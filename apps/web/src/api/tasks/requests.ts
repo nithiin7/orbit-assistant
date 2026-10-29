@@ -8,7 +8,7 @@ import type {
   UpdateTaskRequest,
 } from "@orbit/contracts";
 
-import { request, type Signal, toQueryString, workspacePath } from "./client";
+import { request, type Signal, toQueryString, workspacePath } from "../client";
 
 function tasksPath(workspaceId: string, suffix = ""): string {
   return workspacePath(workspaceId, `/tasks${suffix}`);

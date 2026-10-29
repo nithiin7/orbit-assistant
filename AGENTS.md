@@ -102,9 +102,17 @@ and `packages/*/package.json`. Check them rather than guessing.
 - Layering: routes in `src/app/`, UI in `src/components/` (`ui/` holds small
   shadcn/ui-compatible primitives), API calls in `src/api/`, and other logic in `src/lib/`.
 - Call the API only through the typed helpers in `src/api/`, using types from
-  `@orbit/contracts`. Each file covers one API area (`tasks.ts`, `shopping.ts`, `auth.ts`, …)
-  and builds on `client.ts`, which owns `request`, `ApiError`, and `describeApiError`. Import
-  from the specific module (`@/api/tasks`); there is no barrel. Add a new area as a new file.
+  `@orbit/contracts`. Each API area (`tasks`, `shopping`, `auth`, …) has its own module,
+  built on `client.ts`, which owns `request`, `ApiError`, and `describeApiError`. Import from
+  the area (`@/api/tasks`), not from a root barrel.
+- Server data is fetched and cached with TanStack Query (`QueryProvider`, inside
+  `AuthProvider`, clears the cache when the user changes). An area that uses it is a folder:
+  `requests.ts` (fetch functions), `queries.ts` (query keys, `queryOptions`, cache helpers),
+  their tests, and `index.ts`. Query keys start with `["workspaces", workspaceId, …]` so
+  workspaces never share cached data. Hooks that bind queries to auth and the active workspace
+  live in `src/hooks/` (for example `use-tasks.ts`). Areas not migrated yet are single files
+  using `useWorkspaceResource`; move them to queries rather than adding new hand-rolled
+  loaders. `fetch` is the HTTP client; don't add axios.
 - Each `src/lib` module has its own folder: `src/lib/<name>/<name>.ts`, its
   `<name>.test.ts`, and an `index.ts` that re-exports it, so imports stay `@/lib/<name>`.
   Related modules can share a domain folder without an index, like `src/lib/auth/`.

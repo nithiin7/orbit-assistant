@@ -23,6 +23,9 @@ export type RequestOptions = {
 
 export type Signal = { signal?: AbortSignal };
 
+/** Runs an API call with the signed-in user's token (`useAuth().withToken`). */
+export type WithToken = <T>(call: (token: string) => Promise<T>) => Promise<T>;
+
 /** Send a request to the Orbit API, throwing `ApiError` for any non-2xx response. */
 export async function send(path: string, { method, body, token, signal }: RequestOptions = {}) {
   const headers: Record<string, string> = { Accept: "application/json" };

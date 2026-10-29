@@ -5,14 +5,12 @@ import { CheckCheck, ListTodo, SearchX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { describeApiError } from "@/api/client";
-import { completeTask, createTask, deleteTask, reopenTask, updateTask } from "@/api/tasks";
-import { useAuth } from "@/components/auth/auth-provider";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorkspaces } from "@/components/workspace/workspace-provider";
-import { useTaskList } from "@/hooks/use-task-list";
+import { useTaskList, useTaskMutations } from "@/hooks/use-tasks";
 import { isEditableTarget } from "@/lib/keyboard";
 import {
   DEFAULT_TASK_FILTERS,
@@ -49,11 +47,11 @@ export function TasksPanel() {
 }
 
 function TasksView({ workspaceId }: { workspaceId: string }) {
-  const { withToken } = useAuth();
   const [filters, setFilters] = useState<TaskFilters>(DEFAULT_TASK_FILTERS);
   const [search, setSearch] = useState("");
   const query = useMemo(() => toTaskListQuery(filters), [filters]);
-  const { state, refreshing, reload, refresh, replaceTask, removeTask } = useTaskList(query);
+  const { state, refreshing, reload } = useTaskList(workspaceId, query);
+  const mutations = useTaskMutations(workspaceId);
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [editing, setEditing] = useState<Task | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -99,13 +97,11 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
 
   const create = useCallback(
     async (draft: CreateTaskRequest) => {
-      const task = await withToken((token) => createTask(token, workspaceId, draft));
+      const task = await mutations.create.mutateAsync(draft);
       setActionError(null);
       setAnnouncement(`Added “${task.title}”.`);
-      // Reload in place so the new task lands where the current sort puts it.
-      refresh();
     },
-    [withToken, workspaceId, refresh],
+    [mutations.create],
   );
 
   const toggle = useCallback(
@@ -113,20 +109,10 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
       const completing = task.status === "open";
       setActionError(null);
       setTaskPending(task.id, true);
-      // Show the change immediately; the task stays in view until the list reloads.
-      replaceTask({
-        ...task,
-        status: completing ? "completed" : "open",
-        completed_at: completing ? new Date().toISOString() : null,
-      });
       try {
-        const updated = await withToken((token) =>
-          (completing ? completeTask : reopenTask)(token, workspaceId, task.id),
-        );
-        replaceTask(updated);
+        await mutations.toggle.mutateAsync(task);
         setAnnouncement(completing ? `Completed “${task.title}”.` : `Reopened “${task.title}”.`);
       } catch (reason) {
-        replaceTask(task);
         setActionError(
           describeApiError(
             reason,
@@ -136,19 +122,16 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
       }
       setTaskPending(task.id, false);
     },
-    [withToken, workspaceId, replaceTask, setTaskPending],
+    [mutations.toggle, setTaskPending],
   );
 
   const save = useCallback(
     async (task: Task, changes: UpdateTaskRequest) => {
-      const updated = await withToken((token) => updateTask(token, workspaceId, task.id, changes));
-      replaceTask(updated);
+      const updated = await mutations.update.mutateAsync({ task, changes });
       setActionError(null);
       setAnnouncement(`Saved “${updated.title}”.`);
-      // A new due date or priority can move the task in the current sort.
-      refresh();
     },
-    [withToken, workspaceId, replaceTask, refresh],
+    [mutations.update],
   );
 
   const remove = useCallback(
@@ -156,8 +139,7 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
       setActionError(null);
       setTaskPending(task.id, true);
       try {
-        await withToken((token) => deleteTask(token, workspaceId, task.id));
-        removeTask(task.id);
+        await mutations.remove.mutateAsync(task);
         setAnnouncement(`Deleted “${task.title}”.`);
         // The row and its focused button are gone; keep focus in the list.
         listRef.current?.focus();
@@ -166,7 +148,7 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
       }
       setTaskPending(task.id, false);
     },
-    [withToken, workspaceId, removeTask, setTaskPending],
+    [mutations.remove, setTaskPending],
   );
 
   const clearNarrowing = () => {

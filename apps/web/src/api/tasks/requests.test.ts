@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { getTaskSummary, listTasks } from "./tasks";
+import { getTaskSummary, listTasks } from "./requests";
 
 afterEach(() => {
   vi.unstubAllGlobals();
