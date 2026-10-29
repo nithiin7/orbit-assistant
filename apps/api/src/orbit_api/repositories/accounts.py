@@ -11,6 +11,7 @@ from orbit_api.db.models import LocalCredentialModel, LocalSessionModel, UserMod
 from orbit_api.repositories.transaction import flush
 from orbit_api.services.accounts.models import AuthProvider, User
 from orbit_api.services.local_auth.models import LocalCredential
+from orbit_api.services.tasks.models import UNSET, Change
 
 
 def _to_user(model: UserModel) -> User:
@@ -21,6 +22,7 @@ def _to_user(model: UserModel) -> User:
         email=model.email,
         display_name=model.display_name,
         created_at=model.created_at,
+        timezone=model.timezone,
     )
 
 
@@ -56,13 +58,20 @@ class SqlAccountRepository:
         await flush(self._session)
 
     async def update(
-        self, user_id: uuid.UUID, *, email: str | None = None, display_name: str | None = None
+        self,
+        user_id: uuid.UUID,
+        *,
+        email: str | None = None,
+        display_name: str | None = None,
+        timezone: Change[str | None] = UNSET,
     ) -> User:
         model = await self._session.get_one(UserModel, user_id)
         if email is not None:
             model.email = email
         if display_name is not None:
             model.display_name = display_name
+        if timezone is not UNSET:
+            model.timezone = timezone
         await flush(self._session)
         return _to_user(model)
 

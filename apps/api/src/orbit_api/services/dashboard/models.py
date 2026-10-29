@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Final, Literal, get_args
 
-WidgetId = Literal["workspace", "status", "tasks", "shopping", "modules"]
+WidgetId = Literal["workspace", "status", "tasks", "reminders", "shopping", "modules"]
 # `half` widgets sit side by side on wide screens.
 WidgetSize = Literal["half", "full"]
 

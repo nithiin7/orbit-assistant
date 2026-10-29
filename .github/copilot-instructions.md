@@ -14,9 +14,10 @@ non-trivial work. The essentials are repeated here because Copilot may not load 
   `pnpm contracts:generate`.
 - The API owns all data access through SQLAlchemy (SQLite in `local` mode, PostgreSQL in
   `cloud` mode) with Alembic migrations. The web app never touches a database. Identity
-  exists (profiles, local or Supabase auth, workspaces; dependencies in `api/auth.py`). Tasks
-  is the only product feature (`/workspaces/{workspace_id}/tasks`); no other features or AI
-  integration exist yet. Don't build on them unless the task asks.
+  exists (profiles, local or Supabase auth, workspaces; dependencies in `api/auth.py`). The
+  product features are tasks, shopping lists, and reminders with in-app notifications
+  (delivered by the worker in `scheduler/`); no other features or AI integration exist yet.
+  Don't build on them unless the task asks.
 
 ## Rules
 

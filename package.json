@@ -13,6 +13,7 @@
     "dev": "concurrently --kill-others --names web,api --prefix-colors blue,green \"pnpm:dev:web\" \"pnpm:dev:api\"",
     "dev:web": "pnpm --filter @orbit/web dev",
     "dev:api": "pnpm --filter @orbit/api dev",
+    "worker": "pnpm --filter @orbit/api worker",
     "lint": "pnpm -r lint",
     "lint:web": "pnpm --filter @orbit/web lint",
     "lint:api": "pnpm --filter @orbit/api lint",

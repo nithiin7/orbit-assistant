@@ -125,6 +125,7 @@ apps/web/src/
 │   ├── (app)/           # Signed-in routes: RequireAuth + WorkspaceProvider + app shell
 │   │   ├── page.tsx     # Dashboard: user-arranged widgets (components/dashboard/)
 │   │   ├── tasks/       # Tasks page
+│   │   ├── reminders/   # Reminders page
 │   │   ├── settings/    # Settings: drill-down on small screens, split view on large; [panel]/ sub-pages
 │   │   └── [section]/   # Placeholder page for every other nav section
 │   ├── (auth)/          # Public routes without the shell: sign-in, sign-up
@@ -137,6 +138,8 @@ apps/web/src/
 │   ├── dashboard/       # Customizable dashboard grid and widgets without a module of their own
 │   ├── workspace/       # Workspace switcher, dashboard overview
 │   ├── tasks/           # Tasks page (composer, toolbar, list, edit dialog), dashboard summary
+│   ├── reminders/       # Reminders page (list, create/edit dialog), dashboard widget
+│   ├── notifications/   # Notification bell and panel (in the sidebar and mobile top bar)
 │   ├── settings/        # Settings menu and the account, workspace, theme, and storage panels
 │   ├── storage/         # Storage-mode indicator and status card
 │   └── ui/              # Small shadcn/ui-compatible primitives
@@ -190,9 +193,12 @@ apps/api/src/orbit_api/
 │       ├── me.py        # The signed-in user's profile and profile photo
 │       ├── storage.py   # Local database location; open its folder (local mode, not prod)
 │       ├── workspaces.py # List, create, get, rename, and delete workspaces
-│       └── tasks.py     # Workspace-scoped tasks: CRUD, complete/reopen, filters, summary
+│       ├── tasks.py     # Workspace-scoped tasks: CRUD, complete/reopen, filters, summary
+│       ├── reminders.py # Workspace-scoped reminders: CRUD, enable/disable, upcoming
+│       └── notifications.py # The signed-in user's notifications: list, unread count, read state
 ├── auth/                # Adapters: Argon2 password hashing, Supabase JWT verification
 ├── system/              # Adapter: opening the OS file manager on the API's machine
+├── scheduler/           # Reminder worker (embedded in the API or `orbit-worker`) and its CLI
 ├── schemas/             # Pydantic request/response models (the API contract)
 ├── services/            # Domain logic, one package per feature (no FastAPI/SQLAlchemy):
 │                        #   models.py (dataclasses, errors) and service.py (protocols, service)
@@ -296,6 +302,8 @@ written once. SQLite is embedded in the API process; local mode needs no databas
 - `0004_create_tasks` creates `tasks` with RLS (see [Tasks](#tasks)).
 - `0006_create_dashboard_layouts` creates `dashboard_layouts` with RLS (see
   [Dashboard layout](#dashboard-layout)).
+- `0007_create_reminders` creates `reminders`, `reminder_occurrences`, and `notifications` with
+  RLS, and adds `users.timezone` (see [Reminders and notifications](#reminders-and-notifications)).
 - Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
   Startup only checks that the database is at the head revision. For a shared cloud database,
   schema changes should be deliberate and reviewable.
@@ -364,7 +372,8 @@ structure.
   schema to anyone holding the project's publishable (anon) key.
   1. Every migration that creates a table in PostgreSQL enables RLS on it in the same
      revision. `0002` does this for `users`, `local_credentials`, `local_sessions`, and
-     `workspaces`; `0003` for `user_avatars`; `0004` for `tasks`; `0006` for `dashboard_layouts`.
+     `workspaces`; `0003` for `user_avatars`; `0004` for `tasks`; `0006` for `dashboard_layouts`;
+     `0007` for `reminders`, `reminder_occurrences`, and `notifications`.
   2. **No policies exist**, deliberately: the browser never queries tables directly, so the
      Data API's `anon` and `authenticated` roles get no rows. Add `authenticated` policies
      (for example `owner_id = auth.uid()`) only if a client is ever allowed direct access.
@@ -392,7 +401,9 @@ structure.
 
 ```text
 users ──< workspaces ──< tasks    (owner_id → users.id, workspace_id → workspaces.id,
-  │                                  both ON DELETE CASCADE)
+  │                 │                both ON DELETE CASCADE)
+  │                 └──< reminders   (see Reminders and notifications)
+  ├──< notifications              (in-app inbox, per recipient)
   │
   ├── user_avatars                (profile photo bytes and type, 1:1)
   ├── dashboard_layouts           (dashboard widget order and widths, 1:1)
@@ -400,7 +411,8 @@ users ──< workspaces ──< tasks    (owner_id → users.id, workspace_id �
   └──< local_sessions             (local mode: SHA-256 of the bearer token, expiry)
 ```
 
-- **`users`** is the Orbit profile: UUID `id`, `email`, `display_name`, UTC `created_at` and
+- **`users`** is the Orbit profile: UUID `id`, `email`, `display_name`, an optional IANA
+  `timezone` (the default for new reminders), UTC `created_at` and
   `updated_at`, and the identity it belongs to, `(auth_provider, auth_subject)`, which is
   unique. `auth_provider` is `local` or `supabase` (a CHECK constraint); for Supabase,
   `auth_subject` is the Supabase user ID (the JWT `sub`), for local accounts it is the profile ID.
@@ -608,7 +620,193 @@ workspace is `404 Workspace not found.`, and a task from another workspace is
 
 ### Not implemented
 
-Reminders, recurring tasks, subtasks, tags, sharing, and drag-and-drop ordering.
+Recurring tasks, subtasks, tags, sharing, and drag-and-drop ordering. Tasks can have
+[reminders](#reminders-and-notifications), which are a separate feature.
+
+## Reminders and notifications
+
+Reminders prompt the user at a chosen time, once or on a schedule, optionally about a task. When
+one comes due, a worker delivers it as an **in-app notification** (the bell in the sidebar and
+mobile top bar). In-app is the only channel today; see [Limitations](#reminder-limitations).
+
+### Data model
+
+```text
+workspaces ──< reminders ──< reminder_occurrences          (ON DELETE CASCADE)
+                  │                 │
+tasks ──<─────────┘                 │   (task_id, workspace_id) → tasks(id, workspace_id),
+                                    │   ON DELETE CASCADE; NULL for standalone reminders
+users ──< notifications >───────────┘   (occurrence_id, reminder_id ON DELETE SET NULL;
+                                         user_id, workspace_id ON DELETE CASCADE)
+```
+
+| Table                  | Holds                                                                                                                                           |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `reminders`            | Title, description, `enabled`, the schedule in local terms (`start_date`, `time_of_day`, IANA `timezone`, `recurrence`), the last outcome       |
+| `reminder_occurrences` | One scheduled firing: `scheduled_for` (UTC), status, `attempts`, `available_at` (backoff), lease (`claim_token`, `claimed_until`), `last_error` |
+| `notifications`        | One delivered occurrence for one recipient: a copy of the title and description, `scheduled_for`, `read_at`                                     |
+| `users.timezone`       | Optional IANA time zone preference; new reminders start in it                                                                                   |
+
+Why three tables: a reminder is what the user edits; an occurrence is the unit of work the
+worker claims, retries, and records the outcome of; a notification is what the user reads. Keeping
+occurrences separate makes delivery state (attempts, leases, failures) observable without
+cluttering reminders, and lets notifications outlive edits and deletions of their reminder.
+
+- **One pending occurrence per reminder.** Only the next occurrence is stored. Creating a
+  reminder, changing its schedule, or enabling it replaces the pending occurrence in the same
+  transaction; disabling it deletes it. Delivering an occurrence schedules the next.
+- **Constraints:** `unique(reminder_id, scheduled_for)` (a reminder never fires twice for one
+  instant); `unique(occurrence_id, user_id)` on notifications (one notification per occurrence
+  and recipient); CHECKs tie the lease to `processing` and `finished_at` to final statuses. The
+  composite foreign key to `tasks(id, workspace_id)` keeps a reminder in its task's workspace.
+- **Indexes:** `(status, available_at)` for the worker's poll, `(reminder_id, status)` for the
+  next occurrence, and `(user_id, created_at)` and `(user_id, read_at)` for the inbox and the
+  unread count.
+- **Status** (`scheduled`, `overdue`, `completed`, `disabled`) is derived in SQL, never stored:
+  `disabled` when switched off; `completed` when the task is completed or nothing is left to
+  fire; `overdue` when an occurrence is due but not delivered yet, or the last delivery failed;
+  otherwise `scheduled`.
+- Migration `0007_create_reminders` creates the three tables with RLS, adds `users.timezone`,
+  and adds the unique `tasks(id, workspace_id)` key the composite foreign key needs.
+
+### Time zones and recurrence
+
+`services/reminders/recurrence.py` is pure and fully unit-tested (`tests/test_recurrence.py`).
+
+- A schedule is a **local date and time in an IANA time zone**, converted to UTC one occurrence
+  at a time. A reminder at 09:00 stays at 09:00 local time across daylight-saving changes.
+  `scheduled_for` and all other timestamps are stored in UTC.
+- **Time zone choice:** each reminder stores its own zone. New reminders default to the user's
+  preference (Settings → Account), else the browser's zone (web app), else UTC (API). The server's
+  own time zone is never used. Names are validated against the IANA database (`tzdata` ships it
+  on platforms without one, such as Windows).
+- **Skipped times** (02:30 when clocks jump from 02:00 to 03:00) fire at 03:30, the instant
+  the wall clock would have shown 02:30. **Repeated times** (01:30 when clocks fall back) fire
+  once, at the first 01:30.
+- **Recurrence** is a versioned JSON document (`{"version": 1, "frequency": …, "weekdays": […]}`),
+  validated on the way in (Pydantic) and on the way out (the repository). Frequencies: `daily`,
+  `weekly` on chosen weekdays (Monday to Friday is the "every weekday" preset), and `monthly`.
+  There are no user-supplied expressions (no cron strings or RRULEs).
+- **Monthly on the 29th to 31st** fires on the last day of shorter months and returns to the
+  original day in longer ones: Jan 31, Feb 28 (29 in leap years), Mar 31, Apr 30.
+- A one-time reminder must be in the future when created or re-enabled (422 otherwise); a
+  recurring one may start in the past and continues from now.
+
+### Tasks and reminders
+
+- A reminder's time is **independent of its task's due date**: rescheduling the task leaves its
+  reminders where they are.
+- While the task is **completed**, its reminders don't notify: occurrences that come due are
+  recorded as `cancelled`, and recurring reminders keep their schedule, so **reopening** the task
+  resumes them. Such reminders show as `completed` and are left out of "upcoming".
+- **Deleting** the task deletes its reminders and their pending occurrences (database cascade).
+  Delivered notifications stay in the inbox, without the link.
+
+### Scheduling and delivery
+
+```text
+API request ──► reminders + next pending occurrence (one transaction)
+                                    │
+worker poll ──► claim due rows (atomic UPDATE … RETURNING, lease) ──► per occurrence, one transaction:
+                  confirm claim → lock reminder → notification(s) → occurrence delivered
+                  → reminder.last_outcome → next pending occurrence → COMMIT
+```
+
+The worker (`scheduler/worker.py`) holds no schedule in memory; each poll reads due work from the
+database. It runs **inside each API process** by default (an asyncio task started and stopped by
+the app's lifespan; `ORBIT_SCHEDULER_IN_API`) and/or as a **standalone process**
+(`pnpm worker`, i.e. `uv run orbit-worker`). Any number of workers can share a database.
+
+- **Claiming:** one conditional `UPDATE … WHERE id IN (SELECT … LIMIT n) AND <still claimable>
+RETURNING` moves due `pending` rows (and `processing` rows whose lease expired) to
+  `processing` with a fresh `claim_token` and `claimed_until`. On PostgreSQL the subquery uses
+  `FOR UPDATE SKIP LOCKED` so concurrent workers take different rows; the re-checked condition
+  makes a racing worker skip a row another just claimed. SQLite serializes writers.
+- **Delivering:** each claimed occurrence gets its own transaction. Its first statement re-confirms
+  the claim token, which also takes the row lock (PostgreSQL) or the write lock (SQLite) so no
+  other worker can take over mid-delivery. The reminder row is then locked (`FOR UPDATE` on
+  PostgreSQL), so an edit in flight finishes first. The notification, the occurrence's
+  `delivered` status, and the next occurrence are committed together: an occurrence is
+  `delivered` exactly when its notification exists. `processing` only means a worker holds the
+  lease.
+- **Retries:** a failed attempt rolls back, then returns the occurrence to `pending` with
+  backoff (30 s, 1 min, 2 min, … up to 30 min). After 5 attempts it becomes `failed`; the
+  reminder shows `overdue` with "the last delivery failed", and a recurring reminder's next
+  occurrence is still scheduled. Only the exception's class name is stored (`last_error`), never
+  reminder content.
+- **Recovery:** `orbit-worker status` counts occurrences by status; `orbit-worker retry-failed`
+  makes failed occurrences pending again. Editing or re-enabling a reminder also reschedules it.
+- **Downtime:** after a stop, each reminder fires **once** for its oldest missed occurrence
+  (late, with its original `scheduled_for`), and the next occurrence is the first one still in
+  the future. Missed occurrences are not replayed one by one.
+- **Shutdown:** the loop finishes the poll in progress before stopping (lifespan shutdown,
+  SIGINT, or SIGTERM), so it never abandons a transaction. A killed worker's claims are
+  recovered by any worker once their lease (2 minutes) expires.
+- **Storage modes:** the same code runs on SQLite and PostgreSQL. Local mode typically runs the
+  embedded worker in the single API process. Cloud mode can run the embedded worker in every
+  API instance, a standalone worker, or both.
+
+**Tested guarantees** (`tests/test_reminder_worker.py`, against real SQLite files with a
+controllable clock): delivery exactly once per occurrence, including three concurrent workers on
+separate connections; recovery of a crashed worker's claim after its lease; a worker whose lease
+was taken over writes nothing; the database rejects a second notification for an occurrence;
+pending work survives a restart; retry with backoff, final failure, and `retry-failed`; late
+delivery after downtime; completed tasks, disabling, rescheduling, and deletion during delivery.
+
+**Assumptions, not yet tested:** PostgreSQL concurrency relies on `SKIP LOCKED` and row locks
+behaving as documented; the opt-in PostgreSQL suite checks RLS on the new tables but doesn't
+run concurrent workers. Delivery is "at the next poll" (default every 15 s), not to the second.
+
+### API
+
+Reminders are workspace-scoped (`/api/v1/workspaces/{workspace_id}/reminders`, authorized by
+`WorkspaceDep`); notifications belong to the signed-in user (`/api/v1/me/notifications`,
+`CurrentUserDep`) and span their workspaces.
+
+| Method   | Path                             | Purpose                                                                                      |
+| -------- | -------------------------------- | -------------------------------------------------------------------------------------------- |
+| `GET`    | `…/reminders`                    | List, soonest first: `status`, `task_id`, `limit` (≤ 200), `offset`; `reminders`, `total`    |
+| `POST`   | `…/reminders`                    | Create (`title`, `start_date`, `time_of_day`, optional `timezone`, `recurrence`, `task_id`)  |
+| `GET`    | `…/reminders/upcoming`           | Enabled reminders with an active occurrence and an open (or no) task, by time; `limit` ≤ 50  |
+| `GET`    | `…/reminders/{id}`               | Get one                                                                                      |
+| `PATCH`  | `…/reminders/{id}`               | Change fields, including `enabled`; schedule changes replace the pending occurrence          |
+| `DELETE` | `…/reminders/{id}`               | Delete with its occurrences; notifications stay                                              |
+| `GET`    | `/me/notifications`              | Inbox, newest first: `unread`, `limit` (≤ 100), `offset`; `notifications`, `total`, `unread` |
+| `GET`    | `/me/notifications/unread-count` | `{"unread": n}`, cheap enough to poll                                                        |
+| `PATCH`  | `/me/notifications/{id}`         | `{"read": true \| false}`; marking read again keeps the first read time                      |
+| `POST`   | `/me/notifications/read-all`     | Mark all read; returns how many changed                                                      |
+
+- A task in another workspace (or another user's) is a 422 "That task doesn't exist in this
+  workspace.", the same as a missing one. Another user's reminder or notification is a 404.
+- Request models forbid unknown fields, so a client can't set `status`, `workspace_id`, or
+  occurrence data. Times must be whole minutes without an offset; dates are years 2000 to 2200.
+- `PATCH /api/v1/me` accepts `timezone` (IANA name, or `null` to clear) alongside
+  `display_name`.
+
+### Web app
+
+- `/reminders` (`components/reminders/`): status tabs (Upcoming, Overdue, Completed, Disabled,
+  All), the list with an enable switch, schedule, recurrence, task, and time zone (shown when it
+  differs from the viewer's), delete with confirmation, and a create/edit dialog (date, time,
+  time zone, repeat presets, weekday toggles, task).
+- The notification bell (`components/notifications/`) polls the unread count every 30 seconds
+  (one indexed `COUNT`). Opening it loads the 20 newest notifications; each can be marked read or
+  unread, or all at once. When the count rises, reminder lists are marked stale, since a delivery
+  changed their status. Reminder lists also refetch every minute while shown.
+- The dashboard's **Reminders** widget shows the next five from `…/upcoming` for the active
+  workspace.
+- Query keys: reminders under `["workspaces", id, "reminders", …]`; notifications under
+  `["notifications", …]` (per user, cleared on sign-out like the rest of the cache).
+
+### Reminder limitations
+
+- **In-app only.** No browser push, email, SMS, or mobile notifications; a notification is seen
+  when Orbit is open. The polling bell is the stand-in for a push channel.
+- Delivery granularity is the poll interval. A reminder shows as `overdue` until delivered.
+- Notifications go to the workspace's owner, its only member today. Shared workspaces would
+  deliver to each member and need membership checks on notifications.
+- No snooze, no end date or count for recurrences, no "every N days/weeks", and no history view
+  beyond the inbox.
 
 ## Configuration
 
@@ -626,15 +824,16 @@ Reminders, recurring tasks, subtasks, tags, sharing, and drag-and-drop ordering.
 
 ## Testing strategy
 
-| Layer                    | Tool                                  | Location                                   | Current coverage                                                                                           |
-| ------------------------ | ------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| Web units and components | Vitest, Testing Library, jsdom        | `apps/web/src/**/*.test.ts(x)`, co-located | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks                      |
-| API routes and config    | Pytest, FastAPI `TestClient`          | `apps/api/tests/`                          | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, cross-user isolation |
-| Services                 | Pytest, in-memory fake repositories   | `apps/api/tests/test_*_service.py`         | Onboarding, concurrent provisioning, ownership checks, task completion rules                               |
-| Database (SQLite)        | Pytest, temporary SQLite files        | `apps/api/tests/test_database.py`, etc.    | Startup checks, sessions, migrations, constraints, 503 errors                                              |
-| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)        | `apps/api/tests/test_postgres.py`          | Migrations, connectivity, RLS; skipped by default                                                          |
-| Contract freshness       | Pytest + `openapi-typescript --check` | `tests/test_openapi.py`, contracts `lint`  | Generated contract matches the API                                                                         |
-| End-to-end               | Not set up (**planned**)              | —                                          | —                                                                                                          |
+| Layer                    | Tool                                            | Location                                                    | Current coverage                                                                                                                     |
+| ------------------------ | ----------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                  | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications                      |
+| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                           | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, cross-user isolation |
+| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_reminder_worker.py` | Recurrence, DST, month ends; delivery, concurrency, leases, retries, restarts                                                        |
+| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                          | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                         |
+| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                     | Startup checks, sessions, migrations, constraints, 503 errors                                                                        |
+| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                           | Migrations, connectivity, RLS; skipped by default                                                                                    |
+| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                   | Generated contract matches the API                                                                                                   |
+| End-to-end               | Not set up (**planned**)                        | —                                                           | —                                                                                                                                    |
 
 Unit tests cover logic, route tests cover HTTP behavior and validation, and E2E tests will cover
 critical user journeys once real features exist. CI runs every layer on each pull request.
@@ -669,7 +868,8 @@ The database foundation is implemented (see [Storage](#storage)). Still planned:
 
 ### Evolution
 
-The first database-backed, workspace-scoped feature, [tasks](#tasks), is in place. Next: more
+Workspace-scoped [tasks](#tasks) and [reminders](#reminders-and-notifications), with a
+database-backed worker, are in place. Next: more
 modules on the same pattern, AI-assisted features through the provider interface, then optional
 sync and extension points.
 Each step should leave the boundaries above intact.

@@ -15,6 +15,8 @@ class User:
     email: str
     display_name: str
     created_at: datetime
+    # An IANA time zone name; `None` until the user chooses one.
+    timezone: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

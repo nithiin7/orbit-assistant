@@ -188,6 +188,80 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the signed-in user's notifications
+         * @description Newest first, from every workspace the user owns.
+         */
+        get: operations["list_notifications_api_v1_me_notifications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Count the signed-in user's unread notifications
+         * @description Cheap enough to poll.
+         */
+        get: operations["count_unread_api_v1_me_notifications_unread_count_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark every notification read */
+        post: operations["mark_all_read_api_v1_me_notifications_read_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notifications/{notification_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Mark a notification read or unread */
+        patch: operations["update_notification_api_v1_me_notifications__notification_id__patch"];
+        trace?: never;
+    };
     "/api/v1/workspaces": {
         parameters: {
             query?: never;
@@ -488,6 +562,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/reminders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List reminders
+         * @description Soonest next occurrence first; reminders with nothing left to fire come last.
+         */
+        get: operations["list_reminders_api_v1_workspaces__workspace_id__reminders_get"];
+        put?: never;
+        /** Create a reminder */
+        post: operations["create_reminder_api_v1_workspaces__workspace_id__reminders_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/reminders/upcoming": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List upcoming reminders
+         * @description Enabled reminders by next occurrence, soonest first, including any that are due but not
+         *     delivered yet. Reminders about completed tasks are left out.
+         */
+        get: operations["upcoming_reminders_api_v1_workspaces__workspace_id__reminders_upcoming_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/reminders/{reminder_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a reminder */
+        get: operations["get_reminder_api_v1_workspaces__workspace_id__reminders__reminder_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a reminder
+         * @description Permanently delete a reminder and its pending occurrences. Notifications it already
+         *     delivered stay in the inbox.
+         */
+        delete: operations["delete_reminder_api_v1_workspaces__workspace_id__reminders__reminder_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update a reminder
+         * @description Also enables and disables reminders (`enabled`). Changing the schedule or `enabled`
+         *     replaces the next occurrence.
+         */
+        patch: operations["update_reminder_api_v1_workspaces__workspace_id__reminders__reminder_id__patch"];
+        trace?: never;
+    };
     "/api/v1/storage": {
         parameters: {
             query?: never;
@@ -552,6 +695,42 @@ export interface components {
              */
             notes: string;
         };
+        /** CreateReminderRequest */
+        CreateReminderRequest: {
+            /** Title */
+            title: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Task Id
+             * @description A task in the same workspace, or omit for a standalone one.
+             */
+            task_id?: string | null;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /**
+             * Time Of Day
+             * Format: time
+             */
+            time_of_day: string;
+            /**
+             * Timezone
+             * @description Defaults to the user's time zone preference, or UTC without one.
+             */
+            timezone?: string | null;
+            recurrence?: components["schemas"]["RecurrenceModel"] | null;
+        };
         /** CreateTaskRequest */
         CreateTaskRequest: {
             /** Title */
@@ -599,7 +778,7 @@ export interface components {
              * Id
              * @enum {string}
              */
-            id: "workspace" | "status" | "tasks" | "shopping" | "modules";
+            id: "workspace" | "status" | "tasks" | "reminders" | "shopping" | "modules";
             /**
              * Size
              * @description `half` widgets sit side by side on wide screens.
@@ -700,6 +879,185 @@ export interface components {
             password: string;
             /** Display Name */
             display_name: string;
+        };
+        /** MarkAllReadResponse */
+        MarkAllReadResponse: {
+            /**
+             * Count
+             * @description How many notifications were marked read.
+             */
+            count: number;
+        };
+        /** NotificationListResponse */
+        NotificationListResponse: {
+            /** Notifications */
+            notifications: components["schemas"]["NotificationResponse"][];
+            /**
+             * Total
+             * @description Notifications matching the filters, across all pages.
+             */
+            total: number;
+            /**
+             * Unread
+             * @description All of the user's unread notifications.
+             */
+            unread: number;
+        };
+        /** NotificationResponse */
+        NotificationResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             * @description The workspace the reminder belongs to.
+             */
+            workspace_id: string;
+            /**
+             * Reminder Id
+             * @description The reminder that fired, or `null` once it has been deleted.
+             */
+            reminder_id: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Body
+             * @description The reminder's description when it fired; may be empty.
+             */
+            body: string;
+            /**
+             * Scheduled For
+             * Format: date-time
+             * @description When the reminder was scheduled to fire.
+             */
+            scheduled_for: string;
+            /**
+             * Created At
+             * Format: date-time
+             * @description When the notification was delivered.
+             */
+            created_at: string;
+            /**
+             * Read At
+             * @description When it was first read, or `null` if unread.
+             */
+            read_at: string | null;
+        };
+        /**
+         * RecurrenceModel
+         * @description How a reminder repeats. Monthly reminders on a day a month lacks (29 to 31) fire on that
+         *     month's last day.
+         */
+        RecurrenceModel: {
+            /**
+             * Frequency
+             * @enum {string}
+             */
+            frequency: "daily" | "weekly" | "monthly";
+            /**
+             * Weekdays
+             * @description Weekly only, and required for it: the days it repeats on.
+             */
+            weekdays?: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[];
+        };
+        /** ReminderListResponse */
+        ReminderListResponse: {
+            /** Reminders */
+            reminders: components["schemas"]["ReminderResponse"][];
+            /**
+             * Total
+             * @description Reminders matching the filters, across all pages.
+             */
+            total: number;
+        };
+        /** ReminderResponse */
+        ReminderResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** @description The task this reminder is about, or `null` for a standalone reminder. */
+            task: components["schemas"]["ReminderTaskResponse"] | null;
+            /** Title */
+            title: string;
+            /**
+             * Description
+             * @description Empty when the reminder has no description.
+             */
+            description: string;
+            /** Enabled */
+            enabled: boolean;
+            /**
+             * Start Date
+             * Format: date
+             * @description The date of a one-time reminder, or the first date of a recurring one.
+             */
+            start_date: string;
+            /**
+             * Time Of Day
+             * Format: time
+             * @description Local wall-clock time in `timezone`.
+             */
+            time_of_day: string;
+            /**
+             * Timezone
+             * @description An IANA time zone name.
+             */
+            timezone: string;
+            /** @description `null` for a one-time reminder. */
+            recurrence: components["schemas"]["RecurrenceModel"] | null;
+            /**
+             * Status
+             * @description `scheduled`: the next occurrence is ahead. `overdue`: one is due but not delivered yet, or the last delivery failed. `completed`: nothing left to fire, or the task is completed. `disabled`: switched off.
+             * @enum {string}
+             */
+            status: "scheduled" | "overdue" | "completed" | "disabled";
+            /**
+             * Next Occurrence At
+             * @description When it next fires (UTC), possibly already due; `null` if it won't.
+             */
+            next_occurrence_at: string | null;
+            /**
+             * Last Occurrence At
+             * @description The scheduled time of the most recent occurrence that was processed.
+             */
+            last_occurrence_at: string | null;
+            /** Last Outcome */
+            last_outcome: ("delivered" | "cancelled" | "failed") | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ReminderTaskResponse */
+        ReminderTaskResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "completed";
         };
         /** ShoppingItemResponse */
         ShoppingItemResponse: {
@@ -957,6 +1315,16 @@ export interface components {
              */
             due_today: number;
         };
+        /** UnreadCountResponse */
+        UnreadCountResponse: {
+            /** Unread */
+            unread: number;
+        };
+        /** UpcomingRemindersResponse */
+        UpcomingRemindersResponse: {
+            /** Reminders */
+            reminders: components["schemas"]["ReminderResponse"][];
+        };
         /**
          * UpdateItemRequest
          * @description Change some of an item's fields. Omitted fields keep their values; `quantity: null` and
@@ -972,10 +1340,44 @@ export interface components {
             /** Notes */
             notes?: string | null;
         };
-        /** UpdateProfileRequest */
+        /** UpdateNotificationRequest */
+        UpdateNotificationRequest: {
+            /** Read */
+            read: boolean;
+        };
+        /**
+         * UpdateProfileRequest
+         * @description Change some profile fields. Omitted fields keep their values; `timezone: null` clears
+         *     the time zone preference.
+         */
         UpdateProfileRequest: {
             /** Display Name */
-            display_name: string;
+            display_name?: string | null;
+            /** Timezone */
+            timezone?: string | null;
+        };
+        /**
+         * UpdateReminderRequest
+         * @description Change some of a reminder's fields. Omitted fields keep their values; `task_id: null`
+         *     detaches the task and `recurrence: null` makes the reminder one-time. Changing the schedule
+         *     or `enabled` replaces the pending occurrence.
+         */
+        UpdateReminderRequest: {
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Task Id */
+            task_id?: string | null;
+            /** Enabled */
+            enabled?: boolean | null;
+            /** Start Date */
+            start_date?: string | null;
+            /** Time Of Day */
+            time_of_day?: string | null;
+            /** Timezone */
+            timezone?: string | null;
+            recurrence?: components["schemas"]["RecurrenceModel"] | null;
         };
         /**
          * UpdateTaskRequest
@@ -1017,6 +1419,11 @@ export interface components {
              * @enum {string}
              */
             auth_provider: "local" | "supabase";
+            /**
+             * Timezone
+             * @description The user's IANA time zone, used by default for new reminders; `null` until they choose one.
+             */
+            timezone: string | null;
             /**
              * Created At
              * Format: date-time
@@ -1532,6 +1939,151 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_notifications_api_v1_me_notifications_get: {
+        parameters: {
+            query?: {
+                /** @description Only unread notifications. */
+                unread?: boolean;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    count_unread_api_v1_me_notifications_unread_count_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadCountResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    mark_all_read_api_v1_me_notifications_read_all_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarkAllReadResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_notification_api_v1_me_notifications__notification_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The notification's ID. */
+                notification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateNotificationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The notification does not exist or is someone else's. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
@@ -2713,6 +3265,293 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    list_reminders_api_v1_workspaces__workspace_id__reminders_get: {
+        parameters: {
+            query?: {
+                /** @description Omit for every status. */
+                status?: ("scheduled" | "overdue" | "completed" | "disabled") | null;
+                /** @description Only reminders about this task. */
+                task_id?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or reminder does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_reminder_api_v1_workspaces__workspace_id__reminders_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReminderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or reminder does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, a task outside this workspace, or a one-time reminder in the past. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    upcoming_reminders_api_v1_workspaces__workspace_id__reminders_upcoming_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpcomingRemindersResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or reminder does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_reminder_api_v1_workspaces__workspace_id__reminders__reminder_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The reminder's ID. */
+                reminder_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or reminder does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_reminder_api_v1_workspaces__workspace_id__reminders__reminder_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The reminder's ID. */
+                reminder_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or reminder does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_reminder_api_v1_workspaces__workspace_id__reminders__reminder_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The reminder's ID. */
+                reminder_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateReminderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or reminder does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, a task outside this workspace, or a one-time reminder in the past. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

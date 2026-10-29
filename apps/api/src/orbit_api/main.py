@@ -1,5 +1,6 @@
 """Application factory and ASGI entry point."""
 
+import asyncio
 import logging
 from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
@@ -20,6 +21,7 @@ from orbit_api.auth.passwords import Argon2PasswordHasher
 from orbit_api.auth.supabase import SupabaseTokenVerifier
 from orbit_api.config import Settings, get_settings
 from orbit_api.db.database import open_database
+from orbit_api.scheduler.worker import ReminderWorker
 from orbit_api.system.file_manager import SystemFileRevealer
 
 logger = logging.getLogger(__name__)
@@ -48,9 +50,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         # fallback to another storage mode.
         database = await open_database(settings)
         app.state.database = database
+        stop = asyncio.Event()
+        worker = None
+        if settings.scheduler_embedded:
+            worker = asyncio.create_task(
+                ReminderWorker(database).run(stop, settings.scheduler_poll_seconds)
+            )
         try:
             yield
         finally:
+            # Let a poll in progress finish its transactions before closing the database.
+            stop.set()
+            if worker is not None:
+                await worker
             await database.dispose()
 
     app = FastAPI(

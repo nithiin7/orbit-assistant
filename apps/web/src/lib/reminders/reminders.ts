@@ -1,0 +1,306 @@
+/** Reminder display rules, recurrence presets, time zones, and the form schema mirroring the API. */
+
+import type {
+  CreateReminderRequest,
+  Recurrence,
+  Reminder,
+  ReminderListQuery,
+  ReminderStatus,
+  Weekday,
+} from "@orbit/contracts";
+import { array, mixed, object, string } from "yup";
+
+import { type Option } from "@/lib/utils";
+import { multiLineText, singleLineText } from "@/lib/validation";
+
+export const REMINDER_TITLE_MAX_LENGTH = 200;
+export const REMINDER_DESCRIPTION_MAX_LENGTH = 2000;
+/** The most reminders the Reminders page loads at once. */
+export const REMINDER_PAGE_SIZE = 200;
+
+/** In the API's order, Monday first. */
+export const WEEKDAYS: readonly Option<Weekday>[] = [
+  { value: "mon", label: "Mon" },
+  { value: "tue", label: "Tue" },
+  { value: "wed", label: "Wed" },
+  { value: "thu", label: "Thu" },
+  { value: "fri", label: "Fri" },
+  { value: "sat", label: "Sat" },
+  { value: "sun", label: "Sun" },
+];
+
+const WORKDAYS: readonly Weekday[] = ["mon", "tue", "wed", "thu", "fri"];
+
+/** How a reminder repeats, as offered in the form. `weekdays` is weekly on Monday to Friday. */
+export type Repeat = "none" | "daily" | "weekdays" | "weekly" | "monthly";
+
+export const REPEATS: readonly Option<Repeat>[] = [
+  { value: "none", label: "Does not repeat" },
+  { value: "daily", label: "Every day" },
+  { value: "weekdays", label: "Every weekday (Mon–Fri)" },
+  { value: "weekly", label: "Weekly on chosen days" },
+  { value: "monthly", label: "Every month" },
+];
+
+/** A `YYYY-MM-DD` date's weekday, independent of the viewer's time zone. */
+export function weekdayOf(date: string): Weekday {
+  const [year = 1970, month = 1, day = 1] = date.split("-").map(Number);
+  // getUTCDay: Sunday is 0. The API's weekdays start on Monday.
+  const index = (new Date(Date.UTC(year, month - 1, day)).getUTCDay() + 6) % 7;
+  return WEEKDAYS[index]?.value ?? "mon";
+}
+
+function sameDays(a: readonly Weekday[], b: readonly Weekday[]): boolean {
+  return a.length === b.length && a.every((day) => b.includes(day));
+}
+
+export function toRecurrence(repeat: Repeat, weekdays: readonly Weekday[]): Recurrence | null {
+  switch (repeat) {
+    case "none":
+      return null;
+    case "weekdays":
+      return { frequency: "weekly", weekdays: [...WORKDAYS] };
+    case "weekly":
+      // In weekday order, as the API returns them.
+      return {
+        frequency: "weekly",
+        weekdays: WEEKDAYS.map((day) => day.value).filter((day) => weekdays.includes(day)),
+      };
+    default:
+      return { frequency: repeat, weekdays: [] };
+  }
+}
+
+export function toRepeat(recurrence: Recurrence | null): Repeat {
+  if (!recurrence) return "none";
+  if (recurrence.frequency !== "weekly") return recurrence.frequency;
+  return sameDays(recurrence.weekdays ?? [], WORKDAYS) ? "weekdays" : "weekly";
+}
+
+function ordinal(day: number): string {
+  const rule = new Intl.PluralRules("en", { type: "ordinal" }).select(day);
+  const suffix = { one: "st", two: "nd", few: "rd" }[rule as "one" | "two" | "few"] ?? "th";
+  return `${day}${suffix}`;
+}
+
+/** "Every day", "Weekly on Mon, Thu", "Monthly on the 31st (or the month’s last day)". */
+export function describeRecurrence(recurrence: Recurrence | null, startDate: string): string {
+  if (!recurrence) return "Once";
+  switch (recurrence.frequency) {
+    case "daily":
+      return "Every day";
+    case "weekly": {
+      const days = recurrence.weekdays ?? [];
+      if (sameDays(days, WORKDAYS)) return "Every weekday";
+      if (days.length === 7) return "Every day";
+      const labels = WEEKDAYS.filter((day) => days.includes(day.value)).map((day) => day.label);
+      return `Weekly on ${labels.join(", ")}`;
+    }
+    case "monthly": {
+      const day = Number(startDate.slice(8, 10));
+      return day > 28
+        ? `Monthly on the ${ordinal(day)} (or the month’s last day)`
+        : `Monthly on the ${ordinal(day)}`;
+    }
+  }
+}
+
+/** The page's status tabs; `all` sends no filter. */
+export type ReminderFilter = ReminderStatus | "all";
+
+export const REMINDER_FILTERS: readonly Option<ReminderFilter>[] = [
+  { value: "scheduled", label: "Upcoming" },
+  { value: "overdue", label: "Overdue" },
+  { value: "completed", label: "Completed" },
+  { value: "disabled", label: "Disabled" },
+  { value: "all", label: "All" },
+];
+
+export function toReminderListQuery(filter: ReminderFilter): ReminderListQuery {
+  return { status: filter === "all" ? undefined : filter, limit: REMINDER_PAGE_SIZE };
+}
+
+/** The browser's IANA time zone, falling back to UTC where the browser won't say. */
+export function browserTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
+
+/** Every IANA time zone the browser knows, always including `UTC` and the given extras. */
+export function timeZoneNames(...include: (string | null | undefined)[]): string[] {
+  let names: string[] = [];
+  try {
+    names = Intl.supportedValuesOf("timeZone");
+  } catch {
+    // Older browsers: offer the zones that matter here.
+  }
+  const extras = ["UTC", ...include].filter((name): name is string => Boolean(name));
+  return [...new Set([...names, ...extras])].sort((a, b) => a.localeCompare(b));
+}
+
+/** "Europe/Paris" as "Europe / Paris", easier to scan in a long list. */
+export function timeZoneLabel(name: string): string {
+  return name.replaceAll("_", " ").replaceAll("/", " / ");
+}
+
+/** The date (`YYYY-MM-DD`) and time (`HH:MM`) of an instant, on the wall clock of `timeZone`. */
+export function localParts(instant: Date, timeZone: string): { date: string; time: string } {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(instant)
+      .map((part) => [part.type, part.value]),
+  );
+  return {
+    date: `${parts.year}-${parts.month}-${parts.day}`,
+    time: `${parts.hour}:${parts.minute}`,
+  };
+}
+
+/**
+ * When a reminder fires, on its own time zone's clock: "Today, 9:00 AM", "Tomorrow, 9:00 AM",
+ * or "Tue, Jan 15, 9:00 AM" (with the year when it isn't this year).
+ */
+export function formatOccurrence(at: string, timeZone: string, now: Date = new Date()): string {
+  const instant = new Date(at);
+  const time = new Intl.DateTimeFormat(undefined, {
+    timeZone,
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(instant);
+  const day = localParts(instant, timeZone).date;
+  const today = localParts(now, timeZone).date;
+  const tomorrow = localParts(new Date(now.getTime() + 86_400_000), timeZone).date;
+  if (day === today) return `Today, ${time}`;
+  if (day === tomorrow) return `Tomorrow, ${time}`;
+  const date = new Intl.DateTimeFormat(undefined, {
+    timeZone,
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: day.slice(0, 4) === today.slice(0, 4) ? undefined : "numeric",
+  }).format(instant);
+  return `${date}, ${time}`;
+}
+
+/** A short "3 min ago" or "Jan 15" for when a notification arrived. */
+export function formatReceived(at: string, now: Date = new Date()): string {
+  const minutes = Math.round((now.getTime() - new Date(at).getTime()) / 60_000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  if (minutes < 24 * 60) return `${Math.round(minutes / 60)} h ago`;
+  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(
+    new Date(at),
+  );
+}
+
+/** The next whole hour on the wall clock of `timeZone`: a sensible default for a new reminder. */
+export function nextHour(timeZone: string, now: Date = new Date()): { date: string; time: string } {
+  const hour = new Date(Math.ceil((now.getTime() + 1) / 3_600_000) * 3_600_000);
+  return localParts(hour, timeZone);
+}
+
+export const STATUS_LABELS: Record<ReminderStatus, string> = {
+  scheduled: "Upcoming",
+  overdue: "Overdue",
+  completed: "Completed",
+  disabled: "Disabled",
+};
+
+/** Why a reminder that won't fire looks the way it does, for a short hint under it. */
+export function statusHint(reminder: Reminder): string | null {
+  if (reminder.status === "overdue") {
+    return reminder.last_outcome === "failed"
+      ? "The last delivery failed. Orbit will keep trying the next time."
+      : "Due now. It will arrive in your notifications shortly.";
+  }
+  if (reminder.status === "completed" && reminder.task?.status === "completed") {
+    return "Paused while its task is completed.";
+  }
+  return null;
+}
+
+const repeatField = mixed<Repeat>()
+  .oneOf(REPEATS.map((item) => item.value))
+  .defined();
+
+export const reminderSchema = object({
+  title: singleLineText(REMINDER_TITLE_MAX_LENGTH).required("Enter a title."),
+  description: multiLineText(REMINDER_DESCRIPTION_MAX_LENGTH),
+  /** `""` for a standalone reminder. */
+  taskId: string().defined(),
+  date: string().defined().required("Choose a date."),
+  time: string()
+    .defined()
+    .required("Choose a time.")
+    .matches(/^\d{2}:\d{2}$/, "Choose a time."),
+  timeZone: string().defined().required("Choose a time zone."),
+  repeat: repeatField,
+  weekdays: array(mixed<Weekday>().defined())
+    .defined()
+    .when("repeat", {
+      is: "weekly",
+      then: (schema) => schema.min(1, "Choose at least one day."),
+    }),
+});
+
+export type ReminderFormValues = {
+  title: string;
+  description: string;
+  taskId: string;
+  date: string;
+  time: string;
+  timeZone: string;
+  repeat: Repeat;
+  weekdays: Weekday[];
+};
+
+/** The form's values for an existing reminder. */
+export function toFormValues(reminder: Reminder): ReminderFormValues {
+  const repeat = toRepeat(reminder.recurrence);
+  return {
+    title: reminder.title,
+    description: reminder.description,
+    taskId: reminder.task?.id ?? "",
+    date: reminder.start_date,
+    time: reminder.time_of_day.slice(0, 5),
+    timeZone: reminder.timezone,
+    repeat,
+    weekdays:
+      repeat === "weekly"
+        ? [...(reminder.recurrence?.weekdays ?? [])]
+        : [weekdayOf(reminder.start_date)],
+  };
+}
+
+/**
+ * The reminder fields the form edits. `enabled` is left out, so editing a disabled reminder
+ * doesn't switch it back on; new reminders are created enabled.
+ */
+export type ReminderFields = Omit<CreateReminderRequest, "enabled">;
+
+/** The API request for the form's (validated) values. */
+export function toReminderRequest(values: ReminderFormValues): ReminderFields {
+  return {
+    title: values.title,
+    description: values.description,
+    task_id: values.taskId || null,
+    start_date: values.date,
+    time_of_day: values.time,
+    timezone: values.timeZone,
+    recurrence: toRecurrence(values.repeat, values.weekdays),
+  };
+}
+
+/** Settings: the account's time zone; `""` clears the preference. */
+export const timeZonePreferenceSchema = object({ timeZone: string().defined() });

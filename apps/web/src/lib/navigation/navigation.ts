@@ -1,4 +1,5 @@
 import {
+  AlarmClock,
   Bot,
   CalendarDays,
   CheckSquare,
@@ -33,6 +34,13 @@ export const navItems: readonly NavItem[] = [
     href: "/tasks",
     icon: CheckSquare,
     description: "Plan and track what needs doing.",
+    group: "workspace",
+  },
+  {
+    title: "Reminders",
+    href: "/reminders",
+    icon: AlarmClock,
+    description: "Get notified about tasks and anything else, once or on a schedule.",
     group: "workspace",
   },
   {
@@ -80,7 +88,13 @@ export const navItems: readonly NavItem[] = [
 ];
 
 /** Routes with their own page; every other item is rendered by the `[section]` placeholder. */
-const dedicatedRoutes: ReadonlySet<string> = new Set(["/", "/tasks", "/shopping", "/settings"]);
+const dedicatedRoutes: ReadonlySet<string> = new Set([
+  "/",
+  "/tasks",
+  "/reminders",
+  "/shopping",
+  "/settings",
+]);
 
 /** Section routes rendered by the `[section]` placeholder page. */
 export const sectionItems = navItems.filter((item) => !dedicatedRoutes.has(item.href));

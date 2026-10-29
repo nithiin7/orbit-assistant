@@ -33,6 +33,7 @@ const routes = {
   [`GET ${WORKSPACE}/tasks/summary`]: json({ open: 0, completed: 0, overdue: 0, due_today: 0 }),
   [`GET ${WORKSPACE}/tasks`]: json({ tasks: [], total: 0 }),
   [`GET ${WORKSPACE}/shopping/lists`]: json({ lists: [] }),
+  [`GET ${WORKSPACE}/reminders/upcoming`]: json({ reminders: [] }),
 };
 
 /** Bodies of the layouts the dashboard saved to the account, oldest first. */
@@ -211,6 +212,7 @@ describe("Dashboard account sync", () => {
         { id: "workspace", size: "half" },
         { id: "status", size: "half" },
         { id: "tasks", size: "full" },
+        { id: "reminders", size: "full" },
       ],
     });
 
@@ -278,10 +280,15 @@ describe("Dashboard account sync", () => {
         { id: "workspace", size: "half" },
         { id: "status", size: "half" },
         { id: "tasks", size: "full" },
+        { id: "reminders", size: "full" },
         { id: "modules", size: "full" },
       ],
     });
     expect(savedLayouts(api)[1]).toEqual({ widgets: readDashboardLayout(ada.id) });
-    expect(readDashboardLayout(ada.id).map((widget) => widget.id)).toEqual(["workspace", "status"]);
+    expect(readDashboardLayout(ada.id).map((widget) => widget.id)).toEqual([
+      "workspace",
+      "status",
+      "reminders",
+    ]);
   });
 });

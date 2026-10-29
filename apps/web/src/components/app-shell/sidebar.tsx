@@ -1,4 +1,5 @@
 import { Logo } from "@/components/logo";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Tooltip } from "@/components/ui/tooltip";
 import { WorkspaceSwitcher } from "@/components/workspace/workspace-switcher";
@@ -30,9 +31,12 @@ export function Sidebar() {
       <div className="shrink-0 space-y-1 border-t border-sidebar-border p-2">
         <WorkspaceSwitcher collapsible />
         <div className="flex items-center justify-between gap-1 sidebar-collapsed:flex-col">
-          <Tooltip label="Toggle color theme">
-            <ThemeToggle />
-          </Tooltip>
+          <div className="flex items-center gap-1 sidebar-collapsed:flex-col">
+            <Tooltip label="Toggle color theme">
+              <ThemeToggle />
+            </Tooltip>
+            <NotificationBell />
+          </div>
           <SidebarToggle />
         </div>
       </div>

@@ -92,6 +92,7 @@ describe("layout changes", () => {
       "workspace",
       "status",
       "tasks",
+      "reminders",
       "modules",
     ]);
     expect(hiddenWidgets(defaultLayout)).toEqual([]);

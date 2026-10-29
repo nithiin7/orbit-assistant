@@ -2,6 +2,11 @@
 
 from orbit_api.db.models.avatars import UserAvatarModel
 from orbit_api.db.models.dashboard import DashboardLayoutModel
+from orbit_api.db.models.reminders import (
+    NotificationModel,
+    ReminderModel,
+    ReminderOccurrenceModel,
+)
 from orbit_api.db.models.shopping import ShoppingItemModel, ShoppingListModel
 from orbit_api.db.models.tasks import TaskModel
 from orbit_api.db.models.users import LocalCredentialModel, LocalSessionModel, UserModel
@@ -11,6 +16,9 @@ __all__ = [
     "DashboardLayoutModel",
     "LocalCredentialModel",
     "LocalSessionModel",
+    "NotificationModel",
+    "ReminderModel",
+    "ReminderOccurrenceModel",
     "ShoppingItemModel",
     "ShoppingListModel",
     "TaskModel",

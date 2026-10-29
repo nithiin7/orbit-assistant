@@ -16,10 +16,11 @@ open-source productivity platform. **It is in early development:** the repositor
 monorepo foundation, an application shell, an API with health endpoints, a shared API contract,
 a database foundation (SQLAlchemy and Alembic over SQLite in local mode, or PostgreSQL on
 Supabase in cloud mode), and an identity foundation: user profiles, local accounts or Supabase
-Auth, workspaces, and centralized authorization. The first product feature, **tasks**, is
-workspace-scoped (API, Tasks page, dashboard summary). There are no other product features
-(calendar, notes, finance), no reminders or recurring tasks, and no AI integration yet. Do not
-describe or build on capabilities that do not exist.
+Auth, workspaces, and centralized authorization. The product features are workspace-scoped
+**tasks**, **shopping lists**, and **reminders** (one-time or recurring, optionally about a task),
+delivered as in-app **notifications** by a database-backed worker. There are no other product
+features (calendar, notes, finance), no recurring tasks, no push, email, or mobile notifications,
+and no AI integration yet. Do not describe or build on capabilities that do not exist.
 
 ## Principles
 
@@ -44,7 +45,7 @@ describe or build on capabilities that do not exist.
 | `.github/workflows/ci.yml`     | CI: web, API, and commit-message jobs                                            |
 | `.husky/`, `.lintstagedrc.mjs` | Git hooks: staged-file lint/format and commitlint                                |
 
-Not present yet (planned; see `docs/architecture.md`): product tables other than `tasks`,
+Not present yet (planned; see `docs/architecture.md`): product tables for notes and finance,
 shared workspaces, AI provider abstractions, end-to-end tests, and a `scripts/` directory.
 
 ### Boundaries
@@ -75,6 +76,7 @@ Run from the repository root. Setup: `pnpm install` (also installs Git hooks) an
 | Production web build    | `pnpm build`                                                      |
 | Regenerate API contract | `pnpm contracts:generate`; verify with `pnpm contracts:check`     |
 | Apply DB migrations     | `pnpm db:migrate` (Alembic, against the configured database)      |
+| Reminder worker         | `pnpm worker` (standalone; the API also runs one by default)      |
 
 Narrow commands, for fast iteration:
 

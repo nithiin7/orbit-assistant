@@ -24,6 +24,7 @@ class UserModel(Base):
         CheckConstraint("length(auth_subject) BETWEEN 1 AND 255", name="auth_subject_length"),
         CheckConstraint("length(email) BETWEEN 3 AND 320", name="email_length"),
         CheckConstraint("length(display_name) BETWEEN 1 AND 100", name="display_name_length"),
+        CheckConstraint("length(timezone) BETWEEN 1 AND 64", name="timezone_length"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
@@ -31,6 +32,8 @@ class UserModel(Base):
     auth_subject: Mapped[str] = mapped_column(String(255))
     email: Mapped[str] = mapped_column(String(320))
     display_name: Mapped[str] = mapped_column(String(100))
+    # The user's IANA time zone, such as `Europe/Paris`; `None` until they choose one.
+    timezone: Mapped[str | None] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now, onupdate=utc_now)
 

@@ -34,7 +34,9 @@ async def get_profile(user: CurrentUserDep) -> UserProfile:
 async def update_profile(
     body: UpdateProfileRequest, user: CurrentUserDep, accounts: AccountServiceDep
 ) -> UserProfile:
-    updated = await accounts.update_profile(user.id, display_name=body.display_name)
+    updated = await accounts.update_profile(
+        user.id, display_name=body.display_name, timezone=body.timezone_change
+    )
     return UserProfile.of(updated)
 
 

@@ -18,8 +18,8 @@ export function StatusWidget() {
             <Badge variant="brand">Preview</Badge>
           </div>
           <p className="max-w-prose text-sm text-pretty text-muted-foreground">
-            Tasks and Shopping are built, and each has a dashboard widget. The other modules are
-            planned; as each one is built, it will get a widget too.
+            Tasks, Reminders, and Shopping are built, and each has a dashboard widget. The other
+            modules are planned; as each one is built, it will get a widget too.
           </p>
         </div>
       </Card>
