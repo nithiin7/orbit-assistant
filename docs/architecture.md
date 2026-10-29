@@ -113,7 +113,7 @@ apps/web/src/
 │   ├── layout.tsx       # Root layout: theme provider + auth provider
 │   ├── (app)/           # Signed-in routes: RequireAuth + WorkspaceProvider + app shell
 │   │   ├── page.tsx     # Dashboard (active workspace, module list)
-│   │   ├── settings/    # Account, workspaces, appearance, storage
+│   │   ├── settings/    # Settings: drill-down on small screens, split view on large; [panel]/ sub-pages
 │   │   └── [section]/   # Placeholder page for every other nav section
 │   ├── (auth)/          # Public routes without the shell: sign-in, sign-up
 │   ├── not-found.tsx    # Standalone 404 (works signed in or out)
@@ -122,12 +122,13 @@ apps/web/src/
 │   ├── app-shell/       # Sidebar, mobile drawer, navigation links
 │   ├── auth/            # AuthProvider, RequireAuth, sign-in and sign-up forms
 │   ├── workspace/       # WorkspaceProvider, switcher, dashboard overview
-│   ├── settings/        # Account, workspace, and theme settings
+│   ├── settings/        # Settings menu and the account, workspace, theme, and storage panels
 │   ├── storage/         # Storage-mode indicator and status card
 │   └── ui/              # Small shadcn/ui-compatible primitives
 ├── hooks/               # use-workspace-resource (stale-safe workspace data), etc.
 └── lib/
     ├── navigation.ts    # Single source of truth for nav items and section routes
+    ├── settings.ts      # Single source of truth for settings panels and their routes
     ├── api.ts           # Typed API client (types from @orbit/contracts)
     ├── auth/            # Auth clients (local, Supabase), session storage, validation
     ├── workspaces.ts    # Active-workspace selection and per-user preference

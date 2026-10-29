@@ -21,20 +21,20 @@ export function Sidebar() {
       <div className="flex h-14 shrink-0 items-center px-4">
         <Logo textClassName="transition-opacity duration-200 sidebar-collapsed:opacity-0" />
       </div>
-      <div className="px-2 pb-3">
-        <WorkspaceSwitcher collapsible />
-      </div>
       <div className="px-2 pb-2">
         <SidebarSearch />
       </div>
       <div className="flex-1 overflow-x-hidden overflow-y-auto px-2 py-2">
         <NavLinks collapsible />
       </div>
-      <div className="flex shrink-0 items-center justify-between gap-1 border-t border-sidebar-border p-2 sidebar-collapsed:flex-col">
-        <Tooltip label="Toggle color theme">
-          <ThemeToggle />
-        </Tooltip>
-        <SidebarToggle />
+      <div className="shrink-0 space-y-1 border-t border-sidebar-border p-2">
+        <WorkspaceSwitcher collapsible />
+        <div className="flex items-center justify-between gap-1 sidebar-collapsed:flex-col">
+          <Tooltip label="Toggle color theme">
+            <ThemeToggle />
+          </Tooltip>
+          <SidebarToggle />
+        </div>
       </div>
     </aside>
   );

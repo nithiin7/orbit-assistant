@@ -1,7 +1,6 @@
 "use client";
 
-import { Check, ChevronsUpDown, LogOut, RotateCw, Settings } from "lucide-react";
-import Link from "next/link";
+import { Check, ChevronsUpDown, LogOut, RotateCw } from "lucide-react";
 import {
   type CSSProperties,
   type KeyboardEvent,
@@ -31,9 +30,10 @@ type WorkspaceSwitcherProps = {
 };
 
 /**
- * Shows the active workspace and opens a menu to switch workspaces, open workspace settings, or
- * sign out. Follows the ARIA menu pattern: arrow keys, Home/End, and Escape. The menu uses
- * fixed positioning so the collapsed sidebar's overflow can't clip it.
+ * Shows the active workspace and opens a menu to switch workspaces or sign out. It sits at the
+ * foot of the sidebar, so the menu opens upward. Follows the ARIA menu pattern: arrow keys,
+ * Home/End, and Escape. The menu uses fixed positioning so the collapsed sidebar's overflow
+ * can't clip it.
  */
 export function WorkspaceSwitcher({ collapsible = false, onNavigate }: WorkspaceSwitcherProps) {
   const { state, switchWorkspace, refresh } = useWorkspaces();
@@ -53,7 +53,11 @@ export function WorkspaceSwitcher({ collapsible = false, onNavigate }: Workspace
   const openMenu = () => {
     const rect = triggerRef.current?.getBoundingClientRect();
     if (!rect) return;
-    setPosition({ top: rect.bottom + 4, left: rect.left, minWidth: Math.max(rect.width, 232) });
+    setPosition({
+      bottom: window.innerHeight - rect.top + 4,
+      left: rect.left,
+      minWidth: Math.max(rect.width, 232),
+    });
   };
 
   useEffect(() => {
@@ -227,19 +231,6 @@ export function WorkspaceSwitcher({ collapsible = false, onNavigate }: Workspace
             })}
           </div>
           <div role="separator" className="-mx-1 my-1 h-px bg-border" />
-          <Link
-            href="/settings#workspace"
-            role="menuitem"
-            tabIndex={-1}
-            onClick={() => {
-              close(false);
-              onNavigate?.();
-            }}
-            className={itemClassName}
-          >
-            <Settings className="size-4 text-muted-foreground" aria-hidden="true" />
-            Workspace settings
-          </Link>
           <button
             type="button"
             role="menuitem"
