@@ -21,7 +21,7 @@ not already in your context. Read `docs/architecture.md` for module boundaries.
 
 1. Check `git status` and read the relevant code before changing anything. Follow existing
    patterns: routes in `src/app/`, components in `src/components/` (`ui/` primitives), logic
-   in `src/lib/`, navigation in `src/lib/navigation.ts`, and API calls via `src/lib/api.ts` with
+   in `src/lib/`, navigation in `src/lib/navigation/navigation.ts`, and API calls via `src/lib/api/api.ts` with
    `import type` from `@orbit/contracts`.
 2. For an unfamiliar Next.js API, check the docs bundled for this version in
    `apps/web/node_modules/next/dist/docs/`.

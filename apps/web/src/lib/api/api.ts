@@ -31,7 +31,7 @@ import type {
   WorkspaceList,
 } from "@orbit/contracts";
 
-import { publicEnv } from "./env";
+import { publicEnv } from "../env";
 
 export class ApiError extends Error {
   constructor(

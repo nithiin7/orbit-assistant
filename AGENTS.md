@@ -79,7 +79,7 @@ Run from the repository root. Setup: `pnpm install` (also installs Git hooks) an
 Narrow commands, for fast iteration:
 
 ```bash
-pnpm --filter @orbit/web exec vitest run src/lib/api.test.ts   # one web test file
+pnpm --filter @orbit/web exec vitest run src/lib/api/api.test.ts   # one web test file
 pnpm --filter @orbit/web exec eslint src/lib                    # lint a web path
 cd apps/api && uv run pytest tests/test_health.py -k cors       # selected API tests
 cd apps/api && uv run ruff check src && uv run pyright          # API lint + types
@@ -101,7 +101,10 @@ and `packages/*/package.json`. Check them rather than guessing.
   `apps/web/node_modules/next/dist/docs/` before using an unfamiliar API.
 - Layering: routes in `src/app/`, UI in `src/components/` (`ui/` holds small
   shadcn/ui-compatible primitives), logic and data access in `src/lib/`. Call the API through
-  typed helpers in `src/lib/api.ts`, using types from `@orbit/contracts`.
+  typed helpers in `src/lib/api/api.ts`, using types from `@orbit/contracts`.
+- Each `src/lib` module has its own folder: `src/lib/<name>/<name>.ts`, its
+  `<name>.test.ts`, and an `index.ts` that re-exports it, so imports stay `@/lib/<name>`.
+  Related modules can share a domain folder without an index, like `src/lib/auth/`.
 - Accessibility: semantic HTML, labelled controls, full keyboard support, and visible focus
   states (`focus-visible:ring-2 focus-visible:ring-ring`). Decorative icons get
   `aria-hidden="true"`.
@@ -109,9 +112,9 @@ and `packages/*/package.json`. Check them rather than guessing.
   user-facing errors that are helpful without leaking internals.
 - Handle async work correctly: await or deliberately void promises, and handle rejections.
 - Style with Tailwind utilities and the design tokens in `src/app/globals.css`. Use `cn()` from
-  `src/lib/utils.ts` for conditional classes. Keep the restrained visual style.
+  `src/lib/utils/utils.ts` for conditional classes. Keep the restrained visual style.
 - Only `NEXT_PUBLIC_*` variables reach the browser, and they are public. **No secrets in client
-  code.** Validate public config in `src/lib/env.ts`.
+  code.** Validate public config in `src/lib/env/env.ts`.
 - Create a reusable component only when it removes real duplication or clarifies the code.
 - ESLint (Next.js, jsx-a11y, sorted imports) and Prettier (with Tailwind class sorting) are
   authoritative. Do not add competing style rules.
