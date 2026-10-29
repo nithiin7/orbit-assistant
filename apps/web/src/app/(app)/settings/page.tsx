@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 
 import { PageHeader } from "@/components/page-header";
+import { AccountSettings } from "@/components/settings/account-settings";
 import { ThemeSelector } from "@/components/settings/theme-selector";
+import { WorkspaceSettings } from "@/components/settings/workspace-settings";
 import { StorageStatusCard } from "@/components/storage/storage-indicator";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -10,6 +12,38 @@ export default function SettingsPage() {
   return (
     <div className="space-y-10">
       <PageHeader title="Settings" description="Configure Orbit to fit how you work." />
+
+      <section
+        id="account"
+        aria-labelledby="account-heading"
+        className="grid scroll-mt-20 gap-4 md:grid-cols-[13rem_minmax(0,1fr)] md:gap-8"
+      >
+        <div className="space-y-1">
+          <h2 id="account-heading" className="text-base font-semibold">
+            Account
+          </h2>
+          <p className="text-sm text-pretty text-muted-foreground">
+            Your profile and how you sign in to Orbit.
+          </p>
+        </div>
+        <AccountSettings />
+      </section>
+
+      <section
+        id="workspace"
+        aria-labelledby="workspace-heading"
+        className="grid scroll-mt-20 gap-4 md:grid-cols-[13rem_minmax(0,1fr)] md:gap-8"
+      >
+        <div className="space-y-1">
+          <h2 id="workspace-heading" className="text-base font-semibold">
+            Workspaces
+          </h2>
+          <p className="text-sm text-pretty text-muted-foreground">
+            Each workspace keeps its data separate. Switch between them from the sidebar.
+          </p>
+        </div>
+        <WorkspaceSettings />
+      </section>
 
       <section
         aria-labelledby="appearance-heading"
@@ -57,8 +91,9 @@ export default function SettingsPage() {
               </li>
             </ol>
             <p className="text-pretty">
-              Switching doesn’t move data. The other database starts empty, and your current data
-              stays where it is. Database credentials are never entered or shown in the browser.
+              Switching doesn’t move data or accounts. The other database starts empty, so you
+              create a new account there; your current data stays where it is. Database credentials
+              are never entered or shown in the browser.
             </p>
           </div>
         </div>

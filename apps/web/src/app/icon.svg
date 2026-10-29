@@ -1,4 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <circle cx="16" cy="16" r="5" fill="#3b82f6"/>
-  <ellipse cx="16" cy="16" rx="13" ry="6.5" transform="rotate(-30 16 16)" stroke="#737373" stroke-width="1.75"/>
+  <style>
+    .orbit { stroke: #5048e5; stroke-opacity: 0.45; }
+    .core { fill: #5048e5; }
+    .satellite { fill: #1c1d21; }
+    @media (prefers-color-scheme: dark) {
+      .orbit { stroke: #9198f4; stroke-opacity: 0.5; }
+      .core { fill: #9198f4; }
+      .satellite { fill: #f1f2f4; }
+    }
+  </style>
+  <path class="orbit" d="M26.63 13.15A11 11 0 1 1 18.85 5.37" stroke-width="2.25" stroke-linecap="round"/>
+  <circle class="core" cx="16" cy="16" r="4.75"/>
+  <circle class="satellite" cx="23.78" cy="8.22" r="2.75"/>
 </svg>
