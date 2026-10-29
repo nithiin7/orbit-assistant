@@ -1,0 +1,16 @@
+{
+  "name": "@orbit/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Thin pnpm wrapper around uv so the API joins root workspace scripts.",
+  "license": "Apache-2.0",
+  "scripts": {
+    "dev": "uv run orbit-api",
+    "start": "uv run orbit-api",
+    "lint": "uv run ruff check .",
+    "format": "uv run ruff format . && uv run ruff check --fix --select I .",
+    "format:check": "uv run ruff format --check .",
+    "typecheck": "uv run pyright",
+    "test": "uv run pytest"
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "extends": "@orbit/typescript-config/base.json",
+  "include": ["src"]
+}

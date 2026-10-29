@@ -1,0 +1,32 @@
+# Root of the uv workspace. Holds Python tooling shared across the repository.
+# Each Python app declares its own dependencies in its own pyproject.toml.
+
+[tool.uv.workspace]
+members = ["apps/api"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["**/node_modules", "**/.next"]
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # pyflakes
+  "I",   # isort
+  "B",   # flake8-bugbear
+  "UP",  # pyupgrade
+  "SIM", # flake8-simplify
+  "C4",  # flake8-comprehensions
+  "RUF", # ruff-specific rules
+  "PTH", # use pathlib
+  "N",   # pep8-naming
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["orbit_api"]
+
+[tool.ruff.format]
+quote-style = "double"
+line-ending = "lf"

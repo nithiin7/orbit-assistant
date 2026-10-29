@@ -1,0 +1,22 @@
+{
+  "name": "@orbit/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "API contract shared by Orbit apps: the OpenAPI schema and TypeScript types generated from it.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./openapi.json": "./openapi.json"
+  },
+  "scripts": {
+    "generate": "uv run --package orbit-api python -m orbit_api.openapi openapi.json && openapi-typescript openapi.json --output src/schema.ts",
+    "lint": "openapi-typescript openapi.json --output src/schema.ts --check",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@orbit/typescript-config": "workspace:*",
+    "openapi-typescript": "7.13.0",
+    "typescript": "6.0.3"
+  }
+}

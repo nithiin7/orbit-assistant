@@ -1,0 +1,18 @@
+# Generated, vendored, and lock files
+pnpm-lock.yaml
+uv.lock
+**/.next/
+**/out/
+**/build/
+**/dist/
+**/coverage/
+**/node_modules/
+**/.venv/
+**/next-env.d.ts
+
+# Python is formatted by Ruff
+**/*.py
+
+# Generated API contract
+packages/contracts/openapi.json
+packages/contracts/src/schema.ts

@@ -1,0 +1,40 @@
+{
+  "name": "orbit",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Orbit — an open-source, privacy-first personal assistant.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "packageManager": "pnpm@11.0.5",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "concurrently --kill-others --names web,api --prefix-colors blue,green \"pnpm:dev:web\" \"pnpm:dev:api\"",
+    "dev:web": "pnpm --filter @orbit/web dev",
+    "dev:api": "pnpm --filter @orbit/api dev",
+    "lint": "pnpm -r lint",
+    "lint:web": "pnpm --filter @orbit/web lint",
+    "lint:api": "pnpm --filter @orbit/api lint",
+    "format": "prettier --write . && pnpm --filter @orbit/api format",
+    "format:check": "prettier --check . && pnpm --filter @orbit/api format:check",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "test:web": "pnpm --filter @orbit/web test",
+    "test:api": "pnpm --filter @orbit/api test",
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test",
+    "build": "pnpm --filter @orbit/web build",
+    "contracts:generate": "pnpm --filter @orbit/contracts generate",
+    "contracts:check": "uv run --package orbit-api python -m orbit_api.openapi packages/contracts/openapi.json --check && pnpm --filter @orbit/contracts lint",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "21.2.4",
+    "@commitlint/config-conventional": "21.2.4",
+    "concurrently": "10.0.6",
+    "husky": "9.1.7",
+    "lint-staged": "17.6.0",
+    "prettier": "3.9.10",
+    "prettier-plugin-tailwindcss": "0.8.1"
+  }
+}

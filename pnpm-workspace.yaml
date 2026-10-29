@@ -1,0 +1,14 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Dependency install scripts are denied unless explicitly allowed (pnpm 11 default).
+# unrs-resolver ships prebuilt native bindings as optional dependencies, so its
+# postinstall fallback is not needed.
+allowBuilds:
+  unrs-resolver: false
+
+peerDependencyRules:
+  allowedVersions:
+    # openapi-typescript declares TypeScript 5 but works with 6 (verified by `contracts:check`).
+    openapi-typescript>typescript: "6"

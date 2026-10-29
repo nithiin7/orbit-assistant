@@ -1,0 +1,64 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Orbit API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Check API health",
+        "description": "Return a minimal status payload. Contains no configuration or secrets.",
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status",
+            "description": "Always `ok` when the API is serving requests."
+          },
+          "service": {
+            "type": "string",
+            "const": "orbit-api",
+            "title": "Service",
+            "description": "Name of the responding service."
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "description": "Version of the running API."
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "service",
+          "version"
+        ],
+        "title": "HealthResponse",
+        "description": "Reports that the API process is running and able to serve requests."
+      }
+    }
+  }
+}

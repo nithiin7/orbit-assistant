@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js / build output
+.next/
+out/
+build/
+dist/
+next-env.d.ts
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ruff_cache/
+.pytest_cache/
+.pyright/
+.mypy_cache/
+
+# Test artifacts
+coverage/
+.coverage
+.coverage.*
+htmlcov/
+junit*.xml
+
+# Environment and secrets (commit only *.example files)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editors and IDEs
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Tooling
+.vercel/
+.turbo/
