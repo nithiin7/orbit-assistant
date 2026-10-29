@@ -188,18 +188,18 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
                 Try again
               </Button>
             </div>
-          ) : state.tasks.length === 0 ? (
+          ) : state.data.tasks.length === 0 ? (
             <TaskEmptyState filters={filters} onClear={clearNarrowing} />
           ) : (
             <div className="space-y-2">
               <ul
-                aria-label={`${state.total} ${state.total === 1 ? "task" : "tasks"}`}
+                aria-label={`${state.data.total} ${state.data.total === 1 ? "task" : "tasks"}`}
                 className={cn(
                   "divide-y overflow-hidden rounded-xl border bg-card shadow-elevation-1 transition-opacity duration-150",
                   refreshing && "opacity-70",
                 )}
               >
-                {state.tasks.map((task) => (
+                {state.data.tasks.map((task) => (
                   <TaskItem
                     key={task.id}
                     task={task}
@@ -212,9 +212,9 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
                 ))}
               </ul>
               <p className="px-1 text-xs text-muted-foreground">
-                {state.total > state.tasks.length
-                  ? `Showing ${state.tasks.length} of ${state.total} tasks. Search or filter to find the rest.`
-                  : `${state.total} ${state.total === 1 ? "task" : "tasks"}`}
+                {state.data.total > state.data.tasks.length
+                  ? `Showing ${state.data.tasks.length} of ${state.data.total} tasks. Search or filter to find the rest.`
+                  : `${state.data.total} ${state.data.total === 1 ? "task" : "tasks"}`}
               </p>
             </div>
           )}

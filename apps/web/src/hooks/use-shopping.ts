@@ -29,7 +29,7 @@ import {
 } from "@/api/shopping";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useWorkspaces } from "@/components/workspace/workspace-provider";
-import { queryResource, type WorkspaceResource } from "@/hooks/query-resource";
+import { queryResource, type Resource } from "@/hooks/query-resource";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
 
 const selectLists = (data: { lists: ShoppingListOverview[] }) => data.lists;
@@ -60,7 +60,7 @@ export function useShopping(workspaceId: string) {
   const reloadLists = useCallback(() => void refetchLists(), [refetchLists]);
   const reloadItems = useCallback(() => void refetchItems(), [refetchItems]);
 
-  const items: WorkspaceResource<ShoppingItem[]> = active
+  const items: Resource<ShoppingItem[]> = active
     ? queryResource(itemsQuery, "Couldn’t load this list.")
     : { status: "loading" };
 
@@ -189,7 +189,7 @@ export function useShoppingMutations(workspaceId: string) {
 
 /** The active workspace's shopping lists, for the dashboard. Shares the Shopping page's cache. */
 export function useShoppingOverview(): {
-  resource: WorkspaceResource<ShoppingListOverview[]>;
+  resource: Resource<ShoppingListOverview[]>;
   reload: () => void;
 } {
   const { withToken } = useAuth();

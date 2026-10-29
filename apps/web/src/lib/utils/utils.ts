@@ -2,6 +2,9 @@ import { type ClassValue, clsx } from "clsx";
 import type { Ref, RefCallback } from "react";
 import { twMerge } from "tailwind-merge";
 
+/** One choice in a select, radio group, or segmented control. */
+export type Option<T extends string> = { value: T; label: string };
+
 /** Merges conditional class names and resolves Tailwind conflicts. */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

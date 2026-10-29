@@ -3,6 +3,7 @@
 import type { TaskListQuery, TaskPriority, TaskStatus } from "@orbit/contracts";
 import { mixed, object, string } from "yup";
 
+import { type Option } from "@/lib/utils";
 import { multiLineText, singleLineText } from "@/lib/validation";
 
 export const TASK_TITLE_MAX_LENGTH = 200;
@@ -11,7 +12,7 @@ export const TASK_DESCRIPTION_MAX_LENGTH = 5000;
 export const TASK_PAGE_SIZE = 200;
 
 /** Highest first, the order people scan them in. */
-export const PRIORITIES: readonly { value: TaskPriority; label: string }[] = [
+export const PRIORITIES: readonly Option<TaskPriority>[] = [
   { value: "high", label: "High" },
   { value: "medium", label: "Medium" },
   { value: "low", label: "Low" },
@@ -29,13 +30,13 @@ export function isTaskPriority(value: string): value is TaskPriority {
 export type StatusFilter = TaskStatus | "all";
 export type TaskSort = NonNullable<TaskListQuery["sort"]>;
 
-export const STATUS_FILTERS: readonly { value: StatusFilter; label: string }[] = [
+export const STATUS_FILTERS: readonly Option<StatusFilter>[] = [
   { value: "open", label: "Open" },
   { value: "completed", label: "Completed" },
   { value: "all", label: "All" },
 ];
 
-export const SORTS: readonly { value: TaskSort; label: string }[] = [
+export const SORTS: readonly Option<TaskSort>[] = [
   { value: "due_date", label: "Due date" },
   { value: "priority", label: "Priority" },
   { value: "created_at", label: "Newest" },

@@ -3,6 +3,7 @@
 import type {
   CreateTaskRequest,
   Task,
+  TaskList,
   TaskListQuery,
   TaskSummary,
   UpdateTaskRequest,
@@ -25,14 +26,9 @@ import {
 } from "@/api/tasks";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useWorkspaces } from "@/components/workspace/workspace-provider";
-import type { WorkspaceResource } from "@/hooks/query-resource";
+import { queryResource, type Resource } from "@/hooks/query-resource";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
 import { localDateString } from "@/lib/tasks";
-
-export type TaskListState =
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "success"; tasks: Task[]; total: number };
 
 /**
  * The workspace's tasks for `query`. Within a workspace, the previous results stay visible
@@ -41,7 +37,7 @@ export type TaskListState =
 export function useTaskList(
   workspaceId: string,
   query: TaskListQuery,
-): { state: TaskListState; refreshing: boolean; reload: () => void } {
+): { state: Resource<TaskList>; refreshing: boolean; reload: () => void } {
   const { withToken } = useAuth();
   const result = useQuery({
     ...taskListOptions(withToken, workspaceId, query),
@@ -49,17 +45,7 @@ export function useTaskList(
   });
   useWorkspaceNotFound(result.error);
 
-  let state: TaskListState;
-  if (result.isError && !result.isFetching) {
-    state = {
-      status: "error",
-      message: describeApiError(result.error, "Couldn’t load your tasks."),
-    };
-  } else if (result.data) {
-    state = { status: "success", tasks: result.data.tasks, total: result.data.total };
-  } else {
-    state = { status: "loading" };
-  }
+  const state = queryResource(result, "Couldn’t load your tasks.");
 
   const { refetch } = result;
   const reload = useCallback(() => void refetch(), [refetch]);
@@ -72,7 +58,7 @@ export type TaskOverviewData = { summary: TaskSummary; upNext: Task[]; today: st
 
 /** Task counts and the next open tasks in the active workspace, for the dashboard. */
 export function useTaskOverview(): {
-  resource: WorkspaceResource<TaskOverviewData>;
+  resource: Resource<TaskOverviewData>;
   reload: () => void;
 } {
   const { withToken } = useAuth();
@@ -85,7 +71,7 @@ export function useTaskOverview(): {
   const error = summary.error ?? upNext.error;
   useWorkspaceNotFound(error);
 
-  let resource: WorkspaceResource<TaskOverviewData>;
+  let resource: Resource<TaskOverviewData>;
   if (error && !summary.isFetching && !upNext.isFetching) {
     resource = {
       status: "error",
