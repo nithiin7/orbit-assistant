@@ -1,17 +1,23 @@
 """Application factory and ASGI entry point."""
 
 import logging
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Sequence
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import InterfaceError, OperationalError
 from sqlalchemy.exc import TimeoutError as PoolTimeoutError
 
 from orbit_api import __version__
+from orbit_api.api.auth import Authenticator, LocalAuthenticator, SupabaseAuthenticator
 from orbit_api.api.v1 import router as v1_router
+from orbit_api.auth.passwords import Argon2PasswordHasher
+from orbit_api.auth.supabase import SupabaseTokenVerifier
 from orbit_api.config import Settings, get_settings
 from orbit_api.db.database import open_database
 
@@ -54,6 +60,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         openapi_url="/openapi.json" if docs_enabled else None,
         lifespan=lifespan,
     )
+    app.state.settings = settings
+    app.state.authenticator = _create_authenticator(settings)
+    app.state.password_hasher = Argon2PasswordHasher()
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
@@ -63,8 +72,26 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     for error in DATABASE_UNAVAILABLE_ERRORS:
         app.add_exception_handler(error, _database_unavailable)
+    app.add_exception_handler(RequestValidationError, _validation_failed)
     app.include_router(v1_router)
     return app
+
+
+def _create_authenticator(settings: Settings) -> Authenticator:
+    """Local accounts in local mode, Supabase Auth in cloud mode. Never both."""
+    if settings.storage_mode == "cloud":
+        return SupabaseAuthenticator(SupabaseTokenVerifier(settings.supabase_base_url))
+    return LocalAuthenticator()
+
+
+async def _validation_failed(request: Request, exc: Exception) -> JSONResponse:
+    # FastAPI's default response echoes the submitted values, which may include passwords.
+    # Report where and why validation failed, never what was sent.
+    errors: Sequence[dict[str, Any]] = (
+        exc.errors() if isinstance(exc, RequestValidationError) else ()
+    )
+    detail = [{key: error.get(key) for key in ("loc", "msg", "type")} for error in errors]
+    return JSONResponse(status_code=422, content={"detail": jsonable_encoder(detail)})
 
 
 async def _database_unavailable(request: Request, exc: Exception) -> JSONResponse:

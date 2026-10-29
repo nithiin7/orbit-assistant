@@ -15,6 +15,6 @@ NAMING_CONVENTION = {
 
 
 class Base(DeclarativeBase):
-    """Base class for ORM models. There are no models yet."""
+    """Base class for ORM models, which live in `orbit_api.db.models`."""
 
     metadata = MetaData(naming_convention=NAMING_CONVENTION)

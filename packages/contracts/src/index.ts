@@ -10,3 +10,15 @@ type Schemas = components["schemas"];
 
 export type HealthResponse = Schemas["HealthResponse"];
 export type DatabaseHealthResponse = Schemas["DatabaseHealthResponse"];
+export type AuthConfig = Schemas["LocalAuthConfig"] | Schemas["SupabaseAuthConfig"];
+export type LocalAuthConfig = Schemas["LocalAuthConfig"];
+export type SupabaseAuthConfig = Schemas["SupabaseAuthConfig"];
+export type LocalSignUpRequest = Schemas["LocalSignUpRequest"];
+export type LocalSignInRequest = Schemas["LocalSignInRequest"];
+export type LocalSessionResponse = Schemas["LocalSessionResponse"];
+export type UserProfile = Schemas["UserProfile"];
+export type UpdateProfileRequest = Schemas["UpdateProfileRequest"];
+export type Workspace = Schemas["WorkspaceResponse"];
+export type WorkspaceList = Schemas["WorkspaceListResponse"];
+export type CreateWorkspaceRequest = Schemas["CreateWorkspaceRequest"];
+export type UpdateWorkspaceRequest = Schemas["UpdateWorkspaceRequest"];

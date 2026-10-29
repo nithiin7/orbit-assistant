@@ -1,12 +1,20 @@
-"""FastAPI dependencies shared by routers."""
+"""FastAPI dependencies shared by routers: database sessions, settings, and services."""
 
 from collections.abc import AsyncIterator
+from datetime import timedelta
 from typing import Annotated
 
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from orbit_api.config import Settings
 from orbit_api.db.database import Database
+from orbit_api.repositories.accounts import SqlAccountRepository, SqlLocalAuthRepository
+from orbit_api.repositories.transaction import SqlTransaction
+from orbit_api.repositories.workspaces import SqlWorkspaceRepository
+from orbit_api.services.accounts import AccountService
+from orbit_api.services.local_auth import LocalAuthService, PasswordHasher
+from orbit_api.services.workspaces import WorkspaceService
 
 
 async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
@@ -18,3 +26,51 @@ async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
 
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
+
+
+def get_app_settings(request: Request) -> Settings:
+    """The settings the running app was created with (not re-read from the environment)."""
+    return request.app.state.settings
+
+
+SettingsDep = Annotated[Settings, Depends(get_app_settings)]
+
+
+def get_password_hasher(request: Request) -> PasswordHasher:
+    return request.app.state.password_hasher
+
+
+def get_account_service(session: SessionDep) -> AccountService:
+    return AccountService(
+        SqlAccountRepository(session), SqlWorkspaceRepository(session), SqlTransaction(session)
+    )
+
+
+AccountServiceDep = Annotated[AccountService, Depends(get_account_service)]
+
+
+def get_local_auth_service(
+    session: SessionDep,
+    settings: SettingsDep,
+    account_service: AccountServiceDep,
+    hasher: Annotated[PasswordHasher, Depends(get_password_hasher)],
+) -> LocalAuthService:
+    return LocalAuthService(
+        accounts=SqlAccountRepository(session),
+        credentials=SqlLocalAuthRepository(session),
+        account_service=account_service,
+        transaction=SqlTransaction(session),
+        hasher=hasher,
+        session_ttl=timedelta(hours=settings.local_session_ttl_hours),
+        open_registration=settings.local_open_registration,
+    )
+
+
+LocalAuthServiceDep = Annotated[LocalAuthService, Depends(get_local_auth_service)]
+
+
+def get_workspace_service(session: SessionDep) -> WorkspaceService:
+    return WorkspaceService(SqlWorkspaceRepository(session), SqlTransaction(session))
+
+
+WorkspaceServiceDep = Annotated[WorkspaceService, Depends(get_workspace_service)]

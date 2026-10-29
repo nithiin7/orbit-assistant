@@ -6,6 +6,12 @@ from pydantic import ValidationError
 from orbit_api.config import DEFAULT_SQLITE_PATH, LOCAL_ORIGINS, Settings
 from orbit_api.main import create_app
 
+# Cloud mode signs users in with Supabase Auth, so it needs the project's public settings.
+SUPABASE = {
+    "supabase_url": "https://project.supabase.co",
+    "supabase_publishable_key": "sb_publishable_test",
+}
+
 
 def make_settings(**overrides: object) -> Settings:
     return Settings(_env_file=None, **overrides)  # pyright: ignore[reportCallIssue, reportArgumentType]
@@ -83,7 +89,7 @@ def test_cloud_mode_requires_a_database_url() -> None:
     ],
 )
 def test_cloud_mode_normalizes_postgres_urls_to_asyncpg(url: str) -> None:
-    settings = make_settings(storage_mode="cloud", database_url=url)
+    settings = make_settings(storage_mode="cloud", database_url=url, **SUPABASE)
 
     assert settings.postgres_url.drivername == "postgresql+asyncpg"
     assert settings.postgres_url.host == "db.example"
@@ -114,14 +120,50 @@ def test_validation_errors_never_echo_the_database_password() -> None:
 
 def test_database_url_is_masked_in_repr() -> None:
     settings = make_settings(
-        storage_mode="cloud", database_url="postgresql://orbit:hunter2-secret@db.example/orbit"
+        storage_mode="cloud",
+        database_url="postgresql://orbit:hunter2-secret@db.example/orbit",
+        **SUPABASE,
     )
 
     assert "hunter2-secret" not in repr(settings)
 
 
+def test_cloud_mode_requires_supabase_auth_settings() -> None:
+    with pytest.raises(ValidationError, match="ORBIT_SUPABASE_URL and ORBIT_SUPABASE_PUB"):
+        make_settings(storage_mode="cloud", database_url="postgresql://o:pw@db.example/orbit")
+
+
+def test_local_mode_rejects_supabase_settings() -> None:
+    """Supabase settings suggest cloud mode was intended; never silently use local accounts."""
+    with pytest.raises(ValidationError, match="only used in cloud mode"):
+        make_settings(**SUPABASE)
+
+
+def test_supabase_url_is_normalized_without_a_trailing_slash() -> None:
+    settings = make_settings(
+        storage_mode="cloud",
+        database_url="postgresql://o:pw@db.example/orbit",
+        supabase_url="https://project.supabase.co/",
+        supabase_publishable_key="sb_publishable_test",
+    )
+
+    assert settings.supabase_base_url == "https://project.supabase.co"
+
+
+def test_production_requires_https_for_supabase() -> None:
+    with pytest.raises(ValidationError, match="must use https"):
+        make_settings(
+            env="production",
+            cors_origins=["https://orbit.example"],
+            storage_mode="cloud",
+            database_url="postgresql://o:pw@db.example/orbit?ssl=require",
+            supabase_url="http://project.supabase.co",
+            supabase_publishable_key="sb_publishable_test",
+        )
+
+
 def test_production_cloud_mode_requires_tls() -> None:
-    production = {"env": "production", "cors_origins": ["https://orbit.example"]}
+    production = {"env": "production", "cors_origins": ["https://orbit.example"], **SUPABASE}
     with pytest.raises(ValidationError, match="must require TLS"):
         make_settings(
             **production, storage_mode="cloud", database_url="postgresql://o:pw@db.example/orbit"

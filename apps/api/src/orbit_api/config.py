@@ -4,7 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal, Self
 
-from pydantic import Field, SecretStr, field_validator, model_validator
+from pydantic import AnyHttpUrl, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import URL, make_url
 from sqlalchemy.exc import ArgumentError
@@ -47,6 +47,16 @@ class Settings(BaseSettings):
     database_pool_size: int = Field(default=5, ge=1)
     database_max_overflow: int = Field(default=5, ge=0)
 
+    # Cloud mode authenticates with Supabase Auth. Both values are public by design: the URL
+    # locates the project's signing keys, and the publishable (anon) key is sent to browsers.
+    supabase_url: AnyHttpUrl | None = None
+    supabase_publishable_key: str | None = None
+
+    # Local mode authenticates with accounts stored in the SQLite database.
+    local_session_ttl_hours: int = Field(default=24 * 14, ge=1, le=24 * 90)
+    # By default only the first local account can register; later accounts need this enabled.
+    local_open_registration: bool = False
+
     @property
     def is_development(self) -> bool:
         return self.env == "development"
@@ -61,6 +71,13 @@ class Settings(BaseSettings):
         if self.database_url is None:
             raise ValueError("ORBIT_DATABASE_URL is not configured.")
         return _parse_postgres_url(self.database_url.get_secret_value())
+
+    @property
+    def supabase_base_url(self) -> str:
+        """The Supabase project URL without a trailing slash. Cloud mode only."""
+        if self.supabase_url is None:
+            raise ValueError("ORBIT_SUPABASE_URL is not configured.")
+        return str(self.supabase_url).rstrip("/")
 
     @field_validator("sqlite_path")
     @classmethod
@@ -83,6 +100,11 @@ class Settings(BaseSettings):
                     "ORBIT_DATABASE_URL is set but ORBIT_STORAGE_MODE is 'local'. "
                     "Set ORBIT_STORAGE_MODE=cloud, or unset ORBIT_DATABASE_URL."
                 )
+            if self.supabase_url is not None or self.supabase_publishable_key is not None:
+                raise ValueError(
+                    "ORBIT_SUPABASE_URL and ORBIT_SUPABASE_PUBLISHABLE_KEY are only used in "
+                    "cloud mode. Set ORBIT_STORAGE_MODE=cloud, or unset them."
+                )
             if self.sqlite_path.is_dir():
                 raise ValueError("ORBIT_SQLITE_PATH must be a file path, not a directory.")
             return self
@@ -95,6 +117,13 @@ class Settings(BaseSettings):
                 "ORBIT_DATABASE_URL must require TLS in production "
                 "(add ?ssl=require, verify-ca, or verify-full)."
             )
+        if self.supabase_url is None or not self.supabase_publishable_key:
+            raise ValueError(
+                "ORBIT_SUPABASE_URL and ORBIT_SUPABASE_PUBLISHABLE_KEY are required when "
+                "ORBIT_STORAGE_MODE is 'cloud'; cloud mode signs users in with Supabase Auth."
+            )
+        if self.is_production and self.supabase_url.scheme != "https":
+            raise ValueError("ORBIT_SUPABASE_URL must use https in production.")
         return self
 
 

@@ -2,11 +2,13 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from orbit_api.config import Settings
 from orbit_api.db.migrate import upgrade
 from orbit_api.main import create_app
+from tests.support import FAST_PASSWORD_HASHER
 
 
 @pytest.fixture
@@ -33,6 +35,14 @@ def migrated_settings(settings: Settings) -> Settings:
 
 
 @pytest.fixture
-def client(migrated_settings: Settings) -> Iterator[TestClient]:
-    with TestClient(create_app(migrated_settings)) as test_client:
+def app(migrated_settings: Settings) -> FastAPI:
+    app = create_app(migrated_settings)
+    # Production-strength Argon2 parameters make each hash take tens of milliseconds.
+    app.state.password_hasher = FAST_PASSWORD_HASHER
+    return app
+
+
+@pytest.fixture
+def client(app: FastAPI) -> Iterator[TestClient]:
+    with TestClient(app) as test_client:
         yield test_client
