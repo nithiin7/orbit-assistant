@@ -388,6 +388,7 @@ and no fallback from one to the other.
 | Session lifetime           | `ORBIT_LOCAL_SESSION_TTL_HOURS` (default 14 days), fixed           | Supabase settings; refreshed by the client                                                  |
 | Sign-out                   | Deletes the session row (immediate revocation)                     | Ends the Supabase session in this browser                                                   |
 | Registration               | First account only, unless `ORBIT_LOCAL_OPEN_REGISTRATION=true`    | Supabase project settings                                                                   |
+| Password reset             | Not available (no email in local mode)                             | Supabase reset email → `/reset-password` (recovery session) → `updateUser`                  |
 | Profile creation           | During sign-up, in the same transaction                            | On the first authenticated request                                                          |
 
 - `GET /api/v1/auth/config` tells the web app which provider applies, with only public values

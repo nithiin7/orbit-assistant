@@ -15,6 +15,8 @@ const supabaseAuth = vi.hoisted(() => ({
   signInWithPassword: vi.fn(),
   signUp: vi.fn(),
   signOut: vi.fn(),
+  resetPasswordForEmail: vi.fn(),
+  updateUser: vi.fn(),
   onAuthStateChange: vi.fn(),
 }));
 const createClient = vi.hoisted(() => vi.fn(() => ({ auth: supabaseAuth })));
@@ -100,6 +102,17 @@ describe("local auth client", () => {
     expect(warn).toHaveBeenCalled();
   });
 
+  it("can't reset passwords, since local mode sends no email", async () => {
+    const api = mockApi({});
+    const client = createLocalAuthClient();
+
+    await expect(client.requestPasswordReset("ada@example.com")).rejects.toBeInstanceOf(
+      AuthFailure,
+    );
+    await expect(client.updatePassword("long enough")).rejects.toBeInstanceOf(AuthFailure);
+    expect(api).not.toHaveBeenCalled();
+  });
+
   it("notices sign-in and sign-out in other tabs", () => {
     const listener = vi.fn();
     const unsubscribe = createLocalAuthClient().subscribe(listener);
@@ -169,6 +182,32 @@ describe("Supabase auth client", () => {
 
     await expect(client.signIn("ada@example.com", "nope")).rejects.toEqual(
       new AuthFailure("The email or password is incorrect."),
+    );
+  });
+
+  it("sends reset links back to the reset page on this origin", async () => {
+    supabaseAuth.resetPasswordForEmail.mockResolvedValue({ data: {}, error: null });
+    const client = await createSupabaseAuthClient(config);
+
+    await client.requestPasswordReset("ada@example.com");
+
+    expect(supabaseAuth.resetPasswordForEmail).toHaveBeenCalledWith("ada@example.com", {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+  });
+
+  it("updates the password and explains a rejected one", async () => {
+    supabaseAuth.updateUser.mockResolvedValueOnce({ data: {}, error: null });
+    supabaseAuth.updateUser.mockResolvedValueOnce({
+      data: {},
+      error: { code: "same_password", status: 422, message: "New password should be different." },
+    });
+    const client = await createSupabaseAuthClient(config);
+
+    await client.updatePassword("long enough");
+    expect(supabaseAuth.updateUser).toHaveBeenCalledWith({ password: "long enough" });
+    await expect(client.updatePassword("long enough")).rejects.toEqual(
+      new AuthFailure("Choose a password that’s different from your current one."),
     );
   });
 

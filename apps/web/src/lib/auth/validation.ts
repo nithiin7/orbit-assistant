@@ -57,6 +57,20 @@ export function validateSignUp(values: {
   };
 }
 
+export function validatePasswordReset(values: {
+  password: string;
+  confirmPassword: string;
+}): FieldErrors<"password" | "confirmPassword"> {
+  return {
+    password: validateNewPassword(values.password),
+    confirmPassword: !values.confirmPassword
+      ? "Enter the new password again."
+      : values.confirmPassword !== values.password
+        ? "The passwords don’t match."
+        : undefined,
+  };
+}
+
 export function hasErrors(errors: Record<string, string | undefined>): boolean {
   return Object.values(errors).some(Boolean);
 }

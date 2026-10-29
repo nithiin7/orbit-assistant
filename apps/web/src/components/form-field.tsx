@@ -1,4 +1,4 @@
-import { type ComponentProps, useId } from "react";
+import { type ComponentProps, type ReactNode, useId } from "react";
 
 import { Input } from "@/components/ui/input";
 
@@ -7,10 +7,12 @@ type FormFieldProps = Omit<ComponentProps<"input">, "id"> & {
   /** Persistent guidance, such as a password requirement. */
   hint?: string;
   error?: string;
+  /** A small control beside the label, such as a "Forgot password?" link. */
+  labelAction?: ReactNode;
 };
 
 /** A labelled input whose hint and error are announced with it via `aria-describedby`. */
-export function FormField({ label, hint, error, ...inputProps }: FormFieldProps) {
+export function FormField({ label, hint, error, labelAction, ...inputProps }: FormFieldProps) {
   const id = useId();
   const hintId = `${id}-hint`;
   const errorId = `${id}-error`;
@@ -18,9 +20,12 @@ export function FormField({ label, hint, error, ...inputProps }: FormFieldProps)
 
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="block text-sm font-medium">
-        {label}
-      </label>
+      <div className="flex items-baseline justify-between gap-2">
+        <label htmlFor={id} className="block text-sm font-medium">
+          {label}
+        </label>
+        {labelAction}
+      </div>
       <Input
         id={id}
         aria-invalid={error ? true : undefined}

@@ -87,6 +87,14 @@ export function SignInForm({ next }: { next: string }) {
           type="password"
           name="password"
           autoComplete="current-password"
+          labelAction={
+            <Link
+              href="/forgot-password"
+              className="rounded-sm text-xs text-muted-foreground underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Forgot password?
+            </Link>
+          }
           value={values.password}
           onChange={(event) => setValues({ ...values, password: event.target.value })}
           error={errors.password}
