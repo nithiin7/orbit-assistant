@@ -19,7 +19,7 @@ import {
   readDashboardLayout,
   writeDashboardLayout,
 } from "@/lib/dashboard";
-import { useAuth } from "@/providers/auth-provider";
+import { useAuth } from "@/providers/auth";
 
 type DashboardLayoutState = {
   layout: DashboardWidget[];

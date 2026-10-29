@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkspaceAvatar } from "@/components/workspace/workspace-switcher";
 import { workspaceNameSchema } from "@/lib/auth/validation";
-import { useWorkspaces } from "@/providers/workspace-provider";
+import { useWorkspaces } from "@/providers/workspace";
 
 export function WorkspaceSettings() {
   const { state, switchWorkspace, refresh } = useWorkspaces();

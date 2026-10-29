@@ -19,7 +19,7 @@ import {
   toTaskListQuery,
 } from "@/lib/tasks";
 import { cn } from "@/lib/utils";
-import { useWorkspaces } from "@/providers/workspace-provider";
+import { useWorkspaces } from "@/providers/workspace";
 
 import { TaskComposer } from "./task-composer";
 import { TaskEditDialog } from "./task-edit-dialog";

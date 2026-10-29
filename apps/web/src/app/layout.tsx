@@ -4,9 +4,9 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
 import { sidebarPreferenceScript } from "@/lib/sidebar-preference";
-import { AuthProvider } from "@/providers/auth-provider";
-import { QueryProvider } from "@/providers/query-provider";
-import { ThemeProvider } from "@/providers/theme-provider";
+import { AuthProvider } from "@/providers/auth";
+import { QueryProvider } from "@/providers/query";
+import { ThemeProvider } from "@/providers/theme";
 
 export const metadata: Metadata = {
   title: { default: "Orbit", template: "%s · Orbit" },

@@ -8,7 +8,7 @@ import { FormAlert, FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { AuthFailure } from "@/lib/auth/auth-client";
 import { signInSchema } from "@/lib/auth/validation";
-import { useAuth } from "@/providers/auth-provider";
+import { useAuth } from "@/providers/auth";
 
 import { AuthCard, authLinkClassName } from "./auth-card";
 import { AuthErrorScreen, AuthLoadingScreen } from "./auth-status-screen";

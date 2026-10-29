@@ -2,8 +2,8 @@
 
 import { cn } from "@/lib/utils";
 import { workspaceInitial } from "@/lib/workspaces";
-import { useCurrentUser } from "@/providers/auth-provider";
-import { useAvatar } from "@/providers/avatar-provider";
+import { useCurrentUser } from "@/providers/auth";
+import { useAvatar } from "@/providers/avatar";
 
 const sizes = {
   md: "size-12 text-lg",

@@ -29,8 +29,8 @@ import {
 } from "@/api/shopping";
 import { queryResource, type Resource } from "@/hooks/query-resource";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
-import { useAuth } from "@/providers/auth-provider";
-import { useWorkspaces } from "@/providers/workspace-provider";
+import { useAuth } from "@/providers/auth";
+import { useWorkspaces } from "@/providers/workspace";
 
 const selectLists = (data: { lists: ShoppingListOverview[] }) => data.lists;
 const selectItems = (data: { items: ShoppingItem[] }) => data.items;

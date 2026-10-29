@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-import type { AuthState } from "@/providers/auth-provider";
+import type { AuthState } from "@/providers/auth";
 
 /** On the sign-in and sign-up pages: leave as soon as the user is signed in. */
 export function useAuthRedirect(state: AuthState, next: string): void {

@@ -27,8 +27,8 @@ import {
 import { queryResource, type Resource } from "@/hooks/query-resource";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
 import { localDateString } from "@/lib/tasks";
-import { useAuth } from "@/providers/auth-provider";
-import { useWorkspaces } from "@/providers/workspace-provider";
+import { useAuth } from "@/providers/auth";
+import { useWorkspaces } from "@/providers/workspace";
 
 /**
  * The workspace's tasks for `query`. Within a workspace, the previous results stay visible

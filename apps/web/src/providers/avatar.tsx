@@ -5,7 +5,7 @@ import { createContext, type ReactNode, useContext, useEffect, useMemo } from "r
 
 import { avatarOptions, deleteMyAvatar, profileKeys, putMyAvatar } from "@/api/profile";
 import { prepareAvatar } from "@/lib/avatar";
-import { useAuth } from "@/providers/auth-provider";
+import { useAuth } from "@/providers/auth";
 
 type AvatarContextValue = {
   /** An object URL for the photo; `null` when none is set or it hasn't loaded. */

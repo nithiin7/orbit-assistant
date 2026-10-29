@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryResource } from "@/hooks/query-resource";
 import { revealLabel } from "@/lib/storage";
-import { useAuth } from "@/providers/auth-provider";
+import { useAuth } from "@/providers/auth";
 
 /**
  * Where the SQLite database lives, with a button that opens its folder. The API does the

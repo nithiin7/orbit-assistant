@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 import { ApiError } from "@/api/client";
-import { useWorkspaces } from "@/providers/workspace-provider";
+import { useWorkspaces } from "@/providers/workspace";
 
 /**
  * When a request fails because the workspace is gone or no longer accessible, re-validate the

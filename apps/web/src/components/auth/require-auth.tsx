@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { type ReactNode, useEffect } from "react";
 
 import { signInPath } from "@/lib/auth/redirect";
-import { useAuth } from "@/providers/auth-provider";
+import { useAuth } from "@/providers/auth";
 
 import { AuthErrorScreen, AuthLoadingScreen } from "./auth-status-screen";
 

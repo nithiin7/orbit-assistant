@@ -23,7 +23,7 @@ import {
   type WidgetSize,
 } from "@/lib/dashboard";
 import { cn } from "@/lib/utils";
-import { useCurrentUser } from "@/providers/auth-provider";
+import { useCurrentUser } from "@/providers/auth";
 
 import { ModulesWidget } from "./modules-widget";
 import { StatusWidget } from "./status-widget";

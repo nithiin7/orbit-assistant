@@ -10,7 +10,7 @@ import { updateMe } from "@/api/profile";
 import { FormAlert, FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { displayNameSchema } from "@/lib/auth/validation";
-import { useAuth, useCurrentUser } from "@/providers/auth-provider";
+import { useAuth, useCurrentUser } from "@/providers/auth";
 
 import { ProfilePhoto } from "./profile-photo";
 

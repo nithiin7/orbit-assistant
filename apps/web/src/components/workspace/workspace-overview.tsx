@@ -9,8 +9,8 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryResource } from "@/hooks/query-resource";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
-import { useAuth, useCurrentUser } from "@/providers/auth-provider";
-import { useWorkspaces } from "@/providers/workspace-provider";
+import { useAuth, useCurrentUser } from "@/providers/auth";
+import { useWorkspaces } from "@/providers/workspace";
 
 import { WorkspaceAvatar } from "./workspace-switcher";
 

@@ -4,10 +4,10 @@ import type { ReactNode } from "react";
 import { createQueryClient } from "@/api/query-client";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { writeLocalSession } from "@/lib/auth/local-session";
-import { AuthProvider } from "@/providers/auth-provider";
-import { AvatarProvider } from "@/providers/avatar-provider";
-import { QueryProvider } from "@/providers/query-provider";
-import { WorkspaceProvider } from "@/providers/workspace-provider";
+import { AuthProvider } from "@/providers/auth";
+import { AvatarProvider } from "@/providers/avatar";
+import { QueryProvider } from "@/providers/query";
+import { WorkspaceProvider } from "@/providers/workspace";
 
 export const SESSION_TOKEN = "local-session-token";
 

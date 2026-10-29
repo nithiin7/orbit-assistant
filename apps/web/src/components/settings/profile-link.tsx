@@ -6,7 +6,7 @@ import Link from "next/link";
 import { UserAvatar } from "@/components/avatar/user-avatar";
 import { settingsHref } from "@/lib/settings";
 import { cn } from "@/lib/utils";
-import { useCurrentUser } from "@/providers/auth-provider";
+import { useCurrentUser } from "@/providers/auth";
 
 /** The signed-in user's name and email, opening account settings. */
 export function ProfileLink({ active = false }: { active?: boolean }) {

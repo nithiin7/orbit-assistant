@@ -17,7 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useShopping, useShoppingMutations } from "@/hooks/use-shopping";
 import { isEditableTarget } from "@/lib/keyboard";
 import { cn } from "@/lib/utils";
-import { useWorkspaces } from "@/providers/workspace-provider";
+import { useWorkspaces } from "@/providers/workspace";
 
 import { ItemComposer } from "./item-composer";
 import { ItemEditDialog } from "./item-edit-dialog";

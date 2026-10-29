@@ -19,7 +19,7 @@ import {
   readWorkspacePreference,
   writeWorkspacePreference,
 } from "@/lib/workspaces";
-import { useAuth, useCurrentUser } from "@/providers/auth-provider";
+import { useAuth, useCurrentUser } from "@/providers/auth";
 
 export type WorkspaceState =
   | { status: "loading" }

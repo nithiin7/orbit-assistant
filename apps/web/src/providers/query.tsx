@@ -4,7 +4,7 @@ import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type ReactNode, useEffect, useState } from "react";
 
 import { createQueryClient } from "@/api/query-client";
-import { useAuth } from "@/providers/auth-provider";
+import { useAuth } from "@/providers/auth";
 
 /**
  * The query cache for the app. Must sit inside `AuthProvider`: cached data belongs to the
