@@ -8,13 +8,16 @@ describe("navigation", () => {
     expect(new Set(hrefs).size).toBe(hrefs.length);
   });
 
-  it("excludes the dashboard from section routes", () => {
-    expect(sectionItems.map((item) => item.href)).not.toContain("/");
+  it("excludes routes with dedicated pages from placeholder sections", () => {
+    const hrefs = sectionItems.map((item) => item.href);
+    expect(hrefs).not.toContain("/");
+    expect(hrefs).not.toContain("/settings");
   });
 
   it("finds sections by slug", () => {
     expect(findSection("tasks")?.title).toBe("Tasks");
     expect(findSection("unknown")).toBeUndefined();
+    expect(findSection("settings")).toBeUndefined();
   });
 
   it.each([

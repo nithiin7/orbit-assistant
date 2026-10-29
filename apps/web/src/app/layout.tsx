@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 
 import { AppShell } from "@/components/app-shell/app-shell";
 import { ThemeProvider } from "@/components/theme-provider";
+import { sidebarPreferenceScript } from "@/lib/sidebar-preference";
 
 export const metadata: Metadata = {
   title: { default: "Orbit", template: "%s · Orbit" },
@@ -13,14 +14,18 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: light)", color: "#fcfcfd" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f1013" },
   ],
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Static, first-party script: restores the sidebar preference before first paint. */}
+        <script dangerouslySetInnerHTML={{ __html: sidebarPreferenceScript }} />
+      </head>
       <body>
         <ThemeProvider
           attribute="class"

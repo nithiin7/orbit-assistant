@@ -19,7 +19,13 @@ export function OrbitMark({ className }: { className?: string }) {
   );
 }
 
-export function Logo({ className }: { className?: string }) {
+type LogoProps = {
+  className?: string;
+  /** Classes for the wordmark, e.g. to fade it out in the collapsed sidebar. */
+  textClassName?: string;
+};
+
+export function Logo({ className, textClassName }: LogoProps) {
   return (
     <Link
       href="/"
@@ -28,8 +34,8 @@ export function Logo({ className }: { className?: string }) {
         className,
       )}
     >
-      <OrbitMark />
-      <span>Orbit</span>
+      <OrbitMark className="shrink-0" />
+      <span className={textClassName}>Orbit</span>
     </Link>
   );
 }

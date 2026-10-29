@@ -1,20 +1,36 @@
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Tooltip } from "@/components/ui/tooltip";
 
 import { NavLinks } from "./nav-links";
+import { SidebarSearch } from "./sidebar-search";
+import { SidebarToggle } from "./sidebar-toggle";
 
+/**
+ * Desktop sidebar. Its width follows `<html data-sidebar>` through the `sidebar-collapsed`
+ * variant, so the saved state applies before hydration without a layout jump.
+ */
 export function Sidebar() {
   return (
-    <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex">
-      <div className="flex h-14 items-center px-5">
-        <Logo />
+    <aside
+      id="sidebar"
+      aria-label="Sidebar"
+      className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-out-soft md:flex sidebar-collapsed:w-14"
+    >
+      <div className="flex h-14 shrink-0 items-center px-4">
+        <Logo textClassName="transition-opacity duration-200 sidebar-collapsed:opacity-0" />
       </div>
-      <div className="flex-1 overflow-y-auto px-3 py-2">
-        <NavLinks />
+      <div className="px-2 pb-2">
+        <SidebarSearch />
       </div>
-      <div className="flex items-center justify-between border-t border-sidebar-border px-5 py-3">
-        <span className="text-xs text-muted-foreground">Theme</span>
-        <ThemeToggle />
+      <div className="flex-1 overflow-x-hidden overflow-y-auto px-2 py-2">
+        <NavLinks collapsible />
+      </div>
+      <div className="flex shrink-0 items-center justify-between gap-1 border-t border-sidebar-border p-2 sidebar-collapsed:flex-col">
+        <Tooltip label="Toggle color theme">
+          <ThemeToggle />
+        </Tooltip>
+        <SidebarToggle />
       </div>
     </aside>
   );
