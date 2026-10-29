@@ -1,21 +1,17 @@
 "use client";
 
+import { yupResolver } from "@hookform/resolvers/yup";
 import type { ShoppingItem, UpdateShoppingItemRequest } from "@orbit/contracts";
 import { X } from "lucide-react";
-import { type FormEvent, useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
-import { focusFirstInvalid, FormAlert, FormField } from "@/components/form-field";
+import { FormAlert, FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  NOTES_MAX_LENGTH,
-  optionalText,
-  validateItemName,
-  validateNotes,
-  validateQuantity,
-  validateUrl,
-} from "@/lib/shopping";
+import { itemSchema, NOTES_MAX_LENGTH, optionalText } from "@/lib/shopping";
 
 type ItemEditDialogProps = {
   item: ShoppingItem;
@@ -24,21 +20,27 @@ type ItemEditDialogProps = {
   onClose: () => void;
 };
 
-type Errors = { name?: string; quantity?: string; url?: string; notes?: string };
-
 /** Edits an item in a modal `<dialog>`. Focus returns to whatever opened it. */
 export function ItemEditDialog({ item, onSave, onClose }: ItemEditDialogProps) {
   const id = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const formRef = useRef<HTMLFormElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
-  const [name, setName] = useState(item.name);
-  const [quantity, setQuantity] = useState(item.quantity ?? "");
-  const [url, setUrl] = useState(item.url ?? "");
-  const [notes, setNotes] = useState(item.notes);
-  const [errors, setErrors] = useState<Errors>({});
-  const [formError, setFormError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    control,
+    formState: { errors, isSubmitting: saving },
+  } = useForm({
+    resolver: yupResolver(itemSchema),
+    defaultValues: {
+      name: item.name,
+      quantity: item.quantity ?? "",
+      url: item.url ?? "",
+      notes: item.notes,
+    },
+  });
+  const notes = useWatch({ control, name: "notes" });
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -50,43 +52,26 @@ export function ItemEditDialog({ item, onSave, onClose }: ItemEditDialogProps) {
 
   const close = () => dialogRef.current?.close();
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const next: Errors = {
-      name: validateItemName(name),
-      quantity: validateQuantity(quantity),
-      url: validateUrl(url),
-      notes: validateNotes(notes),
-    };
-    setErrors(next);
-    setFormError(null);
-    if (next.name || next.quantity || next.url || next.notes) {
-      focusFirstInvalid(formRef.current, next, {
-        name: "name",
-        quantity: "quantity",
-        url: "url",
-        notes: "notes",
-      });
-      return;
-    }
-
+  async function save(values: InferType<typeof itemSchema>) {
+    const quantity = optionalText(values.quantity);
+    const url = optionalText(values.url);
     const changes: UpdateShoppingItemRequest = {};
-    if (name.trim() !== item.name) changes.name = name.trim();
-    if (optionalText(quantity) !== item.quantity) changes.quantity = optionalText(quantity);
-    if (optionalText(url) !== item.url) changes.url = optionalText(url);
-    if (notes.trim() !== item.notes) changes.notes = notes.trim();
+    if (values.name !== item.name) changes.name = values.name;
+    if (quantity !== item.quantity) changes.quantity = quantity;
+    if (url !== item.url) changes.url = url;
+    if (values.notes !== item.notes) changes.notes = values.notes;
     if (Object.keys(changes).length === 0) {
       close();
       return;
     }
 
-    setSaving(true);
     try {
       await onSave(item, changes);
       close();
     } catch (reason) {
-      setFormError(describeApiError(reason, "Couldn’t save the item. Try again."));
-      setSaving(false);
+      setError("root.server", {
+        message: describeApiError(reason, "Couldn’t save the item. Try again."),
+      });
     }
   }
 
@@ -104,7 +89,12 @@ export function ItemEditDialog({ item, onSave, onClose }: ItemEditDialogProps) {
         if (event.target === event.currentTarget && !saving) close();
       }}
     >
-      <form ref={formRef} noValidate onSubmit={onSubmit} className="space-y-4 p-5">
+      <form
+        noValidate
+        // Called here, not during render: `save` closes the dialog through a ref.
+        onSubmit={(event) => void handleSubmit(save)(event)}
+        className="space-y-4 p-5"
+      >
         <div className="flex items-start justify-between gap-4">
           <h2 id={`${id}-heading`} className="text-base font-semibold">
             Edit item
@@ -122,34 +112,28 @@ export function ItemEditDialog({ item, onSave, onClose }: ItemEditDialogProps) {
 
         <FormField
           label="Item"
-          name="name"
           autoComplete="off"
           autoFocus
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          error={errors.name}
+          {...register("name")}
+          error={errors.name?.message}
         />
 
         <div className="grid gap-4 sm:grid-cols-[8rem_1fr]">
           <FormField
             label="Quantity"
-            name="quantity"
             autoComplete="off"
             placeholder="2 kg"
-            value={quantity}
-            onChange={(event) => setQuantity(event.target.value)}
-            error={errors.quantity}
+            {...register("quantity")}
+            error={errors.quantity?.message}
           />
           <FormField
             label="Link"
-            name="url"
             type="url"
             inputMode="url"
             autoComplete="off"
             placeholder="https://"
-            value={url}
-            onChange={(event) => setUrl(event.target.value)}
-            error={errors.url}
+            {...register("url")}
+            error={errors.url?.message}
           />
         </div>
 
@@ -159,10 +143,8 @@ export function ItemEditDialog({ item, onSave, onClose }: ItemEditDialogProps) {
           </label>
           <Textarea
             id={`${id}-notes`}
-            name="notes"
             rows={3}
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
+            {...register("notes")}
             aria-invalid={errors.notes ? true : undefined}
             aria-describedby={`${id}-notes-hint`}
           />
@@ -174,11 +156,11 @@ export function ItemEditDialog({ item, onSave, onClose }: ItemEditDialogProps) {
                 : "text-xs text-muted-foreground"
             }
           >
-            {errors.notes ?? `${notes.trim().length} / ${NOTES_MAX_LENGTH} characters`}
+            {errors.notes?.message ?? `${notes.trim().length} / ${NOTES_MAX_LENGTH} characters`}
           </p>
         </div>
 
-        <FormAlert message={formError} />
+        <FormAlert message={errors.root?.server?.message ?? null} />
 
         <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
           <Button variant="ghost" disabled={saving} onClick={close}>

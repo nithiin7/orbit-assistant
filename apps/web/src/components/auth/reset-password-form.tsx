@@ -1,25 +1,20 @@
 "use client";
 
+import { yupResolver } from "@hookform/resolvers/yup";
 import { CircleCheck, Link2Off } from "lucide-react";
 import Link from "next/link";
-import { type FormEvent, useRef, useState } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
-import { focusFirstInvalid, FormAlert, FormField } from "@/components/form-field";
+import { FormAlert, FormField } from "@/components/form-field";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { AuthFailure } from "@/lib/auth/auth-client";
-import {
-  type FieldErrors,
-  hasErrors,
-  PASSWORD_MIN_LENGTH,
-  validatePasswordReset,
-} from "@/lib/auth/validation";
+import { PASSWORD_MIN_LENGTH, passwordResetSchema } from "@/lib/auth/validation";
 
 import { AuthCard } from "./auth-card";
 import { useAuth } from "./auth-provider";
 import { AuthErrorScreen, AuthLoadingScreen } from "./auth-status-screen";
 import { backToSignIn, LocalRecoveryUnavailable } from "./forgot-password-form";
-
-type Field = "password" | "confirmPassword";
 
 /**
  * The landing page of a Supabase reset email. Supabase reads the link and starts a recovery
@@ -27,12 +22,16 @@ type Field = "password" | "confirmPassword";
  */
 export function ResetPasswordForm() {
   const { state, updatePassword, retry } = useAuth();
-  const [values, setValues] = useState({ password: "", confirmPassword: "" });
-  const [errors, setErrors] = useState<FieldErrors<Field>>({});
-  const [formError, setFormError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: yupResolver(passwordResetSchema),
+    defaultValues: { password: "", confirmPassword: "" },
+  });
   const [done, setDone] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
 
   if (state.status === "loading") return <AuthLoadingScreen compact label="Checking your link…" />;
   if (state.status === "error")
@@ -80,29 +79,19 @@ export function ResetPasswordForm() {
     );
   }
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const fieldErrors = validatePasswordReset(values);
-    setErrors(fieldErrors);
-    setFormError(null);
-    if (hasErrors(fieldErrors)) {
-      focusFirstInvalid(formRef.current, fieldErrors, {
-        password: "password",
-        confirmPassword: "confirm-password",
-      });
-      return;
-    }
-    setSubmitting(true);
+  const onSubmit = handleSubmit(async ({ password }) => {
     try {
-      await updatePassword(values.password);
+      await updatePassword(password);
       setDone(true);
     } catch (error) {
-      setFormError(
-        error instanceof AuthFailure ? error.message : "Couldn’t update your password. Try again.",
-      );
+      setError("root.server", {
+        message:
+          error instanceof AuthFailure
+            ? error.message
+            : "Couldn’t update your password. Try again.",
+      });
     }
-    setSubmitting(false);
-  }
+  });
 
   return (
     <AuthCard
@@ -114,29 +103,25 @@ export function ResetPasswordForm() {
       }
       footer={backToSignIn}
     >
-      <form ref={formRef} noValidate onSubmit={onSubmit} className="space-y-4">
+      <form noValidate onSubmit={onSubmit} className="space-y-4">
         <FormField
           label="New password"
           type="password"
-          name="password"
           autoComplete="new-password"
           hint={`At least ${PASSWORD_MIN_LENGTH} characters.`}
-          value={values.password}
-          onChange={(event) => setValues({ ...values, password: event.target.value })}
-          error={errors.password}
+          {...register("password")}
+          error={errors.password?.message}
         />
         <FormField
           label="Confirm new password"
           type="password"
-          name="confirm-password"
           autoComplete="new-password"
-          value={values.confirmPassword}
-          onChange={(event) => setValues({ ...values, confirmPassword: event.target.value })}
-          error={errors.confirmPassword}
+          {...register("confirmPassword")}
+          error={errors.confirmPassword?.message}
         />
-        <FormAlert message={formError} />
-        <Button type="submit" className="w-full" disabled={submitting}>
-          {submitting ? "Updating password…" : "Update password"}
+        <FormAlert message={errors.root?.server?.message ?? null} />
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Updating password…" : "Update password"}
         </Button>
       </form>
     </AuthCard>

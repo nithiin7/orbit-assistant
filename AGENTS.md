@@ -114,6 +114,10 @@ and `packages/*/package.json`. Check them rather than guessing.
   live in `src/hooks/` (for example `use-tasks.ts`); `queryResource` turns a query into a
   view's loading, error, or success state. Don't add hand-rolled loaders with `useEffect`.
   `fetch` is the HTTP client; don't add axios.
+- Forms use React Hook Form with a Yup schema (`yupResolver`). Schemas live in `src/lib`
+  beside their domain (`@/lib/auth/validation`, `@/lib/tasks`, `@/lib/shopping`), mirror the
+  API's rules, and build on the text helpers in `@/lib/validation`. Show server failures with
+  `setError("root.server", …)` and `FormAlert`. Don't hand-roll field state or validators.
 - Each `src/lib` module has its own folder: `src/lib/<name>/<name>.ts`, its
   `<name>.test.ts`, and an `index.ts` that re-exports it, so imports stay `@/lib/<name>`.
   Related modules can share a domain folder without an index, like `src/lib/auth/`.

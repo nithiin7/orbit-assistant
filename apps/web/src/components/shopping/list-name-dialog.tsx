@@ -1,12 +1,15 @@
 "use client";
 
+import { yupResolver } from "@hookform/resolvers/yup";
 import { X } from "lucide-react";
-import { type FormEvent, useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef } from "react";
+import { useForm } from "react-hook-form";
+import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
 import { FormAlert, FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
-import { validateListName } from "@/lib/shopping";
+import { listNameSchema } from "@/lib/shopping";
 
 type ListNameDialogProps = {
   title: string;
@@ -28,10 +31,12 @@ export function ListNameDialog({
   const id = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
-  const [name, setName] = useState(initialName);
-  const [error, setError] = useState<string | undefined>();
-  const [formError, setFormError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting: saving },
+  } = useForm({ resolver: yupResolver(listNameSchema), defaultValues: { name: initialName } });
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -43,23 +48,18 @@ export function ListNameDialog({
 
   const close = () => dialogRef.current?.close();
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const nameError = validateListName(name);
-    setError(nameError);
-    setFormError(null);
-    if (nameError) return;
-    if (name.trim() === initialName) {
+  async function save({ name }: InferType<typeof listNameSchema>) {
+    if (name === initialName) {
       close();
       return;
     }
-    setSaving(true);
     try {
-      await onSave(name.trim());
+      await onSave(name);
       close();
     } catch (reason) {
-      setFormError(describeApiError(reason, "Couldn’t save the list. Try again."));
-      setSaving(false);
+      setError("root.server", {
+        message: describeApiError(reason, "Couldn’t save the list. Try again."),
+      });
     }
   }
 
@@ -77,7 +77,12 @@ export function ListNameDialog({
         if (event.target === event.currentTarget && !saving) close();
       }}
     >
-      <form noValidate onSubmit={onSubmit} className="space-y-4 p-5">
+      <form
+        noValidate
+        // Called here, not during render: `save` closes the dialog through a ref.
+        onSubmit={(event) => void handleSubmit(save)(event)}
+        className="space-y-4 p-5"
+      >
         <div className="flex items-start justify-between gap-4">
           <h2 id={`${id}-heading`} className="text-base font-semibold">
             {title}
@@ -95,19 +100,14 @@ export function ListNameDialog({
 
         <FormField
           label="List name"
-          name="name"
           autoComplete="off"
           autoFocus
           placeholder="Electronics"
-          value={name}
-          onChange={(event) => {
-            setName(event.target.value);
-            if (error) setError(undefined);
-          }}
-          error={error}
+          {...register("name")}
+          error={errors.name?.message}
         />
 
-        <FormAlert message={formError} />
+        <FormAlert message={errors.root?.server?.message ?? null} />
 
         <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
           <Button variant="ghost" disabled={saving} onClick={close}>

@@ -1,15 +1,18 @@
 "use client";
 
-import type { CreateTaskRequest, TaskPriority } from "@orbit/contracts";
+import { yupResolver } from "@hookform/resolvers/yup";
+import type { CreateTaskRequest } from "@orbit/contracts";
 import { Plus } from "lucide-react";
-import { type FormEvent, type Ref, useId, useState } from "react";
+import { type Ref, useId } from "react";
+import { Controller, useForm } from "react-hook-form";
 
 import { describeApiError } from "@/api/client";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
-import { validateTaskTitle } from "@/lib/tasks";
+import { newTaskSchema } from "@/lib/tasks";
+import { mergeRefs } from "@/lib/utils";
 
 import { PrioritySelect } from "./priority-select";
 
@@ -22,38 +25,41 @@ type TaskComposerProps = {
 /** Quick entry: type a title, optionally set a due date and priority, press Enter. */
 export function TaskComposer({ onCreate, titleRef }: TaskComposerProps) {
   const id = useId();
-  const [title, setTitle] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [priority, setPriority] = useState<TaskPriority>("none");
-  const [fieldError, setFieldError] = useState<string | undefined>();
-  const [formError, setFormError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const {
+    register,
+    control,
+    handleSubmit,
+    setError,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: yupResolver(newTaskSchema),
+    defaultValues: { title: "", dueDate: "", priority: "none" as const },
+  });
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (saving) return;
-    const error = validateTaskTitle(title);
-    setFieldError(error);
-    setFormError(null);
-    if (error) return;
-    setSaving(true);
+  const onSubmit = handleSubmit(async ({ title, dueDate, priority }) => {
     try {
-      await onCreate({ title: title.trim(), description: "", priority, due_date: dueDate || null });
+      await onCreate({ title, description: "", priority, due_date: dueDate || null });
       // Ready for the next task; focus stays in the title field.
-      setTitle("");
-      setDueDate("");
-      setPriority("none");
+      reset();
     } catch (reason) {
-      setFormError(describeApiError(reason, "Couldn’t add the task. Try again."));
+      setError("root.server", {
+        message: describeApiError(reason, "Couldn’t add the task. Try again."),
+      });
     }
-    setSaving(false);
-  }
+  });
 
+  const titleField = register("title");
+  const fieldError = errors.title?.message;
   const errorId = `${id}-error`;
   return (
     <form
       noValidate
-      onSubmit={onSubmit}
+      onSubmit={(event) => {
+        // Enter in the title field submits even while the button is disabled.
+        if (isSubmitting) event.preventDefault();
+        else void onSubmit(event);
+      }}
       aria-label="Add a task"
       className="space-y-3 rounded-xl border bg-card p-3 shadow-elevation-1 sm:p-4"
     >
@@ -63,19 +69,14 @@ export function TaskComposer({ onCreate, titleRef }: TaskComposerProps) {
             Task title
           </label>
           <Input
-            ref={titleRef}
+            {...titleField}
+            ref={mergeRefs(titleField.ref, titleRef)}
             id={`${id}-title`}
-            name="title"
             autoComplete="off"
             placeholder="Add a task…"
             aria-keyshortcuts="N"
             aria-invalid={fieldError ? true : undefined}
             aria-describedby={fieldError ? errorId : undefined}
-            value={title}
-            onChange={(event) => {
-              setTitle(event.target.value);
-              if (fieldError) setFieldError(undefined);
-            }}
             className="pr-9"
           />
           <Kbd
@@ -92,21 +93,25 @@ export function TaskComposer({ onCreate, titleRef }: TaskComposerProps) {
           <Input
             id={`${id}-due`}
             type="date"
-            name="due_date"
-            value={dueDate}
-            onChange={(event) => setDueDate(event.target.value)}
+            {...register("dueDate")}
             className="w-auto min-w-36 flex-1 sm:flex-none"
           />
-          <PrioritySelect
-            id={`${id}-priority`}
-            value={priority}
-            onChange={setPriority}
-            className="min-w-36 flex-1 sm:flex-none"
-            hiddenLabel
+          <Controller
+            control={control}
+            name="priority"
+            render={({ field }) => (
+              <PrioritySelect
+                id={`${id}-priority`}
+                value={field.value}
+                onChange={field.onChange}
+                className="min-w-36 flex-1 sm:flex-none"
+                hiddenLabel
+              />
+            )}
           />
-          <Button type="submit" disabled={saving} className="flex-1 sm:flex-none">
+          <Button type="submit" disabled={isSubmitting} className="flex-1 sm:flex-none">
             <Plus aria-hidden="true" />
-            {saving ? "Adding…" : "Add task"}
+            {isSubmitting ? "Adding…" : "Add task"}
           </Button>
         </div>
       </div>
@@ -115,7 +120,7 @@ export function TaskComposer({ onCreate, titleRef }: TaskComposerProps) {
           {fieldError}
         </p>
       ) : null}
-      <FormAlert message={formError} />
+      <FormAlert message={errors.root?.server?.message ?? null} />
     </form>
   );
 }

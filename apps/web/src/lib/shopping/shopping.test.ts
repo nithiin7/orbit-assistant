@@ -1,17 +1,21 @@
 import type { ShoppingItem } from "@orbit/contracts";
 import { describe, expect, it } from "vitest";
 
+import { fieldErrors } from "@/test/validation";
+
 import {
   countItems,
+  itemSchema,
   linkLabel,
+  listNameSchema,
   optionalText,
   sortItems,
-  validateItemName,
-  validateListName,
-  validateNotes,
-  validateQuantity,
-  validateUrl,
 } from "./shopping";
+
+const validItem = { name: "Oat milk", quantity: "", url: "", notes: "" };
+const itemErrors = (changes: Partial<typeof validItem>) =>
+  fieldErrors(itemSchema, { ...validItem, ...changes });
+const listNameError = (name: string) => fieldErrors(listNameSchema, { name }).name;
 
 function item(overrides: Partial<ShoppingItem> & Pick<ShoppingItem, "id">): ShoppingItem {
   return {
@@ -31,25 +35,25 @@ function item(overrides: Partial<ShoppingItem> & Pick<ShoppingItem, "id">): Shop
 
 describe("validation", () => {
   it("requires list and item names within the API's limits", () => {
-    expect(validateListName("  ")).toBe("Enter a name.");
-    expect(validateListName("x".repeat(101))).toBe("Use 100 characters or fewer.");
-    expect(validateListName(" Electronics ")).toBeUndefined();
-    expect(validateItemName("")).toBe("Enter an item.");
-    expect(validateItemName("x".repeat(201))).toBe("Use 200 characters or fewer.");
-    expect(validateItemName("Line\nbreak")).toMatch(/line breaks/);
-    expect(validateItemName("Oat milk 🥛")).toBeUndefined();
+    expect(listNameError("  ")).toBe("Enter a name.");
+    expect(listNameError("x".repeat(101))).toBe("Use 100 characters or fewer.");
+    expect(listNameError(" Electronics ")).toBeUndefined();
+    expect(itemErrors({ name: "" }).name).toBe("Enter an item.");
+    expect(itemErrors({ name: "x".repeat(201) }).name).toBe("Use 200 characters or fewer.");
+    expect(itemErrors({ name: "Line\nbreak" }).name).toMatch(/line breaks/);
+    expect(itemErrors({ name: "Oat milk 🥛" }).name).toBeUndefined();
   });
 
   it("treats quantity as optional single-line text", () => {
-    expect(validateQuantity("")).toBeUndefined();
-    expect(validateQuantity("2 kg")).toBeUndefined();
-    expect(validateQuantity("x".repeat(51))).toBe("Use 50 characters or fewer.");
+    expect(itemErrors({ quantity: "" }).quantity).toBeUndefined();
+    expect(itemErrors({ quantity: "2 kg" }).quantity).toBeUndefined();
+    expect(itemErrors({ quantity: "x".repeat(51) }).quantity).toBe("Use 50 characters or fewer.");
   });
 
   it("allows line breaks in notes but not other control characters", () => {
-    expect(validateNotes("Brand A\n\tor B")).toBeUndefined();
-    expect(validateNotes("Bell\u0007")).toBe("Remove unsupported characters.");
-    expect(validateNotes("x".repeat(2001))).toBe("Use 2000 characters or fewer.");
+    expect(itemErrors({ notes: "Brand A\n\tor B" }).notes).toBeUndefined();
+    expect(itemErrors({ notes: "Bell\u0007" }).notes).toBe("Remove unsupported characters.");
+    expect(itemErrors({ notes: "x".repeat(2001) }).notes).toBe("Use 2000 characters or fewer.");
   });
 
   it.each([
@@ -60,8 +64,8 @@ describe("validation", () => {
     ["javascript:alert(1)", "Enter a full web address, starting with https://"],
     ["ftp://example.com", "Enter a full web address, starting with https://"],
     ["https://example.com/a b", "Enter a full web address, starting with https://"],
-  ])("validateUrl(%j) is %j", (url, expected) => {
-    expect(validateUrl(url)).toBe(expected);
+  ])("url %j is %j", (url, expected) => {
+    expect(itemErrors({ url }).url).toBe(expected);
   });
 });
 

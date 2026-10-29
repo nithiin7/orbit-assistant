@@ -1,6 +1,9 @@
-/** Task display rules, filters, and client-side validation that mirrors the API's. */
+/** Task display rules, filters, and form schemas that mirror the API's. */
 
 import type { TaskListQuery, TaskPriority, TaskStatus } from "@orbit/contracts";
+import { mixed, object, string } from "yup";
+
+import { multiLineText, singleLineText } from "@/lib/validation";
 
 export const TASK_TITLE_MAX_LENGTH = 200;
 export const TASK_DESCRIPTION_MAX_LENGTH = 5000;
@@ -72,28 +75,25 @@ export function isNarrowed(filters: TaskFilters): boolean {
   return filters.search !== "" || filters.priority !== "all";
 }
 
-// Control characters, which the API rejects (descriptions may contain line breaks and tabs).
-const CONTROL_CHARACTERS = /\p{Cc}/u;
-const CONTROL_CHARACTERS_EXCEPT_WHITESPACE = /(?![\n\r\t])\p{Cc}/u;
+const taskTitleField = singleLineText(TASK_TITLE_MAX_LENGTH).required("Enter a title.");
+const priorityField = mixed<TaskPriority>()
+  .oneOf(PRIORITIES.map((item) => item.value))
+  .defined();
+/** `""` when no due date is set. */
+const dueDateField = string().defined();
 
-export function validateTaskTitle(title: string): string | undefined {
-  const value = title.trim();
-  if (!value) return "Enter a title.";
-  if (value.length > TASK_TITLE_MAX_LENGTH) {
-    return `Use ${TASK_TITLE_MAX_LENGTH} characters or fewer.`;
-  }
-  if (CONTROL_CHARACTERS.test(value)) return "Remove line breaks and unsupported characters.";
-  return undefined;
-}
+export const newTaskSchema = object({
+  title: taskTitleField,
+  dueDate: dueDateField,
+  priority: priorityField,
+});
 
-export function validateTaskDescription(description: string): string | undefined {
-  const value = description.trim();
-  if (value.length > TASK_DESCRIPTION_MAX_LENGTH) {
-    return `Use ${TASK_DESCRIPTION_MAX_LENGTH} characters or fewer.`;
-  }
-  if (CONTROL_CHARACTERS_EXCEPT_WHITESPACE.test(value)) return "Remove unsupported characters.";
-  return undefined;
-}
+export const taskSchema = object({
+  title: taskTitleField,
+  description: multiLineText(TASK_DESCRIPTION_MAX_LENGTH),
+  dueDate: dueDateField,
+  priority: priorityField,
+});
 
 /** A date as `YYYY-MM-DD` in the user's time zone, the format of a task's `due_date`. */
 export function localDateString(date: Date = new Date()): string {

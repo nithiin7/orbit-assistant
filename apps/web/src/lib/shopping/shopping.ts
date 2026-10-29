@@ -1,6 +1,9 @@
-/** Shopping list ordering, link display, and client-side validation that mirrors the API's. */
+/** Shopping list ordering, link display, and form schemas that mirror the API's. */
 
 import type { ShoppingItem } from "@orbit/contracts";
+import { object, string } from "yup";
+
+import { multiLineText, singleLineText, tooLongMessage } from "@/lib/validation";
 
 export const LIST_NAME_MAX_LENGTH = 100;
 export const ITEM_NAME_MAX_LENGTH = 200;
@@ -8,51 +11,30 @@ export const QUANTITY_MAX_LENGTH = 50;
 export const URL_MAX_LENGTH = 2048;
 export const NOTES_MAX_LENGTH = 2000;
 
-// Control characters, which the API rejects (notes may contain line breaks and tabs).
-const CONTROL_CHARACTERS = /\p{Cc}/u;
-const CONTROL_CHARACTERS_EXCEPT_WHITESPACE = /(?![\n\r\t])\p{Cc}/u;
-
-function validateLine(
-  value: string,
-  maxLength: number,
-  { required, empty }: { required: boolean; empty: string },
-): string | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return required ? empty : undefined;
-  if (trimmed.length > maxLength) return `Use ${maxLength} characters or fewer.`;
-  if (CONTROL_CHARACTERS.test(trimmed)) return "Remove line breaks and unsupported characters.";
-  return undefined;
-}
-
-export function validateListName(name: string): string | undefined {
-  return validateLine(name, LIST_NAME_MAX_LENGTH, { required: true, empty: "Enter a name." });
-}
-
-export function validateItemName(name: string): string | undefined {
-  return validateLine(name, ITEM_NAME_MAX_LENGTH, { required: true, empty: "Enter an item." });
-}
-
-export function validateQuantity(quantity: string): string | undefined {
-  return validateLine(quantity, QUANTITY_MAX_LENGTH, { required: false, empty: "" });
-}
-
-export function validateNotes(notes: string): string | undefined {
-  const value = notes.trim();
-  if (value.length > NOTES_MAX_LENGTH) return `Use ${NOTES_MAX_LENGTH} characters or fewer.`;
-  if (CONTROL_CHARACTERS_EXCEPT_WHITESPACE.test(value)) return "Remove unsupported characters.";
-  return undefined;
-}
-
 /** Optional; when present, an http(s) URL with a host, like the API accepts. */
-export function validateUrl(url: string): string | undefined {
-  const value = url.trim();
-  if (!value) return undefined;
-  if (value.length > URL_MAX_LENGTH) return `Use ${URL_MAX_LENGTH} characters or fewer.`;
-  if (/\s/.test(value) || !parseWebUrl(value)) {
-    return "Enter a full web address, starting with https://";
-  }
-  return undefined;
-}
+const urlField = string()
+  .trim()
+  .defined()
+  .max(URL_MAX_LENGTH, tooLongMessage(URL_MAX_LENGTH))
+  .test(
+    "web-url",
+    "Enter a full web address, starting with https://",
+    (value) => !value || (!/\s/.test(value) && parseWebUrl(value) !== null),
+  );
+
+export const listNameSchema = object({
+  name: singleLineText(LIST_NAME_MAX_LENGTH).required("Enter a name."),
+});
+
+const itemFields = {
+  name: singleLineText(ITEM_NAME_MAX_LENGTH).required("Enter an item."),
+  quantity: singleLineText(QUANTITY_MAX_LENGTH),
+  url: urlField,
+};
+
+export const newItemSchema = object(itemFields);
+
+export const itemSchema = object({ ...itemFields, notes: multiLineText(NOTES_MAX_LENGTH) });
 
 function parseWebUrl(value: string): URL | null {
   try {

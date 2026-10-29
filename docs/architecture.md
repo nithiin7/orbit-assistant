@@ -46,6 +46,8 @@ API contract in `packages/contracts`, described below.
 - Server data is cached by TanStack Query, keyed by workspace (`["workspaces", id, …]`). The
   cache is cleared whenever the signed-in user changes, so one user's data is never shown to
   another.
+- Forms use React Hook Form with Yup schemas from `src/lib`. The schemas mirror the API's
+  validation for immediate feedback; the API still validates every request.
 
 ## Shared API contract
 

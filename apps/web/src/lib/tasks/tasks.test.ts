@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { fieldErrors } from "@/test/validation";
+
 import {
   daysBetween,
   DEFAULT_TASK_FILTERS,
@@ -7,10 +9,13 @@ import {
   isNarrowed,
   localDateString,
   TASK_PAGE_SIZE,
+  taskSchema,
   toTaskListQuery,
-  validateTaskDescription,
-  validateTaskTitle,
 } from "./tasks";
+
+const validTask = { title: "Pay rent", description: "", dueDate: "", priority: "none" };
+const taskErrors = (changes: Partial<typeof validTask>) =>
+  fieldErrors(taskSchema, { ...validTask, ...changes });
 
 describe("toTaskListQuery", () => {
   it("sends only the filters that narrow the list", () => {
@@ -46,28 +51,44 @@ describe("isNarrowed", () => {
   });
 });
 
-describe("validateTaskTitle", () => {
+describe("task title", () => {
   it.each([
     ["", "Enter a title."],
     ["   ", "Enter a title."],
     ["x".repeat(201), "Use 200 characters or fewer."],
     ["Two\nlines", "Remove line breaks and unsupported characters."],
   ])("rejects %j", (title, message) => {
-    expect(validateTaskTitle(title)).toBe(message);
+    expect(taskErrors({ title }).title).toBe(message);
   });
 
   it("accepts titles the API accepts", () => {
-    expect(validateTaskTitle(`  ${"x".repeat(200)}  `)).toBeUndefined();
-    expect(validateTaskTitle("Dinner 👨‍👩‍👧 at 7")).toBeUndefined();
+    expect(taskErrors({ title: `  ${"x".repeat(200)}  ` })).toEqual({});
+    expect(taskErrors({ title: "Dinner 👨‍👩‍👧 at 7" })).toEqual({});
   });
 });
 
-describe("validateTaskDescription", () => {
+describe("taskSchema", () => {
+  it("submits trimmed text", () => {
+    expect(
+      taskSchema.validateSync({ ...validTask, title: "  Pay rent ", description: " Today\n" }),
+    ).toMatchObject({ title: "Pay rent", description: "Today" });
+  });
+
+  it("accepts only the API's priorities", () => {
+    expect(taskErrors({ priority: "urgent" }).priority).toBeDefined();
+  });
+});
+
+describe("task description", () => {
   it("allows line breaks and tabs but not other control characters", () => {
-    expect(validateTaskDescription("")).toBeUndefined();
-    expect(validateTaskDescription("Line one\n\tLine two\r\n")).toBeUndefined();
-    expect(validateTaskDescription("Bell\u0007")).toBe("Remove unsupported characters.");
-    expect(validateTaskDescription("x".repeat(5001))).toBe("Use 5000 characters or fewer.");
+    expect(taskErrors({ description: "" })).toEqual({});
+    expect(taskErrors({ description: "Line one\n\tLine two\r\n" })).toEqual({});
+    expect(taskErrors({ description: "Bell\u0007" }).description).toBe(
+      "Remove unsupported characters.",
+    );
+    expect(taskErrors({ description: "x".repeat(5001) }).description).toBe(
+      "Use 5000 characters or fewer.",
+    );
   });
 });
 
