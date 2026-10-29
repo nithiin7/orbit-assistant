@@ -13,9 +13,10 @@ environment variables), [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Orbit is a privacy-first, local-first personal assistant intended to grow into an extensible
 open-source productivity platform. **It is in early development:** the repository contains the
-monorepo foundation, an application shell, an API skeleton with a health endpoint, and a shared
-API contract. There is no database, authentication, or AI integration yet. Do not describe or
-build on capabilities that do not exist.
+monorepo foundation, an application shell, an API with health endpoints, a shared API contract,
+and a database foundation: SQLAlchemy and Alembic over SQLite (local mode) or PostgreSQL on
+Supabase (cloud mode). There are no product tables, authentication, or AI integration yet. Do not
+describe or build on capabilities that do not exist.
 
 ## Principles
 
@@ -40,8 +41,8 @@ build on capabilities that do not exist.
 | `.github/workflows/ci.yml`     | CI: web, API, and commit-message jobs                                            |
 | `.husky/`, `.lintstagedrc.mjs` | Git hooks: staged-file lint/format and commitlint                                |
 
-Not present yet (planned; see `docs/architecture.md`): storage adapters, authentication, AI
-provider abstractions, end-to-end tests, and a `scripts/` directory.
+Not present yet (planned; see `docs/architecture.md`): product tables, repositories and
+services, authentication, AI provider abstractions, end-to-end tests, and a `scripts/` directory.
 
 ### Boundaries
 
@@ -70,6 +71,7 @@ Run from the repository root. Setup: `pnpm install` (also installs Git hooks) an
 | Test                    | `pnpm test`, `pnpm test:web` (Vitest), `pnpm test:api` (Pytest)   |
 | Production web build    | `pnpm build`                                                      |
 | Regenerate API contract | `pnpm contracts:generate`; verify with `pnpm contracts:check`     |
+| Apply DB migrations     | `pnpm db:migrate` (Alembic, against the configured database)      |
 
 Narrow commands, for fast iteration:
 
@@ -124,6 +126,15 @@ and `packages/*/package.json`. Check them rather than guessing.
   services (domain logic), and infrastructure adapters (storage, external providers). See the
   planned layout in `docs/architecture.md`; create those packages when the first feature needs
   them, not before.
+- Data access goes only through the API. The web app never connects to a database or holds
+  database credentials. `db/` (SQLAlchemy and Alembic, no FastAPI) owns engines, sessions, and
+  migrations. Routes get a request-scoped session via `SessionDep`. Services stay free of
+  SQLAlchemy and FastAPI. Layer rules: `docs/architecture.md#backend-layers`.
+- Storage mode (`local` SQLite or `cloud` PostgreSQL) is explicit. Never add a fallback from
+  one mode to the other, dual writes, or sync without a design.
+- Schema changes go through Alembic revisions that run on both SQLite and PostgreSQL. A table
+  created on PostgreSQL enables Row Level Security in the same revision. Never claim RLS
+  protects data unless the tables and policies exist.
 - Raise explicit exceptions and map them to safe HTTP errors (`HTTPException` or exception
   handlers). Never swallow exceptions. Catch broad `Exception` only at a deliberate boundary,
   with logging and a comment explaining why.

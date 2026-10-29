@@ -9,3 +9,4 @@ export type { components, operations, paths } from "./schema";
 type Schemas = components["schemas"];
 
 export type HealthResponse = Schemas["HealthResponse"];
+export type DatabaseHealthResponse = Schemas["DatabaseHealthResponse"];

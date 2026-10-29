@@ -26,10 +26,61 @@
           }
         }
       }
+    },
+    "/api/v1/health/database": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Check database connectivity",
+        "description": "Query the database. Reports the storage mode, never paths or connection details.",
+        "operationId": "database_health_api_v1_health_database_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatabaseHealthResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The database is unavailable."
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "DatabaseHealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status",
+            "description": "Always `ok` when the database answered a query."
+          },
+          "storage_mode": {
+            "type": "string",
+            "enum": [
+              "local",
+              "cloud"
+            ],
+            "title": "Storage Mode",
+            "description": "`local` (SQLite on this machine) or `cloud` (hosted PostgreSQL)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "storage_mode"
+        ],
+        "title": "DatabaseHealthResponse",
+        "description": "Reports that the configured database is reachable."
+      },
       "HealthResponse": {
         "properties": {
           "status": {

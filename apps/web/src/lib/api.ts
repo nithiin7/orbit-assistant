@@ -1,4 +1,4 @@
-import type { HealthResponse } from "@orbit/contracts";
+import type { DatabaseHealthResponse, HealthResponse } from "@orbit/contracts";
 
 import { publicEnv } from "./env";
 
@@ -24,4 +24,9 @@ async function getJson<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function getHealth(init?: RequestInit): Promise<HealthResponse> {
   return getJson<HealthResponse>("/api/v1/health", init);
+}
+
+/** Reports which storage mode the API uses. Responds 503 when the database is unreachable. */
+export function getDatabaseHealth(init?: RequestInit): Promise<DatabaseHealthResponse> {
+  return getJson<DatabaseHealthResponse>("/api/v1/health/database", init);
 }

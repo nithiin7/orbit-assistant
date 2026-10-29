@@ -13,6 +13,10 @@ Extends the core rule and `AGENTS.md`.
 - Thin routes with Pydantic request and response models. Return typed models.
 - As features land, split schemas, framework-free services, and infrastructure adapters per
   `docs/architecture.md`, but only when a feature needs them.
+- Database: `db/` holds engines, sessions, and Alembic migrations (no FastAPI imports). Routes
+  take `SessionDep`; services stay free of SQLAlchemy. Storage mode is explicit, with no
+  fallback between `local` and `cloud`. Schema changes are Alembic revisions that work on
+  SQLite and PostgreSQL.
 - Full type hints; Pyright is strict. No unexplained `# pyright: ignore`.
 - Explicit exceptions mapped to safe HTTP errors. No swallowed exceptions, and no secrets or
   internals in responses or logs. No hardcoded config or credentials.

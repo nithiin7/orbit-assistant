@@ -12,8 +12,9 @@ non-trivial work. The essentials are repeated here because Copilot may not load 
   (`packages/contracts`), generated from the API's Pydantic models. Never hand-edit
   `openapi.json` or `src/schema.ts` there; change the models and run
   `pnpm contracts:generate`.
-- No database, auth, or AI integration exists yet. Don't reference or build on them unless
-  the task asks.
+- The API owns all data access through SQLAlchemy (SQLite in `local` mode, PostgreSQL in
+  `cloud` mode) with Alembic migrations. The web app never touches a database. No product
+  tables, auth, or AI integration exist yet. Don't build on them unless the task asks.
 
 ## Rules
 
