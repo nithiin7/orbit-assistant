@@ -142,6 +142,11 @@
   --color-sidebar-border: var(--sidebar-border);
 }
 
+/* Extra breakpoint for wide desktop displays (1920px and up). */
+@theme {
+  --breakpoint-3xl: 120rem;
+}
+
 /* Motion: short and calm. Ordinary interactions sit between 120ms and 220ms. */
 @theme {
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
@@ -169,6 +174,14 @@
 
   html {
     color-scheme: light;
+    /*
+     * Scale the whole interface on very wide screens. Everything is sized in rem, so beyond
+     * 2844px (0.5625vw = 16px) a 4K display at 100% scaling gets a proportionally larger UI
+     * instead of a tiny one. `100%` keeps the browser's font-size setting as the floor; the cap
+     * keeps ultrawide displays readable. Media queries resolve rem against the initial font size,
+     * so breakpoints are unaffected.
+     */
+    font-size: clamp(100%, 0.5625vw, 137.5%);
   }
 
   html.dark {
@@ -177,6 +190,12 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+  }
+
+  /* Tailwind v4 resets buttons to the default cursor; interactive controls should read as such. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
   }
 
   ::selection {

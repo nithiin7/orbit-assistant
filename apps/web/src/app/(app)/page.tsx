@@ -19,27 +19,29 @@ export default function DashboardPage() {
         actions={<StorageIndicator />}
       />
 
-      <WorkspaceOverview />
+      <div className="grid gap-4 xl:grid-cols-2 2xl:gap-6">
+        <WorkspaceOverview />
 
-      <section aria-labelledby="status-heading">
-        <Card className="flex flex-col gap-4 p-5 shadow-elevation-1 sm:flex-row sm:items-start">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-subtle">
-            <OrbitMark className="size-6" />
-          </div>
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 id="status-heading" className="text-base font-semibold">
-                Orbit is in early development
-              </h2>
-              <Badge variant="brand">Preview</Badge>
+        <section aria-labelledby="status-heading">
+          <Card className="flex h-full flex-col gap-4 p-5 shadow-elevation-1 sm:flex-row sm:items-start">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-subtle">
+              <OrbitMark className="size-6" />
             </div>
-            <p className="max-w-prose text-sm text-pretty text-muted-foreground">
-              Accounts and workspaces are in place, but no modules are built yet, so there is no
-              workspace content to show. As each module lands, a summary of it will appear here.
-            </p>
-          </div>
-        </Card>
-      </section>
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 id="status-heading" className="text-base font-semibold">
+                  Orbit is in early development
+                </h2>
+                <Badge variant="brand">Preview</Badge>
+              </div>
+              <p className="max-w-prose text-sm text-pretty text-muted-foreground">
+                Accounts and workspaces are in place, but no modules are built yet, so there is no
+                workspace content to show. As each module lands, a summary of it will appear here.
+              </p>
+            </div>
+          </Card>
+        </section>
+      </div>
 
       <section aria-labelledby="modules-heading" className="space-y-4">
         <div className="space-y-1">
@@ -50,7 +52,7 @@ export default function DashboardPage() {
             Each opens a placeholder page describing what it will do.
           </p>
         </div>
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 2xl:gap-4">
           {modules.map(({ title, href, icon: Icon, description }) => (
             <li key={href}>
               <Link

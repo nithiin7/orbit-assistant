@@ -23,11 +23,14 @@ export function WorkspaceOverview() {
   const { resource, reload } = useWorkspaceResource<Workspace>(loadWorkspace);
 
   return (
-    <section aria-labelledby="workspace-overview-heading">
+    <section aria-labelledby="workspace-overview-heading" className="h-full">
       <h2 id="workspace-overview-heading" className="sr-only">
         Current workspace
       </h2>
-      <Card className="flex min-h-20 items-center gap-4 p-5 shadow-elevation-1" aria-live="polite">
+      <Card
+        className="flex h-full min-h-20 items-center gap-4 p-5 shadow-elevation-1"
+        aria-live="polite"
+      >
         {resource.status === "loading" ? (
           <>
             <span className="sr-only">Loading workspace…</span>
