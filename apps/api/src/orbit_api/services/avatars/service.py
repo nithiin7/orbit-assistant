@@ -1,31 +1,19 @@
 """Profile photos. The web app resizes photos before upload; the API checks what it stores."""
 
 import uuid
-from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Literal, Protocol
+from typing import Protocol
 
+from orbit_api.services.avatars.models import (
+    Avatar,
+    AvatarContentType,
+    AvatarTooLargeError,
+    UnsupportedImageError,
+)
 from orbit_api.services.transactions import Transaction
-
-AvatarContentType = Literal["image/png", "image/jpeg", "image/webp"]
 
 # Far above a 256px photo (tens of KB), and small enough to store inline in the database.
 MAX_AVATAR_BYTES = 512 * 1024
-
-
-@dataclass(frozen=True, slots=True)
-class Avatar:
-    content_type: AvatarContentType
-    data: bytes
-    updated_at: datetime
-
-
-class UnsupportedImageError(Exception):
-    """The upload is not a PNG, JPEG, or WebP image."""
-
-
-class AvatarTooLargeError(Exception):
-    pass
 
 
 class AvatarRepository(Protocol):

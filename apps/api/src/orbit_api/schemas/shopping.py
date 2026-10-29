@@ -16,8 +16,7 @@ from pydantic import (
 )
 
 from orbit_api.schemas.common import Name, blank_to_none, multi_line, single_line
-from orbit_api.services.shopping import (
-    UNSET,
+from orbit_api.services.shopping.models import (
     ItemChanges,
     ItemDraft,
     ItemStatus,
@@ -25,6 +24,7 @@ from orbit_api.services.shopping import (
     ShoppingList,
     ShoppingListOverview,
 )
+from orbit_api.services.tasks.models import UNSET
 
 ITEM_NAME_MAX_LENGTH = 200
 QUANTITY_MAX_LENGTH = 50

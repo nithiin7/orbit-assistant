@@ -7,7 +7,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from orbit_api.schemas.common import Name
-from orbit_api.services.accounts import User
+from orbit_api.services.accounts.models import User
 
 
 class UserProfile(BaseModel):

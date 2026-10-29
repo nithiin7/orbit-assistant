@@ -15,12 +15,12 @@ from orbit_api.repositories.shopping import SqlShoppingItemRepository, SqlShoppi
 from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.repositories.workspaces import SqlWorkspaceRepository
-from orbit_api.services.accounts import AccountService
-from orbit_api.services.avatars import AvatarService
-from orbit_api.services.local_auth import LocalAuthService, PasswordHasher
-from orbit_api.services.shopping import ShoppingService
-from orbit_api.services.tasks import TaskService
-from orbit_api.services.workspaces import WorkspaceService
+from orbit_api.services.accounts.service import AccountService
+from orbit_api.services.avatars.service import AvatarService
+from orbit_api.services.local_auth.service import LocalAuthService, PasswordHasher
+from orbit_api.services.shopping.service import ShoppingService
+from orbit_api.services.tasks.service import TaskService
+from orbit_api.services.workspaces.service import WorkspaceService
 
 
 async def get_session(request: Request) -> AsyncIterator[AsyncSession]:

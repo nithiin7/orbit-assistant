@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from orbit_api.db.models import ShoppingItemModel, ShoppingListModel
 from orbit_api.repositories.transaction import flush
-from orbit_api.services.shopping import (
+from orbit_api.services.shopping.models import (
     ItemStatus,
     ShoppingItem,
     ShoppingItemNotFoundError,

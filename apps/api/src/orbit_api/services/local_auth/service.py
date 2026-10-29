@@ -8,43 +8,23 @@ session. Sessions expire after a fixed lifetime and are deleted on sign-out.
 import hashlib
 import secrets
 import uuid
-from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Protocol
 
 from anyio import to_thread
 
-from orbit_api.services.accounts import AccountRepository, AccountService, User
+from orbit_api.services.accounts.models import User
+from orbit_api.services.accounts.service import AccountRepository, AccountService
+from orbit_api.services.local_auth.models import (
+    EmailAlreadyRegisteredError,
+    InvalidCredentialsError,
+    LocalCredential,
+    LocalSession,
+    RegistrationClosedError,
+)
 from orbit_api.services.transactions import ConflictError, Transaction
 
 SESSION_TOKEN_BYTES = 32
-
-
-@dataclass(frozen=True, slots=True)
-class LocalCredential:
-    user_id: uuid.UUID
-    password_hash: str
-
-
-@dataclass(frozen=True, slots=True)
-class LocalSession:
-    """A new session. `token` is shown to the client once and never stored."""
-
-    token: str
-    expires_at: datetime
-    user: User
-
-
-class RegistrationClosedError(Exception):
-    """This installation does not accept new local accounts."""
-
-
-class EmailAlreadyRegisteredError(Exception):
-    pass
-
-
-class InvalidCredentialsError(Exception):
-    """Unknown email or wrong password. The two are deliberately indistinguishable."""
 
 
 class PasswordHasher(Protocol):

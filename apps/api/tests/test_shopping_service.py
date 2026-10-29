@@ -6,8 +6,7 @@ from datetime import datetime
 
 import pytest
 
-from orbit_api.services.shopping import (
-    DEFAULT_LIST_NAME,
+from orbit_api.services.shopping.models import (
     DefaultListError,
     ItemChanges,
     ItemDraft,
@@ -16,8 +15,8 @@ from orbit_api.services.shopping import (
     ShoppingList,
     ShoppingListNotFoundError,
     ShoppingListOverview,
-    ShoppingService,
 )
+from orbit_api.services.shopping.service import DEFAULT_LIST_NAME, ShoppingService
 from orbit_api.services.transactions import ConflictError
 from tests.test_account_service import FakeTransaction
 from tests.test_task_service import Clock

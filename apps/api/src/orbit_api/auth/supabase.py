@@ -12,7 +12,7 @@ import jwt
 from jwt import PyJWK, PyJWKClient
 from jwt.exceptions import InvalidTokenError, PyJWKClientConnectionError, PyJWKClientError
 
-from orbit_api.services.accounts import ExternalIdentity
+from orbit_api.services.accounts.models import ExternalIdentity
 
 ALGORITHMS = ["ES256", "RS256"]
 AUDIENCE = "authenticated"

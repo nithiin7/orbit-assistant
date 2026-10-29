@@ -180,7 +180,8 @@ apps/api/src/orbit_api/
 ├── auth/                # Adapters: Argon2 password hashing, Supabase JWT verification
 ├── system/              # Adapter: opening the OS file manager on the API's machine
 ├── schemas/             # Pydantic request/response models (the API contract)
-├── services/            # Domain logic: accounts, avatars, local auth, workspaces, tasks (no FastAPI/SQLAlchemy)
+├── services/            # Domain logic, one package per feature (no FastAPI/SQLAlchemy):
+│                        #   models.py (dataclasses, errors) and service.py (protocols, service)
 ├── repositories/        # SQLAlchemy implementations of the services' repository protocols
 └── db/                  # Database infrastructure (SQLAlchemy + Alembic, no FastAPI)
     ├── base.py          # Declarative `Base` with a constraint naming convention
@@ -294,7 +295,7 @@ structure.
 | ------------- | --------------------------- | ---------------------------------------------------------------- | ------------------------------ |
 | Routes        | `api/v1/<feature>.py`       | HTTP: routing, status codes, auth dependencies, calling services | Only for the `SessionDep` type |
 | Schemas       | `schemas/<feature>.py`      | Pydantic request/response models (the API contract)              | No                             |
-| Services      | `services/<feature>.py`     | Domain rules and authorization decisions, transaction boundaries | No (receives a repository)     |
+| Services      | `services/<feature>/`       | Domain rules and authorization decisions, transaction boundaries | No (receives a repository)     |
 | Repositories  | `repositories/<feature>.py` | Queries for one aggregate, always scoped to the owning user      | Yes                            |
 | Models        | `db/models/<feature>.py`    | SQLAlchemy ORM tables, subclasses of `db.base.Base`              | Yes                            |
 | DB foundation | `db/`                       | Engines, sessions, migrations, storage-mode selection            | Yes (no FastAPI)               |
@@ -302,7 +303,9 @@ structure.
 - Services depend on a small `Protocol` per repository, not on SQLAlchemy, so domain logic is
   unit-testable without a database (`tests/test_account_service.py`). A concrete repository
   class takes an `AsyncSession`. Repositories exchange frozen dataclasses (for example
-  `services.accounts.User`), never ORM objects.
+  `services.accounts.models.User`), never ORM objects. Each feature package keeps those domain
+  types and its errors in `models.py`, and the repository protocols and service class in
+  `service.py`.
 - Services commit through a `Transaction` protocol (`services/transactions.py`), which an
   `AsyncSession` adapter implements. Uniqueness violations surface as `ConflictError`, so services
   can handle races (two first requests for the same Supabase user) without importing SQLAlchemy.
@@ -440,7 +443,7 @@ and no fallback from one to the other.
 
 ### Authorization
 
-All rules live in `api/auth.py` and `services/workspaces.py`:
+All rules live in `api/auth.py` and `services/workspaces/service.py`:
 
 - **`CurrentUserDep`** reads only the `Authorization: Bearer` header. A missing, malformed,
   oversized, expired, or unknown token is `401 {"detail": "Sign in to continue."}` with

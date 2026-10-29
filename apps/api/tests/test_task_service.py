@@ -6,16 +6,16 @@ from datetime import UTC, date, datetime, timedelta
 
 import pytest
 
-from orbit_api.services.tasks import (
+from orbit_api.services.tasks.models import (
     Task,
     TaskChanges,
     TaskDraft,
     TaskNotFoundError,
     TaskPage,
     TaskQuery,
-    TaskService,
     TaskSummary,
 )
+from orbit_api.services.tasks.service import TaskService
 from tests.test_account_service import FakeTransaction
 
 pytestmark = pytest.mark.anyio

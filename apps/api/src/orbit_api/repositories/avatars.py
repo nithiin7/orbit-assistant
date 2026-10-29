@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from orbit_api.db.models import UserAvatarModel
 from orbit_api.repositories.transaction import flush
-from orbit_api.services.avatars import Avatar, AvatarContentType
+from orbit_api.services.avatars.models import Avatar, AvatarContentType
 
 
 class SqlAvatarRepository:

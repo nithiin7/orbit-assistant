@@ -7,11 +7,8 @@ from fastapi import APIRouter, HTTPException, Request, Response, status
 from orbit_api.api.auth import CurrentUserDep
 from orbit_api.api.dependencies import AccountServiceDep, AvatarServiceDep
 from orbit_api.schemas.users import UpdateProfileRequest, UserProfile
-from orbit_api.services.avatars import (
-    MAX_AVATAR_BYTES,
-    AvatarTooLargeError,
-    UnsupportedImageError,
-)
+from orbit_api.services.avatars.models import AvatarTooLargeError, UnsupportedImageError
+from orbit_api.services.avatars.service import MAX_AVATAR_BYTES
 
 router = APIRouter(
     prefix="/me", tags=["account"], responses={401: {"description": "Not signed in."}}

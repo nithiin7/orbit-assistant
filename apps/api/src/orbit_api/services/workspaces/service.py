@@ -1,35 +1,17 @@
 """Workspaces and the ownership checks that authorize access to them."""
 
 import uuid
-from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Literal, Protocol
+from typing import Protocol
 
 from orbit_api.services.transactions import Transaction
+from orbit_api.services.workspaces.models import (
+    PersonalWorkspaceError,
+    Workspace,
+    WorkspaceNotFoundError,
+)
 
 PERSONAL_WORKSPACE_NAME = "Personal"
-
-# Only owners exist until shared workspaces are designed.
-WorkspaceRole = Literal["owner"]
-
-
-@dataclass(frozen=True, slots=True)
-class Workspace:
-    id: uuid.UUID
-    owner_id: uuid.UUID
-    name: str
-    is_personal: bool
-    created_at: datetime
-    updated_at: datetime
-
-
-class WorkspaceNotFoundError(Exception):
-    """The workspace does not exist or the user may not access it. The two are deliberately
-    indistinguishable, so responses never reveal other users' workspaces."""
-
-
-class PersonalWorkspaceError(Exception):
-    """The personal workspace cannot be deleted; every user keeps exactly one."""
 
 
 class WorkspaceRepository(Protocol):

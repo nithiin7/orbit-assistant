@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from orbit_api.db.models import TaskModel
 from orbit_api.repositories.transaction import flush
-from orbit_api.services.tasks import (
+from orbit_api.services.tasks.models import (
     Task,
     TaskNotFoundError,
     TaskPage,

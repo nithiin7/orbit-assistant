@@ -12,7 +12,7 @@ from orbit_api.schemas.workspaces import (
     WorkspaceListResponse,
     WorkspaceResponse,
 )
-from orbit_api.services.workspaces import PersonalWorkspaceError
+from orbit_api.services.workspaces.models import PersonalWorkspaceError
 
 router = APIRouter(
     prefix="/workspaces",

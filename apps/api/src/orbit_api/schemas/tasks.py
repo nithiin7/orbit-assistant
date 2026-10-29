@@ -15,7 +15,7 @@ from pydantic import (
 )
 
 from orbit_api.schemas.common import blank_to_none, multi_line, single_line
-from orbit_api.services.tasks import (
+from orbit_api.services.tasks.models import (
     UNSET,
     SortOrder,
     Task,

@@ -7,7 +7,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from orbit_api.schemas.common import Name
-from orbit_api.services.workspaces import Workspace
+from orbit_api.services.workspaces.models import Workspace
 
 
 class WorkspaceResponse(BaseModel):

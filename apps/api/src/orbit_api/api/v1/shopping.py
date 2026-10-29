@@ -19,7 +19,7 @@ from orbit_api.schemas.shopping import (
     ShoppingListsResponse,
     UpdateItemRequest,
 )
-from orbit_api.services.shopping import (
+from orbit_api.services.shopping.models import (
     DefaultListError,
     ShoppingItemNotFoundError,
     ShoppingListNotFoundError,

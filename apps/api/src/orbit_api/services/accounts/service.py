@@ -1,38 +1,18 @@
 """User profiles and onboarding, shared by local and Supabase authentication."""
 
 import uuid
-from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Literal, Protocol
+from typing import Protocol
 
+from orbit_api.services.accounts.models import AuthProvider, ExternalIdentity, User
 from orbit_api.services.transactions import ConflictError, Transaction
-from orbit_api.services.workspaces import (
+from orbit_api.services.workspaces.service import (
     PERSONAL_WORKSPACE_NAME,
     WorkspaceRepository,
     new_workspace,
 )
 
-AuthProvider = Literal["local", "supabase"]
-
 DISPLAY_NAME_MAX_LENGTH = 100
-
-
-@dataclass(frozen=True, slots=True)
-class User:
-    id: uuid.UUID
-    auth_provider: AuthProvider
-    email: str
-    display_name: str
-    created_at: datetime
-
-
-@dataclass(frozen=True, slots=True)
-class ExternalIdentity:
-    """A user identity asserted by a verified Supabase access token."""
-
-    subject: str
-    email: str
-    display_name: str | None
 
 
 class AccountRepository(Protocol):
