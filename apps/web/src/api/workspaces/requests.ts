@@ -5,7 +5,7 @@ import type {
   WorkspaceList,
 } from "@orbit/contracts";
 
-import { request, type Signal, workspacePath } from "./client";
+import { request, type Signal, workspacePath } from "../client";
 
 export function listWorkspaces(token: string, { signal }: Signal = {}): Promise<WorkspaceList> {
   return request<WorkspaceList>("/api/v1/workspaces", { token, signal });

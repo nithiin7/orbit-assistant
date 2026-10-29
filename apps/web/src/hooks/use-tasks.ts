@@ -25,8 +25,8 @@ import {
 } from "@/api/tasks";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useWorkspaces } from "@/components/workspace/workspace-provider";
+import type { WorkspaceResource } from "@/hooks/query-resource";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
-import type { WorkspaceResource } from "@/hooks/use-workspace-resource";
 import { localDateString } from "@/lib/tasks";
 
 export type TaskListState =

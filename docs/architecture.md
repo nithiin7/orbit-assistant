@@ -497,10 +497,10 @@ All rules live in `api/auth.py` and `services/workspaces/service.py`:
   (`orbit:workspace:<user id>`). It is a selector, never a credential: every workspace request
   is authorized by the API. On load, a remembered workspace the user no longer has falls back to
   the personal workspace.
-- Workspace-scoped data loads through `useWorkspaceResource`, which aborts the request for the
-  previous workspace on switch and only renders a result while its workspace is still active, so
-  a slow response can't show the previous workspace's data. A 404 re-validates the workspace
-  list.
+- Workspace-scoped data is cached by TanStack Query under keys that start with the workspace
+  ID, so switching workspaces never shows the previous workspace's data, and the request for
+  the previous workspace is cancelled. Deleting a workspace drops everything cached for it. A
+  404 whose detail is "Workspace not found." re-validates the workspace list.
 
 ### Dashboard layout
 
@@ -588,9 +588,9 @@ workspace is `404 Workspace not found.`, and a task from another workspace is
   (debounced search, Open/Completed/All, priority filter, sort), the list, and an edit dialog on
   the native `<dialog>`. Keyboard: `N` focuses the composer, `/` focuses search, Escape clears
   the search or cancels a delete confirmation.
-- `useTaskList` loads the list for the active workspace, with the same stale-response guard as
-  `useWorkspaceResource`. Within a workspace it keeps the previous results on screen while a new
-  filter loads, and supports in-place updates.
+- `useTaskList` (in `src/hooks/use-tasks.ts`) queries the list for the active workspace.
+  Within a workspace it keeps the previous results on screen while a new filter loads.
+  `useTaskMutations` updates the cached lists in place and marks the dashboard summary stale.
 - Completing or reopening is optimistic: the checkbox changes at once and reverts with an error
   if the API refuses. A completed task stays visible, struck through, until the list reloads.
   Creating or editing a task reloads the list in the background, so it lands in sorted position.

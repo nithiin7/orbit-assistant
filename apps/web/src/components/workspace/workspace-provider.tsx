@@ -1,22 +1,18 @@
 "use client";
 
 import type { Workspace } from "@orbit/contracts";
-import {
-  createContext,
-  type ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import {
   createWorkspace as createWorkspaceRequest,
   deleteWorkspace as deleteWorkspaceRequest,
-  listWorkspaces,
+  removeCachedWorkspace,
   renameWorkspace as renameWorkspaceRequest,
+  replaceCachedWorkspace,
+  updateCachedWorkspaces,
+  workspaceListOptions,
 } from "@/api/workspaces";
 import { useAuth, useCurrentUser } from "@/components/auth/auth-provider";
 import {
@@ -53,93 +49,87 @@ export function useWorkspaces(): WorkspaceContextValue {
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const { withToken } = useAuth();
   const user = useCurrentUser();
-  const [workspaces, setWorkspaces] = useState<Workspace[] | null>(null);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [reloads, setReloads] = useState(0);
+  const queryClient = useQueryClient();
+  const list = useQuery(workspaceListOptions(withToken));
+  // The user's choice; falls back to the personal workspace when it's no longer in the list.
+  const [selectedId, setSelectedId] = useState(() => readWorkspacePreference(user.id));
+  const workspaces = list.data?.workspaces;
+  const active = workspaces ? pickActiveWorkspace(workspaces, selectedId) : null;
 
-  useEffect(() => {
-    const controller = new AbortController();
-    withToken((token) => listWorkspaces(token, { signal: controller.signal })).then(
-      (list) => {
-        setWorkspaces(list.workspaces);
-        setActiveId(
-          (current) =>
-            pickActiveWorkspace(list.workspaces, current ?? readWorkspacePreference(user.id))?.id ??
-            null,
-        );
-        setError(null);
-      },
-      (reason: unknown) => {
-        if (controller.signal.aborted) return;
-        setError(describeApiError(reason, "Couldn’t load your workspaces."));
-      },
-    );
-    return () => controller.abort();
-  }, [withToken, user.id, reloads]);
+  const choose = useCallback(
+    (workspaceId: string) => {
+      setSelectedId(workspaceId);
+      writeWorkspacePreference(user.id, workspaceId);
+    },
+    [user.id],
+  );
 
   const switchWorkspace = useCallback(
     (workspaceId: string) => {
-      if (!workspaces?.some((workspace) => workspace.id === workspaceId)) return;
-      setActiveId(workspaceId);
-      writeWorkspacePreference(user.id, workspaceId);
+      if (workspaces?.some((workspace) => workspace.id === workspaceId)) choose(workspaceId);
     },
-    [workspaces, user.id],
+    [workspaces, choose],
   );
 
-  const createWorkspace = useCallback(
-    async (name: string) => {
-      const workspace = await withToken((token) => createWorkspaceRequest(token, { name }));
-      setWorkspaces((current) => [...(current ?? []), workspace]);
-      setActiveId(workspace.id);
-      writeWorkspacePreference(user.id, workspace.id);
-      return workspace;
+  const { mutateAsync: create } = useMutation({
+    mutationFn: (name: string) => withToken((token) => createWorkspaceRequest(token, { name })),
+    onSuccess: (workspace) => {
+      updateCachedWorkspaces(queryClient, (current) => [...current, workspace]);
+      choose(workspace.id);
     },
-    [withToken, user.id],
-  );
+  });
+
+  const { mutateAsync: rename } = useMutation({
+    mutationFn: ({ workspaceId, name }: { workspaceId: string; name: string }) =>
+      withToken((token) => renameWorkspaceRequest(token, workspaceId, { name })),
+    onSuccess: (renamed) => replaceCachedWorkspace(queryClient, renamed),
+  });
+
+  const { mutateAsync: remove } = useMutation({
+    mutationFn: (workspaceId: string) =>
+      withToken((token) => deleteWorkspaceRequest(token, workspaceId)),
+    onSuccess: (_result, workspaceId) => {
+      if (active?.id === workspaceId) {
+        const next = pickActiveWorkspace(
+          (workspaces ?? []).filter((workspace) => workspace.id !== workspaceId),
+          null,
+        );
+        if (next) choose(next.id);
+      }
+      removeCachedWorkspace(queryClient, workspaceId);
+    },
+  });
 
   const renameWorkspace = useCallback(
-    async (workspaceId: string, name: string) => {
-      const renamed = await withToken((token) =>
-        renameWorkspaceRequest(token, workspaceId, { name }),
-      );
-      setWorkspaces((current) =>
-        (current ?? []).map((workspace) => (workspace.id === renamed.id ? renamed : workspace)),
-      );
-      return renamed;
-    },
-    [withToken],
+    (workspaceId: string, name: string) => rename({ workspaceId, name }),
+    [rename],
   );
 
-  const deleteWorkspace = useCallback(
-    async (workspaceId: string) => {
-      await withToken((token) => deleteWorkspaceRequest(token, workspaceId));
-      const remaining = (workspaces ?? []).filter((workspace) => workspace.id !== workspaceId);
-      setWorkspaces(remaining);
-      if (activeId === workspaceId) {
-        const next = pickActiveWorkspace(remaining, null);
-        setActiveId(next?.id ?? null);
-        if (next) writeWorkspacePreference(user.id, next.id);
-      }
-    },
-    [withToken, workspaces, activeId, user.id],
-  );
+  const { refetch } = list;
+  const refresh = useCallback(() => void refetch(), [refetch]);
 
-  const refresh = useCallback(() => {
-    setError(null);
-    setReloads((value) => value + 1);
-  }, []);
-
+  const listError = list.isError && !list.isFetching ? list.error : null;
   const state = useMemo<WorkspaceState>(() => {
-    const active = workspaces?.find((workspace) => workspace.id === activeId);
     if (workspaces && active) return { status: "ready", workspaces, active };
-    if (error) return { status: "error", message: error };
+    if (listError) {
+      return {
+        status: "error",
+        message: describeApiError(listError, "Couldn’t load your workspaces."),
+      };
+    }
     return { status: "loading" };
-  }, [workspaces, activeId, error]);
+  }, [workspaces, active, listError]);
 
   const value = useMemo(
-    () => ({ state, switchWorkspace, createWorkspace, renameWorkspace, deleteWorkspace, refresh }),
-    [state, switchWorkspace, createWorkspace, renameWorkspace, deleteWorkspace, refresh],
+    () => ({
+      state,
+      switchWorkspace,
+      createWorkspace: create,
+      renameWorkspace,
+      deleteWorkspace: remove,
+      refresh,
+    }),
+    [state, switchWorkspace, create, renameWorkspace, remove, refresh],
   );
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;

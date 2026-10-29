@@ -1,7 +1,9 @@
 import type { UseQueryResult } from "@tanstack/react-query";
 
 import { describeApiError } from "@/api/client";
-import type { WorkspaceResource } from "@/hooks/use-workspace-resource";
+
+export type WorkspaceResource<T> =
+  { status: "loading" } | { status: "error"; message: string } | { status: "success"; data: T };
 
 /**
  * A query's result as a loading, error, or success state for a view. A retry after an error

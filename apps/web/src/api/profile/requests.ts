@@ -1,6 +1,6 @@
 import type { UpdateProfileRequest, UserProfile } from "@orbit/contracts";
 
-import { request, send, type Signal } from "./client";
+import { request, send, type Signal } from "../client";
 
 export function getMe(token: string, { signal }: Signal = {}): Promise<UserProfile> {
   return request<UserProfile>("/api/v1/me", { token, signal });

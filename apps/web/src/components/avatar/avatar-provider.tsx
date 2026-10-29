@@ -1,17 +1,10 @@
 "use client";
 
-import {
-  createContext,
-  type ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createContext, type ReactNode, useContext, useEffect, useMemo } from "react";
 
-import { deleteMyAvatar, getMyAvatar, putMyAvatar } from "@/api/profile";
-import { useAuth, useCurrentUser } from "@/components/auth/auth-provider";
+import { avatarOptions, deleteMyAvatar, profileKeys, putMyAvatar } from "@/api/profile";
+import { useAuth } from "@/components/auth/auth-provider";
 import { prepareAvatar } from "@/lib/avatar";
 
 type AvatarContextValue = {
@@ -37,24 +30,11 @@ export function useAvatar(): AvatarContextValue {
  */
 export function AvatarProvider({ children }: { children: ReactNode }) {
   const { withToken } = useAuth();
-  const user = useCurrentUser();
-  const [url, setUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    withToken((token) => getMyAvatar(token, { signal: controller.signal })).then(
-      (blob) => {
-        setUrl(blob ? URL.createObjectURL(blob) : null);
-        setLoading(false);
-      },
-      () => {
-        // A missing photo is cosmetic: fall back to the initial rather than showing an error.
-        if (!controller.signal.aborted) setLoading(false);
-      },
-    );
-    return () => controller.abort();
-  }, [withToken, user.id]);
+  const queryClient = useQueryClient();
+  // A missing photo is cosmetic: on failure, `url` stays null and the initial shows instead.
+  const photo = useQuery(avatarOptions(withToken));
+  const blob = photo.data ?? null;
+  const url = useMemo(() => (blob ? URL.createObjectURL(blob) : null), [blob]);
 
   // Release each object URL once it is replaced, and the last one on unmount.
   useEffect(
@@ -64,21 +44,30 @@ export function AvatarProvider({ children }: { children: ReactNode }) {
     [url],
   );
 
-  const upload = useCallback(
-    async (file: File) => {
+  const { mutateAsync: upload } = useMutation({
+    mutationFn: async (file: File) => {
       const image = await prepareAvatar(file);
       await withToken((token) => putMyAvatar(token, image));
-      setUrl(URL.createObjectURL(image));
+      return image;
     },
-    [withToken],
+    onSuccess: (image) => queryClient.setQueryData(profileKeys.avatar(), image),
+  });
+
+  const { mutateAsync: remove } = useMutation({
+    mutationFn: () => withToken((token) => deleteMyAvatar(token)),
+    onSuccess: () => queryClient.setQueryData(profileKeys.avatar(), null),
+  });
+
+  const loading = photo.isPending && photo.fetchStatus !== "idle";
+  const value = useMemo(
+    () => ({
+      url,
+      loading,
+      upload: async (file: File) => void (await upload(file)),
+      remove: () => remove(),
+    }),
+    [url, loading, upload, remove],
   );
-
-  const remove = useCallback(async () => {
-    await withToken((token) => deleteMyAvatar(token));
-    setUrl(null);
-  }, [withToken]);
-
-  const value = useMemo(() => ({ url, loading, upload, remove }), [url, loading, upload, remove]);
 
   return <AvatarContext.Provider value={value}>{children}</AvatarContext.Provider>;
 }

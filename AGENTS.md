@@ -110,9 +110,9 @@ and `packages/*/package.json`. Check them rather than guessing.
   `requests.ts` (fetch functions), `queries.ts` (query keys, `queryOptions`, cache helpers),
   their tests, and `index.ts`. Query keys start with `["workspaces", workspaceId, …]` so
   workspaces never share cached data. Hooks that bind queries to auth and the active workspace
-  live in `src/hooks/` (for example `use-tasks.ts`). Areas not migrated yet are single files
-  using `useWorkspaceResource`; move them to queries rather than adding new hand-rolled
-  loaders. `fetch` is the HTTP client; don't add axios.
+  live in `src/hooks/` (for example `use-tasks.ts`); `queryResource` turns a query into a
+  view's loading, error, or success state. Don't add hand-rolled loaders with `useEffect`.
+  `fetch` is the HTTP client; don't add axios.
 - Each `src/lib` module has its own folder: `src/lib/<name>/<name>.ts`, its
   `<name>.test.ts`, and an `index.ts` that re-exports it, so imports stay `@/lib/<name>`.
   Related modules can share a domain folder without an index, like `src/lib/auth/`.
