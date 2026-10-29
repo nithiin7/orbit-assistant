@@ -23,8 +23,8 @@ export function ShoppingOverview() {
   const { resource, reload } = useWorkspaceResource(loadShoppingLists);
 
   return (
-    <section aria-labelledby="shopping-overview-heading">
-      <Card className="shadow-elevation-1" aria-busy={resource.status === "loading"}>
+    <section aria-labelledby="shopping-overview-heading" className="h-full">
+      <Card className="h-full shadow-elevation-1" aria-busy={resource.status === "loading"}>
         <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
           <h2
             id="shopping-overview-heading"

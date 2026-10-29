@@ -112,7 +112,7 @@ apps/web/src/
 ├── app/                 # Routes (App Router)
 │   ├── layout.tsx       # Root layout: theme provider + auth provider
 │   ├── (app)/           # Signed-in routes: RequireAuth + WorkspaceProvider + app shell
-│   │   ├── page.tsx     # Dashboard (active workspace, task summary, planned modules)
+│   │   ├── page.tsx     # Dashboard: user-arranged widgets (components/dashboard/)
 │   │   ├── tasks/       # Tasks page
 │   │   ├── settings/    # Settings: drill-down on small screens, split view on large; [panel]/ sub-pages
 │   │   └── [section]/   # Placeholder page for every other nav section
@@ -123,6 +123,7 @@ apps/web/src/
 │   ├── app-shell/       # Sidebar, mobile drawer, navigation links
 │   ├── auth/            # AuthProvider, RequireAuth, sign-in and sign-up forms
 │   ├── avatar/          # AvatarProvider (the user's photo as an object URL), UserAvatar
+│   ├── dashboard/       # Customizable dashboard grid and widgets without a module of their own
 │   ├── workspace/       # WorkspaceProvider, switcher, dashboard overview
 │   ├── tasks/           # Tasks page (composer, toolbar, list, edit dialog), dashboard summary
 │   ├── settings/        # Settings menu and the account, workspace, theme, and storage panels
@@ -136,6 +137,7 @@ apps/web/src/
     ├── api.ts           # Typed API client (types from @orbit/contracts)
     ├── auth/            # Auth clients (local, Supabase), session storage, validation
     ├── workspaces.ts    # Active-workspace selection and per-user preference
+    ├── dashboard.ts     # Dashboard widget catalog and per-user layout preference
     ├── tasks.ts         # Task filters, due-date display, validation mirroring the API
     ├── env.ts           # Validated public configuration
     └── utils.ts         # `cn()` class-name helper
@@ -280,6 +282,8 @@ written once. SQLite is embedded in the API process; local mode needs no databas
   `local_sessions`, and `workspaces`, and enables RLS on them in PostgreSQL.
 - `0003_create_user_avatars` creates `user_avatars` (profile photos) with RLS.
 - `0004_create_tasks` creates `tasks` with RLS (see [Tasks](#tasks)).
+- `0006_create_dashboard_layouts` creates `dashboard_layouts` with RLS (see
+  [Dashboard layout](#dashboard-layout)).
 - Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
   Startup only checks that the database is at the head revision. For a shared cloud database,
   schema changes should be deliberate and reviewable.
@@ -348,7 +352,7 @@ structure.
   schema to anyone holding the project's publishable (anon) key.
   1. Every migration that creates a table in PostgreSQL enables RLS on it in the same
      revision. `0002` does this for `users`, `local_credentials`, `local_sessions`, and
-     `workspaces`; `0003` for `user_avatars`; `0004` for `tasks`.
+     `workspaces`; `0003` for `user_avatars`; `0004` for `tasks`; `0006` for `dashboard_layouts`.
   2. **No policies exist**, deliberately: the browser never queries tables directly, so the
      Data API's `anon` and `authenticated` roles get no rows. Add `authenticated` policies
      (for example `owner_id = auth.uid()`) only if a client is ever allowed direct access.
@@ -379,6 +383,7 @@ users ──< workspaces ──< tasks    (owner_id → users.id, workspace_id �
   │                                  both ON DELETE CASCADE)
   │
   ├── user_avatars                (profile photo bytes and type, 1:1)
+  ├── dashboard_layouts           (dashboard widget order and widths, 1:1)
   ├── local_credentials           (local mode: email + Argon2id hash, 1:1)
   └──< local_sessions             (local mode: SHA-256 of the bearer token, expiry)
 ```
@@ -401,8 +406,11 @@ users ──< workspaces ──< tasks    (owner_id → users.id, workspace_id �
 - **Extensibility:** user data carries a non-null `workspace_id` foreign key, as `tasks` does;
   future notes and expenses will too. Shared workspaces would add a `workspace_members` table and change
   only the authorization check described below; the API already reports a `role` (`owner`).
-- There is no separate preferences table. The active workspace is a per-browser preference
-  (see [Workspace selection](#workspace-selection)).
+- **`dashboard_layouts`** holds a user's optional dashboard arrangement (see
+  [Dashboard layout](#dashboard-layout)). It belongs to the user, not a workspace, because it
+  holds no workspace data.
+- There is no general preferences table. The active workspace is a per-browser preference (see
+  [Workspace selection](#workspace-selection)).
 
 ### Local and cloud identities
 
@@ -487,6 +495,30 @@ All rules live in `api/auth.py` and `services/workspaces/service.py`:
   previous workspace on switch and only renders a result while its workspace is still active, so
   a slow response can't show the previous workspace's data. A 404 re-validates the workspace
   list.
+
+### Dashboard layout
+
+- The dashboard is a grid of widgets listed in `lib/dashboard.ts` (workspace, Orbit status,
+  tasks, shopping, planned modules). **Customize** lets the user add, remove, reorder, and resize
+  them. Each widget is half or full width; half-width widgets sit side by side from the `xl`
+  breakpoint, and every widget is full width below it.
+- The layout is saved per user in the `dashboard_layouts` table: one row per user with an
+  ordered JSON list of `{ id, size }` widgets. It holds no data, only arrangement, and it
+  follows the user across browsers and devices.
+  - `GET /api/v1/me/dashboard` returns it, or 204 when the user hasn't arranged their
+    dashboard. `PUT` replaces it; `DELETE` resets to the default. Widget IDs and sizes are
+    enums in the contract (`DashboardWidgetId`, `DashboardWidgetSize`), so the web app's widget
+    list can't drift from what the API accepts. Unknown fields, unknown widgets, and repeats are
+    rejected (422). On read, stored widgets this version doesn't know are skipped, so retiring a
+    widget can't break the response.
+  - The web app (`hooks/use-dashboard-layout.ts`) caches the layout in `localStorage`
+    (`orbit:dashboard:<user id>`, validated on read) so the page shows it before the API answers.
+    The account copy wins when it loads. A layout cached before the account had one is uploaded
+    once. Changes show at once and save in order, one request at a time; a failed save keeps the
+    change in this browser and offers a retry.
+- Removed widgets are not rendered, so they make no API requests.
+- Reordering uses move-earlier/later buttons, not drag and drop, so it works from the keyboard.
+  Changes are announced through a polite status region, and focus is kept on the control.
 
 ## Tasks
 

@@ -42,8 +42,8 @@ export function TaskOverview() {
   const { resource, reload } = useWorkspaceResource<TaskOverviewData>(loadTaskOverview);
 
   return (
-    <section aria-labelledby="task-overview-heading">
-      <Card className="shadow-elevation-1" aria-busy={resource.status === "loading"}>
+    <section aria-labelledby="task-overview-heading" className="h-full">
+      <Card className="h-full shadow-elevation-1" aria-busy={resource.status === "loading"}>
         <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
           <h2
             id="task-overview-heading"
