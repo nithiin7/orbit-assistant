@@ -3,13 +3,13 @@
 import { Camera, Trash2 } from "lucide-react";
 import { type ChangeEvent, useState } from "react";
 
-import { useAvatar } from "@/components/avatar/avatar-provider";
+import { describeApiError } from "@/api/client";
 import { UserAvatar } from "@/components/avatar/user-avatar";
 import { FormAlert } from "@/components/form-field";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { describeApiError } from "@/lib/api";
 import { AvatarImageError } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
+import { useAvatar } from "@/providers/avatar";
 
 type Busy = "uploading" | "removing" | null;
 

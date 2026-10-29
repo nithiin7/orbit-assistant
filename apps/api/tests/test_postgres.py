@@ -46,6 +46,9 @@ PROTECTED_TABLES = (
     "workspaces",
     "user_avatars",
     "tasks",
+    "shopping_lists",
+    "shopping_items",
+    "dashboard_layouts",
 )
 
 

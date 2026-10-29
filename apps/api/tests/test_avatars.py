@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from orbit_api.services.avatars import MAX_AVATAR_BYTES, detect_image_type
+from orbit_api.services.avatars.service import MAX_AVATAR_BYTES, detect_image_type
 from tests.support import bearer, sign_up
 
 AVATAR = "/api/v1/me/avatar"

@@ -1,26 +1,31 @@
 "use client";
 
-import type { Workspace } from "@orbit/contracts";
+import { useQuery } from "@tanstack/react-query";
 
-import { useCurrentUser } from "@/components/auth/auth-provider";
+import { workspaceOptions } from "@/api/workspaces";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useWorkspaceResource } from "@/hooks/use-workspace-resource";
-import { getWorkspace } from "@/lib/api";
+import { queryResource } from "@/hooks/query-resource";
+import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
+import { useAuth, useCurrentUser } from "@/providers/auth";
+import { useWorkspaces } from "@/providers/workspace";
 
 import { WorkspaceAvatar } from "./workspace-switcher";
-
-const loadWorkspace = (workspaceId: string, token: string, signal: AbortSignal) =>
-  getWorkspace(token, workspaceId, { signal });
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
 
 /** The active workspace, as confirmed by the API for the signed-in user. */
 export function WorkspaceOverview() {
   const user = useCurrentUser();
-  const { resource, reload } = useWorkspaceResource<Workspace>(loadWorkspace);
+  const { withToken } = useAuth();
+  const { state } = useWorkspaces();
+  const workspaceId = state.status === "ready" ? state.active.id : null;
+  const result = useQuery(workspaceOptions(withToken, workspaceId));
+  useWorkspaceNotFound(result.error);
+  const resource = queryResource(result, "Couldn’t load this workspace.");
+  const reload = () => void result.refetch();
 
   return (
     <section aria-labelledby="workspace-overview-heading" className="h-full">

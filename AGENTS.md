@@ -79,7 +79,7 @@ Run from the repository root. Setup: `pnpm install` (also installs Git hooks) an
 Narrow commands, for fast iteration:
 
 ```bash
-pnpm --filter @orbit/web exec vitest run src/lib/api.test.ts   # one web test file
+pnpm --filter @orbit/web exec vitest run src/api/client.test.ts   # one web test file
 pnpm --filter @orbit/web exec eslint src/lib                    # lint a web path
 cd apps/api && uv run pytest tests/test_health.py -k cors       # selected API tests
 cd apps/api && uv run ruff check src && uv run pyright          # API lint + types
@@ -100,8 +100,30 @@ and `packages/*/package.json`. Check them rather than guessing.
   `next typegen`, no `next lint`). Check the docs bundled at
   `apps/web/node_modules/next/dist/docs/` before using an unfamiliar API.
 - Layering: routes in `src/app/`, UI in `src/components/` (`ui/` holds small
-  shadcn/ui-compatible primitives), logic and data access in `src/lib/`. Call the API through
-  typed helpers in `src/lib/api.ts`, using types from `@orbit/contracts`.
+  shadcn/ui-compatible primitives), app-wide React context (auth, workspaces, avatar, query
+  client, theme) in `src/providers/`, data hooks in `src/hooks/`, API calls in `src/api/`, and
+  other logic in `src/lib/`. Dependencies point one way: components → hooks → providers →
+  api/lib. ESLint (`no-restricted-imports` in `apps/web/eslint.config.mjs`) enforces it.
+- Call the API only through the typed helpers in `src/api/`, using types from
+  `@orbit/contracts`. Each API area (`tasks`, `shopping`, `auth`, …) is a folder under
+  `src/api/`: `requests.ts` (fetch functions), `queries.ts` when the area has cached queries,
+  their tests, and an `index.ts` that re-exports them. All build on `client.ts`, which owns
+  `request`, `ApiError`, and `describeApiError`. Import from the area (`@/api/tasks`), not from
+  a root barrel.
+- Server data is fetched and cached with TanStack Query (`QueryProvider`, inside
+  `AuthProvider`, clears the cache when the user changes). An area's `queries.ts` holds its
+  query keys, `queryOptions`, and cache helpers. Query keys start with `["workspaces", workspaceId, …]` so
+  workspaces never share cached data. Hooks that bind queries to auth and the active workspace
+  live in `src/hooks/` (for example `use-tasks.ts`); `queryResource` turns a query into a
+  view's loading, error, or success state. Don't add hand-rolled loaders with `useEffect`.
+  `fetch` is the HTTP client; don't add axios.
+- Forms use React Hook Form with a Yup schema (`yupResolver`). Schemas live in `src/lib`
+  beside their domain (`@/lib/auth/validation`, `@/lib/tasks`, `@/lib/shopping`), mirror the
+  API's rules, and build on the text helpers in `@/lib/validation`. Show server failures with
+  `setError("root.server", …)` and `FormAlert`. Don't hand-roll field state or validators.
+- Each `src/lib` module has its own folder: `src/lib/<name>/<name>.ts`, its
+  `<name>.test.ts`, and an `index.ts` that re-exports it, so imports stay `@/lib/<name>`.
+  Related modules can share a domain folder without an index, like `src/lib/auth/`.
 - Accessibility: semantic HTML, labelled controls, full keyboard support, and visible focus
   states (`focus-visible:ring-2 focus-visible:ring-ring`). Decorative icons get
   `aria-hidden="true"`.
@@ -109,9 +131,9 @@ and `packages/*/package.json`. Check them rather than guessing.
   user-facing errors that are helpful without leaking internals.
 - Handle async work correctly: await or deliberately void promises, and handle rejections.
 - Style with Tailwind utilities and the design tokens in `src/app/globals.css`. Use `cn()` from
-  `src/lib/utils.ts` for conditional classes. Keep the restrained visual style.
+  `src/lib/utils/utils.ts` for conditional classes. Keep the restrained visual style.
 - Only `NEXT_PUBLIC_*` variables reach the browser, and they are public. **No secrets in client
-  code.** Validate public config in `src/lib/env.ts`.
+  code.** Validate public config in `src/lib/env/env.ts`.
 - Create a reusable component only when it removes real duplication or clarifies the code.
 - ESLint (Next.js, jsx-a11y, sorted imports) and Prettier (with Tailwind class sorting) are
   authoritative. Do not add competing style rules.
@@ -164,6 +186,9 @@ and `packages/*/package.json`. Check them rather than guessing.
     not add one without the task asking for it.
 - Web: Vitest + Testing Library + jsdom. Tests live next to the code as `*.test.ts(x)` under
   `apps/web/src/`. Query by role and accessible name. Mock `next/navigation` and network calls.
+  Render signed-in views with `renderSignedIn` (`src/test/session.tsx`) and standalone
+  components that query data with `renderWithQueries` (`src/test/query.tsx`); both give each
+  test a fresh query cache that doesn't retry. Mock the API with `mockApi` (`src/test/api-mock.ts`).
 - API: Pytest in `apps/api/tests/`. Use the `client` fixture from `conftest.py`, which builds an
   isolated app via `create_app(Settings(...))`. Pytest treats warnings as errors.
 - Test behavior, not implementation details. Mock external services, not the code under test.

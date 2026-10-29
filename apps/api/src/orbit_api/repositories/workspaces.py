@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from orbit_api.db.models import WorkspaceModel
 from orbit_api.repositories.transaction import flush
-from orbit_api.services.workspaces import Workspace
+from orbit_api.services.workspaces.models import Workspace
 
 
 def _to_workspace(model: WorkspaceModel) -> Workspace:

@@ -3,10 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { LOCAL_SESSION_KEY, readLocalSession } from "@/lib/auth/local-session";
+import { AuthProvider } from "@/providers/auth";
 import { ada, json, mockApi, status } from "@/test/api-mock";
 import { SESSION_TOKEN, storeSession } from "@/test/session";
 
-import { AuthProvider } from "./auth-provider";
 import { RequireAuth } from "./require-auth";
 import { SignInForm } from "./sign-in-form";
 import { SignUpForm } from "./sign-up-form";

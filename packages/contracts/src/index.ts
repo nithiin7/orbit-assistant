@@ -37,3 +37,18 @@ export type TaskListQuery = NonNullable<
 export type TaskSummaryQuery = NonNullable<
   paths["/api/v1/workspaces/{workspace_id}/tasks/summary"]["get"]["parameters"]["query"]
 >;
+export type ShoppingList = Schemas["ShoppingListResponse"];
+export type ShoppingListOverview = Schemas["ShoppingListOverviewResponse"];
+export type ShoppingLists = Schemas["ShoppingListsResponse"];
+export type ShoppingListRequest = Schemas["ShoppingListRequest"];
+export type ShoppingItem = Schemas["ShoppingItemResponse"];
+export type ShoppingItemStatus = ShoppingItem["status"];
+export type ShoppingItems = Schemas["ShoppingItemsResponse"];
+export type CreateShoppingItemRequest = Schemas["CreateItemRequest"];
+export type UpdateShoppingItemRequest = Schemas["UpdateItemRequest"];
+export type BulkChangeResponse = Schemas["BulkChangeResponse"];
+export type DashboardLayout = Schemas["DashboardLayoutResponse"];
+export type DashboardLayoutRequest = Schemas["DashboardLayoutRequest"];
+export type DashboardWidget = Schemas["DashboardWidgetModel"];
+export type DashboardWidgetId = DashboardWidget["id"];
+export type DashboardWidgetSize = DashboardWidget["size"];

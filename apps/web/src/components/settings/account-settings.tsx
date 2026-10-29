@@ -1,13 +1,16 @@
 "use client";
 
+import { yupResolver } from "@hookform/resolvers/yup";
 import { LogOut } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 
-import { useAuth, useCurrentUser } from "@/components/auth/auth-provider";
+import { describeApiError } from "@/api/client";
+import { updateMe } from "@/api/profile";
 import { FormAlert, FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
-import { describeApiError, updateMe } from "@/lib/api";
-import { validateName } from "@/lib/auth/validation";
+import { displayNameSchema } from "@/lib/auth/validation";
+import { useAuth, useCurrentUser } from "@/providers/auth";
 
 import { ProfilePhoto } from "./profile-photo";
 
@@ -19,34 +22,34 @@ const providerLabels = {
 export function AccountSettings() {
   const { withToken, setUser, signOut } = useAuth();
   const user = useCurrentUser();
-  const [displayName, setDisplayName] = useState(user.display_name);
-  const [fieldError, setFieldError] = useState<string | undefined>();
-  const [formError, setFormError] = useState<string | null>(null);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    reset,
+    control,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: yupResolver(displayNameSchema),
+    defaultValues: { displayName: user.display_name },
+  });
   const [saved, setSaved] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
-  const unchanged = displayName.trim() === user.display_name;
+  const unchanged = useWatch({ control, name: "displayName" }).trim() === user.display_name;
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const error = validateName(displayName, "your name");
-    setFieldError(error);
-    setFormError(null);
+  const onSubmit = handleSubmit(async ({ displayName }) => {
     setSaved(false);
-    if (error) return;
-    setSaving(true);
     try {
-      const updated = await withToken((token) =>
-        updateMe(token, { display_name: displayName.trim() }),
-      );
+      const updated = await withToken((token) => updateMe(token, { display_name: displayName }));
       setUser(updated);
-      setDisplayName(updated.display_name);
+      reset({ displayName: updated.display_name });
       setSaved(true);
     } catch (reason) {
-      setFormError(describeApiError(reason, "Couldn’t save your name. Try again."));
+      setError("root.server", {
+        message: describeApiError(reason, "Couldn’t save your name. Try again."),
+      });
     }
-    setSaving(false);
-  }
+  });
 
   return (
     <div className="space-y-6">
@@ -66,19 +69,14 @@ export function AccountSettings() {
       <form noValidate onSubmit={onSubmit} className="space-y-3">
         <FormField
           label="Display name"
-          name="name"
           autoComplete="name"
-          value={displayName}
-          onChange={(event) => {
-            setDisplayName(event.target.value);
-            setSaved(false);
-          }}
-          error={fieldError}
+          {...register("displayName", { onChange: () => setSaved(false) })}
+          error={errors.displayName?.message}
         />
-        <FormAlert message={formError} />
+        <FormAlert message={errors.root?.server?.message ?? null} />
         <div className="flex items-center gap-3">
-          <Button type="submit" size="sm" disabled={saving || unchanged}>
-            {saving ? "Saving…" : "Save name"}
+          <Button type="submit" size="sm" disabled={isSubmitting || unchanged}>
+            {isSubmitting ? "Saving…" : "Save name"}
           </Button>
           <p role="status" className="text-sm text-muted-foreground">
             {saved ? "Saved." : null}

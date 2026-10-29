@@ -11,14 +11,18 @@ from orbit_api.config import Settings
 from orbit_api.db.database import Database
 from orbit_api.repositories.accounts import SqlAccountRepository, SqlLocalAuthRepository
 from orbit_api.repositories.avatars import SqlAvatarRepository
+from orbit_api.repositories.dashboard import SqlDashboardRepository
+from orbit_api.repositories.shopping import SqlShoppingItemRepository, SqlShoppingListRepository
 from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.repositories.workspaces import SqlWorkspaceRepository
-from orbit_api.services.accounts import AccountService
-from orbit_api.services.avatars import AvatarService
-from orbit_api.services.local_auth import LocalAuthService, PasswordHasher
-from orbit_api.services.tasks import TaskService
-from orbit_api.services.workspaces import WorkspaceService
+from orbit_api.services.accounts.service import AccountService
+from orbit_api.services.avatars.service import AvatarService
+from orbit_api.services.dashboard.service import DashboardService
+from orbit_api.services.local_auth.service import LocalAuthService, PasswordHasher
+from orbit_api.services.shopping.service import ShoppingService
+from orbit_api.services.tasks.service import TaskService
+from orbit_api.services.workspaces.service import WorkspaceService
 
 
 async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
@@ -87,8 +91,26 @@ def get_avatar_service(session: SessionDep) -> AvatarService:
 AvatarServiceDep = Annotated[AvatarService, Depends(get_avatar_service)]
 
 
+def get_dashboard_service(session: SessionDep) -> DashboardService:
+    return DashboardService(SqlDashboardRepository(session), SqlTransaction(session))
+
+
+DashboardServiceDep = Annotated[DashboardService, Depends(get_dashboard_service)]
+
+
 def get_task_service(session: SessionDep) -> TaskService:
     return TaskService(SqlTaskRepository(session), SqlTransaction(session))
 
 
 TaskServiceDep = Annotated[TaskService, Depends(get_task_service)]
+
+
+def get_shopping_service(session: SessionDep) -> ShoppingService:
+    return ShoppingService(
+        SqlShoppingListRepository(session),
+        SqlShoppingItemRepository(session),
+        SqlTransaction(session),
+    )
+
+
+ShoppingServiceDep = Annotated[ShoppingService, Depends(get_shopping_service)]

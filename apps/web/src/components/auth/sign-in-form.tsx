@@ -1,27 +1,30 @@
 "use client";
 
+import { yupResolver } from "@hookform/resolvers/yup";
 import Link from "next/link";
-import { type FormEvent, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 
-import { focusFirstInvalid, FormAlert, FormField } from "@/components/form-field";
+import { FormAlert, FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { AuthFailure } from "@/lib/auth/auth-client";
-import { type FieldErrors, hasErrors, validateSignIn } from "@/lib/auth/validation";
+import { signInSchema } from "@/lib/auth/validation";
+import { useAuth } from "@/providers/auth";
 
 import { AuthCard, authLinkClassName } from "./auth-card";
-import { useAuth } from "./auth-provider";
 import { AuthErrorScreen, AuthLoadingScreen } from "./auth-status-screen";
 import { useAuthRedirect } from "./use-auth-redirect";
 
-type Field = "email" | "password";
-
 export function SignInForm({ next }: { next: string }) {
   const { state, signIn, retry } = useAuth();
-  const [values, setValues] = useState({ email: "", password: "" });
-  const [errors, setErrors] = useState<FieldErrors<Field>>({});
-  const [formError, setFormError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: yupResolver(signInSchema),
+    defaultValues: { email: "", password: "" },
+  });
   useAuthRedirect(state, next);
 
   if (state.status === "loading") return <AuthLoadingScreen compact label="Loading sign-in…" />;
@@ -32,25 +35,16 @@ export function SignInForm({ next }: { next: string }) {
   const { config } = state;
   const canSignUp = config.provider === "supabase" || config.registration_open;
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const fieldErrors = validateSignIn(values);
-    setErrors(fieldErrors);
-    setFormError(null);
-    if (hasErrors(fieldErrors)) {
-      focusFirstInvalid(formRef.current, fieldErrors, { email: "email", password: "password" });
-      return;
-    }
-    setSubmitting(true);
+  const onSubmit = handleSubmit(async ({ email, password }) => {
     try {
-      await signIn(values.email.trim(), values.password);
+      await signIn(email, password);
     } catch (error) {
-      setFormError(
-        error instanceof AuthFailure ? error.message : "Sign-in failed. Try again in a moment.",
-      );
-      setSubmitting(false);
+      setError("root.server", {
+        message:
+          error instanceof AuthFailure ? error.message : "Sign-in failed. Try again in a moment.",
+      });
     }
-  }
+  });
 
   return (
     <AuthCard
@@ -71,21 +65,18 @@ export function SignInForm({ next }: { next: string }) {
         ) : null
       }
     >
-      <form ref={formRef} noValidate onSubmit={onSubmit} className="space-y-4">
+      <form noValidate onSubmit={onSubmit} className="space-y-4">
         <FormField
           label="Email"
           type="email"
-          name="email"
           autoComplete="email"
           inputMode="email"
-          value={values.email}
-          onChange={(event) => setValues({ ...values, email: event.target.value })}
-          error={errors.email}
+          {...register("email")}
+          error={errors.email?.message}
         />
         <FormField
           label="Password"
           type="password"
-          name="password"
           autoComplete="current-password"
           labelAction={
             <Link
@@ -95,13 +86,12 @@ export function SignInForm({ next }: { next: string }) {
               Forgot password?
             </Link>
           }
-          value={values.password}
-          onChange={(event) => setValues({ ...values, password: event.target.value })}
-          error={errors.password}
+          {...register("password")}
+          error={errors.password?.message}
         />
-        <FormAlert message={formError} />
-        <Button type="submit" className="w-full" disabled={submitting}>
-          {submitting ? "Signing in…" : "Sign in"}
+        <FormAlert message={errors.root?.server?.message ?? null} />
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Signing in…" : "Sign in"}
         </Button>
       </form>
     </AuthCard>

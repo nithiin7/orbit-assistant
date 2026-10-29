@@ -3,9 +3,10 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
-import { AuthProvider } from "@/components/auth/auth-provider";
-import { ThemeProvider } from "@/components/theme-provider";
 import { sidebarPreferenceScript } from "@/lib/sidebar-preference";
+import { AuthProvider } from "@/providers/auth";
+import { QueryProvider } from "@/providers/query";
+import { ThemeProvider } from "@/providers/theme";
 
 export const metadata: Metadata = {
   title: { default: "Orbit", template: "%s · Orbit" },
@@ -33,7 +34,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <QueryProvider>{children}</QueryProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

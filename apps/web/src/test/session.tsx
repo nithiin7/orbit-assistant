@@ -1,11 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
-import { AuthProvider } from "@/components/auth/auth-provider";
+import { createQueryClient } from "@/api/query-client";
 import { RequireAuth } from "@/components/auth/require-auth";
-import { AvatarProvider } from "@/components/avatar/avatar-provider";
-import { WorkspaceProvider } from "@/components/workspace/workspace-provider";
 import { writeLocalSession } from "@/lib/auth/local-session";
+import { AuthProvider } from "@/providers/auth";
+import { AvatarProvider } from "@/providers/avatar";
+import { QueryProvider } from "@/providers/query";
+import { WorkspaceProvider } from "@/providers/workspace";
 
 export const SESSION_TOKEN = "local-session-token";
 
@@ -17,18 +19,21 @@ export function storeSession(token = SESSION_TOKEN) {
 /**
  * Render `ui` inside the real auth and workspace providers, with a stored local session.
  * Mock the API (config, `/me`, workspaces, and the profile photo) with `mockApi` first.
+ * Each render gets an empty query cache that doesn't retry, so failures show at once.
  */
 export async function renderSignedIn(ui: ReactNode) {
   storeSession();
   const result = render(
     <AuthProvider>
-      <RequireAuth>
-        <AvatarProvider>
-          <WorkspaceProvider>
-            <div data-testid="signed-in">{ui}</div>
-          </WorkspaceProvider>
-        </AvatarProvider>
-      </RequireAuth>
+      <QueryProvider client={createQueryClient({ retry: false })}>
+        <RequireAuth>
+          <AvatarProvider>
+            <WorkspaceProvider>
+              <div data-testid="signed-in">{ui}</div>
+            </WorkspaceProvider>
+          </AvatarProvider>
+        </RequireAuth>
+      </QueryProvider>
     </AuthProvider>,
   );
   // RequireAuth renders its children only once `/me` confirmed the session.

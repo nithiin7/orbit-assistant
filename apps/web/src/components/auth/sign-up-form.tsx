@@ -1,25 +1,20 @@
 "use client";
 
+import { yupResolver } from "@hookform/resolvers/yup";
 import { MailCheck } from "lucide-react";
 import Link from "next/link";
-import { type FormEvent, useRef, useState } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
-import { focusFirstInvalid, FormAlert, FormField } from "@/components/form-field";
+import { FormAlert, FormField } from "@/components/form-field";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { AuthFailure } from "@/lib/auth/auth-client";
-import {
-  type FieldErrors,
-  hasErrors,
-  PASSWORD_MIN_LENGTH,
-  validateSignUp,
-} from "@/lib/auth/validation";
+import { PASSWORD_MIN_LENGTH, signUpSchema } from "@/lib/auth/validation";
+import { useAuth } from "@/providers/auth";
 
 import { AuthCard, authLinkClassName } from "./auth-card";
-import { useAuth } from "./auth-provider";
 import { AuthErrorScreen, AuthLoadingScreen } from "./auth-status-screen";
 import { useAuthRedirect } from "./use-auth-redirect";
-
-type Field = "displayName" | "email" | "password";
 
 const signInFooter = (
   <>
@@ -32,12 +27,16 @@ const signInFooter = (
 
 export function SignUpForm() {
   const { state, signUp, retry } = useAuth();
-  const [values, setValues] = useState({ displayName: "", email: "", password: "" });
-  const [errors, setErrors] = useState<FieldErrors<Field>>({});
-  const [formError, setFormError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: yupResolver(signUpSchema),
+    defaultValues: { displayName: "", email: "", password: "" },
+  });
   const [confirmationSentTo, setConfirmationSentTo] = useState<string | null>(null);
-  const formRef = useRef<HTMLFormElement>(null);
   useAuthRedirect(state, "/");
 
   if (state.status === "loading") return <AuthLoadingScreen compact label="Loading sign-up…" />;
@@ -79,35 +78,17 @@ export function SignUpForm() {
     );
   }
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const fieldErrors = validateSignUp(values);
-    setErrors(fieldErrors);
-    setFormError(null);
-    if (hasErrors(fieldErrors)) {
-      focusFirstInvalid(formRef.current, fieldErrors, {
-        displayName: "name",
-        email: "email",
-        password: "password",
-      });
-      return;
-    }
-    setSubmitting(true);
-    const email = values.email.trim();
+  const onSubmit = handleSubmit(async (values) => {
     try {
-      const result = await signUp({
-        email,
-        password: values.password,
-        displayName: values.displayName.trim(),
-      });
-      if (result === "confirmation-required") setConfirmationSentTo(email);
+      const result = await signUp(values);
+      if (result === "confirmation-required") setConfirmationSentTo(values.email);
     } catch (error) {
-      setFormError(
-        error instanceof AuthFailure ? error.message : "Couldn’t create your account. Try again.",
-      );
+      setError("root.server", {
+        message:
+          error instanceof AuthFailure ? error.message : "Couldn’t create your account. Try again.",
+      });
     }
-    setSubmitting(false);
-  }
+  });
 
   return (
     <AuthCard
@@ -119,38 +100,32 @@ export function SignUpForm() {
       }
       footer={signInFooter}
     >
-      <form ref={formRef} noValidate onSubmit={onSubmit} className="space-y-4">
+      <form noValidate onSubmit={onSubmit} className="space-y-4">
         <FormField
           label="Name"
-          name="name"
           autoComplete="name"
-          value={values.displayName}
-          onChange={(event) => setValues({ ...values, displayName: event.target.value })}
-          error={errors.displayName}
+          {...register("displayName")}
+          error={errors.displayName?.message}
         />
         <FormField
           label="Email"
           type="email"
-          name="email"
           autoComplete="email"
           inputMode="email"
-          value={values.email}
-          onChange={(event) => setValues({ ...values, email: event.target.value })}
-          error={errors.email}
+          {...register("email")}
+          error={errors.email?.message}
         />
         <FormField
           label="Password"
           type="password"
-          name="password"
           autoComplete="new-password"
           hint={`At least ${PASSWORD_MIN_LENGTH} characters.`}
-          value={values.password}
-          onChange={(event) => setValues({ ...values, password: event.target.value })}
-          error={errors.password}
+          {...register("password")}
+          error={errors.password?.message}
         />
-        <FormAlert message={formError} />
-        <Button type="submit" className="w-full" disabled={submitting}>
-          {submitting ? "Creating account…" : "Create account"}
+        <FormAlert message={errors.root?.server?.message ?? null} />
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Creating account…" : "Create account"}
         </Button>
       </form>
     </AuthCard>

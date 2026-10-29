@@ -1,16 +1,18 @@
 "use client";
 
+import { yupResolver } from "@hookform/resolvers/yup";
 import { KeyRound, MailCheck } from "lucide-react";
 import Link from "next/link";
-import { type FormEvent, useRef, useState } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { FormAlert, FormField } from "@/components/form-field";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { AuthFailure } from "@/lib/auth/auth-client";
-import { validateEmail } from "@/lib/auth/validation";
+import { forgotPasswordSchema } from "@/lib/auth/validation";
+import { useAuth } from "@/providers/auth";
 
 import { AuthCard, authLinkClassName } from "./auth-card";
-import { useAuth } from "./auth-provider";
 import { AuthErrorScreen, AuthLoadingScreen } from "./auth-status-screen";
 import { useAuthRedirect } from "./use-auth-redirect";
 
@@ -48,12 +50,13 @@ export function LocalRecoveryUnavailable() {
 
 export function ForgotPasswordForm() {
   const { state, requestPasswordReset, retry } = useAuth();
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState<string | undefined>();
-  const [formError, setFormError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm({ resolver: yupResolver(forgotPasswordSchema), defaultValues: { email: "" } });
   const [sentTo, setSentTo] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   useAuthRedirect(state, "/");
 
   if (state.status === "loading") return <AuthLoadingScreen compact label="Loading…" />;
@@ -85,29 +88,19 @@ export function ForgotPasswordForm() {
     );
   }
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const fieldError = validateEmail(email);
-    setError(fieldError);
-    setFormError(null);
-    if (fieldError) {
-      inputRef.current?.focus();
-      return;
-    }
-    setSubmitting(true);
-    const address = email.trim();
+  const onSubmit = handleSubmit(async ({ email }) => {
     try {
-      await requestPasswordReset(address);
-      setSentTo(address);
+      await requestPasswordReset(email);
+      setSentTo(email);
     } catch (failure) {
-      setFormError(
-        failure instanceof AuthFailure
-          ? failure.message
-          : "Couldn’t send the reset link. Try again.",
-      );
+      setError("root.server", {
+        message:
+          failure instanceof AuthFailure
+            ? failure.message
+            : "Couldn’t send the reset link. Try again.",
+      });
     }
-    setSubmitting(false);
-  }
+  });
 
   return (
     <AuthCard
@@ -117,19 +110,16 @@ export function ForgotPasswordForm() {
     >
       <form noValidate onSubmit={onSubmit} className="space-y-4">
         <FormField
-          ref={inputRef}
           label="Email"
           type="email"
-          name="email"
           autoComplete="email"
           inputMode="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          error={error}
+          {...register("email")}
+          error={errors.email?.message}
         />
-        <FormAlert message={formError} />
-        <Button type="submit" className="w-full" disabled={submitting}>
-          {submitting ? "Sending link…" : "Send reset link"}
+        <FormAlert message={errors.root?.server?.message ?? null} />
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Sending link…" : "Send reset link"}
         </Button>
       </form>
     </AuthCard>

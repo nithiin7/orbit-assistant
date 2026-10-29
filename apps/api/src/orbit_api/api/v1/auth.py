@@ -13,7 +13,7 @@ from orbit_api.schemas.auth import (
     SupabaseAuthConfig,
 )
 from orbit_api.schemas.users import UserProfile
-from orbit_api.services.local_auth import (
+from orbit_api.services.local_auth.models import (
     EmailAlreadyRegisteredError,
     InvalidCredentialsError,
     LocalSession,

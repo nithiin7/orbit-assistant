@@ -46,16 +46,6 @@ export function FormField({ label, hint, error, labelAction, ...inputProps }: Fo
   );
 }
 
-/** Focus the first field with an error. `fields` maps error keys to input names, in form order. */
-export function focusFirstInvalid(
-  form: HTMLFormElement | null,
-  errors: Record<string, string | undefined>,
-  fields: Record<string, string>,
-) {
-  const name = Object.entries(fields).find(([key]) => errors[key])?.[1];
-  if (name) form?.querySelector<HTMLInputElement>(`[name="${name}"]`)?.focus();
-}
-
 /** A form-level error, announced when it appears. */
 export function FormAlert({ message }: { message: string | null }) {
   return (

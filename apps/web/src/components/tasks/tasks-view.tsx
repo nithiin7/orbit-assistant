@@ -4,21 +4,12 @@ import type { CreateTaskRequest, Task, UpdateTaskRequest } from "@orbit/contract
 import { CheckCheck, ListTodo, SearchX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { useAuth } from "@/components/auth/auth-provider";
+import { describeApiError } from "@/api/client";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useWorkspaces } from "@/components/workspace/workspace-provider";
-import { useTaskList } from "@/hooks/use-task-list";
-import {
-  completeTask,
-  createTask,
-  deleteTask,
-  describeApiError,
-  reopenTask,
-  updateTask,
-} from "@/lib/api";
+import { useTaskList, useTaskMutations } from "@/hooks/use-tasks";
 import { isEditableTarget } from "@/lib/keyboard";
 import {
   DEFAULT_TASK_FILTERS,
@@ -28,6 +19,7 @@ import {
   toTaskListQuery,
 } from "@/lib/tasks";
 import { cn } from "@/lib/utils";
+import { useWorkspaces } from "@/providers/workspace";
 
 import { TaskComposer } from "./task-composer";
 import { TaskEditDialog } from "./task-edit-dialog";
@@ -55,11 +47,11 @@ export function TasksPanel() {
 }
 
 function TasksView({ workspaceId }: { workspaceId: string }) {
-  const { withToken } = useAuth();
   const [filters, setFilters] = useState<TaskFilters>(DEFAULT_TASK_FILTERS);
   const [search, setSearch] = useState("");
   const query = useMemo(() => toTaskListQuery(filters), [filters]);
-  const { state, refreshing, reload, refresh, replaceTask, removeTask } = useTaskList(query);
+  const { state, refreshing, reload } = useTaskList(workspaceId, query);
+  const mutations = useTaskMutations(workspaceId);
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [editing, setEditing] = useState<Task | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -105,13 +97,11 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
 
   const create = useCallback(
     async (draft: CreateTaskRequest) => {
-      const task = await withToken((token) => createTask(token, workspaceId, draft));
+      const task = await mutations.create.mutateAsync(draft);
       setActionError(null);
       setAnnouncement(`Added “${task.title}”.`);
-      // Reload in place so the new task lands where the current sort puts it.
-      refresh();
     },
-    [withToken, workspaceId, refresh],
+    [mutations.create],
   );
 
   const toggle = useCallback(
@@ -119,20 +109,10 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
       const completing = task.status === "open";
       setActionError(null);
       setTaskPending(task.id, true);
-      // Show the change immediately; the task stays in view until the list reloads.
-      replaceTask({
-        ...task,
-        status: completing ? "completed" : "open",
-        completed_at: completing ? new Date().toISOString() : null,
-      });
       try {
-        const updated = await withToken((token) =>
-          (completing ? completeTask : reopenTask)(token, workspaceId, task.id),
-        );
-        replaceTask(updated);
+        await mutations.toggle.mutateAsync(task);
         setAnnouncement(completing ? `Completed “${task.title}”.` : `Reopened “${task.title}”.`);
       } catch (reason) {
-        replaceTask(task);
         setActionError(
           describeApiError(
             reason,
@@ -142,19 +122,16 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
       }
       setTaskPending(task.id, false);
     },
-    [withToken, workspaceId, replaceTask, setTaskPending],
+    [mutations.toggle, setTaskPending],
   );
 
   const save = useCallback(
     async (task: Task, changes: UpdateTaskRequest) => {
-      const updated = await withToken((token) => updateTask(token, workspaceId, task.id, changes));
-      replaceTask(updated);
+      const updated = await mutations.update.mutateAsync({ task, changes });
       setActionError(null);
       setAnnouncement(`Saved “${updated.title}”.`);
-      // A new due date or priority can move the task in the current sort.
-      refresh();
     },
-    [withToken, workspaceId, replaceTask, refresh],
+    [mutations.update],
   );
 
   const remove = useCallback(
@@ -162,8 +139,7 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
       setActionError(null);
       setTaskPending(task.id, true);
       try {
-        await withToken((token) => deleteTask(token, workspaceId, task.id));
-        removeTask(task.id);
+        await mutations.remove.mutateAsync(task);
         setAnnouncement(`Deleted “${task.title}”.`);
         // The row and its focused button are gone; keep focus in the list.
         listRef.current?.focus();
@@ -172,7 +148,7 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
       }
       setTaskPending(task.id, false);
     },
-    [withToken, workspaceId, removeTask, setTaskPending],
+    [mutations.remove, setTaskPending],
   );
 
   const clearNarrowing = () => {
@@ -212,18 +188,18 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
                 Try again
               </Button>
             </div>
-          ) : state.tasks.length === 0 ? (
+          ) : state.data.tasks.length === 0 ? (
             <TaskEmptyState filters={filters} onClear={clearNarrowing} />
           ) : (
             <div className="space-y-2">
               <ul
-                aria-label={`${state.total} ${state.total === 1 ? "task" : "tasks"}`}
+                aria-label={`${state.data.total} ${state.data.total === 1 ? "task" : "tasks"}`}
                 className={cn(
                   "divide-y overflow-hidden rounded-xl border bg-card shadow-elevation-1 transition-opacity duration-150",
                   refreshing && "opacity-70",
                 )}
               >
-                {state.tasks.map((task) => (
+                {state.data.tasks.map((task) => (
                   <TaskItem
                     key={task.id}
                     task={task}
@@ -236,9 +212,9 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
                 ))}
               </ul>
               <p className="px-1 text-xs text-muted-foreground">
-                {state.total > state.tasks.length
-                  ? `Showing ${state.tasks.length} of ${state.total} tasks. Search or filter to find the rest.`
-                  : `${state.total} ${state.total === 1 ? "task" : "tasks"}`}
+                {state.data.total > state.data.tasks.length
+                  ? `Showing ${state.data.tasks.length} of ${state.data.total} tasks. Search or filter to find the rest.`
+                  : `${state.data.total} ${state.data.total === 1 ? "task" : "tasks"}`}
               </p>
             </div>
           )}

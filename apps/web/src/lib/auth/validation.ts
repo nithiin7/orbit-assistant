@@ -1,76 +1,62 @@
-/** Client-side checks that mirror the API's validation, for immediate, field-level feedback. */
+/** Form schemas that mirror the API's validation, for immediate, field-level feedback. */
+
+import { object, ref, string } from "yup";
+
+import { singleLineText } from "@/lib/validation";
 
 export const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_LENGTH = 128;
 export const NAME_MAX_LENGTH = 100;
 
+const EMAIL_MAX_LENGTH = 320;
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-// Control characters, which the API rejects in names.
-const CONTROL_CHARACTERS = /\p{Cc}/u;
+const INVALID_EMAIL = "Enter a valid email address.";
 
-export type FieldErrors<Field extends string> = Partial<Record<Field, string>>;
+export const emailField = string()
+  .trim()
+  .required("Enter your email address.")
+  .max(EMAIL_MAX_LENGTH, INVALID_EMAIL)
+  .matches(EMAIL_PATTERN, { message: INVALID_EMAIL, excludeEmptyString: true });
 
-export function validateEmail(email: string): string | undefined {
-  const value = email.trim();
-  if (!value) return "Enter your email address.";
-  if (value.length > 320 || !EMAIL_PATTERN.test(value)) return "Enter a valid email address.";
-  return undefined;
+/** A person's or workspace's name. `label` completes "Enter …" when the name is missing. */
+export function nameField(label = "a name") {
+  return singleLineText(NAME_MAX_LENGTH, "Remove unsupported characters.").required(
+    `Enter ${label}.`,
+  );
 }
 
-export function validateName(name: string, label = "a name"): string | undefined {
-  const value = name.trim();
-  if (!value) return `Enter ${label}.`;
-  if (value.length > NAME_MAX_LENGTH) return `Use ${NAME_MAX_LENGTH} characters or fewer.`;
-  if (CONTROL_CHARACTERS.test(value)) return "Remove unsupported characters.";
-  return undefined;
-}
+/** A password being chosen. Not trimmed: spaces are part of a password. */
+export const newPasswordField = string()
+  .defined()
+  .min(PASSWORD_MIN_LENGTH, `Use at least ${PASSWORD_MIN_LENGTH} characters.`)
+  .max(PASSWORD_MAX_LENGTH, `Use ${PASSWORD_MAX_LENGTH} characters or fewer.`);
 
-export function validateNewPassword(password: string): string | undefined {
-  if (password.length < PASSWORD_MIN_LENGTH) {
-    return `Use at least ${PASSWORD_MIN_LENGTH} characters.`;
-  }
-  if (password.length > PASSWORD_MAX_LENGTH) {
-    return `Use ${PASSWORD_MAX_LENGTH} characters or fewer.`;
-  }
-  return undefined;
-}
+/** Signing in checks only that a password was entered, not the policy for new ones. */
+export const signInSchema = object({
+  email: emailField,
+  password: string().required("Enter your password."),
+});
 
-export function validateSignIn(values: {
-  email: string;
-  password: string;
-}): FieldErrors<"email" | "password"> {
-  return {
-    email: validateEmail(values.email),
-    password: values.password ? undefined : "Enter your password.",
-  };
-}
+export const signUpSchema = object({
+  displayName: nameField("your name"),
+  email: emailField,
+  password: newPasswordField,
+});
 
-export function validateSignUp(values: {
-  displayName: string;
-  email: string;
-  password: string;
-}): FieldErrors<"displayName" | "email" | "password"> {
-  return {
-    displayName: validateName(values.displayName, "your name"),
-    email: validateEmail(values.email),
-    password: validateNewPassword(values.password),
-  };
-}
+export const forgotPasswordSchema = object({ email: emailField });
 
-export function validatePasswordReset(values: {
-  password: string;
-  confirmPassword: string;
-}): FieldErrors<"password" | "confirmPassword"> {
-  return {
-    password: validateNewPassword(values.password),
-    confirmPassword: !values.confirmPassword
-      ? "Enter the new password again."
-      : values.confirmPassword !== values.password
-        ? "The passwords don’t match."
-        : undefined,
-  };
-}
+export const passwordResetSchema = object({
+  password: newPasswordField,
+  confirmPassword: string()
+    .required("Enter the new password again.")
+    // A test rather than `oneOf`, which Yup would check before `required`.
+    .test(
+      "matches-password",
+      "The passwords don’t match.",
+      (value, context) => !value || value === context.resolve(ref<string>("password")),
+    ),
+});
 
-export function hasErrors(errors: Record<string, string | undefined>): boolean {
-  return Object.values(errors).some(Boolean);
-}
+export const displayNameSchema = object({ displayName: nameField("your name") });
+
+export const workspaceNameSchema = object({ name: nameField("a workspace name") });

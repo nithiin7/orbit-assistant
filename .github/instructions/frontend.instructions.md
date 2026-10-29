@@ -13,17 +13,18 @@ Follows the shared rules in `AGENTS.md`. Frontend specifics:
 - Server Components by default. Add `"use client"` only for state, effects, event handlers, or
   browser APIs, and keep client components small.
 - Layout: routes in `src/app/`, components in `src/components/` (`ui/` = small
-  shadcn/ui-compatible primitives), logic in `src/lib/`. Navigation items come from
-  `src/lib/navigation.ts`.
-- Data access goes through typed helpers in `src/lib/api.ts`, using `import type` from
+  shadcn/ui-compatible primitives), logic in `src/lib/`. App-wide context lives in `src/providers/`, data
+  hooks in `src/hooks/`; dependencies point components → hooks → providers → api/lib. Navigation items come from
+  `src/lib/navigation/navigation.ts`.
+- Data access goes through typed helpers in `src/api/`, using `import type` from
   `@orbit/contracts`. Don't call `fetch` against the API directly from components.
 - Every data-driven view handles loading, error, empty, and success states.
 - Accessibility: semantic elements, labelled controls, keyboard support, visible focus
   (`focus-visible:ring-2 focus-visible:ring-ring`), `aria-hidden="true"` on decorative icons.
 - Styling: Tailwind utilities with the tokens in `src/app/globals.css`, combined with `cn()`
-  from `src/lib/utils.ts`. Prettier sorts classes. Keep the restrained, minimal style.
+  from `src/lib/utils/utils.ts`. Prettier sorts classes. Keep the restrained, minimal style.
 - Imports use the `@/` alias for `src/`. ESLint enforces sorted imports and type-only imports.
-- Public config is read and validated in `src/lib/env.ts`. Only `NEXT_PUBLIC_*` values, never
+- Public config is read and validated in `src/lib/env/env.ts`. Only `NEXT_PUBLIC_*` values, never
   secrets.
 - Verify with `pnpm lint:web`, `pnpm --filter @orbit/web typecheck`, `pnpm test:web`, and
   `pnpm build`.

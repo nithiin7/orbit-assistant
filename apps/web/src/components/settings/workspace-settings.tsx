@@ -1,17 +1,19 @@
 "use client";
 
+import { yupResolver } from "@hookform/resolvers/yup";
 import type { Workspace } from "@orbit/contracts";
 import { Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 
+import { describeApiError } from "@/api/client";
 import { FormAlert, FormField } from "@/components/form-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useWorkspaces } from "@/components/workspace/workspace-provider";
 import { WorkspaceAvatar } from "@/components/workspace/workspace-switcher";
-import { describeApiError } from "@/lib/api";
-import { validateName } from "@/lib/auth/validation";
+import { workspaceNameSchema } from "@/lib/auth/validation";
+import { useWorkspaces } from "@/providers/workspace";
 
 export function WorkspaceSettings() {
   const { state, switchWorkspace, refresh } = useWorkspaces();
@@ -83,47 +85,45 @@ export function WorkspaceSettings() {
 
 function RenameWorkspaceForm({ workspace }: { workspace: Workspace }) {
   const { renameWorkspace } = useWorkspaces();
-  const [name, setName] = useState(workspace.name);
-  const [fieldError, setFieldError] = useState<string | undefined>();
-  const [formError, setFormError] = useState<string | null>(null);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    reset,
+    control,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: yupResolver(workspaceNameSchema),
+    defaultValues: { name: workspace.name },
+  });
+  const unchanged = useWatch({ control, name: "name" }).trim() === workspace.name;
   const [saved, setSaved] = useState(false);
-  const [saving, setSaving] = useState(false);
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const error = validateName(name, "a workspace name");
-    setFieldError(error);
-    setFormError(null);
+  const onSubmit = handleSubmit(async ({ name }) => {
     setSaved(false);
-    if (error) return;
-    setSaving(true);
     try {
-      const renamed = await renameWorkspace(workspace.id, name.trim());
-      setName(renamed.name);
+      const renamed = await renameWorkspace(workspace.id, name);
+      reset({ name: renamed.name });
       setSaved(true);
     } catch (reason) {
-      setFormError(describeApiError(reason, "Couldn’t rename the workspace. Try again."));
+      setError("root.server", {
+        message: describeApiError(reason, "Couldn’t rename the workspace. Try again."),
+      });
     }
-    setSaving(false);
-  }
+  });
 
   return (
     <form noValidate onSubmit={onSubmit} className="space-y-3">
       <FormField
         label="Current workspace name"
-        name="workspace-name"
         autoComplete="off"
-        value={name}
-        onChange={(event) => {
-          setName(event.target.value);
-          setSaved(false);
-        }}
-        error={fieldError}
+        {...register("name", { onChange: () => setSaved(false) })}
+        error={errors.name?.message}
       />
-      <FormAlert message={formError} />
+      <FormAlert message={errors.root?.server?.message ?? null} />
       <div className="flex items-center gap-3">
-        <Button type="submit" size="sm" disabled={saving || name.trim() === workspace.name}>
-          {saving ? "Saving…" : "Rename"}
+        <Button type="submit" size="sm" disabled={isSubmitting || unchanged}>
+          {isSubmitting ? "Saving…" : "Rename"}
         </Button>
         <p role="status" className="text-sm text-muted-foreground">
           {saved ? "Saved." : null}
@@ -135,46 +135,42 @@ function RenameWorkspaceForm({ workspace }: { workspace: Workspace }) {
 
 function CreateWorkspaceForm() {
   const { createWorkspace } = useWorkspaces();
-  const [name, setName] = useState("");
-  const [fieldError, setFieldError] = useState<string | undefined>();
-  const [formError, setFormError] = useState<string | null>(null);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm({ resolver: yupResolver(workspaceNameSchema), defaultValues: { name: "" } });
   const [created, setCreated] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const error = validateName(name, "a workspace name");
-    setFieldError(error);
-    setFormError(null);
+  const onSubmit = handleSubmit(async ({ name }) => {
     setCreated(null);
-    if (error) return;
-    setCreating(true);
     try {
-      const workspace = await createWorkspace(name.trim());
-      setName("");
+      const workspace = await createWorkspace(name);
+      reset();
       setCreated(workspace.name);
     } catch (reason) {
-      setFormError(describeApiError(reason, "Couldn’t create the workspace. Try again."));
+      setError("root.server", {
+        message: describeApiError(reason, "Couldn’t create the workspace. Try again."),
+      });
     }
-    setCreating(false);
-  }
+  });
 
   return (
     <form noValidate onSubmit={onSubmit} className="space-y-3 border-t pt-6">
       <FormField
         label="New workspace"
-        name="new-workspace"
         autoComplete="off"
         placeholder="For example, Side project"
         hint="Workspaces are private to you. Sharing isn’t available yet."
-        value={name}
-        onChange={(event) => setName(event.target.value)}
-        error={fieldError}
+        {...register("name")}
+        error={errors.name?.message}
       />
-      <FormAlert message={formError} />
+      <FormAlert message={errors.root?.server?.message ?? null} />
       <div className="flex items-center gap-3">
-        <Button type="submit" size="sm" variant="outline" disabled={creating}>
-          {creating ? "Creating…" : "Create workspace"}
+        <Button type="submit" size="sm" variant="outline" disabled={isSubmitting}>
+          {isSubmitting ? "Creating…" : "Create workspace"}
         </Button>
         <p role="status" className="text-sm text-muted-foreground">
           {created ? `Created and switched to ${created}.` : null}

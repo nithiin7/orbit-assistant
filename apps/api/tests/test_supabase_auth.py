@@ -30,7 +30,7 @@ from orbit_api.auth.supabase import (
 )
 from orbit_api.config import Settings
 from orbit_api.main import create_app
-from orbit_api.services.accounts import ExternalIdentity
+from orbit_api.services.accounts.models import ExternalIdentity
 from tests.support import bearer, query
 
 PROJECT_URL = "https://project.supabase.co"

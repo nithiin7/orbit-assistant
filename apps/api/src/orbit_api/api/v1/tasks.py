@@ -17,7 +17,7 @@ from orbit_api.schemas.tasks import (
     TaskSummaryResponse,
     UpdateTaskRequest,
 )
-from orbit_api.services.tasks import TaskNotFoundError
+from orbit_api.services.tasks.models import TaskNotFoundError
 
 router = APIRouter(
     prefix="/workspaces/{workspace_id}/tasks",

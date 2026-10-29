@@ -166,6 +166,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the signed-in user's dashboard layout
+         * @description Widgets a newer layout used but this version doesn't know are left out.
+         */
+        get: operations["get_dashboard_api_v1_me_dashboard_get"];
+        /** Save the signed-in user's dashboard layout */
+        put: operations["put_dashboard_api_v1_me_dashboard_put"];
+        post?: never;
+        /** Reset the signed-in user's dashboard to the default layout */
+        delete: operations["delete_dashboard_api_v1_me_dashboard_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces": {
         parameters: {
             query?: never;
@@ -307,6 +329,165 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/shopping/lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List shopping lists
+         * @description Every list with its item counts. The workspace's default Groceries list is created the
+         *     first time its lists are read.
+         */
+        get: operations["list_lists_api_v1_workspaces__workspace_id__shopping_lists_get"];
+        put?: never;
+        /** Create a shopping list */
+        post: operations["create_list_api_v1_workspaces__workspace_id__shopping_lists_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/shopping/lists/{list_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a shopping list
+         * @description Permanently delete a list and its items.
+         */
+        delete: operations["delete_list_api_v1_workspaces__workspace_id__shopping_lists__list_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename a shopping list */
+        patch: operations["rename_list_api_v1_workspaces__workspace_id__shopping_lists__list_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/shopping/lists/{list_id}/restock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark purchased items as needed again
+         * @description Start the list over, for things bought again and again, such as groceries.
+         */
+        post: operations["restock_list_api_v1_workspaces__workspace_id__shopping_lists__list_id__restock_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/shopping/lists/{list_id}/clear-purchased": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete purchased items
+         * @description Permanently delete the list's purchased items, for one-off purchases.
+         */
+        post: operations["clear_purchased_api_v1_workspaces__workspace_id__shopping_lists__list_id__clear_purchased_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/shopping/lists/{list_id}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List a shopping list's items */
+        get: operations["list_items_api_v1_workspaces__workspace_id__shopping_lists__list_id__items_get"];
+        put?: never;
+        /** Add an item */
+        post: operations["add_item_api_v1_workspaces__workspace_id__shopping_lists__list_id__items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/shopping/items/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete an item
+         * @description Permanently delete an item.
+         */
+        delete: operations["delete_item_api_v1_workspaces__workspace_id__shopping_items__item_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update an item */
+        patch: operations["update_item_api_v1_workspaces__workspace_id__shopping_items__item_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/shopping/items/{item_id}/purchase": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark an item purchased
+         * @description Idempotent: purchasing a purchased item keeps its original purchase time.
+         */
+        post: operations["purchase_item_api_v1_workspaces__workspace_id__shopping_items__item_id__purchase_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/shopping/items/{item_id}/restock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark an item needed again */
+        post: operations["restock_item_api_v1_workspaces__workspace_id__shopping_items__item_id__restock_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/storage": {
         parameters: {
             query?: never;
@@ -349,6 +530,28 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** BulkChangeResponse */
+        BulkChangeResponse: {
+            /**
+             * Count
+             * @description How many items changed.
+             */
+            count: number;
+        };
+        /** CreateItemRequest */
+        CreateItemRequest: {
+            /** Name */
+            name: string;
+            /** Quantity */
+            quantity?: string | null;
+            /** Url */
+            url?: string | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
         /** CreateTaskRequest */
         CreateTaskRequest: {
             /** Title */
@@ -371,6 +574,38 @@ export interface components {
         CreateWorkspaceRequest: {
             /** Name */
             name: string;
+        };
+        /** DashboardLayoutRequest */
+        DashboardLayoutRequest: {
+            /**
+             * Widgets
+             * @description The widgets to show, in order. Each widget may appear once; an empty list is an empty dashboard.
+             */
+            widgets: components["schemas"]["DashboardWidgetModel"][];
+        };
+        /** DashboardLayoutResponse */
+        DashboardLayoutResponse: {
+            /** Widgets */
+            widgets: components["schemas"]["DashboardWidgetModel"][];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** DashboardWidgetModel */
+        DashboardWidgetModel: {
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "workspace" | "status" | "tasks" | "shopping" | "modules";
+            /**
+             * Size
+             * @description `half` widgets sit side by side on wide screens.
+             * @enum {string}
+             */
+            size: "half" | "full";
         };
         /**
          * DatabaseHealthResponse
@@ -465,6 +700,149 @@ export interface components {
             password: string;
             /** Display Name */
             display_name: string;
+        };
+        /** ShoppingItemResponse */
+        ShoppingItemResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /**
+             * List Id
+             * Format: uuid
+             */
+            list_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Quantity
+             * @description Free text, such as "2 kg".
+             */
+            quantity: string | null;
+            /**
+             * Url
+             * @description An http or https link.
+             */
+            url: string | null;
+            /**
+             * Notes
+             * @description Empty when the item has no notes.
+             */
+            notes: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "needed" | "purchased";
+            /**
+             * Purchased At
+             * @description When the item was purchased, if it is.
+             */
+            purchased_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ShoppingItemsResponse */
+        ShoppingItemsResponse: {
+            /**
+             * Items
+             * @description Needed items in the order they were added, then purchased items, most recently purchased first.
+             */
+            items: components["schemas"]["ShoppingItemResponse"][];
+        };
+        /** ShoppingListOverviewResponse */
+        ShoppingListOverviewResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Is Default
+             * @description The workspace's default list, which cannot be deleted.
+             */
+            is_default: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Needed Count
+             * @description Items still to buy.
+             */
+            needed_count: number;
+            /** Purchased Count */
+            purchased_count: number;
+        };
+        /** ShoppingListRequest */
+        ShoppingListRequest: {
+            /** Name */
+            name: string;
+        };
+        /** ShoppingListResponse */
+        ShoppingListResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Is Default
+             * @description The workspace's default list, which cannot be deleted.
+             */
+            is_default: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ShoppingListsResponse */
+        ShoppingListsResponse: {
+            /**
+             * Lists
+             * @description The default list first, then the others in creation order.
+             */
+            lists: components["schemas"]["ShoppingListOverviewResponse"][];
         };
         /**
          * StorageLocationResponse
@@ -578,6 +956,21 @@ export interface components {
              * @description Open tasks due today.
              */
             due_today: number;
+        };
+        /**
+         * UpdateItemRequest
+         * @description Change some of an item's fields. Omitted fields keep their values; `quantity: null` and
+         *     `url: null` clear them. Purchasing has its own endpoints.
+         */
+        UpdateItemRequest: {
+            /** Name */
+            name?: string | null;
+            /** Quantity */
+            quantity?: string | null;
+            /** Url */
+            url?: string | null;
+            /** Notes */
+            notes?: string | null;
         };
         /** UpdateProfileRequest */
         UpdateProfileRequest: {
@@ -1019,6 +1412,105 @@ export interface operations {
         };
     };
     delete_avatar_api_v1_me_avatar_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_dashboard_api_v1_me_dashboard_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardLayoutResponse"];
+                };
+            };
+            /** @description No layout is saved; show the default dashboard. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    put_dashboard_api_v1_me_dashboard_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DashboardLayoutRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardLayoutResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_dashboard_api_v1_me_dashboard_delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -1628,6 +2120,585 @@ export interface operations {
                 content?: never;
             };
             /** @description The workspace or task does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_lists_api_v1_workspaces__workspace_id__shopping_lists_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShoppingListsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, list, or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_list_api_v1_workspaces__workspace_id__shopping_lists_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShoppingListRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShoppingListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, list, or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_list_api_v1_workspaces__workspace_id__shopping_lists__list_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The shopping list's ID. */
+                list_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, list, or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The default list cannot be deleted. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_list_api_v1_workspaces__workspace_id__shopping_lists__list_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The shopping list's ID. */
+                list_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShoppingListRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShoppingListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, list, or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restock_list_api_v1_workspaces__workspace_id__shopping_lists__list_id__restock_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The shopping list's ID. */
+                list_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkChangeResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, list, or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clear_purchased_api_v1_workspaces__workspace_id__shopping_lists__list_id__clear_purchased_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The shopping list's ID. */
+                list_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkChangeResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, list, or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_items_api_v1_workspaces__workspace_id__shopping_lists__list_id__items_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The shopping list's ID. */
+                list_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShoppingItemsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, list, or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_item_api_v1_workspaces__workspace_id__shopping_lists__list_id__items_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The shopping list's ID. */
+                list_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShoppingItemResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, list, or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_item_api_v1_workspaces__workspace_id__shopping_items__item_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The item's ID. */
+                item_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, list, or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_item_api_v1_workspaces__workspace_id__shopping_items__item_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The item's ID. */
+                item_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShoppingItemResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, list, or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    purchase_item_api_v1_workspaces__workspace_id__shopping_items__item_id__purchase_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The item's ID. */
+                item_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShoppingItemResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, list, or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restock_item_api_v1_workspaces__workspace_id__shopping_items__item_id__restock_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The item's ID. */
+                item_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShoppingItemResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, list, or item does not exist or is not accessible. */
             404: {
                 headers: {
                     [name: string]: unknown;

@@ -1,20 +1,17 @@
 "use client";
 
-import type { StorageLocation } from "@orbit/contracts";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Copy, FolderOpen } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
-import { useAuth } from "@/components/auth/auth-provider";
+import { describeApiError } from "@/api/client";
+import { revealStorageLocation, storageLocationOptions } from "@/api/storage";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { describeApiError, getStorageLocation, revealStorageLocation } from "@/lib/api";
+import { queryResource } from "@/hooks/query-resource";
 import { revealLabel } from "@/lib/storage";
-
-type LocationState =
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "ready"; location: StorageLocation };
+import { useAuth } from "@/providers/auth";
 
 /**
  * Where the SQLite database lives, with a button that opens its folder. The API does the
@@ -23,39 +20,25 @@ type LocationState =
  */
 export function DatabaseLocation() {
   const { withToken } = useAuth();
-  const [state, setState] = useState<LocationState>({ status: "loading" });
-  const [reloads, setReloads] = useState(0);
-  const [revealing, setRevealing] = useState(false);
+  const location = useQuery(storageLocationOptions(withToken));
+  const state = queryResource(location, "Couldn’t find where your data is stored.");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    withToken((token) => getStorageLocation(token, { signal: controller.signal })).then(
-      (location) => setState({ status: "ready", location }),
-      (reason: unknown) => {
-        if (controller.signal.aborted) return;
-        setState({
-          status: "error",
-          message: describeApiError(reason, "Couldn’t find where your data is stored."),
-        });
-      },
-    );
-    return () => controller.abort();
-  }, [withToken, reloads]);
+  const { mutateAsync: revealFolder, isPending: revealing } = useMutation({
+    mutationFn: () => withToken((token) => revealStorageLocation(token)),
+  });
 
   const reveal = useCallback(async () => {
     setError(null);
     setMessage(null);
-    setRevealing(true);
     try {
-      await withToken((token) => revealStorageLocation(token));
+      await revealFolder();
       setMessage("Opened on the computer running the Orbit API.");
     } catch (reason) {
       setError(describeApiError(reason, "Couldn’t open the folder. Try again."));
     }
-    setRevealing(false);
-  }, [withToken]);
+  }, [revealFolder]);
 
   const copy = useCallback(async (path: string) => {
     setError(null);
@@ -80,21 +63,14 @@ export function DatabaseLocation() {
     return (
       <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
         <p>{state.message}</p>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setState({ status: "loading" });
-            setReloads((value) => value + 1);
-          }}
-        >
+        <Button variant="outline" size="sm" onClick={() => void location.refetch()}>
           Try again
         </Button>
       </div>
     );
   }
 
-  const path = state.location.database_path;
+  const path = state.data.database_path;
   if (!path) return null;
 
   return (
@@ -109,7 +85,7 @@ export function DatabaseLocation() {
         {path}
       </code>
       <div className="flex flex-wrap items-center gap-2">
-        {state.location.can_reveal ? (
+        {state.data.can_reveal ? (
           <Button variant="outline" size="sm" disabled={revealing} onClick={() => void reveal()}>
             <FolderOpen aria-hidden="true" />
             {revealing ? "Opening…" : revealLabel(navigator.userAgent)}

@@ -27,9 +27,10 @@ from orbit_api.auth.supabase import (
     InvalidAccessTokenError,
     SupabaseTokenVerifier,
 )
-from orbit_api.services.accounts import AccountService, User
-from orbit_api.services.local_auth import LocalAuthService
-from orbit_api.services.workspaces import Workspace, WorkspaceNotFoundError
+from orbit_api.services.accounts.models import User
+from orbit_api.services.accounts.service import AccountService
+from orbit_api.services.local_auth.service import LocalAuthService
+from orbit_api.services.workspaces.models import Workspace, WorkspaceNotFoundError
 
 # Real tokens are far shorter; reject oversized input before doing any work.
 MAX_TOKEN_LENGTH = 4096

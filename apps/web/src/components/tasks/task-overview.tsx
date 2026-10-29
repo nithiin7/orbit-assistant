@@ -1,49 +1,23 @@
 "use client";
 
-import type { Task, TaskSummary } from "@orbit/contracts";
 import { ArrowRight, CheckSquare } from "lucide-react";
 import Link from "next/link";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useWorkspaceResource } from "@/hooks/use-workspace-resource";
-import { getTaskSummary, listTasks } from "@/lib/api";
-import { localDateString } from "@/lib/tasks";
+import { type TaskOverviewData, useTaskOverview } from "@/hooks/use-tasks";
 import { cn } from "@/lib/utils";
 
 import { DueDateLabel, PriorityBadge } from "./task-meta";
 
-const UP_NEXT_COUNT = 5;
-
-type TaskOverviewData = { summary: TaskSummary; upNext: Task[]; today: string };
-
-async function loadTaskOverview(
-  workspaceId: string,
-  token: string,
-  signal: AbortSignal,
-): Promise<TaskOverviewData> {
-  // The user's local date decides what counts as overdue or due today.
-  const today = localDateString();
-  const [summary, upNext] = await Promise.all([
-    getTaskSummary(token, workspaceId, { today }, { signal }),
-    listTasks(
-      token,
-      workspaceId,
-      { status: "open", sort: "due_date", limit: UP_NEXT_COUNT },
-      { signal },
-    ),
-  ]);
-  return { summary, upNext: upNext.tasks, today };
-}
-
 /** Task counts and the next open tasks in the active workspace, for the dashboard. */
 export function TaskOverview() {
-  const { resource, reload } = useWorkspaceResource<TaskOverviewData>(loadTaskOverview);
+  const { resource, reload } = useTaskOverview();
 
   return (
-    <section aria-labelledby="task-overview-heading">
-      <Card className="shadow-elevation-1" aria-busy={resource.status === "loading"}>
+    <section aria-labelledby="task-overview-heading" className="h-full">
+      <Card className="h-full shadow-elevation-1" aria-busy={resource.status === "loading"}>
         <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
           <h2
             id="task-overview-heading"

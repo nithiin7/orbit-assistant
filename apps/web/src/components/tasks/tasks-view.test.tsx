@@ -305,8 +305,10 @@ describe("TasksPanel", () => {
     await user.click(await screen.findByRole("button", { name: "Clear search and filters" }));
 
     expect(screen.getByRole("searchbox", { name: "Search tasks" })).toHaveValue("");
-    await waitFor(() => expect(listQueries(api).at(-1)?.has("q")).toBe(false));
     expect(await screen.findByRole("heading", { name: "No open tasks" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "No matching tasks" })).not.toBeInTheDocument();
+    // The unfiltered list is still cached, so clearing the filters shows it without a request.
+    expect(listQueries(api).filter((query) => !query.has("q"))).toHaveLength(1);
   });
 
   it("offers a retry when tasks can't be loaded", async () => {

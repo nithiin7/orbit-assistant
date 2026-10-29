@@ -2,9 +2,9 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { AuthProvider } from "@/providers/auth";
 import { ada, json, mockApi } from "@/test/api-mock";
 
-import { AuthProvider } from "./auth-provider";
 import { ForgotPasswordForm } from "./forgot-password-form";
 import { ResetPasswordForm } from "./reset-password-form";
 import { SignInForm } from "./sign-in-form";

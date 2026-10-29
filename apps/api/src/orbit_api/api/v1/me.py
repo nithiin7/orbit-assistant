@@ -1,17 +1,16 @@
-"""The signed-in user's profile and profile photo."""
+"""The signed-in user's profile, profile photo, and dashboard layout."""
 
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 
 from orbit_api.api.auth import CurrentUserDep
-from orbit_api.api.dependencies import AccountServiceDep, AvatarServiceDep
+from orbit_api.api.dependencies import AccountServiceDep, AvatarServiceDep, DashboardServiceDep
+from orbit_api.schemas.dashboard import DashboardLayoutRequest, DashboardLayoutResponse
 from orbit_api.schemas.users import UpdateProfileRequest, UserProfile
-from orbit_api.services.avatars import (
-    MAX_AVATAR_BYTES,
-    AvatarTooLargeError,
-    UnsupportedImageError,
-)
+from orbit_api.services.avatars.models import AvatarTooLargeError, UnsupportedImageError
+from orbit_api.services.avatars.service import MAX_AVATAR_BYTES
+from orbit_api.services.dashboard.models import DuplicateWidgetError
 
 router = APIRouter(
     prefix="/me", tags=["account"], responses={401: {"description": "Not signed in."}}
@@ -95,6 +94,47 @@ async def put_avatar(request: Request, user: CurrentUserDep, avatars: AvatarServ
 )
 async def delete_avatar(user: CurrentUserDep, avatars: AvatarServiceDep) -> Response:
     await avatars.remove(user.id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get(
+    "/dashboard",
+    summary="Get the signed-in user's dashboard layout",
+    response_model=DashboardLayoutResponse,
+    responses={204: {"description": "No layout is saved; show the default dashboard."}},
+)
+async def get_dashboard(
+    user: CurrentUserDep, dashboard: DashboardServiceDep
+) -> DashboardLayoutResponse | Response:
+    """Widgets a newer layout used but this version doesn't know are left out."""
+    layout = await dashboard.get(user.id)
+    if layout is None:
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return DashboardLayoutResponse.of(layout)
+
+
+@router.put("/dashboard", summary="Save the signed-in user's dashboard layout")
+async def put_dashboard(
+    body: DashboardLayoutRequest, user: CurrentUserDep, dashboard: DashboardServiceDep
+) -> DashboardLayoutResponse:
+    try:
+        layout = await dashboard.replace(
+            user.id, tuple(widget.to_widget() for widget in body.widgets)
+        )
+    except DuplicateWidgetError:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT, "Each widget can appear only once."
+        ) from None
+    return DashboardLayoutResponse.of(layout)
+
+
+@router.delete(
+    "/dashboard",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Reset the signed-in user's dashboard to the default layout",
+)
+async def delete_dashboard(user: CurrentUserDep, dashboard: DashboardServiceDep) -> Response:
+    await dashboard.reset(user.id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
