@@ -250,4 +250,38 @@ describe("Dashboard account sync", () => {
       widgets: readDashboardLayout(ada.id),
     });
   });
+
+  it("sends changes in order, skipping ones overtaken while a save is in flight", async () => {
+    let releaseFirst: () => void = () => {};
+    let puts = 0;
+    const api = mockApi({
+      ...routes,
+      [`PUT ${DASHBOARD}`]: (request) => {
+        puts += 1;
+        if (puts > 1) return saved(request);
+        return new Promise((resolve) => {
+          releaseFirst = () => resolve(saved(request));
+        });
+      },
+    });
+    const user = await customize();
+
+    await user.click(screen.getByRole("button", { name: "Remove Shopping" }));
+    await waitFor(() => expect(puts).toBe(1));
+    await user.click(screen.getByRole("button", { name: "Remove Planned modules" }));
+    await user.click(screen.getByRole("button", { name: "Remove Tasks" }));
+    releaseFirst();
+
+    await waitFor(() => expect(savedLayouts(api)).toHaveLength(2));
+    expect(savedLayouts(api)[0]).toEqual({
+      widgets: [
+        { id: "workspace", size: "half" },
+        { id: "status", size: "half" },
+        { id: "tasks", size: "full" },
+        { id: "modules", size: "full" },
+      ],
+    });
+    expect(savedLayouts(api)[1]).toEqual({ widgets: readDashboardLayout(ada.id) });
+    expect(readDashboardLayout(ada.id).map((widget) => widget.id)).toEqual(["workspace", "status"]);
+  });
 });

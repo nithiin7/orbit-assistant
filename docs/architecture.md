@@ -504,7 +504,7 @@ All rules live in `api/auth.py` and `services/workspaces/service.py`:
 
 ### Dashboard layout
 
-- The dashboard is a grid of widgets listed in `lib/dashboard.ts` (workspace, Orbit status,
+- The dashboard is a grid of widgets listed in `lib/dashboard/dashboard.ts` (workspace, Orbit status,
   tasks, shopping, planned modules). **Customize** lets the user add, remove, reorder, and resize
   them. Each widget is half or full width; half-width widgets sit side by side from the `xl`
   breakpoint, and every widget is full width below it.
@@ -519,9 +519,12 @@ All rules live in `api/auth.py` and `services/workspaces/service.py`:
     widget can't break the response.
   - The web app (`hooks/use-dashboard-layout.ts`) caches the layout in `localStorage`
     (`orbit:dashboard:<user id>`, validated on read) so the page shows it before the API answers.
-    The account copy wins when it loads. A layout cached before the account had one is uploaded
-    once. Changes show at once and save in order, one request at a time; a failed save keeps the
-    change in this browser and offers a retry.
+    The account copy (a TanStack Query, `["me", "dashboard"]`) wins when it loads, unless the user
+    has already changed the layout. A layout cached before the account had one is uploaded once.
+    Changes show at once and save in order, one request at a time (a shared mutation scope); a
+    change overtaken by a newer one is skipped, since each save sends the whole layout. Each save
+    updates the cached account copy, so returning to the dashboard can't show an older layout. A
+    failed save keeps the change in this browser and offers a retry.
 - Removed widgets are not rendered, so they make no API requests.
 - Reordering uses move-earlier/later buttons, not drag and drop, so it works from the keyboard.
   Changes are announced through a polite status region, and focus is kept on the control.

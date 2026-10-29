@@ -1,20 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
-import { fetchStorageStatus, type StorageStatus } from "@/lib/storage";
+import { storageStatusOptions } from "@/api/storage";
+import type { StorageStatus } from "@/lib/storage";
 
-/** Fetch the API's storage mode once on mount. Starts as `loading`. */
+/** The API's storage mode, shared by every indicator on the page. Starts as `loading`. */
 export function useStorageStatus(): StorageStatus {
-  const [status, setStatus] = useState<StorageStatus>({ state: "loading" });
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetchStorageStatus(controller.signal).then(setStatus, () => {
-      // Only an abort rejects, and that happens on unmount, when there is nothing to update.
-    });
-    return () => controller.abort();
-  }, []);
-
-  return status;
+  return useQuery(storageStatusOptions()).data ?? { state: "loading" };
 }

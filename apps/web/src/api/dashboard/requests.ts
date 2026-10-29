@@ -1,6 +1,6 @@
 import type { DashboardLayout, DashboardLayoutRequest } from "@orbit/contracts";
 
-import { request, type Signal } from "./client";
+import { request, type Signal } from "../client";
 
 /** The signed-in user's saved dashboard layout, or `null` when they haven't arranged it. */
 export async function getMyDashboard(

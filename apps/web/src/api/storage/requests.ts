@@ -1,6 +1,6 @@
 import type { StorageLocation } from "@orbit/contracts";
 
-import { request, type Signal } from "./client";
+import { request, type Signal } from "../client";
 
 export function getStorageLocation(
   token: string,

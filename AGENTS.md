@@ -179,6 +179,9 @@ and `packages/*/package.json`. Check them rather than guessing.
 - Web: Vitest + Testing Library + jsdom. Tests live next to the code as `*.test.ts(x)` under
   `apps/web/src/`. Query by role and accessible name. Mock `next/navigation` and network calls.
 - API: Pytest in `apps/api/tests/`. Use the `client` fixture from `conftest.py`, which builds an
+  Render signed-in views with `renderSignedIn` (`src/test/session.tsx`) and standalone
+  components that query data with `renderWithQueries` (`src/test/query.tsx`); both give each
+  test a fresh query cache that doesn't retry. Mock the API with `mockApi` (`src/test/api-mock.ts`).
   isolated app via `create_app(Settings(...))`. Pytest treats warnings as errors.
 - Test behavior, not implementation details. Mock external services, not the code under test.
 - **Never weaken, skip, or delete tests to make checks pass.** Fix the code, or explain why the

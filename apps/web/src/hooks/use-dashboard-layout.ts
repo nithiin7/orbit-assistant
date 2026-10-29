@@ -1,9 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import type { DashboardLayout } from "@orbit/contracts";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { describeApiError } from "@/api/client";
-import { deleteMyDashboard, getMyDashboard, putMyDashboard } from "@/api/dashboard";
+import {
+  dashboardKeys,
+  type DashboardLayoutChange,
+  dashboardLayoutOptions,
+  sendDashboardLayout,
+} from "@/api/dashboard";
 import { useAuth } from "@/components/auth/auth-provider";
 import {
   clearDashboardLayout,
@@ -13,8 +20,6 @@ import {
   readDashboardLayout,
   writeDashboardLayout,
 } from "@/lib/dashboard";
-
-type Change = { kind: "save"; widgets: DashboardWidget[] } | { kind: "reset" };
 
 type DashboardLayoutState = {
   layout: DashboardWidget[];
@@ -28,6 +33,8 @@ type DashboardLayoutState = {
   retry: () => void;
 };
 
+const toWidgets = (saved: DashboardLayout) => saved.widgets.map(({ id, size }) => ({ id, size }));
+
 /**
  * The signed-in user's dashboard layout. The account (API) is the source of truth; this
  * browser's copy shows the layout instantly while the API answers. A layout saved in this
@@ -35,94 +42,80 @@ type DashboardLayoutState = {
  */
 export function useDashboardLayout(userId: string): DashboardLayoutState {
   const { withToken } = useAuth();
-  const [layout, setLayout] = useState(() => readDashboardLayout(userId));
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const layoutRef = useRef(layout);
+  const queryClient = useQueryClient();
+  const account = useQuery(dashboardLayoutOptions(withToken));
+  const [local, setLocal] = useState(() => readDashboardLayout(userId));
   // Set once the user changes the layout, so a slow first load can't overwrite their change.
-  const changed = useRef(false);
-  // Changes are sent one at a time, newest last, so responses can't land out of order.
-  const queued = useRef<Change | null>(null);
-  const sending = useRef(false);
+  const [changed, setChanged] = useState(false);
+  const fromAccount = useMemo(
+    () => (account.data ? toWidgets(account.data) : null),
+    [account.data],
+  );
+  const layout = !changed && fromAccount ? fromAccount : local;
 
-  const send = useCallback(
-    async (change: Change) => {
-      queued.current = change;
-      if (sending.current) return;
-      sending.current = true;
-      try {
-        while (queued.current) {
-          const next: Change = queued.current;
-          queued.current = null;
-          await withToken(async (token) => {
-            if (next.kind === "reset") await deleteMyDashboard(token);
-            else await putMyDashboard(token, { widgets: next.widgets });
-          });
-        }
-        setSaveError(null);
-      } catch (reason) {
-        // The whole layout is sent each time, so the next change or a retry catches up.
-        queued.current = null;
-        setSaveError(
-          describeApiError(
-            reason,
-            "Couldn’t save your layout to your account. It still applies in this browser.",
-          ),
-        );
-      } finally {
-        sending.current = false;
-      }
+  // Changes share a mutation scope, so they're sent one at a time in order. The whole layout is
+  // sent each time, so a change that a newer one has overtaken is skipped rather than sent.
+  const latest = useRef(0);
+  const save = useMutation({
+    scope: { id: "dashboard-layout" },
+    mutationFn: ({ change, version }: { change: DashboardLayoutChange; version: number }) =>
+      version === latest.current
+        ? sendDashboardLayout(withToken, change)
+        : Promise.resolve(undefined),
+    onSuccess: (saved) => {
+      if (saved !== undefined) queryClient.setQueryData(dashboardKeys.layout(), saved);
     },
-    [withToken],
+  });
+  const { mutate } = save;
+  const send = useCallback(
+    (change: DashboardLayoutChange) => {
+      latest.current += 1;
+      mutate({ change, version: latest.current });
+    },
+    [mutate],
   );
 
+  // Keep this browser's copy in step with the account.
   useEffect(() => {
-    const controller = new AbortController();
-    withToken((token) => getMyDashboard(token, { signal: controller.signal })).then(
-      (saved) => {
-        if (controller.signal.aborted || changed.current) return;
-        if (saved) {
-          const widgets = saved.widgets.map(({ id, size }) => ({ id, size }));
-          layoutRef.current = widgets;
-          setLayout(widgets);
-          writeDashboardLayout(userId, widgets);
-        } else if (hasStoredDashboardLayout(userId)) {
-          void send({ kind: "save", widgets: layoutRef.current });
-        }
-      },
-      () => {
-        // The browser's copy (or the default) keeps working; the next change tries again.
-      },
-    );
-    return () => controller.abort();
-  }, [withToken, userId, send]);
+    if (!changed && fromAccount) writeDashboardLayout(userId, fromAccount);
+  }, [changed, fromAccount, userId]);
+
+  // The account has no layout yet: upload the one arranged in this browser, once.
+  const uploaded = useRef(false);
+  useEffect(() => {
+    if (account.data !== null || changed || uploaded.current) return;
+    if (!hasStoredDashboardLayout(userId)) return;
+    uploaded.current = true;
+    send({ kind: "save", widgets: local });
+  }, [account.data, changed, userId, local, send]);
 
   const update = useCallback(
     (next: DashboardWidget[]) => {
-      changed.current = true;
-      layoutRef.current = next;
-      setLayout(next);
+      setChanged(true);
+      setLocal(next);
       writeDashboardLayout(userId, next);
-      void send({ kind: "save", widgets: next });
+      send({ kind: "save", widgets: next });
     },
     [userId, send],
   );
 
   const reset = useCallback(() => {
-    changed.current = true;
-    const next = [...defaultLayout];
-    layoutRef.current = next;
-    setLayout(next);
+    setChanged(true);
+    setLocal([...defaultLayout]);
     clearDashboardLayout(userId);
-    void send({ kind: "reset" });
+    send({ kind: "reset" });
   }, [userId, send]);
 
   const retry = useCallback(() => {
-    void send(
-      hasStoredDashboardLayout(userId)
-        ? { kind: "save", widgets: layoutRef.current }
-        : { kind: "reset" },
-    );
-  }, [userId, send]);
+    send(hasStoredDashboardLayout(userId) ? { kind: "save", widgets: layout } : { kind: "reset" });
+  }, [userId, layout, send]);
+
+  const saveError = save.isError
+    ? describeApiError(
+        save.error,
+        "Couldn’t save your layout to your account. It still applies in this browser.",
+      )
+    : null;
 
   return { layout, update, reset, saveError, retry };
 }
