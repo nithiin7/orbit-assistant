@@ -11,12 +11,14 @@ from orbit_api.config import Settings
 from orbit_api.db.database import Database
 from orbit_api.repositories.accounts import SqlAccountRepository, SqlLocalAuthRepository
 from orbit_api.repositories.avatars import SqlAvatarRepository
+from orbit_api.repositories.shopping import SqlShoppingItemRepository, SqlShoppingListRepository
 from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.repositories.workspaces import SqlWorkspaceRepository
 from orbit_api.services.accounts import AccountService
 from orbit_api.services.avatars import AvatarService
 from orbit_api.services.local_auth import LocalAuthService, PasswordHasher
+from orbit_api.services.shopping import ShoppingService
 from orbit_api.services.tasks import TaskService
 from orbit_api.services.workspaces import WorkspaceService
 
@@ -92,3 +94,14 @@ def get_task_service(session: SessionDep) -> TaskService:
 
 
 TaskServiceDep = Annotated[TaskService, Depends(get_task_service)]
+
+
+def get_shopping_service(session: SessionDep) -> ShoppingService:
+    return ShoppingService(
+        SqlShoppingListRepository(session),
+        SqlShoppingItemRepository(session),
+        SqlTransaction(session),
+    )
+
+
+ShoppingServiceDep = Annotated[ShoppingService, Depends(get_shopping_service)]

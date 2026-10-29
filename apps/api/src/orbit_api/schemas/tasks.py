@@ -1,9 +1,8 @@
 """Task models."""
 
-import unicodedata
 import uuid
 from datetime import date, datetime
-from typing import Annotated, Any, Self
+from typing import Annotated, Self
 
 from pydantic import (
     AfterValidator,
@@ -15,6 +14,7 @@ from pydantic import (
     model_validator,
 )
 
+from orbit_api.schemas.common import blank_to_none, multi_line, single_line
 from orbit_api.services.tasks import (
     UNSET,
     SortOrder,
@@ -33,53 +33,25 @@ DESCRIPTION_MAX_LENGTH = 5000
 SEARCH_MAX_LENGTH = 200
 PAGE_MAX_SIZE = 500
 
-# Line breaks and tabs are fine in a description; other control characters are not.
-_ALLOWED_CONTROL_CHARACTERS = frozenset("\n\r\t")
-
-
-def _is_control(character: str) -> bool:
-    # Only C0/C1 controls (category Cc). Unlike `str.isprintable()`, this accepts the zero-width
-    # joiners in emoji sequences and non-breaking spaces, which people paste into tasks.
-    return unicodedata.category(character) == "Cc"
-
-
-def _single_line(value: str) -> str:
-    if any(_is_control(c) for c in value):
-        raise ValueError("must not contain control characters")
-    return value
-
-
-def _multi_line(value: str) -> str:
-    if any(_is_control(c) and c not in _ALLOWED_CONTROL_CHARACTERS for c in value):
-        raise ValueError("must not contain control characters other than line breaks and tabs")
-    return value
-
-
-def _blank_to_none(value: Any) -> Any:
-    if isinstance(value, str) and not value.strip():
-        return None
-    return value
-
-
 Title = Annotated[
     str,
     StringConstraints(strip_whitespace=True, min_length=1, max_length=TITLE_MAX_LENGTH),
-    AfterValidator(_single_line),
+    AfterValidator(single_line),
 ]
 Description = Annotated[
     str,
     StringConstraints(strip_whitespace=True, max_length=DESCRIPTION_MAX_LENGTH),
-    AfterValidator(_multi_line),
+    AfterValidator(multi_line),
 ]
 # Blank searches are treated as no search.
 SearchText = Annotated[
     Annotated[
         str,
         StringConstraints(strip_whitespace=True, max_length=SEARCH_MAX_LENGTH),
-        AfterValidator(_single_line),
+        AfterValidator(single_line),
     ]
     | None,
-    BeforeValidator(_blank_to_none),
+    BeforeValidator(blank_to_none),
 ]
 
 

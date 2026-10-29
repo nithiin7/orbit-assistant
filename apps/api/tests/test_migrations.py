@@ -235,3 +235,130 @@ def test_task_migration_creates_and_drops_its_table(migrated_settings: Settings)
 
     assert "tasks" not in tables(migrated_settings)
     assert tables(migrated_settings) >= IDENTITY_TABLES
+
+
+def insert_shopping_list(
+    database: Path, workspace_id: str, *, is_default: bool = False, name: str = "L"
+) -> str:
+    list_id = uuid.uuid4().hex
+    query(
+        database,
+        "INSERT INTO shopping_lists (id, workspace_id, name, is_default, created_at, updated_at)"
+        " VALUES (?, ?, ?, ?, ?, ?)",
+        list_id,
+        workspace_id,
+        name,
+        is_default,
+        NOW,
+        NOW,
+    )
+    return list_id
+
+
+def insert_shopping_item(
+    database: Path, workspace_id: str, list_id: str, **overrides: object
+) -> str:
+    item_id = uuid.uuid4().hex
+    values: dict[str, object] = {
+        "name": "I",
+        "quantity": None,
+        "url": None,
+        "notes": "",
+        "status": "needed",
+        "purchased_at": None,
+        **overrides,
+    }
+    query(
+        database,
+        "INSERT INTO shopping_items (id, workspace_id, list_id, name, quantity, url, notes,"
+        " status, purchased_at, created_at, updated_at)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        item_id,
+        workspace_id,
+        list_id,
+        values["name"],
+        values["quantity"],
+        values["url"],
+        values["notes"],
+        values["status"],
+        values["purchased_at"],
+        NOW,
+        NOW,
+    )
+    return item_id
+
+
+def test_database_allows_one_default_shopping_list_per_workspace(
+    migrated_settings: Settings,
+) -> None:
+    database = migrated_settings.sqlite_path
+    workspace = insert_workspace(database, insert_user(database), is_personal=True)
+    insert_shopping_list(database, workspace, is_default=True)
+    insert_shopping_list(database, workspace)
+    insert_shopping_list(database, workspace)
+
+    with pytest.raises(sqlite3.IntegrityError, match="UNIQUE"):
+        insert_shopping_list(database, workspace, is_default=True)
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"name": ""},
+        {"name": "x" * 201},
+        {"quantity": "x" * 51},
+        {"url": "x" * 2049},
+        {"notes": "x" * 2001},
+        {"status": "wanted"},
+        # `purchased_at` is set exactly when the item is purchased.
+        {"status": "purchased"},
+        {"status": "needed", "purchased_at": NOW},
+    ],
+)
+def test_database_enforces_shopping_item_constraints(
+    migrated_settings: Settings, overrides: dict[str, object]
+) -> None:
+    database = migrated_settings.sqlite_path
+    workspace = insert_workspace(database, insert_user(database), is_personal=True)
+    list_id = insert_shopping_list(database, workspace)
+    insert_shopping_item(database, workspace, list_id, status="purchased", purchased_at=NOW)
+
+    with pytest.raises(sqlite3.IntegrityError, match="CHECK"):
+        insert_shopping_item(database, workspace, list_id, **overrides)
+
+
+def test_shopping_items_stay_in_their_lists_workspace(migrated_settings: Settings) -> None:
+    database = migrated_settings.sqlite_path
+    owner = insert_user(database)
+    workspace = insert_workspace(database, owner, is_personal=True)
+    other = insert_workspace(database, owner, is_personal=False)
+    list_id = insert_shopping_list(database, workspace)
+
+    with pytest.raises(sqlite3.IntegrityError, match="FOREIGN KEY"):
+        insert_shopping_item(database, other, list_id)
+
+
+def test_deleting_a_workspace_deletes_its_shopping_lists_and_items(
+    migrated_settings: Settings,
+) -> None:
+    database = migrated_settings.sqlite_path
+    owner = insert_user(database)
+    doomed = insert_workspace(database, owner, is_personal=False)
+    kept_workspace = insert_workspace(database, owner, is_personal=True)
+    insert_shopping_item(database, doomed, insert_shopping_list(database, doomed))
+    kept_list = insert_shopping_list(database, kept_workspace)
+    kept = insert_shopping_item(database, kept_workspace, kept_list)
+
+    query(database, "DELETE FROM workspaces WHERE id = ?", doomed)
+
+    assert query(database, "SELECT id FROM shopping_lists") == [(kept_list,)]
+    assert query(database, "SELECT id FROM shopping_items") == [(kept,)]
+
+
+def test_shopping_migration_creates_and_drops_its_tables(migrated_settings: Settings) -> None:
+    assert {"shopping_lists", "shopping_items"} <= tables(migrated_settings)
+
+    downgrade(migrated_settings, "0004")
+
+    assert not {"shopping_lists", "shopping_items"} & tables(migrated_settings)
+    assert "tasks" in tables(migrated_settings)
