@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { OrbitMark } from "@/components/logo";
 import { PageHeader } from "@/components/page-header";
+import { StorageIndicator } from "@/components/storage/storage-indicator";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { navItems } from "@/lib/navigation";
@@ -11,7 +12,11 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-10">
-      <PageHeader title="Dashboard" description="Your private, local-first workspace." />
+      <PageHeader
+        title="Dashboard"
+        description="Your private, local-first workspace."
+        actions={<StorageIndicator />}
+      />
 
       <section aria-labelledby="status-heading">
         <Card className="flex flex-col gap-4 p-5 shadow-elevation-1 sm:flex-row sm:items-start">

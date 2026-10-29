@@ -115,6 +115,7 @@ apps/web/src/
 │   └── globals.css      # Tailwind + design tokens (light/dark)
 ├── components/
 │   ├── app-shell/       # Sidebar, mobile drawer, navigation links
+│   ├── storage/         # Storage-mode indicator (dashboard) and status card (settings)
 │   └── ui/              # Small shadcn/ui-compatible primitives
 └── lib/
     ├── navigation.ts    # Single source of truth for nav items and section routes
@@ -198,6 +199,11 @@ written once. SQLite is embedded in the API process; local mode needs no databas
   - `cloud` requires `ORBIT_DATABASE_URL`, a PostgreSQL URL. `postgres://` and
     `postgresql://` URLs are normalized to the `asyncpg` driver; other drivers are rejected.
     Production requires TLS in the URL (`?ssl=require`, `verify-ca`, or `verify-full`).
+- The web app shows the active mode (from `GET /api/v1/health/database`) as a badge on the
+  dashboard and a status card in Settings, so users can see where their data goes. The UI
+  can't change the mode. Switching is server configuration (`apps/api/.env`) plus a restart,
+  because the API has no authentication yet and the database URL is a secret that should never
+  pass through the browser. UI switching can be revisited once authentication exists.
 - Startup logs the mode and a credential-free target, for example
   `Storage mode: local. Using the SQLite database at …`.
 - **No fallback.** If the selected database cannot be opened, reached, or is not migrated, the
@@ -324,7 +330,7 @@ The first feature (tasks) will add the layers below. Only `api/` and `db/` exist
 
 | Layer                    | Tool                                  | Location                                   | Current coverage                                   |
 | ------------------------ | ------------------------------------- | ------------------------------------------ | -------------------------------------------------- |
-| Web units and components | Vitest, Testing Library, jsdom        | `apps/web/src/**/*.test.ts(x)`, co-located | Navigation, env parsing, API client, mobile drawer |
+| Web units and components | Vitest, Testing Library, jsdom        | `apps/web/src/**/*.test.ts(x)`, co-located | Navigation, env, API client, drawer, storage badge |
 | API routes and config    | Pytest, FastAPI `TestClient`          | `apps/api/tests/`                          | Health endpoints, CORS, settings validation        |
 | Database (SQLite)        | Pytest, temporary SQLite files        | `apps/api/tests/test_database.py`, etc.    | Startup checks, sessions, migrations, 503 errors   |
 | Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)        | `apps/api/tests/test_postgres.py`          | Migrations and connectivity; skipped by default    |

@@ -120,6 +120,9 @@ Backups contain all of your data unencrypted. Store them with the same care as t
 
 3. `pnpm db:migrate`, then `pnpm dev:api`. Startup logs the host and database name only.
 
+The dashboard shows a **Local · SQLite** or **Cloud · Supabase** badge, and **Settings → Storage**
+shows the same status. Neither can change the mode: edit `apps/api/.env` and restart the API.
+
 Supabase Row Level Security is planned but not active, since no tables exist yet. See
 [architecture.md](architecture.md#cloud-security-and-supabase).
 
