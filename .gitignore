@@ -35,6 +35,15 @@ junit*.xml
 *.pem
 *.key
 
+# Local databases: SQLite files, their WAL/SHM/journal files, and the default data directory
+.data/
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+
 # Logs
 logs/
 *.log

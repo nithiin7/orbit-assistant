@@ -26,6 +26,7 @@
     "build": "pnpm --filter @orbit/web build",
     "contracts:generate": "pnpm --filter @orbit/contracts generate",
     "contracts:check": "uv run --package orbit-api python -m orbit_api.openapi packages/contracts/openapi.json --check && pnpm --filter @orbit/contracts lint",
+    "db:migrate": "pnpm --filter @orbit/api db:migrate",
     "prepare": "husky"
   },
   "devDependencies": {

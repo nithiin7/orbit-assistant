@@ -14,6 +14,10 @@ Follows the shared rules in `AGENTS.md`. Backend specifics:
   typed models (the return annotation is the response schema).
 - As features land, separate schemas, framework-free services, and infrastructure adapters, as
   described in `docs/architecture.md`. Create these packages only when a feature needs them.
+- Database: `db/` holds engines, sessions, and Alembic migrations (no FastAPI imports). Routes
+  take `SessionDep`; services stay free of SQLAlchemy. Storage mode is explicit, with no
+  fallback between `local` and `cloud`. Schema changes are Alembic revisions that work on
+  SQLite and PostgreSQL.
 - Full type hints; Pyright runs in strict mode. Avoid `Any` and unexplained
   `# pyright: ignore`.
 - Raise explicit exceptions and map them to safe HTTP errors. No swallowed exceptions, and no

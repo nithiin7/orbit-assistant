@@ -8,29 +8,34 @@ intended direction; none of that code exists yet. Coding-agent rules live in
 ## Overview
 
 ```text
-Browser ──► apps/web (Next.js, :3000) ──HTTP/JSON──► apps/api (FastAPI, :8000)
+Browser ──► apps/web (Next.js, :3000) ──HTTP/JSON──► apps/api (FastAPI, :8000) ──► database
+                                                                                  │
+                                              local mode: SQLite file on this machine
+                                              cloud mode: PostgreSQL (Supabase)
 ```
 
 - **apps/web** renders the user interface. It is a Next.js App Router app written in strict
   TypeScript and styled with Tailwind CSS v4.
-- **apps/api** is a FastAPI service that will own data and business logic. Today it exposes
-  only `GET /api/v1/health`.
+- **apps/api** is a FastAPI service that owns data access and business logic. Today it exposes
+  `GET /api/v1/health` (liveness) and `GET /api/v1/health/database` (database connectivity),
+  and it has the database foundation described under [Storage](#storage). No product data
+  is stored yet.
 
 The two apps communicate only over HTTP and share no runtime code. They share one thing: the
 API contract in `packages/contracts`, described below.
 
 ## Dependency boundaries
 
-| Module                       | May depend on                                     | Must not depend on                      |
-| ---------------------------- | ------------------------------------------------- | --------------------------------------- |
-| `apps/web`                   | `@orbit/contracts` (types only), its own packages | `apps/api` code, Python, server secrets |
-| `apps/api`                   | Its own Python dependencies                       | Anything in `apps/web` or `packages/`   |
-| `packages/contracts`         | Nothing at runtime (generated from `apps/api`)    | `apps/web`                              |
-| `packages/eslint-config`     | ESLint plugins                                    | Application code                        |
-| `packages/typescript-config` | Nothing                                           | Application code                        |
+| Module                       | May depend on                                     | Must not depend on                                    |
+| ---------------------------- | ------------------------------------------------- | ----------------------------------------------------- |
+| `apps/web`                   | `@orbit/contracts` (types only), its own packages | `apps/api` code, Python, server secrets, any database |
+| `apps/api`                   | Its own Python dependencies                       | Anything in `apps/web` or `packages/`                 |
+| `packages/contracts`         | Nothing at runtime (generated from `apps/api`)    | `apps/web`                                            |
+| `packages/eslint-config`     | ESLint plugins                                    | Application code                                      |
+| `packages/typescript-config` | Nothing                                           | Application code                                      |
 
-- Web and API communicate only over HTTP. All data and business rules are meant to live behind
-  the API. The web app renders, navigates, and calls the API through `src/lib/api.ts`.
+- Web and API communicate only over HTTP. All data and business rules live behind the API.
+  The web app never connects to SQLite or PostgreSQL and never holds database credentials. The web app renders, navigates, and calls the API through `src/lib/api.ts`.
 - Within the web app, `src/app` (routes) may use `src/components` and `src/lib`;
   `src/components/ui` primitives depend only on `src/lib/utils.ts`; `src/lib` does not import
   components.
@@ -140,8 +145,17 @@ apps/api/src/orbit_api/
 ├── main.py              # `create_app()` factory and ASGI `app`
 ├── config.py            # Pydantic Settings: the only place config is read
 ├── openapi.py           # Exports the OpenAPI contract to packages/contracts
-└── api/v1/              # Versioned HTTP API, mounted at /api/v1
-    └── health.py
+├── api/
+│   ├── dependencies.py  # FastAPI dependencies (request-scoped database session)
+│   └── v1/              # Versioned HTTP API, mounted at /api/v1
+│       └── health.py    # Liveness and database connectivity
+└── db/                  # Database infrastructure (SQLAlchemy + Alembic, no FastAPI)
+    ├── base.py          # Declarative `Base` with a constraint naming convention
+    ├── engine.py        # Engine per storage mode: SQLite PRAGMAs, Postgres pooling
+    ├── database.py      # `open_database()`: connect, verify schema, sessions, dispose
+    ├── migrate.py       # Programmatic Alembic: upgrade, downgrade, head revision
+    └── migrations/      # Alembic environment and versioned revisions
+        └── versions/    # 0001_baseline (no tables)
 ```
 
 Design decisions:
@@ -153,8 +167,144 @@ Design decisions:
   CORS origins, and the interactive docs are disabled there.
 - **Versioned routes.** Endpoints live under `/api/v1`, so breaking changes can ship as `/api/v2`
   alongside.
-- **No persistence or auth yet.** These are deliberately deferred until product requirements
-  are clearer.
+- **Fail-fast startup.** The lifespan opens the database selected by `ORBIT_STORAGE_MODE`,
+  checks connectivity and that the schema is at the latest migration, and logs the mode and
+  target. If any check fails the API exits; it never falls back to another storage mode.
+- **Safe database errors.** Connectivity failures during a request (SQLAlchemy
+  `OperationalError`, `InterfaceError`, pool timeouts, or connection errors from the driver)
+  are logged server-side and returned as `503 {"detail": "The database is unavailable."}`,
+  without paths, hosts, or SQL.
+- **No authentication yet.** Deliberately deferred until product requirements are clearer.
+
+## Storage
+
+Orbit stores application data in a relational database owned by the API. There are two
+**storage modes**, chosen per deployment with `ORBIT_STORAGE_MODE`:
+
+| Mode    | Database              | Driver      | Intended for                                           |
+| ------- | --------------------- | ----------- | ------------------------------------------------------ |
+| `local` | SQLite file (default) | `aiosqlite` | Single user, data stays on their machine               |
+| `cloud` | PostgreSQL (Supabase) | `asyncpg`   | Hosted deployment, future authenticated multi-user use |
+
+Both use SQLAlchemy 2.x (async) and the same Alembic migrations, so models and queries are
+written once. SQLite is embedded in the API process; local mode needs no database server.
+
+### Selecting a mode
+
+- The mode is explicit configuration, validated at startup (`config.py`):
+  - `local` uses `ORBIT_SQLITE_PATH` (default `apps/api/.data/orbit.sqlite3`, git-ignored and
+    outside the web app). Setting `ORBIT_DATABASE_URL` in local mode is a configuration error,
+    because it suggests cloud storage was intended.
+  - `cloud` requires `ORBIT_DATABASE_URL`, a PostgreSQL URL. `postgres://` and
+    `postgresql://` URLs are normalized to the `asyncpg` driver; other drivers are rejected.
+    Production requires TLS in the URL (`?ssl=require`, `verify-ca`, or `verify-full`).
+- Startup logs the mode and a credential-free target, for example
+  `Storage mode: local. Using the SQLite database at …`.
+- **No fallback.** If the selected database cannot be opened, reached, or is not migrated, the
+  API refuses to start. Silently using local storage when cloud storage was configured would
+  let users believe their data was saved remotely when it was not.
+- **One database at a time.** There are no dual writes and no synchronization between modes.
+
+### Engines, pooling, and sessions
+
+- **SQLite:** each connection enables `foreign_keys`, WAL journaling (`synchronous=NORMAL`),
+  and a busy timeout. SQLAlchemy's default async queue pool is used.
+- **PostgreSQL:** a bounded pool (`ORBIT_DATABASE_POOL_SIZE`, `ORBIT_DATABASE_MAX_OVERFLOW`),
+  `pool_pre_ping` to discard dead connections, recycling after 30 minutes, and a 10-second
+  connect timeout. Use Supabase's direct connection or **session** pooler. The transaction
+  pooler (port 6543) does not support the prepared statements `asyncpg` uses.
+- Both engines set `hide_parameters=True`, so bound values (user data) never appear in error
+  messages or logs.
+- **One session per request.** Routes receive an `AsyncSession` through `SessionDep`
+  (`api/dependencies.py`). Services commit explicitly. Anything uncommitted is rolled back when
+  the session closes at the end of the request. Sessions use `expire_on_commit=False`.
+
+### Migrations
+
+- Alembic owns the schema. Migrations live in `src/orbit_api/db/migrations/versions/`, ship
+  with the package, and run on both SQLite (in batch mode, which rebuilds tables for `ALTER`)
+  and PostgreSQL.
+- `0001_baseline` creates no tables. It establishes version tracking so the first feature's
+  migration has a parent.
+- Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
+  Startup only checks that the database is at the head revision. For a shared cloud database,
+  schema changes should be deliberate and reviewable.
+- `tests/test_migrations.py` checks that the history is linear, that upgrade and downgrade
+  work, and that ORM models match the migrations (`alembic check`).
+
+### Backend layers
+
+The first feature (tasks) will add the layers below. Only `api/` and `db/` exist today; per
+`AGENTS.md`, the others are created with the first feature that needs them, not before.
+
+| Layer         | Location (planned paths in _italics_) | Responsibility                                                   | Depends on SQLAlchemy?         |
+| ------------- | ------------------------------------- | ---------------------------------------------------------------- | ------------------------------ |
+| Routes        | `api/v1/<feature>.py`                 | HTTP: routing, status codes, auth dependencies, calling services | Only for the `SessionDep` type |
+| Schemas       | _`schemas/<feature>.py`_              | Pydantic request/response models (the API contract)              | No                             |
+| Services      | _`services/<feature>.py`_             | Domain rules and authorization decisions, transaction boundaries | No (receives a repository)     |
+| Repositories  | _`repositories/<feature>.py`_         | Queries for one aggregate, always scoped to the owning user      | Yes                            |
+| Models        | _`db/models/<feature>.py`_            | SQLAlchemy ORM tables, subclasses of `db.base.Base`              | Yes                            |
+| DB foundation | `db/`                                 | Engines, sessions, migrations, storage-mode selection            | Yes (no FastAPI)               |
+
+- Services depend on a small `Protocol` per repository, not on SQLAlchemy, so domain logic is
+  unit-testable without a database. A concrete repository class takes an `AsyncSession`.
+- Schemas and ORM models stay separate: API shape and storage shape evolve independently.
+- No generic repository base class or unit-of-work framework is planned. Add one only if
+  several features demonstrably repeat the same code.
+
+### Local security
+
+- The SQLite file is created with mode `0600`, and its directory with `0700` when Orbit
+  creates it. SQLite gives the `-wal` and `-shm` files the same permissions as the database
+  file. Existing files and directories keep their permissions. On Windows these modes have
+  little effect; rely on the user profile's ACLs.
+- The data is **not encrypted at rest** by Orbit. Use full-disk encryption (FileVault,
+  BitLocker, LUKS).
+- The default location is inside the repository (`apps/api/.data/`) for development only.
+  `.data/`, `*.sqlite*`, and `*.db*` files are git-ignored. For real use, point
+  `ORBIT_SQLITE_PATH` at a user data directory. Never place it under `apps/web` (especially
+  `public/`) or in a folder synced to a third party you don't trust.
+- The API binds to `127.0.0.1` by default (`ORBIT_API_HOST`), so the local backend and its data
+  are not reachable from other devices. Binding to `0.0.0.0` exposes the API, which has no
+  authentication yet, to the network. Don't do it outside a trusted, isolated environment.
+- Backups: see [development.md](development.md#backups).
+
+### Cloud security and Supabase
+
+- The PostgreSQL URL is server-side configuration (`ORBIT_DATABASE_URL`, a `SecretStr`). It is
+  never sent to the browser, never logged (startup logs only the host and database name), and
+  validation errors never echo it.
+- The browser never talks to the database. If authentication later uses Supabase Auth, the web
+  app may use the public Supabase client for sign-in flows only. Application data still goes
+  through the API.
+- **Ownership (planned):** every user-owned table will carry a non-null owner column
+  (`user_id`, and `workspace_id` once workspaces exist). The API derives the owner from the
+  authenticated session, never from request bodies or query parameters. Repositories filter
+  every read and write by owner, and cross-user isolation tests accompany each repository.
+- **Row Level Security (planned, not active):** the API connects with a server-side role that
+  bypasses RLS, so **application-level authorization is the primary control**. RLS is defense
+  in depth against other access paths, chiefly Supabase's auto-generated Data API, which
+  exposes tables in the `public` schema to anyone holding the project's anon key. The intended
+  strategy:
+  1. Every migration that creates a table in PostgreSQL enables RLS on it in the same
+     revision (`ALTER TABLE … ENABLE ROW LEVEL SECURITY`). With no policies, the Data API's
+     `anon` and `authenticated` roles can read nothing.
+  2. Add `authenticated` policies (`owner_id = auth.uid()`) only if a client is ever allowed
+     to query a table directly. None is planned.
+  3. Consider a dedicated, non-superuser role for the API and a schema that is not exposed
+     through the Data API.
+
+  **No tables exist yet, so RLS currently protects nothing.** Don't describe Orbit data as
+  RLS-protected until the tables and policies exist and are tested.
+
+### Not implemented in this phase
+
+- **Synchronization or local↔cloud migration.** Moving data between modes needs stable
+  record identity, conflict resolution, and deletion semantics (tombstones). Those depend on
+  real schemas that don't exist yet. Until then, a deployment uses exactly one mode, and the
+  API refuses to start rather than guess.
+- **Authentication and ownership columns.** Planned with the first user-owned feature.
+- **Encryption at rest beyond the OS**, a desktop wrapper, and a bundled local database server.
 
 ## Configuration
 
@@ -175,7 +325,9 @@ Design decisions:
 | Layer                    | Tool                                  | Location                                   | Current coverage                                   |
 | ------------------------ | ------------------------------------- | ------------------------------------------ | -------------------------------------------------- |
 | Web units and components | Vitest, Testing Library, jsdom        | `apps/web/src/**/*.test.ts(x)`, co-located | Navigation, env parsing, API client, mobile drawer |
-| API routes and config    | Pytest, FastAPI `TestClient`          | `apps/api/tests/`                          | Health endpoint, CORS, settings validation         |
+| API routes and config    | Pytest, FastAPI `TestClient`          | `apps/api/tests/`                          | Health endpoints, CORS, settings validation        |
+| Database (SQLite)        | Pytest, temporary SQLite files        | `apps/api/tests/test_database.py`, etc.    | Startup checks, sessions, migrations, 503 errors   |
+| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)        | `apps/api/tests/test_postgres.py`          | Migrations and connectivity; skipped by default    |
 | Contract freshness       | Pytest + `openapi-typescript --check` | `tests/test_openapi.py`, contracts `lint`  | Generated contract matches the API                 |
 | End-to-end               | Not set up (**planned**)              | —                                          | —                                                  |
 
@@ -190,28 +342,19 @@ critical user journeys once real features exist. CI runs every layer on each pul
 
 ### Backend layering
 
-As features are added, the API package is expected to grow into these layers:
-
-```text
-apps/api/src/orbit_api/
-├── api/v1/<feature>.py      # HTTP only: routing, status codes, dependency injection
-├── schemas/<feature>.py     # Pydantic request/response models (the API contract)
-├── services/<feature>.py    # Domain logic; no FastAPI, database, or vendor imports
-├── storage/                 # Storage adapters behind small interfaces (Protocols)
-└── providers/               # External integrations (e.g. AI providers) behind interfaces
-```
-
-Routes call services; services depend on interfaces, not concrete storage or vendors. This keeps
-domain logic unit-testable without HTTP, a database, or network access.
+Storage layers are described under [Backend layers](#backend-layers). External integrations
+such as AI providers will live in `providers/`, behind interfaces, so services don't import
+vendor SDKs.
 
 ### Storage
 
-- **Local-first by default:** a user's data is stored on infrastructure they control. An
-  embedded database such as SQLite is the likely first adapter.
-- **Optional cloud sync** may be added later as an explicit opt-in, implemented as another
-  adapter rather than a change to domain logic.
-- Every data-access path must enforce per-user isolation once accounts exist.
-- The choice of database, migration tool, and sync approach is **not yet decided**.
+The database foundation is implemented (see [Storage](#storage)). Still planned:
+
+- The first product tables, starting with tasks, with repositories and services in the layers
+  described above.
+- Per-user ownership columns and authorization, then PostgreSQL RLS as defense in depth.
+- Any synchronization or migration between local and cloud storage. This is undecided and
+  needs its own design.
 
 ### AI providers
 
@@ -222,9 +365,10 @@ domain logic unit-testable without HTTP, a database, or network access.
 
 ### Evolution
 
-The rough order is: first real feature with storage, then authentication and per-user data
-isolation, then AI-assisted features through the provider interface, then optional sync and
-extension points. Each step should leave the boundaries above intact.
+The next step is to define the task schema and implement the first database-backed task API
+(model, migration, repository, service, routes, and contract). After that: authentication and
+per-user data isolation, then AI-assisted features through the provider interface, then
+optional sync and extension points. Each step should leave the boundaries above intact.
 
 ## Continuous integration
 
@@ -236,4 +380,5 @@ extension points. Each step should leave the boundaries above intact.
   contract freshness test).
 - **Commit messages (PRs only):** commitlint over the PR's commits.
 
-CI requires no secrets.
+CI requires no secrets. API tests use temporary SQLite databases. The PostgreSQL tests are
+skipped unless `ORBIT_TEST_DATABASE_URL` is set.

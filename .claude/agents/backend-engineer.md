@@ -26,7 +26,8 @@ backend layout.
    structure:
    - `main.py`: `create_app(settings)`
    - `config.py`: `Settings` via `get_settings()`, `ORBIT_*` variables
-   - `api/v1/`: versioned routers
+   - `api/v1/`: versioned routers; `api/dependencies.py`: `SessionDep`
+   - `db/`: engines, sessions, and Alembic migrations (storage mode `local` or `cloud`)
 2. Keep routes thin with Pydantic request and response models. Put domain logic in
    framework-free modules once a feature needs them, as described in the architecture doc. No
    speculative layers.

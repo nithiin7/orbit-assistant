@@ -5,8 +5,8 @@ finances, notes, and an AI assistant together in one place, while keeping your d
 control.
 
 > **Status: early scaffolding.** This repository currently contains the project foundation only:
-> the monorepo, tooling, an application shell, and an API skeleton. None of the product features
-> are built yet.
+> the monorepo, tooling, an application shell, and an API with a database foundation. None of the
+> product features are built yet.
 
 ## Scope
 
@@ -15,13 +15,16 @@ control.
 - A Next.js web app with a responsive application shell (collapsible sidebar on Cmd/Ctrl+B,
   mobile drawer, command palette on Cmd/Ctrl+K, light/dark/system themes chosen in Settings) and
   placeholder sections.
-- A FastAPI service with centralized configuration and a health endpoint.
+- A FastAPI service with centralized configuration, health endpoints, and a database layer:
+  SQLite on your machine (local mode) or PostgreSQL on Supabase (cloud mode), with SQLAlchemy and
+  Alembic migrations. No product tables exist yet.
 - Shared tooling for linting, formatting, type checking, testing, commit conventions, and CI.
 
 **Explicit non-goals for now**
 
 - Task, calendar, finance, or notes functionality.
-- Authentication, user accounts, or data persistence (no database or ORM).
+- Authentication or user accounts.
+- Synchronization or data migration between local and cloud storage.
 - AI or LLM integration, data synchronization, or background jobs.
 - Containers or deployment infrastructure.
 
@@ -30,7 +33,7 @@ control.
 | Part       | Path                                                       | Stack                                                     |
 | ---------- | ---------------------------------------------------------- | --------------------------------------------------------- |
 | Web app    | [`apps/web`](apps/web)                                     | Next.js (App Router), React, TypeScript, Tailwind CSS v4  |
-| API        | [`apps/api`](apps/api)                                     | Python 3.12, FastAPI, Pydantic Settings, Uvicorn          |
+| API        | [`apps/api`](apps/api)                                     | Python 3.12, FastAPI, SQLAlchemy, Alembic, Uvicorn        |
 | Contracts  | [`packages/contracts`](packages/contracts)                 | OpenAPI schema and TS types generated from the API        |
 | TS configs | [`packages/typescript-config`](packages/typescript-config) | Shared strict `tsconfig` presets                          |
 | ESLint     | [`packages/eslint-config`](packages/eslint-config)         | Shared flat config (Next.js, TypeScript, import ordering) |
@@ -81,6 +84,7 @@ cd orbit-assistant
 
 pnpm install              # JS dependencies + Git hooks
 uv sync --all-packages    # Python virtual environment in .venv
+pnpm db:migrate           # create the local SQLite database (apps/api/.data/, git-ignored)
 
 pnpm dev                  # web on http://localhost:3000, API on http://localhost:8000
 ```
@@ -126,6 +130,7 @@ Run everything from the repository root.
 | `pnpm build`              | Production build of the web app                              |
 | `pnpm contracts:generate` | Regenerate the shared API contract after changing API models |
 | `pnpm contracts:check`    | Verify the shared API contract is up to date                 |
+| `pnpm db:migrate`         | Apply database migrations to the configured database         |
 
 You can also use `uv` directly inside `apps/api`, for example `uv run pytest -k health`. See
 [docs/development.md](docs/development.md) for the full workflow.

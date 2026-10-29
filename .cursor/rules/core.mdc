@@ -20,7 +20,9 @@ Privacy-first, local-first personal assistant in early development. pnpm + uv mo
   types. Never hand-edit the generated files; run `pnpm contracts:generate`.
 - `packages/eslint-config`, `packages/typescript-config`: shared configuration only.
 
-Web and API communicate only over HTTP. No database, auth, or AI integration exists yet.
+Web and API communicate only over HTTP. The API owns data access (SQLAlchemy over SQLite in
+`local` mode or PostgreSQL in `cloud` mode, Alembic migrations); the web app never touches a
+database. No product tables, auth, or AI integration exist yet.
 
 ## Rules
 
