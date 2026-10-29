@@ -22,6 +22,7 @@ vi.mock("next/navigation", () => ({
 const session = {
   "GET /api/v1/auth/config": json({ provider: "local", registration_open: false }),
   "GET /api/v1/me": json(ada),
+  "GET /api/v1/me/avatar": status(204),
 };
 
 afterEach(() => {
@@ -246,6 +247,44 @@ describe("WorkspaceSettings", () => {
     await user.click(screen.getByRole("button", { name: "Rename" }));
     expect(await screen.findByText("Saved.")).toBeInTheDocument();
     expect(screen.getByText("Home", { selector: "span" })).toBeInTheDocument();
+  });
+
+  it("deletes the current workspace after typing its name, then returns to Personal", async () => {
+    const user = userEvent.setup();
+    // React reports problems such as duplicate sibling keys only through console.error.
+    const consoleError = vi.spyOn(console, "error");
+    localStorage.setItem(workspacePreferenceKey(ada.id), lab.id);
+    const api = mockApi({
+      ...session,
+      "GET /api/v1/workspaces": json({ workspaces: [personal, lab] }),
+      [`DELETE /api/v1/workspaces/${lab.id}`]: status(204),
+    });
+    await renderSignedIn(
+      <>
+        <WorkspaceSwitcher />
+        <WorkspaceSettings />
+      </>,
+    );
+
+    await user.click(await screen.findByRole("button", { name: "Delete workspace…" }));
+    const confirm = screen.getByRole("button", { name: "Delete workspace" });
+    expect(confirm).toBeDisabled();
+    await user.type(screen.getByLabelText("Type Lab to confirm"), "Lab");
+    await user.click(confirm);
+
+    expect(await screen.findByRole("button", { name: /Workspace: Personal/ })).toBeInTheDocument();
+    expect(api.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(true);
+    expect(screen.queryByRole("button", { name: "Switch to Lab" })).not.toBeInTheDocument();
+    expect(localStorage.getItem(workspacePreferenceKey(ada.id))).toBe(personal.id);
+    expect(consoleError).not.toHaveBeenCalled();
+  });
+
+  it("never offers to delete the personal workspace", async () => {
+    mockApi({ ...session, "GET /api/v1/workspaces": json({ workspaces: [personal, lab] }) });
+    await renderSignedIn(<WorkspaceSettings />);
+
+    await screen.findByLabelText("Current workspace name");
+    expect(screen.queryByRole("button", { name: /Delete workspace/ })).not.toBeInTheDocument();
   });
 
   it("validates names before contacting the API", async () => {

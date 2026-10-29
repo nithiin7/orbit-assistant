@@ -32,3 +32,10 @@ export async function fetchStorageStatus(signal?: AbortSignal): Promise<StorageS
     return { state: "unreachable" };
   }
 }
+
+/** The name of the platform's file manager action, for the "show database" button. */
+export function revealLabel(userAgent: string): string {
+  if (/Macintosh|Mac OS X/.test(userAgent)) return "Show in Finder";
+  if (/Windows/.test(userAgent)) return "Show in File Explorer";
+  return "Open folder";
+}

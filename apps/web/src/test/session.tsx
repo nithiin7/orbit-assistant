@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { RequireAuth } from "@/components/auth/require-auth";
+import { AvatarProvider } from "@/components/avatar/avatar-provider";
 import { WorkspaceProvider } from "@/components/workspace/workspace-provider";
 import { writeLocalSession } from "@/lib/auth/local-session";
 
@@ -15,16 +16,18 @@ export function storeSession(token = SESSION_TOKEN) {
 
 /**
  * Render `ui` inside the real auth and workspace providers, with a stored local session.
- * Mock the API (config, `/me`, and workspaces) with `mockApi` first.
+ * Mock the API (config, `/me`, workspaces, and the profile photo) with `mockApi` first.
  */
 export async function renderSignedIn(ui: ReactNode) {
   storeSession();
   const result = render(
     <AuthProvider>
       <RequireAuth>
-        <WorkspaceProvider>
-          <div data-testid="signed-in">{ui}</div>
-        </WorkspaceProvider>
+        <AvatarProvider>
+          <WorkspaceProvider>
+            <div data-testid="signed-in">{ui}</div>
+          </WorkspaceProvider>
+        </AvatarProvider>
       </RequireAuth>
     </AuthProvider>,
   );

@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { describeApiError, updateMe } from "@/lib/api";
 import { validateName } from "@/lib/auth/validation";
 
+import { ProfilePhoto } from "./profile-photo";
+
 const providerLabels = {
   local: "Local account, stored in this installation’s database",
   supabase: "Supabase account (Orbit cloud)",
@@ -48,6 +50,8 @@ export function AccountSettings() {
 
   return (
     <div className="space-y-6">
+      <ProfilePhoto />
+
       <dl className="grid gap-4 rounded-xl border bg-card p-4 text-sm sm:grid-cols-2">
         <div className="min-w-0 space-y-0.5">
           <dt className="text-muted-foreground">Email</dt>

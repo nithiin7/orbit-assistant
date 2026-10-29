@@ -4,9 +4,9 @@ import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 import { useCurrentUser } from "@/components/auth/auth-provider";
+import { UserAvatar } from "@/components/avatar/user-avatar";
 import { settingsHref } from "@/lib/settings";
 import { cn } from "@/lib/utils";
-import { workspaceInitial } from "@/lib/workspaces";
 
 /** The signed-in user's name and email, opening account settings. */
 export function ProfileLink({ active = false }: { active?: boolean }) {
@@ -22,12 +22,7 @@ export function ProfileLink({ active = false }: { active?: boolean }) {
         active && "bg-accent",
       )}
     >
-      <span
-        aria-hidden="true"
-        className="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-subtle text-lg font-semibold text-brand"
-      >
-        {workspaceInitial(user.display_name)}
-      </span>
+      <UserAvatar />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="truncate text-base font-semibold">{user.display_name}</span>
         <span className="truncate text-sm text-muted-foreground">

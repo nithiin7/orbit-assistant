@@ -1,9 +1,12 @@
 import { StorageStatusCard } from "@/components/storage/storage-indicator";
 
+import { DatabaseLocation } from "./database-location";
+
 export function StorageSettings() {
   return (
     <div className="space-y-4">
       <StorageStatusCard />
+      <DatabaseLocation />
       <div className="space-y-2 text-sm text-muted-foreground">
         <h2 className="font-medium text-foreground">Switching storage</h2>
         <ol className="list-decimal space-y-1 pl-5 marker:text-muted-foreground">
