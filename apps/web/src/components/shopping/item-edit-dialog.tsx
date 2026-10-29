@@ -3,7 +3,7 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { ShoppingItem, UpdateShoppingItemRequest } from "@orbit/contracts";
 import { X } from "lucide-react";
-import { useEffect, useId, useRef } from "react";
+import { useId } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
 
@@ -11,6 +11,7 @@ import { describeApiError } from "@/api/client";
 import { FormAlert, FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { itemSchema, NOTES_MAX_LENGTH, optionalText } from "@/lib/shopping";
 
 type ItemEditDialogProps = {
@@ -23,8 +24,6 @@ type ItemEditDialogProps = {
 /** Edits an item in a modal `<dialog>`. Focus returns to whatever opened it. */
 export function ItemEditDialog({ item, onSave, onClose }: ItemEditDialogProps) {
   const id = useId();
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const returnFocusRef = useRef<HTMLElement | null>(null);
   const {
     register,
     handleSubmit,
@@ -40,17 +39,8 @@ export function ItemEditDialog({ item, onSave, onClose }: ItemEditDialogProps) {
       notes: item.notes,
     },
   });
+  const { close, dialogProps } = useModalDialog({ onClose, dismissible: !saving });
   const notes = useWatch({ control, name: "notes" });
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog || dialog.open) return;
-    returnFocusRef.current =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    dialog.showModal();
-  }, []);
-
-  const close = () => dialogRef.current?.close();
 
   async function save(values: InferType<typeof itemSchema>) {
     const quantity = optionalText(values.quantity);
@@ -77,17 +67,9 @@ export function ItemEditDialog({ item, onSave, onClose }: ItemEditDialogProps) {
 
   return (
     <dialog
-      ref={dialogRef}
+      {...dialogProps}
       aria-labelledby={`${id}-heading`}
       className="dialog-motion dialog-pop mx-auto mt-[10vh] w-[calc(100%-2rem)] max-w-lg rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
-      onClose={() => {
-        returnFocusRef.current?.focus();
-        onClose();
-      }}
-      onClick={(event) => {
-        // A click on the dialog element itself (not its content) is a backdrop click.
-        if (event.target === event.currentTarget && !saving) close();
-      }}
     >
       <form
         noValidate
