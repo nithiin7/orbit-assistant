@@ -1,0 +1,24 @@
+---
+description: Testing conventions for Vitest and Pytest suites
+globs: apps/web/src/**/*.test.ts,apps/web/src/**/*.test.tsx,apps/api/tests/**/*.py
+alwaysApply: false
+---
+
+# Tests
+
+Extends the core rule and `AGENTS.md`.
+
+- Test behavior, not implementation details. Cover success, validation, error, and edge
+  cases. Mock external services only.
+- Never weaken, skip, or delete tests to make checks pass, and don't change production code
+  only to suit a broken test.
+- Web: Vitest + Testing Library + jsdom, co-located `*.test.ts(x)`. Query by role and
+  accessible name. Mock `next/navigation` with `vi.mock` and network with
+  `vi.stubGlobal("fetch", …)`.
+- API: Pytest in `apps/api/tests/`. Use the `client` fixture (`conftest.py`), which builds an
+  isolated app with `create_app(Settings(...))`. Warnings are errors.
+- `tests/test_openapi.py` guards the shared contract. If it fails, run
+  `pnpm contracts:generate`.
+- No E2E framework yet. Don't add one unless asked.
+- Narrowest first: `pnpm --filter @orbit/web exec vitest run <file>`,
+  `cd apps/api && uv run pytest <file>`. Then `pnpm check`.

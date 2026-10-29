@@ -1,7 +1,9 @@
 # Architecture
 
-This document describes how the Orbit repository is organized and why. It covers the
-foundation only; product architecture (data model, sync, AI) will be documented as it is built.
+This document describes how the Orbit repository is organized and why. Sections describe the
+**current implementation** unless they are explicitly marked **planned**. Planned sections record
+intended direction; none of that code exists yet. Coding-agent rules live in
+[`AGENTS.md`](../AGENTS.md).
 
 ## Overview
 
@@ -16,6 +18,22 @@ Browser ──► apps/web (Next.js, :3000) ──HTTP/JSON──► apps/api (F
 
 The two apps communicate only over HTTP and share no runtime code. They share one thing: the
 API contract in `packages/contracts`, described below.
+
+## Dependency boundaries
+
+| Module                       | May depend on                                     | Must not depend on                      |
+| ---------------------------- | ------------------------------------------------- | --------------------------------------- |
+| `apps/web`                   | `@orbit/contracts` (types only), its own packages | `apps/api` code, Python, server secrets |
+| `apps/api`                   | Its own Python dependencies                       | Anything in `apps/web` or `packages/`   |
+| `packages/contracts`         | Nothing at runtime (generated from `apps/api`)    | `apps/web`                              |
+| `packages/eslint-config`     | ESLint plugins                                    | Application code                        |
+| `packages/typescript-config` | Nothing                                           | Application code                        |
+
+- Web and API communicate only over HTTP. All data and business rules are meant to live behind
+  the API. The web app renders, navigates, and calls the API through `src/lib/api.ts`.
+- Within the web app, `src/app` (routes) may use `src/components` and `src/lib`;
+  `src/components/ui` primitives depend only on `src/lib/utils.ts`; `src/lib` does not import
+  components.
 
 ## Shared API contract
 
@@ -137,6 +155,76 @@ Design decisions:
   alongside.
 - **No persistence or auth yet.** These are deliberately deferred until product requirements
   are clearer.
+
+## Configuration
+
+| App | Source                                                    | Validation                                    | Visibility  |
+| --- | --------------------------------------------------------- | --------------------------------------------- | ----------- |
+| API | `ORBIT_*` environment variables, optional `apps/api/.env` | `Settings` in `config.py` (pydantic-settings) | Server-only |
+| Web | `NEXT_PUBLIC_*` variables, optional `apps/web/.env.local` | `src/lib/env.ts`                              | Public      |
+
+- Configuration is read in exactly one place per app. Other modules receive it from there
+  (`get_settings()` or `publicEnv`).
+- Invalid configuration fails at startup with a clear error. Production rejects wildcard CORS
+  origins and disables interactive API docs.
+- Only `.env.example` files with placeholder values are committed. Variable reference:
+  [development.md](development.md#environment-variables).
+
+## Testing strategy
+
+| Layer                    | Tool                                  | Location                                   | Current coverage                                   |
+| ------------------------ | ------------------------------------- | ------------------------------------------ | -------------------------------------------------- |
+| Web units and components | Vitest, Testing Library, jsdom        | `apps/web/src/**/*.test.ts(x)`, co-located | Navigation, env parsing, API client, mobile drawer |
+| API routes and config    | Pytest, FastAPI `TestClient`          | `apps/api/tests/`                          | Health endpoint, CORS, settings validation         |
+| Contract freshness       | Pytest + `openapi-typescript --check` | `tests/test_openapi.py`, contracts `lint`  | Generated contract matches the API                 |
+| End-to-end               | Not set up (**planned**)              | —                                          | —                                                  |
+
+Unit tests cover logic, route tests cover HTTP behavior and validation, and E2E tests will cover
+critical user journeys once real features exist. CI runs every layer on each pull request.
+
+## Planned architecture
+
+> **Not implemented.** This section records intended direction so that early features don't
+> block it. Build each piece only when a feature needs it, and update this document when it
+> lands.
+
+### Backend layering
+
+As features are added, the API package is expected to grow into these layers:
+
+```text
+apps/api/src/orbit_api/
+├── api/v1/<feature>.py      # HTTP only: routing, status codes, dependency injection
+├── schemas/<feature>.py     # Pydantic request/response models (the API contract)
+├── services/<feature>.py    # Domain logic; no FastAPI, database, or vendor imports
+├── storage/                 # Storage adapters behind small interfaces (Protocols)
+└── providers/               # External integrations (e.g. AI providers) behind interfaces
+```
+
+Routes call services; services depend on interfaces, not concrete storage or vendors. This keeps
+domain logic unit-testable without HTTP, a database, or network access.
+
+### Storage
+
+- **Local-first by default:** a user's data is stored on infrastructure they control. An
+  embedded database such as SQLite is the likely first adapter.
+- **Optional cloud sync** may be added later as an explicit opt-in, implemented as another
+  adapter rather than a change to domain logic.
+- Every data-access path must enforce per-user isolation once accounts exist.
+- The choice of database, migration tool, and sync approach is **not yet decided**.
+
+### AI providers
+
+- AI features will call a provider interface defined by Orbit, not a vendor SDK directly.
+- Local models are the privacy-preserving default. Sending personal data to a third-party
+  provider must require explicit user configuration and consent.
+- Retrieved documents and model or tool output are treated as untrusted input.
+
+### Evolution
+
+The rough order is: first real feature with storage, then authentication and per-user data
+isolation, then AI-assisted features through the provider interface, then optional sync and
+extension points. Each step should leave the boundaries above intact.
 
 ## Continuous integration
 

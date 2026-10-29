@@ -56,7 +56,7 @@ Rules:
 
 - Keep the subject short, **72 characters at most**, in the imperative mood ("add", not
   "added"), with no trailing period.
-- Suggested scopes: `web`, `api`, `config`, `ci`, `deps`, `docs`.
+- Suggested scopes: `web`, `api`, `contracts`, `config`, `ci`, `deps`, `docs`.
 - Explain _why_ in the body when it is not obvious.
 - Mark breaking changes with `!` (`feat(api)!: rename health fields`) and a `BREAKING CHANGE:`
   footer.
