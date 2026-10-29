@@ -6,6 +6,7 @@ import type {
   LocalSessionResponse,
   LocalSignInRequest,
   LocalSignUpRequest,
+  StorageLocation,
   UpdateProfileRequest,
   UpdateWorkspaceRequest,
   UserProfile,
@@ -28,26 +29,34 @@ export class ApiError extends Error {
 }
 
 type RequestOptions = {
-  method?: "GET" | "POST" | "PATCH";
+  method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
+  /** JSON-encoded, except a `Blob`, which is sent as-is with its own content type. */
   body?: unknown;
   /** Session or access token, sent as `Authorization: Bearer`. */
   token?: string;
   signal?: AbortSignal;
 };
 
-/** Call the Orbit API. Response types come from the shared API contract. */
-async function request<T>(path: string, { method, body, token, signal }: RequestOptions = {}) {
+/** Send a request to the Orbit API, throwing `ApiError` for any non-2xx response. */
+async function send(path: string, { method, body, token, signal }: RequestOptions = {}) {
   const headers: Record<string, string> = { Accept: "application/json" };
-  if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (body instanceof Blob) headers["Content-Type"] = body.type;
+  else if (body !== undefined) headers["Content-Type"] = "application/json";
   if (token) headers.Authorization = `Bearer ${token}`;
 
   const response = await fetch(`${publicEnv.apiUrl}${path}`, {
     method,
     headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: body === undefined || body instanceof Blob ? body : JSON.stringify(body),
     signal,
   });
   if (!response.ok) throw new ApiError(response.status, path, await readDetail(response));
+  return response;
+}
+
+/** Call the Orbit API. Response types come from the shared API contract. */
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const response = await send(path, options);
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
 }
@@ -100,6 +109,20 @@ export function updateMe(token: string, body: UpdateProfileRequest): Promise<Use
   return request<UserProfile>("/api/v1/me", { method: "PATCH", body, token });
 }
 
+/** The signed-in user's profile photo, or `null` when none is set. */
+export async function getMyAvatar(token: string, { signal }: Signal = {}): Promise<Blob | null> {
+  const response = await send("/api/v1/me/avatar", { token, signal });
+  return response.status === 204 ? null : response.blob();
+}
+
+export function putMyAvatar(token: string, image: Blob): Promise<void> {
+  return request<void>("/api/v1/me/avatar", { method: "PUT", body: image, token });
+}
+
+export function deleteMyAvatar(token: string): Promise<void> {
+  return request<void>("/api/v1/me/avatar", { method: "DELETE", token });
+}
+
 export function listWorkspaces(token: string, { signal }: Signal = {}): Promise<WorkspaceList> {
   return request<WorkspaceList>("/api/v1/workspaces", { token, signal });
 }
@@ -129,6 +152,24 @@ export function renameWorkspace(
     body,
     token,
   });
+}
+
+export function deleteWorkspace(token: string, workspaceId: string): Promise<void> {
+  return request<void>(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}`, {
+    method: "DELETE",
+    token,
+  });
+}
+
+export function getStorageLocation(
+  token: string,
+  { signal }: Signal = {},
+): Promise<StorageLocation> {
+  return request<StorageLocation>("/api/v1/storage", { token, signal });
+}
+
+export function revealStorageLocation(token: string): Promise<void> {
+  return request<void>("/api/v1/storage/reveal", { method: "POST", token });
 }
 
 /** A message for a failed request, suitable for showing to the user. */

@@ -1,6 +1,7 @@
 "use client";
 
 import type { Workspace } from "@orbit/contracts";
+import { Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 
 import { FormAlert, FormField } from "@/components/form-field";
@@ -39,7 +40,7 @@ export function WorkspaceSettings() {
   return (
     <div className="space-y-8">
       {/* Keyed so the form resets when another workspace becomes active. */}
-      <RenameWorkspaceForm key={active.id} workspace={active} />
+      <RenameWorkspaceForm key={`rename-${active.id}`} workspace={active} />
 
       <div className="space-y-3">
         <h3 className="text-sm font-medium">Your workspaces</h3>
@@ -72,6 +73,10 @@ export function WorkspaceSettings() {
       </div>
 
       <CreateWorkspaceForm />
+
+      {active.is_personal ? null : (
+        <DeleteWorkspaceSection key={`delete-${active.id}`} workspace={active} />
+      )}
     </div>
   );
 }
@@ -176,5 +181,82 @@ function CreateWorkspaceForm() {
         </p>
       </div>
     </form>
+  );
+}
+
+/** Deleting is permanent, so it asks for the workspace's name before enabling the button. */
+function DeleteWorkspaceSection({ workspace }: { workspace: Workspace }) {
+  const { deleteWorkspace } = useWorkspaces();
+  const [confirming, setConfirming] = useState(false);
+  const [typed, setTyped] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const matches = typed.trim() === workspace.name;
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!matches) return;
+    setFormError(null);
+    setDeleting(true);
+    try {
+      // On success the section unmounts, because another workspace becomes active.
+      await deleteWorkspace(workspace.id);
+    } catch (reason) {
+      setFormError(describeApiError(reason, "Couldn’t delete the workspace. Try again."));
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <section
+      aria-labelledby="delete-workspace-heading"
+      className="space-y-3 rounded-xl border border-destructive/30 p-4"
+    >
+      <div className="space-y-1">
+        <h3 id="delete-workspace-heading" className="text-sm font-medium text-destructive">
+          Delete this workspace
+        </h3>
+        <p className="text-sm text-pretty text-muted-foreground">
+          Permanently deletes {workspace.name} and everything in it. This can’t be undone. Your
+          personal workspace becomes active.
+        </p>
+      </div>
+      {confirming ? (
+        <form noValidate onSubmit={onSubmit} className="space-y-3">
+          <FormField
+            label={`Type ${workspace.name} to confirm`}
+            name="confirm-workspace-name"
+            autoComplete="off"
+            autoFocus
+            value={typed}
+            onChange={(event) => setTyped(event.target.value)}
+          />
+          <FormAlert message={formError} />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="submit" variant="destructive" size="sm" disabled={!matches || deleting}>
+              <Trash2 aria-hidden="true" />
+              {deleting ? "Deleting…" : "Delete workspace"}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={deleting}
+              onClick={() => {
+                setConfirming(false);
+                setTyped("");
+                setFormError(null);
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <Button variant="destructive" size="sm" onClick={() => setConfirming(true)}>
+          <Trash2 aria-hidden="true" />
+          Delete workspace…
+        </Button>
+      )}
+    </section>
   );
 }

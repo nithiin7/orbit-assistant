@@ -35,6 +35,10 @@ export interface AuthClient {
   signOut(): Promise<void>;
   /** Drop a session the API rejected, without contacting the server. */
   discardSession(): Promise<void>;
+  /** Email a password reset link. Cloud accounts only; Orbit sends no email in local mode. */
+  requestPasswordReset(email: string): Promise<void>;
+  /** Set a new password for the signed-in user (after following a reset link). Cloud only. */
+  updatePassword(password: string): Promise<void>;
   /** Notified when the session changes outside this tab's actions (other tabs, expiry). */
   subscribe(listener: () => void): () => void;
 }
@@ -84,6 +88,8 @@ export function createLocalAuthClient(): AuthClient {
       clearLocalSession();
       return Promise.resolve();
     },
+    requestPasswordReset: localRecoveryUnavailable,
+    updatePassword: localRecoveryUnavailable,
     subscribe(listener) {
       const onStorage = (event: StorageEvent) => {
         if (event.key === LOCAL_SESSION_KEY || event.key === null) listener();
@@ -93,6 +99,15 @@ export function createLocalAuthClient(): AuthClient {
     },
   };
 }
+
+function localRecoveryUnavailable(): Promise<never> {
+  return Promise.reject(
+    new AuthFailure("Password reset isn’t available for accounts stored on this computer."),
+  );
+}
+
+/** Where Supabase sends people from a password reset email. Add it to the redirect allow list. */
+export const RESET_PASSWORD_PATH = "/reset-password";
 
 const SUPABASE_STORAGE_KEY = "orbit:supabase-auth";
 
@@ -105,6 +120,9 @@ const supabaseMessages: Record<string, string> = {
   email_address_invalid: "Enter a valid email address.",
   over_request_rate_limit: "Too many attempts. Wait a moment, then try again.",
   over_email_send_rate_limit: "Too many emails were sent. Wait a few minutes, then try again.",
+  same_password: "Choose a password that’s different from your current one.",
+  session_not_found: "Your reset link has expired. Request a new one.",
+  reauthentication_needed: "For your security, request a new reset link and try again.",
 };
 
 /** A user-facing message for a Supabase Auth error, never echoing raw server text. */
@@ -166,6 +184,20 @@ export async function createSupabaseAuthClient(config: SupabaseAuthConfig): Prom
     },
     async discardSession() {
       await supabase.auth.signOut({ scope: "local" });
+    },
+    async requestPasswordReset(email) {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}${RESET_PASSWORD_PATH}`,
+      });
+      if (error) {
+        throw new AuthFailure(describeSupabaseError(error, "Couldn’t send the reset link."));
+      }
+    },
+    async updatePassword(password) {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) {
+        throw new AuthFailure(describeSupabaseError(error, "Couldn’t update your password."));
+      }
     },
     subscribe(listener) {
       const { data } = supabase.auth.onAuthStateChange((event) => {

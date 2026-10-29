@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CommandPaletteProvider } from "@/components/command-palette/command-palette";
-import { ada, json, mockApi, personal } from "@/test/api-mock";
+import { ada, json, mockApi, personal, status } from "@/test/api-mock";
 import { renderSignedIn } from "@/test/session";
 
 import { MobileNav } from "./mobile-nav";
@@ -17,6 +17,7 @@ beforeEach(() => {
   mockApi({
     "GET /api/v1/auth/config": json({ provider: "local", registration_open: false }),
     "GET /api/v1/me": json(ada),
+    "GET /api/v1/me/avatar": status(204),
     "GET /api/v1/workspaces": json({ workspaces: [personal] }),
   });
 });

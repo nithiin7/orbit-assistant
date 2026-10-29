@@ -70,7 +70,7 @@ export function SignUpForm() {
     return (
       <AuthCard
         title="Sign-up is closed"
-        description="This Orbit installation already has an account. Sign in with it instead."
+        description="This Orbit installation doesn’t accept new accounts. Sign in with an existing one instead."
       >
         <Link href="/sign-in" className={buttonVariants({ className: "w-full" })}>
           Go to sign in

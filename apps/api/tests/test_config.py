@@ -47,6 +47,28 @@ def test_production_disables_interactive_docs() -> None:
     assert app.openapi_url is None
 
 
+@pytest.mark.parametrize(
+    ("overrides", "expected"),
+    [
+        ({}, True),
+        ({"env": "production", "cors_origins": ["https://orbit.example"]}, False),
+        ({"local_open_registration": False}, False),
+        (
+            {
+                "env": "production",
+                "cors_origins": ["https://orbit.example"],
+                "local_open_registration": True,
+            },
+            True,
+        ),
+    ],
+)
+def test_local_registration_is_open_by_default_except_in_production(
+    overrides: dict[str, object], expected: bool
+) -> None:
+    assert make_settings(**overrides).local_registration_open is expected
+
+
 def test_storage_defaults_to_local_sqlite_outside_the_web_app() -> None:
     settings = make_settings()
 

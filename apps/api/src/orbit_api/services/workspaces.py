@@ -28,6 +28,10 @@ class WorkspaceNotFoundError(Exception):
     indistinguishable, so responses never reveal other users' workspaces."""
 
 
+class PersonalWorkspaceError(Exception):
+    """The personal workspace cannot be deleted; every user keeps exactly one."""
+
+
 class WorkspaceRepository(Protocol):
     async def add(self, workspace: Workspace) -> None: ...
 
@@ -38,6 +42,10 @@ class WorkspaceRepository(Protocol):
         ...
 
     async def rename(self, workspace_id: uuid.UUID, name: str) -> Workspace: ...
+
+    async def delete(self, workspace_id: uuid.UUID) -> None:
+        """Delete the workspace; its data goes with it through `ON DELETE CASCADE`."""
+        ...
 
 
 def new_workspace(owner_id: uuid.UUID, name: str, *, is_personal: bool) -> Workspace:
@@ -83,3 +91,10 @@ class WorkspaceService:
         workspace = await self._workspaces.rename(workspace_id, name)
         await self._transaction.commit()
         return workspace
+
+    async def delete(self, user_id: uuid.UUID, workspace_id: uuid.UUID) -> None:
+        workspace = await self.authorize(user_id, workspace_id)
+        if workspace.is_personal:
+            raise PersonalWorkspaceError
+        await self._workspaces.delete(workspace_id)
+        await self._transaction.commit()

@@ -17,8 +17,8 @@ SIGN_OUT = "/api/v1/auth/local/sign-out"
 
 
 @pytest.fixture
-def open_client(migrated_settings: Settings) -> Iterator[TestClient]:
-    app = create_app(migrated_settings.model_copy(update={"local_open_registration": True}))
+def closed_client(migrated_settings: Settings) -> Iterator[TestClient]:
+    app = create_app(migrated_settings.model_copy(update={"local_open_registration": False}))
     app.state.password_hasher = FAST_PASSWORD_HASHER
     with TestClient(app) as client:
         yield client
@@ -50,30 +50,36 @@ def test_sign_up_creates_profile_and_personal_workspace(client: TestClient) -> N
     ]
 
 
-def test_only_the_first_account_can_register_by_default(client: TestClient) -> None:
-    sign_up(client)
+def test_several_people_can_register_on_one_machine_by_default(client: TestClient) -> None:
+    ada = sign_up(client, email="ada@example.com", display_name="Ada")
+    grace = sign_up(client, email="grace@example.com", display_name="Grace")
 
-    assert client.get("/api/v1/auth/config").json()["registration_open"] is False
+    assert client.get("/api/v1/auth/config").json()["registration_open"] is True
+    assert client.get("/api/v1/me", headers=bearer(ada)).json()["display_name"] == "Ada"
+    assert client.get("/api/v1/me", headers=bearer(grace)).json()["display_name"] == "Grace"
+
+
+def test_registration_rejects_duplicate_emails(client: TestClient) -> None:
+    sign_up(client, email="ada@example.com")
+
     response = client.post(
+        SIGN_UP, json={"email": "ADA@example.com", "password": PASSWORD, "display_name": "Ada 2"}
+    )
+    assert response.status_code == 409
+
+
+def test_closed_registration_allows_only_the_first_account(closed_client: TestClient) -> None:
+    assert closed_client.get("/api/v1/auth/config").json()["registration_open"] is True
+    sign_up(closed_client)
+
+    assert closed_client.get("/api/v1/auth/config").json()["registration_open"] is False
+    response = closed_client.post(
         SIGN_UP, json={"email": "eve@example.com", "password": PASSWORD, "display_name": "Eve"}
     )
     assert response.status_code == 403
     assert response.json() == {
-        "detail": "This Orbit installation already has an account. Sign in instead."
+        "detail": "This Orbit installation does not accept new accounts. Sign in instead."
     }
-
-
-def test_open_registration_allows_more_accounts_but_not_duplicate_emails(
-    open_client: TestClient,
-) -> None:
-    sign_up(open_client, email="ada@example.com")
-    sign_up(open_client, email="grace@example.com")
-
-    response = open_client.post(
-        SIGN_UP, json={"email": "ADA@example.com", "password": PASSWORD, "display_name": "Ada 2"}
-    )
-    assert response.status_code == 409
-    assert open_client.get("/api/v1/auth/config").json()["registration_open"] is True
 
 
 def test_passwords_and_session_tokens_are_stored_only_as_hashes(

@@ -14,6 +14,7 @@ import {
 import { useAuth, useCurrentUser } from "@/components/auth/auth-provider";
 import {
   createWorkspace as createWorkspaceRequest,
+  deleteWorkspace as deleteWorkspaceRequest,
   describeApiError,
   listWorkspaces,
   renameWorkspace as renameWorkspaceRequest,
@@ -34,6 +35,8 @@ type WorkspaceContextValue = {
   switchWorkspace: (workspaceId: string) => void;
   createWorkspace: (name: string) => Promise<Workspace>;
   renameWorkspace: (workspaceId: string, name: string) => Promise<Workspace>;
+  /** Delete a workspace; if it was active, the personal workspace becomes active. */
+  deleteWorkspace: (workspaceId: string) => Promise<void>;
   /** Reload the list, e.g. after the API reported the active workspace as gone. */
   refresh: () => void;
 };
@@ -108,6 +111,20 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     [withToken],
   );
 
+  const deleteWorkspace = useCallback(
+    async (workspaceId: string) => {
+      await withToken((token) => deleteWorkspaceRequest(token, workspaceId));
+      const remaining = (workspaces ?? []).filter((workspace) => workspace.id !== workspaceId);
+      setWorkspaces(remaining);
+      if (activeId === workspaceId) {
+        const next = pickActiveWorkspace(remaining, null);
+        setActiveId(next?.id ?? null);
+        if (next) writeWorkspacePreference(user.id, next.id);
+      }
+    },
+    [withToken, workspaces, activeId, user.id],
+  );
+
   const refresh = useCallback(() => {
     setError(null);
     setReloads((value) => value + 1);
@@ -121,8 +138,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, [workspaces, activeId, error]);
 
   const value = useMemo(
-    () => ({ state, switchWorkspace, createWorkspace, renameWorkspace, refresh }),
-    [state, switchWorkspace, createWorkspace, renameWorkspace, refresh],
+    () => ({ state, switchWorkspace, createWorkspace, renameWorkspace, deleteWorkspace, refresh }),
+    [state, switchWorkspace, createWorkspace, renameWorkspace, deleteWorkspace, refresh],
   );
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;

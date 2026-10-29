@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { hasErrors, validateName, validateSignIn, validateSignUp } from "./validation";
+import {
+  hasErrors,
+  validateName,
+  validatePasswordReset,
+  validateSignIn,
+  validateSignUp,
+} from "./validation";
 
 describe("validateSignUp", () => {
   it("accepts valid input", () => {
@@ -42,5 +48,21 @@ describe("validateName", () => {
     expect(validateName("x".repeat(101))).toBe("Use 100 characters or fewer.");
     expect(validateName("Tab\there")).toBe("Remove unsupported characters.");
     expect(validateName("Side project")).toBeUndefined();
+  });
+});
+
+describe("validatePasswordReset", () => {
+  it("applies the password policy and requires a matching confirmation", () => {
+    expect(validatePasswordReset({ password: "short", confirmPassword: "" })).toEqual({
+      password: "Use at least 8 characters.",
+      confirmPassword: "Enter the new password again.",
+    });
+    expect(
+      validatePasswordReset({ password: "long enough", confirmPassword: "long enougj" })
+        .confirmPassword,
+    ).toBe("The passwords don’t match.");
+    expect(
+      hasErrors(validatePasswordReset({ password: "long enough", confirmPassword: "long enough" })),
+    ).toBe(false);
   });
 });

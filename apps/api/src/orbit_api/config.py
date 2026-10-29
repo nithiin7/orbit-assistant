@@ -54,8 +54,10 @@ class Settings(BaseSettings):
 
     # Local mode authenticates with accounts stored in the SQLite database.
     local_session_ttl_hours: int = Field(default=24 * 14, ge=1, le=24 * 90)
-    # By default only the first local account can register; later accounts need this enabled.
-    local_open_registration: bool = False
+    # Several people can share one machine, each with their own private workspaces. Unset means
+    # open outside production and first-account-only in production, where a reachable server
+    # should not accept strangers by default.
+    local_open_registration: bool | None = None
 
     @property
     def is_development(self) -> bool:
@@ -64,6 +66,13 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.env == "production"
+
+    @property
+    def local_registration_open(self) -> bool:
+        """Whether local accounts beyond the first may register."""
+        if self.local_open_registration is None:
+            return not self.is_production
+        return self.local_open_registration
 
     @property
     def postgres_url(self) -> URL:

@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, HTTPException, Response, status
 
 from orbit_api.api.auth import CurrentUserDep, WorkspaceDep
 from orbit_api.api.dependencies import WorkspaceServiceDep
@@ -12,6 +12,7 @@ from orbit_api.schemas.workspaces import (
     WorkspaceListResponse,
     WorkspaceResponse,
 )
+from orbit_api.services.workspaces import PersonalWorkspaceError
 
 router = APIRouter(
     prefix="/workspaces",
@@ -52,3 +53,25 @@ async def update_workspace(
     workspaces: WorkspaceServiceDep,
 ) -> WorkspaceResponse:
     return WorkspaceResponse.of(await workspaces.rename(user.id, workspace.id, body.name))
+
+
+@router.delete(
+    "/{workspace_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a workspace",
+    responses={
+        **NOT_FOUND,
+        409: {"description": "The personal workspace cannot be deleted."},
+    },
+)
+async def delete_workspace(
+    user: CurrentUserDep, workspace: WorkspaceDep, workspaces: WorkspaceServiceDep
+) -> Response:
+    """Permanently delete a workspace and everything in it."""
+    try:
+        await workspaces.delete(user.id, workspace.id)
+    except PersonalWorkspaceError:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "Your personal workspace cannot be deleted."
+        ) from None
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

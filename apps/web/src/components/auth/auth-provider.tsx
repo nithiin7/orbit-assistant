@@ -32,6 +32,8 @@ type AuthContextValue = {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (input: SignUpInput) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
   retry: () => void;
   /** Run an API call with the current token. A 401 response signs the user out. */
   withToken: <T>(call: (token: string) => Promise<T>) => Promise<T>;
@@ -166,6 +168,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signedOut();
   }, [requireClient, signedOut]);
 
+  const requestPasswordReset = useCallback(
+    (email: string) => requireClient().requestPasswordReset(email),
+    [requireClient],
+  );
+
+  const updatePassword = useCallback(
+    (password: string) => requireClient().updatePassword(password),
+    [requireClient],
+  );
+
   const retry = useCallback(() => {
     setState({ status: "loading" });
     setAttempt((value) => value + 1);
@@ -197,8 +209,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ state, signIn, signUp, signOut, retry, withToken, setUser }),
-    [state, signIn, signUp, signOut, retry, withToken, setUser],
+    () => ({
+      state,
+      signIn,
+      signUp,
+      signOut,
+      requestPasswordReset,
+      updatePassword,
+      retry,
+      withToken,
+      setUser,
+    }),
+    [
+      state,
+      signIn,
+      signUp,
+      signOut,
+      requestPasswordReset,
+      updatePassword,
+      retry,
+      withToken,
+      setUser,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

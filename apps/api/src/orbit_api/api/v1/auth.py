@@ -56,7 +56,7 @@ async def sign_up(
     except RegistrationClosedError:
         raise HTTPException(
             status.HTTP_403_FORBIDDEN,
-            "This Orbit installation already has an account. Sign in instead.",
+            "This Orbit installation does not accept new accounts. Sign in instead.",
         ) from None
     except EmailAlreadyRegisteredError:
         raise HTTPException(

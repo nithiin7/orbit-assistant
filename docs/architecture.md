@@ -113,7 +113,7 @@ apps/web/src/
 │   ├── layout.tsx       # Root layout: theme provider + auth provider
 │   ├── (app)/           # Signed-in routes: RequireAuth + WorkspaceProvider + app shell
 │   │   ├── page.tsx     # Dashboard (active workspace, module list)
-│   │   ├── settings/    # Account, workspaces, appearance, storage
+│   │   ├── settings/    # Settings: drill-down on small screens, split view on large; [panel]/ sub-pages
 │   │   └── [section]/   # Placeholder page for every other nav section
 │   ├── (auth)/          # Public routes without the shell: sign-in, sign-up
 │   ├── not-found.tsx    # Standalone 404 (works signed in or out)
@@ -121,13 +121,16 @@ apps/web/src/
 ├── components/
 │   ├── app-shell/       # Sidebar, mobile drawer, navigation links
 │   ├── auth/            # AuthProvider, RequireAuth, sign-in and sign-up forms
+│   ├── avatar/          # AvatarProvider (the user's photo as an object URL), UserAvatar
 │   ├── workspace/       # WorkspaceProvider, switcher, dashboard overview
-│   ├── settings/        # Account, workspace, and theme settings
+│   ├── settings/        # Settings menu and the account, workspace, theme, and storage panels
 │   ├── storage/         # Storage-mode indicator and status card
 │   └── ui/              # Small shadcn/ui-compatible primitives
 ├── hooks/               # use-workspace-resource (stale-safe workspace data), etc.
 └── lib/
     ├── navigation.ts    # Single source of truth for nav items and section routes
+    ├── settings.ts      # Single source of truth for settings panels and their routes
+    ├── avatar.ts        # Crop and resize profile photos in the browser before upload
     ├── api.ts           # Typed API client (types from @orbit/contracts)
     ├── auth/            # Auth clients (local, Supabase), session storage, validation
     ├── workspaces.ts    # Active-workspace selection and per-user preference
@@ -167,21 +170,23 @@ apps/api/src/orbit_api/
 │   └── v1/              # Versioned HTTP API, mounted at /api/v1
 │       ├── health.py    # Liveness and database connectivity
 │       ├── auth.py      # Sign-in configuration; local sign-up, sign-in, sign-out
-│       ├── me.py        # The signed-in user's profile
-│       └── workspaces.py # List, create, get, and rename workspaces
+│       ├── me.py        # The signed-in user's profile and profile photo
+│       ├── storage.py   # Local database location; open its folder (local mode, not prod)
+│       └── workspaces.py # List, create, get, rename, and delete workspaces
 ├── auth/                # Adapters: Argon2 password hashing, Supabase JWT verification
+├── system/              # Adapter: opening the OS file manager on the API's machine
 ├── schemas/             # Pydantic request/response models (the API contract)
-├── services/            # Domain logic: accounts, local auth, workspaces (no FastAPI/SQLAlchemy)
+├── services/            # Domain logic: accounts, avatars, local auth, workspaces (no FastAPI/SQLAlchemy)
 ├── repositories/        # SQLAlchemy implementations of the services' repository protocols
 └── db/                  # Database infrastructure (SQLAlchemy + Alembic, no FastAPI)
     ├── base.py          # Declarative `Base` with a constraint naming convention
     ├── columns.py       # `UTCDateTime`: timezone-aware UTC timestamps on both databases
-    ├── models/          # ORM tables: users, local credentials and sessions, workspaces
+    ├── models/          # ORM tables: users, avatars, local credentials and sessions, workspaces
     ├── engine.py        # Engine per storage mode: SQLite PRAGMAs, Postgres pooling
     ├── database.py      # `open_database()`: connect, verify schema, sessions, dispose
     ├── migrate.py       # Programmatic Alembic: upgrade, downgrade, head revision
     └── migrations/      # Alembic environment and versioned revisions
-        └── versions/    # 0001_baseline, 0002_create_identity_and_workspace_tables
+        └── versions/    # 0001_baseline, 0002_create_identity_and_workspace_tables, 0003_create_user_avatars
 ```
 
 Design decisions:
@@ -232,6 +237,13 @@ written once. SQLite is embedded in the API process; local mode needs no databas
   data goes. The UI can't change the mode. Switching is server configuration
   (`apps/api/.env`) plus a restart: the mode is an installation-wide decision rather than a
   per-user one, and the database URL is a secret that should never pass through the browser.
+- In local mode outside production, **Settings → Storage** shows the SQLite file's path
+  (`GET /api/v1/storage`, signed-in users only) and a button that opens its folder
+  (`POST /api/v1/storage/reveal`). The API opens Finder, File Explorer, or the desktop file
+  manager on its own machine, which in local mode is the user's computer. It runs a fixed
+  command without a shell, on the configured path only (`system/file_manager.py`). Production
+  and cloud mode never return the path and refuse to open anything; health endpoints never
+  report paths.
 - Startup logs the mode and a credential-free target, for example
   `Storage mode: local. Using the SQLite database at …`.
 - **No fallback.** If the selected database cannot be opened, reached, or is not migrated, the
@@ -261,6 +273,7 @@ written once. SQLite is embedded in the API process; local mode needs no databas
 - `0001_baseline` creates no tables. It establishes version tracking.
 - `0002_create_identity_and_workspace_tables` creates `users`, `local_credentials`,
   `local_sessions`, and `workspaces`, and enables RLS on them in PostgreSQL.
+- `0003_create_user_avatars` creates `user_avatars` (profile photos) with RLS.
 - Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
   Startup only checks that the database is at the head revision. For a shared cloud database,
   schema changes should be deliberate and reviewable.
@@ -327,7 +340,7 @@ structure.
   schema to anyone holding the project's publishable (anon) key.
   1. Every migration that creates a table in PostgreSQL enables RLS on it in the same
      revision. `0002` does this for `users`, `local_credentials`, `local_sessions`, and
-     `workspaces`.
+     `workspaces`; `0003` for `user_avatars`.
   2. **No policies exist**, deliberately: the browser never queries tables directly, so the
      Data API's `anon` and `authenticated` roles get no rows. Add `authenticated` policies
      (for example `owner_id = auth.uid()`) only if a client is ever allowed direct access.
@@ -356,6 +369,7 @@ structure.
 ```text
 users ──< workspaces              (owner_id → users.id, ON DELETE CASCADE)
   │
+  ├── user_avatars                (profile photo bytes and type, 1:1)
   ├── local_credentials           (local mode: email + Argon2id hash, 1:1)
   └──< local_sessions             (local mode: SHA-256 of the bearer token, expiry)
 ```
@@ -366,7 +380,15 @@ users ──< workspaces              (owner_id → users.id, ON DELETE CASCADE)
   `auth_subject` is the Supabase user ID (the JWT `sub`), for local accounts it is the profile ID.
 - **`workspaces`** belong to one owner. `is_personal` marks the default workspace created
   during onboarding; a partial unique index allows one personal workspace per user. Names are
-  1 to 100 characters (validated by the API and a CHECK constraint).
+  1 to 100 characters (validated by the API and a CHECK constraint). Deleting a workspace
+  (`DELETE /api/v1/workspaces/{id}`) is permanent and cascades to its data; the personal
+  workspace can't be deleted (409).
+- **`user_avatars`** holds an optional profile photo, kept out of `users` so loading a profile
+  never loads image bytes. The browser crops and resizes photos to 256 px before upload;
+  `PUT /api/v1/me/avatar` takes the raw image, detects PNG, JPEG, or WebP from the file's
+  signature (never SVG, never the declared type), and caps it at 512 KB. `GET` serves it with
+  `nosniff` and a locked-down CSP, or 204 when none is set. Because the API needs a bearer token,
+  the web app fetches the photo as a blob and shows it through an object URL.
 - **Extensibility:** future user data (tasks, notes, expenses) carries a non-null
   `workspace_id` foreign key. Shared workspaces would add a `workspace_members` table and change
   only the authorization check described below; the API already reports a `role` (`owner`).
@@ -378,17 +400,18 @@ users ──< workspaces              (owner_id → users.id, ON DELETE CASCADE)
 The storage mode decides the identity provider. There is no configuration that mixes them,
 and no fallback from one to the other.
 
-|                            | Local mode                                                         | Cloud mode                                                                                  |
-| -------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| Identity provider          | Orbit's own accounts in SQLite                                     | Supabase Auth                                                                               |
-| Sign-up, sign-in, sign-out | `POST /api/v1/auth/local/*`                                        | `@supabase/supabase-js` in the browser                                                      |
-| Password storage           | Argon2id (argon2-cffi), rehashed on sign-in when parameters change | Supabase                                                                                    |
-| Bearer token               | Opaque 256-bit random token; only its SHA-256 is stored            | Supabase access token (JWT)                                                                 |
-| Server-side validation     | Look up the token digest; reject if missing or expired             | Verify signature (JWKS, ES256/RS256), `exp`, `iss`, `aud=authenticated`, `role`, UUID `sub` |
-| Session lifetime           | `ORBIT_LOCAL_SESSION_TTL_HOURS` (default 14 days), fixed           | Supabase settings; refreshed by the client                                                  |
-| Sign-out                   | Deletes the session row (immediate revocation)                     | Ends the Supabase session in this browser                                                   |
-| Registration               | First account only, unless `ORBIT_LOCAL_OPEN_REGISTRATION=true`    | Supabase project settings                                                                   |
-| Profile creation           | During sign-up, in the same transaction                            | On the first authenticated request                                                          |
+|                            | Local mode                                                               | Cloud mode                                                                                  |
+| -------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| Identity provider          | Orbit's own accounts in SQLite                                           | Supabase Auth                                                                               |
+| Sign-up, sign-in, sign-out | `POST /api/v1/auth/local/*`                                              | `@supabase/supabase-js` in the browser                                                      |
+| Password storage           | Argon2id (argon2-cffi), rehashed on sign-in when parameters change       | Supabase                                                                                    |
+| Bearer token               | Opaque 256-bit random token; only its SHA-256 is stored                  | Supabase access token (JWT)                                                                 |
+| Server-side validation     | Look up the token digest; reject if missing or expired                   | Verify signature (JWKS, ES256/RS256), `exp`, `iss`, `aud=authenticated`, `role`, UUID `sub` |
+| Session lifetime           | `ORBIT_LOCAL_SESSION_TTL_HOURS` (default 14 days), fixed                 | Supabase settings; refreshed by the client                                                  |
+| Sign-out                   | Deletes the session row (immediate revocation)                           | Ends the Supabase session in this browser                                                   |
+| Registration               | Open outside production; first account only in production (configurable) | Supabase project settings                                                                   |
+| Password reset             | Not available (no email in local mode)                                   | Supabase reset email → `/reset-password` (recovery session) → `updateUser`                  |
+| Profile creation           | During sign-up, in the same transaction                                  | On the first authenticated request                                                          |
 
 - `GET /api/v1/auth/config` tells the web app which provider applies, with only public values
   (`registration_open` locally; the Supabase URL and publishable key in cloud mode). The web app

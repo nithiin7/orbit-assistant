@@ -22,3 +22,4 @@ export type Workspace = Schemas["WorkspaceResponse"];
 export type WorkspaceList = Schemas["WorkspaceListResponse"];
 export type CreateWorkspaceRequest = Schemas["CreateWorkspaceRequest"];
 export type UpdateWorkspaceRequest = Schemas["UpdateWorkspaceRequest"];
+export type StorageLocation = Schemas["StorageLocationResponse"];

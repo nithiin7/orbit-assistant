@@ -1,16 +1,42 @@
-# Orbit
+<div align="center">
 
-Orbit is an open-source, privacy-first personal assistant. It aims to bring tasks, calendar,
-finances, notes, and an AI assistant together in one place, while keeping your data under your
+# 🪐 Orbit
+
+**An open-source, privacy-first personal assistant.**
+
+Tasks, calendar, finances, notes, and an AI assistant in one place, with your data under your
 control.
 
-> **Status: early scaffolding.** This repository currently contains the project foundation only:
-> the monorepo, tooling, an application shell, and an API with a database foundation. None of the
-> product features are built yet.
+[![CI](https://github.com/nithiin7/orbit-assistant/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nithiin7/orbit-assistant/actions/workflows/ci.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](LICENSE)
+![Status: early development](https://img.shields.io/badge/status-early_development-orange)
+[![Conventional Commits](https://img.shields.io/badge/commits-conventional-fe5196?logo=conventionalcommits&logoColor=white)](https://www.conventionalcommits.org/)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?logo=tailwindcss&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-local-003B57?logo=sqlite&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-3ECF8E?logo=supabase&logoColor=white)
+![pnpm](https://img.shields.io/badge/pnpm-11-F69220?logo=pnpm&logoColor=white)
+![uv](https://img.shields.io/badge/uv-managed-DE5FE9?logo=uv&logoColor=white)
+
+[Getting started](#getting-started) · [Architecture](docs/architecture.md) ·
+[Development guide](docs/development.md) · [Contributing](CONTRIBUTING.md)
+
+</div>
+
+> [!NOTE]
+> **Early development.** This repository contains the project foundation: the monorepo, tooling,
+> an application shell, an API with a database layer, and accounts with workspaces. None of the
+> product features (tasks, calendar, finance, notes, AI) are built yet.
 
 ## Scope
 
-**In scope today**
+### ✅ In scope today
 
 - A Next.js web app with a responsive application shell (collapsible sidebar on Cmd/Ctrl+B,
   mobile drawer, command palette on Cmd/Ctrl+K, light/dark/system themes chosen in Settings) and
@@ -18,11 +44,13 @@ control.
 - A FastAPI service with centralized configuration, health endpoints, and a database layer:
   SQLite on your machine (local mode) or PostgreSQL on Supabase (cloud mode), with SQLAlchemy and
   Alembic migrations.
-- Accounts and workspaces: local accounts (local mode) or Supabase Auth (cloud mode), a default
-  Personal workspace per user, workspace switching, and server-side authorization.
+- Accounts and workspaces: local accounts (several per machine in local mode) or Supabase Auth
+  (cloud mode), profile photos, a default Personal workspace per user, creating, switching, and
+  deleting workspaces, server-side authorization, and password reset by email for cloud
+  accounts.
 - Shared tooling for linting, formatting, type checking, testing, commit conventions, and CI.
 
-**Explicit non-goals for now**
+### 🚫 Explicit non-goals for now
 
 - Task, calendar, finance, or notes functionality.
 - Shared workspaces, invitations, password recovery for local accounts, and account linking
@@ -92,8 +120,9 @@ pnpm db:migrate           # create the local SQLite database (apps/api/.data/, g
 pnpm dev                  # web on http://localhost:3000, API on http://localhost:8000
 ```
 
-Check the API with `curl http://localhost:8000/api/v1/health`. Interactive API docs are served at
-<http://localhost:8000/docs> outside production.
+> [!TIP]
+> Check the API with `curl http://localhost:8000/api/v1/health`. Interactive API docs are
+> served at <http://localhost:8000/docs> outside production.
 
 ## Configuration
 
@@ -154,13 +183,16 @@ commit message. CI runs the full suite. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Development status
 
-| Area                  | Status         |
-| --------------------- | -------------- |
-| Monorepo and tooling  | ✅ In place    |
-| Web application shell | ✅ In place    |
-| API foundation        | ✅ In place    |
-| CI                    | ✅ In place    |
-| Product features      | ⏳ Not started |
+| Area                    | Status         |
+| ----------------------- | -------------- |
+| Monorepo and tooling    | ✅ In place    |
+| Web application shell   | ✅ In place    |
+| API foundation          | ✅ In place    |
+| Database (local/cloud)  | ✅ In place    |
+| Accounts and workspaces | ✅ In place    |
+| CI                      | ✅ In place    |
+| Product features        | ⏳ Not started |
+| AI integration          | ⏳ Not started |
 
 ## Contributing and security
 

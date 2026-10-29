@@ -2,7 +2,7 @@
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from orbit_api.db.models import WorkspaceModel
@@ -62,3 +62,6 @@ class SqlWorkspaceRepository:
         model.name = name
         await flush(self._session)
         return _to_workspace(model)
+
+    async def delete(self, workspace_id: uuid.UUID) -> None:
+        await self._session.execute(delete(WorkspaceModel).where(WorkspaceModel.id == workspace_id))

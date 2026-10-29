@@ -75,6 +75,9 @@ class FakeWorkspaces:
     async def rename(self, workspace_id: uuid.UUID, name: str) -> Workspace:
         raise NotImplementedError
 
+    async def delete(self, workspace_id: uuid.UUID) -> None:
+        raise NotImplementedError
+
 
 def identity(display_name: str | None = "Ada") -> ExternalIdentity:
     return ExternalIdentity(
