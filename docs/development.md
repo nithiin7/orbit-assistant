@@ -74,7 +74,7 @@ Accounts (see [Accounts](#accounts)):
 | `ORBIT_SUPABASE_URL`             | unset   | Cloud mode only (required): Supabase project URL, `https` in production |
 | `ORBIT_SUPABASE_PUBLISHABLE_KEY` | unset   | Cloud mode only (required): publishable (anon) key. Public by design    |
 | `ORBIT_LOCAL_SESSION_TTL_HOURS`  | `336`   | Local mode: session lifetime in hours (14 days; 1 to 2160)              |
-| `ORBIT_LOCAL_OPEN_REGISTRATION`  | `false` | Local mode: allow accounts beyond the first                             |
+| `ORBIT_LOCAL_OPEN_REGISTRATION`  | unset   | Local mode: allow accounts beyond the first. Unset: open except in prod |
 
 All API variables are server-only. Settings are validated at startup. In production, wildcard
 CORS origins are rejected and the interactive docs are disabled. If you change the web app's
@@ -154,9 +154,11 @@ Which sign-in Orbit uses follows the storage mode; the web app asks the API
 
 - Accounts live in the SQLite database. Passwords are hashed with Argon2id; sessions are random
   tokens stored only as hashes, valid for `ORBIT_LOCAL_SESSION_TTL_HOURS`.
-- The first account created is the installation's owner. After that, **Create account** shows
-  that sign-up is closed. To allow more people on the same machine (each with private
-  workspaces), set `ORBIT_LOCAL_OPEN_REGISTRATION=true` and restart the API.
+- Several people can create accounts on the same machine; each sees only their own
+  workspaces. Sign out, then use **Create account**. In production (`ORBIT_ENV=production`)
+  only the first account can register unless `ORBIT_LOCAL_OPEN_REGISTRATION=true`, because a
+  reachable server shouldn't accept strangers by default. Set it to `false` to close sign-up
+  anywhere.
 - **Forgotten password:** there is no email-based recovery in local mode (Orbit doesn't send
   email); `/forgot-password` says so instead of offering a reset. This is a known gap; until a
   recovery design exists, the only way back in is to reset the database, which deletes its data.

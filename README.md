@@ -44,9 +44,10 @@ control.
 - A FastAPI service with centralized configuration, health endpoints, and a database layer:
   SQLite on your machine (local mode) or PostgreSQL on Supabase (cloud mode), with SQLAlchemy and
   Alembic migrations.
-- Accounts and workspaces: local accounts (local mode) or Supabase Auth (cloud mode), a default
-  Personal workspace per user, workspace switching, server-side authorization, and password
-  reset by email for cloud accounts.
+- Accounts and workspaces: local accounts (several per machine in local mode) or Supabase Auth
+  (cloud mode), profile photos, a default Personal workspace per user, creating, switching, and
+  deleting workspaces, server-side authorization, and password reset by email for cloud
+  accounts.
 - Shared tooling for linting, formatting, type checking, testing, commit conventions, and CI.
 
 ### 🚫 Explicit non-goals for now
