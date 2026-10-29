@@ -40,7 +40,8 @@ API contract in `packages/contracts`, described below.
 - Within the web app, `src/app` (routes) may use `src/components`, `src/api`, and `src/lib`;
   `src/components/ui` primitives depend only on `src/lib/utils/utils.ts`; `src/api` and
   `src/lib` do not import components. `src/api` depends only on `@orbit/contracts`,
-  `@tanstack/react-query`, and `src/lib/env`. Query hooks that need auth or the active
+  `@tanstack/react-query`, `src/lib/env`, and pure `src/lib` helpers (such as
+  `src/lib/shopping` for sorting and counting). Query hooks that need auth or the active
   workspace live in `src/hooks/`.
 - Server data is cached by TanStack Query, keyed by workspace (`["workspaces", id, …]`). The
   cache is cleared whenever the signed-in user changes, so one user's data is never shown to

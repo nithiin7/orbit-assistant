@@ -10,25 +10,12 @@ import { ShoppingBasket } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { describeApiError } from "@/api/client";
-import {
-  addShoppingItem,
-  clearPurchasedItems,
-  createShoppingList,
-  deleteShoppingItem,
-  deleteShoppingList,
-  purchaseShoppingItem,
-  renameShoppingList,
-  restockShoppingItem,
-  restockShoppingList,
-  updateShoppingItem,
-} from "@/api/shopping";
-import { useAuth } from "@/components/auth/auth-provider";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorkspaces } from "@/components/workspace/workspace-provider";
-import { useShopping } from "@/hooks/use-shopping";
+import { useShopping, useShoppingMutations } from "@/hooks/use-shopping";
 import { isEditableTarget } from "@/lib/keyboard";
 import { cn } from "@/lib/utils";
 
@@ -53,9 +40,9 @@ export function ShoppingPanel() {
 type NameDialog = { mode: "create" } | { mode: "rename"; list: ShoppingListOverview };
 
 function ShoppingView({ workspaceId }: { workspaceId: string }) {
-  const { withToken } = useAuth();
   const shopping = useShopping(workspaceId);
-  const { active, items, updateItems, updateLists, select } = shopping;
+  const { active, items, select } = shopping;
+  const mutations = useShoppingMutations(workspaceId);
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [editing, setEditing] = useState<ShoppingItem | null>(null);
   const [nameDialog, setNameDialog] = useState<NameDialog | null>(null);
@@ -86,73 +73,43 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
     });
   }, []);
 
-  const replaceItem = useCallback(
-    (item: ShoppingItem) =>
-      updateItems(item.list_id, (current) =>
-        current.map((entry) => (entry.id === item.id ? item : entry)),
-      ),
-    [updateItems],
-  );
-
   // Lists
 
   const saveListName = useCallback(
     async (dialog: NameDialog, name: string) => {
       if (dialog.mode === "create") {
-        const created = await withToken((token) =>
-          createShoppingList(token, workspaceId, { name }),
-        );
-        updateLists((current) => [...current, { ...created, needed_count: 0, purchased_count: 0 }]);
+        const created = await mutations.createList.mutateAsync(name);
         select(created.id);
         setAnnouncement(`Created “${created.name}”.`);
       } else {
-        const renamed = await withToken((token) =>
-          renameShoppingList(token, workspaceId, dialog.list.id, { name }),
-        );
-        updateLists((current) =>
-          current.map((entry) => (entry.id === renamed.id ? { ...entry, ...renamed } : entry)),
-        );
+        const renamed = await mutations.renameList.mutateAsync({ list: dialog.list, name });
         setAnnouncement(`Renamed to “${renamed.name}”.`);
       }
       setActionError(null);
     },
-    [withToken, workspaceId, updateLists, select],
+    [mutations.createList, mutations.renameList, select],
   );
 
   const removeList = useCallback(
     async (list: ShoppingListOverview) => {
       setActionError(null);
       try {
-        await withToken((token) => deleteShoppingList(token, workspaceId, list.id));
-        updateLists((current) => current.filter((entry) => entry.id !== list.id));
+        await mutations.deleteList.mutateAsync(list);
         select(null);
         setAnnouncement(`Deleted “${list.name}”.`);
       } catch (reason) {
         setActionError(describeApiError(reason, "Couldn’t delete the list. Try again."));
       }
     },
-    [withToken, workspaceId, updateLists, select],
+    [mutations.deleteList, select],
   );
 
   const bulkChange = useCallback(
     async (list: ShoppingListOverview, action: "restock" | "clear") => {
       setActionError(null);
       try {
-        await withToken((token) =>
-          (action === "restock" ? restockShoppingList : clearPurchasedItems)(
-            token,
-            workspaceId,
-            list.id,
-          ),
-        );
-        updateItems(list.id, (current) =>
-          action === "restock"
-            ? current.map((item) =>
-                item.status === "purchased"
-                  ? { ...item, status: "needed", purchased_at: null }
-                  : item,
-              )
-            : current.filter((item) => item.status !== "purchased"),
+        await (action === "restock" ? mutations.restockList : mutations.clearPurchased).mutateAsync(
+          list,
         );
         setAnnouncement(
           action === "restock"
@@ -170,19 +127,18 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
         );
       }
     },
-    [withToken, workspaceId, updateItems],
+    [mutations.restockList, mutations.clearPurchased],
   );
 
   // Items
 
   const add = useCallback(
     async (listId: string, draft: CreateShoppingItemRequest) => {
-      const item = await withToken((token) => addShoppingItem(token, workspaceId, listId, draft));
-      updateItems(listId, (current) => [...current, item]);
+      const item = await mutations.addItem.mutateAsync({ listId, draft });
       setActionError(null);
       setAnnouncement(`Added “${item.name}”.`);
     },
-    [withToken, workspaceId, updateItems],
+    [mutations.addItem],
   );
 
   const toggle = useCallback(
@@ -190,41 +146,28 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
       const purchasing = item.status === "needed";
       setActionError(null);
       setItemPending(item.id, true);
-      // Show the change immediately; restore the item if the request fails.
-      replaceItem({
-        ...item,
-        status: purchasing ? "purchased" : "needed",
-        purchased_at: purchasing ? new Date().toISOString() : null,
-      });
       try {
-        const updated = await withToken((token) =>
-          (purchasing ? purchaseShoppingItem : restockShoppingItem)(token, workspaceId, item.id),
-        );
-        replaceItem(updated);
+        await mutations.toggleItem.mutateAsync(item);
         setAnnouncement(
           purchasing
             ? `Marked “${item.name}” as bought.`
             : `Moved “${item.name}” back to the list.`,
         );
       } catch (reason) {
-        replaceItem(item);
         setActionError(describeApiError(reason, "Couldn’t update the item. Try again."));
       }
       setItemPending(item.id, false);
     },
-    [withToken, workspaceId, replaceItem, setItemPending],
+    [mutations.toggleItem, setItemPending],
   );
 
   const save = useCallback(
     async (item: ShoppingItem, changes: UpdateShoppingItemRequest) => {
-      const updated = await withToken((token) =>
-        updateShoppingItem(token, workspaceId, item.id, changes),
-      );
-      replaceItem(updated);
+      const updated = await mutations.updateItem.mutateAsync({ item, changes });
       setActionError(null);
       setAnnouncement(`Saved “${updated.name}”.`);
     },
-    [withToken, workspaceId, replaceItem],
+    [mutations.updateItem],
   );
 
   const remove = useCallback(
@@ -232,8 +175,7 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
       setActionError(null);
       setItemPending(item.id, true);
       try {
-        await withToken((token) => deleteShoppingItem(token, workspaceId, item.id));
-        updateItems(item.list_id, (current) => current.filter((entry) => entry.id !== item.id));
+        await mutations.deleteItem.mutateAsync(item);
         setAnnouncement(`Deleted “${item.name}”.`);
         // The row and its focused button are gone; keep focus in the list.
         listRef.current?.focus();
@@ -242,7 +184,7 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
       }
       setItemPending(item.id, false);
     },
-    [withToken, workspaceId, updateItems, setItemPending],
+    [mutations.deleteItem, setItemPending],
   );
 
   if (shopping.lists.status === "loading") return <ShoppingSkeleton />;

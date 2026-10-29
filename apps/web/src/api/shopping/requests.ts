@@ -9,7 +9,7 @@ import type {
   UpdateShoppingItemRequest,
 } from "@orbit/contracts";
 
-import { request, type Signal, workspacePath } from "./client";
+import { request, type Signal, workspacePath } from "../client";
 
 function shoppingPath(workspaceId: string, suffix: string): string {
   return workspacePath(workspaceId, `/shopping${suffix}`);

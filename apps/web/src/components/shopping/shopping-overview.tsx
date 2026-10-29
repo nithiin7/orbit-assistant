@@ -1,26 +1,16 @@
 "use client";
 
-import type { ShoppingListOverview } from "@orbit/contracts";
 import { ArrowRight, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 
-import { listShoppingLists } from "@/api/shopping";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useWorkspaceResource } from "@/hooks/use-workspace-resource";
-
-async function loadShoppingLists(
-  workspaceId: string,
-  token: string,
-  signal: AbortSignal,
-): Promise<ShoppingListOverview[]> {
-  return (await listShoppingLists(token, workspaceId, { signal })).lists;
-}
+import { useShoppingOverview } from "@/hooks/use-shopping";
 
 /** How many items are still to buy on each list in the active workspace, for the dashboard. */
 export function ShoppingOverview() {
-  const { resource, reload } = useWorkspaceResource(loadShoppingLists);
+  const { resource, reload } = useShoppingOverview();
 
   return (
     <section aria-labelledby="shopping-overview-heading" className="h-full">
