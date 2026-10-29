@@ -11,11 +11,13 @@ from orbit_api.config import Settings
 from orbit_api.db.database import Database
 from orbit_api.repositories.accounts import SqlAccountRepository, SqlLocalAuthRepository
 from orbit_api.repositories.avatars import SqlAvatarRepository
+from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.repositories.workspaces import SqlWorkspaceRepository
 from orbit_api.services.accounts import AccountService
 from orbit_api.services.avatars import AvatarService
 from orbit_api.services.local_auth import LocalAuthService, PasswordHasher
+from orbit_api.services.tasks import TaskService
 from orbit_api.services.workspaces import WorkspaceService
 
 
@@ -83,3 +85,10 @@ def get_avatar_service(session: SessionDep) -> AvatarService:
 
 
 AvatarServiceDep = Annotated[AvatarService, Depends(get_avatar_service)]
+
+
+def get_task_service(session: SessionDep) -> TaskService:
+    return TaskService(SqlTaskRepository(session), SqlTransaction(session))
+
+
+TaskServiceDep = Annotated[TaskService, Depends(get_task_service)]

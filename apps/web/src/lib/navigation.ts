@@ -72,7 +72,7 @@ export const navItems: readonly NavItem[] = [
 ];
 
 /** Routes with their own page; every other item is rendered by the `[section]` placeholder. */
-const dedicatedRoutes: ReadonlySet<string> = new Set(["/", "/settings"]);
+const dedicatedRoutes: ReadonlySet<string> = new Set(["/", "/tasks", "/settings"]);
 
 /** Section routes rendered by the `[section]` placeholder page. */
 export const sectionItems = navItems.filter((item) => !dedicatedRoutes.has(item.href));

@@ -1,0 +1,46 @@
+"use client";
+
+import type { TaskPriority } from "@orbit/contracts";
+
+import { NativeSelect } from "@/components/ui/native-select";
+import { isTaskPriority, PRIORITIES } from "@/lib/tasks";
+import { cn } from "@/lib/utils";
+
+type PrioritySelectProps = {
+  id: string;
+  value: TaskPriority;
+  onChange: (priority: TaskPriority) => void;
+  className?: string;
+  /** Keep the label for assistive technology only, in compact layouts. */
+  hiddenLabel?: boolean;
+};
+
+export function PrioritySelect({
+  id,
+  value,
+  onChange,
+  className,
+  hiddenLabel = false,
+}: PrioritySelectProps) {
+  return (
+    <div className={cn(hiddenLabel ? null : "space-y-1.5", className)}>
+      <label htmlFor={id} className={hiddenLabel ? "sr-only" : "block text-sm font-medium"}>
+        Priority
+      </label>
+      <NativeSelect
+        id={id}
+        name="priority"
+        value={value}
+        onChange={(event) => {
+          if (isTaskPriority(event.target.value)) onChange(event.target.value);
+        }}
+      >
+        {PRIORITIES.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </NativeSelect>
+    </div>
+  );
+}

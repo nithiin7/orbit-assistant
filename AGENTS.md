@@ -16,8 +16,10 @@ open-source productivity platform. **It is in early development:** the repositor
 monorepo foundation, an application shell, an API with health endpoints, a shared API contract,
 a database foundation (SQLAlchemy and Alembic over SQLite in local mode, or PostgreSQL on
 Supabase in cloud mode), and an identity foundation: user profiles, local accounts or Supabase
-Auth, workspaces, and centralized authorization. There are no product features (tasks, notes,
-finance) or AI integration yet. Do not describe or build on capabilities that do not exist.
+Auth, workspaces, and centralized authorization. The first product feature, **tasks**, is
+workspace-scoped (API, Tasks page, dashboard summary). There are no other product features
+(calendar, notes, finance), no reminders or recurring tasks, and no AI integration yet. Do not
+describe or build on capabilities that do not exist.
 
 ## Principles
 
@@ -42,8 +44,8 @@ finance) or AI integration yet. Do not describe or build on capabilities that do
 | `.github/workflows/ci.yml`     | CI: web, API, and commit-message jobs                                            |
 | `.husky/`, `.lintstagedrc.mjs` | Git hooks: staged-file lint/format and commitlint                                |
 
-Not present yet (planned; see `docs/architecture.md`): product tables, shared workspaces, AI
-provider abstractions, end-to-end tests, and a `scripts/` directory.
+Not present yet (planned; see `docs/architecture.md`): product tables other than `tasks`,
+shared workspaces, AI provider abstractions, end-to-end tests, and a `scripts/` directory.
 
 ### Boundaries
 

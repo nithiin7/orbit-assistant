@@ -23,7 +23,7 @@ Privacy-first, local-first personal assistant in early development. pnpm + uv mo
 Web and API communicate only over HTTP. The API owns data access (SQLAlchemy over SQLite in
 `local` mode or PostgreSQL in `cloud` mode, Alembic migrations); the web app never touches a
 database. Identity exists (profiles, local or Supabase auth, workspaces, `api/auth.py`
-dependencies); no product features or AI integration exist yet.
+dependencies). Tasks is the only product feature; no other features or AI integration exist yet.
 
 ## Rules
 

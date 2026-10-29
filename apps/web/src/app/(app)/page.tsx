@@ -3,13 +3,15 @@ import Link from "next/link";
 import { OrbitMark } from "@/components/logo";
 import { PageHeader } from "@/components/page-header";
 import { StorageIndicator } from "@/components/storage/storage-indicator";
+import { TaskOverview } from "@/components/tasks/task-overview";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { WorkspaceOverview } from "@/components/workspace/workspace-overview";
-import { navItems } from "@/lib/navigation";
+import { sectionItems } from "@/lib/navigation";
 
 export default function DashboardPage() {
-  const modules = navItems.filter((item) => item.href !== "/" && item.group === "workspace");
+  // Sections that are still placeholders; built modules summarize themselves above.
+  const modules = sectionItems.filter((item) => item.group === "workspace");
 
   return (
     <div className="space-y-10">
@@ -35,13 +37,15 @@ export default function DashboardPage() {
                 <Badge variant="brand">Preview</Badge>
               </div>
               <p className="max-w-prose text-sm text-pretty text-muted-foreground">
-                Accounts and workspaces are in place, but no modules are built yet, so there is no
-                workspace content to show. As each module lands, a summary of it will appear here.
+                Tasks is the first module to land, and its summary is below. The other modules are
+                planned; as each one is built, a summary of it will appear here too.
               </p>
             </div>
           </Card>
         </section>
       </div>
+
+      <TaskOverview />
 
       <section aria-labelledby="modules-heading" className="space-y-4">
         <div className="space-y-1">
