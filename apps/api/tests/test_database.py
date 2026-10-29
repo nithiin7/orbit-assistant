@@ -72,6 +72,8 @@ async def test_unreachable_cloud_database_fails_without_local_fallback(tmp_path:
         storage_mode="cloud",
         # Port 1 on loopback refuses connections immediately.
         database_url="postgresql://orbit:hunter2-secret@127.0.0.1:1/orbit",
+        supabase_url="https://project.supabase.co",
+        supabase_publishable_key="sb_publishable_test",
         sqlite_path=sqlite_path,
         _env_file=None,  # pyright: ignore[reportCallIssue]
     )

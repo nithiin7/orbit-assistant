@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { StorageIndicator } from "@/components/storage/storage-indicator";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { WorkspaceOverview } from "@/components/workspace/workspace-overview";
 import { navItems } from "@/lib/navigation";
 
 export default function DashboardPage() {
@@ -14,9 +15,11 @@ export default function DashboardPage() {
     <div className="space-y-10">
       <PageHeader
         title="Dashboard"
-        description="Your private, local-first workspace."
+        description="Your private, local-first assistant."
         actions={<StorageIndicator />}
       />
+
+      <WorkspaceOverview />
 
       <section aria-labelledby="status-heading">
         <Card className="flex flex-col gap-4 p-5 shadow-elevation-1 sm:flex-row sm:items-start">
@@ -31,8 +34,8 @@ export default function DashboardPage() {
               <Badge variant="brand">Preview</Badge>
             </div>
             <p className="max-w-prose text-sm text-pretty text-muted-foreground">
-              The application shell is in place, but no modules are built yet and nothing is stored.
-              As each module lands, a summary of it will appear on this dashboard.
+              Accounts and workspaces are in place, but no modules are built yet, so there is no
+              workspace content to show. As each module lands, a summary of it will appear here.
             </p>
           </div>
         </Card>

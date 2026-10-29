@@ -16,10 +16,11 @@ Browser ──► apps/web (Next.js, :3000) ──HTTP/JSON──► apps/api (F
 
 - **apps/web** renders the user interface. It is a Next.js App Router app written in strict
   TypeScript and styled with Tailwind CSS v4.
-- **apps/api** is a FastAPI service that owns data access and business logic. Today it exposes
-  `GET /api/v1/health` (liveness) and `GET /api/v1/health/database` (database connectivity),
-  and it has the database foundation described under [Storage](#storage). No product data
-  is stored yet.
+- **apps/api** is a FastAPI service that owns data access and business logic. It exposes health
+  endpoints, sign-in configuration and local accounts, the signed-in user's profile, and
+  workspaces, on the database foundation described under [Storage](#storage). Identity is
+  described under [Identity and authorization](#identity-and-authorization). No product data
+  (tasks, notes, finance) is stored yet.
 
 The two apps communicate only over HTTP and share no runtime code. They share one thing: the
 API contract in `packages/contracts`, described below.
@@ -109,17 +110,27 @@ These packages, and `@orbit/contracts`, are consumed via `workspace:*` and conta
 ```text
 apps/web/src/
 ├── app/                 # Routes (App Router)
-│   ├── layout.tsx       # Root layout: theme provider + app shell
-│   ├── page.tsx         # Dashboard placeholder
-│   ├── [section]/       # Placeholder page for every other nav section
+│   ├── layout.tsx       # Root layout: theme provider + auth provider
+│   ├── (app)/           # Signed-in routes: RequireAuth + WorkspaceProvider + app shell
+│   │   ├── page.tsx     # Dashboard (active workspace, module list)
+│   │   ├── settings/    # Account, workspaces, appearance, storage
+│   │   └── [section]/   # Placeholder page for every other nav section
+│   ├── (auth)/          # Public routes without the shell: sign-in, sign-up
+│   ├── not-found.tsx    # Standalone 404 (works signed in or out)
 │   └── globals.css      # Tailwind + design tokens (light/dark)
 ├── components/
 │   ├── app-shell/       # Sidebar, mobile drawer, navigation links
-│   ├── storage/         # Storage-mode indicator (dashboard) and status card (settings)
+│   ├── auth/            # AuthProvider, RequireAuth, sign-in and sign-up forms
+│   ├── workspace/       # WorkspaceProvider, switcher, dashboard overview
+│   ├── settings/        # Account, workspace, and theme settings
+│   ├── storage/         # Storage-mode indicator and status card
 │   └── ui/              # Small shadcn/ui-compatible primitives
+├── hooks/               # use-workspace-resource (stale-safe workspace data), etc.
 └── lib/
     ├── navigation.ts    # Single source of truth for nav items and section routes
     ├── api.ts           # Typed API client (types from @orbit/contracts)
+    ├── auth/            # Auth clients (local, Supabase), session storage, validation
+    ├── workspaces.ts    # Active-workspace selection and per-user preference
     ├── env.ts           # Validated public configuration
     └── utils.ts         # `cn()` class-name helper
 ```
@@ -136,7 +147,11 @@ Design decisions:
   shadcn/ui. New shadcn components can be added with `pnpm dlx shadcn@latest add <component>`
   from `apps/web` (see `components.json`).
 - **Server Components by default.** Only components that need browser APIs or hooks are marked
-  `"use client"` (theme toggle, nav links, mobile drawer).
+  `"use client"` (theme toggle, nav links, mobile drawer, auth and workspace components).
+- **Route groups split public and signed-in pages.** `(auth)` pages render without the app
+  shell; `(app)` pages render inside `RequireAuth`, which shows a loading screen until the
+  session is confirmed and redirects visitors to `/sign-in?next=…` (validated against open
+  redirects by `lib/auth/redirect.ts`).
 
 ## API
 
@@ -147,16 +162,26 @@ apps/api/src/orbit_api/
 ├── config.py            # Pydantic Settings: the only place config is read
 ├── openapi.py           # Exports the OpenAPI contract to packages/contracts
 ├── api/
-│   ├── dependencies.py  # FastAPI dependencies (request-scoped database session)
+│   ├── dependencies.py  # FastAPI dependencies: database session, settings, services
+│   ├── auth.py          # Authentication and authorization dependencies (the single gate)
 │   └── v1/              # Versioned HTTP API, mounted at /api/v1
-│       └── health.py    # Liveness and database connectivity
+│       ├── health.py    # Liveness and database connectivity
+│       ├── auth.py      # Sign-in configuration; local sign-up, sign-in, sign-out
+│       ├── me.py        # The signed-in user's profile
+│       └── workspaces.py # List, create, get, and rename workspaces
+├── auth/                # Adapters: Argon2 password hashing, Supabase JWT verification
+├── schemas/             # Pydantic request/response models (the API contract)
+├── services/            # Domain logic: accounts, local auth, workspaces (no FastAPI/SQLAlchemy)
+├── repositories/        # SQLAlchemy implementations of the services' repository protocols
 └── db/                  # Database infrastructure (SQLAlchemy + Alembic, no FastAPI)
     ├── base.py          # Declarative `Base` with a constraint naming convention
+    ├── columns.py       # `UTCDateTime`: timezone-aware UTC timestamps on both databases
+    ├── models/          # ORM tables: users, local credentials and sessions, workspaces
     ├── engine.py        # Engine per storage mode: SQLite PRAGMAs, Postgres pooling
     ├── database.py      # `open_database()`: connect, verify schema, sessions, dispose
     ├── migrate.py       # Programmatic Alembic: upgrade, downgrade, head revision
     └── migrations/      # Alembic environment and versioned revisions
-        └── versions/    # 0001_baseline (no tables)
+        └── versions/    # 0001_baseline, 0002_create_identity_and_workspace_tables
 ```
 
 Design decisions:
@@ -175,7 +200,10 @@ Design decisions:
   `OperationalError`, `InterfaceError`, pool timeouts, or connection errors from the driver)
   are logged server-side and returned as `503 {"detail": "The database is unavailable."}`,
   without paths, hosts, or SQL.
-- **No authentication yet.** Deliberately deferred until product requirements are clearer.
+- **Safe validation errors.** 422 responses list where and why validation failed, but never
+  echo submitted values, so a rejected password is not reflected back or logged by proxies.
+- **Authentication everywhere but health and sign-in.** See
+  [Identity and authorization](#identity-and-authorization).
 
 ## Storage
 
@@ -200,10 +228,10 @@ written once. SQLite is embedded in the API process; local mode needs no databas
     `postgresql://` URLs are normalized to the `asyncpg` driver; other drivers are rejected.
     Production requires TLS in the URL (`?ssl=require`, `verify-ca`, or `verify-full`).
 - The web app shows the active mode (from `GET /api/v1/health/database`) as a badge on the
-  dashboard and a status card in Settings, so users can see where their data goes. The UI
-  can't change the mode. Switching is server configuration (`apps/api/.env`) plus a restart,
-  because the API has no authentication yet and the database URL is a secret that should never
-  pass through the browser. UI switching can be revisited once authentication exists.
+  dashboard and the sign-in pages, and a status card in Settings, so users can see where their
+  data goes. The UI can't change the mode. Switching is server configuration
+  (`apps/api/.env`) plus a restart: the mode is an installation-wide decision rather than a
+  per-user one, and the database URL is a secret that should never pass through the browser.
 - Startup logs the mode and a credential-free target, for example
   `Storage mode: local. Using the SQLite database at …`.
 - **No fallback.** If the selected database cannot be opened, reached, or is not migrated, the
@@ -230,8 +258,9 @@ written once. SQLite is embedded in the API process; local mode needs no databas
 - Alembic owns the schema. Migrations live in `src/orbit_api/db/migrations/versions/`, ship
   with the package, and run on both SQLite (in batch mode, which rebuilds tables for `ALTER`)
   and PostgreSQL.
-- `0001_baseline` creates no tables. It establishes version tracking so the first feature's
-  migration has a parent.
+- `0001_baseline` creates no tables. It establishes version tracking.
+- `0002_create_identity_and_workspace_tables` creates `users`, `local_credentials`,
+  `local_sessions`, and `workspaces`, and enables RLS on them in PostgreSQL.
 - Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
   Startup only checks that the database is at the head revision. For a shared cloud database,
   schema changes should be deliberate and reviewable.
@@ -240,20 +269,25 @@ written once. SQLite is embedded in the API process; local mode needs no databas
 
 ### Backend layers
 
-The first feature (tasks) will add the layers below. Only `api/` and `db/` exist today; per
-`AGENTS.md`, the others are created with the first feature that needs them, not before.
+Identity (accounts and workspaces) introduced these layers; product features follow the same
+structure.
 
-| Layer         | Location (planned paths in _italics_) | Responsibility                                                   | Depends on SQLAlchemy?         |
-| ------------- | ------------------------------------- | ---------------------------------------------------------------- | ------------------------------ |
-| Routes        | `api/v1/<feature>.py`                 | HTTP: routing, status codes, auth dependencies, calling services | Only for the `SessionDep` type |
-| Schemas       | _`schemas/<feature>.py`_              | Pydantic request/response models (the API contract)              | No                             |
-| Services      | _`services/<feature>.py`_             | Domain rules and authorization decisions, transaction boundaries | No (receives a repository)     |
-| Repositories  | _`repositories/<feature>.py`_         | Queries for one aggregate, always scoped to the owning user      | Yes                            |
-| Models        | _`db/models/<feature>.py`_            | SQLAlchemy ORM tables, subclasses of `db.base.Base`              | Yes                            |
-| DB foundation | `db/`                                 | Engines, sessions, migrations, storage-mode selection            | Yes (no FastAPI)               |
+| Layer         | Location                    | Responsibility                                                   | Depends on SQLAlchemy?         |
+| ------------- | --------------------------- | ---------------------------------------------------------------- | ------------------------------ |
+| Routes        | `api/v1/<feature>.py`       | HTTP: routing, status codes, auth dependencies, calling services | Only for the `SessionDep` type |
+| Schemas       | `schemas/<feature>.py`      | Pydantic request/response models (the API contract)              | No                             |
+| Services      | `services/<feature>.py`     | Domain rules and authorization decisions, transaction boundaries | No (receives a repository)     |
+| Repositories  | `repositories/<feature>.py` | Queries for one aggregate, always scoped to the owning user      | Yes                            |
+| Models        | `db/models/<feature>.py`    | SQLAlchemy ORM tables, subclasses of `db.base.Base`              | Yes                            |
+| DB foundation | `db/`                       | Engines, sessions, migrations, storage-mode selection            | Yes (no FastAPI)               |
 
 - Services depend on a small `Protocol` per repository, not on SQLAlchemy, so domain logic is
-  unit-testable without a database. A concrete repository class takes an `AsyncSession`.
+  unit-testable without a database (`tests/test_account_service.py`). A concrete repository
+  class takes an `AsyncSession`. Repositories exchange frozen dataclasses (for example
+  `services.accounts.User`), never ORM objects.
+- Services commit through a `Transaction` protocol (`services/transactions.py`), which an
+  `AsyncSession` adapter implements. Uniqueness violations surface as `ConflictError`, so services
+  can handle races (two first requests for the same Supabase user) without importing SQLAlchemy.
 - Schemas and ORM models stay separate: API shape and storage shape evolve independently.
 - No generic repository base class or unit-of-work framework is planned. Add one only if
   several features demonstrably repeat the same code.
@@ -271,8 +305,9 @@ The first feature (tasks) will add the layers below. Only `api/` and `db/` exist
   `ORBIT_SQLITE_PATH` at a user data directory. Never place it under `apps/web` (especially
   `public/`) or in a folder synced to a third party you don't trust.
 - The API binds to `127.0.0.1` by default (`ORBIT_API_HOST`), so the local backend and its data
-  are not reachable from other devices. Binding to `0.0.0.0` exposes the API, which has no
-  authentication yet, to the network. Don't do it outside a trusted, isolated environment.
+  are not reachable from other devices. Binding to `0.0.0.0` exposes the API, including local
+  sign-in, to the network over plain HTTP and without rate limiting. Don't do it outside a
+  trusted, isolated environment.
 - Backups: see [development.md](development.md#backups).
 
 ### Cloud security and Supabase
@@ -280,28 +315,28 @@ The first feature (tasks) will add the layers below. Only `api/` and `db/` exist
 - The PostgreSQL URL is server-side configuration (`ORBIT_DATABASE_URL`, a `SecretStr`). It is
   never sent to the browser, never logged (startup logs only the host and database name), and
   validation errors never echo it.
-- The browser never talks to the database. If authentication later uses Supabase Auth, the web
-  app may use the public Supabase client for sign-in flows only. Application data still goes
-  through the API.
-- **Ownership (planned):** every user-owned table will carry a non-null owner column
-  (`user_id`, and `workspace_id` once workspaces exist). The API derives the owner from the
-  authenticated session, never from request bodies or query parameters. Repositories filter
-  every read and write by owner, and cross-user isolation tests accompany each repository.
-- **Row Level Security (planned, not active):** the API connects with a server-side role that
-  bypasses RLS, so **application-level authorization is the primary control**. RLS is defense
-  in depth against other access paths, chiefly Supabase's auto-generated Data API, which
-  exposes tables in the `public` schema to anyone holding the project's anon key. The intended
-  strategy:
+- The browser never talks to the database. It uses the public Supabase client
+  (`@supabase/supabase-js`, with the project URL and publishable key) for sign-in flows only.
+  Application data always goes through the API.
+- The API needs **no Supabase secret**: it verifies access tokens against the project's public
+  signing keys. The service-role key is not used and must not be configured anywhere in Orbit.
+- **Ownership** is described under [Identity and authorization](#identity-and-authorization).
+- **Row Level Security (defense in depth):** the API connects as the table owner, which RLS does
+  not restrict, so **application-level authorization is the primary control**. RLS guards other
+  access paths, chiefly Supabase's auto-generated Data API, which exposes tables in the `public`
+  schema to anyone holding the project's publishable (anon) key.
   1. Every migration that creates a table in PostgreSQL enables RLS on it in the same
-     revision (`ALTER TABLE … ENABLE ROW LEVEL SECURITY`). With no policies, the Data API's
-     `anon` and `authenticated` roles can read nothing.
-  2. Add `authenticated` policies (`owner_id = auth.uid()`) only if a client is ever allowed
-     to query a table directly. None is planned.
-  3. Consider a dedicated, non-superuser role for the API and a schema that is not exposed
-     through the Data API.
-
-  **No tables exist yet, so RLS currently protects nothing.** Don't describe Orbit data as
-  RLS-protected until the tables and policies exist and are tested.
+     revision. `0002` does this for `users`, `local_credentials`, `local_sessions`, and
+     `workspaces`.
+  2. **No policies exist**, deliberately: the browser never queries tables directly, so the
+     Data API's `anon` and `authenticated` roles get no rows. Add `authenticated` policies
+     (for example `owner_id = auth.uid()`) only if a client is ever allowed direct access.
+  3. Tested by `tests/test_postgres.py` (opt-in): RLS is enabled on every identity table, and a
+     role that does not own the tables sees no rows. This was verified against PostgreSQL 17,
+     not against a live Supabase project; Supabase's own `anon` and `authenticated` roles are
+     ordinary non-owner roles, so the same rule applies to them.
+  4. Still worth considering: a dedicated, non-superuser role for the API, and a schema not
+     exposed through the Data API.
 
 ### Not implemented in this phase
 
@@ -309,8 +344,116 @@ The first feature (tasks) will add the layers below. Only `api/` and `db/` exist
   record identity, conflict resolution, and deletion semantics (tombstones). Those depend on
   real schemas that don't exist yet. Until then, a deployment uses exactly one mode, and the
   API refuses to start rather than guess.
-- **Authentication and ownership columns.** Planned with the first user-owned feature.
+- **Shared workspaces**, invitations, and roles other than owner.
+- **Linking local and cloud identities.** A local account and a Supabase account are unrelated,
+  even with the same email.
 - **Encryption at rest beyond the OS**, a desktop wrapper, and a bundled local database server.
+
+## Identity and authorization
+
+### Identity model
+
+```text
+users ──< workspaces              (owner_id → users.id, ON DELETE CASCADE)
+  │
+  ├── local_credentials           (local mode: email + Argon2id hash, 1:1)
+  └──< local_sessions             (local mode: SHA-256 of the bearer token, expiry)
+```
+
+- **`users`** is the Orbit profile: UUID `id`, `email`, `display_name`, UTC `created_at` and
+  `updated_at`, and the identity it belongs to, `(auth_provider, auth_subject)`, which is
+  unique. `auth_provider` is `local` or `supabase` (a CHECK constraint); for Supabase,
+  `auth_subject` is the Supabase user ID (the JWT `sub`), for local accounts it is the profile ID.
+- **`workspaces`** belong to one owner. `is_personal` marks the default workspace created
+  during onboarding; a partial unique index allows one personal workspace per user. Names are
+  1 to 100 characters (validated by the API and a CHECK constraint).
+- **Extensibility:** future user data (tasks, notes, expenses) carries a non-null
+  `workspace_id` foreign key. Shared workspaces would add a `workspace_members` table and change
+  only the authorization check described below; the API already reports a `role` (`owner`).
+- There is no separate preferences table. The active workspace is a per-browser preference
+  (see [Workspace selection](#workspace-selection)).
+
+### Local and cloud identities
+
+The storage mode decides the identity provider. There is no configuration that mixes them,
+and no fallback from one to the other.
+
+|                            | Local mode                                                         | Cloud mode                                                                                  |
+| -------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| Identity provider          | Orbit's own accounts in SQLite                                     | Supabase Auth                                                                               |
+| Sign-up, sign-in, sign-out | `POST /api/v1/auth/local/*`                                        | `@supabase/supabase-js` in the browser                                                      |
+| Password storage           | Argon2id (argon2-cffi), rehashed on sign-in when parameters change | Supabase                                                                                    |
+| Bearer token               | Opaque 256-bit random token; only its SHA-256 is stored            | Supabase access token (JWT)                                                                 |
+| Server-side validation     | Look up the token digest; reject if missing or expired             | Verify signature (JWKS, ES256/RS256), `exp`, `iss`, `aud=authenticated`, `role`, UUID `sub` |
+| Session lifetime           | `ORBIT_LOCAL_SESSION_TTL_HOURS` (default 14 days), fixed           | Supabase settings; refreshed by the client                                                  |
+| Sign-out                   | Deletes the session row (immediate revocation)                     | Ends the Supabase session in this browser                                                   |
+| Registration               | First account only, unless `ORBIT_LOCAL_OPEN_REGISTRATION=true`    | Supabase project settings                                                                   |
+| Profile creation           | During sign-up, in the same transaction                            | On the first authenticated request                                                          |
+
+- `GET /api/v1/auth/config` tells the web app which provider applies, with only public values
+  (`registration_open` locally; the Supabase URL and publishable key in cloud mode). The web app
+  holds no Supabase configuration of its own, so it can't disagree with the API.
+- **Local accounts** model a personal installation: the first person to open Orbit creates the
+  owner account. More accounts can be allowed for a shared computer; each has its own isolated
+  workspaces. Sign-in errors don't reveal whether an email exists (a dummy hash is verified for
+  unknown emails). The local database stores no plaintext secret: no session secret or signing
+  key is needed, and nothing secret is configured.
+- **Supabase onboarding:** on the first request with a valid token, the API creates the profile
+  and its Personal workspace. The initial display name comes from the `display_name` the user
+  entered at sign-up (stored in Supabase user metadata), falling back to the email's local part.
+  Concurrent first requests are handled: the loser of the unique-constraint race uses the
+  winner's profile. The profile's email follows the token's `email` claim.
+- **Supabase token revocation:** access tokens are verified locally, so a token stays valid until
+  it expires (one hour by default) even after sign-out elsewhere. Supabase revokes the refresh
+  token, so the session can't be extended.
+- If Supabase's signing keys can't be fetched, protected requests fail with 503, never with
+  access granted, and the browser keeps its session.
+
+### Authorization
+
+All rules live in `api/auth.py` and `services/workspaces.py`:
+
+- **`CurrentUserDep`** reads only the `Authorization: Bearer` header. A missing, malformed,
+  oversized, expired, or unknown token is `401 {"detail": "Sign in to continue."}` with
+  `WWW-Authenticate: Bearer`. User IDs are never accepted from bodies or query strings; request
+  models forbid unknown fields, so a submitted `user_id` or `owner_id` is a 422.
+- **`WorkspaceDep`** authorizes the `{workspace_id}` path parameter through
+  `WorkspaceService.authorize()`, which queries by both workspace ID and owner. A workspace that
+  doesn't exist and one owned by someone else produce the same `404 Workspace not found.`, so
+  responses never reveal other users' workspaces.
+- **Pattern for future features:** routes live under `/api/v1/workspaces/{workspace_id}/…`,
+  declare `workspace: WorkspaceDep`, and pass `workspace.id` to repositories, which filter every
+  query by it. Each feature adds cross-user isolation tests like `tests/test_workspaces.py`.
+- Database constraints back the application checks: foreign keys with cascading deletes,
+  unique identities, one personal workspace per user, and CHECK constraints on names, providers,
+  and normalized emails.
+- There is no role-based access control framework. Owner is the only role.
+
+### Sessions in the browser
+
+- Both modes send the token as a bearer header; the API sets no cookies, and CORS stays
+  credential-free. Local tokens live in `localStorage` (`orbit:session`); Supabase keeps its
+  session in `localStorage` (`orbit:supabase-auth`) and refreshes it. Scripts running on the page
+  could read either, so XSS prevention (no `dangerouslySetInnerHTML` with untrusted data, and a
+  future Content Security Policy) protects sessions.
+- `AuthProvider` restores the session on load and confirms it with `GET /api/v1/me` before
+  rendering private pages. A 401 at any time discards the session and returns to sign-in;
+  other failures (API down, database 503) show a retry screen and keep the session. Sign-in or
+  sign-out in another tab is picked up.
+- **Route protection happens in the browser** (`RequireAuth`), because tokens are not
+  visible to the Next.js server. It is a UX guard: pages contain no private data, and every
+  private byte comes from the API, which validates the token on each request.
+
+### Workspace selection
+
+- The active workspace is remembered per user in `localStorage`
+  (`orbit:workspace:<user id>`). It is a selector, never a credential: every workspace request
+  is authorized by the API. On load, a remembered workspace the user no longer has falls back to
+  the personal workspace.
+- Workspace-scoped data loads through `useWorkspaceResource`, which aborts the request for the
+  previous workspace on switch and only renders a result while its workspace is still active, so
+  a slow response can't show the previous workspace's data. A 404 re-validates the workspace
+  list.
 
 ## Configuration
 
@@ -328,14 +471,15 @@ The first feature (tasks) will add the layers below. Only `api/` and `db/` exist
 
 ## Testing strategy
 
-| Layer                    | Tool                                  | Location                                   | Current coverage                                   |
-| ------------------------ | ------------------------------------- | ------------------------------------------ | -------------------------------------------------- |
-| Web units and components | Vitest, Testing Library, jsdom        | `apps/web/src/**/*.test.ts(x)`, co-located | Navigation, env, API client, drawer, storage badge |
-| API routes and config    | Pytest, FastAPI `TestClient`          | `apps/api/tests/`                          | Health endpoints, CORS, settings validation        |
-| Database (SQLite)        | Pytest, temporary SQLite files        | `apps/api/tests/test_database.py`, etc.    | Startup checks, sessions, migrations, 503 errors   |
-| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)        | `apps/api/tests/test_postgres.py`          | Migrations and connectivity; skipped by default    |
-| Contract freshness       | Pytest + `openapi-typescript --check` | `tests/test_openapi.py`, contracts `lint`  | Generated contract matches the API                 |
-| End-to-end               | Not set up (**planned**)              | —                                          | —                                                  |
+| Layer                    | Tool                                  | Location                                   | Current coverage                                                                                    |
+| ------------------------ | ------------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| Web units and components | Vitest, Testing Library, jsdom        | `apps/web/src/**/*.test.ts(x)`, co-located | Shell, API client, auth flows, route guard, workspace switching and stale data                      |
+| API routes and config    | Pytest, FastAPI `TestClient`          | `apps/api/tests/`                          | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, cross-user isolation |
+| Services                 | Pytest, in-memory fake repositories   | `apps/api/tests/test_account_service.py`   | Onboarding, concurrent provisioning, ownership checks                                               |
+| Database (SQLite)        | Pytest, temporary SQLite files        | `apps/api/tests/test_database.py`, etc.    | Startup checks, sessions, migrations, constraints, 503 errors                                       |
+| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)        | `apps/api/tests/test_postgres.py`          | Migrations, connectivity, RLS; skipped by default                                                   |
+| Contract freshness       | Pytest + `openapi-typescript --check` | `tests/test_openapi.py`, contracts `lint`  | Generated contract matches the API                                                                  |
+| End-to-end               | Not set up (**planned**)              | —                                          | —                                                                                                   |
 
 Unit tests cover logic, route tests cover HTTP behavior and validation, and E2E tests will cover
 critical user journeys once real features exist. CI runs every layer on each pull request.
@@ -358,7 +502,7 @@ The database foundation is implemented (see [Storage](#storage)). Still planned:
 
 - The first product tables, starting with tasks, with repositories and services in the layers
   described above.
-- Per-user ownership columns and authorization, then PostgreSQL RLS as defense in depth.
+- Shared workspaces (a membership table, invitations, roles), if the product needs them.
 - Any synchronization or migration between local and cloud storage. This is undecided and
   needs its own design.
 
@@ -371,10 +515,11 @@ The database foundation is implemented (see [Storage](#storage)). Still planned:
 
 ### Evolution
 
-The next step is to define the task schema and implement the first database-backed task API
-(model, migration, repository, service, routes, and contract). After that: authentication and
-per-user data isolation, then AI-assisted features through the provider interface, then
-optional sync and extension points. Each step should leave the boundaries above intact.
+The next step is to define the task schema and implement the first database-backed,
+workspace-scoped task API (model with `workspace_id`, migration with RLS, repository, service,
+routes under `/workspaces/{workspace_id}/tasks` using `WorkspaceDep`, and contract). After that:
+AI-assisted features through the provider interface, then optional sync and extension points.
+Each step should leave the boundaries above intact.
 
 ## Continuous integration
 

@@ -7,6 +7,7 @@ import { CommandPaletteTrigger } from "@/components/command-palette/command-pale
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { WorkspaceSwitcher } from "@/components/workspace/workspace-switcher";
 
 import { NavLinks } from "./nav-links";
 
@@ -52,6 +53,9 @@ export function MobileNav() {
             <Button variant="ghost" size="icon" aria-label="Close navigation" onClick={close}>
               <X aria-hidden="true" />
             </Button>
+          </div>
+          <div className="px-2 pb-2">
+            <WorkspaceSwitcher onNavigate={close} />
           </div>
           <div className="flex-1 overflow-y-auto px-2 py-2">
             <NavLinks onNavigate={close} />

@@ -1,6 +1,7 @@
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Tooltip } from "@/components/ui/tooltip";
+import { WorkspaceSwitcher } from "@/components/workspace/workspace-switcher";
 
 import { NavLinks } from "./nav-links";
 import { SidebarSearch } from "./sidebar-search";
@@ -19,6 +20,9 @@ export function Sidebar() {
     >
       <div className="flex h-14 shrink-0 items-center px-4">
         <Logo textClassName="transition-opacity duration-200 sidebar-collapsed:opacity-0" />
+      </div>
+      <div className="px-2 pb-3">
+        <WorkspaceSwitcher collapsible />
       </div>
       <div className="px-2 pb-2">
         <SidebarSearch />

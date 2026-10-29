@@ -26,6 +26,9 @@ migrated, and its error message says so.
 `pnpm dev` uses [concurrently](https://github.com/open-cli-tools/concurrently) with
 `--kill-others`. Ctrl+C, or either app exiting, stops both.
 
+Open <http://localhost:3000>. On a fresh local database you are sent to **Create your Orbit
+account**; that first account owns the installation (see [Accounts](#accounts)).
+
 Useful API URLs in development:
 
 - Health: <http://localhost:8000/api/v1/health>
@@ -64,6 +67,15 @@ Storage (see [Database](#database)):
 | `ORBIT_DATABASE_POOL_SIZE`    | `5`                            | Cloud mode: persistent pooled connections                 |
 | `ORBIT_DATABASE_MAX_OVERFLOW` | `5`                            | Cloud mode: extra connections allowed under load          |
 
+Accounts (see [Accounts](#accounts)):
+
+| Variable                         | Default | Purpose                                                                 |
+| -------------------------------- | ------- | ----------------------------------------------------------------------- |
+| `ORBIT_SUPABASE_URL`             | unset   | Cloud mode only (required): Supabase project URL, `https` in production |
+| `ORBIT_SUPABASE_PUBLISHABLE_KEY` | unset   | Cloud mode only (required): publishable (anon) key. Public by design    |
+| `ORBIT_LOCAL_SESSION_TTL_HOURS`  | `336`   | Local mode: session lifetime in hours (14 days; 1 to 2160)              |
+| `ORBIT_LOCAL_OPEN_REGISTRATION`  | `false` | Local mode: allow accounts beyond the first                             |
+
 All API variables are server-only. Settings are validated at startup. In production, wildcard
 CORS origins are rejected and the interactive docs are disabled. If you change the web app's
 port, update `ORBIT_CORS_ORIGINS` to match.
@@ -89,8 +101,8 @@ pnpm dev:api        # logs "Storage mode: local. Using the SQLite database at �
   doesn't change the permissions of existing files or folders.
 - The database, its `-wal`/`-shm` files, and `.data/` are git-ignored. Never commit them.
 - The API binds to `127.0.0.1` by default, so only this machine can reach it. Keep it that way
-  unless you deliberately need access from another device on a trusted network. The API has no
-  authentication yet.
+  unless you deliberately need access from another device on a trusted network: local sign-in
+  is served over plain HTTP and has no rate limiting.
 
 #### Backups
 
@@ -113,18 +125,59 @@ Backups contain all of your data unencrypted. Store them with the same care as t
    ```bash
    ORBIT_STORAGE_MODE=cloud
    ORBIT_DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/postgres?ssl=require
+   ORBIT_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
+   ORBIT_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
    ```
 
    Production (`ORBIT_ENV=production`) rejects URLs without `ssl=require`, `verify-ca`, or
-   `verify-full`.
+   `verify-full`. The Supabase URL and publishable key come from **Project Settings → API
+   Keys**; they are public and reach the browser through `GET /api/v1/auth/config`. Never
+   configure the service-role (secret) key: Orbit doesn't need it.
 
-3. `pnpm db:migrate`, then `pnpm dev:api`. Startup logs the host and database name only.
+3. Configure Supabase Auth (see [Cloud accounts](#cloud-accounts-supabase-auth)).
+4. `pnpm db:migrate`, then `pnpm dev:api`. Startup logs the host and database name only.
 
 The dashboard shows a **Local · SQLite** or **Cloud · Supabase** badge, and **Settings → Storage**
 shows the same status. Neither can change the mode: edit `apps/api/.env` and restart the API.
 
-Supabase Row Level Security is planned but not active, since no tables exist yet. See
-[architecture.md](architecture.md#cloud-security-and-supabase).
+Migrations enable Row Level Security, with no policies, on every Orbit table in PostgreSQL, so
+Supabase's Data API can't read them with the publishable key. The API itself enforces
+authorization. See [architecture.md](architecture.md#cloud-security-and-supabase).
+
+## Accounts
+
+Which sign-in Orbit uses follows the storage mode; the web app asks the API
+(`GET /api/v1/auth/config`) and needs no configuration of its own. The design is in
+[architecture.md](architecture.md#identity-and-authorization).
+
+### Local accounts
+
+- Accounts live in the SQLite database. Passwords are hashed with Argon2id; sessions are random
+  tokens stored only as hashes, valid for `ORBIT_LOCAL_SESSION_TTL_HOURS`.
+- The first account created is the installation's owner. After that, **Create account** shows
+  that sign-up is closed. To allow more people on the same machine (each with private
+  workspaces), set `ORBIT_LOCAL_OPEN_REGISTRATION=true` and restart the API.
+- **Forgotten password:** there is no email-based recovery in local mode (Orbit doesn't send
+  email). This is a known gap; until a recovery design exists, the only way back in is to reset
+  the database, which deletes its data.
+- There is no secret to configure for local sessions.
+
+### Cloud accounts (Supabase Auth)
+
+1. **JWT signing keys:** Orbit verifies tokens with the project's public keys and accepts only
+   asymmetric signatures (ES256 or RS256), the default for new Supabase projects. If your
+   project still signs with the legacy shared secret (HS256), migrate under **Project Settings
+   → JWT Keys** first, or every request will be rejected with 401.
+2. **Email provider:** keep the Email provider enabled. If **Confirm email** is on (the default),
+   sign-up shows "Check your email", and the confirmation link signs the user in.
+3. **URL configuration:** set **Site URL** to the web app's origin (for example
+   `http://localhost:3000`) and add it to the redirect allow list, so confirmation links return
+   to Orbit.
+4. Password rules, rate limits, and session lifetime are Supabase settings. The web form asks
+   for at least 8 characters; keep Supabase's minimum at or below that, or its message is shown.
+
+The first request from a new Supabase user creates their Orbit profile and Personal workspace.
+Supabase users and local accounts are separate identities, even with the same email.
 
 ### Migrations
 
@@ -149,13 +202,18 @@ uv run alembic downgrade -1           # revert the latest revision
   changes the shared cloud database.
 - `uv run pytest tests/test_migrations.py` fails if ORM models and migrations disagree.
 
-### Database tests
+### Database and auth tests
 
 - `pnpm test:api` (or `uv run pytest`) uses a temporary SQLite database per test. It needs no
   database server or credentials, and never touches your real database.
+- Supabase Auth is never contacted by tests: `tests/test_supabase_auth.py` signs tokens with a key
+  generated in the test and hands the verifier that key in place of the project's JWKS. No
+  Supabase credentials are needed.
 - PostgreSQL integration tests are marked `postgres` and skipped unless
   `ORBIT_TEST_DATABASE_URL` is set. They migrate up and back down to an empty schema, so use a
-  **disposable** database:
+  **disposable** database. They also check that RLS is enabled and that a role that doesn't own
+  the tables sees no rows (the test creates and rolls back a temporary role, so the database
+  user needs `CREATEROLE`):
 
   ```bash
   createdb orbit_test
@@ -274,5 +332,9 @@ echo "feat(web): add task list" | pnpm exec commitlint
   reached. Check `ORBIT_SQLITE_PATH` (its folder must be writable), or check that
   `ORBIT_DATABASE_URL` is correct and the server is reachable. Orbit will not fall back to the
   other mode.
+- **Every request returns 401 in cloud mode:** check that the project uses asymmetric JWT
+  signing keys, and that `ORBIT_SUPABASE_URL` matches the project the web app signs in to.
+- **"Orbit can't check your session":** the web app reached neither the API nor its database.
+  Start the API (`pnpm dev:api`) and choose **Try again**; your session is kept.
 - **Port already in use:** stop the other process, or set `ORBIT_API_PORT` / run
   `pnpm --filter @orbit/web exec next dev --port 3001` and update `ORBIT_CORS_ORIGINS`.

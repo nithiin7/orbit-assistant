@@ -1,18 +1,33 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CommandPaletteProvider } from "@/components/command-palette/command-palette";
+import { ada, json, mockApi, personal } from "@/test/api-mock";
+import { renderSignedIn } from "@/test/session";
 
 import { MobileNav } from "./mobile-nav";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/",
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 
-function renderMobileNav() {
-  render(
+beforeEach(() => {
+  mockApi({
+    "GET /api/v1/auth/config": json({ provider: "local", registration_open: false }),
+    "GET /api/v1/me": json(ada),
+    "GET /api/v1/workspaces": json({ workspaces: [personal] }),
+  });
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  localStorage.clear();
+});
+
+async function renderMobileNav() {
+  await renderSignedIn(
     <CommandPaletteProvider>
       <MobileNav />
     </CommandPaletteProvider>,
@@ -23,7 +38,7 @@ function renderMobileNav() {
 describe("MobileNav", () => {
   it("opens and closes the navigation drawer", async () => {
     const user = userEvent.setup();
-    const drawer = renderMobileNav();
+    const drawer = await renderMobileNav();
     expect(drawer).not.toHaveAttribute("open");
 
     await user.click(screen.getByRole("button", { name: "Open navigation" }));
@@ -35,7 +50,7 @@ describe("MobileNav", () => {
 
   it("closes the drawer after choosing a destination", async () => {
     const user = userEvent.setup();
-    const drawer = renderMobileNav();
+    const drawer = await renderMobileNav();
 
     await user.click(screen.getByRole("button", { name: "Open navigation" }));
     await user.click(screen.getByRole("link", { name: "Tasks" }));
