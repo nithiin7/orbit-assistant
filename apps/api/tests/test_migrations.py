@@ -156,3 +156,82 @@ def test_deleting_a_user_deletes_their_workspaces(migrated_settings: Settings) -
     query(database, "DELETE FROM users WHERE id = ?", owner)
 
     assert query(database, "SELECT id FROM workspaces") == [(kept,)]
+
+
+def insert_task(database: Path, workspace_id: str, **overrides: object) -> str:
+    task_id = uuid.uuid4().hex
+    values: dict[str, object] = {
+        "title": "T",
+        "description": "",
+        "status": "open",
+        "priority": 0,
+        "completed_at": None,
+        **overrides,
+    }
+    query(
+        database,
+        "INSERT INTO tasks (id, workspace_id, title, description, status, priority,"
+        " completed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        task_id,
+        workspace_id,
+        values["title"],
+        values["description"],
+        values["status"],
+        values["priority"],
+        values["completed_at"],
+        NOW,
+        NOW,
+    )
+    return task_id
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"title": ""},
+        {"title": "x" * 201},
+        {"description": "x" * 5001},
+        {"status": "archived"},
+        {"priority": 4},
+        {"priority": -1},
+        # `completed_at` is set exactly when the task is completed.
+        {"status": "completed"},
+        {"status": "open", "completed_at": NOW},
+    ],
+)
+def test_database_enforces_task_constraints(
+    migrated_settings: Settings, overrides: dict[str, object]
+) -> None:
+    database = migrated_settings.sqlite_path
+    workspace = insert_workspace(database, insert_user(database), is_personal=True)
+    insert_task(database, workspace, status="completed", completed_at=NOW)
+
+    with pytest.raises(sqlite3.IntegrityError, match="CHECK"):
+        insert_task(database, workspace, **overrides)
+
+
+def test_tasks_require_an_existing_workspace(migrated_settings: Settings) -> None:
+    with pytest.raises(sqlite3.IntegrityError, match="FOREIGN KEY"):
+        insert_task(migrated_settings.sqlite_path, uuid.uuid4().hex)
+
+
+def test_deleting_a_workspace_deletes_its_tasks(migrated_settings: Settings) -> None:
+    database = migrated_settings.sqlite_path
+    owner = insert_user(database)
+    doomed = insert_workspace(database, owner, is_personal=False)
+    kept_workspace = insert_workspace(database, owner, is_personal=True)
+    insert_task(database, doomed)
+    kept = insert_task(database, kept_workspace)
+
+    query(database, "DELETE FROM workspaces WHERE id = ?", doomed)
+
+    assert query(database, "SELECT id FROM tasks") == [(kept,)]
+
+
+def test_task_migration_creates_and_drops_its_table(migrated_settings: Settings) -> None:
+    assert "tasks" in tables(migrated_settings)
+
+    downgrade(migrated_settings, "0003")
+
+    assert "tasks" not in tables(migrated_settings)
+    assert tables(migrated_settings) >= IDENTITY_TABLES

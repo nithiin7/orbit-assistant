@@ -39,23 +39,30 @@ def cloud_settings() -> Iterator[Settings]:
     downgrade(settings, "base")
 
 
-IDENTITY_TABLES = ("users", "local_credentials", "local_sessions", "workspaces", "user_avatars")
+PROTECTED_TABLES = (
+    "users",
+    "local_credentials",
+    "local_sessions",
+    "workspaces",
+    "user_avatars",
+    "tasks",
+)
 
 
 @pytest.mark.anyio
-async def test_identity_tables_enable_row_level_security(cloud_settings: Settings) -> None:
+async def test_every_table_enables_row_level_security(cloud_settings: Settings) -> None:
     engine = create_engine(cloud_settings)
     try:
         async with engine.connect() as connection:
             result = await connection.execute(
                 text("SELECT relname, relrowsecurity FROM pg_class WHERE relname = ANY(:names)"),
-                {"names": list(IDENTITY_TABLES)},
+                {"names": list(PROTECTED_TABLES)},
             )
             rows: dict[str, bool] = dict(result.all())
     finally:
         await engine.dispose()
 
-    assert rows == dict.fromkeys(IDENTITY_TABLES, True)
+    assert rows == dict.fromkeys(PROTECTED_TABLES, True)
 
 
 @pytest.mark.anyio
