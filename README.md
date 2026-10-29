@@ -17,13 +17,16 @@ control.
   placeholder sections.
 - A FastAPI service with centralized configuration, health endpoints, and a database layer:
   SQLite on your machine (local mode) or PostgreSQL on Supabase (cloud mode), with SQLAlchemy and
-  Alembic migrations. No product tables exist yet.
+  Alembic migrations.
+- Accounts and workspaces: local accounts (local mode) or Supabase Auth (cloud mode), a default
+  Personal workspace per user, workspace switching, and server-side authorization.
 - Shared tooling for linting, formatting, type checking, testing, commit conventions, and CI.
 
 **Explicit non-goals for now**
 
 - Task, calendar, finance, or notes functionality.
-- Authentication or user accounts.
+- Shared workspaces, invitations, password recovery for local accounts, and account linking
+  between local and cloud.
 - Synchronization or data migration between local and cloud storage.
 - AI or LLM integration, data synchronization, or background jobs.
 - Containers or deployment infrastructure.

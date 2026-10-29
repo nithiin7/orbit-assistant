@@ -14,9 +14,10 @@ environment variables), [CONTRIBUTING.md](CONTRIBUTING.md).
 Orbit is a privacy-first, local-first personal assistant intended to grow into an extensible
 open-source productivity platform. **It is in early development:** the repository contains the
 monorepo foundation, an application shell, an API with health endpoints, a shared API contract,
-and a database foundation: SQLAlchemy and Alembic over SQLite (local mode) or PostgreSQL on
-Supabase (cloud mode). There are no product tables, authentication, or AI integration yet. Do not
-describe or build on capabilities that do not exist.
+a database foundation (SQLAlchemy and Alembic over SQLite in local mode, or PostgreSQL on
+Supabase in cloud mode), and an identity foundation: user profiles, local accounts or Supabase
+Auth, workspaces, and centralized authorization. There are no product features (tasks, notes,
+finance) or AI integration yet. Do not describe or build on capabilities that do not exist.
 
 ## Principles
 
@@ -41,8 +42,8 @@ describe or build on capabilities that do not exist.
 | `.github/workflows/ci.yml`     | CI: web, API, and commit-message jobs                                            |
 | `.husky/`, `.lintstagedrc.mjs` | Git hooks: staged-file lint/format and commitlint                                |
 
-Not present yet (planned; see `docs/architecture.md`): product tables, repositories and
-services, authentication, AI provider abstractions, end-to-end tests, and a `scripts/` directory.
+Not present yet (planned; see `docs/architecture.md`): product tables, shared workspaces, AI
+provider abstractions, end-to-end tests, and a `scripts/` directory.
 
 ### Boundaries
 
@@ -135,6 +136,11 @@ and `packages/*/package.json`. Check them rather than guessing.
 - Schema changes go through Alembic revisions that run on both SQLite and PostgreSQL. A table
   created on PostgreSQL enables Row Level Security in the same revision. Never claim RLS
   protects data unless the tables and policies exist.
+- Authentication and authorization live in `api/auth.py`. Protected routes take
+  `CurrentUserDep`; workspace-scoped routes use a `{workspace_id}` path parameter and
+  `WorkspaceDep`, and repositories filter every query by that workspace's ID. Never accept user
+  or workspace IDs from bodies or query strings as proof of access. See
+  `docs/architecture.md#identity-and-authorization`.
 - Raise explicit exceptions and map them to safe HTTP errors (`HTTPException` or exception
   handlers). Never swallow exceptions. Catch broad `Exception` only at a deliberate boundary,
   with logging and a comment explaining why.
