@@ -12,6 +12,7 @@ describe("navigation", () => {
     const hrefs = sectionItems.map((item) => item.href);
     expect(hrefs).not.toContain("/");
     expect(hrefs).not.toContain("/tasks");
+    expect(hrefs).not.toContain("/shopping");
     expect(hrefs).not.toContain("/settings");
   });
 
@@ -19,6 +20,7 @@ describe("navigation", () => {
     expect(findSection("notes")?.title).toBe("Notes");
     expect(findSection("unknown")).toBeUndefined();
     expect(findSection("tasks")).toBeUndefined();
+    expect(findSection("shopping")).toBeUndefined();
     expect(findSection("settings")).toBeUndefined();
   });
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { OrbitMark } from "@/components/logo";
 import { PageHeader } from "@/components/page-header";
+import { ShoppingOverview } from "@/components/shopping/shopping-overview";
 import { StorageIndicator } from "@/components/storage/storage-indicator";
 import { TaskOverview } from "@/components/tasks/task-overview";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +38,7 @@ export default function DashboardPage() {
                 <Badge variant="brand">Preview</Badge>
               </div>
               <p className="max-w-prose text-sm text-pretty text-muted-foreground">
-                Tasks is the first module to land, and its summary is below. The other modules are
+                Tasks and Shopping are built, and their summaries are below. The other modules are
                 planned; as each one is built, a summary of it will appear here too.
               </p>
             </div>
@@ -46,6 +47,8 @@ export default function DashboardPage() {
       </div>
 
       <TaskOverview />
+
+      <ShoppingOverview />
 
       <section aria-labelledby="modules-heading" className="space-y-4">
         <div className="space-y-1">

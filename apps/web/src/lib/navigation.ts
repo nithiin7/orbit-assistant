@@ -6,6 +6,7 @@ import {
   type LucideIcon,
   NotebookPen,
   Settings,
+  ShoppingCart,
   Wallet,
 } from "lucide-react";
 
@@ -32,6 +33,13 @@ export const navItems: readonly NavItem[] = [
     href: "/tasks",
     icon: CheckSquare,
     description: "Plan and track what needs doing.",
+    group: "workspace",
+  },
+  {
+    title: "Shopping",
+    href: "/shopping",
+    icon: ShoppingCart,
+    description: "Track what to buy across your shopping lists.",
     group: "workspace",
   },
   {
@@ -72,7 +80,7 @@ export const navItems: readonly NavItem[] = [
 ];
 
 /** Routes with their own page; every other item is rendered by the `[section]` placeholder. */
-const dedicatedRoutes: ReadonlySet<string> = new Set(["/", "/tasks", "/settings"]);
+const dedicatedRoutes: ReadonlySet<string> = new Set(["/", "/tasks", "/shopping", "/settings"]);
 
 /** Section routes rendered by the `[section]` placeholder page. */
 export const sectionItems = navItems.filter((item) => !dedicatedRoutes.has(item.href));
