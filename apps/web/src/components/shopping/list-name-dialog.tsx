@@ -3,9 +3,9 @@
 import { X } from "lucide-react";
 import { type FormEvent, useEffect, useId, useRef, useState } from "react";
 
+import { describeApiError } from "@/api/client";
 import { FormAlert, FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
-import { describeApiError } from "@/lib/api";
 import { validateListName } from "@/lib/shopping";
 
 type ListNameDialogProps = {

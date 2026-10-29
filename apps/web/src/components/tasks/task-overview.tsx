@@ -4,11 +4,11 @@ import type { Task, TaskSummary } from "@orbit/contracts";
 import { ArrowRight, CheckSquare } from "lucide-react";
 import Link from "next/link";
 
+import { getTaskSummary, listTasks } from "@/api/tasks";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorkspaceResource } from "@/hooks/use-workspace-resource";
-import { getTaskSummary, listTasks } from "@/lib/api";
 import { localDateString } from "@/lib/tasks";
 import { cn } from "@/lib/utils";
 

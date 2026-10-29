@@ -4,11 +4,11 @@ import type { Task, TaskPriority, UpdateTaskRequest } from "@orbit/contracts";
 import { X } from "lucide-react";
 import { type FormEvent, useEffect, useId, useRef, useState } from "react";
 
+import { describeApiError } from "@/api/client";
 import { FormAlert, FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { describeApiError } from "@/lib/api";
 import {
   TASK_DESCRIPTION_MAX_LENGTH,
   validateTaskDescription,

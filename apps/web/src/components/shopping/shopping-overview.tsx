@@ -4,11 +4,11 @@ import type { ShoppingListOverview } from "@orbit/contracts";
 import { ArrowRight, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 
+import { listShoppingLists } from "@/api/shopping";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorkspaceResource } from "@/hooks/use-workspace-resource";
-import { listShoppingLists } from "@/lib/api";
 
 async function loadShoppingLists(
   workspaceId: string,

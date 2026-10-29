@@ -4,11 +4,12 @@ import type { StorageLocation } from "@orbit/contracts";
 import { Copy, FolderOpen } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
+import { describeApiError } from "@/api/client";
+import { getStorageLocation, revealStorageLocation } from "@/api/storage";
 import { useAuth } from "@/components/auth/auth-provider";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { describeApiError, getStorageLocation, revealStorageLocation } from "@/lib/api";
 import { revealLabel } from "@/lib/storage";
 
 type LocationState =

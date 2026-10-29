@@ -10,8 +10,8 @@ import {
   useState,
 } from "react";
 
+import { deleteMyAvatar, getMyAvatar, putMyAvatar } from "@/api/profile";
 import { useAuth, useCurrentUser } from "@/components/auth/auth-provider";
-import { deleteMyAvatar, getMyAvatar, putMyAvatar } from "@/lib/api";
 import { prepareAvatar } from "@/lib/avatar";
 
 type AvatarContextValue = {

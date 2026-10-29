@@ -79,7 +79,7 @@ Run from the repository root. Setup: `pnpm install` (also installs Git hooks) an
 Narrow commands, for fast iteration:
 
 ```bash
-pnpm --filter @orbit/web exec vitest run src/lib/api/api.test.ts   # one web test file
+pnpm --filter @orbit/web exec vitest run src/api/client.test.ts   # one web test file
 pnpm --filter @orbit/web exec eslint src/lib                    # lint a web path
 cd apps/api && uv run pytest tests/test_health.py -k cors       # selected API tests
 cd apps/api && uv run ruff check src && uv run pyright          # API lint + types
@@ -100,8 +100,11 @@ and `packages/*/package.json`. Check them rather than guessing.
   `next typegen`, no `next lint`). Check the docs bundled at
   `apps/web/node_modules/next/dist/docs/` before using an unfamiliar API.
 - Layering: routes in `src/app/`, UI in `src/components/` (`ui/` holds small
-  shadcn/ui-compatible primitives), logic and data access in `src/lib/`. Call the API through
-  typed helpers in `src/lib/api/api.ts`, using types from `@orbit/contracts`.
+  shadcn/ui-compatible primitives), API calls in `src/api/`, and other logic in `src/lib/`.
+- Call the API only through the typed helpers in `src/api/`, using types from
+  `@orbit/contracts`. Each file covers one API area (`tasks.ts`, `shopping.ts`, `auth.ts`, …)
+  and builds on `client.ts`, which owns `request`, `ApiError`, and `describeApiError`. Import
+  from the specific module (`@/api/tasks`); there is no barrel. Add a new area as a new file.
 - Each `src/lib` module has its own folder: `src/lib/<name>/<name>.ts`, its
   `<name>.test.ts`, and an `index.ts` that re-exports it, so imports stay `@/lib/<name>`.
   Related modules can share a domain folder without an index, like `src/lib/auth/`.

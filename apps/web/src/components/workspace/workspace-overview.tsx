@@ -2,13 +2,13 @@
 
 import type { Workspace } from "@orbit/contracts";
 
+import { getWorkspace } from "@/api/workspaces";
 import { useCurrentUser } from "@/components/auth/auth-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorkspaceResource } from "@/hooks/use-workspace-resource";
-import { getWorkspace } from "@/lib/api";
 
 import { WorkspaceAvatar } from "./workspace-switcher";
 

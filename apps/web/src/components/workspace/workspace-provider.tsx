@@ -11,14 +11,14 @@ import {
   useState,
 } from "react";
 
-import { useAuth, useCurrentUser } from "@/components/auth/auth-provider";
+import { describeApiError } from "@/api/client";
 import {
   createWorkspace as createWorkspaceRequest,
   deleteWorkspace as deleteWorkspaceRequest,
-  describeApiError,
   listWorkspaces,
   renameWorkspace as renameWorkspaceRequest,
-} from "@/lib/api";
+} from "@/api/workspaces";
+import { useAuth, useCurrentUser } from "@/components/auth/auth-provider";
 import {
   pickActiveWorkspace,
   readWorkspacePreference,

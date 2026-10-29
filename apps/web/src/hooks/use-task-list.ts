@@ -3,9 +3,10 @@
 import type { Task, TaskListQuery } from "@orbit/contracts";
 import { useCallback, useEffect, useState } from "react";
 
+import { ApiError, describeApiError } from "@/api/client";
+import { listTasks } from "@/api/tasks";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useWorkspaces } from "@/components/workspace/workspace-provider";
-import { ApiError, describeApiError, listTasks } from "@/lib/api";
 
 export type TaskListState =
   | { status: "loading" }

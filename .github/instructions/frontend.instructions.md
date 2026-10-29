@@ -15,7 +15,7 @@ Follows the shared rules in `AGENTS.md`. Frontend specifics:
 - Layout: routes in `src/app/`, components in `src/components/` (`ui/` = small
   shadcn/ui-compatible primitives), logic in `src/lib/`. Navigation items come from
   `src/lib/navigation/navigation.ts`.
-- Data access goes through typed helpers in `src/lib/api/api.ts`, using `import type` from
+- Data access goes through typed helpers in `src/api/`, using `import type` from
   `@orbit/contracts`. Don't call `fetch` against the API directly from components.
 - Every data-driven view handles loading, error, empty, and success states.
 - Accessibility: semantic elements, labelled controls, keyboard support, visible focus

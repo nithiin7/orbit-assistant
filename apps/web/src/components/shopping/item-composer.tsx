@@ -4,11 +4,11 @@ import type { CreateShoppingItemRequest } from "@orbit/contracts";
 import { Plus } from "lucide-react";
 import { type FormEvent, type Ref, useId, useState } from "react";
 
+import { describeApiError } from "@/api/client";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
-import { describeApiError } from "@/lib/api";
 import { optionalText, validateItemName, validateQuantity, validateUrl } from "@/lib/shopping";
 
 type ItemComposerProps = {

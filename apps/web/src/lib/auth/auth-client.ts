@@ -1,6 +1,8 @@
 import type { AuthConfig, SupabaseAuthConfig } from "@orbit/contracts";
 
-import { ApiError, describeApiError, localSignIn, localSignOut, localSignUp } from "../api";
+import { localSignIn, localSignOut, localSignUp } from "@/api/auth";
+import { ApiError, describeApiError } from "@/api/client";
+
 import {
   clearLocalSession,
   LOCAL_SESSION_KEY,

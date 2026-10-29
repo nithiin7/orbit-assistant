@@ -14,7 +14,7 @@ Extends the core rule and `AGENTS.md`.
   APIs.
 - Routes in `src/app/`, components in `src/components/` (`ui/` = shadcn/ui-compatible
   primitives), logic in `src/lib/`. Navigation is defined in `src/lib/navigation/navigation.ts`.
-- Call the API through `src/lib/api/api.ts` with `import type` from `@orbit/contracts`.
+- Call the API through `src/api/` with `import type` from `@orbit/contracts`.
 - No `any`, unsafe `as`, or unexplained suppressions. Explicit prop and return types on
   exported APIs.
 - Loading, error, empty, and success states for data-driven views.

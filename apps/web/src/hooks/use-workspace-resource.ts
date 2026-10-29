@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { ApiError, describeApiError } from "@/api/client";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useWorkspaces } from "@/components/workspace/workspace-provider";
-import { ApiError, describeApiError } from "@/lib/api";
 
 export type WorkspaceResource<T> =
   { status: "loading" } | { status: "error"; message: string } | { status: "success"; data: T };

@@ -1,6 +1,7 @@
 import type { DatabaseHealthResponse } from "@orbit/contracts";
 
-import { ApiError, getDatabaseHealth } from "../api";
+import { ApiError } from "@/api/client";
+import { getDatabaseHealth } from "@/api/health";
 
 export type StorageMode = DatabaseHealthResponse["storage_mode"];
 

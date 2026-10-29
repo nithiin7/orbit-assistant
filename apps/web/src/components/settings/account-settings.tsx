@@ -3,10 +3,11 @@
 import { LogOut } from "lucide-react";
 import { type FormEvent, useState } from "react";
 
+import { describeApiError } from "@/api/client";
+import { updateMe } from "@/api/profile";
 import { useAuth, useCurrentUser } from "@/components/auth/auth-provider";
 import { FormAlert, FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
-import { describeApiError, updateMe } from "@/lib/api";
 import { validateName } from "@/lib/auth/validation";
 
 import { ProfilePhoto } from "./profile-photo";

@@ -12,7 +12,9 @@ import {
   useState,
 } from "react";
 
-import { ApiError, describeApiError, getAuthConfig, getMe } from "@/lib/api";
+import { getAuthConfig } from "@/api/auth";
+import { ApiError, describeApiError } from "@/api/client";
+import { getMe } from "@/api/profile";
 import {
   type AuthClient,
   createAuthClient,

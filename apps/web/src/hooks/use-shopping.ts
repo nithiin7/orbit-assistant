@@ -3,9 +3,10 @@
 import type { ShoppingItem, ShoppingListOverview } from "@orbit/contracts";
 import { useCallback, useEffect, useState } from "react";
 
+import { ApiError, describeApiError } from "@/api/client";
+import { listShoppingItems, listShoppingLists } from "@/api/shopping";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useWorkspaces } from "@/components/workspace/workspace-provider";
-import { ApiError, describeApiError, listShoppingItems, listShoppingLists } from "@/lib/api";
 import { countItems, sortItems } from "@/lib/shopping";
 
 export type Load<T> =

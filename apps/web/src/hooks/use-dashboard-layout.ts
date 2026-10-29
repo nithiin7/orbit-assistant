@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { describeApiError } from "@/api/client";
+import { deleteMyDashboard, getMyDashboard, putMyDashboard } from "@/api/dashboard";
 import { useAuth } from "@/components/auth/auth-provider";
-import { deleteMyDashboard, describeApiError, getMyDashboard, putMyDashboard } from "@/lib/api";
 import {
   clearDashboardLayout,
   type DashboardWidget,

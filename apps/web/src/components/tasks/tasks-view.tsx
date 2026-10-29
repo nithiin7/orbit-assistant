@@ -4,6 +4,8 @@ import type { CreateTaskRequest, Task, UpdateTaskRequest } from "@orbit/contract
 import { CheckCheck, ListTodo, SearchX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { describeApiError } from "@/api/client";
+import { completeTask, createTask, deleteTask, reopenTask, updateTask } from "@/api/tasks";
 import { useAuth } from "@/components/auth/auth-provider";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
@@ -11,14 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorkspaces } from "@/components/workspace/workspace-provider";
 import { useTaskList } from "@/hooks/use-task-list";
-import {
-  completeTask,
-  createTask,
-  deleteTask,
-  describeApiError,
-  reopenTask,
-  updateTask,
-} from "@/lib/api";
 import { isEditableTarget } from "@/lib/keyboard";
 import {
   DEFAULT_TASK_FILTERS,

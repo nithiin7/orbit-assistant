@@ -4,13 +4,13 @@ import type { Workspace } from "@orbit/contracts";
 import { Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 
+import { describeApiError } from "@/api/client";
 import { FormAlert, FormField } from "@/components/form-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorkspaces } from "@/components/workspace/workspace-provider";
 import { WorkspaceAvatar } from "@/components/workspace/workspace-switcher";
-import { describeApiError } from "@/lib/api";
 import { validateName } from "@/lib/auth/validation";
 
 export function WorkspaceSettings() {

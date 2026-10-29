@@ -9,6 +9,19 @@ import type {
 import { ShoppingBasket } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { describeApiError } from "@/api/client";
+import {
+  addShoppingItem,
+  clearPurchasedItems,
+  createShoppingList,
+  deleteShoppingItem,
+  deleteShoppingList,
+  purchaseShoppingItem,
+  renameShoppingList,
+  restockShoppingItem,
+  restockShoppingList,
+  updateShoppingItem,
+} from "@/api/shopping";
 import { useAuth } from "@/components/auth/auth-provider";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
@@ -16,19 +29,6 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorkspaces } from "@/components/workspace/workspace-provider";
 import { useShopping } from "@/hooks/use-shopping";
-import {
-  addShoppingItem,
-  clearPurchasedItems,
-  createShoppingList,
-  deleteShoppingItem,
-  deleteShoppingList,
-  describeApiError,
-  purchaseShoppingItem,
-  renameShoppingList,
-  restockShoppingItem,
-  restockShoppingList,
-  updateShoppingItem,
-} from "@/lib/api";
 import { isEditableTarget } from "@/lib/keyboard";
 import { cn } from "@/lib/utils";
 
