@@ -1,0 +1,27 @@
+---
+description: Next.js and React conventions for the Orbit web app
+globs: apps/web/src/**/*.ts,apps/web/src/**/*.tsx,apps/web/src/**/*.css
+alwaysApply: false
+---
+
+# Frontend (`apps/web`)
+
+Extends the core rule and `AGENTS.md`.
+
+- Next.js 16 App Router: async `params` typed with generated `PageProps`. Bundled docs for this
+  version are in `apps/web/node_modules/next/dist/docs/`; check them for unfamiliar APIs.
+- Server Components by default; `"use client"` only for state, effects, handlers, or browser
+  APIs.
+- Routes in `src/app/`, components in `src/components/` (`ui/` = shadcn/ui-compatible
+  primitives), logic in `src/lib/`. Navigation is defined in `src/lib/navigation.ts`.
+- Call the API through `src/lib/api.ts` with `import type` from `@orbit/contracts`.
+- No `any`, unsafe `as`, or unexplained suppressions. Explicit prop and return types on
+  exported APIs.
+- Loading, error, empty, and success states for data-driven views.
+- Accessible: semantic HTML, labelled controls, keyboard support, visible focus
+  (`focus-visible:ring-2 focus-visible:ring-ring`).
+- Tailwind with tokens from `src/app/globals.css`; `cn()` from `src/lib/utils.ts`.
+- Only `NEXT_PUBLIC_*` env vars reach the browser, so never put secrets there. Validate in
+  `src/lib/env.ts`.
+- Verify: `pnpm lint:web`, `pnpm --filter @orbit/web typecheck`, `pnpm test:web`,
+  `pnpm build`.

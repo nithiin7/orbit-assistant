@@ -54,5 +54,7 @@ pnpm-debug.log*
 Thumbs.db
 
 # Tooling
+# Written by `next dev` when it detects an AI agent; shared guidance lives in /AGENTS.md
+apps/web/AGENTS.md
 .vercel/
 .turbo/

@@ -123,7 +123,7 @@ The full test suite is not run on commit, to keep commits fast. CI runs it.
 
 - **Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`,
   `chore`, `revert`.
-- **Suggested scopes:** `web`, `api`, `config`, `ci`, `deps`, `docs`.
+- **Suggested scopes:** `web`, `api`, `contracts`, `config`, `ci`, `deps`, `docs`.
 - The header must be 72 characters or fewer. Use the body for the "why".
 - Breaking changes: add `!` after the type/scope (`feat(api)!: …`) and a `BREAKING CHANGE:`
   footer.

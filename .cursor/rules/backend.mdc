@@ -1,0 +1,23 @@
+---
+description: FastAPI and Python conventions for the Orbit API
+globs: apps/api/**/*.py
+alwaysApply: false
+---
+
+# Backend (`apps/api`)
+
+Extends the core rule and `AGENTS.md`.
+
+- `main.py`: `create_app(settings)` factory. `config.py`: `Settings` (pydantic-settings,
+  `ORBIT_*`), read via `get_settings()`. `api/v1/`: versioned routers at `/api/v1`.
+- Thin routes with Pydantic request and response models. Return typed models.
+- As features land, split schemas, framework-free services, and infrastructure adapters per
+  `docs/architecture.md`, but only when a feature needs them.
+- Full type hints; Pyright is strict. No unexplained `# pyright: ignore`.
+- Explicit exceptions mapped to safe HTTP errors. No swallowed exceptions, and no secrets or
+  internals in responses or logs. No hardcoded config or credentials.
+- `async def` only when awaiting async I/O.
+- After changing routes or exposed models: `pnpm contracts:generate` and include the result in
+  the same change.
+- Verify in `apps/api`: `uv run ruff check .`, `uv run ruff format --check .`,
+  `uv run pyright`, `uv run pytest`.
