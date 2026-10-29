@@ -14,7 +14,7 @@ WORKSPACES = "/api/v1/workspaces"
 
 @pytest.fixture
 def client(migrated_settings: Settings) -> Iterator[TestClient]:
-    """Two local accounts are needed to test isolation, so registration is open."""
+    """Two local accounts are needed to test isolation, so registration is explicitly open."""
     app = create_app(migrated_settings.model_copy(update={"local_open_registration": True}))
     app.state.password_hasher = FAST_PASSWORD_HASHER
     with TestClient(app) as test_client:
@@ -72,19 +72,44 @@ def test_rename_workspace(client: TestClient, ada: dict[str, str]) -> None:
     assert response.json()["is_personal"] is True
 
 
+def test_delete_workspace(client: TestClient, ada: dict[str, str]) -> None:
+    lab = client.post(WORKSPACES, json={"name": "Lab"}, headers=ada).json()
+
+    response = client.delete(f"{WORKSPACES}/{lab['id']}", headers=ada)
+
+    assert response.status_code == 204
+    assert client.get(f"{WORKSPACES}/{lab['id']}", headers=ada).status_code == 404
+    names = [w["name"] for w in client.get(WORKSPACES, headers=ada).json()["workspaces"]]
+    assert names == ["Personal"]
+
+
+def test_personal_workspace_cannot_be_deleted(client: TestClient, ada: dict[str, str]) -> None:
+    workspace = personal(client, ada)
+
+    response = client.delete(f"{WORKSPACES}/{workspace['id']}", headers=ada)
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Your personal workspace cannot be deleted."}
+    assert client.get(f"{WORKSPACES}/{workspace['id']}", headers=ada).status_code == 200
+
+
 def test_other_users_workspaces_look_like_missing_ones(
     client: TestClient, ada: dict[str, str], grace: dict[str, str]
 ) -> None:
     adas = personal(client, ada)
+    lab = client.post(WORKSPACES, json={"name": "Lab"}, headers=ada).json()
     missing = str(uuid.uuid4())
 
-    for workspace_id in (adas["id"], missing):
+    for workspace_id in (adas["id"], lab["id"], missing):
         read = client.get(f"{WORKSPACES}/{workspace_id}", headers=grace)
         rename = client.patch(f"{WORKSPACES}/{workspace_id}", json={"name": "Mine"}, headers=grace)
+        delete = client.delete(f"{WORKSPACES}/{workspace_id}", headers=grace)
         assert (read.status_code, read.json()) == (404, {"detail": "Workspace not found."})
         assert (rename.status_code, rename.json()) == (404, {"detail": "Workspace not found."})
+        assert (delete.status_code, delete.json()) == (404, {"detail": "Workspace not found."})
 
     assert client.get(f"{WORKSPACES}/{adas['id']}", headers=ada).json()["name"] == "Personal"
+    assert client.get(f"{WORKSPACES}/{lab['id']}", headers=ada).json()["name"] == "Lab"
     graces = client.get(WORKSPACES, headers=grace).json()["workspaces"]
     assert adas["id"] not in {w["id"] for w in graces}
 
@@ -126,8 +151,14 @@ def test_invalid_workspace_ids_are_rejected(client: TestClient, ada: dict[str, s
         ("POST", WORKSPACES),
         ("GET", f"{WORKSPACES}/{uuid.uuid4()}"),
         ("PATCH", f"{WORKSPACES}/{uuid.uuid4()}"),
+        ("DELETE", f"{WORKSPACES}/{uuid.uuid4()}"),
         ("GET", "/api/v1/me"),
         ("PATCH", "/api/v1/me"),
+        ("GET", "/api/v1/me/avatar"),
+        ("PUT", "/api/v1/me/avatar"),
+        ("DELETE", "/api/v1/me/avatar"),
+        ("GET", "/api/v1/storage"),
+        ("POST", "/api/v1/storage/reveal"),
     ],
 )
 def test_every_account_endpoint_requires_authentication(

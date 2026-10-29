@@ -10,9 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from orbit_api.config import Settings
 from orbit_api.db.database import Database
 from orbit_api.repositories.accounts import SqlAccountRepository, SqlLocalAuthRepository
+from orbit_api.repositories.avatars import SqlAvatarRepository
 from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.repositories.workspaces import SqlWorkspaceRepository
 from orbit_api.services.accounts import AccountService
+from orbit_api.services.avatars import AvatarService
 from orbit_api.services.local_auth import LocalAuthService, PasswordHasher
 from orbit_api.services.workspaces import WorkspaceService
 
@@ -62,7 +64,7 @@ def get_local_auth_service(
         transaction=SqlTransaction(session),
         hasher=hasher,
         session_ttl=timedelta(hours=settings.local_session_ttl_hours),
-        open_registration=settings.local_open_registration,
+        open_registration=settings.local_registration_open,
     )
 
 
@@ -74,3 +76,10 @@ def get_workspace_service(session: SessionDep) -> WorkspaceService:
 
 
 WorkspaceServiceDep = Annotated[WorkspaceService, Depends(get_workspace_service)]
+
+
+def get_avatar_service(session: SessionDep) -> AvatarService:
+    return AvatarService(SqlAvatarRepository(session), SqlTransaction(session))
+
+
+AvatarServiceDep = Annotated[AvatarService, Depends(get_avatar_service)]

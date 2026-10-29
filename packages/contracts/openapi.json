@@ -281,6 +281,121 @@
         ]
       }
     },
+    "/api/v1/me/avatar": {
+      "get": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Get the signed-in user's profile photo",
+        "operationId": "get_avatar_api_v1_me_avatar_get",
+        "responses": {
+          "200": {
+            "description": "The photo.",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "204": {
+            "description": "No photo is set."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Set the signed-in user's profile photo",
+        "description": "The request body is the image itself. Its format is detected from the file, not from\nthe declared content type.",
+        "operationId": "put_avatar_api_v1_me_avatar_put",
+        "requestBody": {
+          "content": {
+            "image/png": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/jpeg": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/webp": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "413": {
+            "description": "The image is larger than 512 KB."
+          },
+          "415": {
+            "description": "The image is not a PNG, JPEG, or WebP file."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Remove the signed-in user's profile photo",
+        "operationId": "delete_avatar_api_v1_me_avatar_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/workspaces": {
       "get": {
         "tags": [
@@ -472,6 +587,113 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "workspaces"
+        ],
+        "summary": "Delete a workspace",
+        "description": "Permanently delete a workspace and everything in it.",
+        "operationId": "delete_workspace_api_v1_workspaces__workspace_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The personal workspace cannot be deleted."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/storage": {
+      "get": {
+        "tags": [
+          "storage"
+        ],
+        "summary": "Get the storage location",
+        "operationId": "get_storage_location_api_v1_storage_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageLocationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/storage/reveal": {
+      "post": {
+        "tags": [
+          "storage"
+        ],
+        "summary": "Show the database in the file manager",
+        "description": "Opens Finder, File Explorer, or the desktop file manager on the machine running the API,\nwhich in local mode is the user's own computer. Sync, so the spawn runs off the event loop.",
+        "operationId": "reveal_storage_location_api_v1_storage_reveal_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Not available in cloud mode or in production."
+          },
+          "503": {
+            "description": "No file manager could be opened on the API's machine."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     }
   },
@@ -663,6 +885,43 @@
           "display_name"
         ],
         "title": "LocalSignUpRequest"
+      },
+      "StorageLocationResponse": {
+        "properties": {
+          "storage_mode": {
+            "type": "string",
+            "enum": [
+              "local",
+              "cloud"
+            ],
+            "title": "Storage Mode"
+          },
+          "database_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Database Path",
+            "description": "The SQLite file on the API's machine. Only in local mode, outside production."
+          },
+          "can_reveal": {
+            "type": "boolean",
+            "title": "Can Reveal",
+            "description": "Whether the API can open the database's folder in the file manager."
+          }
+        },
+        "type": "object",
+        "required": [
+          "storage_mode",
+          "database_path",
+          "can_reveal"
+        ],
+        "title": "StorageLocationResponse",
+        "description": "Where this installation keeps its data, for signed-in users."
       },
       "SupabaseAuthConfig": {
         "properties": {

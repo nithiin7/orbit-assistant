@@ -20,6 +20,7 @@ from orbit_api.auth.passwords import Argon2PasswordHasher
 from orbit_api.auth.supabase import SupabaseTokenVerifier
 from orbit_api.config import Settings, get_settings
 from orbit_api.db.database import open_database
+from orbit_api.system.file_manager import SystemFileRevealer
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +64,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.authenticator = _create_authenticator(settings)
     app.state.password_hasher = Argon2PasswordHasher()
+    app.state.file_revealer = SystemFileRevealer()
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

@@ -39,7 +39,7 @@ def cloud_settings() -> Iterator[Settings]:
     downgrade(settings, "base")
 
 
-IDENTITY_TABLES = ("users", "local_credentials", "local_sessions", "workspaces")
+IDENTITY_TABLES = ("users", "local_credentials", "local_sessions", "workspaces", "user_avatars")
 
 
 @pytest.mark.anyio
