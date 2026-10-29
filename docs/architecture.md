@@ -19,8 +19,8 @@ Browser ──► apps/web (Next.js, :3000) ──HTTP/JSON──► apps/api (F
 - **apps/api** is a FastAPI service that owns data access and business logic. It exposes health
   endpoints, sign-in configuration and local accounts, the signed-in user's profile, and
   workspaces, on the database foundation described under [Storage](#storage). Identity is
-  described under [Identity and authorization](#identity-and-authorization). No product data
-  (tasks, notes, finance) is stored yet.
+  described under [Identity and authorization](#identity-and-authorization). The only product
+  data so far is [tasks](#tasks); notes, finance, and the other modules store nothing yet.
 
 The two apps communicate only over HTTP and share no runtime code. They share one thing: the
 API contract in `packages/contracts`, described below.
@@ -112,7 +112,8 @@ apps/web/src/
 ├── app/                 # Routes (App Router)
 │   ├── layout.tsx       # Root layout: theme provider + auth provider
 │   ├── (app)/           # Signed-in routes: RequireAuth + WorkspaceProvider + app shell
-│   │   ├── page.tsx     # Dashboard (active workspace, module list)
+│   │   ├── page.tsx     # Dashboard (active workspace, task summary, planned modules)
+│   │   ├── tasks/       # Tasks page
 │   │   ├── settings/    # Settings: drill-down on small screens, split view on large; [panel]/ sub-pages
 │   │   └── [section]/   # Placeholder page for every other nav section
 │   ├── (auth)/          # Public routes without the shell: sign-in, sign-up
@@ -123,10 +124,11 @@ apps/web/src/
 │   ├── auth/            # AuthProvider, RequireAuth, sign-in and sign-up forms
 │   ├── avatar/          # AvatarProvider (the user's photo as an object URL), UserAvatar
 │   ├── workspace/       # WorkspaceProvider, switcher, dashboard overview
+│   ├── tasks/           # Tasks page (composer, toolbar, list, edit dialog), dashboard summary
 │   ├── settings/        # Settings menu and the account, workspace, theme, and storage panels
 │   ├── storage/         # Storage-mode indicator and status card
 │   └── ui/              # Small shadcn/ui-compatible primitives
-├── hooks/               # use-workspace-resource (stale-safe workspace data), etc.
+├── hooks/               # use-workspace-resource (stale-safe workspace data), use-task-list, etc.
 └── lib/
     ├── navigation.ts    # Single source of truth for nav items and section routes
     ├── settings.ts      # Single source of truth for settings panels and their routes
@@ -134,6 +136,7 @@ apps/web/src/
     ├── api.ts           # Typed API client (types from @orbit/contracts)
     ├── auth/            # Auth clients (local, Supabase), session storage, validation
     ├── workspaces.ts    # Active-workspace selection and per-user preference
+    ├── tasks.ts         # Task filters, due-date display, validation mirroring the API
     ├── env.ts           # Validated public configuration
     └── utils.ts         # `cn()` class-name helper
 ```
@@ -172,21 +175,22 @@ apps/api/src/orbit_api/
 │       ├── auth.py      # Sign-in configuration; local sign-up, sign-in, sign-out
 │       ├── me.py        # The signed-in user's profile and profile photo
 │       ├── storage.py   # Local database location; open its folder (local mode, not prod)
-│       └── workspaces.py # List, create, get, rename, and delete workspaces
+│       ├── workspaces.py # List, create, get, rename, and delete workspaces
+│       └── tasks.py     # Workspace-scoped tasks: CRUD, complete/reopen, filters, summary
 ├── auth/                # Adapters: Argon2 password hashing, Supabase JWT verification
 ├── system/              # Adapter: opening the OS file manager on the API's machine
 ├── schemas/             # Pydantic request/response models (the API contract)
-├── services/            # Domain logic: accounts, avatars, local auth, workspaces (no FastAPI/SQLAlchemy)
+├── services/            # Domain logic: accounts, avatars, local auth, workspaces, tasks (no FastAPI/SQLAlchemy)
 ├── repositories/        # SQLAlchemy implementations of the services' repository protocols
 └── db/                  # Database infrastructure (SQLAlchemy + Alembic, no FastAPI)
     ├── base.py          # Declarative `Base` with a constraint naming convention
     ├── columns.py       # `UTCDateTime`: timezone-aware UTC timestamps on both databases
-    ├── models/          # ORM tables: users, avatars, local credentials and sessions, workspaces
+    ├── models/          # ORM tables: users, avatars, local credentials and sessions, workspaces, tasks
     ├── engine.py        # Engine per storage mode: SQLite PRAGMAs, Postgres pooling
     ├── database.py      # `open_database()`: connect, verify schema, sessions, dispose
     ├── migrate.py       # Programmatic Alembic: upgrade, downgrade, head revision
     └── migrations/      # Alembic environment and versioned revisions
-        └── versions/    # 0001_baseline, 0002_create_identity_and_workspace_tables, 0003_create_user_avatars
+        └── versions/    # 0001_baseline … 0004_create_tasks
 ```
 
 Design decisions:
@@ -274,6 +278,7 @@ written once. SQLite is embedded in the API process; local mode needs no databas
 - `0002_create_identity_and_workspace_tables` creates `users`, `local_credentials`,
   `local_sessions`, and `workspaces`, and enables RLS on them in PostgreSQL.
 - `0003_create_user_avatars` creates `user_avatars` (profile photos) with RLS.
+- `0004_create_tasks` creates `tasks` with RLS (see [Tasks](#tasks)).
 - Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
   Startup only checks that the database is at the head revision. For a shared cloud database,
   schema changes should be deliberate and reviewable.
@@ -340,11 +345,11 @@ structure.
   schema to anyone holding the project's publishable (anon) key.
   1. Every migration that creates a table in PostgreSQL enables RLS on it in the same
      revision. `0002` does this for `users`, `local_credentials`, `local_sessions`, and
-     `workspaces`; `0003` for `user_avatars`.
+     `workspaces`; `0003` for `user_avatars`; `0004` for `tasks`.
   2. **No policies exist**, deliberately: the browser never queries tables directly, so the
      Data API's `anon` and `authenticated` roles get no rows. Add `authenticated` policies
      (for example `owner_id = auth.uid()`) only if a client is ever allowed direct access.
-  3. Tested by `tests/test_postgres.py` (opt-in): RLS is enabled on every identity table, and a
+  3. Tested by `tests/test_postgres.py` (opt-in): RLS is enabled on every table, and a
      role that does not own the tables sees no rows. This was verified against PostgreSQL 17,
      not against a live Supabase project; Supabase's own `anon` and `authenticated` roles are
      ordinary non-owner roles, so the same rule applies to them.
@@ -367,7 +372,8 @@ structure.
 ### Identity model
 
 ```text
-users ──< workspaces              (owner_id → users.id, ON DELETE CASCADE)
+users ──< workspaces ──< tasks    (owner_id → users.id, workspace_id → workspaces.id,
+  │                                  both ON DELETE CASCADE)
   │
   ├── user_avatars                (profile photo bytes and type, 1:1)
   ├── local_credentials           (local mode: email + Argon2id hash, 1:1)
@@ -389,8 +395,8 @@ users ──< workspaces              (owner_id → users.id, ON DELETE CASCADE)
   signature (never SVG, never the declared type), and caps it at 512 KB. `GET` serves it with
   `nosniff` and a locked-down CSP, or 204 when none is set. Because the API needs a bearer token,
   the web app fetches the photo as a blob and shows it through an object URL.
-- **Extensibility:** future user data (tasks, notes, expenses) carries a non-null
-  `workspace_id` foreign key. Shared workspaces would add a `workspace_members` table and change
+- **Extensibility:** user data carries a non-null `workspace_id` foreign key, as `tasks` does;
+  future notes and expenses will too. Shared workspaces would add a `workspace_members` table and change
   only the authorization check described below; the API already reports a `role` (`owner`).
 - There is no separate preferences table. The active workspace is a per-browser preference
   (see [Workspace selection](#workspace-selection)).
@@ -444,9 +450,10 @@ All rules live in `api/auth.py` and `services/workspaces.py`:
   `WorkspaceService.authorize()`, which queries by both workspace ID and owner. A workspace that
   doesn't exist and one owned by someone else produce the same `404 Workspace not found.`, so
   responses never reveal other users' workspaces.
-- **Pattern for future features:** routes live under `/api/v1/workspaces/{workspace_id}/…`,
+- **Pattern for features:** routes live under `/api/v1/workspaces/{workspace_id}/…`,
   declare `workspace: WorkspaceDep`, and pass `workspace.id` to repositories, which filter every
-  query by it. Each feature adds cross-user isolation tests like `tests/test_workspaces.py`.
+  query by it. Each feature adds cross-user isolation tests like `tests/test_workspaces.py` and
+  `tests/test_tasks.py`. Tasks is the first feature built this way.
 - Database constraints back the application checks: foreign keys with cascading deletes,
   unique identities, one personal workspace per user, and CHECK constraints on names, providers,
   and normalized emails.
@@ -478,6 +485,81 @@ All rules live in `api/auth.py` and `services/workspaces.py`:
   a slow response can't show the previous workspace's data. A 404 re-validates the workspace
   list.
 
+## Tasks
+
+The first product feature: to-dos inside a workspace.
+
+### Data model
+
+`tasks` (`db/models/tasks.py`, migration `0004`):
+
+| Column                     | Notes                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------- |
+| `id`                       | UUID primary key, generated by the service                                      |
+| `workspace_id`             | Non-null FK to `workspaces.id`, `ON DELETE CASCADE`                             |
+| `title`                    | 1 to 200 characters (CHECK); single line                                        |
+| `description`              | Text, at most 5,000 characters (CHECK); empty when unset                        |
+| `status`                   | `open` or `completed` (CHECK)                                                   |
+| `priority`                 | Rank 0 to 3 (none, low, medium, high), so sorting by priority is a column order |
+| `due_date`                 | Optional calendar date (no time or time zone)                                   |
+| `completed_at`             | Set exactly when `status` is `completed` (CHECK)                                |
+| `created_at`, `updated_at` | UTC timestamps; `updated_at` changes only when a field actually changes         |
+
+Indexes: `(workspace_id, status, due_date)` and `(workspace_id, status, priority)`, matching the
+list's usual shape (one workspace, often one status, sorted by due date or priority). Search is
+a case-insensitive substring match (`ILIKE`, with `%`, `_`, and `\` matched literally), which
+can't use an index; it scans one workspace's tasks, which is fine at personal scale. PostgreSQL
+full-text or trigram search can replace it if that changes.
+
+### API
+
+All routes are under `/api/v1/workspaces/{workspace_id}/tasks` and authorize the workspace
+through `WorkspaceDep` first. A task ID resolves only inside its own workspace: another user's
+workspace is `404 Workspace not found.`, and a task from another workspace is
+`404 Task not found.`, exactly like a missing one.
+
+| Method   | Path                  | Purpose                                                                                                               |
+| -------- | --------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/`                   | List: `status`, `priority` (repeatable), `q`, `sort`, `order`, `limit` (≤ 500), `offset`; returns `tasks` and `total` |
+| `POST`   | `/`                   | Create (`title`, optional `description`, `priority`, `due_date`)                                                      |
+| `GET`    | `/summary`            | Counts of open, completed, overdue, and due-today tasks for `today`                                                   |
+| `GET`    | `/{task_id}`          | Get one task                                                                                                          |
+| `PATCH`  | `/{task_id}`          | Change some fields; `due_date: null` clears it                                                                        |
+| `POST`   | `/{task_id}/complete` | Complete (idempotent: keeps the first completion time)                                                                |
+| `POST`   | `/{task_id}/reopen`   | Reopen (idempotent)                                                                                                   |
+| `DELETE` | `/{task_id}`          | Delete permanently                                                                                                    |
+
+- `sort` is `due_date`, `priority`, or `created_at` (the default). Without `order`, each sort
+  uses its natural direction: soonest due date, highest priority, or newest. Tasks without a due
+  date always come last. Ties fall back to priority, due date, and creation time, so the order is
+  stable.
+- Status changes only through `complete` and `reopen`, which keep `completed_at` consistent.
+  Request models forbid unknown fields, so `status`, `completed_at`, `workspace_id`, or `id` in a
+  body is a 422.
+- Due dates are calendar dates, so "overdue" depends on the user's time zone. The web app sends
+  its local date as `summary?today=`; the API falls back to the UTC date.
+- Titles and descriptions reject control characters (descriptions allow line breaks and tabs)
+  but accept emoji sequences and non-breaking spaces.
+
+### Web app
+
+- `/tasks` (`components/tasks/`): a quick-add composer (title, due date, priority), a toolbar
+  (debounced search, Open/Completed/All, priority filter, sort), the list, and an edit dialog on
+  the native `<dialog>`. Keyboard: `N` focuses the composer, `/` focuses search, Escape clears
+  the search or cancels a delete confirmation.
+- `useTaskList` loads the list for the active workspace, with the same stale-response guard as
+  `useWorkspaceResource`. Within a workspace it keeps the previous results on screen while a new
+  filter loads, and supports in-place updates.
+- Completing or reopening is optimistic: the checkbox changes at once and reverts with an error
+  if the API refuses. A completed task stays visible, struck through, until the list reloads.
+  Creating or editing a task reloads the list in the background, so it lands in sorted position.
+- The page loads at most 200 tasks and says when more match, rather than paginating.
+- The dashboard's task card shows the summary counts and the next five open tasks by due date.
+
+### Not implemented
+
+Reminders, recurring tasks, subtasks, tags, sharing, and drag-and-drop ordering.
+
 ## Configuration
 
 | App | Source                                                    | Validation                                    | Visibility  |
@@ -494,15 +576,15 @@ All rules live in `api/auth.py` and `services/workspaces.py`:
 
 ## Testing strategy
 
-| Layer                    | Tool                                  | Location                                   | Current coverage                                                                                    |
-| ------------------------ | ------------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| Web units and components | Vitest, Testing Library, jsdom        | `apps/web/src/**/*.test.ts(x)`, co-located | Shell, API client, auth flows, route guard, workspace switching and stale data                      |
-| API routes and config    | Pytest, FastAPI `TestClient`          | `apps/api/tests/`                          | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, cross-user isolation |
-| Services                 | Pytest, in-memory fake repositories   | `apps/api/tests/test_account_service.py`   | Onboarding, concurrent provisioning, ownership checks                                               |
-| Database (SQLite)        | Pytest, temporary SQLite files        | `apps/api/tests/test_database.py`, etc.    | Startup checks, sessions, migrations, constraints, 503 errors                                       |
-| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)        | `apps/api/tests/test_postgres.py`          | Migrations, connectivity, RLS; skipped by default                                                   |
-| Contract freshness       | Pytest + `openapi-typescript --check` | `tests/test_openapi.py`, contracts `lint`  | Generated contract matches the API                                                                  |
-| End-to-end               | Not set up (**planned**)              | —                                          | —                                                                                                   |
+| Layer                    | Tool                                  | Location                                   | Current coverage                                                                                           |
+| ------------------------ | ------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| Web units and components | Vitest, Testing Library, jsdom        | `apps/web/src/**/*.test.ts(x)`, co-located | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks                      |
+| API routes and config    | Pytest, FastAPI `TestClient`          | `apps/api/tests/`                          | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, cross-user isolation |
+| Services                 | Pytest, in-memory fake repositories   | `apps/api/tests/test_*_service.py`         | Onboarding, concurrent provisioning, ownership checks, task completion rules                               |
+| Database (SQLite)        | Pytest, temporary SQLite files        | `apps/api/tests/test_database.py`, etc.    | Startup checks, sessions, migrations, constraints, 503 errors                                              |
+| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)        | `apps/api/tests/test_postgres.py`          | Migrations, connectivity, RLS; skipped by default                                                          |
+| Contract freshness       | Pytest + `openapi-typescript --check` | `tests/test_openapi.py`, contracts `lint`  | Generated contract matches the API                                                                         |
+| End-to-end               | Not set up (**planned**)              | —                                          | —                                                                                                          |
 
 Unit tests cover logic, route tests cover HTTP behavior and validation, and E2E tests will cover
 critical user journeys once real features exist. CI runs every layer on each pull request.
@@ -523,8 +605,7 @@ vendor SDKs.
 
 The database foundation is implemented (see [Storage](#storage)). Still planned:
 
-- The first product tables, starting with tasks, with repositories and services in the layers
-  described above.
+- More product tables (notes, finance), following the pattern [tasks](#tasks) established.
 - Shared workspaces (a membership table, invitations, roles), if the product needs them.
 - Any synchronization or migration between local and cloud storage. This is undecided and
   needs its own design.
@@ -538,10 +619,9 @@ The database foundation is implemented (see [Storage](#storage)). Still planned:
 
 ### Evolution
 
-The next step is to define the task schema and implement the first database-backed,
-workspace-scoped task API (model with `workspace_id`, migration with RLS, repository, service,
-routes under `/workspaces/{workspace_id}/tasks` using `WorkspaceDep`, and contract). After that:
-AI-assisted features through the provider interface, then optional sync and extension points.
+The first database-backed, workspace-scoped feature, [tasks](#tasks), is in place. Next: more
+modules on the same pattern, AI-assisted features through the provider interface, then optional
+sync and extension points.
 Each step should leave the boundaries above intact.
 
 ## Continuous integration

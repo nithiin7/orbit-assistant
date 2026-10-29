@@ -31,8 +31,8 @@ control.
 
 > [!NOTE]
 > **Early development.** This repository contains the project foundation: the monorepo, tooling,
-> an application shell, an API with a database layer, and accounts with workspaces. None of the
-> product features (tasks, calendar, finance, notes, AI) are built yet.
+> an application shell, an API with a database layer, and accounts with workspaces. Tasks is the
+> first product feature; calendar, finance, notes, and the AI assistant are not built yet.
 
 ## Scope
 
