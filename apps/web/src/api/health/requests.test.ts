@@ -1,8 +1,8 @@
 import type { HealthResponse } from "@orbit/contracts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError } from "./client";
-import { getDatabaseHealth, getHealth } from "./health";
+import { ApiError } from "../client";
+import { getDatabaseHealth, getHealth } from "./requests";
 
 const health: HealthResponse = { status: "ok", service: "orbit-api", version: "0.1.0" };
 

@@ -102,13 +102,14 @@ and `packages/*/package.json`. Check them rather than guessing.
 - Layering: routes in `src/app/`, UI in `src/components/` (`ui/` holds small
   shadcn/ui-compatible primitives), API calls in `src/api/`, and other logic in `src/lib/`.
 - Call the API only through the typed helpers in `src/api/`, using types from
-  `@orbit/contracts`. Each API area (`tasks`, `shopping`, `auth`, …) has its own module,
-  built on `client.ts`, which owns `request`, `ApiError`, and `describeApiError`. Import from
-  the area (`@/api/tasks`), not from a root barrel.
+  `@orbit/contracts`. Each API area (`tasks`, `shopping`, `auth`, …) is a folder under
+  `src/api/`: `requests.ts` (fetch functions), `queries.ts` when the area has cached queries,
+  their tests, and an `index.ts` that re-exports them. All build on `client.ts`, which owns
+  `request`, `ApiError`, and `describeApiError`. Import from the area (`@/api/tasks`), not from
+  a root barrel.
 - Server data is fetched and cached with TanStack Query (`QueryProvider`, inside
-  `AuthProvider`, clears the cache when the user changes). An area that uses it is a folder:
-  `requests.ts` (fetch functions), `queries.ts` (query keys, `queryOptions`, cache helpers),
-  their tests, and `index.ts`. Query keys start with `["workspaces", workspaceId, …]` so
+  `AuthProvider`, clears the cache when the user changes). An area's `queries.ts` holds its
+  query keys, `queryOptions`, and cache helpers. Query keys start with `["workspaces", workspaceId, …]` so
   workspaces never share cached data. Hooks that bind queries to auth and the active workspace
   live in `src/hooks/` (for example `use-tasks.ts`); `queryResource` turns a query into a
   view's loading, error, or success state. Don't add hand-rolled loaders with `useEffect`.
@@ -178,10 +179,10 @@ and `packages/*/package.json`. Check them rather than guessing.
     not add one without the task asking for it.
 - Web: Vitest + Testing Library + jsdom. Tests live next to the code as `*.test.ts(x)` under
   `apps/web/src/`. Query by role and accessible name. Mock `next/navigation` and network calls.
-- API: Pytest in `apps/api/tests/`. Use the `client` fixture from `conftest.py`, which builds an
   Render signed-in views with `renderSignedIn` (`src/test/session.tsx`) and standalone
   components that query data with `renderWithQueries` (`src/test/query.tsx`); both give each
   test a fresh query cache that doesn't retry. Mock the API with `mockApi` (`src/test/api-mock.ts`).
+- API: Pytest in `apps/api/tests/`. Use the `client` fixture from `conftest.py`, which builds an
   isolated app via `create_app(Settings(...))`. Pytest treats warnings as errors.
 - Test behavior, not implementation details. Mock external services, not the code under test.
 - **Never weaken, skip, or delete tests to make checks pass.** Fix the code, or explain why the

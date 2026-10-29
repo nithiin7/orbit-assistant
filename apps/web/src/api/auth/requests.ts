@@ -5,7 +5,7 @@ import type {
   LocalSignUpRequest,
 } from "@orbit/contracts";
 
-import { request, type Signal } from "./client";
+import { request, type Signal } from "../client";
 
 /** How to sign in: local accounts or Supabase Auth, decided by the API's storage mode. */
 export function getAuthConfig({ signal }: Signal = {}): Promise<AuthConfig> {

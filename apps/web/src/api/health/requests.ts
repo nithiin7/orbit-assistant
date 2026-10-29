@@ -1,6 +1,6 @@
 import type { DatabaseHealthResponse, HealthResponse } from "@orbit/contracts";
 
-import { request, type Signal } from "./client";
+import { request, type Signal } from "../client";
 
 export function getHealth({ signal }: Signal = {}): Promise<HealthResponse> {
   return request<HealthResponse>("/api/v1/health", { signal });
