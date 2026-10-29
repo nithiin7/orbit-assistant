@@ -67,6 +67,13 @@ Storage (see [Database](#database)):
 | `ORBIT_DATABASE_POOL_SIZE`    | `5`                            | Cloud mode: persistent pooled connections                 |
 | `ORBIT_DATABASE_MAX_OVERFLOW` | `5`                            | Cloud mode: extra connections allowed under load          |
 
+Reminders (see [Reminder worker](#reminder-worker)):
+
+| Variable                       | Default | Purpose                                                                  |
+| ------------------------------ | ------- | ------------------------------------------------------------------------ |
+| `ORBIT_SCHEDULER_IN_API`       | unset   | Run the reminder worker inside the API process. Unset: yes, except tests |
+| `ORBIT_SCHEDULER_POLL_SECONDS` | `15`    | How often a worker looks for due reminders (1 to 300)                    |
+
 Accounts (see [Accounts](#accounts)):
 
 | Variable                         | Default | Purpose                                                                 |
@@ -236,6 +243,38 @@ other, are deliberately not implemented. Both need stable record identity, confl
 resolution, and deletion tracking, which depend on product schemas that don't exist yet. Until
 then, choose one mode per installation. Switching modes starts with an empty database; it does
 not move data.
+
+## Reminder worker
+
+Due reminders are delivered as in-app notifications by a worker that polls the database. The
+design and its guarantees are in
+[architecture.md](architecture.md#reminders-and-notifications).
+
+- **Locally, nothing extra is needed:** `pnpm dev` (or `pnpm dev:api`) runs the worker inside
+  the API process; startup logs `Reminder worker started; polling every 15 s.` Notifications
+  appear in the bell within one poll interval, and the bell checks for them every 30 seconds.
+- **Standalone:** set `ORBIT_SCHEDULER_IN_API=false` for the API and run the worker separately.
+  It reads the same `ORBIT_*` settings and refuses to start if the database isn't migrated.
+
+  ```bash
+  pnpm worker                                 # poll until Ctrl+C or SIGTERM
+  cd apps/api
+  uv run orbit-worker --once                  # deliver what is due now, then exit
+  uv run orbit-worker status                  # occurrences by status (pending, failed, …)
+  uv run orbit-worker retry-failed            # make failed occurrences pending again
+  ```
+
+- **Several workers are safe** (for example one per API instance in cloud mode, plus a
+  standalone one): claims are atomic, so each occurrence is delivered once. In local mode
+  SQLite serializes writes, which is plenty for one person's reminders.
+- **Stopping** the API or worker lets the poll in progress finish. Pending reminders are rows in
+  the database, so nothing is lost; after downtime, each reminder fires once for what it missed,
+  then continues on schedule.
+- **Failures** are retried with backoff and, after 5 attempts, marked failed. The reminder shows
+  as overdue in the app, the worker logs a warning with the occurrence ID (never reminder
+  text), and `orbit-worker status` counts them.
+- Tests never start the embedded worker; they drive it directly with a controllable clock
+  (`tests/test_reminder_worker.py`).
 
 ## Quality checks
 

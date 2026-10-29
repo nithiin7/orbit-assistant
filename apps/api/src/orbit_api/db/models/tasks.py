@@ -3,7 +3,16 @@
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import CheckConstraint, Date, ForeignKey, Index, SmallInteger, String, Text
+from sqlalchemy import (
+    CheckConstraint,
+    Date,
+    ForeignKey,
+    Index,
+    SmallInteger,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from orbit_api.db.base import Base
@@ -28,6 +37,9 @@ class TaskModel(Base):
             " OR (status = 'open' AND completed_at IS NULL)",
             name="completed_at_matches_status",
         ),
+        # The target of `reminders`' composite foreign key, which keeps a reminder in the same
+        # workspace as its task.
+        UniqueConstraint("id", "workspace_id"),
         # Lists are always scoped to a workspace, usually filtered by status, and sorted by due
         # date or priority.
         Index("ix_tasks_workspace_status_due_date", "workspace_id", "status", "due_date"),

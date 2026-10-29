@@ -49,6 +49,9 @@ PROTECTED_TABLES = (
     "shopping_lists",
     "shopping_items",
     "dashboard_layouts",
+    "reminders",
+    "reminder_occurrences",
+    "notifications",
 )
 
 

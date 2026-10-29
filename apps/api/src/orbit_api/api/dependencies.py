@@ -12,6 +12,8 @@ from orbit_api.db.database import Database
 from orbit_api.repositories.accounts import SqlAccountRepository, SqlLocalAuthRepository
 from orbit_api.repositories.avatars import SqlAvatarRepository
 from orbit_api.repositories.dashboard import SqlDashboardRepository
+from orbit_api.repositories.notifications import SqlNotificationRepository
+from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.shopping import SqlShoppingItemRepository, SqlShoppingListRepository
 from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import SqlTransaction
@@ -20,6 +22,8 @@ from orbit_api.services.accounts.service import AccountService
 from orbit_api.services.avatars.service import AvatarService
 from orbit_api.services.dashboard.service import DashboardService
 from orbit_api.services.local_auth.service import LocalAuthService, PasswordHasher
+from orbit_api.services.notifications.service import NotificationService
+from orbit_api.services.reminders.service import ReminderService
 from orbit_api.services.shopping.service import ShoppingService
 from orbit_api.services.tasks.service import TaskService
 from orbit_api.services.workspaces.service import WorkspaceService
@@ -114,3 +118,22 @@ def get_shopping_service(session: SessionDep) -> ShoppingService:
 
 
 ShoppingServiceDep = Annotated[ShoppingService, Depends(get_shopping_service)]
+
+
+def get_reminder_service(session: SessionDep) -> ReminderService:
+    return ReminderService(
+        SqlReminderRepository(session),
+        SqlOccurrenceRepository(session),
+        SqlTaskRepository(session),
+        SqlTransaction(session),
+    )
+
+
+ReminderServiceDep = Annotated[ReminderService, Depends(get_reminder_service)]
+
+
+def get_notification_service(session: SessionDep) -> NotificationService:
+    return NotificationService(SqlNotificationRepository(session), SqlTransaction(session))
+
+
+NotificationServiceDep = Annotated[NotificationService, Depends(get_notification_service)]

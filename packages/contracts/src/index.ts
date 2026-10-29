@@ -52,3 +52,26 @@ export type DashboardLayoutRequest = Schemas["DashboardLayoutRequest"];
 export type DashboardWidget = Schemas["DashboardWidgetModel"];
 export type DashboardWidgetId = DashboardWidget["id"];
 export type DashboardWidgetSize = DashboardWidget["size"];
+export type Reminder = Schemas["ReminderResponse"];
+export type ReminderStatus = Reminder["status"];
+export type ReminderList = Schemas["ReminderListResponse"];
+export type UpcomingReminders = Schemas["UpcomingRemindersResponse"];
+export type Recurrence = Schemas["RecurrenceModel"];
+export type RecurrenceFrequency = Recurrence["frequency"];
+export type Weekday = NonNullable<Recurrence["weekdays"]>[number];
+export type CreateReminderRequest = Schemas["CreateReminderRequest"];
+export type UpdateReminderRequest = Schemas["UpdateReminderRequest"];
+/** Filters and paging accepted when listing reminders. */
+export type ReminderListQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/reminders"]["get"]["parameters"]["query"]
+>;
+export type UpcomingRemindersQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/reminders/upcoming"]["get"]["parameters"]["query"]
+>;
+export type Notification = Schemas["NotificationResponse"];
+export type NotificationList = Schemas["NotificationListResponse"];
+export type NotificationListQuery = NonNullable<
+  paths["/api/v1/me/notifications"]["get"]["parameters"]["query"]
+>;
+export type UnreadNotificationCount = Schemas["UnreadCountResponse"];
+export type MarkAllNotificationsReadResponse = Schemas["MarkAllReadResponse"];

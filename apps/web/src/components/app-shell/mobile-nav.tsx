@@ -5,6 +5,7 @@ import { useRef } from "react";
 
 import { CommandPaletteTrigger } from "@/components/command-palette/command-palette-trigger";
 import { Logo } from "@/components/logo";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { WorkspaceSwitcher } from "@/components/workspace/workspace-switcher";
@@ -35,6 +36,7 @@ export function MobileNav() {
       <Logo className="ml-1" />
       <div className="ml-auto flex items-center gap-1">
         <CommandPaletteTrigger />
+        <NotificationBell placement="header" />
         <ThemeToggle />
       </div>
 

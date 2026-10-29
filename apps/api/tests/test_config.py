@@ -69,6 +69,27 @@ def test_local_registration_is_open_by_default_except_in_production(
     assert make_settings(**overrides).local_registration_open is expected
 
 
+@pytest.mark.parametrize(
+    ("overrides", "expected"),
+    [
+        ({}, True),
+        ({"env": "test"}, False),
+        ({"scheduler_in_api": False}, False),
+        ({"env": "test", "scheduler_in_api": True}, True),
+    ],
+)
+def test_reminder_worker_runs_in_the_api_by_default_except_in_tests(
+    overrides: dict[str, object], expected: bool
+) -> None:
+    assert make_settings(**overrides).scheduler_embedded is expected
+
+
+@pytest.mark.parametrize("seconds", [0, 301])
+def test_rejects_unreasonable_poll_intervals(seconds: int) -> None:
+    with pytest.raises(ValidationError):
+        make_settings(scheduler_poll_seconds=seconds)
+
+
 def test_storage_defaults_to_local_sqlite_outside_the_web_app() -> None:
     settings = make_settings()
 

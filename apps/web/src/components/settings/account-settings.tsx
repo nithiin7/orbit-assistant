@@ -13,6 +13,7 @@ import { displayNameSchema } from "@/lib/auth/validation";
 import { useAuth, useCurrentUser } from "@/providers/auth";
 
 import { ProfilePhoto } from "./profile-photo";
+import { TimeZonePreference } from "./time-zone-preference";
 
 const providerLabels = {
   local: "Local account, stored in this installation’s database",
@@ -83,6 +84,8 @@ export function AccountSettings() {
           </p>
         </div>
       </form>
+
+      <TimeZonePreference />
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
         <p className="text-sm text-muted-foreground">

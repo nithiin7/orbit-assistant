@@ -496,6 +496,208 @@
         ]
       }
     },
+    "/api/v1/me/notifications": {
+      "get": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "List the signed-in user's notifications",
+        "description": "Newest first, from every workspace the user owns.",
+        "operationId": "list_notifications_api_v1_me_notifications_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "unread",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Only unread notifications.",
+              "default": false,
+              "title": "Unread"
+            },
+            "description": "Only unread notifications."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/notifications/unread-count": {
+      "get": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Count the signed-in user's unread notifications",
+        "description": "Cheap enough to poll.",
+        "operationId": "count_unread_api_v1_me_notifications_unread_count_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadCountResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/notifications/read-all": {
+      "post": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Mark every notification read",
+        "operationId": "mark_all_read_api_v1_me_notifications_read_all_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkAllReadResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/notifications/{notification_id}": {
+      "patch": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Mark a notification read or unread",
+        "operationId": "update_notification_api_v1_me_notifications__notification_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "notification_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The notification's ID.",
+              "title": "Notification Id"
+            },
+            "description": "The notification's ID."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNotificationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The notification does not exist or is someone else's."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/workspaces": {
       "get": {
         "tags": [
@@ -2175,6 +2377,441 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/reminders": {
+      "get": {
+        "tags": [
+          "reminders"
+        ],
+        "summary": "List reminders",
+        "description": "Soonest next occurrence first; reminders with nothing left to fire come last.",
+        "operationId": "list_reminders_api_v1_workspaces__workspace_id__reminders_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "scheduled",
+                    "overdue",
+                    "completed",
+                    "disabled"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Omit for every status.",
+              "title": "Status"
+            },
+            "description": "Omit for every status."
+          },
+          {
+            "name": "task_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only reminders about this task.",
+              "title": "Task Id"
+            },
+            "description": "Only reminders about this task."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or reminder does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "reminders"
+        ],
+        "summary": "Create a reminder",
+        "operationId": "create_reminder_api_v1_workspaces__workspace_id__reminders_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReminderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or reminder does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid input, a task outside this workspace, or a one-time reminder in the past."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/reminders/upcoming": {
+      "get": {
+        "tags": [
+          "reminders"
+        ],
+        "summary": "List upcoming reminders",
+        "description": "Enabled reminders by next occurrence, soonest first, including any that are due but not\ndelivered yet. Reminders about completed tasks are left out.",
+        "operationId": "upcoming_reminders_api_v1_workspaces__workspace_id__reminders_upcoming_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 5,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpcomingRemindersResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or reminder does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/reminders/{reminder_id}": {
+      "get": {
+        "tags": [
+          "reminders"
+        ],
+        "summary": "Get a reminder",
+        "operationId": "get_reminder_api_v1_workspaces__workspace_id__reminders__reminder_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "reminder_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The reminder's ID.",
+              "title": "Reminder Id"
+            },
+            "description": "The reminder's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or reminder does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "reminders"
+        ],
+        "summary": "Update a reminder",
+        "description": "Also enables and disables reminders (`enabled`). Changing the schedule or `enabled`\nreplaces the next occurrence.",
+        "operationId": "update_reminder_api_v1_workspaces__workspace_id__reminders__reminder_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "reminder_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The reminder's ID.",
+              "title": "Reminder Id"
+            },
+            "description": "The reminder's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReminderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReminderResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or reminder does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid input, a task outside this workspace, or a one-time reminder in the past."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "reminders"
+        ],
+        "summary": "Delete a reminder",
+        "description": "Permanently delete a reminder and its pending occurrences. Notifications it already\ndelivered stay in the inbox.",
+        "operationId": "delete_reminder_api_v1_workspaces__workspace_id__reminders__reminder_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "reminder_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The reminder's ID.",
+              "title": "Reminder Id"
+            },
+            "description": "The reminder's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or reminder does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/storage": {
       "get": {
         "tags": [
@@ -2296,6 +2933,82 @@
         ],
         "title": "CreateItemRequest"
       },
+      "CreateReminderRequest": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Description",
+            "default": ""
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id",
+            "description": "A task in the same workspace, or omit for a standalone one."
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": true
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "time_of_day": {
+            "type": "string",
+            "format": "time",
+            "title": "Time Of Day"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone",
+            "description": "Defaults to the user's time zone preference, or UTC without one."
+          },
+          "recurrence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecurrenceModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "start_date",
+          "time_of_day"
+        ],
+        "title": "CreateReminderRequest"
+      },
       "CreateTaskRequest": {
         "properties": {
           "title": {
@@ -2364,7 +3077,7 @@
               "$ref": "#/components/schemas/DashboardWidgetModel"
             },
             "type": "array",
-            "maxItems": 5,
+            "maxItems": 6,
             "title": "Widgets",
             "description": "The widgets to show, in order. Each widget may appear once; an empty list is an empty dashboard."
           }
@@ -2406,6 +3119,7 @@
               "workspace",
               "status",
               "tasks",
+              "reminders",
               "shopping",
               "modules"
             ],
@@ -2599,6 +3313,359 @@
           "display_name"
         ],
         "title": "LocalSignUpRequest"
+      },
+      "MarkAllReadResponse": {
+        "properties": {
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "description": "How many notifications were marked read."
+          }
+        },
+        "type": "object",
+        "required": [
+          "count"
+        ],
+        "title": "MarkAllReadResponse"
+      },
+      "NotificationListResponse": {
+        "properties": {
+          "notifications": {
+            "items": {
+              "$ref": "#/components/schemas/NotificationResponse"
+            },
+            "type": "array",
+            "title": "Notifications"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Notifications matching the filters, across all pages."
+          },
+          "unread": {
+            "type": "integer",
+            "title": "Unread",
+            "description": "All of the user's unread notifications."
+          }
+        },
+        "type": "object",
+        "required": [
+          "notifications",
+          "total",
+          "unread"
+        ],
+        "title": "NotificationListResponse"
+      },
+      "NotificationResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id",
+            "description": "The workspace the reminder belongs to."
+          },
+          "reminder_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reminder Id",
+            "description": "The reminder that fired, or `null` once it has been deleted."
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body",
+            "description": "The reminder's description when it fired; may be empty."
+          },
+          "scheduled_for": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scheduled For",
+            "description": "When the reminder was scheduled to fire."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "When the notification was delivered."
+          },
+          "read_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Read At",
+            "description": "When it was first read, or `null` if unread."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "reminder_id",
+          "title",
+          "body",
+          "scheduled_for",
+          "created_at",
+          "read_at"
+        ],
+        "title": "NotificationResponse"
+      },
+      "RecurrenceModel": {
+        "properties": {
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "daily",
+              "weekly",
+              "monthly"
+            ],
+            "title": "Frequency"
+          },
+          "weekdays": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "mon",
+                "tue",
+                "wed",
+                "thu",
+                "fri",
+                "sat",
+                "sun"
+              ]
+            },
+            "type": "array",
+            "maxItems": 7,
+            "title": "Weekdays",
+            "description": "Weekly only, and required for it: the days it repeats on."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "frequency"
+        ],
+        "title": "RecurrenceModel",
+        "description": "How a reminder repeats. Monthly reminders on a day a month lacks (29 to 31) fire on that\nmonth's last day."
+      },
+      "ReminderListResponse": {
+        "properties": {
+          "reminders": {
+            "items": {
+              "$ref": "#/components/schemas/ReminderResponse"
+            },
+            "type": "array",
+            "title": "Reminders"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Reminders matching the filters, across all pages."
+          }
+        },
+        "type": "object",
+        "required": [
+          "reminders",
+          "total"
+        ],
+        "title": "ReminderListResponse"
+      },
+      "ReminderResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "task": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReminderTaskResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The task this reminder is about, or `null` for a standalone reminder."
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "Empty when the reminder has no description."
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date",
+            "description": "The date of a one-time reminder, or the first date of a recurring one."
+          },
+          "time_of_day": {
+            "type": "string",
+            "format": "time",
+            "title": "Time Of Day",
+            "description": "Local wall-clock time in `timezone`."
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone",
+            "description": "An IANA time zone name."
+          },
+          "recurrence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecurrenceModel"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "`null` for a one-time reminder."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "scheduled",
+              "overdue",
+              "completed",
+              "disabled"
+            ],
+            "title": "Status",
+            "description": "`scheduled`: the next occurrence is ahead. `overdue`: one is due but not delivered yet, or the last delivery failed. `completed`: nothing left to fire, or the task is completed. `disabled`: switched off."
+          },
+          "next_occurrence_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Occurrence At",
+            "description": "When it next fires (UTC), possibly already due; `null` if it won't."
+          },
+          "last_occurrence_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Occurrence At",
+            "description": "The scheduled time of the most recent occurrence that was processed."
+          },
+          "last_outcome": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "delivered",
+                  "cancelled",
+                  "failed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Outcome"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "task",
+          "title",
+          "description",
+          "enabled",
+          "start_date",
+          "time_of_day",
+          "timezone",
+          "recurrence",
+          "status",
+          "next_occurrence_at",
+          "last_occurrence_at",
+          "last_outcome",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ReminderResponse"
+      },
+      "ReminderTaskResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "completed"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "status"
+        ],
+        "title": "ReminderTaskResponse"
       },
       "ShoppingItemResponse": {
         "properties": {
@@ -3050,6 +4117,35 @@
         ],
         "title": "TaskSummaryResponse"
       },
+      "UnreadCountResponse": {
+        "properties": {
+          "unread": {
+            "type": "integer",
+            "title": "Unread"
+          }
+        },
+        "type": "object",
+        "required": [
+          "unread"
+        ],
+        "title": "UnreadCountResponse"
+      },
+      "UpcomingRemindersResponse": {
+        "properties": {
+          "reminders": {
+            "items": {
+              "$ref": "#/components/schemas/ReminderResponse"
+            },
+            "type": "array",
+            "title": "Reminders"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reminders"
+        ],
+        "title": "UpcomingRemindersResponse"
+      },
       "UpdateItemRequest": {
         "properties": {
           "name": {
@@ -3107,21 +4203,156 @@
         "title": "UpdateItemRequest",
         "description": "Change some of an item's fields. Omitted fields keep their values; `quantity: null` and\n`url: null` clear them. Purchasing has its own endpoints."
       },
-      "UpdateProfileRequest": {
+      "UpdateNotificationRequest": {
         "properties": {
-          "display_name": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
-            "title": "Display Name"
+          "read": {
+            "type": "boolean",
+            "title": "Read"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "display_name"
+          "read"
         ],
-        "title": "UpdateProfileRequest"
+        "title": "UpdateNotificationRequest"
+      },
+      "UpdateProfileRequest": {
+        "properties": {
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateProfileRequest",
+        "description": "Change some profile fields. Omitted fields keep their values; `timezone: null` clears\nthe time zone preference."
+      },
+      "UpdateReminderRequest": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          },
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "time_of_day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Of Day"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
+          "recurrence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecurrenceModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateReminderRequest",
+        "description": "Change some of a reminder's fields. Omitted fields keep their values; `task_id: null`\ndetaches the task and `recurrence: null` makes the reminder one-time. Changing the schedule\nor `enabled` replaces the pending occurrence."
       },
       "UpdateTaskRequest": {
         "properties": {
@@ -3225,6 +4456,18 @@
             "title": "Auth Provider",
             "description": "`local` (an account on this installation) or `supabase` (Supabase Auth)."
           },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone",
+            "description": "The user's IANA time zone, used by default for new reminders; `null` until they choose one."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -3237,6 +4480,7 @@
           "email",
           "display_name",
           "auth_provider",
+          "timezone",
           "created_at"
         ],
         "title": "UserProfile",

@@ -5,6 +5,8 @@ from typing import Annotated, Any
 
 from pydantic import AfterValidator, StringConstraints
 
+from orbit_api.services.reminders.recurrence import is_valid_timezone
+
 # Line breaks and tabs are fine in multi-line text; other control characters are not.
 _ALLOWED_CONTROL_CHARACTERS = frozenset("\n\r\t")
 
@@ -44,6 +46,20 @@ Name = Annotated[
     str,
     StringConstraints(strip_whitespace=True, min_length=1, max_length=100),
     AfterValidator(_printable),
+]
+
+
+def _known_timezone(value: str) -> str:
+    if not is_valid_timezone(value):
+        raise ValueError("must be an IANA time zone name, such as Europe/Paris")
+    return value
+
+
+# An IANA time zone name, such as `Europe/Paris` or `UTC`.
+TimeZoneName = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=64),
+    AfterValidator(_known_timezone),
 ]
 
 # Normalized for comparison: trimmed and lowercase. Deliberately permissive; it is a sign-in

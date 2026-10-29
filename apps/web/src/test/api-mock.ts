@@ -52,6 +52,7 @@ export const ada: UserProfile = {
   email: "ada@example.com",
   display_name: "Ada",
   auth_provider: "local",
+  timezone: null,
   created_at: "2026-10-01T09:00:00Z",
 };
 

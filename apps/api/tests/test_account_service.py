@@ -8,6 +8,7 @@ import pytest
 
 from orbit_api.services.accounts.models import AuthProvider, ExternalIdentity, User
 from orbit_api.services.accounts.service import AccountService
+from orbit_api.services.tasks.models import UNSET, Change
 from orbit_api.services.transactions import ConflictError
 from orbit_api.services.workspaces.models import Workspace, WorkspaceNotFoundError
 from orbit_api.services.workspaces.service import WorkspaceService
@@ -46,11 +47,19 @@ class FakeAccounts:
         self.users[(user.auth_provider, auth_subject)] = user
 
     async def update(
-        self, user_id: uuid.UUID, *, email: str | None = None, display_name: str | None = None
+        self,
+        user_id: uuid.UUID,
+        *,
+        email: str | None = None,
+        display_name: str | None = None,
+        timezone: Change[str | None] = UNSET,
     ) -> User:
         key, user = next((k, u) for k, u in self.users.items() if u.id == user_id)
         user = replace(
-            user, email=email or user.email, display_name=display_name or user.display_name
+            user,
+            email=email or user.email,
+            display_name=display_name or user.display_name,
+            timezone=user.timezone if timezone is UNSET else timezone,
         )
         self.users[key] = user
         return user

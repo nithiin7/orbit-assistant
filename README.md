@@ -31,8 +31,9 @@ control.
 
 > [!NOTE]
 > **Early development.** This repository contains the project foundation: the monorepo, tooling,
-> an application shell, an API with a database layer, and accounts with workspaces. Tasks is the
-> first product feature; calendar, finance, notes, and the AI assistant are not built yet.
+> an application shell, an API with a database layer, and accounts with workspaces. Tasks,
+> shopping lists, and reminders (with in-app notifications) are built; calendar, finance, notes,
+> and the AI assistant are not.
 
 ## Scope
 
@@ -48,15 +49,19 @@ control.
   (cloud mode), profile photos, a default Personal workspace per user, creating, switching, and
   deleting workspaces, server-side authorization, and password reset by email for cloud
   accounts.
+- Tasks, shopping lists, and reminders: one-time or recurring (daily, chosen weekdays, monthly),
+  time-zone aware, optionally about a task, and delivered as in-app notifications by a
+  database-backed worker.
 - Shared tooling for linting, formatting, type checking, testing, commit conventions, and CI.
 
 ### 🚫 Explicit non-goals for now
 
-- Task, calendar, finance, or notes functionality.
+- Calendar, finance, or notes functionality.
 - Shared workspaces, invitations, password recovery for local accounts, and account linking
   between local and cloud.
 - Synchronization or data migration between local and cloud storage.
-- AI or LLM integration, data synchronization, or background jobs.
+- AI or LLM integration or data synchronization.
+- Push, email, SMS, or mobile notifications (reminders notify in the app only).
 - Containers or deployment infrastructure.
 
 ## Architecture

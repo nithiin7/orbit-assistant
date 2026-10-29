@@ -371,3 +371,155 @@ def test_dashboard_migration_creates_and_drops_its_table(migrated_settings: Sett
 
     assert "dashboard_layouts" not in tables(migrated_settings)
     assert {"shopping_lists", "shopping_items"} <= tables(migrated_settings)
+
+
+def insert_reminder(database: Path, workspace_id: str, **overrides: object) -> str:
+    reminder_id = uuid.uuid4().hex
+    values: dict[str, object] = {
+        "task_id": None,
+        "title": "R",
+        "timezone": "UTC",
+        "last_outcome": None,
+        **overrides,
+    }
+    query(
+        database,
+        "INSERT INTO reminders (id, workspace_id, task_id, title, description, enabled,"
+        " start_date, time_of_day, timezone, recurrence, last_outcome, created_at, updated_at)"
+        " VALUES (?, ?, ?, ?, '', 1, '2030-01-15', '09:00:00.000000', ?, NULL, ?, ?, ?)",
+        reminder_id,
+        workspace_id,
+        values["task_id"],
+        values["title"],
+        values["timezone"],
+        values["last_outcome"],
+        NOW,
+        NOW,
+    )
+    return reminder_id
+
+
+def insert_occurrence(database: Path, reminder_id: str, **overrides: object) -> str:
+    occurrence_id = uuid.uuid4().hex
+    values: dict[str, object] = {
+        "scheduled_for": NOW,
+        "status": "pending",
+        "attempts": 0,
+        "claim_token": None,
+        "claimed_until": None,
+        "finished_at": None,
+        **overrides,
+    }
+    query(
+        database,
+        "INSERT INTO reminder_occurrences (id, reminder_id, scheduled_for, status, attempts,"
+        " available_at, claim_token, claimed_until, finished_at, created_at)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        occurrence_id,
+        reminder_id,
+        values["scheduled_for"],
+        values["status"],
+        values["attempts"],
+        NOW,
+        values["claim_token"],
+        values["claimed_until"],
+        values["finished_at"],
+        NOW,
+    )
+    return occurrence_id
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"title": ""},
+        {"title": "x" * 201},
+        {"timezone": ""},
+        {"last_outcome": "lost"},
+    ],
+)
+def test_database_enforces_reminder_constraints(
+    migrated_settings: Settings, overrides: dict[str, object]
+) -> None:
+    database = migrated_settings.sqlite_path
+    workspace = insert_workspace(database, insert_user(database), is_personal=True)
+    insert_reminder(database, workspace)
+
+    with pytest.raises(sqlite3.IntegrityError, match="CHECK"):
+        insert_reminder(database, workspace, **overrides)
+
+
+def test_reminders_stay_in_their_tasks_workspace(migrated_settings: Settings) -> None:
+    database = migrated_settings.sqlite_path
+    owner = insert_user(database)
+    workspace = insert_workspace(database, owner, is_personal=True)
+    other = insert_workspace(database, owner, is_personal=False)
+    task = insert_task(database, workspace)
+    insert_reminder(database, workspace, task_id=task)
+
+    with pytest.raises(sqlite3.IntegrityError, match="FOREIGN KEY"):
+        insert_reminder(database, other, task_id=task)
+
+
+def test_deleting_a_task_deletes_its_reminders_and_occurrences(
+    migrated_settings: Settings,
+) -> None:
+    database = migrated_settings.sqlite_path
+    workspace = insert_workspace(database, insert_user(database), is_personal=True)
+    task = insert_task(database, workspace)
+    insert_occurrence(database, insert_reminder(database, workspace, task_id=task))
+    kept = insert_reminder(database, workspace)
+
+    query(database, "DELETE FROM tasks WHERE id = ?", task)
+
+    assert query(database, "SELECT id FROM reminders") == [(kept,)]
+    assert query(database, "SELECT id FROM reminder_occurrences") == []
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"status": "sent"},
+        {"attempts": -1},
+        # A claim exists exactly while processing.
+        {"status": "processing"},
+        {"claim_token": uuid.uuid4().hex, "claimed_until": NOW},
+        # Final outcomes record when they finished; active ones don't.
+        {"status": "delivered"},
+        {"finished_at": NOW},
+    ],
+)
+def test_database_enforces_occurrence_constraints(
+    migrated_settings: Settings, overrides: dict[str, object]
+) -> None:
+    database = migrated_settings.sqlite_path
+    workspace = insert_workspace(database, insert_user(database), is_personal=True)
+    reminder = insert_reminder(database, workspace)
+
+    with pytest.raises(sqlite3.IntegrityError, match="CHECK"):
+        insert_occurrence(database, reminder, **overrides)
+
+
+def test_database_allows_one_occurrence_per_reminder_and_time(
+    migrated_settings: Settings,
+) -> None:
+    database = migrated_settings.sqlite_path
+    workspace = insert_workspace(database, insert_user(database), is_personal=True)
+    reminder = insert_reminder(database, workspace)
+    insert_occurrence(database, reminder)
+    insert_occurrence(database, insert_reminder(database, workspace))
+
+    with pytest.raises(sqlite3.IntegrityError, match="UNIQUE"):
+        insert_occurrence(database, reminder, status="delivered", finished_at=NOW)
+
+
+def test_reminder_migration_creates_and_drops_its_tables(migrated_settings: Settings) -> None:
+    reminder_tables = {"reminders", "reminder_occurrences", "notifications"}
+    assert reminder_tables <= tables(migrated_settings)
+
+    downgrade(migrated_settings, "0006")
+
+    assert not reminder_tables & tables(migrated_settings)
+    assert "tasks" in tables(migrated_settings)
+    columns = {row[1] for row in query(migrated_settings.sqlite_path, "PRAGMA table_info(users)")}
+    assert "timezone" not in columns

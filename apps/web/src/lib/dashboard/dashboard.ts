@@ -16,6 +16,7 @@ export const widgetIds = [
   "workspace",
   "status",
   "tasks",
+  "reminders",
   "shopping",
   "modules",
 ] as const satisfies readonly WidgetId[];
@@ -45,6 +46,12 @@ export const widgetCatalog: readonly WidgetDefinition[] = [
     id: "tasks",
     title: "Tasks",
     description: "Task counts and the next open tasks.",
+    defaultSize: "full",
+  },
+  {
+    id: "reminders",
+    title: "Reminders",
+    description: "The next reminders due in this workspace.",
     defaultSize: "full",
   },
   {

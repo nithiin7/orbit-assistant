@@ -59,6 +59,12 @@ class Settings(BaseSettings):
     # should not accept strangers by default.
     local_open_registration: bool | None = None
 
+    # Reminders are delivered by a worker that polls the database. Unset runs one inside each
+    # API process, except in tests, which drive the worker directly. `orbit-worker` runs it as a
+    # separate process; any number of workers can safely share a database.
+    scheduler_in_api: bool | None = None
+    scheduler_poll_seconds: float = Field(default=15, ge=1, le=300)
+
     @property
     def is_development(self) -> bool:
         return self.env == "development"
@@ -73,6 +79,13 @@ class Settings(BaseSettings):
         if self.local_open_registration is None:
             return not self.is_production
         return self.local_open_registration
+
+    @property
+    def scheduler_embedded(self) -> bool:
+        """Whether the API process runs the reminder worker."""
+        if self.scheduler_in_api is None:
+            return self.env != "test"
+        return self.scheduler_in_api
 
     @property
     def postgres_url(self) -> URL:
