@@ -1,5 +1,6 @@
 import type {
   AuthConfig,
+  CreateTaskRequest,
   CreateWorkspaceRequest,
   DatabaseHealthResponse,
   HealthResponse,
@@ -7,7 +8,13 @@ import type {
   LocalSignInRequest,
   LocalSignUpRequest,
   StorageLocation,
+  Task,
+  TaskList,
+  TaskListQuery,
+  TaskSummary,
+  TaskSummaryQuery,
   UpdateProfileRequest,
+  UpdateTaskRequest,
   UpdateWorkspaceRequest,
   UserProfile,
   Workspace,
@@ -170,6 +177,79 @@ export function getStorageLocation(
 
 export function revealStorageLocation(token: string): Promise<void> {
   return request<void>("/api/v1/storage/reveal", { method: "POST", token });
+}
+
+type QueryValue = string | number | readonly string[] | null | undefined;
+
+/** `?a=1&b=x&b=y` from defined values; arrays repeat their key. */
+function toQueryString(params: Record<string, QueryValue>): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value === null || value === undefined) continue;
+    if (typeof value === "string" || typeof value === "number") search.append(key, String(value));
+    else for (const item of value) search.append(key, item);
+  }
+  const query = search.toString();
+  return query ? `?${query}` : "";
+}
+
+function tasksPath(workspaceId: string, suffix = ""): string {
+  return `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/tasks${suffix}`;
+}
+
+function taskPath(workspaceId: string, taskId: string, suffix = ""): string {
+  return tasksPath(workspaceId, `/${encodeURIComponent(taskId)}${suffix}`);
+}
+
+export function listTasks(
+  token: string,
+  workspaceId: string,
+  query: TaskListQuery = {},
+  { signal }: Signal = {},
+): Promise<TaskList> {
+  return request<TaskList>(`${tasksPath(workspaceId)}${toQueryString(query)}`, { token, signal });
+}
+
+/** Task counts; `today` (the user's local date) decides what is overdue or due today. */
+export function getTaskSummary(
+  token: string,
+  workspaceId: string,
+  query: TaskSummaryQuery = {},
+  { signal }: Signal = {},
+): Promise<TaskSummary> {
+  return request<TaskSummary>(`${tasksPath(workspaceId, "/summary")}${toQueryString(query)}`, {
+    token,
+    signal,
+  });
+}
+
+export function createTask(
+  token: string,
+  workspaceId: string,
+  body: CreateTaskRequest,
+): Promise<Task> {
+  return request<Task>(tasksPath(workspaceId), { method: "POST", body, token });
+}
+
+export function updateTask(
+  token: string,
+  workspaceId: string,
+  taskId: string,
+  body: UpdateTaskRequest,
+): Promise<Task> {
+  return request<Task>(taskPath(workspaceId, taskId), { method: "PATCH", body, token });
+}
+
+export function completeTask(token: string, workspaceId: string, taskId: string): Promise<Task> {
+  return request<Task>(taskPath(workspaceId, taskId, "/complete"), { method: "POST", token });
+}
+
+export function reopenTask(token: string, workspaceId: string, taskId: string): Promise<Task> {
+  return request<Task>(taskPath(workspaceId, taskId, "/reopen"), { method: "POST", token });
+}
+
+export function deleteTask(token: string, workspaceId: string, taskId: string): Promise<void> {
+  return request<void>(taskPath(workspaceId, taskId), { method: "DELETE", token });
 }
 
 /** A message for a failed request, suitable for showing to the user. */

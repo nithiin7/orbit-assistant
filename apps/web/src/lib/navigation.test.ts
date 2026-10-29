@@ -11,12 +11,14 @@ describe("navigation", () => {
   it("excludes routes with dedicated pages from placeholder sections", () => {
     const hrefs = sectionItems.map((item) => item.href);
     expect(hrefs).not.toContain("/");
+    expect(hrefs).not.toContain("/tasks");
     expect(hrefs).not.toContain("/settings");
   });
 
   it("finds sections by slug", () => {
-    expect(findSection("tasks")?.title).toBe("Tasks");
+    expect(findSection("notes")?.title).toBe("Notes");
     expect(findSection("unknown")).toBeUndefined();
+    expect(findSection("tasks")).toBeUndefined();
     expect(findSection("settings")).toBeUndefined();
   });
 
