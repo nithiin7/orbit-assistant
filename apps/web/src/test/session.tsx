@@ -2,12 +2,12 @@ import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import { createQueryClient } from "@/api/query-client";
-import { AuthProvider } from "@/components/auth/auth-provider";
 import { RequireAuth } from "@/components/auth/require-auth";
-import { AvatarProvider } from "@/components/avatar/avatar-provider";
-import { QueryProvider } from "@/components/query-provider";
-import { WorkspaceProvider } from "@/components/workspace/workspace-provider";
 import { writeLocalSession } from "@/lib/auth/local-session";
+import { AuthProvider } from "@/providers/auth-provider";
+import { AvatarProvider } from "@/providers/avatar-provider";
+import { QueryProvider } from "@/providers/query-provider";
+import { WorkspaceProvider } from "@/providers/workspace-provider";
 
 export const SESSION_TOKEN = "local-session-token";
 

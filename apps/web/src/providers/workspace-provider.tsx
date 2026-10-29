@@ -14,12 +14,12 @@ import {
   updateCachedWorkspaces,
   workspaceListOptions,
 } from "@/api/workspaces";
-import { useAuth, useCurrentUser } from "@/components/auth/auth-provider";
 import {
   pickActiveWorkspace,
   readWorkspacePreference,
   writeWorkspacePreference,
 } from "@/lib/workspaces";
+import { useAuth, useCurrentUser } from "@/providers/auth-provider";
 
 export type WorkspaceState =
   | { status: "loading" }

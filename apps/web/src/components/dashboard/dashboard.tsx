@@ -3,7 +3,6 @@
 import { ArrowDown, ArrowUp, LayoutDashboard, Plus, RotateCcw, X } from "lucide-react";
 import { type ComponentType, useEffect, useId, useRef, useState } from "react";
 
-import { useCurrentUser } from "@/components/auth/auth-provider";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { ShoppingOverview } from "@/components/shopping/shopping-overview";
@@ -24,6 +23,7 @@ import {
   type WidgetSize,
 } from "@/lib/dashboard";
 import { cn } from "@/lib/utils";
+import { useCurrentUser } from "@/providers/auth-provider";
 
 import { ModulesWidget } from "./modules-widget";
 import { StatusWidget } from "./status-widget";

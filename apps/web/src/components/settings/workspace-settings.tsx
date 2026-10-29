@@ -11,9 +11,9 @@ import { FormAlert, FormField } from "@/components/form-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useWorkspaces } from "@/components/workspace/workspace-provider";
 import { WorkspaceAvatar } from "@/components/workspace/workspace-switcher";
 import { workspaceNameSchema } from "@/lib/auth/validation";
+import { useWorkspaces } from "@/providers/workspace-provider";
 
 export function WorkspaceSettings() {
   const { state, switchWorkspace, refresh } = useWorkspaces();

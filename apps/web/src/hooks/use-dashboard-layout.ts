@@ -11,7 +11,6 @@ import {
   dashboardLayoutOptions,
   sendDashboardLayout,
 } from "@/api/dashboard";
-import { useAuth } from "@/components/auth/auth-provider";
 import {
   clearDashboardLayout,
   type DashboardWidget,
@@ -20,6 +19,7 @@ import {
   readDashboardLayout,
   writeDashboardLayout,
 } from "@/lib/dashboard";
+import { useAuth } from "@/providers/auth-provider";
 
 type DashboardLayoutState = {
   layout: DashboardWidget[];

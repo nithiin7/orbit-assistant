@@ -13,7 +13,8 @@ Follows the shared rules in `AGENTS.md`. Frontend specifics:
 - Server Components by default. Add `"use client"` only for state, effects, event handlers, or
   browser APIs, and keep client components small.
 - Layout: routes in `src/app/`, components in `src/components/` (`ui/` = small
-  shadcn/ui-compatible primitives), logic in `src/lib/`. Navigation items come from
+  shadcn/ui-compatible primitives), logic in `src/lib/`. App-wide context lives in `src/providers/`, data
+  hooks in `src/hooks/`; dependencies point components → hooks → providers → api/lib. Navigation items come from
   `src/lib/navigation/navigation.ts`.
 - Data access goes through typed helpers in `src/api/`, using `import type` from
   `@orbit/contracts`. Don't call `fetch` against the API directly from components.

@@ -14,10 +14,10 @@ import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useWorkspaces } from "@/components/workspace/workspace-provider";
 import { useShopping, useShoppingMutations } from "@/hooks/use-shopping";
 import { isEditableTarget } from "@/lib/keyboard";
 import { cn } from "@/lib/utils";
+import { useWorkspaces } from "@/providers/workspace-provider";
 
 import { ItemComposer } from "./item-composer";
 import { ItemEditDialog } from "./item-edit-dialog";

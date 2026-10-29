@@ -3,10 +3,10 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
-import { AuthProvider } from "@/components/auth/auth-provider";
-import { QueryProvider } from "@/components/query-provider";
-import { ThemeProvider } from "@/components/theme-provider";
 import { sidebarPreferenceScript } from "@/lib/sidebar-preference";
+import { AuthProvider } from "@/providers/auth-provider";
+import { QueryProvider } from "@/providers/query-provider";
+import { ThemeProvider } from "@/providers/theme-provider";
 
 export const metadata: Metadata = {
   title: { default: "Orbit", template: "%s · Orbit" },

@@ -37,12 +37,15 @@ API contract in `packages/contracts`, described below.
 
 - Web and API communicate only over HTTP. All data and business rules live behind the API.
   The web app never connects to SQLite or PostgreSQL and never holds database credentials. The web app renders, navigates, and calls the API through the typed helpers in `src/api/`.
-- Within the web app, `src/app` (routes) may use `src/components`, `src/api`, and `src/lib`;
-  `src/components/ui` primitives depend only on `src/lib/utils/utils.ts`; `src/api` and
-  `src/lib` do not import components. `src/api` depends only on `@orbit/contracts`,
+- Within the web app, dependencies point one way:
+  `src/app` → `src/components` → `src/hooks` → `src/providers` → `src/api`, `src/lib`.
+  `src/providers` holds app-wide React context (auth, workspaces, avatar, query client, theme)
+  and may use other providers, but never components or hooks. `src/hooks` (query hooks that
+  need auth or the active workspace) never imports components. `src/api` and `src/lib` import
+  none of the React layers; `src/api` depends only on `@orbit/contracts`,
   `@tanstack/react-query`, `src/lib/env`, and pure `src/lib` helpers (such as
-  `src/lib/shopping` for sorting and counting). Query hooks that need auth or the active
-  workspace live in `src/hooks/`.
+  `src/lib/shopping` for sorting and counting). `src/components/ui` primitives depend only on
+  `src/lib/utils/utils.ts`. ESLint enforces the layer rules (`apps/web/eslint.config.mjs`).
 - Server data is cached by TanStack Query, keyed by workspace (`["workspaces", id, …]`). The
   cache is cleared whenever the signed-in user changes, so one user's data is never shown to
   another.
@@ -129,15 +132,16 @@ apps/web/src/
 │   └── globals.css      # Tailwind + design tokens (light/dark)
 ├── components/
 │   ├── app-shell/       # Sidebar, mobile drawer, navigation links
-│   ├── auth/            # AuthProvider, RequireAuth, sign-in and sign-up forms
-│   ├── avatar/          # AvatarProvider (the user's photo as an object URL), UserAvatar
+│   ├── auth/            # RequireAuth, sign-in and sign-up forms
+│   ├── avatar/          # UserAvatar
 │   ├── dashboard/       # Customizable dashboard grid and widgets without a module of their own
-│   ├── workspace/       # WorkspaceProvider, switcher, dashboard overview
+│   ├── workspace/       # Workspace switcher, dashboard overview
 │   ├── tasks/           # Tasks page (composer, toolbar, list, edit dialog), dashboard summary
 │   ├── settings/        # Settings menu and the account, workspace, theme, and storage panels
 │   ├── storage/         # Storage-mode indicator and status card
 │   └── ui/              # Small shadcn/ui-compatible primitives
-├── hooks/               # use-workspace-resource (stale-safe workspace data), use-task-list, etc.
+├── hooks/               # Query hooks bound to auth and the active workspace (use-tasks, …)
+├── providers/           # App-wide context: auth, workspaces, avatar, query client, theme
 └── lib/
     ├── navigation.ts    # Single source of truth for nav items and section routes
     ├── settings.ts      # Single source of truth for settings panels and their routes

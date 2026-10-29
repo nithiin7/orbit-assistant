@@ -27,10 +27,10 @@ import {
   updateCachedLists,
   updateShoppingItem,
 } from "@/api/shopping";
-import { useAuth } from "@/components/auth/auth-provider";
-import { useWorkspaces } from "@/components/workspace/workspace-provider";
 import { queryResource, type Resource } from "@/hooks/query-resource";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
+import { useAuth } from "@/providers/auth-provider";
+import { useWorkspaces } from "@/providers/workspace-provider";
 
 const selectLists = (data: { lists: ShoppingListOverview[] }) => data.lists;
 const selectItems = (data: { items: ShoppingItem[] }) => data.items;

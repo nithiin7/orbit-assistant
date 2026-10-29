@@ -7,10 +7,10 @@ import { useForm, useWatch } from "react-hook-form";
 
 import { describeApiError } from "@/api/client";
 import { updateMe } from "@/api/profile";
-import { useAuth, useCurrentUser } from "@/components/auth/auth-provider";
 import { FormAlert, FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { displayNameSchema } from "@/lib/auth/validation";
+import { useAuth, useCurrentUser } from "@/providers/auth-provider";
 
 import { ProfilePhoto } from "./profile-photo";
 

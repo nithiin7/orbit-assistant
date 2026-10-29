@@ -100,7 +100,10 @@ and `packages/*/package.json`. Check them rather than guessing.
   `next typegen`, no `next lint`). Check the docs bundled at
   `apps/web/node_modules/next/dist/docs/` before using an unfamiliar API.
 - Layering: routes in `src/app/`, UI in `src/components/` (`ui/` holds small
-  shadcn/ui-compatible primitives), API calls in `src/api/`, and other logic in `src/lib/`.
+  shadcn/ui-compatible primitives), app-wide React context (auth, workspaces, avatar, query
+  client, theme) in `src/providers/`, data hooks in `src/hooks/`, API calls in `src/api/`, and
+  other logic in `src/lib/`. Dependencies point one way: components → hooks → providers →
+  api/lib. ESLint (`no-restricted-imports` in `apps/web/eslint.config.mjs`) enforces it.
 - Call the API only through the typed helpers in `src/api/`, using types from
   `@orbit/contracts`. Each API area (`tasks`, `shopping`, `auth`, …) is a folder under
   `src/api/`: `requests.ts` (fetch functions), `queries.ts` when the area has cached queries,

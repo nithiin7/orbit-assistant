@@ -3,15 +3,15 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { workspaceOptions } from "@/api/workspaces";
-import { useAuth, useCurrentUser } from "@/components/auth/auth-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryResource } from "@/hooks/query-resource";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
+import { useAuth, useCurrentUser } from "@/providers/auth-provider";
+import { useWorkspaces } from "@/providers/workspace-provider";
 
-import { useWorkspaces } from "./workspace-provider";
 import { WorkspaceAvatar } from "./workspace-switcher";
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });

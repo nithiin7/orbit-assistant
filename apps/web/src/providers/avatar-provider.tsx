@@ -4,8 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, type ReactNode, useContext, useEffect, useMemo } from "react";
 
 import { avatarOptions, deleteMyAvatar, profileKeys, putMyAvatar } from "@/api/profile";
-import { useAuth } from "@/components/auth/auth-provider";
 import { prepareAvatar } from "@/lib/avatar";
+import { useAuth } from "@/providers/auth-provider";
 
 type AvatarContextValue = {
   /** An object URL for the photo; `null` when none is set or it hasn't loaded. */

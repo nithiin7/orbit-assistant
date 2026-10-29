@@ -9,7 +9,6 @@ import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useWorkspaces } from "@/components/workspace/workspace-provider";
 import { useTaskList, useTaskMutations } from "@/hooks/use-tasks";
 import { isEditableTarget } from "@/lib/keyboard";
 import {
@@ -20,6 +19,7 @@ import {
   toTaskListQuery,
 } from "@/lib/tasks";
 import { cn } from "@/lib/utils";
+import { useWorkspaces } from "@/providers/workspace-provider";
 
 import { TaskComposer } from "./task-composer";
 import { TaskEditDialog } from "./task-edit-dialog";

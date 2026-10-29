@@ -3,7 +3,7 @@
 import "./globals.css";
 
 import { type ErrorBoundaryProps, ErrorPage } from "@/components/error-fallback";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/providers/theme-provider";
 
 /**
  * Replaces the root layout when the layout itself fails, so it renders its own document. The

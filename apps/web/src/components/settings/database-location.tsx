@@ -6,12 +6,12 @@ import { useCallback, useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import { revealStorageLocation, storageLocationOptions } from "@/api/storage";
-import { useAuth } from "@/components/auth/auth-provider";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryResource } from "@/hooks/query-resource";
 import { revealLabel } from "@/lib/storage";
+import { useAuth } from "@/providers/auth-provider";
 
 /**
  * Where the SQLite database lives, with a button that opens its folder. The API does the

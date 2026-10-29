@@ -10,9 +10,9 @@ import { FormAlert, FormField } from "@/components/form-field";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { AuthFailure } from "@/lib/auth/auth-client";
 import { PASSWORD_MIN_LENGTH, signUpSchema } from "@/lib/auth/validation";
+import { useAuth } from "@/providers/auth-provider";
 
 import { AuthCard, authLinkClassName } from "./auth-card";
-import { useAuth } from "./auth-provider";
 import { AuthErrorScreen, AuthLoadingScreen } from "./auth-status-screen";
 import { useAuthRedirect } from "./use-auth-redirect";
 

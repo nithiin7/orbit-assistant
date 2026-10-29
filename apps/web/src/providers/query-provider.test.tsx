@@ -2,14 +2,14 @@ import { QueryClient } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import type { AuthState } from "@/components/auth/auth-provider";
+import type { AuthState } from "@/providers/auth-provider";
 import { ada } from "@/test/api-mock";
 
 import { QueryProvider } from "./query-provider";
 
 const auth = vi.hoisted(() => ({ state: { status: "loading" } as AuthState }));
 
-vi.mock("@/components/auth/auth-provider", () => ({ useAuth: () => auth }));
+vi.mock("@/providers/auth-provider", () => ({ useAuth: () => auth }));
 
 const config = { provider: "local", registration_open: false } as const;
 
