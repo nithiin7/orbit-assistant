@@ -166,6 +166,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the signed-in user's dashboard layout
+         * @description Widgets a newer layout used but this version doesn't know are left out.
+         */
+        get: operations["get_dashboard_api_v1_me_dashboard_get"];
+        /** Save the signed-in user's dashboard layout */
+        put: operations["put_dashboard_api_v1_me_dashboard_put"];
+        post?: never;
+        /** Reset the signed-in user's dashboard to the default layout */
+        delete: operations["delete_dashboard_api_v1_me_dashboard_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces": {
         parameters: {
             query?: never;
@@ -552,6 +574,38 @@ export interface components {
         CreateWorkspaceRequest: {
             /** Name */
             name: string;
+        };
+        /** DashboardLayoutRequest */
+        DashboardLayoutRequest: {
+            /**
+             * Widgets
+             * @description The widgets to show, in order. Each widget may appear once; an empty list is an empty dashboard.
+             */
+            widgets: components["schemas"]["DashboardWidgetModel"][];
+        };
+        /** DashboardLayoutResponse */
+        DashboardLayoutResponse: {
+            /** Widgets */
+            widgets: components["schemas"]["DashboardWidgetModel"][];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** DashboardWidgetModel */
+        DashboardWidgetModel: {
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "workspace" | "status" | "tasks" | "shopping" | "modules";
+            /**
+             * Size
+             * @description `half` widgets sit side by side on wide screens.
+             * @enum {string}
+             */
+            size: "half" | "full";
         };
         /**
          * DatabaseHealthResponse
@@ -1358,6 +1412,105 @@ export interface operations {
         };
     };
     delete_avatar_api_v1_me_avatar_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_dashboard_api_v1_me_dashboard_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardLayoutResponse"];
+                };
+            };
+            /** @description No layout is saved; show the default dashboard. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    put_dashboard_api_v1_me_dashboard_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DashboardLayoutRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardLayoutResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_dashboard_api_v1_me_dashboard_delete: {
         parameters: {
             query?: never;
             header?: never;

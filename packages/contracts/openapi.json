@@ -396,6 +396,106 @@
         ]
       }
     },
+    "/api/v1/me/dashboard": {
+      "get": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Get the signed-in user's dashboard layout",
+        "description": "Widgets a newer layout used but this version doesn't know are left out.",
+        "operationId": "get_dashboard_api_v1_me_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardLayoutResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "204": {
+            "description": "No layout is saved; show the default dashboard."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Save the signed-in user's dashboard layout",
+        "operationId": "put_dashboard_api_v1_me_dashboard_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DashboardLayoutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardLayoutResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Reset the signed-in user's dashboard to the default layout",
+        "operationId": "delete_dashboard_api_v1_me_dashboard_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/workspaces": {
       "get": {
         "tags": [
@@ -2256,6 +2356,78 @@
           "name"
         ],
         "title": "CreateWorkspaceRequest"
+      },
+      "DashboardLayoutRequest": {
+        "properties": {
+          "widgets": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardWidgetModel"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Widgets",
+            "description": "The widgets to show, in order. Each widget may appear once; an empty list is an empty dashboard."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "widgets"
+        ],
+        "title": "DashboardLayoutRequest"
+      },
+      "DashboardLayoutResponse": {
+        "properties": {
+          "widgets": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardWidgetModel"
+            },
+            "type": "array",
+            "title": "Widgets"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "widgets",
+          "updated_at"
+        ],
+        "title": "DashboardLayoutResponse"
+      },
+      "DashboardWidgetModel": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "workspace",
+              "status",
+              "tasks",
+              "shopping",
+              "modules"
+            ],
+            "title": "Id"
+          },
+          "size": {
+            "type": "string",
+            "enum": [
+              "half",
+              "full"
+            ],
+            "title": "Size",
+            "description": "`half` widgets sit side by side on wide screens."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "size"
+        ],
+        "title": "DashboardWidgetModel"
       },
       "DatabaseHealthResponse": {
         "properties": {

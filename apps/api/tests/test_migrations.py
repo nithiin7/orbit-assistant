@@ -362,3 +362,12 @@ def test_shopping_migration_creates_and_drops_its_tables(migrated_settings: Sett
 
     assert not {"shopping_lists", "shopping_items"} & tables(migrated_settings)
     assert "tasks" in tables(migrated_settings)
+
+
+def test_dashboard_migration_creates_and_drops_its_table(migrated_settings: Settings) -> None:
+    assert "dashboard_layouts" in tables(migrated_settings)
+
+    downgrade(migrated_settings, "0005")
+
+    assert "dashboard_layouts" not in tables(migrated_settings)
+    assert {"shopping_lists", "shopping_items"} <= tables(migrated_settings)

@@ -48,6 +48,7 @@ PROTECTED_TABLES = (
     "tasks",
     "shopping_lists",
     "shopping_items",
+    "dashboard_layouts",
 )
 
 
