@@ -1,28 +1,29 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+import { CommandPaletteProvider } from "@/components/command-palette/command-palette";
 
 import { MobileNav } from "./mobile-nav";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/",
+  useRouter: () => ({ push: vi.fn() }),
 }));
 
-beforeAll(() => {
-  // jsdom does not implement modal dialogs; emulate the open state they toggle.
-  HTMLDialogElement.prototype.showModal ??= function (this: HTMLDialogElement) {
-    this.open = true;
-  };
-  HTMLDialogElement.prototype.close ??= function (this: HTMLDialogElement) {
-    this.open = false;
-  };
-});
+function renderMobileNav() {
+  render(
+    <CommandPaletteProvider>
+      <MobileNav />
+    </CommandPaletteProvider>,
+  );
+  return screen.getByLabelText("Navigation", { selector: "dialog" });
+}
 
 describe("MobileNav", () => {
   it("opens and closes the navigation drawer", async () => {
     const user = userEvent.setup();
-    render(<MobileNav />);
-    const drawer = screen.getByRole("dialog", { hidden: true });
+    const drawer = renderMobileNav();
     expect(drawer).not.toHaveAttribute("open");
 
     await user.click(screen.getByRole("button", { name: "Open navigation" }));
@@ -34,8 +35,7 @@ describe("MobileNav", () => {
 
   it("closes the drawer after choosing a destination", async () => {
     const user = userEvent.setup();
-    render(<MobileNav />);
-    const drawer = screen.getByRole("dialog", { hidden: true });
+    const drawer = renderMobileNav();
 
     await user.click(screen.getByRole("button", { name: "Open navigation" }));
     await user.click(screen.getByRole("link", { name: "Tasks" }));

@@ -12,8 +12,9 @@ control.
 
 **In scope today**
 
-- A Next.js web app with a responsive application shell (sidebar, mobile drawer, light and dark
-  themes) and placeholder sections.
+- A Next.js web app with a responsive application shell (collapsible sidebar on Cmd/Ctrl+B,
+  mobile drawer, command palette on Cmd/Ctrl+K, light/dark/system themes chosen in Settings) and
+  placeholder sections.
 - A FastAPI service with centralized configuration and a health endpoint.
 - Shared tooling for linting, formatting, type checking, testing, commit conventions, and CI.
 

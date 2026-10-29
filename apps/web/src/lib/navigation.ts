@@ -14,6 +14,8 @@ export type NavItem = {
   href: string;
   icon: LucideIcon;
   description: string;
+  /** `workspace` items lead the sidebar; `system` items sit apart at its foot. */
+  group: "workspace" | "system";
 };
 
 /** Primary navigation. The single source of truth for sidebar links and section routes. */
@@ -23,47 +25,57 @@ export const navItems: readonly NavItem[] = [
     href: "/",
     icon: LayoutDashboard,
     description: "An overview of your day across Orbit.",
+    group: "workspace",
   },
   {
     title: "Tasks",
     href: "/tasks",
     icon: CheckSquare,
     description: "Plan and track what needs doing.",
+    group: "workspace",
   },
   {
     title: "Calendar",
     href: "/calendar",
     icon: CalendarDays,
     description: "See your schedule at a glance.",
+    group: "workspace",
   },
   {
     title: "Finance",
     href: "/finance",
     icon: Wallet,
     description: "Keep an eye on spending and budgets.",
+    group: "workspace",
   },
   {
     title: "Notes",
     href: "/notes",
     icon: NotebookPen,
     description: "Capture ideas and reference material.",
+    group: "workspace",
   },
   {
     title: "Assistant",
     href: "/assistant",
     icon: Bot,
     description: "Ask Orbit for help, privately.",
+    group: "workspace",
   },
   {
     title: "Settings",
     href: "/settings",
     icon: Settings,
     description: "Configure Orbit to fit how you work.",
+    group: "system",
   },
 ];
 
+/** Routes with their own page; every other item is rendered by the `[section]` placeholder. */
+const dedicatedRoutes: ReadonlySet<string> = new Set(["/", "/settings"]);
+
 /** Section routes rendered by the `[section]` placeholder page. */
-export const sectionItems = navItems.filter((item) => item.href !== "/");
+export const sectionItems = navItems.filter((item) => !dedicatedRoutes.has(item.href));
 
 export function findSection(slug: string): NavItem | undefined {
   return sectionItems.find((item) => item.href === `/${slug}`);

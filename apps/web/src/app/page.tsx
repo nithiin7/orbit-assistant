@@ -1,49 +1,66 @@
-import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
+import { OrbitMark } from "@/components/logo";
 import { PageHeader } from "@/components/page-header";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { sectionItems } from "@/lib/navigation";
+import { navItems } from "@/lib/navigation";
 
 export default function DashboardPage() {
-  const modules = sectionItems.filter((item) => item.href !== "/settings");
+  const modules = navItems.filter((item) => item.href !== "/" && item.group === "workspace");
 
   return (
-    <div className="space-y-8">
-      <PageHeader title="Dashboard" description="Welcome to Orbit." />
+    <div className="space-y-10">
+      <PageHeader title="Dashboard" description="Your private, local-first workspace." />
 
-      <section aria-labelledby="getting-started" className="space-y-2">
-        <h2 id="getting-started" className="text-base font-semibold">
-          Nothing here yet
-        </h2>
-        <p className="max-w-prose text-sm text-muted-foreground">
-          Orbit is in early development. As modules are built, a summary of each will appear on this
-          dashboard.
-        </p>
+      <section aria-labelledby="status-heading">
+        <Card className="flex flex-col gap-4 p-5 shadow-elevation-1 sm:flex-row sm:items-start">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-subtle">
+            <OrbitMark className="size-6" />
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 id="status-heading" className="text-base font-semibold">
+                Orbit is in early development
+              </h2>
+              <Badge variant="brand">Preview</Badge>
+            </div>
+            <p className="max-w-prose text-sm text-pretty text-muted-foreground">
+              The application shell is in place, but no modules are built yet and nothing is stored.
+              As each module lands, a summary of it will appear on this dashboard.
+            </p>
+          </div>
+        </Card>
       </section>
 
-      <section aria-labelledby="modules" className="space-y-3">
-        <h2 id="modules" className="text-base font-semibold">
-          Modules
-        </h2>
+      <section aria-labelledby="modules-heading" className="space-y-4">
+        <div className="space-y-1">
+          <h2 id="modules-heading" className="text-base font-semibold">
+            Planned modules
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Each opens a placeholder page describing what it will do.
+          </p>
+        </div>
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {modules.map(({ title, href, icon: Icon, description }) => (
             <li key={href}>
               <Link
                 href={href}
-                className="group block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="group block h-full rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
-                <Card className="h-full transition-colors group-hover:bg-accent/50">
-                  <CardHeader>
+                <Card className="h-full transition-[border-color,box-shadow] duration-150 group-hover:border-foreground/15 group-hover:shadow-elevation-2">
+                  <CardHeader className="gap-3">
                     <div className="flex items-center justify-between">
-                      <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
-                      <ArrowUpRight
-                        className="size-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
-                        aria-hidden="true"
-                      />
+                      <span className="flex size-8 items-center justify-center rounded-md border bg-background text-muted-foreground transition-colors duration-150 group-hover:text-foreground">
+                        <Icon className="size-4" aria-hidden="true" />
+                      </span>
+                      <Badge variant="outline">Planned</Badge>
                     </div>
-                    <CardTitle className="pt-2">{title}</CardTitle>
-                    <CardDescription>{description}</CardDescription>
+                    <div className="space-y-1.5">
+                      <CardTitle>{title}</CardTitle>
+                      <CardDescription>{description}</CardDescription>
+                    </div>
                   </CardHeader>
                 </Card>
               </Link>

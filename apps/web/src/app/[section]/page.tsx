@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { findSection, sectionItems } from "@/lib/navigation";
 
 // Only the sections defined in navigation exist; anything else is a 404.
@@ -21,20 +25,24 @@ export default async function SectionPage(props: PageProps<"/[section]">) {
   const item = findSection(section);
   if (!item) notFound();
 
-  const { title, description, icon: Icon } = item;
+  const { title, description, icon } = item;
 
   return (
     <div className="space-y-8">
-      <PageHeader title={title} description={description} />
-      <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed px-6 py-16 text-center">
-        <div className="flex size-10 items-center justify-center rounded-full bg-muted">
-          <Icon className="size-5 text-muted-foreground" aria-hidden="true" />
-        </div>
-        <h2 className="text-base font-semibold">{title} is coming soon</h2>
-        <p className="max-w-sm text-sm text-muted-foreground">
-          This section is a placeholder and does not store any data yet.
-        </p>
-      </div>
+      <PageHeader
+        title={title}
+        description={description}
+        actions={<Badge variant="outline">Planned</Badge>}
+      />
+      <EmptyState
+        icon={icon}
+        title={`${title} isn’t available yet`}
+        description="This section is a placeholder. It doesn’t store or sync any data yet."
+      >
+        <Link href="/" className={buttonVariants({ variant: "outline", size: "sm" })}>
+          Back to dashboard
+        </Link>
+      </EmptyState>
     </div>
   );
 }
