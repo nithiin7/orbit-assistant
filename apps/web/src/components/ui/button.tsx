@@ -30,7 +30,7 @@ const buttonVariants = cva(
   },
 );
 
-type ButtonProps = ComponentProps<"button"> & VariantProps<typeof buttonVariants>;
+export type ButtonProps = ComponentProps<"button"> & VariantProps<typeof buttonVariants>;
 
 function Button({ className, variant, size, type = "button", ...props }: ButtonProps) {
   return (

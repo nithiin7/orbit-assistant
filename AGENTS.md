@@ -140,6 +140,9 @@ and `packages/*/package.json`. Check them rather than guessing.
   with `SelectField`, `DateField`, and `AmountField` from `@/components/form-field`. Amounts are
   grouped as typed by the currency's rules (`1,00,000` for INR) via `formatAmountInput`, and
   shown with `formatMoney`, both in `@/lib/finance`.
+- Give a view one primary action. Several related "add" actions go in a `Menu`
+  (`src/components/ui/menu.tsx`) rather than a row of equal buttons; secondary actions use the
+  `soft` or `ghost` button variants.
 - Each `src/lib` and `src/utils` module has its own folder: `<layer>/<name>/<name>.ts`, its
   `<name>.test.ts`, and an `index.ts` that re-exports it, so imports stay `@/lib/<name>` or
   `@/utils/<name>`. A helper used by more than one feature belongs in `src/utils`, which imports

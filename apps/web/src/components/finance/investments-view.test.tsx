@@ -255,6 +255,26 @@ describe("Investments", () => {
     expect(screen.getByRole("list", { name: "Allocation" })).toHaveTextContent("Deposits");
   });
 
+  it("adds holdings, deposits, and accounts from one menu", async () => {
+    mockApi(routes());
+    await renderSignedIn(<FinancePanel />);
+    await openTab("Investments");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Add" }));
+    const menu = screen.getByRole("menu", { name: "Add" });
+    expect(
+      within(menu)
+        .getAllByRole("menuitem")
+        .map((item) => item.textContent),
+    ).toEqual([
+      "HoldingA mutual fund, stock, or ETF",
+      "DepositA fixed or recurring deposit",
+      "Investment accountA broker, fund platform, or bank",
+    ]);
+    await userEvent.click(within(menu).getByRole("menuitem", { name: "Holding" }));
+    expect(await screen.findByRole("dialog", { name: "Add a holding" })).toBeVisible();
+  });
+
   it("records a purchase funded from the linked bank account", async () => {
     const recorded: MockRequest[] = [];
     mockApi({

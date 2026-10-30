@@ -9,13 +9,24 @@ import type {
   InvestmentTransaction,
   SipPlan,
 } from "@orbit/contracts";
-import { CircleHelp, LineChart, Plus } from "lucide-react";
+import {
+  BriefcaseBusiness,
+  CircleHelp,
+  Coins,
+  Landmark,
+  LineChart,
+  PiggyBank,
+  Plus,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import { useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import { EmptyState } from "@/components/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Menu } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type Resource } from "@/hooks/query-resource";
 import {
@@ -192,25 +203,38 @@ export function InvestmentsView({ workspaceId, accounts, onAnnounce }: FinanceDa
             options={RANGES}
           />
         </div>
-        {/* Ordered by how often each is needed: holdings most, accounts once per platform. */}
-        <div className="grid grid-cols-3 gap-2 sm:flex">
-          <Button disabled={active.length === 0} onClick={() => setDialog({ kind: "holding" })}>
-            <Plus aria-hidden="true" />
-            Holding
-          </Button>
-          <Button
-            variant="soft"
-            disabled={active.length === 0}
-            onClick={() => setDialog({ kind: "deposit" })}
-          >
-            <Plus aria-hidden="true" />
-            Deposit
-          </Button>
-          <Button variant="ghost" onClick={() => setDialog({ kind: "account" })}>
-            <Plus aria-hidden="true" />
-            Account
-          </Button>
-        </div>
+        <Menu
+          align="end"
+          className="self-start lg:self-auto"
+          items={[
+            {
+              id: "holding",
+              label: "Holding",
+              description: "A mutual fund, stock, or ETF",
+              icon: LineChart,
+              disabled: active.length === 0,
+              onSelect: () => setDialog({ kind: "holding" }),
+            },
+            {
+              id: "deposit",
+              label: "Deposit",
+              description: "A fixed or recurring deposit",
+              icon: PiggyBank,
+              disabled: active.length === 0,
+              onSelect: () => setDialog({ kind: "deposit" }),
+            },
+            {
+              id: "account",
+              label: "Investment account",
+              description: "A broker, fund platform, or bank",
+              icon: Landmark,
+              onSelect: () => setDialog({ kind: "account" }),
+            },
+          ]}
+        >
+          <Plus aria-hidden="true" />
+          Add
+        </Menu>
       </div>
 
       <PortfolioSummary workspaceId={workspaceId} currency={currency} today={today} range={range} />
@@ -297,6 +321,7 @@ function PortfolioSummary({
       <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Tile
           label="Current value"
+          icon={BriefcaseBusiness}
           accent="brand"
           value={formatMoney(data.current_value, currency)}
         >
@@ -304,11 +329,16 @@ function PortfolioSummary({
             ? `Plus ${formatMoney(data.cash, currency)} uninvested cash`
             : "Holdings and deposits"}
         </Tile>
-        <Tile label="Cost of what you hold" value={formatMoney(data.invested, currency)}>
+        <Tile
+          label="Cost of what you hold"
+          icon={Coins}
+          value={formatMoney(data.invested, currency)}
+        >
           FIFO cost of units held, plus deposits
         </Tile>
         <Tile
           label="Unrealized gain"
+          icon={data.unrealized_gain < 0 ? TrendingDown : TrendingUp}
           value={formatMoney(data.unrealized_gain, currency, {
             signDisplay: data.unrealized_gain === 0 ? "auto" : "always",
           })}
@@ -319,6 +349,7 @@ function PortfolioSummary({
         </Tile>
         <Tile
           label="Total return"
+          icon={LineChart}
           value={formatMoney(data.total_return, currency, {
             signDisplay: data.total_return === 0 ? "auto" : "always",
           })}

@@ -1,7 +1,15 @@
 "use client";
 
 import type { Currency, FinanceAccount } from "@orbit/contracts";
-import { ChevronLeft, ChevronRight, Receipt } from "lucide-react";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  type LucideIcon,
+  Receipt,
+  Scale,
+} from "lucide-react";
 import { type ReactNode, useId, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -224,16 +232,27 @@ function CashFlowTiles({
   const savedShare = income > 0 && net > 0 ? Math.round((net / income) * 100) : null;
   return (
     <dl className="grid gap-4 sm:grid-cols-3">
-      <Tile label="Income" accent="income" value={formatMoney(income, currency)}>
+      <Tile
+        label="Income"
+        icon={ArrowDownLeft}
+        accent="income"
+        value={formatMoney(income, currency)}
+      >
         {transactions === 0 ? "Nothing recorded yet" : "Money earned this month"}
       </Tile>
-      <Tile label="Spending" accent="spending" value={formatMoney(net_expenses, currency)}>
+      <Tile
+        label="Spending"
+        icon={ArrowUpRight}
+        accent="spending"
+        value={formatMoney(net_expenses, currency)}
+      >
         {refunds > 0
           ? `${formatMoney(expenses, currency)} spent, ${formatMoney(refunds, currency)} refunded`
           : "Expenses this month"}
       </Tile>
       <Tile
         label="Net cash flow"
+        icon={Scale}
         value={formatMoney(net, currency, { signDisplay: net === 0 ? "auto" : "always" })}
         tone={net < 0 ? "negative" : net > 0 ? "positive" : "default"}
         accent={net < 0 ? "negative" : "positive"}
@@ -248,40 +267,48 @@ function CashFlowTiles({
   );
 }
 
-/** A tile's accent: what the figure is about, shown as a small dot beside the label. */
+/** A tile's accent: what the figure is about, shown as the color of its icon chip. */
 export type TileAccent = "brand" | "income" | "spending" | "positive" | "negative" | "neutral";
 
 const ACCENTS: Record<TileAccent, string> = {
-  brand: "bg-brand",
-  income: "bg-chart-1",
-  spending: "bg-chart-2",
-  positive: "bg-success",
-  negative: "bg-destructive",
-  neutral: "bg-muted-foreground/60",
+  brand: "bg-brand-subtle text-brand",
+  income: "bg-chart-1/12 text-chart-1",
+  spending: "bg-chart-2/12 text-chart-2",
+  positive: "bg-success/12 text-success",
+  negative: "bg-destructive/10 text-destructive",
+  neutral: "bg-muted text-muted-foreground",
 };
 
 export function Tile({
   label,
   value,
+  icon: Icon,
   tone = "default",
   accent = "neutral",
   children,
 }: {
   label: string;
   value: string;
+  icon: LucideIcon;
   tone?: "default" | "positive" | "negative";
   accent?: TileAccent;
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-xl border bg-card p-5 shadow-elevation-1">
-      <dt className="flex items-center gap-2 text-sm text-muted-foreground">
-        <span aria-hidden="true" className={cn("size-2 rounded-full", ACCENTS[accent])} />
-        {label}
-      </dt>
+    <div className="relative rounded-xl border bg-card p-5 shadow-elevation-1">
+      <span
+        aria-hidden="true"
+        className={cn(
+          "absolute top-4 right-4 flex size-9 items-center justify-center rounded-lg",
+          ACCENTS[accent],
+        )}
+      >
+        <Icon className="size-[1.125rem]" />
+      </span>
+      <dt className="pr-12 text-sm text-muted-foreground">{label}</dt>
       <dd
         className={cn(
-          "mt-1 text-2xl font-semibold tracking-tight tabular-nums",
+          "mt-1 pr-12 text-2xl font-semibold tracking-tight tabular-nums",
           tone === "positive" && "text-success",
           tone === "negative" && "text-destructive",
         )}

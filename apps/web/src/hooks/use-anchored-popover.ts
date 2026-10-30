@@ -26,7 +26,14 @@ export function useAnchoredPopover(
   open: boolean,
   anchorRef: RefObject<HTMLElement | null>,
   popupRef: RefObject<HTMLElement | null>,
-  { matchWidth = false }: { matchWidth?: boolean } = {},
+  {
+    matchWidth = false,
+    align = "start",
+  }: {
+    matchWidth?: boolean;
+    /** Line the popup up with the anchor's leading edge, or its trailing edge (for menus at the end of a row). */
+    align?: "start" | "end";
+  } = {},
 ): void {
   useLayoutEffect(() => {
     const anchor = anchorRef.current;
@@ -48,7 +55,8 @@ export function useAnchoredPopover(
       const top = placeBelow ? rect.bottom + GAP : rect.top - GAP - popup.offsetHeight;
       const maxLeft = window.innerWidth - popup.offsetWidth - VIEWPORT_MARGIN;
       popup.style.top = `${Math.max(VIEWPORT_MARGIN, top)}px`;
-      popup.style.left = `${Math.max(VIEWPORT_MARGIN, Math.min(rect.left, maxLeft))}px`;
+      const left = align === "end" ? rect.right - popup.offsetWidth : rect.left;
+      popup.style.left = `${Math.max(VIEWPORT_MARGIN, Math.min(left, maxLeft))}px`;
     }
 
     function onScroll(event: Event) {
@@ -65,5 +73,5 @@ export function useAnchoredPopover(
       window.removeEventListener("scroll", onScroll, true);
       if (supported && popup.isConnected && popup.matches(":popover-open")) popup.hidePopover();
     };
-  }, [open, anchorRef, popupRef, matchWidth]);
+  }, [open, anchorRef, popupRef, matchWidth, align]);
 }

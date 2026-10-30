@@ -7,7 +7,7 @@ import type {
   NetWorthItem,
   NetWorthSnapshot,
 } from "@orbit/contracts";
-import { Camera, CircleHelp, Scale } from "lucide-react";
+import { Camera, CircleHelp, CreditCard, Landmark, Scale, Wallet } from "lucide-react";
 import { useState } from "react";
 
 import { describeApiError } from "@/api/client";
@@ -125,11 +125,17 @@ function NetWorthDetail({
       </div>
 
       <dl className="grid gap-4 sm:grid-cols-3">
-        <Tile label="Total assets" accent="positive" value={formatMoney(data.assets, currency)}>
+        <Tile
+          label="Total assets"
+          icon={Landmark}
+          accent="positive"
+          value={formatMoney(data.assets, currency)}
+        >
           Accounts, investments, and other assets
         </Tile>
         <Tile
           label="Total liabilities"
+          icon={CreditCard}
           accent="negative"
           value={formatMoney(data.liabilities, currency)}
         >
@@ -137,6 +143,7 @@ function NetWorthDetail({
         </Tile>
         <Tile
           label="Net worth"
+          icon={Wallet}
           value={formatMoney(data.net_worth, currency)}
           tone={data.net_worth < 0 ? "negative" : "default"}
           accent="brand"

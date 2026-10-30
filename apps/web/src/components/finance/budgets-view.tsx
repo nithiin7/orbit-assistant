@@ -1,7 +1,17 @@
 "use client";
 
 import type { Budget, BudgetMonth, Currency, FinanceCategory } from "@orbit/contracts";
-import { ChevronDown, Copy, History, Pencil, PiggyBank, Plus } from "lucide-react";
+import {
+  ChevronDown,
+  Copy,
+  History,
+  Pencil,
+  PiggyBank,
+  Plus,
+  Receipt,
+  Target,
+  TriangleAlert,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { describeApiError } from "@/api/client";
@@ -192,6 +202,7 @@ function MonthTiles({ month, currency }: { month: BudgetMonth; currency: Currenc
       <dl className="grid gap-4 sm:grid-cols-3">
         <Tile
           label="Budget"
+          icon={Target}
           accent="brand"
           value={month.total === null ? "—" : formatMoney(month.total, currency)}
         >
@@ -201,13 +212,19 @@ function MonthTiles({ month, currency }: { month: BudgetMonth; currency: Currenc
               ? `${month.budgets_counted} category ${month.budgets_counted === 1 ? "budget" : "budgets"}`
               : "Only custom periods this month"}
         </Tile>
-        <Tile label="Spent" accent="spending" value={formatMoney(month.spent, currency)}>
+        <Tile
+          label="Spent"
+          icon={Receipt}
+          accent="spending"
+          value={formatMoney(month.spent, currency)}
+        >
           {month.unbudgeted !== null && month.unbudgeted > 0
             ? `${formatMoney(month.unbudgeted, currency)} outside your category budgets`
             : "Expenses minus refunds"}
         </Tile>
         <Tile
           label={over ? "Over budget" : "Remaining"}
+          icon={over ? TriangleAlert : PiggyBank}
           value={month.remaining === null ? "—" : formatMoney(Math.abs(month.remaining), currency)}
           tone={over ? "negative" : "default"}
           accent={over ? "negative" : "positive"}
