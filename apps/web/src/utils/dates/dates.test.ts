@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import {
   addDays,
+  addMonths,
+  calendarWeeks,
+  dayOfWeek,
   daysBetween,
+  firstDayOfWeek,
   formatCalendarDate,
   localDateString,
   localMonthString,
@@ -54,5 +58,36 @@ describe("addDays", () => {
     expect(addDays("2026-12-31", 1)).toBe("2027-01-01");
     expect(addDays("2028-03-01", -1)).toBe("2028-02-29");
     expect(addDays("2026-03-15", -30)).toBe("2026-02-13");
+  });
+});
+
+describe("addMonths", () => {
+  it("moves by months, keeping the day where it exists", () => {
+    expect(addMonths("2026-10-30", 1)).toBe("2026-11-30");
+    expect(addMonths("2026-01-31", 1)).toBe("2026-02-28");
+    expect(addMonths("2028-01-31", 1)).toBe("2028-02-29");
+    expect(addMonths("2026-03-15", -15)).toBe("2024-12-15");
+    expect(addMonths("2026-03-15", 12)).toBe("2027-03-15");
+  });
+});
+
+describe("calendarWeeks", () => {
+  it("shows whole weeks starting on the chosen day, padded from the neighbouring months", () => {
+    // October 2026 starts on a Thursday and ends on a Saturday.
+    const sundays = calendarWeeks("2026-10");
+    expect(sundays).toHaveLength(5);
+    expect(sundays[0]?.[0]).toBe("2026-09-27");
+    expect(sundays.at(-1)?.at(-1)).toBe("2026-10-31");
+    expect(sundays.flat().every((day, index) => dayOfWeek(day) === index % 7)).toBe(true);
+
+    const mondays = calendarWeeks("2026-10", 1);
+    expect(mondays[0]?.[0]).toBe("2026-09-28");
+    expect(mondays.at(-1)?.at(-1)).toBe("2026-11-01");
+  });
+});
+
+describe("firstDayOfWeek", () => {
+  it("falls back to Sunday for an invalid locale", () => {
+    expect(firstDayOfWeek("not a locale")).toBe(0);
   });
 });

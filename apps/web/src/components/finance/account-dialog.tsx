@@ -8,7 +8,7 @@ import { useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
-import { FormAlert, FormField } from "@/components/form-field";
+import { AmountField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useFinanceMutations } from "@/hooks/use-finance";
@@ -17,14 +17,12 @@ import {
   ACCOUNT_TYPES,
   accountSchema,
   accountTypeLabel,
-  CURRENCIES,
+  CURRENCY_OPTIONS,
   DEFAULT_CURRENCY,
   isLiability,
   parseSignedAmount,
   toDecimalString,
 } from "@/lib/finance";
-
-import { SelectField } from "./transaction-dialog";
 
 type AccountDialogProps = {
   workspaceId: string;
@@ -150,27 +148,21 @@ export function AccountDialog({ workspaceId, account, onSaved, onClose }: Accoun
 
         {account ? null : (
           <div className="grid gap-4 sm:grid-cols-2">
-            <SelectField label="Type" {...register("type")}>
-              {ACCOUNT_TYPES.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </SelectField>
-            <SelectField label="Currency" {...register("currency")}>
-              {CURRENCIES.map((code) => (
-                <option key={code} value={code}>
-                  {code}
-                </option>
-              ))}
-            </SelectField>
+            <SelectField control={control} name="type" label="Type" options={ACCOUNT_TYPES} />
+            <SelectField
+              control={control}
+              name="currency"
+              label="Currency"
+              options={CURRENCY_OPTIONS}
+            />
           </div>
         )}
 
-        <FormField
+        <AmountField
+          control={control}
+          name="openingBalance"
+          currency={currency}
           label={liability ? `Amount owed (${currency})` : `Opening balance (${currency})`}
-          inputMode="decimal"
-          autoComplete="off"
           placeholder="0.00"
           hint={
             account?.type === "loan"
@@ -179,8 +171,6 @@ export function AccountDialog({ workspaceId, account, onSaved, onClose }: Accoun
                 ? "The outstanding card balance before the first transaction you record."
                 : "The balance before the first transaction you record. Negative if overdrawn."
           }
-          {...register("openingBalance")}
-          error={errors.openingBalance?.message}
         />
 
         <div className="space-y-1.5">

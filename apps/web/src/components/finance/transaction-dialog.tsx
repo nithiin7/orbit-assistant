@@ -9,14 +9,13 @@ import type {
   FinanceTransactionType,
 } from "@orbit/contracts";
 import { X } from "lucide-react";
-import { type ComponentProps, useId } from "react";
+import { useId } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
-import { FormAlert, FormField } from "@/components/form-field";
+import { AmountField, DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
-import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { useFinanceMutations } from "@/hooks/use-finance";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
@@ -214,21 +213,15 @@ export function TransactionDialog({
         ) : null}
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <FormField
+          <AmountField
+            control={control}
+            name="amount"
             label={`Amount (${currency})`}
-            inputMode="decimal"
-            autoComplete="off"
+            currency={currency}
             autoFocus
             placeholder="0.00"
-            {...register("amount")}
-            error={errors.amount?.message}
           />
-          <FormField
-            label="Date"
-            type="date"
-            {...register("occurredOn")}
-            error={errors.occurredOn?.message}
-          />
+          <DateField control={control} name="occurredOn" label="Date" />
         </div>
 
         <FormField
@@ -241,45 +234,41 @@ export function TransactionDialog({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <SelectField
+            control={control}
+            name="accountId"
             label={ACCOUNT_LABELS[selectedType]}
-            error={errors.accountId?.message}
-            {...register("accountId")}
-          >
-            {usable.length === 0 ? <option value="">No accounts yet</option> : null}
-            {usable.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name} ({account.currency}){account.archived ? " – archived" : ""}
-              </option>
-            ))}
-          </SelectField>
+            placeholder={usable.length === 0 ? "No accounts yet" : "Choose an account"}
+            options={usable.map((account) => ({
+              value: account.id,
+              label: `${account.name} (${account.currency})${account.archived ? " – archived" : ""}`,
+            }))}
+          />
 
           {transfer ? (
             <SelectField
+              control={control}
+              name="toAccountId"
               label="To account"
-              error={errors.toAccountId?.message}
-              {...register("toAccountId")}
-            >
-              <option value="">Choose an account</option>
-              {usable
+              placeholder="Choose an account"
+              options={usable
                 .filter((account) => account.id !== accountId && account.currency === currency)
-                .map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name}
-                    {account.archived ? " – archived" : ""}
-                  </option>
-                ))}
-            </SelectField>
+                .map((account) => ({
+                  value: account.id,
+                  label: `${account.name}${account.archived ? " – archived" : ""}`,
+                }))}
+            />
           ) : (
-            <SelectField label="Category" {...register("categoryId")}>
-              <option value="">No category</option>
-              {categories
-                .filter((category) => category.type === categoryType)
-                .map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-            </SelectField>
+            <SelectField
+              control={control}
+              name="categoryId"
+              label="Category"
+              options={[
+                { value: "", label: "No category" },
+                ...categories
+                  .filter((category) => category.type === categoryType)
+                  .map((category) => ({ value: category.id, label: category.name })),
+              ]}
+            />
           )}
         </div>
 
@@ -313,32 +302,5 @@ export function TransactionDialog({
         </div>
       </form>
     </dialog>
-  );
-}
-
-type SelectFieldProps = ComponentProps<"select"> & { label: string; error?: string };
-
-/** A labelled native select whose error is announced with it. */
-export function SelectField({ label, error, children, ...props }: SelectFieldProps) {
-  const id = useId();
-  return (
-    <div className="space-y-1.5">
-      <label htmlFor={id} className="block text-sm font-medium">
-        {label}
-      </label>
-      <NativeSelect
-        id={id}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${id}-error` : undefined}
-        {...props}
-      >
-        {children}
-      </NativeSelect>
-      {error ? (
-        <p id={`${id}-error`} className="text-xs font-medium text-destructive">
-          {error}
-        </p>
-      ) : null}
-    </div>
   );
 }

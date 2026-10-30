@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ada, json, mockApi, type MockRequest, personal, status } from "@/test/api-mock";
+import { chooseOption, pickDate } from "@/test/controls";
 import { renderSignedIn } from "@/test/session";
 
 import { RemindersPanel } from "./reminders-view";
@@ -133,19 +134,24 @@ describe("RemindersPanel", () => {
     const dialog = screen.getByRole("dialog", { name: "New reminder" });
     await user.type(within(dialog).getByRole("textbox", { name: "Title" }), "Pay rent");
     // 2030-01-14 is a Monday.
-    fireEvent.change(within(dialog).getByLabelText("Date"), { target: { value: "2030-01-14" } });
+    await pickDate(user, within(dialog).getByRole("combobox", { name: "Date" }), "2030-01-14");
     fireEvent.change(within(dialog).getByLabelText("Time"), { target: { value: "09:30" } });
-    await user.selectOptions(
+    await chooseOption(
+      user,
       within(dialog).getByRole("combobox", { name: "Time zone" }),
-      "Asia/Tokyo",
+      /Asia\/Tokyo|Tokyo/,
     );
-    await user.selectOptions(within(dialog).getByRole("combobox", { name: "Repeat" }), "weekly");
+    await chooseOption(
+      user,
+      within(dialog).getByRole("combobox", { name: "Repeat" }),
+      "Weekly on chosen days",
+    );
     expect(within(dialog).getByRole("button", { name: "Mon" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
     await user.click(within(dialog).getByRole("button", { name: "Wed" }));
-    await user.selectOptions(within(dialog).getByRole("combobox", { name: /Task/ }), "File taxes");
+    await chooseOption(user, within(dialog).getByRole("combobox", { name: /Task/ }), "File taxes");
     await user.click(within(dialog).getByRole("button", { name: "Create reminder" }));
 
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
@@ -171,7 +177,11 @@ describe("RemindersPanel", () => {
     await user.click((await screen.findAllByRole("button", { name: "New reminder" }))[0]!);
     const dialog = screen.getByRole("dialog", { name: "New reminder" });
 
-    await user.selectOptions(within(dialog).getByRole("combobox", { name: "Repeat" }), "weekly");
+    await chooseOption(
+      user,
+      within(dialog).getByRole("combobox", { name: "Repeat" }),
+      "Weekly on chosen days",
+    );
     for (const day of within(dialog).getAllByRole("button", { pressed: true })) {
       await user.click(day);
     }

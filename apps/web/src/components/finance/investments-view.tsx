@@ -28,7 +28,7 @@ import {
   useSipPlans,
 } from "@/hooks/use-investments";
 import { formatRate, frequencyLabel } from "@/lib/commitments";
-import { formatMoney, isCurrency } from "@/lib/finance";
+import { currencyOptions, formatMoney } from "@/lib/finance";
 import {
   accountKindLabel,
   compoundingLabel,
@@ -180,32 +180,17 @@ export function InvestmentsView({ workspaceId, accounts, onAnnounce }: FinanceDa
               label="Currency"
               value={currency}
               className="w-24"
-              onChange={(value) => {
-                if (isCurrency(value)) setCurrency(value);
-              }}
-            >
-              {currencies.map((code) => (
-                <option key={code} value={code}>
-                  {code}
-                </option>
-              ))}
-            </InlineSelect>
+              onChange={setCurrency}
+              options={currencyOptions(currencies)}
+            />
           ) : null}
           <InlineSelect
             label="Gains and income for"
             value={range}
             className="w-40"
-            onChange={(value) => {
-              const found = RANGES.find((option) => option.value === value);
-              if (found) setRange(found.value);
-            }}
-          >
-            {RANGES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </InlineSelect>
+            onChange={setRange}
+            options={RANGES}
+          />
         </div>
         <div className="grid grid-cols-2 gap-2 sm:flex">
           <Button variant="outline" onClick={() => setDialog({ kind: "account" })}>

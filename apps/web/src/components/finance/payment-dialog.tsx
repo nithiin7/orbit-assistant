@@ -2,11 +2,11 @@
 
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { Currency, FinanceAccount, FinanceTransaction } from "@orbit/contracts";
-import { useForm, type UseFormRegisterReturn, useWatch } from "react-hook-form";
+import { type Control, useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
-import { FormAlert, FormField } from "@/components/form-field";
+import { AmountField, DateField, FormAlert, SelectField } from "@/components/form-field";
 import { useCommitmentMutations } from "@/hooks/use-commitments";
 import { useTransactionHistory } from "@/hooks/use-finance";
 import { parseComponent, paymentSchema } from "@/lib/commitments";
@@ -15,7 +15,6 @@ import { cn } from "@/utils/common";
 import { addDays, formatCalendarDate, localDateString } from "@/utils/dates";
 
 import { DialogShell } from "./dialog-shell";
-import { SelectField } from "./transaction-dialog";
 
 /** What is being paid: one loan installment, or one subscription or bill occurrence. */
 export type PaymentTarget =
@@ -206,12 +205,7 @@ export function PaymentDialog({
         </div>
       </fieldset>
 
-      <FormField
-        label="Paid on"
-        type="date"
-        {...register("paidOn")}
-        error={errors.paidOn?.message}
-      />
+      <DateField control={control} name="paidOn" label="Paid on" />
 
       {mode === "create" ? (
         usable.length === 0 ? (
@@ -220,53 +214,46 @@ export function PaymentDialog({
           </p>
         ) : (
           <SelectField
+            control={control}
+            name="accountId"
             label="Paid from"
-            {...register("accountId")}
-            error={errors.accountId?.message}
-          >
-            {usable.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-              </option>
-            ))}
-          </SelectField>
+            placeholder="Choose an account"
+            options={usable.map((account) => ({ value: account.id, label: account.name }))}
+          />
         )
       ) : null}
 
       {mode !== "link" && target.kind === "loan" ? (
         <div className="grid gap-4 sm:grid-cols-2">
-          <FormField
+          <AmountField
+            control={control}
+            name="principal"
+            currency={target.currency}
             label={`Principal (${target.currency})`}
-            inputMode="decimal"
-            autoComplete="off"
             hint="Reduces what you owe. Not spending."
-            {...register("principal")}
-            error={errors.principal?.message}
           />
-          <FormField
+          <AmountField
+            control={control}
+            name="interest"
+            currency={target.currency}
             label={`Interest (${target.currency})`}
-            inputMode="decimal"
-            autoComplete="off"
             hint="Counted as a Loan interest expense."
-            {...register("interest")}
-            error={errors.interest?.message}
           />
         </div>
       ) : null}
 
       {mode !== "link" && target.kind !== "loan" ? (
-        <FormField
+        <AmountField
+          control={control}
+          name="amount"
+          currency={target.currency}
           label={`Amount paid (${target.currency})`}
-          inputMode="decimal"
-          autoComplete="off"
           placeholder={toDecimalString(target.amount, target.currency)}
           hint={
             target.estimated
               ? `Estimated ${formatMoney(target.amount, target.currency)}. Enter the actual bill.`
               : "Leave as is unless it changed."
           }
-          {...register("amount")}
-          error={errors.amount?.message}
         />
       ) : null}
 
@@ -274,8 +261,7 @@ export function PaymentDialog({
         <LinkFields
           workspaceId={workspaceId}
           target={target}
-          transactionField={register("transactionId")}
-          interestField={register("interestTransactionId")}
+          control={control}
           error={errors.interestTransactionId?.message}
         />
       ) : null}
@@ -292,14 +278,13 @@ export function PaymentDialog({
 function LinkFields({
   workspaceId,
   target,
-  transactionField,
-  interestField,
+  control,
   error,
 }: {
   workspaceId: string;
   target: PaymentTarget;
-  transactionField: UseFormRegisterReturn;
-  interestField: UseFormRegisterReturn;
+  control: Control<Values>;
+  /** "Choose at least one", reported on the interest field. */
   error?: string;
 }) {
   const { state } = useTransactionHistory(workspaceId, {
@@ -316,8 +301,10 @@ function LinkFields({
   const inCurrency = state.data.transactions.filter(
     (transaction) => transaction.currency === target.currency,
   );
-  const describe = (transaction: FinanceTransaction) =>
-    `${formatCalendarDate(transaction.occurred_on)} · ${transaction.description} · ${formatMoney(transaction.amount, transaction.currency)}`;
+  const describe = (transaction: FinanceTransaction) => ({
+    value: transaction.id,
+    label: `${formatCalendarDate(transaction.occurred_on)} · ${transaction.description} · ${formatMoney(transaction.amount, transaction.currency)}`,
+  });
 
   if (target.kind === "loan") {
     const transfers = inCurrency.filter(
@@ -327,36 +314,32 @@ function LinkFields({
     const expenses = inCurrency.filter((transaction) => transaction.type === "expense");
     return (
       <div className="space-y-4">
-        <SelectField label="Principal: a transfer into the loan account" {...transactionField}>
-          <option value="">None</option>
-          {transfers.map((transaction) => (
-            <option key={transaction.id} value={transaction.id}>
-              {describe(transaction)}
-            </option>
-          ))}
-        </SelectField>
-        <SelectField label="Interest: an expense" error={error} {...interestField}>
-          <option value="">None</option>
-          {expenses.map((transaction) => (
-            <option key={transaction.id} value={transaction.id}>
-              {describe(transaction)}
-            </option>
-          ))}
-        </SelectField>
+        <SelectField
+          control={control}
+          name="transactionId"
+          label="Principal: a transfer into the loan account"
+          options={[{ value: "", label: "None" }, ...transfers.map(describe)]}
+        />
+        <SelectField
+          control={control}
+          name="interestTransactionId"
+          label="Interest: an expense"
+          options={[{ value: "", label: "None" }, ...expenses.map(describe)]}
+        />
       </div>
     );
   }
   const expenses = inCurrency.filter((transaction) => transaction.type === "expense");
   return (
     <>
-      <SelectField label="Expense" error={error} {...transactionField}>
-        <option value="">Choose a transaction</option>
-        {expenses.map((transaction) => (
-          <option key={transaction.id} value={transaction.id}>
-            {describe(transaction)}
-          </option>
-        ))}
-      </SelectField>
+      <SelectField
+        control={control}
+        name="transactionId"
+        label="Expense"
+        placeholder="Choose a transaction"
+        options={expenses.map(describe)}
+        error={error}
+      />
       {expenses.length === 0 ? (
         <p className="text-xs text-muted-foreground">
           No expenses in {target.currency} within a month of the due date.

@@ -2,8 +2,8 @@
 
 import type { TaskPriority } from "@orbit/contracts";
 
-import { NativeSelect } from "@/components/ui/native-select";
-import { isTaskPriority, PRIORITIES } from "@/lib/tasks";
+import { Select } from "@/components/ui/select";
+import { PRIORITIES } from "@/lib/tasks";
 import { cn } from "@/utils/common";
 
 type PrioritySelectProps = {
@@ -27,20 +27,7 @@ export function PrioritySelect({
       <label htmlFor={id} className={hiddenLabel ? "sr-only" : "block text-sm font-medium"}>
         Priority
       </label>
-      <NativeSelect
-        id={id}
-        name="priority"
-        value={value}
-        onChange={(event) => {
-          if (isTaskPriority(event.target.value)) onChange(event.target.value);
-        }}
-      >
-        {PRIORITIES.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </NativeSelect>
+      <Select id={id} value={value} onValueChange={onChange} options={PRIORITIES} />
     </div>
   );
 }

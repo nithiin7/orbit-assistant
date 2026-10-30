@@ -270,7 +270,9 @@ describe("Investments", () => {
     const dialog = await screen.findByRole("dialog", { name: "Record a purchase" });
     await userEvent.type(within(dialog).getByLabelText(/Amount invested/), "15,000");
     await userEvent.type(within(dialog).getByLabelText("Units"), "10.5");
-    expect(within(dialog).getByLabelText("Account")).toHaveValue("acc-bank");
+    expect(within(dialog).getByRole("combobox", { name: "Account" })).toHaveTextContent(
+      "HDFC Savings",
+    );
     await userEvent.click(within(dialog).getByRole("button", { name: "Record" }));
 
     await waitFor(() => expect(recorded).toHaveLength(1));

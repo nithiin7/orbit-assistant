@@ -3,7 +3,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   accountCurrencies,
+  amountCharactersBefore,
+  caretAfterAmountCharacters,
   DEFAULT_TRANSACTION_FILTERS,
+  formatAmountInput,
   formatMoney,
   parseAmount,
   parseSignedAmount,
@@ -72,6 +75,11 @@ describe("toDecimalString and formatMoney", () => {
     expect(formatMoney(-5, "INR")).toBe("-₹0.05");
     expect(formatMoney(1_250, "JPY")).toBe("¥1,250");
     expect(formatMoney(100, "USD", { signDisplay: "always" })).toBe("+$1.00");
+  });
+
+  it("groups each currency's digits its own way", () => {
+    expect(formatMoney(1_00_00_000_00, "INR")).toBe("₹1,00,00,000.00");
+    expect(formatMoney(10_000_000_00, "USD")).toBe("$10,000,000.00");
   });
 });
 
@@ -148,5 +156,52 @@ describe("toTransactionListQuery", () => {
       to: "2026-02-01",
     });
     expect(query.date_to).toBeUndefined();
+  });
+});
+
+describe("formatAmountInput", () => {
+  it("groups rupees in lakhs and crores, and other currencies in thousands", () => {
+    expect(formatAmountInput("100000", "INR")).toBe("1,00,000");
+    expect(formatAmountInput("12345678.5", "INR")).toBe("1,23,45,678.5");
+    expect(formatAmountInput("100000", "USD")).toBe("100,000");
+    expect(formatAmountInput("1234567", "JPY")).toBe("1,234,567");
+  });
+
+  it("regroups text that is already grouped, or grouped another way", () => {
+    expect(formatAmountInput("100,000", "INR")).toBe("1,00,000");
+    expect(formatAmountInput("1,00,000", "USD")).toBe("100,000");
+  });
+
+  it("keeps a partial amount as typed", () => {
+    expect(formatAmountInput("", "INR")).toBe("");
+    expect(formatAmountInput("1250.", "INR")).toBe("1,250.");
+    expect(formatAmountInput(".5", "INR")).toBe("0.5");
+    expect(formatAmountInput("-", "INR")).toBe("-");
+    expect(formatAmountInput("-25000", "INR")).toBe("-25,000");
+  });
+
+  it("drops anything that can't be part of an amount", () => {
+    expect(formatAmountInput("₹ 2,500abc", "INR")).toBe("2,500");
+    expect(formatAmountInput("007", "INR")).toBe("7");
+    expect(formatAmountInput("1.2.3", "INR")).toBe("1.23");
+  });
+
+  it("produces text parseAmount reads", () => {
+    expect(parseAmount(formatAmountInput("12345678.90", "INR"), "INR")).toBe(1_234_567_890);
+    expect(parseAmount(formatAmountInput("12345678.90", "USD"), "USD")).toBe(1_234_567_890);
+  });
+});
+
+describe("amount caret helpers", () => {
+  it("keeps the caret after the same digit once regrouped", () => {
+    // Typing a sixth digit after "10,000|" gives "10,0000|", regrouped to "1,00,000|".
+    const typed = "10,0000";
+    const kept = amountCharactersBefore(typed, typed.length);
+    expect(caretAfterAmountCharacters("1,00,000", kept)).toBe(8);
+    // A caret after "1" in "1|0,000" stays after the "1".
+    expect(caretAfterAmountCharacters("10,000", amountCharactersBefore("10,000", 1))).toBe(1);
+    // A caret after "10,0" stays after the third digit, past the new separator.
+    expect(caretAfterAmountCharacters("1,00,000", 3)).toBe(4);
+    expect(caretAfterAmountCharacters("1,000", 0)).toBe(0);
   });
 });

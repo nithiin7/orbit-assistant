@@ -10,7 +10,7 @@ import type { InferType } from "yup";
 import { describeApiError } from "@/api/client";
 import { FormAlert, FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { TASK_DESCRIPTION_MAX_LENGTH, taskSchema } from "@/lib/tasks";
@@ -136,7 +136,21 @@ export function TaskEditDialog({ task, onSave, onClose }: TaskEditDialogProps) {
               Due date
             </label>
             <div className="flex gap-2">
-              <Input id={`${id}-due`} type="date" {...register("dueDate")} />
+              <Controller
+                control={control}
+                name="dueDate"
+                render={({ field }) => (
+                  <DatePicker
+                    id={`${id}-due`}
+                    ref={field.ref}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder="No due date"
+                    className="flex-1"
+                  />
+                )}
+              />
               {dueDate ? (
                 <Button
                   variant="ghost"

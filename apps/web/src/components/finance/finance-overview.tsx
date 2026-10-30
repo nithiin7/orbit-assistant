@@ -6,15 +6,15 @@ import { type ReactNode, useId, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFinanceReport } from "@/hooks/use-finance";
 import {
   accountCurrencies,
   accountTypeLabel,
+  currencyOptions,
   DEFAULT_CURRENCY,
   formatMoney,
-  isCurrency,
 } from "@/lib/finance";
 import { byId, cn } from "@/utils/common";
 import { localMonthString, monthLabel, shiftMonth } from "@/utils/dates";
@@ -80,20 +80,13 @@ export function FinanceOverview({
             <label htmlFor={`${id}-currency`} className="text-sm text-muted-foreground">
               Currency
             </label>
-            <NativeSelect
+            <Select
               id={`${id}-currency`}
               className="w-28"
               value={currency}
-              onChange={(event) => {
-                if (isCurrency(event.target.value)) setCurrency(event.target.value);
-              }}
-            >
-              {currencies.map((code) => (
-                <option key={code} value={code}>
-                  {code}
-                </option>
-              ))}
-            </NativeSelect>
+              onValueChange={setCurrency}
+              options={currencyOptions(currencies)}
+            />
           </div>
         ) : null}
       </div>

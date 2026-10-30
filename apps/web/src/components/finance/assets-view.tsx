@@ -9,14 +9,14 @@ import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
 import { EmptyState } from "@/components/empty-state";
-import { FormAlert, FormField } from "@/components/form-field";
+import { AmountField, DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useAssets, useInvestmentMutations, useValuations } from "@/hooks/use-investments";
 import {
-  CURRENCIES,
+  CURRENCY_OPTIONS,
   DEFAULT_CURRENCY,
   formatMoney,
   parseAmount,
@@ -37,7 +37,6 @@ import { Panel } from "./finance-overview";
 import type { FinanceData } from "./finance-view";
 import { FreshnessBadge } from "./investment-parts";
 import { ErrorPanel } from "./investments-view";
-import { SelectField } from "./transaction-dialog";
 
 type Dialog = { kind: "asset"; asset?: Asset } | { kind: "value"; asset: Asset };
 
@@ -332,50 +331,47 @@ function AssetDialog({
           {...register("name")}
           error={errors.name?.message}
         />
-        <SelectField label="Category" {...register("category")}>
-          {ASSET_CATEGORIES.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </SelectField>
+        <SelectField
+          control={control}
+          name="category"
+          label="Category"
+          options={ASSET_CATEGORIES}
+        />
         {asset ? null : (
-          <SelectField label="Currency" {...register("currency")}>
-            {CURRENCIES.map((code) => (
-              <option key={code} value={code}>
-                {code}
-              </option>
-            ))}
-          </SelectField>
+          <SelectField
+            control={control}
+            name="currency"
+            label="Currency"
+            options={CURRENCY_OPTIONS}
+          />
         )}
-        <FormField label="Bought on (optional)" type="date" {...register("purchaseDate")} />
-        <FormField
+        <DateField control={control} name="purchaseDate" label="Bought on (optional)" clearable />
+        <AmountField
+          control={control}
+          name="purchaseCost"
+          currency={currency}
           label={`Purchase cost (${currency}, optional)`}
-          inputMode="decimal"
-          autoComplete="off"
-          {...register("purchaseCost")}
-          error={errors.purchaseCost?.message}
         />
         {asset ? null : (
           <>
-            <FormField
+            <AmountField
+              control={control}
+              name="currentValue"
+              currency={currency}
               label={`Current value (${currency}, optional)`}
-              inputMode="decimal"
-              autoComplete="off"
-              {...register("currentValue")}
-              error={errors.currentValue?.message}
             />
-            <FormField label="Valued on" type="date" {...register("valuedOn")} />
+            <DateField control={control} name="valuedOn" label="Valued on" />
           </>
         )}
-        <SelectField label="Related account (optional)" {...register("linkedAccountId")}>
-          <option value="">None</option>
-          {linkable.map((account) => (
-            <option key={account.id} value={account.id}>
-              {account.name}
-            </option>
-          ))}
-        </SelectField>
+        <SelectField
+          control={control}
+          name="linkedAccountId"
+          label="Related account (optional)"
+          options={[
+            { value: "", label: "None" },
+            ...linkable.map((account) => ({ value: account.id, label: account.name })),
+          ]}
+        />
       </div>
       <p className="text-xs text-muted-foreground">
         Linking a bank, cash, or investment account means this asset is already counted in that
@@ -411,7 +407,7 @@ function ValuationDialog({
 }) {
   const { recordValuation } = useInvestmentMutations(workspaceId);
   const {
-    register,
+    control,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting: saving },
@@ -449,19 +445,13 @@ function ValuationDialog({
       onSubmit={(event, close) => void handleSubmit((values) => save(values, close))(event)}
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField
-          label="Valued on"
-          type="date"
-          {...register("valuedOn")}
-          error={errors.valuedOn?.message}
-        />
-        <FormField
+        <DateField control={control} name="valuedOn" label="Valued on" />
+        <AmountField
+          control={control}
+          name="value"
+          currency={asset.currency}
           label={`Value (${asset.currency})`}
-          inputMode="decimal"
-          autoComplete="off"
           autoFocus
-          {...register("value")}
-          error={errors.value?.message}
         />
       </div>
       <FormAlert message={errors.root?.server?.message ?? null} />

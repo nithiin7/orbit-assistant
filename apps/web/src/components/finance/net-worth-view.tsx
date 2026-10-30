@@ -15,7 +15,7 @@ import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInvestmentMutations, useNetWorth, useSnapshots } from "@/hooks/use-investments";
-import { formatMoney, isCurrency } from "@/lib/finance";
+import { currencyOptions, formatMoney } from "@/lib/finance";
 import { SNAPSHOT_SOURCE_LABELS, SOURCE_LABELS } from "@/lib/investments";
 import { cn } from "@/utils/common";
 import { formatCalendarDate, localDateString, monthLabel } from "@/utils/dates";
@@ -112,16 +112,9 @@ function NetWorthDetail({
             label="Currency"
             value={currency}
             className="w-24"
-            onChange={(value) => {
-              if (isCurrency(value)) onCurrency(value);
-            }}
-          >
-            {data.currencies.map((code) => (
-              <option key={code} value={code}>
-                {code}
-              </option>
-            ))}
-          </InlineSelect>
+            onChange={onCurrency}
+            options={currencyOptions(data.currencies)}
+          />
         ) : (
           <p className="text-sm text-muted-foreground">As of {formatCalendarDate(data.as_of)}</p>
         )}

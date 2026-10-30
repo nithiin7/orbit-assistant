@@ -24,7 +24,7 @@ import type {
 import { boolean, mixed, object, string } from "yup";
 
 import { amountField, NAME, reminderFields } from "@/lib/commitments";
-import { DEFAULT_CURRENCY, NOTES_MAX_LENGTH, parseAmount } from "@/lib/finance";
+import { DEFAULT_CURRENCY, NOTES_MAX_LENGTH, numberLocale, parseAmount } from "@/lib/finance";
 import { labelOf, type Option } from "@/utils/common";
 import { multiLineText, singleLineText } from "@/utils/validation";
 
@@ -137,7 +137,7 @@ export function formatUnits(text: string): string {
 /** A per-unit price in the major unit, such as `₹45.6789`, with at least the currency's decimals. */
 export function formatUnitPrice(text: string, currency: Currency): string {
   const decimals = (text.split(".")[1] ?? "").length;
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat(numberLocale(currency), {
     style: "currency",
     currency,
     minimumFractionDigits: Math.min(Math.max(decimals, 2), UNIT_DECIMALS),

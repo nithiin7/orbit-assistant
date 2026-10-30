@@ -13,12 +13,12 @@ import { useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
-import { FormAlert, FormField } from "@/components/form-field";
+import { AmountField, DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Textarea } from "@/components/ui/textarea";
 import { useCommitmentMutations } from "@/hooks/use-commitments";
 import { FREQUENCIES, recurringSchema, toReminderRequest } from "@/lib/commitments";
 import {
-  CURRENCIES,
+  CURRENCY_OPTIONS,
   DEFAULT_CURRENCY,
   parseAmount,
   payingAccounts,
@@ -29,7 +29,6 @@ import { browserTimeZone } from "@/utils/time-zones";
 
 import { ReminderFields } from "./commitment-parts";
 import { DialogShell } from "./dialog-shell";
-import { SelectField } from "./transaction-dialog";
 
 type Values = InferType<typeof recurringSchema>;
 
@@ -197,51 +196,44 @@ export function RecurringDialog({
           error={errors.provider?.message}
         />
         {payment ? null : (
-          <SelectField label="Currency" {...register("currency")}>
-            {CURRENCIES.map((code) => (
-              <option key={code} value={code}>
-                {code}
-              </option>
-            ))}
-          </SelectField>
+          <SelectField
+            control={control}
+            name="currency"
+            label="Currency"
+            options={CURRENCY_OPTIONS}
+          />
         )}
-        <FormField
+        <AmountField
+          control={control}
+          name="amount"
+          currency={currency}
           label={`Amount (${currency})`}
-          inputMode="decimal"
-          autoComplete="off"
-          {...register("amount")}
-          error={errors.amount?.message}
         />
-        <SelectField label="Repeats" {...register("frequency")}>
-          {FREQUENCIES.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </SelectField>
-        <FormField
+        <SelectField control={control} name="frequency" label="Repeats" options={FREQUENCIES} />
+        <DateField
+          control={control}
+          name="nextDueDate"
           label={kind === "subscription" ? "Next renewal" : "Next due"}
-          type="date"
           hint={payment ? "Changing it restarts the schedule; past payments stay." : undefined}
-          {...register("nextDueDate")}
-          error={errors.nextDueDate?.message}
         />
-        <SelectField label="Category" {...register("categoryId")}>
-          <option value="">No category</option>
-          {expenseCategories.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </SelectField>
-        <SelectField label="Paid from (optional)" {...register("accountId")}>
-          <option value="">Choose when paying</option>
-          {usable.map((account) => (
-            <option key={account.id} value={account.id}>
-              {account.name}
-            </option>
-          ))}
-        </SelectField>
+        <SelectField
+          control={control}
+          name="categoryId"
+          label="Category"
+          options={[
+            { value: "", label: "No category" },
+            ...expenseCategories.map((category) => ({ value: category.id, label: category.name })),
+          ]}
+        />
+        <SelectField
+          control={control}
+          name="accountId"
+          label="Paid from (optional)"
+          options={[
+            { value: "", label: "Choose when paying" },
+            ...usable.map((account) => ({ value: account.id, label: account.name })),
+          ]}
+        />
       </div>
 
       <div className="flex flex-col gap-2 text-sm sm:flex-row sm:gap-6">
@@ -263,21 +255,21 @@ export function RecurringDialog({
           More dates
         </summary>
         <div className="mt-3 grid gap-4 sm:grid-cols-3">
-          <FormField
+          <DateField
+            control={control}
+            name="startDate"
             label="Started"
-            type="date"
             hint="Defaults to the next due date."
-            {...register("startDate")}
-            error={errors.startDate?.message}
+            clearable
           />
-          <FormField
-            label="Ends (optional)"
-            type="date"
-            {...register("endDate")}
-            error={errors.endDate?.message}
-          />
+          <DateField control={control} name="endDate" label="Ends (optional)" clearable />
           {kind === "subscription" ? (
-            <FormField label="Trial ends (optional)" type="date" {...register("trialEndsOn")} />
+            <DateField
+              control={control}
+              name="trialEndsOn"
+              label="Trial ends (optional)"
+              clearable
+            />
           ) : null}
         </div>
       </details>

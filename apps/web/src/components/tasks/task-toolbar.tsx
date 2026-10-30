@@ -5,16 +5,18 @@ import { type Ref, useId } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
-import { NativeSelect } from "@/components/ui/native-select";
-import {
-  isTaskPriority,
-  isTaskSort,
-  PRIORITIES,
-  SORTS,
-  STATUS_FILTERS,
-  type TaskFilters,
-} from "@/lib/tasks";
-import { cn } from "@/utils/common";
+import { Select } from "@/components/ui/select";
+import { PRIORITIES, SORTS, STATUS_FILTERS, type TaskFilters } from "@/lib/tasks";
+import { cn, type Option } from "@/utils/common";
+
+const PRIORITY_FILTERS: readonly Option<TaskFilters["priority"]>[] = [
+  { value: "all", label: "Any priority" },
+  ...PRIORITIES,
+];
+const SORT_OPTIONS: readonly Option<TaskFilters["sort"]>[] = SORTS.map((option) => ({
+  ...option,
+  label: `Sort: ${option.label}`,
+}));
 
 type TaskToolbarProps = {
   /** The search box's text, which `filters.search` follows after a short pause. */
@@ -99,43 +101,24 @@ export function TaskToolbar({
         <label htmlFor={`${id}-priority`} className="sr-only">
           Filter by priority
         </label>
-        <NativeSelect
+        <Select
           id={`${id}-priority`}
           className="min-w-36 flex-1 sm:flex-none"
           value={filters.priority}
-          onChange={(event) => {
-            const value = event.target.value;
-            if (value === "all" || isTaskPriority(value)) {
-              onFiltersChange({ ...filters, priority: value });
-            }
-          }}
-        >
-          <option value="all">Any priority</option>
-          {PRIORITIES.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </NativeSelect>
+          onValueChange={(priority) => onFiltersChange({ ...filters, priority })}
+          options={PRIORITY_FILTERS}
+        />
 
         <label htmlFor={`${id}-sort`} className="sr-only">
           Sort by
         </label>
-        <NativeSelect
+        <Select
           id={`${id}-sort`}
           className="min-w-36 flex-1 sm:flex-none"
           value={filters.sort}
-          onChange={(event) => {
-            const value = event.target.value;
-            if (isTaskSort(value)) onFiltersChange({ ...filters, sort: value });
-          }}
-        >
-          {SORTS.map((option) => (
-            <option key={option.value} value={option.value}>
-              Sort: {option.label}
-            </option>
-          ))}
-        </NativeSelect>
+          onValueChange={(sort) => onFiltersChange({ ...filters, sort })}
+          options={SORT_OPTIONS}
+        />
       </div>
     </div>
   );

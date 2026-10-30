@@ -9,6 +9,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ada, json, mockApi, type MockRequest, personal, status } from "@/test/api-mock";
+import { chooseOption } from "@/test/controls";
 import { renderSignedIn } from "@/test/session";
 
 import { FinancePanel } from "./finance-view";
@@ -221,7 +222,8 @@ describe("FinancePanel", () => {
     const dialog = screen.getByRole("dialog", { name: "Record a transaction" });
     await user.type(within(dialog).getByRole("textbox", { name: "Amount (INR)" }), "1,250.10");
     await user.type(within(dialog).getByRole("textbox", { name: "Description" }), "Weekly shop");
-    await user.selectOptions(
+    await chooseOption(
+      user,
       within(dialog).getByRole("combobox", { name: "Category" }),
       "Groceries",
     );
@@ -286,7 +288,7 @@ describe("FinancePanel", () => {
     expect(
       within(dialog).getByRole("combobox", { name: "To account" }),
     ).toHaveAccessibleDescription("Choose the account the money goes to.");
-    await user.selectOptions(within(dialog).getByRole("combobox", { name: "To account" }), "Amex");
+    await chooseOption(user, within(dialog).getByRole("combobox", { name: "To account" }), "Amex");
     await user.click(within(dialog).getByRole("button", { name: "Record" }));
 
     await waitFor(() => expect(posted).toHaveLength(1));
@@ -324,8 +326,8 @@ describe("FinancePanel", () => {
       /February rent.*Rent.*HDFC Savings.*-₹20,000\.00/,
     );
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "Type" }), "Expense");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Account" }), "HDFC Savings");
+    await chooseOption(user, screen.getByRole("combobox", { name: "Type" }), "Expense");
+    await chooseOption(user, screen.getByRole("combobox", { name: "Account" }), "HDFC Savings");
     await user.type(screen.getByRole("searchbox", { name: "Search transactions" }), "rent");
 
     await waitFor(() => {

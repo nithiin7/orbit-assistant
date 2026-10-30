@@ -12,16 +12,23 @@ import type {
   SipPlan,
 } from "@orbit/contracts";
 import { useId } from "react";
-import { useForm, type UseFormRegisterReturn, useWatch } from "react-hook-form";
+import {
+  type Control,
+  type FieldPath,
+  type FieldValues,
+  useForm,
+  type UseFormRegisterReturn,
+  useWatch,
+} from "react-hook-form";
 import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
-import { FormAlert, FormField } from "@/components/form-field";
+import { AmountField, DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Textarea } from "@/components/ui/textarea";
 import { useInvestmentMutations } from "@/hooks/use-investments";
 import { formatRate, FREQUENCIES, toReminderRequest } from "@/lib/commitments";
 import {
-  CURRENCIES,
+  CURRENCY_OPTIONS,
   DEFAULT_CURRENCY,
   formatMoney,
   isLiability,
@@ -43,12 +50,24 @@ import {
   sipSchema,
   tradeSchema,
 } from "@/lib/investments";
+import { type Option } from "@/utils/common";
 import { localDateString } from "@/utils/dates";
 import { browserTimeZone } from "@/utils/time-zones";
 
 import { ReminderFields } from "./commitment-parts";
 import { DialogShell } from "./dialog-shell";
-import { SelectField } from "./transaction-dialog";
+
+const TRADE_TYPES: readonly Option<InvestmentTransactionType>[] = [
+  { value: "buy", label: "Buy" },
+  { value: "sell", label: "Sell or redeem" },
+  { value: "dividend", label: "Dividend" },
+  { value: "fee", label: "Fee or charge" },
+];
+
+const PURCHASE_PLANS: readonly Option<"lump_sum" | "sip">[] = [
+  { value: "lump_sum", label: "Lump sum" },
+  { value: "sip", label: "SIP installment (unscheduled)" },
+];
 
 type Common = {
   workspaceId: string;
@@ -75,39 +94,45 @@ function errorMessage(reason: unknown, fallback: string) {
  * Where the money came from or went: the investment account's own cash, another account (Orbit
  * records the transfer, income, or expense there), or outside Orbit (an earlier purchase).
  */
-function SettlementFields({
+function SettlementFields<F extends FieldValues>({
+  control,
+  settlementName,
+  accountName,
   settlement,
-  register,
-  accountRegister,
   accounts,
   allowNone,
-  accountError,
   direction,
 }: {
+  control: Control<F>;
+  /** The form's settlement field, and its cash account field. */
+  settlementName: FieldPath<F>;
+  accountName: FieldPath<F>;
   settlement: Settlement;
-  register: UseFormRegisterReturn;
-  accountRegister: UseFormRegisterReturn;
   accounts: readonly FinanceAccount[];
   allowNone: boolean;
-  accountError?: string;
   direction: "in" | "out";
 }) {
+  const options: Option<Settlement>[] = [
+    { value: "account", label: "Another account" },
+    { value: "investment_account", label: "The investment account’s cash" },
+  ];
+  if (allowNone) options.push({ value: "none", label: "Outside Orbit (already owned)" });
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <SelectField label={direction === "in" ? "Paid from" : "Paid into"} {...register}>
-        <option value="account">Another account</option>
-        <option value="investment_account">The investment account’s cash</option>
-        {allowNone ? <option value="none">Outside Orbit (already owned)</option> : null}
-      </SelectField>
+      <SelectField
+        control={control}
+        name={settlementName}
+        label={direction === "in" ? "Paid from" : "Paid into"}
+        options={options}
+      />
       {settlement === "account" ? (
-        <SelectField label="Account" error={accountError} {...accountRegister}>
-          <option value="">Choose an account</option>
-          {accounts.map((account) => (
-            <option key={account.id} value={account.id}>
-              {account.name}
-            </option>
-          ))}
-        </SelectField>
+        <SelectField
+          control={control}
+          name={accountName}
+          label="Account"
+          placeholder="Choose an account"
+          options={accounts.map((account) => ({ value: account.id, label: account.name }))}
+        />
       ) : (
         <p className="self-end pb-2 text-xs text-muted-foreground">
           {settlement === "none"
@@ -247,14 +272,16 @@ export function InvestmentAccountDialog({
       ) : null}
       <div className="grid gap-4 sm:grid-cols-2">
         {mode === "existing" && !account ? (
-          <SelectField label="Account" error={errors.accountId?.message} {...register("accountId")}>
-            <option value="">Choose an account</option>
-            {adoptable.map((entry) => (
-              <option key={entry.id} value={entry.id}>
-                {entry.name} ({entry.currency})
-              </option>
-            ))}
-          </SelectField>
+          <SelectField
+            control={control}
+            name="accountId"
+            label="Account"
+            placeholder="Choose an account"
+            options={adoptable.map((entry) => ({
+              value: entry.id,
+              label: `${entry.name} (${entry.currency})`,
+            }))}
+          />
         ) : (
           <FormField
             label="Name"
@@ -265,13 +292,12 @@ export function InvestmentAccountDialog({
             error={errors.name?.message}
           />
         )}
-        <SelectField label="Type" {...register("kind")}>
-          {INVESTMENT_ACCOUNT_KINDS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </SelectField>
+        <SelectField
+          control={control}
+          name="kind"
+          label="Type"
+          options={INVESTMENT_ACCOUNT_KINDS}
+        />
         <FormField
           label="Provider or broker (optional)"
           autoComplete="off"
@@ -279,22 +305,22 @@ export function InvestmentAccountDialog({
           error={errors.provider?.message}
         />
         {mode === "new" && !account ? (
-          <SelectField label="Currency" {...register("currency")}>
-            {CURRENCIES.map((code) => (
-              <option key={code} value={code}>
-                {code}
-              </option>
-            ))}
-          </SelectField>
+          <SelectField
+            control={control}
+            name="currency"
+            label="Currency"
+            options={CURRENCY_OPTIONS}
+          />
         ) : null}
-        <SelectField label="Linked bank account (optional)" {...register("linkedAccountId")}>
-          <option value="">None</option>
-          {linkable.map((entry) => (
-            <option key={entry.id} value={entry.id}>
-              {entry.name}
-            </option>
-          ))}
-        </SelectField>
+        <SelectField
+          control={control}
+          name="linkedAccountId"
+          label="Linked bank account (optional)"
+          options={[
+            { value: "", label: "None" },
+            ...linkable.map((entry) => ({ value: entry.id, label: entry.name })),
+          ]}
+        />
       </div>
       {mode === "new" || account ? <NotesField register={register("notes")} /> : null}
       <FormAlert message={errors.root?.server?.message ?? null} />
@@ -384,23 +410,16 @@ export function HoldingDialog({
         {holding ? null : (
           <>
             <SelectField
+              control={control}
+              name="accountId"
               label="Investment account"
-              error={errors.accountId?.message}
-              {...register("accountId")}
-            >
-              {usable.map((account) => (
-                <option key={account.account_id} value={account.account_id}>
-                  {account.name} ({account.currency})
-                </option>
-              ))}
-            </SelectField>
-            <SelectField label="Type" {...register("kind")}>
-              {HOLDING_KINDS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </SelectField>
+              placeholder="Choose an account"
+              options={usable.map((account) => ({
+                value: account.account_id,
+                label: `${account.name} (${account.currency})`,
+              }))}
+            />
+            <SelectField control={control} name="kind" label="Type" options={HOLDING_KINDS} />
           </>
         )}
         <div className="sm:col-span-2">
@@ -581,20 +600,13 @@ export function TradeDialog({
     >
       <div className="grid gap-4 sm:grid-cols-2">
         {sip ? null : (
-          <SelectField label="Type" {...register("type")}>
-            <option value="buy">Buy</option>
-            <option value="sell">Sell or redeem</option>
-            <option value="dividend">Dividend</option>
-            <option value="fee">Fee or charge</option>
-          </SelectField>
+          <SelectField control={control} name="type" label="Type" options={TRADE_TYPES} />
         )}
-        <FormField
-          label="Date"
-          type="date"
-          {...register("tradeDate")}
-          error={errors.tradeDate?.message}
-        />
-        <FormField
+        <DateField control={control} name="tradeDate" label="Date" />
+        <AmountField
+          control={control}
+          name="amount"
+          currency={currency}
           label={
             type === "sell"
               ? `Proceeds before charges (${currency})`
@@ -602,11 +614,7 @@ export function TradeDialog({
                 ? `Amount invested (${currency})`
                 : `Amount (${currency})`
           }
-          inputMode="decimal"
-          autoComplete="off"
           autoFocus
-          {...register("amount")}
-          error={errors.amount?.message}
         />
         {trade ? (
           <>
@@ -618,30 +626,31 @@ export function TradeDialog({
               {...register("quantity")}
               error={errors.quantity?.message}
             />
-            <FormField
+            <AmountField
+              control={control}
+              name="fees"
+              currency={currency}
               label={`Charges (${currency}, optional)`}
-              inputMode="decimal"
-              autoComplete="off"
               hint="Brokerage, stamp duty… Recorded as an expense."
-              {...register("fees")}
-              error={errors.fees?.message}
             />
             {type === "buy" && !sip ? (
-              <SelectField label="Kind of purchase" {...register("plan")}>
-                <option value="lump_sum">Lump sum</option>
-                <option value="sip">SIP installment (unscheduled)</option>
-              </SelectField>
+              <SelectField
+                control={control}
+                name="plan"
+                label="Kind of purchase"
+                options={PURCHASE_PLANS}
+              />
             ) : null}
           </>
         ) : null}
       </div>
       <SettlementFields
+        control={control}
+        settlementName="settlement"
+        accountName="cashAccountId"
         settlement={settlement}
-        register={register("settlement")}
-        accountRegister={register("cashAccountId")}
         accounts={usable}
         allowNone={type === "buy" && !sip}
-        accountError={errors.cashAccountId?.message}
         direction={type === "buy" || type === "fee" ? "in" : "out"}
       />
       <NotesField register={register("notes")} />
@@ -662,7 +671,7 @@ export function PriceDialog({
 }: Common & { holding: Holding }) {
   const { recordPrice } = useInvestmentMutations(workspaceId);
   const {
-    register,
+    control,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting: saving },
@@ -696,19 +705,13 @@ export function PriceDialog({
       onSubmit={(event, close) => void handleSubmit((values) => save(values, close))(event)}
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField
-          label="As of"
-          type="date"
-          {...register("priceDate")}
-          error={errors.priceDate?.message}
-        />
-        <FormField
+        <DateField control={control} name="priceDate" label="As of" />
+        <AmountField
+          control={control}
+          name="price"
+          currency={holding.currency}
           label={`Price per unit (${holding.currency})`}
-          inputMode="decimal"
-          autoComplete="off"
           autoFocus
-          {...register("price")}
-          error={errors.price?.message}
         />
       </div>
       <FormAlert message={errors.root?.server?.message ?? null} />
@@ -730,7 +733,7 @@ export function SipDialog({
 }: Common & { holding: Holding; plan?: SipPlan; accounts: readonly FinanceAccount[] }) {
   const { createSip, updateSip } = useInvestmentMutations(workspaceId);
   const {
-    register,
+    control,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting: saving },
@@ -789,41 +792,28 @@ export function SipDialog({
       onSubmit={(event, close) => void handleSubmit((values) => save(values, close))(event)}
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField
+        <AmountField
+          control={control}
+          name="amount"
+          currency={holding.currency}
           label={`Amount (${holding.currency})`}
-          inputMode="decimal"
-          autoComplete="off"
           autoFocus
-          {...register("amount")}
-          error={errors.amount?.message}
         />
-        <SelectField label="Repeats" {...register("frequency")}>
-          {FREQUENCIES.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </SelectField>
-        <FormField
-          label="Next SIP date"
-          type="date"
-          {...register("nextDueDate")}
-          error={errors.nextDueDate?.message}
+        <SelectField control={control} name="frequency" label="Repeats" options={FREQUENCIES} />
+        <DateField control={control} name="nextDueDate" label="Next SIP date" />
+        <DateField control={control} name="endDate" label="Ends (optional)" clearable />
+        <SelectField
+          control={control}
+          name="fundingAccountId"
+          label="Debited from (optional)"
+          options={[
+            { value: "", label: "The investment account’s cash" },
+            ...cashAccounts(accounts, holding.currency, holding.account_id).map((account) => ({
+              value: account.id,
+              label: account.name,
+            })),
+          ]}
         />
-        <FormField
-          label="Ends (optional)"
-          type="date"
-          {...register("endDate")}
-          error={errors.endDate?.message}
-        />
-        <SelectField label="Debited from (optional)" {...register("fundingAccountId")}>
-          <option value="">The investment account’s cash</option>
-          {cashAccounts(accounts, holding.currency, holding.account_id).map((account) => (
-            <option key={account.id} value={account.id}>
-              {account.name}
-            </option>
-          ))}
-        </SelectField>
       </div>
       <FormAlert message={errors.root?.server?.message ?? null} />
     </DialogShell>
@@ -952,23 +942,16 @@ export function DepositDialog({
         {deposit ? null : (
           <>
             <SelectField
+              control={control}
+              name="accountId"
               label="Held in"
-              error={errors.accountId?.message}
-              {...register("accountId")}
-            >
-              {usable.map((account) => (
-                <option key={account.account_id} value={account.account_id}>
-                  {account.name} ({account.currency})
-                </option>
-              ))}
-            </SelectField>
-            <SelectField label="Type" {...register("kind")}>
-              {DEPOSIT_KINDS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </SelectField>
+              placeholder="Choose an account"
+              options={usable.map((account) => ({
+                value: account.account_id,
+                label: `${account.name} (${account.currency})`,
+              }))}
+            />
+            <SelectField control={control} name="kind" label="Type" options={DEPOSIT_KINDS} />
           </>
         )}
         <FormField
@@ -991,56 +974,41 @@ export function DepositDialog({
           {...register("rate")}
           error={errors.rate?.message}
         />
-        <SelectField label="Compounding" {...register("compounding")}>
-          {COMPOUNDING.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </SelectField>
-        {deposit ? null : (
-          <FormField
-            label="Start date"
-            type="date"
-            {...register("startDate")}
-            error={errors.startDate?.message}
-          />
-        )}
-        <FormField
-          label="Maturity date"
-          type="date"
-          {...register("maturityDate")}
-          error={errors.maturityDate?.message}
+        <SelectField
+          control={control}
+          name="compounding"
+          label="Compounding"
+          options={COMPOUNDING}
         />
+        {deposit ? null : <DateField control={control} name="startDate" label="Start date" />}
+        <DateField control={control} name="maturityDate" label="Maturity date" />
         {!deposit || deposit.kind === "recurring" ? (
-          <FormField
+          <AmountField
+            control={control}
+            name="amount"
+            currency={currency}
             label={
               (deposit?.kind ?? kind) === "recurring"
                 ? `Monthly installment (${currency})`
                 : `Principal (${currency})`
             }
-            inputMode="decimal"
-            autoComplete="off"
-            {...register("amount")}
-            error={errors.amount?.message}
           />
         ) : null}
-        <FormField
+        <AmountField
+          control={control}
+          name="statedMaturity"
+          currency={currency}
           label={`Maturity amount stated by the bank (${currency}, optional)`}
-          inputMode="decimal"
-          autoComplete="off"
-          {...register("statedMaturity")}
-          error={errors.statedMaturity?.message}
         />
       </div>
       {deposit ? null : (
         <SettlementFields
+          control={control}
+          settlementName="settlement"
+          accountName="cashAccountId"
           settlement={settlement}
-          register={register("settlement")}
-          accountRegister={register("cashAccountId")}
           accounts={cashAccounts(accounts, currency, accountId)}
           allowNone
-          accountError={errors.cashAccountId?.message}
           direction="in"
         />
       )}
@@ -1086,7 +1054,6 @@ export function DepositActionDialog({
   const currency = deposit.currency;
   const today = localDateString();
   const {
-    register,
     control,
     handleSubmit,
     setError,
@@ -1163,13 +1130,15 @@ export function DepositActionDialog({
       onSubmit={(event, close) => void handleSubmit((values) => save(values, close))(event)}
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField
+        <DateField
+          control={control}
+          name="closedOn"
           label={action === "close" ? "Closed on" : action === "value" ? "Valued on" : "Date"}
-          type="date"
-          {...register("closedOn")}
-          error={errors.closedOn?.message}
         />
-        <FormField
+        <AmountField
+          control={control}
+          name="amount"
+          currency={currency}
           label={
             action === "close"
               ? `Amount received (${currency})`
@@ -1177,21 +1146,17 @@ export function DepositActionDialog({
                 ? `Value (${currency})`
                 : `Amount (${currency})`
           }
-          inputMode="decimal"
-          autoComplete="off"
           autoFocus
-          {...register("amount")}
-          error={errors.amount?.message}
         />
       </div>
       {action === "value" ? null : (
         <SettlementFields
+          control={control}
+          settlementName="settlement"
+          accountName="cashAccountId"
           settlement={settlement}
-          register={register("settlement")}
-          accountRegister={register("cashAccountId")}
           accounts={cashAccounts(accounts, currency, deposit.account_id)}
           allowNone={false}
-          accountError={errors.cashAccountId?.message}
           direction={action === "close" ? "out" : "in"}
         />
       )}

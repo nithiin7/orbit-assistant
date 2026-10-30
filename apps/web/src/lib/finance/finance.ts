@@ -37,6 +37,11 @@ export const CURRENCY_EXPONENTS: Readonly<Record<Currency, number>> = {
   JPY: 0,
 };
 export const CURRENCIES = Object.keys(CURRENCY_EXPONENTS) as readonly Currency[];
+/** Currency codes as select options, labelled by their codes. */
+export function currencyOptions(codes: readonly Currency[]): Option<Currency>[] {
+  return codes.map((code) => ({ value: code, label: code }));
+}
+export const CURRENCY_OPTIONS: readonly Option<Currency>[] = currencyOptions(CURRENCIES);
 export const DEFAULT_CURRENCY: Currency = "INR";
 /** The largest amount the API accepts, in minor units. */
 export const MAX_AMOUNT = 10 ** 13;
@@ -45,6 +50,17 @@ export const NOTES_MAX_LENGTH = 2000;
 export const ACCOUNT_NAME_MAX_LENGTH = 100;
 /** Transactions per page of history. */
 export const TRANSACTION_PAGE_SIZE = 50;
+
+/**
+ * The locale each currency's amounts are written in, for digit grouping: lakh and crore for
+ * rupees (`1,00,000`), thousands for the rest (`100,000`). Every one uses `,` to group and `.`
+ * for decimals, the separators `parseAmount` reads.
+ */
+const CURRENCY_LOCALES: Partial<Record<Currency, string>> = { INR: "en-IN" };
+
+export function numberLocale(currency: Currency): string {
+  return CURRENCY_LOCALES[currency] ?? "en-US";
+}
 
 export function isCurrency(value: string): value is Currency {
   return value in CURRENCY_EXPONENTS;
@@ -99,7 +115,11 @@ function formatter(currency: Currency, signDisplay: "auto" | "always" | "never")
   const key = `${currency}:${signDisplay}`;
   let format = formatters.get(key);
   if (!format) {
-    format = new Intl.NumberFormat(undefined, { style: "currency", currency, signDisplay });
+    format = new Intl.NumberFormat(numberLocale(currency), {
+      style: "currency",
+      currency,
+      signDisplay,
+    });
     formatters.set(key, format);
   }
   return format;
@@ -116,6 +136,53 @@ export function formatMoney(
 ): string {
   const decimal = toDecimalString(amount, currency) as `${number}`;
   return formatter(currency, signDisplay).format(decimal);
+}
+
+const groupers = new Map<Currency, Intl.NumberFormat>();
+
+/** Whole-number digits grouped the currency's way: `100000` INR is `1,00,000`. */
+function groupDigits(digits: string, currency: Currency): string {
+  let grouper = groupers.get(currency);
+  if (!grouper) {
+    grouper = new Intl.NumberFormat(numberLocale(currency), { maximumFractionDigits: 0 });
+    groupers.set(currency, grouper);
+  }
+  return grouper.format(digits as `${number}`);
+}
+
+/**
+ * Amount text regrouped as it is typed: `100000.5` INR becomes `1,00,000.5`. Only digits, one
+ * decimal point, and a leading minus sign are kept; decimals are kept as typed, so validation,
+ * not formatting, rejects too many.
+ */
+export function formatAmountInput(text: string, currency: Currency): string {
+  const sign = /^\s*[-−]/.test(text) ? "-" : "";
+  const cleaned = text.replace(/[^\d.]/g, "");
+  const point = cleaned.indexOf(".");
+  const whole = (point === -1 ? cleaned : cleaned.slice(0, point)).replace(/^0+(?=\d)/, "");
+  if (point === -1) return `${sign}${whole && groupDigits(whole, currency)}`;
+  const fraction = cleaned.slice(point + 1).replace(/\./g, "");
+  return `${sign}${groupDigits(whole || "0", currency)}.${fraction}`;
+}
+
+/** Characters of amount text that formatting keeps: digits, the point, and the sign. */
+const AMOUNT_CHARACTER = /[\d.\-−]/;
+
+/** How many kept characters come before `caret` in `text`, to place the caret after formatting. */
+export function amountCharactersBefore(text: string, caret: number): number {
+  return [...text.slice(0, caret)].filter((character) => AMOUNT_CHARACTER.test(character)).length;
+}
+
+/** The caret position in formatted `text` just after its `count`th kept character. */
+export function caretAfterAmountCharacters(text: string, count: number): number {
+  if (count <= 0) return 0;
+  let seen = 0;
+  for (let index = 0; index < text.length; index += 1) {
+    if (!AMOUNT_CHARACTER.test(text[index] ?? "")) continue;
+    seen += 1;
+    if (seen === count) return index + 1;
+  }
+  return text.length;
 }
 
 // Labels

@@ -6,7 +6,7 @@ import { type ReactNode, useId, useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLoans, usePayments } from "@/hooks/use-commitments";
 import {
@@ -38,6 +38,11 @@ const KINDS: readonly Option<CommitmentKind | "all">[] = [
   { value: "loan", label: "Loan EMIs" },
   { value: "subscription", label: "Subscriptions" },
   { value: "bill", label: "Bills" },
+];
+
+const STATUS_FILTERS: readonly Option<PaymentStatus | "all">[] = [
+  { value: "all", label: "Any status" },
+  ...PAYMENT_STATUSES,
 ];
 
 function rangeOf(range: Range, today: string): { from: string; to: string } {
@@ -118,59 +123,33 @@ export function UpcomingPayments({
       <label htmlFor={`${id}-range`} className="sr-only">
         Dates
       </label>
-      <NativeSelect
+      <Select
         id={`${id}-range`}
         className="w-48"
         value={range}
-        onChange={(event) => {
-          const next = RANGES.find((option) => option.value === event.target.value);
-          if (next) setRange(next.value);
-        }}
-      >
-        {RANGES.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </NativeSelect>
+        onValueChange={setRange}
+        options={RANGES}
+      />
       <label htmlFor={`${id}-kind`} className="sr-only">
         Payment type
       </label>
-      <NativeSelect
+      <Select
         id={`${id}-kind`}
         className="w-40"
         value={kind}
-        onChange={(event) => {
-          const next = KINDS.find((option) => option.value === event.target.value);
-          if (next) setKind(next.value);
-        }}
-      >
-        {KINDS.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </NativeSelect>
+        onValueChange={setKind}
+        options={KINDS}
+      />
       <label htmlFor={`${id}-status`} className="sr-only">
         Status
       </label>
-      <NativeSelect
+      <Select
         id={`${id}-status`}
         className="w-36"
         value={status}
-        onChange={(event) => {
-          const value = event.target.value;
-          const next = PAYMENT_STATUSES.find((option) => option.value === value);
-          setStatus(next ? next.value : "all");
-        }}
-      >
-        <option value="all">Any status</option>
-        {PAYMENT_STATUSES.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </NativeSelect>
+        onValueChange={setStatus}
+        options={STATUS_FILTERS}
+      />
     </div>
   );
 

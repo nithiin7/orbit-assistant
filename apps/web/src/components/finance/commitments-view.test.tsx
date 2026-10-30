@@ -12,6 +12,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { formatMoney } from "@/lib/finance";
 import { ada, json, mockApi, type MockRequest, personal, status } from "@/test/api-mock";
+import { chooseOption } from "@/test/controls";
 import { renderSignedIn } from "@/test/session";
 import { localDateString } from "@/utils/dates";
 
@@ -244,8 +245,11 @@ describe("Finance commitments", () => {
     await userEvent.click(within(schedule).getByRole("button", { name: "Pay" }));
 
     const dialog = await screen.findByRole("dialog", { name: "Record payment: Car loan" });
-    expect(within(dialog).getByLabelText("Paid from")).toHaveValue("acc-bank");
-    expect(within(dialog).getByLabelText("Principal (INR)")).toHaveValue("49231.00");
+    expect(within(dialog).getByRole("combobox", { name: "Paid from" })).toHaveTextContent(
+      "HDFC Savings",
+    );
+    // Amounts are grouped the rupee's way.
+    expect(within(dialog).getByLabelText("Principal (INR)")).toHaveValue("49,231.00");
     await userEvent.clear(within(dialog).getByLabelText("Interest (INR)"));
     await userEvent.type(within(dialog).getByLabelText("Interest (INR)"), "3,500");
     await userEvent.click(within(dialog).getByRole("button", { name: "Record payment" }));
@@ -280,7 +284,7 @@ describe("Finance commitments", () => {
     const dialog = await screen.findByRole("dialog", { name: "Add a subscription" });
     await userEvent.type(within(dialog).getByLabelText("Name"), "ChatGPT Plus");
     await userEvent.type(within(dialog).getByLabelText("Amount (INR)"), "1,999.00");
-    await userEvent.selectOptions(within(dialog).getByLabelText("Repeats"), "yearly");
+    await chooseOption(userEvent, within(dialog).getByLabelText("Repeats"), "Yearly");
     await userEvent.type(within(dialog).getByLabelText("Days before"), "3");
     await userEvent.click(within(dialog).getByRole("button", { name: "Add subscription" }));
 
@@ -398,7 +402,7 @@ describe("Finance commitments", () => {
     expect(within(paid).getByText("Netflix")).toBeInTheDocument();
     expect(within(paid).queryByRole("button", { name: "Record" })).not.toBeInTheDocument();
 
-    await userEvent.selectOptions(screen.getByLabelText("Payment type"), "bill");
+    await chooseOption(userEvent, screen.getByLabelText("Payment type"), "Bills");
     await waitFor(() => {
       const last = api.mock.calls.at(-1);
       expect(new URL(String(last?.[0])).searchParams.getAll("kind")).toEqual(["bill"]);

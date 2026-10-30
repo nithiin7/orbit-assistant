@@ -5,7 +5,7 @@ import { AlertTriangle, Calculator, CircleHelp, type LucideIcon } from "lucide-r
 import { type ReactNode, useId } from "react";
 
 import { Badge } from "@/components/ui/badge";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Select, type SelectItems } from "@/components/ui/select";
 import { formatMoney } from "@/lib/finance";
 import { FRESHNESS_LABELS, gainTone, SOURCE_LABELS } from "@/lib/investments";
 import { cn } from "@/utils/common";
@@ -96,17 +96,17 @@ export function ProportionBars({
 }
 
 /** A compact labelled select for toolbars (currency, date range). */
-export function InlineSelect({
+export function InlineSelect<T extends string>({
   label,
   value,
   onChange,
-  children,
+  options,
   className,
 }: {
   label: string;
-  value: string;
-  onChange: (value: string) => void;
-  children: ReactNode;
+  value: T;
+  onChange: (value: T) => void;
+  options: SelectItems<T>;
   className?: string;
 }) {
   const id = useId();
@@ -115,14 +115,13 @@ export function InlineSelect({
       <label htmlFor={id} className="text-sm whitespace-nowrap text-muted-foreground">
         {label}
       </label>
-      <NativeSelect
+      <Select
         id={id}
         className={className ?? "w-32"}
         value={value}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        {children}
-      </NativeSelect>
+        onValueChange={onChange}
+        options={options}
+      />
     </div>
   );
 }

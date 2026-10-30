@@ -9,6 +9,7 @@ import { Controller, useForm } from "react-hook-form";
 import { describeApiError } from "@/api/client";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { newTaskSchema } from "@/lib/tasks";
@@ -90,11 +91,21 @@ export function TaskComposer({ onCreate, titleRef }: TaskComposerProps) {
           <label htmlFor={`${id}-due`} className="sr-only">
             Due date
           </label>
-          <Input
-            id={`${id}-due`}
-            type="date"
-            {...register("dueDate")}
-            className="w-auto min-w-36 flex-1 sm:flex-none"
+          <Controller
+            control={control}
+            name="dueDate"
+            render={({ field }) => (
+              <DatePicker
+                id={`${id}-due`}
+                ref={field.ref}
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="Due date"
+                clearable
+                className="min-w-40 flex-1 sm:flex-none"
+              />
+            )}
           />
           <Controller
             control={control}

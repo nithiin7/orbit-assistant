@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { object, string } from "yup";
 
 import { describeApiError } from "@/api/client";
-import { FormAlert, FormField } from "@/components/form-field";
+import { AmountField, DateField, FormAlert, FormField } from "@/components/form-field";
 import { useCommitmentMutations } from "@/hooks/use-commitments";
 import { formatRate, parseComponent, parseRate } from "@/lib/commitments";
 import { formatMoney, parseAmount, toDecimalString } from "@/lib/finance";
@@ -38,7 +38,7 @@ export function InstallmentDialog({
     .defined()
     .test("amount", AMOUNT_HINT, (value) => parseComponent(value, loan.currency) !== null);
   const {
-    register,
+    control,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting: saving },
@@ -94,26 +94,19 @@ export function InstallmentDialog({
       submitLabel="Save"
       onSubmit={(event, close) => void handleSubmit((values) => save(values, close))(event)}
     >
-      <FormField
-        label="Due date"
-        type="date"
-        {...register("dueDate")}
-        error={errors.dueDate?.message}
-      />
+      <DateField control={control} name="dueDate" label="Due date" />
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField
+        <AmountField
+          control={control}
+          name="principal"
+          currency={loan.currency}
           label={`Principal (${loan.currency})`}
-          inputMode="decimal"
-          autoComplete="off"
-          {...register("principal")}
-          error={errors.principal?.message}
         />
-        <FormField
+        <AmountField
+          control={control}
+          name="interest"
+          currency={loan.currency}
           label={`Interest (${loan.currency})`}
-          inputMode="decimal"
-          autoComplete="off"
-          {...register("interest")}
-          error={errors.interest?.message}
         />
       </div>
       <FormAlert message={errors.root?.server?.message ?? null} />
@@ -141,6 +134,7 @@ export function RescheduleDialog({
   const { rescheduleLoan } = useCommitmentMutations(workspaceId);
   const {
     register,
+    control,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting: saving },
@@ -217,16 +211,15 @@ export function RescheduleDialog({
           {...register("rate")}
           error={errors.rate?.message}
         />
-        <FormField
+        <AmountField
+          control={control}
+          name="emi"
+          currency={loan.currency}
           label={`New EMI (${loan.currency}, optional)`}
-          inputMode="decimal"
-          autoComplete="off"
           hint="Blank keeps the number of EMIs and works out a new amount. A new EMI changes the tenure."
-          {...register("emi")}
-          error={errors.emi?.message}
         />
       </div>
-      <FormField label="Next EMI" type="date" {...register("nextPaymentDate")} />
+      <DateField control={control} name="nextPaymentDate" label="Next EMI" />
       <FormAlert message={errors.root?.server?.message ?? null} />
     </DialogShell>
   );

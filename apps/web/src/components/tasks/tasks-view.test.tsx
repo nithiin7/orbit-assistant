@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ada, json, mockApi, type MockRequest, personal, status } from "@/test/api-mock";
+import { chooseOption } from "@/test/controls";
 import { renderSignedIn } from "@/test/session";
 import { localDateString } from "@/utils/dates";
 
@@ -111,7 +112,7 @@ describe("TasksPanel", () => {
     await user.keyboard("n");
     const title = screen.getByRole("textbox", { name: "Task title" });
     expect(title).toHaveFocus();
-    await user.selectOptions(screen.getByRole("combobox", { name: "Priority" }), "Medium");
+    await chooseOption(user, screen.getByRole("combobox", { name: "Priority" }), "Medium");
     await user.type(title, "  Book dentist {Enter}");
 
     expect(await screen.findByRole("checkbox", { name: "Book dentist" })).toBeInTheDocument();
@@ -220,7 +221,7 @@ describe("TasksPanel", () => {
 
     await user.click(await screen.findByRole("button", { name: "Edit “Pay rent”" }));
     const dialog = screen.getByRole("dialog", { name: "Edit task" });
-    await user.selectOptions(within(dialog).getByRole("combobox", { name: "Priority" }), "Low");
+    await chooseOption(user, within(dialog).getByRole("combobox", { name: "Priority" }), "Low");
     await user.click(within(dialog).getByRole("button", { name: "Save changes" }));
 
     expect(await within(dialog).findByRole("alert")).toHaveTextContent("Task not found.");
@@ -282,8 +283,8 @@ describe("TasksPanel", () => {
     );
     await waitFor(() => expect(listQueries(api).at(-1)?.get("status")).toBe("completed"));
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "Filter by priority" }), "High");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Sort by" }), "Sort: Priority");
+    await chooseOption(user, screen.getByRole("combobox", { name: "Filter by priority" }), "High");
+    await chooseOption(user, screen.getByRole("combobox", { name: "Sort by" }), "Sort: Priority");
     await waitFor(() => {
       const last = listQueries(api).at(-1);
       expect(last?.getAll("priority")).toEqual(["high"]);

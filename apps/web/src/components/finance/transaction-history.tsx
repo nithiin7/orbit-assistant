@@ -2,14 +2,15 @@
 
 import type { FinanceTransaction } from "@orbit/contracts";
 import { Download, Receipt, Search, SearchX } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Select, type SelectItems } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   useExportTransactions,
@@ -19,13 +20,12 @@ import {
 import {
   DEFAULT_TRANSACTION_FILTERS,
   isFiltered,
-  isTransactionType,
   toTransactionListQuery,
   TRANSACTION_PAGE_SIZE,
   TRANSACTION_TYPES,
   type TransactionFilters,
 } from "@/lib/finance";
-import { byId, cn } from "@/utils/common";
+import { byId, cn, type Option } from "@/utils/common";
 
 import type { FinanceData } from "./finance-view";
 import { TransactionItem } from "./transaction-item";
@@ -145,48 +145,35 @@ export function TransactionHistory({
           <FilterSelect
             label="Type"
             value={filters.type}
-            onChange={(value) => {
-              if (value === "all" || isTransactionType(value)) narrow({ type: value });
-            }}
-          >
-            <option value="all">All types</option>
-            {TRANSACTION_TYPES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </FilterSelect>
+            onChange={(type) => narrow({ type })}
+            options={TYPE_FILTERS}
+          />
           <FilterSelect
             label="Account"
             value={filters.accountId}
-            onChange={(value) => narrow({ accountId: value })}
-          >
-            <option value="">All accounts</option>
-            {accounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-                {account.archived ? " (archived)" : ""}
-              </option>
-            ))}
-          </FilterSelect>
+            onChange={(accountId) => narrow({ accountId })}
+            options={[
+              { value: "", label: "All accounts" },
+              ...accounts.map((account) => ({
+                value: account.id,
+                label: `${account.name}${account.archived ? " (archived)" : ""}`,
+              })),
+            ]}
+          />
           <FilterSelect
             label="Category"
             value={filters.categoryId}
-            onChange={(value) => narrow({ categoryId: value })}
-          >
-            <option value="">All categories</option>
-            {(["expense", "income"] as const).map((type) => (
-              <optgroup key={type} label={type === "income" ? "Income" : "Expenses"}>
-                {categories
+            onChange={(categoryId) => narrow({ categoryId })}
+            options={[
+              { value: "", label: "All categories" },
+              ...(["expense", "income"] as const).map((type) => ({
+                label: type === "income" ? "Income" : "Expenses",
+                options: categories
                   .filter((category) => category.type === type)
-                  .map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-              </optgroup>
-            ))}
-          </FilterSelect>
+                  .map((category) => ({ value: category.id, label: category.name })),
+              })),
+            ]}
+          />
           <DateFilter
             label="From"
             value={filters.from}
@@ -201,13 +188,9 @@ export function TransactionHistory({
           <FilterSelect
             label="Sort by"
             value={filters.sort}
-            onChange={(value) => {
-              if (value === "date" || value === "amount") narrow({ sort: value });
-            }}
-          >
-            <option value="date">Newest first</option>
-            <option value="amount">Largest first</option>
-          </FilterSelect>
+            onChange={(sort) => narrow({ sort })}
+            options={SORT_OPTIONS}
+          />
         </div>
         {reversed ? (
           <p className="text-xs font-medium text-destructive">
@@ -293,16 +276,26 @@ export function TransactionHistory({
   );
 }
 
-function FilterSelect({
+const TYPE_FILTERS: readonly Option<TransactionFilters["type"]>[] = [
+  { value: "all", label: "All types" },
+  ...TRANSACTION_TYPES,
+];
+
+const SORT_OPTIONS: readonly Option<TransactionFilters["sort"]>[] = [
+  { value: "date", label: "Newest first" },
+  { value: "amount", label: "Largest first" },
+];
+
+function FilterSelect<T extends string>({
   label,
   value,
   onChange,
-  children,
+  options,
 }: {
   label: string;
-  value: string;
-  onChange: (value: string) => void;
-  children: ReactNode;
+  value: T;
+  onChange: (value: T) => void;
+  options: SelectItems<T>;
 }) {
   const id = useId();
   return (
@@ -310,9 +303,7 @@ function FilterSelect({
       <label htmlFor={id} className="block text-xs text-muted-foreground">
         {label}
       </label>
-      <NativeSelect id={id} value={value} onChange={(event) => onChange(event.target.value)}>
-        {children}
-      </NativeSelect>
+      <Select id={id} value={value} onValueChange={onChange} options={options} />
     </div>
   );
 }
@@ -334,12 +325,13 @@ function DateFilter({
       <label htmlFor={id} className="block text-xs text-muted-foreground">
         {label}
       </label>
-      <Input
+      <DatePicker
         id={id}
-        type="date"
         value={value}
+        onValueChange={onChange}
+        placeholder="Any date"
+        clearable
         aria-invalid={invalid || undefined}
-        onChange={(event) => onChange(event.target.value)}
       />
     </div>
   );

@@ -54,6 +54,10 @@ API contract in `packages/contracts`, described below.
   another.
 - Forms use React Hook Form with Yup schemas from `src/lib`. The schemas mirror the API's
   validation for immediate feedback; the API still validates every request.
+- Selects, date pickers, and money inputs are custom accessible controls in
+  `src/components/ui/` (a select-only combobox, a calendar dialog, and an input that groups digits
+  as typed). Their popups use the Popover API so they sit above modal dialogs. Money is grouped
+  per currency: lakhs and crores for INR, thousands for the rest.
 
 ## Shared API contract
 

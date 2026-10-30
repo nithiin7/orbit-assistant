@@ -4,7 +4,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import type { BalanceTotals, FinanceAccount, FinanceCategory } from "@orbit/contracts";
 import { Archive, ArchiveRestore, Pencil, Plus, X } from "lucide-react";
 import { useId, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
@@ -13,9 +13,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Select } from "@/components/ui/select";
 import { useFinanceMutations } from "@/hooks/use-finance";
 import { accountTypeLabel, categorySchema, formatMoney } from "@/lib/finance";
+import { type Option } from "@/utils/common";
 
 import { AccountBalance } from "./finance-overview";
 import type { FinanceData } from "./finance-view";
@@ -164,6 +165,11 @@ export function AccountsView({
 
 type CategoryValues = InferType<typeof categorySchema>;
 
+const CATEGORY_TYPES: readonly Option<CategoryValues["type"]>[] = [
+  { value: "expense", label: "Expense" },
+  { value: "income", label: "Income" },
+];
+
 function CategoriesSection({
   workspaceId,
   categories,
@@ -178,6 +184,7 @@ function CategoriesSection({
   const [error, setError] = useState<string | null>(null);
   const {
     register,
+    control,
     handleSubmit,
     reset,
     setError: setFormError,
@@ -247,10 +254,21 @@ function CategoriesSection({
           <label htmlFor={`${id}-type`} className="sr-only">
             Category type
           </label>
-          <NativeSelect id={`${id}-type`} className="sm:w-36" {...register("type")}>
-            <option value="expense">Expense</option>
-            <option value="income">Income</option>
-          </NativeSelect>
+          <Controller
+            control={control}
+            name="type"
+            render={({ field }) => (
+              <Select
+                id={`${id}-type`}
+                ref={field.ref}
+                className="sm:w-36"
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                options={CATEGORY_TYPES}
+              />
+            )}
+          />
           <Button type="submit" variant="outline" disabled={isSubmitting}>
             Add category
           </Button>

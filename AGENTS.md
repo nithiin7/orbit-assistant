@@ -133,6 +133,11 @@ and `packages/*/package.json`. Check them rather than guessing.
   beside their domain (`@/lib/auth/validation`, `@/lib/tasks`, `@/lib/shopping`), mirror the
   API's rules, and build on the text helpers in `@/utils/validation`. Show server failures with
   `setError("root.server", …)` and `FormAlert`. Don't hand-roll field state or validators.
+- Choices, dates, and money use the custom controls in `src/components/ui/` (`Select`,
+  `DatePicker`, `AmountInput`), never native `<select>` or `type="date"`. In forms, bind them
+  with `SelectField`, `DateField`, and `AmountField` from `@/components/form-field`. Amounts are
+  grouped as typed by the currency's rules (`1,00,000` for INR) via `formatAmountInput`, and
+  shown with `formatMoney`, both in `@/lib/finance`.
 - Each `src/lib` and `src/utils` module has its own folder: `<layer>/<name>/<name>.ts`, its
   `<name>.test.ts`, and an `index.ts` that re-exports it, so imports stay `@/lib/<name>` or
   `@/utils/<name>`. A helper used by more than one feature belongs in `src/utils`, which imports

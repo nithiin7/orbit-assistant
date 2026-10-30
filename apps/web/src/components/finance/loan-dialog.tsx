@@ -7,7 +7,7 @@ import { useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
-import { FormAlert, FormField } from "@/components/form-field";
+import { AmountField, DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Textarea } from "@/components/ui/textarea";
 import { useCommitmentMutations } from "@/hooks/use-commitments";
 import {
@@ -20,7 +20,7 @@ import {
   toReminderRequest,
 } from "@/lib/commitments";
 import {
-  CURRENCIES,
+  CURRENCY_OPTIONS,
   DEFAULT_CURRENCY,
   parseAmount,
   payingAccounts,
@@ -31,7 +31,6 @@ import { browserTimeZone } from "@/utils/time-zones";
 
 import { ReminderFields } from "./commitment-parts";
 import { DialogShell } from "./dialog-shell";
-import { SelectField } from "./transaction-dialog";
 
 type Values = InferType<typeof loanSchema>;
 
@@ -176,40 +175,33 @@ export function LoanDialog({ workspaceId, loan, accounts, onSaved, onClose }: Lo
           {...register("lender")}
           error={errors.lender?.message}
         />
-        <SelectField label="Type" {...register("loanType")}>
-          {LOAN_TYPES.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </SelectField>
-        <SelectField label="EMIs paid from (optional)" {...register("paymentAccountId")}>
-          <option value="">Choose when paying</option>
-          {usable.map((account) => (
-            <option key={account.id} value={account.id}>
-              {account.name}
-            </option>
-          ))}
-        </SelectField>
+        <SelectField control={control} name="loanType" label="Type" options={LOAN_TYPES} />
+        <SelectField
+          control={control}
+          name="paymentAccountId"
+          label="EMIs paid from (optional)"
+          options={[
+            { value: "", label: "Choose when paying" },
+            ...usable.map((account) => ({ value: account.id, label: account.name })),
+          ]}
+        />
       </div>
 
       {loan ? null : (
         <fieldset className="space-y-4">
           <legend className="text-sm font-medium">Terms</legend>
           <div className="grid gap-4 sm:grid-cols-3">
-            <SelectField label="Currency" {...register("currency")}>
-              {CURRENCIES.map((code) => (
-                <option key={code} value={code}>
-                  {code}
-                </option>
-              ))}
-            </SelectField>
-            <FormField
+            <SelectField
+              control={control}
+              name="currency"
+              label="Currency"
+              options={CURRENCY_OPTIONS}
+            />
+            <AmountField
+              control={control}
+              name="principal"
+              currency={currency}
               label="Amount borrowed"
-              inputMode="decimal"
-              autoComplete="off"
-              {...register("principal")}
-              error={errors.principal?.message}
             />
             <FormField
               label="Interest rate (% a year)"
@@ -219,20 +211,18 @@ export function LoanDialog({ workspaceId, loan, accounts, onSaved, onClose }: Lo
               {...register("rate")}
               error={errors.rate?.message}
             />
-            <SelectField label="Interest" {...register("interestMethod")}>
-              {INTEREST_METHODS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </SelectField>
-            <SelectField label="EMI every" {...register("emiFrequency")}>
-              {EMI_FREQUENCIES.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </SelectField>
+            <SelectField
+              control={control}
+              name="interestMethod"
+              label="Interest"
+              options={INTEREST_METHODS}
+            />
+            <SelectField
+              control={control}
+              name="emiFrequency"
+              label="EMI every"
+              options={EMI_FREQUENCIES}
+            />
             <FormField
               label="Tenure (months)"
               inputMode="numeric"
@@ -241,25 +231,14 @@ export function LoanDialog({ workspaceId, loan, accounts, onSaved, onClose }: Lo
               {...register("tenureMonths")}
               error={errors.tenureMonths?.message}
             />
-            <FormField
-              label="Loan start"
-              type="date"
-              {...register("startDate")}
-              error={errors.startDate?.message}
-            />
-            <FormField
-              label="First EMI"
-              type="date"
-              {...register("firstPaymentDate")}
-              error={errors.firstPaymentDate?.message}
-            />
-            <FormField
+            <DateField control={control} name="startDate" label="Loan start" />
+            <DateField control={control} name="firstPaymentDate" label="First EMI" />
+            <AmountField
+              control={control}
+              name="emi"
+              currency={currency}
               label="EMI (optional)"
-              inputMode="decimal"
-              autoComplete="off"
               hint="Blank: worked out from the terms."
-              {...register("emi")}
-              error={errors.emi?.message}
             />
           </div>
           <details className="rounded-lg border p-3 text-sm">
@@ -267,20 +246,18 @@ export function LoanDialog({ workspaceId, loan, accounts, onSaved, onClose }: Lo
               Already repaying this loan?
             </summary>
             <div className="mt-3 grid gap-4 sm:grid-cols-2">
-              <FormField
+              <AmountField
+                control={control}
+                name="outstanding"
+                currency={currency}
                 label="Still owed (principal)"
-                inputMode="decimal"
-                autoComplete="off"
                 hint="From your latest statement."
-                {...register("outstanding")}
-                error={errors.outstanding?.message}
               />
-              <FormField
+              <DateField
+                control={control}
+                name="nextPaymentDate"
                 label="Next EMI"
-                type="date"
                 hint="Earlier EMIs aren’t tracked."
-                {...register("nextPaymentDate")}
-                error={errors.nextPaymentDate?.message}
               />
             </div>
           </details>
