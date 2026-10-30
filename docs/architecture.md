@@ -324,6 +324,11 @@ written once. SQLite is embedded in the API process; local mode needs no databas
   `finance_recurring_payments`, and `finance_recurring_occurrences` with RLS, adds the `loan`
   account type, a unique `finance_transactions(id, workspace_id)` key, and the reminders' links to
   commitments (see [Financial commitments](#financial-commitments-phase-2)).
+- `0010_create_investments` creates `finance_investment_accounts`, `finance_holdings`,
+  `finance_holding_prices`, `finance_sip_plans`, `finance_deposits`,
+  `finance_investment_transactions`, `finance_assets`, `finance_asset_valuations`, and
+  `finance_net_worth_snapshots` with RLS, and adds the reminders' unique link to a deposit (see
+  [Investments and net worth](#investments-and-net-worth-phase-3)).
 - Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
   Startup only checks that the database is at the head revision. For a shared cloud database,
   schema changes should be deliberate and reviewable.
@@ -403,7 +408,7 @@ structure.
      `0007` for `reminders`, `reminder_occurrences`, and `notifications`; `0008` for
      `finance_accounts`, `finance_categories`, and `finance_transactions`; `0009` for
      `finance_loans`, `finance_loan_installments`, `finance_recurring_payments`, and
-     `finance_recurring_occurrences`.
+     `finance_recurring_occurrences`; `0010` for the nine investment, asset, and snapshot tables.
   2. **No policies exist**, deliberately: the browser never queries tables directly, so the
      Data API's `anon` and `authenticated` roles get no rows. Add `authenticated` policies
      (for example `owner_id = auth.uid()`) only if a client is ever allowed direct access.
@@ -735,7 +740,8 @@ cluttering reminders, and lets notifications outlive edits and deletions of thei
 - **Finance-managed reminders.** A loan, subscription, or bill with reminders turned on owns one
   reminder (`reminders.finance_loan_id` or `finance_recurring_payment_id`, unique). It appears in
   the reminders list marked "Managed in Finance"; the reminders API refuses to edit or delete it
-  (409). See [Reminder integration](#reminder-integration).
+  (409). See [Reminder integration](#reminder-integration). A deposit's maturity reminder
+  (`reminders.finance_deposit_id`) works the same way and fires once.
 
 ### Scheduling and delivery
 
@@ -922,7 +928,8 @@ workspaces ──< finance_accounts ──< finance_transactions >── finance
   is an `asset`. `GET …/accounts` returns per-currency `totals`: `assets` (sum of asset balances)
   and `liabilities` (what cards and loans owe, positive), including archived accounts, whose
   balances are still real. The UI labels these "in your accounts" and "owed on cards and loans"
-  and states that they are **not net worth**: investment market values aren't tracked.
+  and states that they are **not net worth**, which is computed separately (see
+  [Net worth](#net-worth)) with investments at market value and other assets.
 - Balances include every recorded transaction, whatever its date.
 
 ### Financial rules
@@ -931,7 +938,9 @@ workspaces ──< finance_accounts ──< finance_transactions >── finance
   spending on its date. Paying the bill is a `transfer` from a bank account to the card: it
   settles the liability and is not spending, so nothing is counted twice.
 - **Investments.** Moving money into an investment account is a `transfer`, not spending. The
-  investment account's balance is what was moved in (cost), not market value.
+  investment account's ledger balance is what was moved in, net of income, fees, and
+  withdrawals; holdings and their market value are tracked by phase 3 (see
+  [Investments and net worth](#investments-and-net-worth-phase-3)).
 - **Refunds and corrections.** Refunds are their own transactions, so the original expense stays
   as it happened. Mistakes are corrected by editing (`PATCH`) or deleting the transaction;
   derived balances and reports follow. `updated_at` records the correction.
@@ -1196,10 +1205,264 @@ transaction is a 422.
   `["workspaces", id, "finance", "commitments", …]`, so any finance change refetches them;
   commitment changes also refetch reminders.
 
+## Investments and net worth (phase 3)
+
+Investment accounts, mutual funds, stocks and ETFs, SIPs, fixed and recurring deposits, other
+assets, a portfolio summary, net worth, and monthly net worth snapshots. Code:
+`services/investments/` (`quantities.py`, `lots.py`, `deposits.py`, and `portfolio.py` are pure
+arithmetic; `service.py` and `assets.py` the rules; `valuation.py` the price-feed seam),
+`services/networth/` (`calculation.py` pure, `service.py` snapshots),
+`repositories/investments.py`, `schemas/investments.py`, `schemas/networth.py`, and
+`api/v1/investments.py` and `api/v1/networth.py`. Like phase 2, this sits **on top of** the phase 1
+ledger: every rupee that moves is an ordinary `finance_transactions` row, and no second account,
+transaction, loan, or reminder model exists.
+
+### Investment data model
+
+```text
+finance_accounts (type 'investment') ──1:1── finance_investment_accounts
+                                                 ├──< finance_holdings ──< finance_holding_prices
+                                                 │          └──< finance_sip_plans
+                                                 ├──< finance_deposits ──── reminders.finance_deposit_id
+                                                 └──< finance_investment_transactions ──> finance_transactions
+                                                                                          (cash, fees; no ON DELETE)
+finance_assets ──< finance_asset_valuations
+finance_net_worth_snapshots   (unique workspace, currency, month)
+```
+
+| Table                             | Holds                                                                                                                                                                 |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `finance_investment_accounts`     | The profile of an `investment` finance account: `kind` (mutual_fund, brokerage, deposit, other), `provider`, optional `linked_account_id`                             |
+| `finance_holdings`                | A mutual fund, stock, or ETF: name, symbol or scheme code, exchange, ISIN, AMC, category, folio, and a normalized `identity`, unique per account                      |
+| `finance_holding_prices`          | One price per holding and date (scaled), with `source` (`manual` today; `import`, `provider` reserved)                                                                |
+| `finance_sip_plans`               | A scheduled SIP: amount, frequency, anchor date, optional end and funding account, state                                                                              |
+| `finance_deposits`                | A fixed or recurring deposit: rate (bps), compounding, start and maturity, RD installment, the bank's stated maturity amount, status, manual value, maturity reminder |
+| `finance_investment_transactions` | buy, sell, dividend, interest, fee, deposit, withdrawal: date, amount, units, charges, settlement, SIP due date, and the ledger rows it recorded                      |
+| `finance_assets`                  | Gold, property, vehicles, cash, other: purchase date and cost, optional linked account, `include_in_net_worth`, archived                                              |
+| `finance_asset_valuations`        | One value per asset and date, with `source`                                                                                                                           |
+| `finance_net_worth_snapshots`     | One month's assets, liabilities, net worth, group totals, `source`, and counts of estimated, manual, stale, and missing values                                        |
+
+- **No parallel accounts.** An investment account _is_ a finance account; the profile adds only
+  what Phase 1 lacks. Name, currency, notes, and archiving stay on the finance account. An
+  existing `investment` account can be **adopted** (`POST …/investment-accounts` with
+  `account_id`), so its history carries over instead of a duplicate being created.
+- **Quantities, cost, and principal are derived**, never stored: units and FIFO cost from a
+  holding's buys and sells, a deposit's principal from its deposits and withdrawals.
+- **Keys keep everything in one workspace and currency**: composite foreign keys from holdings,
+  deposits, and transactions to `finance_investment_accounts(account_id, workspace_id,
+currency)`, and from transactions to their holding's `(id, workspace_id, currency)`.
+- **CHECK constraints mirror the service rules** (tested in `tests/test_migrations.py`): each
+  type's shape (only trades have units; dividends name a holding; deposit flows name a deposit),
+  `settlement` rules, income and fees always having a ledger row, a SIP due date only on a SIP
+  buy, and NULL-safe ranges.
+- **History is protected.** A holding with transactions can't be deleted; the ledger refuses to
+  delete a transaction an investment transaction records (409, like phase 2 payments); one ledger
+  row backs at most one investment transaction (unique keys).
+
+### Investment accounting rules
+
+| Event                       | Ledger rows Orbit records                                                             | Counts as                                        |
+| --------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Buy from another account    | `transfer` from that account into the investment account                              | Neither income nor spending                      |
+| Buy from the account's cash | None: cash becomes a holding inside the investment account                            | Neither                                          |
+| Buy bought before Orbit     | None (`settlement = none`): units arrive as already owned                             | Neither                                          |
+| Sell into another account   | `transfer` from the investment account to that account                                | Neither; the FIFO gain is investment performance |
+| Dividend, interest          | `income` in "Dividends" or "Interest", into the investment account or another account | Income                                           |
+| Fee, or charges on a trade  | `expense` in "Fees and charges"                                                       | Spending                                         |
+| Deposit, withdrawal (FD/RD) | As buy and sell                                                                       | Neither                                          |
+| Deposit closure             | Withdrawal of the principal held; anything above it as `interest` income              | Interest is income                               |
+
+- **No double counting.** A purchase is never an expense; the transfer that funds it moves money
+  between two asset accounts, and the purchase then turns the investment account's cash into a
+  holding. Realized gains are not income in cash-flow reports; they appear in the portfolio.
+- **Investment cash** = the investment account's ledger balance − purchases and deposits + sale
+  proceeds and withdrawals, counting only those settled through Orbit. Its ledger balance alone
+  (shown in Accounts) still includes what was spent on holdings.
+- **Atomic.** Each request commits once: the investment transaction, its transfer, its fee
+  expense, a deposit's opening deposit, and its reminder change succeed or fail together.
+- **Deleting** an investment transaction keeps its ledger rows as ordinary transactions unless
+  `delete_ledger=true`. A buy that later sales depend on can't be deleted (409).
+- **SIPs**: a SIP plan is an expectation. Its next due date is the first scheduled date without a
+  recorded installment (possibly overdue); recording one creates a buy with `plan = sip` and the
+  `sip_due_date` it settles, unique per plan, so an installment can't be recorded twice. Pausing
+  stops the schedule; resuming restarts from the next date on or after today.
+
+### Cost basis, precision, and rounding
+
+- **FIFO for every holding** (`lots.py`): a sale takes units from the oldest open lot first. The
+  cost of a partial lot is its remaining cost × units sold ÷ units remaining, **rounded half up**
+  to the minor unit; selling a lot's last units takes its remaining cost exactly, so rounding
+  never creates or loses cost. Realized gain = gross proceeds − cost of the units taken. Fees are
+  expenses, never part of cost or proceeds. Trades are ordered by date, then as recorded. A sale
+  of more units than were held on its date is rejected (422).
+- **Units and prices are fixed-point**: integers in millionths (6 decimals) of a unit, and of
+  the currency's major unit per unit. The API sends them as decimal strings (`"218.92"`,
+  `"45.6789"`); more decimals, signs, or exponents are rejected, never rounded. Money stays in
+  integer minor units.
+- **Market value** = units × price, converted to minor units and rounded half up once. Average
+  cost = FIFO cost ÷ units, rounded half up to 6 decimals.
+- **Return** = unrealized + realized + dividends and interest − fees; the percentage is over
+  everything ever invested (buys and deposits), simple and not annualized, for display only.
+- Deterministic: the same history and date always produce the same values; everything is
+  covered by pure unit tests (`tests/test_investment_math.py`).
+
+### Deposits
+
+- Opening a deposit records its first `deposit` (an FD's principal, an RD's first installment) on
+  the start date; later RD installments and top-ups are recorded one by one.
+- **Estimated value** (`deposits.py`, `Decimal` at 60 digits, rounded half up once per
+  contribution): interest compounds every whole period counted in calendar months from each
+  contribution; the broken period after the last whole one earns simple interest
+  (`rate × days ÷ 365`) on the compounded amount; `simple` deposits earn simple interest only;
+  nothing accrues after maturity. An RD's projection assumes every monthly installment is paid.
+- These are **estimates, labelled as such** (`value_source = estimate`, `freshness = estimated`).
+  The bank's stated maturity amount is stored and shown beside the projection, not instead of
+  it. A value entered by hand replaces the estimate from its date (marked stale after a year).
+- **Closing** at or after maturity sets `matured`, earlier `closed`. The amount received above the
+  principal held is interest income; less than the principal (a penalty) withdraws what was
+  received and the rest is lost. `…/reopen` undoes a closure (optionally deleting its ledger rows).
+- **Maturity reminders** use the existing reminder engine: one reminder per deposit
+  (`reminders.finance_deposit_id`, unique), `days_before` the maturity date, kept in sync on
+  every change and deleted when the deposit closes. It fires once. The phase 2 reminder-sync
+  step was extracted to `services/reminders/managed.py` and is shared by both.
+
+### Other assets
+
+- Valued by hand with a dated history; the latest valuation on or before a date applies. Without
+  one, the purchase cost is used and marked `missing`. Valuations older than a year are `stale`.
+- **Duplicates are prevented**: names are unique per workspace (case-insensitively), and an asset
+  linked to an **asset account** (bank, cash, investment) is treated as already counted in that
+  balance and left out of net worth, with the reason shown. An asset linked to a liability (the
+  loan that financed a vehicle) is counted. `include_in_net_worth: false` leaves any asset out;
+  archived (sold) assets are history only.
+
+### Net worth
+
+**Net worth = total assets − total liabilities**, per currency (never converted), on any date
+(`services/networth/calculation.py`, pure):
+
+| Source                                 | Counted as                                                    | Value source                    |
+| -------------------------------------- | ------------------------------------------------------------- | ------------------------------- |
+| Bank, savings, cash, wallet, other     | Asset: ledger balance on the date                             | `ledger`                        |
+| Investment account with a profile      | Asset: its **cash** only, plus each holding and deposit below | `ledger`                        |
+| Holding                                | Asset: units × latest price on or before the date             | `market`, else `cost` (missing) |
+| Deposit                                | Asset: estimated or manual value; 0 once closed               | `estimate` or `manual`          |
+| `investment` account without a profile | Asset: ledger balance, labelled "at cost"                     | `cost` (missing)                |
+| Other asset (counted)                  | Asset: latest valuation                                       | `manual`, else `cost`           |
+| Credit card, loan                      | Liability: what the ledger says is owed                       | `ledger`                        |
+
+- **Each source is counted once**: the investment account contributes cash, not its ledger
+  balance (which includes money already turned into holdings), so a purchase at cost leaves net
+  worth unchanged. Loans use the Phase 2 loan account's balance, the same source of truth as the
+  Loans view.
+- **Every item carries** its valuation date, `source`, and `freshness` (`current`, `stale`,
+  `missing`, `estimated`); the totals report how many counted items are estimated, manual,
+  stale, or missing, and the web app lists them. Prices are stale after 7 days.
+- **As of a past date**, balances count transactions dated on or before it (FinanceService's
+  `accounts(…, as_of)`), holdings replay their trades to that date, and prices and valuations are
+  the latest on or before it. Opening balances have no date and always count.
+
+### Net worth snapshots
+
+- **One per workspace, currency, and month** (unique key), valued as of the month's last day, or
+  today for the current month. Generating one is **idempotent**: a month that already has one
+  returns it (200) instead of adding another; a concurrent insert loses the race and returns the
+  winner. Only the current month can be deliberately refreshed (`refresh: true`); past months are
+  never changed (409).
+- **Source** distinguishes actual from reconstructed values: `scheduled` (taken by the worker at
+  month end), `manual` (the current month, saved by the user), or `backfill` (a past month
+  rebuilt later from recorded history). Each snapshot also stores how many of its values were
+  estimated, manual, stale, or missing. Group totals are stored as JSON.
+- **Automation uses the existing worker**: `ReminderWorker` checks at most hourly (after a poll)
+  and takes the previous month's snapshot for every workspace with finance data that lacks one,
+  each in its own transaction. No other scheduler exists. Month boundaries for the worker are
+  UTC dates.
+- The dashboard compares today's net worth with the snapshots 1, 3, 6, and 12 months back, and
+  charts stored snapshots plus a live point for today.
+
+### Valuation strategy
+
+Prices and valuations are **entered by hand** in this phase. Orbit calls no market data, NAV, or
+bank APIs. Every price and valuation stores its date and `source`, and
+`services/investments/valuation.py` defines the seam for later: a `PriceFeed` returns `Quote`s,
+and `InvestmentService.record_prices` stores them (one per holding and date, ignoring holdings
+outside the workspace) with the feed's `source`. A NAV provider, market data provider, or
+statement import can be added behind that protocol without schema changes.
+
+### Investments API
+
+Under `/api/v1/workspaces/{workspace_id}/finance`, authorized through `WorkspaceDep`. Another
+workspace's account, holding, deposit, or transaction is a 404; referencing one in a request is a 422. Date-dependent reads take `today` (the user's local date; defaults as in phase 2).
+
+| Method                   | Path                                            | Purpose                                                                   |
+| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------- |
+| `GET`                    | `/portfolio`                                    | Values, gains, income, fees, allocation (`currency`, `today`, date range) |
+| `GET`, `POST`            | `/investment-accounts`                          | List; create or adopt (`account_id`)                                      |
+| `GET`, `PATCH`           | `/investment-accounts/{account_id}`             | One; change kind, provider, link, name, notes, `archived`                 |
+| `GET`, `POST`            | `/holdings`                                     | List with units, cost, value, gains; add (409 on a duplicate)             |
+| `GET`, `PATCH`, `DELETE` | `/holdings/{id}`                                | One; edit; delete one without transactions                                |
+| `GET`, `POST`            | `/holdings/{id}/prices`                         | Price history; record a price (replaces that date's)                      |
+| `DELETE`                 | `/holdings/{id}/prices/{price_id}`              | Delete a price                                                            |
+| `GET`, `POST`            | `/investment-transactions`                      | Activity (filters, paging); record with its ledger rows                   |
+| `GET`, `DELETE`          | `/investment-transactions/{id}`                 | One; delete (`delete_ledger`)                                             |
+| `GET`, `POST`            | `/sip-plans`                                    | List with next due date; schedule                                         |
+| `PATCH`                  | `/sip-plans/{id}`                               | Change, pause, cancel, resume                                             |
+| `POST`                   | `/sip-plans/{id}/installments`                  | Record an installment (409 if that date is recorded)                      |
+| `GET`, `POST`            | `/deposits`                                     | List with estimates and projections; open                                 |
+| `GET`, `PATCH`           | `/deposits/{id}`                                | One; edit terms and reminder                                              |
+| `POST`                   | `/deposits/{id}/contributions`                  | Record money put in                                                       |
+| `PUT`                    | `/deposits/{id}/value`                          | Set (or clear) a manual value                                             |
+| `POST`                   | `/deposits/{id}/close`, `/deposits/{id}/reopen` | Close (withdrawal + interest); undo a closure                             |
+| `GET`, `POST`            | `/assets`                                       | List; add (409 on a duplicate name)                                       |
+| `GET`, `PATCH`           | `/assets/{id}`                                  | One; edit, archive, restore                                               |
+| `GET`, `POST`            | `/assets/{id}/valuations`                       | History; record a value (replaces that date's)                            |
+| `DELETE`                 | `/assets/{id}/valuations/{valuation_id}`        | Delete a valuation                                                        |
+| `GET`                    | `/net-worth`                                    | Totals, groups, items, quality, changes (`currency`, `today`, `as_of`)    |
+| `GET`, `POST`            | `/net-worth/snapshots`                          | History; save a month (201 created, 200 already there)                    |
+
+Request models forbid unknown fields; quantities and prices must be decimal strings; amounts
+must be JSON integers. Routes log nothing about holdings or values.
+
+### Investments in the web app
+
+- `/finance` gains **Investments** (tiles for current value, cost, unrealized gain, and total
+  return with realized gains, income, and fees for this year, the last 12 months, or all time; a
+  stale or missing price notice; allocation and category bars; holdings grouped by account with
+  units, average cost, cost basis, latest price and date, realized gains, and dividends; SIPs;
+  deposits with estimate labels and the bank's stated amount; recent activity with delete
+  confirmation; investment accounts with their cash), **Assets** (values, stale and "not in net
+  worth" markers, history, update value, archive with confirmation), and **Net worth** (totals,
+  a quality notice, changes, a monthly trend from snapshots plus today, asset and liability
+  breakdowns, and every item with its source and date, including those not counted).
+- Dialogs use React Hook Form with Yup schemas in `lib/investments`, which parses units and
+  prices as strings (`parseUnits`) and never uses floats for money. Queries live under
+  `["workspaces", id, "finance", "investments", …]`, so any finance change refetches them;
+  changes also refetch reminders.
+- Charts use the single `--chart-1` token: allocation as labelled proportion bars, the trend as
+  one bar per month (reconstructed months outlined, today ringed), each focusable with its
+  figures in its accessible name.
+
+### Investment limitations
+
+- **No live prices** or bank, broker, or registrar connections; values are only as current as
+  the prices entered, and stale ones are marked.
+- **Corporate actions** (splits, bonuses, mergers, dividend reinvestment as units) aren't
+  modelled; record them as a sale and buy, or adjust by hand. FIFO is the only cost method;
+  there is no tax lot selection, capital gains tax, or grandfathering.
+- Investment transactions can't be edited, only deleted and recorded again. Editing a ledger row
+  an investment transaction recorded isn't blocked and can make investment cash drift; delete
+  the investment transaction instead.
+- Deposits don't model periodic interest payouts, TDS, or exact bank day counts; RD installments
+  are recorded one by one, and missed ones aren't tracked.
+- Net worth is per currency with no conversion. Reconstructed (backfilled) snapshots count
+  opening balances whatever the date, and use prices and valuations recorded before that date
+  only.
+- Return percentages are simple, not annualized (no XIRR).
+
 ### Finance limitations and extension points (planned, not implemented)
 
-- **Investments** would add holdings and price tables keyed to investment accounts, giving
-  market value beside the cost balance tracked today. Only then can a net-worth figure be shown.
+- **Price providers** (mutual fund NAVs, market prices, statement imports) would implement
+  `PriceFeed` (see [Valuation strategy](#valuation-strategy)); none is integrated.
 - **Budgets** would add per-category monthly limits read against the existing
   `spending-by-category` aggregate.
 - Commitments don't create transactions automatically (no auto-debit); each payment is recorded
@@ -1228,16 +1491,16 @@ transaction is a 422.
 
 ## Testing strategy
 
-| Layer                    | Tool                                            | Location                                                    | Current coverage                                                                                                                              |
-| ------------------------ | ----------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                  | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance                      |
-| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                           | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, cross-user isolation |
-| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_reminder_worker.py` | Recurrence, DST, month ends; delivery, concurrency, leases, retries, restarts                                                                 |
-| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                          | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                  |
-| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                     | Startup checks, sessions, migrations, constraints, 503 errors                                                                                 |
-| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                           | Migrations, connectivity, RLS; skipped by default                                                                                             |
-| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                   | Generated contract matches the API                                                                                                            |
-| End-to-end               | Not set up (**planned**)                        | —                                                           | —                                                                                                                                             |
+| Layer                    | Tool                                            | Location                                                    | Current coverage                                                                                                                                 |
+| ------------------------ | ----------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                  | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth |
+| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                           | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, cross-user isolation    |
+| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_reminder_worker.py` | Recurrence, DST, month ends; delivery, concurrency, leases, retries, restarts                                                                    |
+| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                          | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                     |
+| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                     | Startup checks, sessions, migrations, constraints, 503 errors                                                                                    |
+| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                           | Migrations, connectivity, RLS; skipped by default                                                                                                |
+| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                   | Generated contract matches the API                                                                                                               |
+| End-to-end               | Not set up (**planned**)                        | —                                                           | —                                                                                                                                                |
 
 Unit tests cover logic, route tests cover HTTP behavior and validation, and E2E tests will cover
 critical user journeys once real features exist. CI runs every layer on each pull request.
@@ -1274,7 +1537,8 @@ The database foundation is implemented (see [Storage](#storage)). Still planned:
 ### Evolution
 
 Workspace-scoped [tasks](#tasks), [reminders](#reminders-and-notifications) (with a
-database-backed worker), and the first phase of [finance](#finance) are in place. Next: more
+database-backed worker), and three phases of [finance](#finance) (ledger, commitments, and
+[investments and net worth](#investments-and-net-worth-phase-3)) are in place. Next: more
 modules on the same pattern, AI-assisted features through the provider interface, then optional
 sync and extension points.
 Each step should leave the boundaries above intact.

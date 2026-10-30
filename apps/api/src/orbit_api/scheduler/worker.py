@@ -1,4 +1,6 @@
-"""The reminder worker: polls the database for due occurrences and delivers them.
+"""The reminder worker: polls the database for due occurrences and delivers them. It also
+takes each workspace's month-end net worth snapshots (at most hourly), so Orbit has one
+scheduler rather than two.
 
 It holds no schedule in memory. Each poll reads due work from the database, so a restart loses
 nothing, and any number of workers (the one embedded in each API process, plus standalone
@@ -19,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from orbit_api.db.columns import utc_now
 from orbit_api.db.database import Database
 from orbit_api.repositories.commitments import build_commitment_service
+from orbit_api.repositories.investments import SqlSnapshotRepository, build_net_worth_service
 from orbit_api.repositories.notifications import SqlNotificationRepository
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.transaction import SqlTransaction
@@ -35,6 +38,9 @@ DEFAULT_BATCH_SIZE = 50
 # Long enough for any single delivery; a worker that dies holding a claim delays that occurrence
 # by at most this much.
 DEFAULT_LEASE = timedelta(minutes=2)
+# How often the worker checks for month-end net worth snapshots to take. Taking one is
+# idempotent, so a check that finds nothing to do costs one query per workspace.
+DEFAULT_SNAPSHOT_INTERVAL = timedelta(hours=1)
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,8 +60,11 @@ class ReminderWorker:
         batch_size: int = DEFAULT_BATCH_SIZE,
         lease: timedelta = DEFAULT_LEASE,
         max_attempts: int = DEFAULT_MAX_ATTEMPTS,
+        snapshot_interval: timedelta = DEFAULT_SNAPSHOT_INTERVAL,
     ) -> None:
         self._database = database
+        self._snapshot_interval = snapshot_interval
+        self._snapshots_checked_at: datetime | None = None
         self._clock = clock
         self._batch_size = batch_size
         self._lease = lease
@@ -78,6 +87,39 @@ class ReminderWorker:
             logger.info("Processed %d reminder occurrence(s): %s", len(claims), dict(results))
         return WorkerReport(claimed=len(claims), results=results)
 
+    async def take_snapshots(self) -> int:
+        """Take the previous month's net worth snapshot for every workspace with finance data
+        that doesn't have one yet, each in its own transaction; return how many were taken."""
+        today = self._clock().date()
+        async with self._database.session() as session:
+            workspaces = await SqlSnapshotRepository(session).workspaces_with_finance()
+        taken = 0
+        for workspace_id in workspaces:
+            async with self._database.session() as session:
+                try:
+                    service = build_net_worth_service(session, self._clock)
+                    taken += await service.close_month(workspace_id, today)
+                except Exception:
+                    # Deliberate boundary: one workspace's failure must not stop the others;
+                    # the next check retries it. IDs only: values are personal data.
+                    await session.rollback()
+                    logger.exception("Taking net worth snapshots for %s failed.", workspace_id)
+        if taken:
+            logger.info("Took %d month-end net worth snapshot(s).", taken)
+        return taken
+
+    async def _maybe_take_snapshots(self) -> None:
+        now = self._clock()
+        last = self._snapshots_checked_at
+        if last is not None and now - last < self._snapshot_interval:
+            return
+        self._snapshots_checked_at = now
+        try:
+            await self.take_snapshots()
+        except Exception:
+            # Deliberate boundary: snapshots must never stop reminder delivery.
+            logger.exception("Checking net worth snapshots failed; retrying later.")
+
     async def run(self, stop: asyncio.Event, poll_interval: float) -> None:
         """Poll until `stop` is set. A poll in progress finishes first, so shutdown never
         abandons a claimed occurrence mid-transaction."""
@@ -92,6 +134,7 @@ class ReminderWorker:
                 report = WorkerReport()
             if report.claimed >= self._batch_size:
                 continue  # More may be due: drain the backlog before sleeping.
+            await self._maybe_take_snapshots()
             # Sleep until the next poll, waking early when asked to stop.
             with contextlib.suppress(TimeoutError):
                 await asyncio.wait_for(stop.wait(), timeout=poll_interval)

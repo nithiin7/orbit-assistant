@@ -152,7 +152,10 @@ class SqlFinanceAccountRepository:
         return _to_account(model) if model else None
 
     async def views(
-        self, workspace_id: uuid.UUID, account_id: uuid.UUID | None = None
+        self,
+        workspace_id: uuid.UUID,
+        account_id: uuid.UUID | None = None,
+        as_of: date | None = None,
     ) -> list[AccountView]:
         # Each transaction moves money out of or into `account_id`; a transfer also moves it into
         # `to_account_id`. One grouped pass over the workspace's transactions gives every
@@ -170,6 +173,9 @@ class SqlFinanceAccountRepository:
         if account_id is not None:
             from_side = from_side.where(_Transaction.account_id == account_id)
             to_side = to_side.where(_Transaction.to_account_id == account_id)
+        if as_of is not None:
+            from_side = from_side.where(_Transaction.occurred_on <= as_of)
+            to_side = to_side.where(_Transaction.occurred_on <= as_of)
         movements = union_all(from_side, to_side).subquery()
         totals = (
             select(

@@ -36,7 +36,7 @@ MAX_RATE_BPS = 10_000
 _TRANSACTION_KEY = ["finance_transactions.id", "finance_transactions.workspace_id"]
 
 
-class _ReminderColumns:
+class ReminderColumns:
     """When to remind about each payment. All three are set together, or none."""
 
     reminder_days_before: Mapped[int | None] = mapped_column(Integer)
@@ -44,7 +44,7 @@ class _ReminderColumns:
     reminder_timezone: Mapped[str | None] = mapped_column(String(64))
 
 
-def _reminder_checks() -> tuple[CheckConstraint, ...]:
+def reminder_checks() -> tuple[CheckConstraint, ...]:
     return (
         CheckConstraint(
             "(reminder_days_before IS NULL AND reminder_time IS NULL"
@@ -56,7 +56,7 @@ def _reminder_checks() -> tuple[CheckConstraint, ...]:
     )
 
 
-class FinanceLoanModel(_ReminderColumns, Base):
+class FinanceLoanModel(ReminderColumns, Base):
     """A loan, tracked against a `loan` liability account whose derived balance is the
     outstanding principal. Loans are closed or archived, never deleted through the API."""
 
@@ -83,7 +83,7 @@ class FinanceLoanModel(_ReminderColumns, Base):
         ),
         CheckConstraint("length(notes) <= 2000", name="notes_length"),
         CheckConstraint("status IN ('active', 'closed', 'archived')", name="status"),
-        *_reminder_checks(),
+        *reminder_checks(),
         # The loan's account is in its workspace and currency, and backs no other loan.
         ForeignKeyConstraint(
             ["account_id", "workspace_id", "currency"],
@@ -197,7 +197,7 @@ class FinanceLoanInstallmentModel(Base):
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now, onupdate=utc_now)
 
 
-class FinanceRecurringPaymentModel(_ReminderColumns, Base):
+class FinanceRecurringPaymentModel(ReminderColumns, Base):
     """A subscription or a recurring bill. Its future due dates are computed from
     `anchor_date` and `frequency`; only settled occurrences are stored. Cancelled, never deleted
     through the API, so payment history stays."""
@@ -216,7 +216,7 @@ class FinanceRecurringPaymentModel(_ReminderColumns, Base):
         CheckConstraint("end_date IS NULL OR end_date >= anchor_date", name="end_after_anchor"),
         CheckConstraint("state IN ('active', 'paused', 'cancelled')", name="state"),
         CheckConstraint("length(notes) <= 2000", name="notes_length"),
-        *_reminder_checks(),
+        *reminder_checks(),
         # No `ON DELETE` actions: accounts are archived rather than deleted, and a category a
         # recurring payment uses can't be deleted.
         ForeignKeyConstraint(

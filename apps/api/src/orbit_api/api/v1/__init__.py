@@ -7,7 +7,9 @@ from orbit_api.api.v1 import (
     commitments,
     finance,
     health,
+    investments,
     me,
+    networth,
     notifications,
     reminders,
     shopping,
@@ -27,4 +29,6 @@ router.include_router(shopping.router)
 router.include_router(reminders.router)
 router.include_router(finance.router)
 router.include_router(commitments.router)
+router.include_router(investments.router)
+router.include_router(networth.router)
 router.include_router(storage.router)

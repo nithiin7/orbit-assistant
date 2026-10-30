@@ -59,6 +59,15 @@ PROTECTED_TABLES = (
     "finance_loan_installments",
     "finance_recurring_payments",
     "finance_recurring_occurrences",
+    "finance_investment_accounts",
+    "finance_holdings",
+    "finance_holding_prices",
+    "finance_sip_plans",
+    "finance_deposits",
+    "finance_investment_transactions",
+    "finance_assets",
+    "finance_asset_valuations",
+    "finance_net_worth_snapshots",
 )
 
 

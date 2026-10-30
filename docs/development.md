@@ -206,7 +206,7 @@ pnpm db:migrate                       # upgrade to the latest revision (from the
 cd apps/api
 uv run alembic current                # revision the database is at
 uv run alembic history                # all revisions
-uv run alembic revision --autogenerate --rev-id 0009 -m "create notes table"
+uv run alembic revision --autogenerate --rev-id 0011 -m "create notes table"
 uv run alembic downgrade -1           # revert the latest revision
 ```
 

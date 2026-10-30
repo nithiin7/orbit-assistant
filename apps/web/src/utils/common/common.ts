@@ -5,6 +5,11 @@ import { twMerge } from "tailwind-merge";
 /** One choice in a select, radio group, or segmented control. */
 export type Option<T extends string> = { value: T; label: string };
 
+/** The label of `value` among `options`, or the value itself if it isn't one. */
+export function labelOf<T extends string>(options: readonly Option<T>[], value: T): string {
+  return options.find((option) => option.value === value)?.label ?? value;
+}
+
 /** Merges conditional class names and resolves Tailwind conflicts. */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

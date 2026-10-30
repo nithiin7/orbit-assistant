@@ -18,7 +18,8 @@ non-trivial work. The essentials are repeated here because Copilot may not load 
   product features are tasks, shopping lists, reminders with in-app notifications
   (delivered by the worker in `scheduler/`), and finance (accounts, transactions, categories,
   monthly reports, CSV export, loans and EMIs, subscriptions, recurring bills, upcoming
-  payments); no other features or AI integration exist yet.
+  payments, investments with hand-entered prices, deposits, other assets, net worth); no other
+  features or AI integration exist yet.
   Don't build on them unless the task asks.
 
 ## Rules

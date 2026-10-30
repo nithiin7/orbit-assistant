@@ -18,6 +18,11 @@ from orbit_api.repositories.finance import (
     SqlFinanceCategoryRepository,
     SqlFinanceTransactionRepository,
 )
+from orbit_api.repositories.investments import (
+    build_asset_service,
+    build_investment_service,
+    build_net_worth_service,
+)
 from orbit_api.repositories.notifications import SqlNotificationRepository
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.shopping import SqlShoppingItemRepository, SqlShoppingListRepository
@@ -29,7 +34,10 @@ from orbit_api.services.avatars.service import AvatarService
 from orbit_api.services.commitments.service import CommitmentService
 from orbit_api.services.dashboard.service import DashboardService
 from orbit_api.services.finance.service import FinanceService
+from orbit_api.services.investments.assets import AssetService
+from orbit_api.services.investments.service import InvestmentService
 from orbit_api.services.local_auth.service import LocalAuthService, PasswordHasher
+from orbit_api.services.networth.service import NetWorthService
 from orbit_api.services.notifications.service import NotificationService
 from orbit_api.services.reminders.service import ReminderService
 from orbit_api.services.shopping.service import ShoppingService
@@ -164,3 +172,24 @@ def get_commitment_service(session: SessionDep) -> CommitmentService:
 
 
 CommitmentServiceDep = Annotated[CommitmentService, Depends(get_commitment_service)]
+
+
+def get_investment_service(session: SessionDep) -> InvestmentService:
+    return build_investment_service(session)
+
+
+InvestmentServiceDep = Annotated[InvestmentService, Depends(get_investment_service)]
+
+
+def get_asset_service(session: SessionDep) -> AssetService:
+    return build_asset_service(session)
+
+
+AssetServiceDep = Annotated[AssetService, Depends(get_asset_service)]
+
+
+def get_net_worth_service(session: SessionDep) -> NetWorthService:
+    return build_net_worth_service(session)
+
+
+NetWorthServiceDep = Annotated[NetWorthService, Depends(get_net_worth_service)]

@@ -13,6 +13,17 @@ from orbit_api.db.models.finance import (
     FinanceCategoryModel,
     FinanceTransactionModel,
 )
+from orbit_api.db.models.investments import (
+    FinanceAssetModel,
+    FinanceAssetValuationModel,
+    FinanceDepositModel,
+    FinanceHoldingModel,
+    FinanceHoldingPriceModel,
+    FinanceInvestmentAccountModel,
+    FinanceInvestmentTransactionModel,
+    FinanceNetWorthSnapshotModel,
+    FinanceSipPlanModel,
+)
 from orbit_api.db.models.reminders import (
     NotificationModel,
     ReminderModel,
@@ -26,11 +37,20 @@ from orbit_api.db.models.workspaces import WorkspaceModel
 __all__ = [
     "DashboardLayoutModel",
     "FinanceAccountModel",
+    "FinanceAssetModel",
+    "FinanceAssetValuationModel",
     "FinanceCategoryModel",
+    "FinanceDepositModel",
+    "FinanceHoldingModel",
+    "FinanceHoldingPriceModel",
+    "FinanceInvestmentAccountModel",
+    "FinanceInvestmentTransactionModel",
     "FinanceLoanInstallmentModel",
     "FinanceLoanModel",
+    "FinanceNetWorthSnapshotModel",
     "FinanceRecurringOccurrenceModel",
     "FinanceRecurringPaymentModel",
+    "FinanceSipPlanModel",
     "FinanceTransactionModel",
     "LocalCredentialModel",
     "LocalSessionModel",

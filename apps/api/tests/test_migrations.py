@@ -722,3 +722,233 @@ def test_finance_migration_creates_and_drops_its_tables(migrated_settings: Setti
 
     assert not finance_tables & tables(migrated_settings)
     assert {"reminders", "tasks"} <= tables(migrated_settings)
+
+
+# Investments, assets, and net worth (0010)
+
+INVESTMENT_TABLES = {
+    "finance_investment_accounts",
+    "finance_holdings",
+    "finance_holding_prices",
+    "finance_sip_plans",
+    "finance_deposits",
+    "finance_investment_transactions",
+    "finance_assets",
+    "finance_asset_valuations",
+    "finance_net_worth_snapshots",
+}
+
+
+def insert_investment_account(database: Path, workspace_id: str, currency: str = "INR") -> str:
+    account_id = insert_finance_account(
+        database, workspace_id, type="investment", currency=currency
+    )
+    query(
+        database,
+        "INSERT INTO finance_investment_accounts (account_id, workspace_id, currency, kind,"
+        " provider, linked_account_id, created_at, updated_at)"
+        " VALUES (?, ?, ?, 'brokerage', '', NULL, ?, ?)",
+        account_id,
+        workspace_id,
+        currency,
+        NOW,
+        NOW,
+    )
+    return account_id
+
+
+def insert_holding(
+    database: Path, workspace_id: str, account_id: str, currency: str = "INR"
+) -> str:
+    holding_id = uuid.uuid4().hex
+    query(
+        database,
+        "INSERT INTO finance_holdings (id, workspace_id, account_id, currency, kind, name, symbol,"
+        " exchange, isin, issuer, category, folio, identity, notes, created_at, updated_at)"
+        " VALUES (?, ?, ?, ?, 'stock', 'H', '', '', '', '', '', '', ?, '', ?, ?)",
+        holding_id,
+        workspace_id,
+        account_id,
+        currency,
+        f"stock|name:{holding_id}|",
+        NOW,
+        NOW,
+    )
+    return holding_id
+
+
+def insert_investment_transaction(
+    database: Path, workspace_id: str, account_id: str, **overrides: object
+) -> str:
+    transaction_id = uuid.uuid4().hex
+    values: dict[str, object] = {
+        "type": "buy",
+        "amount": 100,
+        "fees": 0,
+        "holding_id": None,
+        "deposit_id": None,
+        "quantity": 1_000_000,
+        "plan": "lump_sum",
+        "settlement": "investment_account",
+        "cash_transaction_id": None,
+        "currency": "INR",
+        **overrides,
+    }
+    query(
+        database,
+        "INSERT INTO finance_investment_transactions (id, workspace_id, account_id, currency, type,"
+        " trade_date, amount, fees, holding_id, deposit_id, sip_plan_id, sip_due_date, quantity,"
+        " plan, settlement, cash_account_id, cash_transaction_id, fee_transaction_id, notes,"
+        " created_at, updated_at)"
+        " VALUES (?, ?, ?, ?, ?, '2026-02-10', ?, ?, ?, ?, NULL, NULL, ?, ?, ?, NULL, ?, NULL, '',"
+        " ?, ?)",
+        transaction_id,
+        workspace_id,
+        account_id,
+        values["currency"],
+        values["type"],
+        values["amount"],
+        values["fees"],
+        values["holding_id"],
+        values["deposit_id"],
+        values["quantity"],
+        values["plan"],
+        values["settlement"],
+        values["cash_transaction_id"],
+        NOW,
+        NOW,
+    )
+    return transaction_id
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"amount": 0},
+        {"type": "swap"},
+        {"quantity": None},
+        {"quantity": 0},
+        # Only buys are lump sums or SIP installments; only trades have units.
+        {"type": "sell"},
+        {"type": "dividend", "quantity": None, "plan": None},
+        # Income and fees always have a ledger row; fees on a trade too.
+        {"fees": 5},
+        # Money settled through another account names it; sales can't come from outside.
+        {"settlement": "account"},
+        {"type": "sell", "plan": None, "settlement": "none"},
+    ],
+)
+def test_database_enforces_investment_transaction_constraints(
+    migrated_settings: Settings, overrides: dict[str, object]
+) -> None:
+    database = migrated_settings.sqlite_path
+    workspace = insert_workspace(database, insert_user(database), is_personal=True)
+    account = insert_investment_account(database, workspace)
+    holding = insert_holding(database, workspace, account)
+    insert_investment_transaction(database, workspace, account, holding_id=holding)
+
+    with pytest.raises(sqlite3.IntegrityError, match="CHECK"):
+        insert_investment_transaction(database, workspace, account, holding_id=holding, **overrides)
+
+
+def test_investments_stay_in_their_accounts_workspace_and_currency(
+    migrated_settings: Settings,
+) -> None:
+    database = migrated_settings.sqlite_path
+    owner = insert_user(database)
+    workspace = insert_workspace(database, owner, is_personal=True)
+    other = insert_workspace(database, owner, is_personal=False)
+    account = insert_investment_account(database, workspace)
+    foreign = insert_holding(database, other, insert_investment_account(database, other))
+    dollars = insert_holding(
+        database, workspace, insert_investment_account(database, workspace, "USD"), "USD"
+    )
+
+    # A holding's account is an investment account in its workspace and currency.
+    with pytest.raises(sqlite3.IntegrityError, match="FOREIGN KEY"):
+        insert_holding(database, workspace, insert_finance_account(database, workspace))
+    with pytest.raises(sqlite3.IntegrityError, match="FOREIGN KEY"):
+        insert_holding(database, other, account)
+    for holding in (foreign, dollars):
+        with pytest.raises(sqlite3.IntegrityError, match="FOREIGN KEY"):
+            insert_investment_transaction(database, workspace, account, holding_id=holding)
+
+
+def test_ledger_rows_recording_investments_cannot_be_deleted(migrated_settings: Settings) -> None:
+    database = migrated_settings.sqlite_path
+    workspace = insert_workspace(database, insert_user(database), is_personal=True)
+    account = insert_investment_account(database, workspace)
+    holding = insert_holding(database, workspace, account)
+    income = insert_finance_transaction(database, workspace, account, type="income")
+    insert_investment_transaction(
+        database,
+        workspace,
+        account,
+        type="dividend",
+        holding_id=holding,
+        quantity=None,
+        plan=None,
+        cash_transaction_id=income,
+    )
+    with pytest.raises(sqlite3.IntegrityError, match="FOREIGN KEY"):
+        query(database, "DELETE FROM finance_transactions WHERE id = ?", income)
+    # Nor can one ledger row back two investment transactions.
+    with pytest.raises(sqlite3.IntegrityError, match="UNIQUE"):
+        insert_investment_transaction(
+            database,
+            workspace,
+            account,
+            type="dividend",
+            holding_id=holding,
+            quantity=None,
+            plan=None,
+            cash_transaction_id=income,
+        )
+
+
+def test_one_net_worth_snapshot_per_month_and_currency(migrated_settings: Settings) -> None:
+    database = migrated_settings.sqlite_path
+    workspace = insert_workspace(database, insert_user(database), is_personal=True)
+
+    def snapshot(currency: str = "INR") -> None:
+        query(
+            database,
+            "INSERT INTO finance_net_worth_snapshots (id, workspace_id, currency, period_start,"
+            " as_of, assets, liabilities, net_worth, groups, source, estimated_items,"
+            " manual_items, stale_items, missing_items, created_at, updated_at)"
+            " VALUES (?, ?, ?, '2026-01-01', '2026-01-31', 0, 0, 0, '[]', 'manual', 0, 0, 0, 0,"
+            " ?, ?)",
+            uuid.uuid4().hex,
+            workspace,
+            currency,
+            NOW,
+            NOW,
+        )
+
+    snapshot()
+    snapshot("USD")
+    with pytest.raises(sqlite3.IntegrityError, match="UNIQUE"):
+        snapshot()
+
+
+def test_deleting_a_workspace_deletes_its_investments(migrated_settings: Settings) -> None:
+    database = migrated_settings.sqlite_path
+    owner = insert_user(database)
+    doomed = insert_workspace(database, owner, is_personal=False)
+    account = insert_investment_account(database, doomed)
+    holding = insert_holding(database, doomed, account)
+    insert_investment_transaction(database, doomed, account, holding_id=holding)
+
+    query(database, "DELETE FROM workspaces WHERE id = ?", doomed)
+
+    for table in INVESTMENT_TABLES:
+        assert query(database, f"SELECT count(*) FROM {table}") == [(0,)]
+
+
+def test_investment_migration_creates_and_drops_its_tables(migrated_settings: Settings) -> None:
+    assert tables(migrated_settings) >= INVESTMENT_TABLES
+
+    downgrade(migrated_settings, "0009")
+
+    assert not INVESTMENT_TABLES & tables(migrated_settings)
+    assert {"finance_loans", "finance_accounts", "reminders"} <= tables(migrated_settings)

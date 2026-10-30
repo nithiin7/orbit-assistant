@@ -6045,6 +6045,2982 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/finance/portfolio": {
+      "get": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Portfolio summary",
+        "description": "Invested amount, current value, gains, income, fees, and allocation in one currency.\nValues are as of `today`; realized gains, income, and fees cover the date range.",
+        "operationId": "portfolio_api_v1_workspaces__workspace_id__finance_portfolio_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "INR",
+                "USD",
+                "EUR",
+                "GBP",
+                "AED",
+                "SGD",
+                "AUD",
+                "CAD",
+                "CHF",
+                "JPY"
+              ],
+              "type": "string",
+              "default": "INR",
+              "title": "Currency"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Today"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/investment-accounts": {
+      "get": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "List investment accounts",
+        "operationId": "list_investment_accounts_api_v1_workspaces__workspace_id__finance_investment_accounts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestmentAccountListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Track investments in an account",
+        "description": "Uses an existing `investment` finance account, or creates one.",
+        "operationId": "create_investment_account_api_v1_workspaces__workspace_id__finance_investment_accounts_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInvestmentAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestmentAccountResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A duplicate, or history that depends on it."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/investment-accounts/{account_id}": {
+      "get": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Get an investment account",
+        "operationId": "get_investment_account_api_v1_workspaces__workspace_id__finance_investment_accounts__account_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The investment account's finance account ID.",
+              "title": "Account Id"
+            },
+            "description": "The investment account's finance account ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestmentAccountResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Update an investment account",
+        "operationId": "update_investment_account_api_v1_workspaces__workspace_id__finance_investment_accounts__account_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The investment account's finance account ID.",
+              "title": "Account Id"
+            },
+            "description": "The investment account's finance account ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInvestmentAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestmentAccountResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A duplicate, or history that depends on it."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/holdings": {
+      "get": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "List holdings",
+        "description": "Holdings with units and cost (FIFO) and value at the latest price on or before `today`.",
+        "operationId": "list_holdings_api_v1_workspaces__workspace_id__finance_holdings_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          },
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Account Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoldingListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Add a holding",
+        "operationId": "create_holding_api_v1_workspaces__workspace_id__finance_holdings_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateHoldingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoldingResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A duplicate, or history that depends on it."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/holdings/{holding_id}": {
+      "get": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Get a holding",
+        "operationId": "get_holding_api_v1_workspaces__workspace_id__finance_holdings__holding_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "holding_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The holding's ID.",
+              "title": "Holding Id"
+            },
+            "description": "The holding's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoldingResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Update a holding",
+        "operationId": "update_holding_api_v1_workspaces__workspace_id__finance_holdings__holding_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "holding_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The holding's ID.",
+              "title": "Holding Id"
+            },
+            "description": "The holding's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateHoldingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoldingResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A duplicate, or history that depends on it."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Delete a holding without transactions",
+        "operationId": "delete_holding_api_v1_workspaces__workspace_id__finance_holdings__holding_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "holding_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The holding's ID.",
+              "title": "Holding Id"
+            },
+            "description": "The holding's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A duplicate, or history that depends on it."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/holdings/{holding_id}/prices": {
+      "get": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "A holding's price history",
+        "operationId": "list_prices_api_v1_workspaces__workspace_id__finance_holdings__holding_id__prices_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "holding_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The holding's ID.",
+              "title": "Holding Id"
+            },
+            "description": "The holding's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Record a price by hand",
+        "description": "Replaces any price already recorded on that date.",
+        "operationId": "record_price_api_v1_workspaces__workspace_id__finance_holdings__holding_id__prices_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "holding_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The holding's ID.",
+              "title": "Holding Id"
+            },
+            "description": "The holding's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordPriceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A duplicate, or history that depends on it."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/holdings/{holding_id}/prices/{price_id}": {
+      "delete": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Delete a price",
+        "operationId": "delete_price_api_v1_workspaces__workspace_id__finance_holdings__holding_id__prices__price_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "holding_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The holding's ID.",
+              "title": "Holding Id"
+            },
+            "description": "The holding's ID."
+          },
+          {
+            "name": "price_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Price Id"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/investment-transactions": {
+      "get": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Investment activity",
+        "operationId": "list_investment_transactions_api_v1_workspaces__workspace_id__finance_investment_transactions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Account Id"
+            }
+          },
+          {
+            "name": "holding_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Holding Id"
+            }
+          },
+          {
+            "name": "deposit_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Deposit Id"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "buy",
+                  "sell",
+                  "dividend",
+                  "interest",
+                  "fee",
+                  "deposit",
+                  "withdrawal"
+                ],
+                "type": "string"
+              },
+              "description": "Repeat to match any of several types. Omit for all.",
+              "title": "Type"
+            },
+            "description": "Repeat to match any of several types. Omit for all."
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestmentTransactionListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Record an investment transaction",
+        "description": "Records the transaction and its ledger rows (a transfer, income, or expenses) in one\nstep.",
+        "operationId": "record_investment_transaction_api_v1_workspaces__workspace_id__finance_investment_transactions_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordInvestmentTransactionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestmentTransactionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A duplicate, or history that depends on it."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/investment-transactions/{transaction_id}": {
+      "get": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Get an investment transaction",
+        "operationId": "get_investment_transaction_api_v1_workspaces__workspace_id__finance_investment_transactions__transaction_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "transaction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The investment transaction's ID.",
+              "title": "Transaction Id"
+            },
+            "description": "The investment transaction's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestmentTransactionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Delete an investment transaction",
+        "description": "A buy that later sales depend on can't be deleted (409).",
+        "operationId": "delete_investment_transaction_api_v1_workspaces__workspace_id__finance_investment_transactions__transaction_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "transaction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The investment transaction's ID.",
+              "title": "Transaction Id"
+            },
+            "description": "The investment transaction's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "delete_ledger",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Also delete the ledger transactions it recorded. Otherwise they stay as ordinary transfers, income, or expenses.",
+              "default": false,
+              "title": "Delete Ledger"
+            },
+            "description": "Also delete the ledger transactions it recorded. Otherwise they stay as ordinary transfers, income, or expenses."
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A duplicate, or history that depends on it."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/sip-plans": {
+      "get": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "List SIP plans",
+        "operationId": "list_sip_plans_api_v1_workspaces__workspace_id__finance_sip_plans_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          },
+          {
+            "name": "holding_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Holding Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SipPlanListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Schedule a SIP",
+        "description": "A schedule of expected buys. Nothing is invested until an installment is recorded.",
+        "operationId": "create_sip_plan_api_v1_workspaces__workspace_id__finance_sip_plans_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSipPlanRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SipPlanResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A duplicate, or history that depends on it."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/sip-plans/{plan_id}": {
+      "patch": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Change, pause, or resume a SIP",
+        "operationId": "update_sip_plan_api_v1_workspaces__workspace_id__finance_sip_plans__plan_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "plan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The SIP plan's ID.",
+              "title": "Plan Id"
+            },
+            "description": "The SIP plan's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSipPlanRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SipPlanResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A duplicate, or history that depends on it."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/sip-plans/{plan_id}/installments": {
+      "post": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Record a SIP installment",
+        "description": "Records a buy for the SIP's next unrecorded date (or `due_date`). Each date is recorded\nonce (409 otherwise).",
+        "operationId": "record_sip_installment_api_v1_workspaces__workspace_id__finance_sip_plans__plan_id__installments_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "plan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The SIP plan's ID.",
+              "title": "Plan Id"
+            },
+            "description": "The SIP plan's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordSipInstallmentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestmentTransactionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A duplicate, or history that depends on it."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/deposits": {
+      "get": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "List fixed and recurring deposits",
+        "operationId": "list_deposits_api_v1_workspaces__workspace_id__finance_deposits_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepositListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Open a deposit",
+        "operationId": "create_deposit_api_v1_workspaces__workspace_id__finance_deposits_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDepositRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepositResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A duplicate, or history that depends on it."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/deposits/{deposit_id}": {
+      "get": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Get a deposit",
+        "operationId": "get_deposit_api_v1_workspaces__workspace_id__finance_deposits__deposit_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "deposit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The deposit's ID.",
+              "title": "Deposit Id"
+            },
+            "description": "The deposit's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepositResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Update a deposit",
+        "operationId": "update_deposit_api_v1_workspaces__workspace_id__finance_deposits__deposit_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "deposit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The deposit's ID.",
+              "title": "Deposit Id"
+            },
+            "description": "The deposit's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDepositRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepositResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A duplicate, or history that depends on it."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/deposits/{deposit_id}/contributions": {
+      "post": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Record money put into a deposit",
+        "operationId": "contribute_to_deposit_api_v1_workspaces__workspace_id__finance_deposits__deposit_id__contributions_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "deposit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The deposit's ID.",
+              "title": "Deposit Id"
+            },
+            "description": "The deposit's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepositContributionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestmentTransactionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A duplicate, or history that depends on it."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/deposits/{deposit_id}/value": {
+      "put": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Set a deposit's value by hand",
+        "operationId": "value_deposit_api_v1_workspaces__workspace_id__finance_deposits__deposit_id__value_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "deposit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The deposit's ID.",
+              "title": "Deposit Id"
+            },
+            "description": "The deposit's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepositValueRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepositResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A duplicate, or history that depends on it."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/deposits/{deposit_id}/close": {
+      "post": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Close a deposit",
+        "description": "Records the principal returned and any interest as income, in one step.",
+        "operationId": "close_deposit_api_v1_workspaces__workspace_id__finance_deposits__deposit_id__close_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "deposit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The deposit's ID.",
+              "title": "Deposit Id"
+            },
+            "description": "The deposit's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloseDepositRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepositResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A duplicate, or history that depends on it."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/deposits/{deposit_id}/reopen": {
+      "post": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Undo a deposit's closure",
+        "operationId": "reopen_deposit_api_v1_workspaces__workspace_id__finance_deposits__deposit_id__reopen_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "deposit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The deposit's ID.",
+              "title": "Deposit Id"
+            },
+            "description": "The deposit's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "delete_ledger",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Also delete the ledger transactions it recorded. Otherwise they stay as ordinary transfers, income, or expenses.",
+              "default": false,
+              "title": "Delete Ledger"
+            },
+            "description": "Also delete the ledger transactions it recorded. Otherwise they stay as ordinary transfers, income, or expenses."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepositResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A duplicate, or history that depends on it."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/assets": {
+      "get": {
+        "tags": [
+          "finance net worth"
+        ],
+        "summary": "List other assets",
+        "operationId": "list_assets_api_v1_workspaces__workspace_id__finance_assets_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, asset, or valuation does not exist."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "finance net worth"
+        ],
+        "summary": "Track an asset",
+        "operationId": "create_asset_api_v1_workspaces__workspace_id__finance_assets_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAssetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, asset, or valuation does not exist."
+          },
+          "409": {
+            "description": "An asset with that name exists, or a past snapshot can't change."
+          },
+          "422": {
+            "description": "Invalid input, or a linked account outside this workspace."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/assets/{asset_id}": {
+      "get": {
+        "tags": [
+          "finance net worth"
+        ],
+        "summary": "Get an asset",
+        "operationId": "get_asset_api_v1_workspaces__workspace_id__finance_assets__asset_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "asset_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The asset's ID.",
+              "title": "Asset Id"
+            },
+            "description": "The asset's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, asset, or valuation does not exist."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "finance net worth"
+        ],
+        "summary": "Update or archive an asset",
+        "operationId": "update_asset_api_v1_workspaces__workspace_id__finance_assets__asset_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "asset_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The asset's ID.",
+              "title": "Asset Id"
+            },
+            "description": "The asset's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAssetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, asset, or valuation does not exist."
+          },
+          "409": {
+            "description": "An asset with that name exists, or a past snapshot can't change."
+          },
+          "422": {
+            "description": "Invalid input, or a linked account outside this workspace."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/assets/{asset_id}/valuations": {
+      "get": {
+        "tags": [
+          "finance net worth"
+        ],
+        "summary": "An asset's valuation history",
+        "operationId": "list_valuations_api_v1_workspaces__workspace_id__finance_assets__asset_id__valuations_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "asset_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The asset's ID.",
+              "title": "Asset Id"
+            },
+            "description": "The asset's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetValuationListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, asset, or valuation does not exist."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "finance net worth"
+        ],
+        "summary": "Record a valuation",
+        "description": "Replaces any valuation already on that date; earlier ones stay as history.",
+        "operationId": "record_valuation_api_v1_workspaces__workspace_id__finance_assets__asset_id__valuations_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "asset_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The asset's ID.",
+              "title": "Asset Id"
+            },
+            "description": "The asset's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordValuationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetValuationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, asset, or valuation does not exist."
+          },
+          "409": {
+            "description": "An asset with that name exists, or a past snapshot can't change."
+          },
+          "422": {
+            "description": "Invalid input, or a linked account outside this workspace."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/assets/{asset_id}/valuations/{valuation_id}": {
+      "delete": {
+        "tags": [
+          "finance net worth"
+        ],
+        "summary": "Delete a valuation",
+        "operationId": "delete_valuation_api_v1_workspaces__workspace_id__finance_assets__asset_id__valuations__valuation_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "asset_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The asset's ID.",
+              "title": "Asset Id"
+            },
+            "description": "The asset's ID."
+          },
+          {
+            "name": "valuation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Valuation Id"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, asset, or valuation does not exist."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/net-worth": {
+      "get": {
+        "tags": [
+          "finance net worth"
+        ],
+        "summary": "Net worth",
+        "description": "Total assets minus total liabilities in one currency, with every item behind them, its\nvaluation date and source, and changes since earlier snapshots.",
+        "operationId": "net_worth_api_v1_workspaces__workspace_id__finance_net_worth_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "INR",
+                    "USD",
+                    "EUR",
+                    "GBP",
+                    "AED",
+                    "SGD",
+                    "AUD",
+                    "CAD",
+                    "CHF",
+                    "JPY"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Defaults to the first currency with accounts or assets.",
+              "title": "Currency"
+            },
+            "description": "Defaults to the first currency with accounts or assets."
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Today"
+            }
+          },
+          {
+            "name": "as_of",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Value as of this date instead of today.",
+              "title": "As Of"
+            },
+            "description": "Value as of this date instead of today."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetWorthResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, asset, or valuation does not exist."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/net-worth/snapshots": {
+      "get": {
+        "tags": [
+          "finance net worth"
+        ],
+        "summary": "Net worth history",
+        "operationId": "list_snapshots_api_v1_workspaces__workspace_id__finance_net_worth_snapshots_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "INR",
+                "USD",
+                "EUR",
+                "GBP",
+                "AED",
+                "SGD",
+                "AUD",
+                "CAD",
+                "CHF",
+                "JPY"
+              ],
+              "type": "string",
+              "default": "INR",
+              "title": "Currency"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnapshotListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, asset, or valuation does not exist."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "finance net worth"
+        ],
+        "summary": "Save a month's net worth snapshot",
+        "description": "Idempotent: a month with a snapshot returns it with 200 instead of adding another.",
+        "operationId": "take_snapshot_api_v1_workspaces__workspace_id__finance_net_worth_snapshots_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TakeSnapshotRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnapshotResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, asset, or valuation does not exist."
+          },
+          "201": {
+            "description": "Created or refreshed."
+          },
+          "409": {
+            "description": "An asset with that name exists, or a past snapshot can't change."
+          },
+          "422": {
+            "description": "Invalid input, or a linked account outside this workspace."
+          }
+        }
+      }
+    },
     "/api/v1/storage": {
       "get": {
         "tags": [
@@ -6247,6 +9223,273 @@
         ],
         "title": "AccountResponse"
       },
+      "AssetListResponse": {
+        "properties": {
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/AssetResponse"
+            },
+            "type": "array",
+            "title": "Assets",
+            "description": "Current first, then archived, by name."
+          }
+        },
+        "type": "object",
+        "required": [
+          "assets"
+        ],
+        "title": "AssetListResponse"
+      },
+      "AssetResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "gold",
+              "cash",
+              "property",
+              "vehicle",
+              "other"
+            ],
+            "title": "Category"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "purchase_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purchase Date"
+          },
+          "purchase_cost": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purchase Cost"
+          },
+          "linked_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Account Id"
+          },
+          "include_in_net_worth": {
+            "type": "boolean",
+            "title": "Include In Net Worth"
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "archived": {
+            "type": "boolean",
+            "title": "Archived"
+          },
+          "value": {
+            "type": "integer",
+            "title": "Value",
+            "description": "The latest valuation, else the purchase cost, else 0."
+          },
+          "valued_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valued On"
+          },
+          "latest_valuation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AssetValuationResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "freshness": {
+            "type": "string",
+            "enum": [
+              "current",
+              "stale",
+              "missing",
+              "estimated"
+            ],
+            "title": "Freshness",
+            "description": "`current`; `stale` when the latest valuation is over a year old; `missing` without one."
+          },
+          "counted": {
+            "type": "boolean",
+            "title": "Counted",
+            "description": "Whether net worth counts it."
+          },
+          "excluded_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Excluded Reason",
+            "description": "Why net worth leaves it out, such as being already counted in a linked account's balance."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "name",
+          "category",
+          "currency",
+          "purchase_date",
+          "purchase_cost",
+          "linked_account_id",
+          "include_in_net_worth",
+          "notes",
+          "archived",
+          "value",
+          "valued_on",
+          "latest_valuation",
+          "freshness",
+          "counted",
+          "excluded_reason",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AssetResponse"
+      },
+      "AssetValuationListResponse": {
+        "properties": {
+          "valuations": {
+            "items": {
+              "$ref": "#/components/schemas/AssetValuationResponse"
+            },
+            "type": "array",
+            "title": "Valuations",
+            "description": "Newest first."
+          }
+        },
+        "type": "object",
+        "required": [
+          "valuations"
+        ],
+        "title": "AssetValuationListResponse"
+      },
+      "AssetValuationResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "asset_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Asset Id"
+          },
+          "valued_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Valued On"
+          },
+          "value": {
+            "type": "integer",
+            "title": "Value"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "purchase",
+              "import",
+              "provider"
+            ],
+            "title": "Source"
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "asset_id",
+          "valued_on",
+          "value",
+          "source",
+          "notes",
+          "created_at"
+        ],
+        "title": "AssetValuationResponse"
+      },
       "BalanceTotalsResponse": {
         "properties": {
           "currency": {
@@ -6405,6 +9648,51 @@
         ],
         "title": "CategorySpendingResponse"
       },
+      "CloseDepositRequest": {
+        "properties": {
+          "closed_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Closed On"
+          },
+          "amount": {
+            "type": "integer",
+            "maximum": 10000000000000.0,
+            "minimum": 0.0,
+            "title": "Amount",
+            "description": "Minor units."
+          },
+          "settlement": {
+            "type": "string",
+            "enum": [
+              "investment_account",
+              "account"
+            ],
+            "title": "Settlement",
+            "default": "account"
+          },
+          "cash_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cash Account Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "closed_on",
+          "amount"
+        ],
+        "title": "CloseDepositRequest",
+        "description": "Close at maturity or early. `amount` is everything received: above the principal is\ninterest income; below it, a loss."
+      },
       "CommitmentSummaryResponse": {
         "properties": {
           "currency": {
@@ -6544,6 +9832,128 @@
         ],
         "title": "CreateAccountRequest"
       },
+      "CreateAssetRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "gold",
+              "cash",
+              "property",
+              "vehicle",
+              "other"
+            ],
+            "title": "Category"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency",
+            "default": "INR"
+          },
+          "purchase_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purchase Date"
+          },
+          "purchase_cost": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "minimum": 0.0,
+                "description": "Minor units."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purchase Cost"
+          },
+          "current_value": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "minimum": 0.0,
+                "description": "Minor units."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Value"
+          },
+          "valued_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valued On"
+          },
+          "linked_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Account Id",
+            "description": "A related account. An asset account (bank, cash, investment) means the asset is already counted in its balance, so net worth leaves the asset out."
+          },
+          "include_in_net_worth": {
+            "type": "boolean",
+            "title": "Include In Net Worth",
+            "default": true
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "category"
+        ],
+        "title": "CreateAssetRequest",
+        "description": "Track an asset valued by hand. `current_value` records its first valuation (on\n`valued_on`, default today). Names are unique per workspace."
+      },
       "CreateCategoryRequest": {
         "properties": {
           "name": {
@@ -6568,6 +9978,300 @@
           "type"
         ],
         "title": "CreateCategoryRequest"
+      },
+      "CreateDepositRequest": {
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "fixed",
+              "recurring"
+            ],
+            "title": "Kind"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "institution": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Institution",
+            "default": ""
+          },
+          "interest_rate_bps": {
+            "type": "integer",
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Interest Rate Bps",
+            "description": "Annual interest rate in basis points: 7.1% is 710."
+          },
+          "compounding": {
+            "type": "string",
+            "enum": [
+              "monthly",
+              "quarterly",
+              "half_yearly",
+              "yearly",
+              "simple"
+            ],
+            "title": "Compounding",
+            "default": "quarterly"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "maturity_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Maturity Date"
+          },
+          "amount": {
+            "type": "integer",
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "Minor units, always positive: ₹12.50 is 1250."
+          },
+          "settlement": {
+            "type": "string",
+            "enum": [
+              "investment_account",
+              "account",
+              "none"
+            ],
+            "title": "Settlement",
+            "default": "account"
+          },
+          "cash_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cash Account Id"
+          },
+          "stated_maturity_amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
+                "description": "Minor units, always positive: ₹12.50 is 1250."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stated Maturity Amount"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          },
+          "reminder": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReminderSettingsRequest"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Remind before the maturity date."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "account_id",
+          "kind",
+          "name",
+          "interest_rate_bps",
+          "start_date",
+          "maturity_date",
+          "amount"
+        ],
+        "title": "CreateDepositRequest",
+        "description": "Open a fixed deposit (`amount`: the principal) or a recurring deposit (`amount`: the\nmonthly installment). The first deposit is recorded on `start_date`, settled as given."
+      },
+      "CreateHoldingRequest": {
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "mutual_fund",
+              "stock",
+              "etf"
+            ],
+            "title": "Kind"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "symbol": {
+            "type": "string",
+            "maxLength": 40,
+            "title": "Symbol",
+            "default": ""
+          },
+          "exchange": {
+            "type": "string",
+            "maxLength": 20,
+            "title": "Exchange",
+            "default": ""
+          },
+          "isin": {
+            "type": "string",
+            "maxLength": 12,
+            "title": "Isin",
+            "default": ""
+          },
+          "issuer": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Issuer",
+            "default": ""
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Category",
+            "default": ""
+          },
+          "folio": {
+            "type": "string",
+            "maxLength": 40,
+            "title": "Folio",
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "account_id",
+          "kind",
+          "name"
+        ],
+        "title": "CreateHoldingRequest",
+        "description": "Add a mutual fund, stock, or ETF to an investment account. Units come from its buys; one\nbought before Orbit is recorded as a buy with settlement `none`."
+      },
+      "CreateInvestmentAccountRequest": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "mutual_fund",
+              "brokerage",
+              "deposit",
+              "other"
+            ],
+            "title": "Kind"
+          },
+          "provider": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Provider",
+            "description": "The platform, broker, or bank.",
+            "default": ""
+          },
+          "linked_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Account Id"
+          },
+          "account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency",
+            "default": "INR"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "title": "CreateInvestmentAccountRequest",
+        "description": "Track investments in an account: give `account_id` to use an existing finance account of\ntype `investment` (its history carries over), or `name` and `currency` for a new one."
       },
       "CreateItemRequest": {
         "properties": {
@@ -7035,6 +10739,77 @@
         ],
         "title": "CreateReminderRequest"
       },
+      "CreateSipPlanRequest": {
+        "properties": {
+          "holding_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Holding Id"
+          },
+          "amount": {
+            "type": "integer",
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "Minor units, always positive: ₹12.50 is 1250."
+          },
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "weekly",
+              "monthly",
+              "quarterly",
+              "half_yearly",
+              "yearly"
+            ],
+            "title": "Frequency",
+            "default": "monthly"
+          },
+          "next_due_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Next Due Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "funding_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Funding Account Id"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "holding_id",
+          "amount",
+          "next_due_date"
+        ],
+        "title": "CreateSipPlanRequest"
+      },
       "CreateTaskRequest": {
         "properties": {
           "title": {
@@ -7322,6 +11097,418 @@
         "title": "DatabaseHealthResponse",
         "description": "Reports that the configured database is reachable."
       },
+      "DepositContributionRequest": {
+        "properties": {
+          "trade_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Trade Date"
+          },
+          "amount": {
+            "type": "integer",
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "Minor units, always positive: ₹12.50 is 1250."
+          },
+          "settlement": {
+            "type": "string",
+            "enum": [
+              "investment_account",
+              "account",
+              "none"
+            ],
+            "title": "Settlement",
+            "default": "account"
+          },
+          "cash_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cash Account Id"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "trade_date",
+          "amount"
+        ],
+        "title": "DepositContributionRequest",
+        "description": "Record money put into the deposit: a recurring deposit's installment or a top-up."
+      },
+      "DepositListResponse": {
+        "properties": {
+          "deposits": {
+            "items": {
+              "$ref": "#/components/schemas/DepositResponse"
+            },
+            "type": "array",
+            "title": "Deposits",
+            "description": "Active first, then by maturity date."
+          }
+        },
+        "type": "object",
+        "required": [
+          "deposits"
+        ],
+        "title": "DepositListResponse"
+      },
+      "DepositResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "fixed",
+              "recurring"
+            ],
+            "title": "Kind"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "institution": {
+            "type": "string",
+            "title": "Institution"
+          },
+          "interest_rate_bps": {
+            "type": "integer",
+            "title": "Interest Rate Bps"
+          },
+          "compounding": {
+            "type": "string",
+            "enum": [
+              "monthly",
+              "quarterly",
+              "half_yearly",
+              "yearly",
+              "simple"
+            ],
+            "title": "Compounding"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "maturity_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Maturity Date"
+          },
+          "installment_amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Installment Amount",
+            "description": "A recurring deposit's installment."
+          },
+          "stated_maturity_amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stated Maturity Amount",
+            "description": "The maturity amount the bank stated, if entered."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "matured",
+              "closed"
+            ],
+            "title": "Status",
+            "description": "`active`; `matured` (closed on or after maturity); `closed` (early)."
+          },
+          "closed_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed On"
+          },
+          "principal": {
+            "type": "integer",
+            "title": "Principal",
+            "description": "Money deposited minus principal withdrawn."
+          },
+          "interest_received": {
+            "type": "integer",
+            "title": "Interest Received"
+          },
+          "estimated_value": {
+            "type": "integer",
+            "title": "Estimated Value",
+            "description": "Accrued value estimated from the rate and compounding. An estimate, not a guarantee."
+          },
+          "value": {
+            "type": "integer",
+            "title": "Value"
+          },
+          "valued_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Valued On"
+          },
+          "value_source": {
+            "type": "string",
+            "enum": [
+              "ledger",
+              "market",
+              "manual",
+              "estimate",
+              "cost"
+            ],
+            "title": "Value Source",
+            "description": "`estimate`, `manual` (entered by hand), or `ledger` once closed."
+          },
+          "freshness": {
+            "type": "string",
+            "enum": [
+              "current",
+              "stale",
+              "missing",
+              "estimated"
+            ],
+            "title": "Freshness"
+          },
+          "manual_value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manual Value"
+          },
+          "manual_valued_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manual Valued On"
+          },
+          "projected_maturity_amount": {
+            "type": "integer",
+            "title": "Projected Maturity Amount",
+            "description": "Estimated from the terms; a recurring deposit assumes every installment is paid on time."
+          },
+          "projected_interest": {
+            "type": "integer",
+            "title": "Projected Interest"
+          },
+          "projected_contributions": {
+            "type": "integer",
+            "title": "Projected Contributions"
+          },
+          "reminder": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReminderSettingsResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "account_id",
+          "currency",
+          "kind",
+          "name",
+          "institution",
+          "interest_rate_bps",
+          "compounding",
+          "start_date",
+          "maturity_date",
+          "installment_amount",
+          "stated_maturity_amount",
+          "status",
+          "closed_on",
+          "principal",
+          "interest_received",
+          "estimated_value",
+          "value",
+          "valued_on",
+          "value_source",
+          "freshness",
+          "manual_value",
+          "manual_valued_on",
+          "projected_maturity_amount",
+          "projected_interest",
+          "projected_contributions",
+          "reminder",
+          "notes",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "DepositResponse"
+      },
+      "DepositValueRequest": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "minimum": 0.0,
+                "description": "Minor units."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "valued_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valued On"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "title": "DepositValueRequest",
+        "description": "Set the deposit's value by hand (it replaces the estimate), or `value: null` to clear."
+      },
+      "GroupTotalResponse": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "investment_cash",
+              "mutual_funds",
+              "stocks",
+              "etfs",
+              "deposits",
+              "investments_at_cost",
+              "other_assets",
+              "credit_cards",
+              "loans"
+            ],
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "asset",
+              "liability"
+            ],
+            "title": "Side"
+          },
+          "value": {
+            "type": "integer",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label",
+          "side",
+          "value"
+        ],
+        "title": "GroupTotalResponse"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -7363,6 +11550,232 @@
         ],
         "title": "HealthResponse",
         "description": "Reports that the API process is running and able to serve requests."
+      },
+      "HoldingListResponse": {
+        "properties": {
+          "holdings": {
+            "items": {
+              "$ref": "#/components/schemas/HoldingResponse"
+            },
+            "type": "array",
+            "title": "Holdings",
+            "description": "By name."
+          }
+        },
+        "type": "object",
+        "required": [
+          "holdings"
+        ],
+        "title": "HoldingListResponse"
+      },
+      "HoldingResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "mutual_fund",
+              "stock",
+              "etf"
+            ],
+            "title": "Kind"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol",
+            "description": "A ticker, or a mutual fund's scheme code."
+          },
+          "exchange": {
+            "type": "string",
+            "title": "Exchange"
+          },
+          "isin": {
+            "type": "string",
+            "title": "Isin"
+          },
+          "issuer": {
+            "type": "string",
+            "title": "Issuer",
+            "description": "The AMC or fund house for mutual funds."
+          },
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "description": "The scheme category, such as Flexi cap."
+          },
+          "folio": {
+            "type": "string",
+            "title": "Folio"
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "quantity": {
+            "type": "string",
+            "title": "Quantity",
+            "description": "Units held, from the transactions (FIFO)."
+          },
+          "cost": {
+            "type": "integer",
+            "title": "Cost",
+            "description": "Cost basis of the units held (FIFO), excluding fees."
+          },
+          "average_cost": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Cost",
+            "description": "`cost / quantity` per unit; `null` if none."
+          },
+          "invested_total": {
+            "type": "integer",
+            "title": "Invested Total",
+            "description": "Everything ever paid for buys."
+          },
+          "price": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PriceResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The latest price on or before today."
+          },
+          "market_value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Value",
+            "description": "`quantity * price`; `null` without a price."
+          },
+          "value": {
+            "type": "integer",
+            "title": "Value",
+            "description": "`market_value`, or `cost` when there is no price."
+          },
+          "unrealized_gain": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unrealized Gain"
+          },
+          "realized_gain": {
+            "type": "integer",
+            "title": "Realized Gain"
+          },
+          "dividends": {
+            "type": "integer",
+            "title": "Dividends"
+          },
+          "fees": {
+            "type": "integer",
+            "title": "Fees"
+          },
+          "freshness": {
+            "type": "string",
+            "enum": [
+              "current",
+              "stale",
+              "missing",
+              "estimated"
+            ],
+            "title": "Freshness",
+            "description": "`current`; `stale` when the price is over 7 days old; `missing` without a price (valued at cost)."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "account_id",
+          "currency",
+          "kind",
+          "name",
+          "symbol",
+          "exchange",
+          "isin",
+          "issuer",
+          "category",
+          "folio",
+          "notes",
+          "quantity",
+          "cost",
+          "average_cost",
+          "invested_total",
+          "price",
+          "market_value",
+          "value",
+          "unrealized_gain",
+          "realized_gain",
+          "dividends",
+          "fees",
+          "freshness",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "HoldingResponse"
       },
       "InstallmentResponse": {
         "properties": {
@@ -7493,6 +11906,396 @@
           "updated_at"
         ],
         "title": "InstallmentResponse"
+      },
+      "InvestmentAccountListResponse": {
+        "properties": {
+          "accounts": {
+            "items": {
+              "$ref": "#/components/schemas/InvestmentAccountResponse"
+            },
+            "type": "array",
+            "title": "Accounts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "accounts"
+        ],
+        "title": "InvestmentAccountListResponse"
+      },
+      "InvestmentAccountResponse": {
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id",
+            "description": "The finance account (type `investment`)."
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "mutual_fund",
+              "brokerage",
+              "deposit",
+              "other"
+            ],
+            "title": "Kind"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider"
+          },
+          "linked_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Account Id",
+            "description": "The account money usually comes from and returns to."
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "archived": {
+            "type": "boolean",
+            "title": "Archived"
+          },
+          "ledger_balance": {
+            "type": "integer",
+            "title": "Ledger Balance",
+            "description": "The finance account's balance: money moved in, plus income, minus fees and money moved out. Includes what was spent on holdings and deposits."
+          },
+          "cash": {
+            "type": "integer",
+            "title": "Cash",
+            "description": "Uninvested cash: the ledger balance net of positions."
+          },
+          "holdings_value": {
+            "type": "integer",
+            "title": "Holdings Value"
+          },
+          "deposits_value": {
+            "type": "integer",
+            "title": "Deposits Value"
+          },
+          "value": {
+            "type": "integer",
+            "title": "Value",
+            "description": "`cash + holdings_value + deposits_value`."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "account_id",
+          "workspace_id",
+          "name",
+          "currency",
+          "kind",
+          "provider",
+          "linked_account_id",
+          "notes",
+          "archived",
+          "ledger_balance",
+          "cash",
+          "holdings_value",
+          "deposits_value",
+          "value",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "InvestmentAccountResponse"
+      },
+      "InvestmentTransactionListResponse": {
+        "properties": {
+          "transactions": {
+            "items": {
+              "$ref": "#/components/schemas/InvestmentTransactionResponse"
+            },
+            "type": "array",
+            "title": "Transactions",
+            "description": "Newest first."
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "transactions",
+          "total"
+        ],
+        "title": "InvestmentTransactionListResponse"
+      },
+      "InvestmentTransactionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "buy",
+              "sell",
+              "dividend",
+              "interest",
+              "fee",
+              "deposit",
+              "withdrawal"
+            ],
+            "title": "Type"
+          },
+          "trade_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Trade Date"
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount",
+            "description": "Buy: cost. Sell: gross proceeds. Dividend, interest: income. Fee: the charge. Deposit, withdrawal: the money moved."
+          },
+          "fees": {
+            "type": "integer",
+            "title": "Fees",
+            "description": "Charges on a buy or sale, recorded as a ledger expense."
+          },
+          "holding_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holding Id"
+          },
+          "deposit_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deposit Id"
+          },
+          "sip_plan_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sip Plan Id"
+          },
+          "sip_due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sip Due Date"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "unit_price": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Price",
+            "description": "`amount / quantity` for buys and sales."
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "lump_sum",
+                  "sip"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan"
+          },
+          "settlement": {
+            "type": "string",
+            "enum": [
+              "investment_account",
+              "account",
+              "none"
+            ],
+            "title": "Settlement"
+          },
+          "cash_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cash Account Id"
+          },
+          "cash_transaction_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cash Transaction Id",
+            "description": "The ledger transaction recording its cash: a transfer, income, or expense."
+          },
+          "fee_transaction_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fee Transaction Id"
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "account_id",
+          "currency",
+          "type",
+          "trade_date",
+          "amount",
+          "fees",
+          "holding_id",
+          "deposit_id",
+          "sip_plan_id",
+          "sip_due_date",
+          "quantity",
+          "unit_price",
+          "plan",
+          "settlement",
+          "cash_account_id",
+          "cash_transaction_id",
+          "fee_transaction_id",
+          "notes",
+          "created_at"
+        ],
+        "title": "InvestmentTransactionResponse"
       },
       "LoanDetailResponse": {
         "properties": {
@@ -7988,6 +12791,220 @@
         ],
         "title": "MonthlySummaryResponse"
       },
+      "NetWorthItemResponse": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "account",
+              "holding",
+              "deposit",
+              "asset"
+            ],
+            "title": "Kind"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "group": {
+            "type": "string",
+            "enum": [
+              "cash",
+              "investment_cash",
+              "mutual_funds",
+              "stocks",
+              "etfs",
+              "deposits",
+              "investments_at_cost",
+              "other_assets",
+              "credit_cards",
+              "loans"
+            ],
+            "title": "Group"
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "asset",
+              "liability"
+            ],
+            "title": "Side"
+          },
+          "value": {
+            "type": "integer",
+            "title": "Value",
+            "description": "What it adds to its side: a value, or what is owed."
+          },
+          "valued_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valued On"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "ledger",
+              "market",
+              "manual",
+              "estimate",
+              "cost"
+            ],
+            "title": "Source",
+            "description": "`ledger` (account balance), `market` (latest price), `manual` (entered by hand), `estimate` (computed from assumptions), or `cost` (no valuation)."
+          },
+          "freshness": {
+            "type": "string",
+            "enum": [
+              "current",
+              "stale",
+              "missing",
+              "estimated"
+            ],
+            "title": "Freshness"
+          },
+          "counted": {
+            "type": "boolean",
+            "title": "Counted"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "id",
+          "name",
+          "group",
+          "side",
+          "value",
+          "valued_on",
+          "source",
+          "freshness",
+          "counted",
+          "note"
+        ],
+        "title": "NetWorthItemResponse"
+      },
+      "NetWorthResponse": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "currencies": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "INR",
+                "USD",
+                "EUR",
+                "GBP",
+                "AED",
+                "SGD",
+                "AUD",
+                "CAD",
+                "CHF",
+                "JPY"
+              ]
+            },
+            "type": "array",
+            "title": "Currencies",
+            "description": "Every currency with accounts or assets. Never added together."
+          },
+          "as_of": {
+            "type": "string",
+            "format": "date",
+            "title": "As Of"
+          },
+          "assets": {
+            "type": "integer",
+            "title": "Assets"
+          },
+          "liabilities": {
+            "type": "integer",
+            "title": "Liabilities"
+          },
+          "net_worth": {
+            "type": "integer",
+            "title": "Net Worth",
+            "description": "`assets - liabilities`."
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/GroupTotalResponse"
+            },
+            "type": "array",
+            "title": "Groups"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NetWorthItemResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Every account, holding, deposit, and asset behind the totals, including assets left out (`counted: false`)."
+          },
+          "quality": {
+            "$ref": "#/components/schemas/QualityResponse"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/PeriodChangeResponse"
+            },
+            "type": "array",
+            "title": "Changes",
+            "description": "Against the snapshots 1, 3, 6, and 12 months back."
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "currencies",
+          "as_of",
+          "assets",
+          "liabilities",
+          "net_worth",
+          "groups",
+          "items",
+          "quality",
+          "changes"
+        ],
+        "title": "NetWorthResponse"
+      },
       "NotificationListResponse": {
         "properties": {
           "notifications": {
@@ -8364,6 +13381,466 @@
         ],
         "title": "PaymentListResponse"
       },
+      "PeriodChangeResponse": {
+        "properties": {
+          "months": {
+            "type": "integer",
+            "title": "Months"
+          },
+          "snapshot": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SnapshotResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "That month's snapshot; `null` when none was taken."
+          },
+          "change": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change",
+            "description": "Net worth now minus then."
+          }
+        },
+        "type": "object",
+        "required": [
+          "months",
+          "snapshot",
+          "change"
+        ],
+        "title": "PeriodChangeResponse"
+      },
+      "PortfolioResponse": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From"
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To"
+          },
+          "invested": {
+            "type": "integer",
+            "title": "Invested",
+            "description": "Cost of what is held now: FIFO cost plus deposits."
+          },
+          "current_value": {
+            "type": "integer",
+            "title": "Current Value"
+          },
+          "cash": {
+            "type": "integer",
+            "title": "Cash",
+            "description": "Uninvested cash in investment accounts."
+          },
+          "unrealized_gain": {
+            "type": "integer",
+            "title": "Unrealized Gain",
+            "description": "Market value minus cost, for priced holdings."
+          },
+          "realized_gain": {
+            "type": "integer",
+            "title": "Realized Gain",
+            "description": "FIFO gains on sales in the date range."
+          },
+          "income": {
+            "type": "integer",
+            "title": "Income",
+            "description": "Dividends and interest in the date range."
+          },
+          "fees": {
+            "type": "integer",
+            "title": "Fees",
+            "description": "Charges in the date range."
+          },
+          "total_return": {
+            "type": "integer",
+            "title": "Total Return",
+            "description": "`unrealized + realized + income - fees`."
+          },
+          "return_percent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Percent",
+            "description": "`total_return` over everything ever invested, as a percentage with two decimals. Simple, not annualized; for display only."
+          },
+          "allocation": {
+            "items": {
+              "$ref": "#/components/schemas/SliceResponse"
+            },
+            "type": "array",
+            "title": "Allocation",
+            "description": "By asset class, largest first."
+          },
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/SliceResponse"
+            },
+            "type": "array",
+            "title": "Categories",
+            "description": "By scheme category, largest first."
+          },
+          "missing_prices": {
+            "type": "integer",
+            "title": "Missing Prices"
+          },
+          "stale_prices": {
+            "type": "integer",
+            "title": "Stale Prices"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "date_from",
+          "date_to",
+          "invested",
+          "current_value",
+          "cash",
+          "unrealized_gain",
+          "realized_gain",
+          "income",
+          "fees",
+          "total_return",
+          "return_percent",
+          "allocation",
+          "categories",
+          "missing_prices",
+          "stale_prices"
+        ],
+        "title": "PortfolioResponse"
+      },
+      "PriceListResponse": {
+        "properties": {
+          "prices": {
+            "items": {
+              "$ref": "#/components/schemas/PriceResponse"
+            },
+            "type": "array",
+            "title": "Prices",
+            "description": "Newest first."
+          }
+        },
+        "type": "object",
+        "required": [
+          "prices"
+        ],
+        "title": "PriceListResponse"
+      },
+      "PriceResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "holding_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Holding Id"
+          },
+          "price_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Price Date"
+          },
+          "price": {
+            "type": "string",
+            "title": "Price",
+            "description": "Per-unit price in the major unit, as a decimal string."
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "import",
+              "provider"
+            ],
+            "title": "Source",
+            "description": "`manual` today; others are reserved for imports."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "holding_id",
+          "price_date",
+          "price",
+          "source",
+          "created_at"
+        ],
+        "title": "PriceResponse"
+      },
+      "QualityResponse": {
+        "properties": {
+          "estimated": {
+            "type": "integer",
+            "title": "Estimated"
+          },
+          "manual": {
+            "type": "integer",
+            "title": "Manual"
+          },
+          "stale": {
+            "type": "integer",
+            "title": "Stale"
+          },
+          "missing": {
+            "type": "integer",
+            "title": "Missing"
+          }
+        },
+        "type": "object",
+        "required": [
+          "estimated",
+          "manual",
+          "stale",
+          "missing"
+        ],
+        "title": "QualityResponse"
+      },
+      "RecordInvestmentTransactionRequest": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "buy",
+              "sell",
+              "dividend",
+              "interest",
+              "fee",
+              "deposit",
+              "withdrawal"
+            ],
+            "title": "Type"
+          },
+          "trade_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Trade Date"
+          },
+          "amount": {
+            "type": "integer",
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "Minor units, always positive: ₹12.50 is 1250."
+          },
+          "settlement": {
+            "type": "string",
+            "enum": [
+              "investment_account",
+              "account",
+              "none"
+            ],
+            "title": "Settlement",
+            "default": "investment_account"
+          },
+          "cash_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cash Account Id"
+          },
+          "holding_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holding Id"
+          },
+          "deposit_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deposit Id"
+          },
+          "account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Id",
+            "description": "The investment account, for interest or fees not tied to a holding or deposit."
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 24,
+                "description": "Units as a decimal string with up to 6 decimals, such as `12.345`."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "fees": {
+            "type": "integer",
+            "maximum": 10000000000000.0,
+            "minimum": 0.0,
+            "title": "Fees",
+            "description": "Minor units.",
+            "default": 0
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "lump_sum",
+                  "sip"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan",
+            "description": "Buys only; defaults to `lump_sum`."
+          },
+          "sip_plan_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sip Plan Id",
+            "description": "Records this buy as an installment of that SIP."
+          },
+          "sip_due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sip Due Date",
+            "description": "The SIP date it settles; defaults to the next unrecorded one."
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "trade_date",
+          "amount"
+        ],
+        "title": "RecordInvestmentTransactionRequest",
+        "description": "Record a buy, sale, dividend, interest, fee, or deposit flow.\n\n`settlement` says where the money is: `investment_account` (its own cash), `account` (another\naccount, `cash_account_id`; Orbit records the transfer, income, or expense there), or `none`\n(buys and deposits only: from outside Orbit, such as a holding bought before it was tracked).\nDividends and interest are income; fees and `fees` on trades are expenses; buys and sales\nare never income or spending."
+      },
+      "RecordPriceRequest": {
+        "properties": {
+          "price_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Price Date"
+          },
+          "price": {
+            "type": "string",
+            "maxLength": 24,
+            "title": "Price",
+            "description": "Per-unit price in the currency's major unit, as a decimal string with up to 6 decimals, such as `45.6789`."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "price_date",
+          "price"
+        ],
+        "title": "RecordPriceRequest",
+        "description": "Record a price (NAV or market price) by hand. A price already on that date is replaced."
+      },
       "RecordRecurringPaymentRequest": {
         "properties": {
           "due_date": {
@@ -8435,6 +13912,129 @@
         ],
         "title": "RecordRecurringPaymentRequest",
         "description": "Record one occurrence as paid. `create` records an expense from `account_id` (default:\nthe usual account) in the subscription's or bill's category; `link` uses an expense already\nrecorded (`transaction_id`); `manual` marks it paid without a transaction, so it isn't\ncounted as spending."
+      },
+      "RecordSipInstallmentRequest": {
+        "properties": {
+          "trade_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Trade Date"
+          },
+          "quantity": {
+            "type": "string",
+            "maxLength": 24,
+            "title": "Quantity",
+            "description": "Units as a decimal string with up to 6 decimals, such as `12.345`."
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
+                "description": "Minor units, always positive: ₹12.50 is 1250."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date",
+            "description": "The SIP date it settles; defaults to the next unrecorded one."
+          },
+          "settlement": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "investment_account",
+                  "account",
+                  "none"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settlement",
+            "description": "Defaults to `account` with the SIP's funding account, else `investment_account`."
+          },
+          "cash_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cash Account Id"
+          },
+          "fees": {
+            "type": "integer",
+            "maximum": 10000000000000.0,
+            "minimum": 0.0,
+            "title": "Fees",
+            "description": "Minor units.",
+            "default": 0
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "trade_date",
+          "quantity"
+        ],
+        "title": "RecordSipInstallmentRequest",
+        "description": "Record one SIP installment as a buy. Amount defaults to the SIP's; the funding account,\nwhen the SIP has one, settles it."
+      },
+      "RecordValuationRequest": {
+        "properties": {
+          "valued_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Valued On"
+          },
+          "value": {
+            "type": "integer",
+            "maximum": 10000000000000.0,
+            "minimum": 0.0,
+            "title": "Value",
+            "description": "Minor units."
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "valued_on",
+          "value"
+        ],
+        "title": "RecordValuationRequest",
+        "description": "What the asset was worth on a date. A value already on that date is replaced."
       },
       "RecurrenceModel": {
         "properties": {
@@ -8724,10 +14324,11 @@
             "type": "string",
             "enum": [
               "loan",
-              "recurring_payment"
+              "recurring_payment",
+              "deposit"
             ],
             "title": "Kind",
-            "description": "`loan`, or `recurring_payment` for a subscription or bill."
+            "description": "`loan`, `recurring_payment` for a subscription or bill, or `deposit` for a fixed or recurring deposit's maturity."
           },
           "id": {
             "type": "string",
@@ -9421,6 +15022,167 @@
         ],
         "title": "ShoppingListsResponse"
       },
+      "SipPlanListResponse": {
+        "properties": {
+          "plans": {
+            "items": {
+              "$ref": "#/components/schemas/SipPlanResponse"
+            },
+            "type": "array",
+            "title": "Plans"
+          }
+        },
+        "type": "object",
+        "required": [
+          "plans"
+        ],
+        "title": "SipPlanListResponse"
+      },
+      "SipPlanResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "holding_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Holding Id"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount"
+          },
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "weekly",
+              "monthly",
+              "quarterly",
+              "half_yearly",
+              "yearly"
+            ],
+            "title": "Frequency"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "funding_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Funding Account Id"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "cancelled"
+            ],
+            "title": "State"
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "next_due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Due Date",
+            "description": "The first due date with no buy recorded; before today means overdue. Scheduled SIPs are not investments until a buy is recorded."
+          },
+          "installments": {
+            "type": "integer",
+            "title": "Installments",
+            "description": "Buys recorded against this SIP."
+          },
+          "invested": {
+            "type": "integer",
+            "title": "Invested"
+          },
+          "last_bought_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Bought On"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "holding_id",
+          "currency",
+          "amount",
+          "frequency",
+          "end_date",
+          "funding_account_id",
+          "state",
+          "notes",
+          "next_due_date",
+          "installments",
+          "invested",
+          "last_bought_on",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "SipPlanResponse"
+      },
       "SkipOccurrenceRequest": {
         "properties": {
           "due_date": {
@@ -9435,6 +15197,140 @@
           "due_date"
         ],
         "title": "SkipOccurrenceRequest"
+      },
+      "SliceResponse": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "value": {
+            "type": "integer",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label",
+          "value"
+        ],
+        "title": "SliceResponse"
+      },
+      "SnapshotListResponse": {
+        "properties": {
+          "snapshots": {
+            "items": {
+              "$ref": "#/components/schemas/SnapshotResponse"
+            },
+            "type": "array",
+            "title": "Snapshots",
+            "description": "Oldest month first."
+          }
+        },
+        "type": "object",
+        "required": [
+          "snapshots"
+        ],
+        "title": "SnapshotListResponse"
+      },
+      "SnapshotResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "month": {
+            "type": "string",
+            "title": "Month",
+            "description": "`YYYY-MM`."
+          },
+          "as_of": {
+            "type": "string",
+            "format": "date",
+            "title": "As Of"
+          },
+          "assets": {
+            "type": "integer",
+            "title": "Assets"
+          },
+          "liabilities": {
+            "type": "integer",
+            "title": "Liabilities"
+          },
+          "net_worth": {
+            "type": "integer",
+            "title": "Net Worth"
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/GroupTotalResponse"
+            },
+            "type": "array",
+            "title": "Groups"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "scheduled",
+              "manual",
+              "backfill"
+            ],
+            "title": "Source",
+            "description": "`scheduled` (taken at month end), `manual` (the current month, saved by you), or `backfill` (a past month reconstructed later from history)."
+          },
+          "quality": {
+            "$ref": "#/components/schemas/QualityResponse",
+            "description": "How many counted values were estimates, manual, stale, or missing."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "currency",
+          "month",
+          "as_of",
+          "assets",
+          "liabilities",
+          "net_worth",
+          "groups",
+          "source",
+          "quality",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "SnapshotResponse"
       },
       "SpendingResponse": {
         "properties": {
@@ -9543,6 +15439,61 @@
         ],
         "title": "SupabaseAuthConfig",
         "description": "Public Supabase settings the web app needs to sign users in. Contains no secrets."
+      },
+      "TakeSnapshotRequest": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency",
+            "default": "INR"
+          },
+          "month": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Month",
+            "description": "`YYYY-MM`; defaults to this month."
+          },
+          "refresh": {
+            "type": "boolean",
+            "title": "Refresh",
+            "default": false
+          },
+          "today": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Today"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "TakeSnapshotRequest",
+        "description": "Save a month's snapshot. Idempotent: a month that has one returns it (200) rather than\nadding another. `refresh` recomputes the current month's; past months can't be refreshed."
       },
       "TaskListResponse": {
         "properties": {
@@ -9955,6 +15906,348 @@
         "title": "UpdateAccountRequest",
         "description": "Change some of an account's fields. Its type and currency are fixed; archiving has its\nown endpoints."
       },
+      "UpdateAssetRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "gold",
+                  "cash",
+                  "property",
+                  "vehicle",
+                  "other"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "purchase_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purchase Date"
+          },
+          "purchase_cost": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "minimum": 0.0,
+                "description": "Minor units."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purchase Cost"
+          },
+          "linked_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Account Id"
+          },
+          "include_in_net_worth": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Include In Net Worth"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateAssetRequest",
+        "description": "`null` clears the purchase details or the linked account. `archived: true` records it as\nsold or disposed of; it stays as history but isn't counted."
+      },
+      "UpdateDepositRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "institution": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Institution"
+          },
+          "interest_rate_bps": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000.0,
+                "minimum": 0.0,
+                "description": "Annual interest rate in basis points: 7.1% is 710."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interest Rate Bps"
+          },
+          "compounding": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "monthly",
+                  "quarterly",
+                  "half_yearly",
+                  "yearly",
+                  "simple"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compounding"
+          },
+          "maturity_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maturity Date"
+          },
+          "installment_amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
+                "description": "Minor units, always positive: ₹12.50 is 1250."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Installment Amount"
+          },
+          "stated_maturity_amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
+                "description": "Minor units, always positive: ₹12.50 is 1250."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stated Maturity Amount"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "reminder": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReminderSettingsRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateDepositRequest",
+        "description": "`null` clears `stated_maturity_amount` or `reminder`."
+      },
+      "UpdateHoldingRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          },
+          "exchange": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exchange"
+          },
+          "isin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 12
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isin"
+          },
+          "issuer": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuer"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "folio": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folio"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateHoldingRequest"
+      },
       "UpdateInstallmentRequest": {
         "properties": {
           "due_date": {
@@ -10000,6 +16293,91 @@
         "type": "object",
         "title": "UpdateInstallmentRequest",
         "description": "Adjust a scheduled installment by hand."
+      },
+      "UpdateInvestmentAccountRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "mutual_fund",
+                  "brokerage",
+                  "deposit",
+                  "other"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "linked_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Account Id"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateInvestmentAccountRequest",
+        "description": "`null` clears `linked_account_id`. `archived` archives or restores the finance account."
       },
       "UpdateItemRequest": {
         "properties": {
@@ -10507,6 +16885,110 @@
         "type": "object",
         "title": "UpdateReminderRequest",
         "description": "Change some of a reminder's fields. Omitted fields keep their values; `task_id: null`\ndetaches the task and `recurrence: null` makes the reminder one-time. Changing the schedule\nor `enabled` replaces the pending occurrence."
+      },
+      "UpdateSipPlanRequest": {
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
+                "description": "Minor units, always positive: ₹12.50 is 1250."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "frequency": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "weekly",
+                  "monthly",
+                  "quarterly",
+                  "half_yearly",
+                  "yearly"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frequency"
+          },
+          "next_due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Due Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "funding_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Funding Account Id"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "paused",
+                  "cancelled"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateSipPlanRequest",
+        "description": "`state` pauses, cancels, or resumes (`active`) the SIP. `null` clears `end_date` or\n`funding_account_id`."
       },
       "UpdateTaskRequest": {
         "properties": {

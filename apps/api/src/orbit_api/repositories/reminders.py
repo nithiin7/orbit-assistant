@@ -82,6 +82,8 @@ def _commitment_of(model: ReminderModel) -> CommitmentLink | None:
         return CommitmentLink(kind="loan", id=model.finance_loan_id)
     if model.finance_recurring_payment_id is not None:
         return CommitmentLink(kind="recurring_payment", id=model.finance_recurring_payment_id)
+    if model.finance_deposit_id is not None:
+        return CommitmentLink(kind="deposit", id=model.finance_deposit_id)
     return None
 
 
@@ -155,6 +157,7 @@ class SqlReminderRepository:
                 finance_recurring_payment_id=(
                     link.id if link and link.kind == "recurring_payment" else None
                 ),
+                finance_deposit_id=link.id if link and link.kind == "deposit" else None,
                 last_occurrence_at=reminder.last_occurrence_at,
                 last_outcome=reminder.last_outcome,
                 created_at=reminder.created_at,
@@ -171,11 +174,11 @@ class SqlReminderRepository:
         self, workspace_id: uuid.UUID, link: CommitmentLink
     ) -> Reminder | None:
         """The reminder a commitment manages, if it has one, locked for this transaction."""
-        column = (
-            ReminderModel.finance_loan_id
-            if link.kind == "loan"
-            else ReminderModel.finance_recurring_payment_id
-        )
+        column = {
+            "loan": ReminderModel.finance_loan_id,
+            "recurring_payment": ReminderModel.finance_recurring_payment_id,
+            "deposit": ReminderModel.finance_deposit_id,
+        }[link.kind]
         model = await self._session.scalar(
             select(ReminderModel)
             .where(ReminderModel.workspace_id == workspace_id, column == link.id)

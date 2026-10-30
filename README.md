@@ -33,8 +33,8 @@ control.
 > **Early development.** This repository contains the project foundation: the monorepo, tooling,
 > an application shell, an API with a database layer, and accounts with workspaces. Tasks,
 > shopping lists, reminders (with in-app notifications), and finance (accounts, transactions,
-> loans, subscriptions, and bills) are built; calendar, notes, investments, budgets, and the AI
-> assistant are not.
+> loans, subscriptions, bills, investments, other assets, and net worth) are built; calendar,
+> notes, budgets, and the AI assistant are not.
 
 ## Scope
 
@@ -61,11 +61,16 @@ control.
   loan's balance, interest as an expense), subscriptions and recurring bills, a unified view of
   upcoming, due, overdue, and recently paid payments, commitment totals on the overview, and
   reminders before each payment.
+- Finance, phase 3: investment accounts; mutual funds, stocks, and ETFs with buys, sales
+  (FIFO realized gains), dividends, charges, SIP plans, and prices you enter; fixed and recurring
+  deposits with estimated values and maturity reminders; other assets with dated valuations; a
+  portfolio dashboard; and net worth with monthly snapshots that mark stale, missing, and
+  estimated values. No live market data.
 - Shared tooling for linting, formatting, type checking, testing, commit conventions, and CI.
 
 ### 🚫 Explicit non-goals for now
 
-- Calendar or notes functionality; automatically created transactions, investment holdings,
+- Calendar or notes functionality; automatically created transactions, live market prices,
   budgets, or bank integrations in finance.
 - Shared workspaces, invitations, password recovery for local accounts, and account linking
   between local and cloud.

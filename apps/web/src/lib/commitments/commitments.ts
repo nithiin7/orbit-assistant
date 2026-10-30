@@ -21,7 +21,7 @@ import type {
 import { boolean, mixed, object, string } from "yup";
 
 import { DEFAULT_CURRENCY, NOTES_MAX_LENGTH, parseAmount } from "@/lib/finance";
-import { type Option } from "@/utils/common";
+import { labelOf, type Option } from "@/utils/common";
 import { multiLineText, singleLineText } from "@/utils/validation";
 
 export const NAME_MAX_LENGTH = 100;
@@ -73,10 +73,6 @@ export const MONTHS_PER_PERIOD: Readonly<Record<EmiFrequency, number>> = {
   half_yearly: 6,
   yearly: 12,
 };
-
-function labelOf<T extends string>(options: readonly Option<T>[], value: T): string {
-  return options.find((option) => option.value === value)?.label ?? value;
-}
 
 export const loanTypeLabel = (type: LoanType) => labelOf(LOAN_TYPES, type);
 export const frequencyLabel = (frequency: RecurringFrequency) => labelOf(FREQUENCIES, frequency);
@@ -170,7 +166,7 @@ export function totalsByCurrency(items: readonly PaymentItem[]): [Currency, numb
 
 // Forms
 
-const NAME = singleLineText(NAME_MAX_LENGTH)
+export const NAME = singleLineText(NAME_MAX_LENGTH)
   .required("Enter a name.")
   .test("printable", "Remove unsupported characters.", (value) => !/\p{C}/u.test(value));
 const COUNTERPARTY = singleLineText(NAME_MAX_LENGTH);
@@ -178,7 +174,8 @@ const AMOUNT_HINT = "Enter an amount, such as 1250 or 1,250.50.";
 
 type CurrencyParent = { currency?: Currency };
 
-function amountField(required: boolean) {
+/** An amount typed in the parent's `currency`; blank only when not `required`. */
+export function amountField(required: boolean) {
   const field = string().trim().defined();
   return (required ? field.required("Enter an amount.") : field).test(
     "amount",
@@ -192,7 +189,7 @@ function amountField(required: boolean) {
 }
 
 /** Reminder fields shared by every commitment form: blank days means no reminder. */
-const reminderFields = {
+export const reminderFields = {
   reminderDays: string()
     .trim()
     .defined()

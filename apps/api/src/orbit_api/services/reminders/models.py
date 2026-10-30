@@ -23,8 +23,9 @@ OccurrenceStatus = Literal["pending", "processing", "delivered", "cancelled", "f
 DeliveryOutcome = Literal["delivered", "cancelled", "failed"]
 
 
-# The financial commitment a reminder is managed by: a loan, or a subscription or bill.
-CommitmentLinkKind = Literal["loan", "recurring_payment"]
+# The finance record a reminder is managed by: a loan, a subscription or bill, or a deposit
+# (its maturity).
+CommitmentLinkKind = Literal["loan", "recurring_payment", "deposit"]
 
 
 @dataclass(frozen=True, slots=True)

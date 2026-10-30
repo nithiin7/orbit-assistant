@@ -55,10 +55,14 @@ class AccountRepository(Protocol):
         ...
 
     async def views(
-        self, workspace_id: uuid.UUID, account_id: uuid.UUID | None = None
+        self,
+        workspace_id: uuid.UUID,
+        account_id: uuid.UUID | None = None,
+        as_of: date | None = None,
     ) -> list[AccountView]:
         """Accounts with their balances, active ones first, each group by name: every account in
-        the workspace, or only `account_id`."""
+        the workspace, or only `account_id`. With `as_of`, balances count only transactions on
+        or before that date (opening balances have no date and always count)."""
         ...
 
     async def save(self, account: Account) -> None:
@@ -176,8 +180,11 @@ class FinanceService:
 
     # Accounts
 
-    async def accounts(self, workspace_id: uuid.UUID) -> list[AccountView]:
-        return await self._accounts.views(workspace_id)
+    async def accounts(
+        self, workspace_id: uuid.UUID, as_of: date | None = None
+    ) -> list[AccountView]:
+        """Every account with its balance: today's, or as of the end of `as_of`."""
+        return await self._accounts.views(workspace_id, as_of=as_of)
 
     async def account(self, workspace_id: uuid.UUID, account_id: uuid.UUID) -> AccountView:
         views = await self._accounts.views(workspace_id, account_id)

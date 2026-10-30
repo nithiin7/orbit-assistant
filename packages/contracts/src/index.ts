@@ -150,3 +150,65 @@ export type CommitmentSummaryQuery = NonNullable<
   paths["/api/v1/workspaces/{workspace_id}/finance/commitments/summary"]["get"]["parameters"]["query"]
 >;
 export type ReminderCommitment = Schemas["ReminderCommitmentResponse"];
+export type InvestmentAccount = Schemas["InvestmentAccountResponse"];
+export type InvestmentAccountKind = InvestmentAccount["kind"];
+export type InvestmentAccountList = Schemas["InvestmentAccountListResponse"];
+export type CreateInvestmentAccountRequest = Schemas["CreateInvestmentAccountRequest"];
+export type UpdateInvestmentAccountRequest = Schemas["UpdateInvestmentAccountRequest"];
+export type Holding = Schemas["HoldingResponse"];
+export type HoldingKind = Holding["kind"];
+export type Freshness = Holding["freshness"];
+export type HoldingList = Schemas["HoldingListResponse"];
+export type CreateHoldingRequest = Schemas["CreateHoldingRequest"];
+export type UpdateHoldingRequest = Schemas["UpdateHoldingRequest"];
+export type HoldingPrice = Schemas["PriceResponse"];
+export type HoldingPriceList = Schemas["PriceListResponse"];
+export type RecordPriceRequest = Schemas["RecordPriceRequest"];
+export type InvestmentTransaction = Schemas["InvestmentTransactionResponse"];
+export type InvestmentTransactionType = InvestmentTransaction["type"];
+export type Settlement = InvestmentTransaction["settlement"];
+export type InvestmentTransactionList = Schemas["InvestmentTransactionListResponse"];
+export type RecordInvestmentTransactionRequest = Schemas["RecordInvestmentTransactionRequest"];
+/** Filters accepted when listing investment activity. */
+export type InvestmentTransactionListQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/finance/investment-transactions"]["get"]["parameters"]["query"]
+>;
+export type SipPlan = Schemas["SipPlanResponse"];
+export type SipState = SipPlan["state"];
+export type SipPlanList = Schemas["SipPlanListResponse"];
+export type CreateSipPlanRequest = Schemas["CreateSipPlanRequest"];
+export type UpdateSipPlanRequest = Schemas["UpdateSipPlanRequest"];
+export type RecordSipInstallmentRequest = Schemas["RecordSipInstallmentRequest"];
+export type Deposit = Schemas["DepositResponse"];
+export type DepositKind = Deposit["kind"];
+export type Compounding = Deposit["compounding"];
+export type ValueSource = Deposit["value_source"];
+export type DepositList = Schemas["DepositListResponse"];
+export type CreateDepositRequest = Schemas["CreateDepositRequest"];
+export type UpdateDepositRequest = Schemas["UpdateDepositRequest"];
+export type DepositContributionRequest = Schemas["DepositContributionRequest"];
+export type DepositValueRequest = Schemas["DepositValueRequest"];
+export type CloseDepositRequest = Schemas["CloseDepositRequest"];
+export type Portfolio = Schemas["PortfolioResponse"];
+export type PortfolioSlice = Schemas["SliceResponse"];
+export type PortfolioQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/finance/portfolio"]["get"]["parameters"]["query"]
+>;
+export type Asset = Schemas["AssetResponse"];
+export type AssetCategory = Asset["category"];
+export type AssetList = Schemas["AssetListResponse"];
+export type CreateAssetRequest = Schemas["CreateAssetRequest"];
+export type UpdateAssetRequest = Schemas["UpdateAssetRequest"];
+export type AssetValuation = Schemas["AssetValuationResponse"];
+export type AssetValuationList = Schemas["AssetValuationListResponse"];
+export type RecordValuationRequest = Schemas["RecordValuationRequest"];
+export type NetWorth = Schemas["NetWorthResponse"];
+export type NetWorthItem = Schemas["NetWorthItemResponse"];
+export type NetWorthGroup = NetWorthItem["group"];
+export type NetWorthGroupTotal = Schemas["GroupTotalResponse"];
+export type NetWorthSnapshot = Schemas["SnapshotResponse"];
+export type NetWorthSnapshotList = Schemas["SnapshotListResponse"];
+export type TakeSnapshotRequest = Schemas["TakeSnapshotRequest"];
+export type NetWorthQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/finance/net-worth"]["get"]["parameters"]["query"]
+>;

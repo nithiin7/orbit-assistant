@@ -22,10 +22,13 @@ import { cn, type Option } from "@/utils/common";
 
 import { AccountDialog } from "./account-dialog";
 import { AccountsView } from "./accounts-view";
+import { AssetsView } from "./assets-view";
 import { FinanceOverview } from "./finance-overview";
+import { InvestmentsView } from "./investments-view";
 import { LoanDialog } from "./loan-dialog";
 import { InstallmentDialog, RescheduleDialog } from "./loan-schedule-dialogs";
 import { LoansView } from "./loans-view";
+import { NetWorthView } from "./net-worth-view";
 import { PaymentDialog, type PaymentTarget } from "./payment-dialog";
 import { RecurringDialog } from "./recurring-dialog";
 import { RecurringView } from "./recurring-view";
@@ -34,7 +37,16 @@ import { TransactionHistory } from "./transaction-history";
 import { UpcomingPayments } from "./upcoming-payments";
 
 export type FinanceTab =
-  "overview" | "upcoming" | "transactions" | "accounts" | "loans" | "subscriptions" | "bills";
+  | "overview"
+  | "upcoming"
+  | "transactions"
+  | "accounts"
+  | "loans"
+  | "subscriptions"
+  | "bills"
+  | "investments"
+  | "assets"
+  | "net-worth";
 
 const TABS: readonly Option<FinanceTab>[] = [
   { value: "overview", label: "Overview" },
@@ -44,6 +56,9 @@ const TABS: readonly Option<FinanceTab>[] = [
   { value: "loans", label: "Loans" },
   { value: "subscriptions", label: "Subscriptions" },
   { value: "bills", label: "Bills" },
+  { value: "investments", label: "Investments" },
+  { value: "assets", label: "Assets" },
+  { value: "net-worth", label: "Net worth" },
 ];
 
 /** Views that need an account to show anything useful. */
@@ -192,6 +207,12 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
             <UpcomingPayments {...data} onPay={pay} />
           ) : tab === "transactions" ? (
             <TransactionHistory {...data} />
+          ) : tab === "investments" ? (
+            <InvestmentsView {...data} />
+          ) : tab === "assets" ? (
+            <AssetsView {...data} />
+          ) : tab === "net-worth" ? (
+            <NetWorthView {...data} />
           ) : tab === "loans" ? (
             <LoansView
               {...data}

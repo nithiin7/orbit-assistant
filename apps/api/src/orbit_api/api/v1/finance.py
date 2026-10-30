@@ -349,8 +349,8 @@ async def delete_transaction(
     except TransactionInUseError:
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            "This transaction records a loan, subscription, or bill payment. Undo that payment "
-            "first.",
+            "This transaction records a loan, subscription, or bill payment, or an investment. "
+            "Undo that payment first, or delete the investment transaction.",
         ) from None
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 

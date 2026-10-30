@@ -22,6 +22,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 from orbit_api.db.base import Base
 from orbit_api.db.columns import UTCDateTime, utc_now
 
+# At most one of the commitment links is set: at least two of the three are NULL.
+ONE_COMMITMENT = (
+    "(finance_loan_id IS NULL AND finance_recurring_payment_id IS NULL)"
+    " OR (finance_loan_id IS NULL AND finance_deposit_id IS NULL)"
+    " OR (finance_recurring_payment_id IS NULL AND finance_deposit_id IS NULL)"
+)
+
 
 class ReminderModel(Base):
     """A reminder in one workspace, optionally about one of its tasks or managed by one of its
@@ -59,12 +66,20 @@ class ReminderModel(Base):
             # The conventional name exceeds PostgreSQL's 63-character limit.
             name="fk_reminders_finance_recurring_payment",
         ),
+        # A deposit's maturity reminder, managed the same way.
+        ForeignKeyConstraint(
+            ["finance_deposit_id", "workspace_id"],
+            ["finance_deposits.id", "finance_deposits.workspace_id"],
+            ondelete="CASCADE",
+            name="fk_reminders_finance_deposit",
+        ),
         UniqueConstraint("finance_loan_id", name="uq_reminders_finance_loan_id"),
         UniqueConstraint(
             "finance_recurring_payment_id", name="uq_reminders_finance_recurring_payment_id"
         ),
+        UniqueConstraint("finance_deposit_id", name="uq_reminders_finance_deposit_id"),
         CheckConstraint(
-            "finance_loan_id IS NULL OR finance_recurring_payment_id IS NULL",
+            ONE_COMMITMENT,
             name="one_commitment",
         ),
         Index("ix_reminders_workspace_created_at", "workspace_id", "created_at"),
@@ -76,6 +91,7 @@ class ReminderModel(Base):
     task_id: Mapped[uuid.UUID | None]
     finance_loan_id: Mapped[uuid.UUID | None]
     finance_recurring_payment_id: Mapped[uuid.UUID | None]
+    finance_deposit_id: Mapped[uuid.UUID | None]
     title: Mapped[str] = mapped_column(String(200))
     description: Mapped[str] = mapped_column(Text)
     enabled: Mapped[bool]

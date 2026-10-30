@@ -174,7 +174,7 @@ export function FinanceOverview({
   );
 }
 
-function Panel({
+export function Panel({
   title,
   description,
   flush = false,
@@ -245,7 +245,7 @@ function CashFlowTiles({
   );
 }
 
-function Tile({
+export function Tile({
   label,
   value,
   tone = "default",
@@ -286,7 +286,7 @@ function Balances({ accounts, currency }: { accounts: FinanceAccount[]; currency
   return (
     <Panel
       title="Account balances"
-      description="Opening balances plus everything recorded. Not net worth: investment market values aren’t tracked."
+      description="Opening balances plus everything recorded. Not net worth: the Net worth view adds investments at market value and other assets."
       flush
     >
       <dl className="grid grid-cols-2 gap-4 px-5 pb-4">

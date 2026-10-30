@@ -16,6 +16,7 @@ from orbit_api.db.models import (
     FinanceRecurringOccurrenceModel,
     FinanceRecurringPaymentModel,
 )
+from orbit_api.db.models.commitments import ReminderColumns
 from orbit_api.repositories.finance import (
     SqlFinanceAccountRepository,
     SqlFinanceCategoryRepository,
@@ -50,7 +51,7 @@ _Recurring = FinanceRecurringPaymentModel
 _Settled = FinanceRecurringOccurrenceModel
 
 
-def _reminder_of(model: FinanceLoanModel | FinanceRecurringPaymentModel) -> ReminderSettings | None:
+def reminder_of(model: ReminderColumns) -> ReminderSettings | None:
     # A CHECK constraint sets all three together or none.
     if (
         model.reminder_days_before is None
@@ -65,7 +66,7 @@ def _reminder_of(model: FinanceLoanModel | FinanceRecurringPaymentModel) -> Remi
     )
 
 
-def _reminder_columns(settings: ReminderSettings | None) -> dict[str, Any]:
+def reminder_columns(settings: ReminderSettings | None) -> dict[str, Any]:
     return {
         "reminder_days_before": settings.days_before if settings else None,
         "reminder_time": settings.time_of_day if settings else None,
@@ -96,7 +97,7 @@ def _to_loan(model: FinanceLoanModel) -> Loan:
         first_payment_date=model.first_payment_date,
         notes=model.notes,
         status=cast(LoanStatus, model.status),
-        reminder=_reminder_of(model),
+        reminder=reminder_of(model),
         created_at=model.created_at,
         updated_at=model.updated_at,
     )
@@ -113,7 +114,7 @@ def _loan_fields(loan: Loan) -> dict[str, Any]:
         "notes": loan.notes,
         "status": loan.status,
         "updated_at": loan.updated_at,
-        **_reminder_columns(loan.reminder),
+        **reminder_columns(loan.reminder),
     }
 
 
@@ -172,7 +173,7 @@ def _to_recurring(model: FinanceRecurringPaymentModel) -> RecurringPayment:
         auto_renew=model.auto_renew,
         state=cast(RecurringState, model.state),
         notes=model.notes,
-        reminder=_reminder_of(model),
+        reminder=reminder_of(model),
         created_at=model.created_at,
         updated_at=model.updated_at,
     )
@@ -195,7 +196,7 @@ def _recurring_fields(payment: RecurringPayment) -> dict[str, Any]:
         "state": payment.state,
         "notes": payment.notes,
         "updated_at": payment.updated_at,
-        **_reminder_columns(payment.reminder),
+        **reminder_columns(payment.reminder),
     }
 
 

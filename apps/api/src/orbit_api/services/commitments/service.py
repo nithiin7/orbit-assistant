@@ -86,9 +86,10 @@ from orbit_api.services.finance.models import (
 )
 from orbit_api.services.finance.money import Currency, month_bounds, to_decimal_string
 from orbit_api.services.finance.service import FinanceService
+from orbit_api.services.reminders.managed import ReminderStore, ReminderTarget, point_reminder
 from orbit_api.services.reminders.models import CommitmentLink, Reminder
 from orbit_api.services.reminders.recurrence import Schedule, local_to_utc
-from orbit_api.services.reminders.service import OccurrenceScheduler, schedule_next
+from orbit_api.services.reminders.service import OccurrenceScheduler
 from orbit_api.services.transactions import ConflictError
 from orbit_api.services.transactions import Transaction as UnitOfWork
 from orbit_api.utils.changes import UNSET
@@ -192,20 +193,6 @@ class PaymentLinks(Protocol):
     async def is_linked(self, workspace_id: uuid.UUID, transaction_id: uuid.UUID) -> bool:
         """Whether an installment or a settled occurrence already points at the transaction."""
         ...
-
-
-class ReminderStore(Protocol):
-    """The reminder operations a commitment needs to manage its reminder."""
-
-    async def for_commitment(
-        self, workspace_id: uuid.UUID, link: CommitmentLink
-    ) -> Reminder | None: ...
-
-    async def add(self, reminder: Reminder) -> None: ...
-
-    async def save(self, reminder: Reminder) -> None: ...
-
-    async def delete(self, workspace_id: uuid.UUID, reminder_id: uuid.UUID) -> bool: ...
 
 
 def _project(installments: list[Installment], outstanding: int) -> list[Installment]:
@@ -1007,7 +994,8 @@ class CommitmentService:
     async def after_delivery(self, reminder: Reminder, now: datetime) -> None:
         """Point a commitment's reminder at its next payment once it has fired. Called by the
         reminder worker inside its delivery transaction, which commits."""
-        if reminder.commitment is not None:
+        # A deposit's maturity reminder fires once; nothing follows it.
+        if reminder.commitment is not None and reminder.commitment.kind != "deposit":
             await self._sync_reminder(reminder.workspace_id, reminder.commitment, now)
 
     async def _sync_reminder(
@@ -1017,58 +1005,24 @@ class CommitmentService:
         reminder time is still ahead; delete it when there's nothing to announce (reminders off,
         the commitment paused, closed, or finished). Idempotent."""
         settings, label, targets = await self._reminder_targets(workspace_id, link, now)
-        existing = await self._reminders.for_commitment(workspace_id, link)
-        target: tuple[date, int, bool, Currency] | None = None
+        reminder: ReminderTarget | None = None
         if settings is not None:
             zone = ZoneInfo(settings.timezone)
             for due, amount, estimated, currency in islice(targets, _REMINDER_SEARCH_LIMIT):
-                at = local_to_utc(
-                    due - timedelta(days=settings.days_before), settings.time_of_day, zone
-                )
-                if at > now:
-                    target = (due, amount, estimated, currency)
+                start = due - timedelta(days=settings.days_before)
+                if local_to_utc(start, settings.time_of_day, zone) > now:
+                    prefix = "About " if estimated else ""
+                    reminder = ReminderTarget(
+                        schedule=Schedule(
+                            start_date=start,
+                            time_of_day=settings.time_of_day,
+                            timezone=settings.timezone,
+                        ),
+                        title=f"{label} due {_short_date(due)}",
+                        description=f"{prefix}{currency} {to_decimal_string(amount, currency)}",
+                    )
                     break
-        if settings is None or target is None:
-            if existing is not None:
-                await self._reminders.delete(workspace_id, existing.id)
-            return
-
-        due, amount, estimated, currency = target
-        schedule = Schedule(
-            start_date=due - timedelta(days=settings.days_before),
-            time_of_day=settings.time_of_day,
-            timezone=settings.timezone,
-        )
-        title = f"{label} due {_short_date(due)}"
-        prefix = "About " if estimated else ""
-        description = f"{prefix}{currency} {to_decimal_string(amount, currency)}"
-        if existing is None:
-            reminder = Reminder(
-                id=uuid.uuid4(),
-                workspace_id=workspace_id,
-                task_id=None,
-                title=title,
-                description=description,
-                enabled=True,
-                schedule=schedule,
-                last_occurrence_at=None,
-                last_outcome=None,
-                created_at=now,
-                updated_at=now,
-                commitment=link,
-            )
-            await self._reminders.add(reminder)
-            await schedule_next(self._scheduler, reminder, now, now)
-            return
-        updated = replace(
-            existing, title=title, description=description, enabled=True, schedule=schedule
-        )
-        if updated == existing and await self._scheduler.has_active(existing.id):
-            return
-        updated = replace(updated, updated_at=now)
-        await self._reminders.save(updated)
-        await self._scheduler.remove_pending(existing.id)
-        await schedule_next(self._scheduler, updated, now, now)
+        await point_reminder(self._reminders, self._scheduler, workspace_id, link, reminder, now)
 
     async def _reminder_targets(
         self, workspace_id: uuid.UUID, link: CommitmentLink, now: datetime

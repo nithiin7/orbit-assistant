@@ -20,11 +20,14 @@ Auth, workspaces, and centralized authorization. The product features are worksp
 **tasks**, **shopping lists**, **reminders** (one-time or recurring, optionally about a task),
 delivered as in-app **notifications** by a database-backed worker, and **finance**: phase 1
 (hand-entered accounts, income, expenses, refunds, transfers, categories, monthly reports, and
-CSV export) and phase 2 commitments (loans with EMI schedules, subscriptions, recurring bills,
-upcoming payments, and payment reminders, all recorded through the phase 1 ledger). There are no
-other product features (calendar, notes), no recurring tasks, no automatically created
-transactions, no investment holdings, budgets, or bank integrations, no push, email, or mobile
-notifications, and no AI integration yet. Do not describe or build on capabilities that do not exist.
+CSV export), phase 2 commitments (loans with EMI schedules, subscriptions, recurring bills,
+upcoming payments, and payment reminders), and phase 3 investments (investment accounts, mutual
+fund, stock, and ETF holdings with FIFO cost basis and hand-entered prices, SIP plans, fixed and
+recurring deposits, other assets with valuations, a portfolio summary, net worth, and monthly
+net worth snapshots), all recorded through the phase 1 ledger. There are no other product
+features (calendar, notes), no recurring tasks, no automatically created transactions, no live
+market prices, budgets, or bank integrations, no push, email, or mobile notifications, and no AI
+integration yet. Do not describe or build on capabilities that do not exist.
 
 ## Principles
 
@@ -50,7 +53,7 @@ notifications, and no AI integration yet. Do not describe or build on capabiliti
 | `.husky/`, `.lintstagedrc.mjs` | Git hooks: staged-file lint/format and commitlint                                |
 
 Not present yet (planned; see `docs/architecture.md`): product tables for notes, later finance
-phases (investments, budgets),
+phases (budgets, price providers),
 shared workspaces, AI provider abstractions, end-to-end tests, and a `scripts/` directory.
 
 ### Boundaries
