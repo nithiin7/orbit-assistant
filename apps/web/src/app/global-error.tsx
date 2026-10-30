@@ -1,9 +1,10 @@
 "use client";
 
-import "./globals.css";
+import "@/styles/globals.css";
 
 import { type ErrorBoundaryProps, ErrorPage } from "@/components/error-fallback";
 import { ThemeProvider } from "@/providers/theme";
+import { fontVariables } from "@/styles/fonts";
 
 /**
  * Replaces the root layout when the layout itself fails, so it renders its own document. The
@@ -11,7 +12,7 @@ import { ThemeProvider } from "@/providers/theme";
  */
 export default function GlobalError(props: ErrorBoundaryProps) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={fontVariables} suppressHydrationWarning>
       <body>
         <title>Something went wrong · Orbit</title>
         <ThemeProvider

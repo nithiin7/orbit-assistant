@@ -21,7 +21,7 @@ Extends the core rule and `AGENTS.md`.
 - Loading, error, empty, and success states for data-driven views.
 - Accessible: semantic HTML, labelled controls, keyboard support, visible focus
   (`focus-visible:ring-2 focus-visible:ring-ring`).
-- Tailwind with tokens from `src/app/globals.css`; `cn()` from `src/utils/common/common.ts`.
+- Tailwind with tokens from `src/styles/` (colors in `tokens.css`); `cn()` from `src/utils/common/common.ts`.
 - Only `NEXT_PUBLIC_*` env vars reach the browser, so never put secrets there. Validate in
   `src/lib/env/env.ts`.
 - Verify: `pnpm lint:web`, `pnpm --filter @orbit/web typecheck`, `pnpm test:web`,

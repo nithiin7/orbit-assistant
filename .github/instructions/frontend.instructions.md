@@ -21,8 +21,8 @@ Follows the shared rules in `AGENTS.md`. Frontend specifics:
 - Every data-driven view handles loading, error, empty, and success states.
 - Accessibility: semantic elements, labelled controls, keyboard support, visible focus
   (`focus-visible:ring-2 focus-visible:ring-ring`), `aria-hidden="true"` on decorative icons.
-- Styling: Tailwind utilities with the tokens in `src/app/globals.css`, combined with `cn()`
-  from `src/utils/common/common.ts`. Prettier sorts classes. Keep the restrained, minimal style.
+- Styling: Tailwind utilities with the tokens in `src/styles/` (colors in `tokens.css`), combined with `cn()`
+  from `src/utils/common/common.ts`. Prettier sorts classes. Keep the warm, calm style.
 - Imports use the `@/` alias for `src/`. ESLint enforces sorted imports and type-only imports.
 - Public config is read and validated in `src/lib/env/env.ts`. Only `NEXT_PUBLIC_*` values, never
   secrets.

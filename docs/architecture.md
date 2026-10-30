@@ -137,8 +137,8 @@ apps/web/src/
 │   │   ├── settings/    # Settings: drill-down on small screens, split view on large; [panel]/ sub-pages
 │   │   └── [section]/   # Placeholder page for every other nav section
 │   ├── (auth)/          # Public routes without the shell: sign-in, sign-up
-│   ├── not-found.tsx    # Standalone 404 (works signed in or out)
-│   └── globals.css      # Tailwind + design tokens (light/dark)
+│   └── not-found.tsx    # Standalone 404 (works signed in or out)
+├── styles/              # globals.css entry: tokens (light/dark), theme, motion, base, components, utilities; fonts.ts (Geist)
 ├── components/
 │   ├── app-shell/       # Sidebar, mobile drawer, navigation links
 │   ├── auth/            # RequireAuth, sign-in and sign-up forms
@@ -1044,7 +1044,7 @@ text in the major unit, such as `20000.50`), Currency, Notes, ID. Text starting 
 - When accounts use several currencies the overview offers a currency picker; otherwise it uses
   the only one.
 - Lists are rows, not tables, so nothing scrolls sideways on phones. Chart colors are the
-  `--chart-1`/`--chart-2` tokens in `globals.css`, a pair checked for color-vision deficiency and
+  `--chart-1`/`--chart-2` tokens in `styles/tokens.css`, a pair checked for color-vision deficiency and
   contrast in both themes; every chart has a legend or labels, and each month is focusable with
   its figures in its accessible name.
 - `hooks/use-finance.ts` binds the queries; keys are `["workspaces", id, "finance", …]`. Every

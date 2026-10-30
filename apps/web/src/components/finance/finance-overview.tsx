@@ -224,10 +224,10 @@ function CashFlowTiles({
   const savedShare = income > 0 && net > 0 ? Math.round((net / income) * 100) : null;
   return (
     <dl className="grid gap-4 sm:grid-cols-3">
-      <Tile label="Income" value={formatMoney(income, currency)}>
+      <Tile label="Income" accent="income" value={formatMoney(income, currency)}>
         {transactions === 0 ? "Nothing recorded yet" : "Money earned this month"}
       </Tile>
-      <Tile label="Spending" value={formatMoney(net_expenses, currency)}>
+      <Tile label="Spending" accent="spending" value={formatMoney(net_expenses, currency)}>
         {refunds > 0
           ? `${formatMoney(expenses, currency)} spent, ${formatMoney(refunds, currency)} refunded`
           : "Expenses this month"}
@@ -235,7 +235,8 @@ function CashFlowTiles({
       <Tile
         label="Net cash flow"
         value={formatMoney(net, currency, { signDisplay: net === 0 ? "auto" : "always" })}
-        tone={net < 0 ? "negative" : "default"}
+        tone={net < 0 ? "negative" : net > 0 ? "positive" : "default"}
+        accent={net < 0 ? "negative" : "positive"}
       >
         {net < 0
           ? "Spent more than earned"
@@ -247,23 +248,41 @@ function CashFlowTiles({
   );
 }
 
+/** A tile's accent: what the figure is about, shown as a small dot beside the label. */
+export type TileAccent = "brand" | "income" | "spending" | "positive" | "negative" | "neutral";
+
+const ACCENTS: Record<TileAccent, string> = {
+  brand: "bg-brand",
+  income: "bg-chart-1",
+  spending: "bg-chart-2",
+  positive: "bg-success",
+  negative: "bg-destructive",
+  neutral: "bg-muted-foreground/60",
+};
+
 export function Tile({
   label,
   value,
   tone = "default",
+  accent = "neutral",
   children,
 }: {
   label: string;
   value: string;
-  tone?: "default" | "negative";
+  tone?: "default" | "positive" | "negative";
+  accent?: TileAccent;
   children: ReactNode;
 }) {
   return (
     <div className="rounded-xl border bg-card p-5 shadow-elevation-1">
-      <dt className="text-sm text-muted-foreground">{label}</dt>
+      <dt className="flex items-center gap-2 text-sm text-muted-foreground">
+        <span aria-hidden="true" className={cn("size-2 rounded-full", ACCENTS[accent])} />
+        {label}
+      </dt>
       <dd
         className={cn(
           "mt-1 text-2xl font-semibold tracking-tight tabular-nums",
+          tone === "positive" && "text-success",
           tone === "negative" && "text-destructive",
         )}
       >

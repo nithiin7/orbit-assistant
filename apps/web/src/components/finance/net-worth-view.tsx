@@ -125,16 +125,21 @@ function NetWorthDetail({
       </div>
 
       <dl className="grid gap-4 sm:grid-cols-3">
-        <Tile label="Total assets" value={formatMoney(data.assets, currency)}>
+        <Tile label="Total assets" accent="positive" value={formatMoney(data.assets, currency)}>
           Accounts, investments, and other assets
         </Tile>
-        <Tile label="Total liabilities" value={formatMoney(data.liabilities, currency)}>
+        <Tile
+          label="Total liabilities"
+          accent="negative"
+          value={formatMoney(data.liabilities, currency)}
+        >
           Owed on cards and loans
         </Tile>
         <Tile
           label="Net worth"
           value={formatMoney(data.net_worth, currency)}
           tone={data.net_worth < 0 ? "negative" : "default"}
+          accent="brand"
         >
           Assets minus liabilities, {formatCalendarDate(data.as_of)}
         </Tile>

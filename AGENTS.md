@@ -151,8 +151,10 @@ and `packages/*/package.json`. Check them rather than guessing.
 - Design every data-driven view with loading, error, empty, and success states. Show
   user-facing errors that are helpful without leaking internals.
 - Handle async work correctly: await or deliberately void promises, and handle rejections.
-- Style with Tailwind utilities and the design tokens in `src/app/globals.css`. Use `cn()` from
-  `src/utils/common/common.ts` for conditional classes. Keep the restrained visual style.
+- Style with Tailwind utilities and the design tokens in `src/styles/` (entry `globals.css`; colors
+  in `tokens.css`, Tailwind theme and fonts in `theme.css`). Use `cn()` from
+  `src/utils/common/common.ts` for conditional classes. Keep the warm, calm visual style:
+  color for actions and meaning, quiet surfaces elsewhere.
 - Only `NEXT_PUBLIC_*` variables reach the browser, and they are public. **No secrets in client
   code.** Validate public config in `src/lib/env/env.ts`.
 - Create a reusable component only when it removes real duplication or clarifies the code.

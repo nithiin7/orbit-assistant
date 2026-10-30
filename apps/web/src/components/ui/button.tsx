@@ -11,6 +11,8 @@ const buttonVariants = cva(
         default: "bg-primary text-primary-foreground shadow-elevation-1 hover:bg-primary/90",
         outline:
           "border bg-card shadow-elevation-1 hover:bg-accent hover:text-accent-foreground dark:bg-transparent",
+        // A tinted secondary action: color without the weight of the primary button.
+        soft: "bg-brand-subtle text-brand hover:bg-brand/15",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         destructive:
           "border border-destructive/40 bg-card text-destructive shadow-elevation-1 hover:bg-destructive/10 dark:bg-transparent",

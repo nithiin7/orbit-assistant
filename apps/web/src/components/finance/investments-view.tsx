@@ -192,26 +192,23 @@ export function InvestmentsView({ workspaceId, accounts, onAnnounce }: FinanceDa
             options={RANGES}
           />
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:flex">
-          <Button variant="outline" onClick={() => setDialog({ kind: "account" })}>
-            <Plus aria-hidden="true" />
-            Account
-          </Button>
-          <Button
-            variant="outline"
-            disabled={active.length === 0}
-            onClick={() => setDialog({ kind: "holding" })}
-          >
+        {/* Ordered by how often each is needed: holdings most, accounts once per platform. */}
+        <div className="grid grid-cols-3 gap-2 sm:flex">
+          <Button disabled={active.length === 0} onClick={() => setDialog({ kind: "holding" })}>
             <Plus aria-hidden="true" />
             Holding
           </Button>
           <Button
-            variant="outline"
+            variant="soft"
             disabled={active.length === 0}
             onClick={() => setDialog({ kind: "deposit" })}
           >
             <Plus aria-hidden="true" />
             Deposit
+          </Button>
+          <Button variant="ghost" onClick={() => setDialog({ kind: "account" })}>
+            <Plus aria-hidden="true" />
+            Account
           </Button>
         </div>
       </div>
@@ -257,6 +254,11 @@ export function InvestmentsView({ workspaceId, accounts, onAnnounce }: FinanceDa
   );
 }
 
+/** Gains read green, losses red, and nothing neutral. */
+function signTone(amount: number): "default" | "positive" | "negative" {
+  return amount > 0 ? "positive" : amount < 0 ? "negative" : "default";
+}
+
 function PortfolioSummary({
   workspaceId,
   currency,
@@ -293,7 +295,11 @@ function PortfolioSummary({
   return (
     <div className="space-y-6">
       <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Tile label="Current value" value={formatMoney(data.current_value, currency)}>
+        <Tile
+          label="Current value"
+          accent="brand"
+          value={formatMoney(data.current_value, currency)}
+        >
           {data.cash
             ? `Plus ${formatMoney(data.cash, currency)} uninvested cash`
             : "Holdings and deposits"}
@@ -306,7 +312,8 @@ function PortfolioSummary({
           value={formatMoney(data.unrealized_gain, currency, {
             signDisplay: data.unrealized_gain === 0 ? "auto" : "always",
           })}
-          tone={data.unrealized_gain < 0 ? "negative" : "default"}
+          tone={signTone(data.unrealized_gain)}
+          accent={data.unrealized_gain < 0 ? "negative" : "positive"}
         >
           Market value minus cost, priced holdings only
         </Tile>
@@ -315,7 +322,8 @@ function PortfolioSummary({
           value={formatMoney(data.total_return, currency, {
             signDisplay: data.total_return === 0 ? "auto" : "always",
           })}
-          tone={data.total_return < 0 ? "negative" : "default"}
+          tone={signTone(data.total_return)}
+          accent={data.total_return < 0 ? "negative" : "positive"}
         >
           {formatPercent(data.return_percent)} on everything invested. Realized{" "}
           {formatMoney(data.realized_gain, currency)}, income {formatMoney(data.income, currency)},

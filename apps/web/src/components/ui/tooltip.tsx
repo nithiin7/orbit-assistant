@@ -105,7 +105,7 @@ export function Tooltip({
           aria-hidden="true"
           style={style}
           className={cn(
-            "pointer-events-none fixed z-50 rounded-md bg-primary px-2 py-1 text-xs font-medium whitespace-nowrap text-primary-foreground shadow-elevation-2",
+            "pointer-events-none fixed z-50 rounded-md bg-foreground px-2 py-1 text-xs font-medium whitespace-nowrap text-background shadow-elevation-2",
             "animate-tooltip-in",
           )}
         >

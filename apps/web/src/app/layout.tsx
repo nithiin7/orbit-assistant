@@ -1,4 +1,4 @@
-import "./globals.css";
+import "@/styles/globals.css";
 
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
@@ -7,6 +7,7 @@ import { sidebarPreferenceScript } from "@/lib/sidebar-preference";
 import { AuthProvider } from "@/providers/auth";
 import { QueryProvider } from "@/providers/query";
 import { ThemeProvider } from "@/providers/theme";
+import { fontVariables } from "@/styles/fonts";
 
 export const metadata: Metadata = {
   title: { default: "Orbit", template: "%s · Orbit" },
@@ -15,14 +16,14 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fcfcfd" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f1013" },
+    { media: "(prefers-color-scheme: light)", color: "#fdfaf6" },
+    { media: "(prefers-color-scheme: dark)", color: "#120f0c" },
   ],
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={fontVariables} suppressHydrationWarning>
       <head>
         {/* Static, first-party script: restores the sidebar preference before first paint. */}
         <script dangerouslySetInnerHTML={{ __html: sidebarPreferenceScript }} />

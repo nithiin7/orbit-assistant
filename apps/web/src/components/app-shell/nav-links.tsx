@@ -38,7 +38,7 @@ export function NavLinks({ onNavigate, collapsible = false }: NavLinksProps) {
                 "focus-visible:ring-2 focus-visible:ring-ring",
                 // Active indicator: a short accent bar on the leading edge.
                 "before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-brand before:opacity-0 before:transition-opacity before:duration-150",
-                active && "bg-sidebar-accent text-sidebar-accent-foreground before:opacity-100",
+                active && "bg-brand-subtle text-brand before:opacity-100",
               )}
             >
               <Icon

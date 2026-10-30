@@ -1,0 +1,22 @@
+/*
+ * Global stylesheet entry point. Tailwind first, then the app's layers in dependency order:
+ *
+ *   tokens.css      color, radius, and elevation variables for light and dark themes
+ *   theme.css       maps tokens onto Tailwind's theme (colors, fonts, radii, breakpoints)
+ *   motion.css      durations, easings, keyframes, and reduced-motion handling
+ *   base.css        element defaults (body, selection, cursors)
+ *   components.css  shared component classes (dialog transitions)
+ *   utilities.css   custom Tailwind utilities
+ */
+@import "tailwindcss";
+@import "./tokens.css";
+@import "./theme.css";
+@import "./motion.css";
+@import "./base.css";
+@import "./components.css";
+@import "./utilities.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Set on <html> by the sidebar script in the root layout; styles the desktop sidebar without a flash. */
+@custom-variant sidebar-collapsed (&:where([data-sidebar="collapsed"], [data-sidebar="collapsed"] *));

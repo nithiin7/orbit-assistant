@@ -172,7 +172,7 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
                 className={cn(
                   "h-full flex-none rounded-[calc(var(--radius-md)-2px)] px-3 text-sm font-medium whitespace-nowrap transition-[color,background-color,box-shadow] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   selected
-                    ? "bg-card text-foreground shadow-elevation-1"
+                    ? "bg-card text-brand shadow-elevation-1"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
@@ -184,15 +184,15 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
 
         {hasActiveAccount ? (
           <div className="grid grid-cols-3 gap-2 sm:flex">
-            <Button variant="outline" onClick={() => record("income")}>
+            <Button variant="soft" onClick={() => record("income")}>
               <Plus aria-hidden="true" />
               Income
             </Button>
-            <Button variant="outline" onClick={() => record("expense")}>
+            <Button variant="soft" onClick={() => record("expense")}>
               <Minus aria-hidden="true" />
               Expense
             </Button>
-            <Button variant="outline" onClick={() => record("transfer")}>
+            <Button variant="soft" onClick={() => record("transfer")}>
               <ArrowLeftRight aria-hidden="true" />
               Transfer
             </Button>

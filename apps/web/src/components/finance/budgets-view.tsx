@@ -192,6 +192,7 @@ function MonthTiles({ month, currency }: { month: BudgetMonth; currency: Currenc
       <dl className="grid gap-4 sm:grid-cols-3">
         <Tile
           label="Budget"
+          accent="brand"
           value={month.total === null ? "—" : formatMoney(month.total, currency)}
         >
           {month.basis === "overall"
@@ -200,7 +201,7 @@ function MonthTiles({ month, currency }: { month: BudgetMonth; currency: Currenc
               ? `${month.budgets_counted} category ${month.budgets_counted === 1 ? "budget" : "budgets"}`
               : "Only custom periods this month"}
         </Tile>
-        <Tile label="Spent" value={formatMoney(month.spent, currency)}>
+        <Tile label="Spent" accent="spending" value={formatMoney(month.spent, currency)}>
           {month.unbudgeted !== null && month.unbudgeted > 0
             ? `${formatMoney(month.unbudgeted, currency)} outside your category budgets`
             : "Expenses minus refunds"}
@@ -209,6 +210,7 @@ function MonthTiles({ month, currency }: { month: BudgetMonth; currency: Currenc
           label={over ? "Over budget" : "Remaining"}
           value={month.remaining === null ? "—" : formatMoney(Math.abs(month.remaining), currency)}
           tone={over ? "negative" : "default"}
+          accent={over ? "negative" : "positive"}
         >
           {month.budgets_counted > 0
             ? `${month.budgets_within} of ${month.budgets_counted} within budget`
