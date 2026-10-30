@@ -52,6 +52,9 @@ PROTECTED_TABLES = (
     "reminders",
     "reminder_occurrences",
     "notifications",
+    "finance_accounts",
+    "finance_categories",
+    "finance_transactions",
 )
 
 

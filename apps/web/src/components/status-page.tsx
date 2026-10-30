@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/common";
 
 type StatusPageProps = {
   icon: LucideIcon;

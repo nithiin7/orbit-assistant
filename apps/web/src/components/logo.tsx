@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/common";
 
 /**
  * The Orbit mark: you at the center (the core), with Orbit circling you (an open ring carrying a

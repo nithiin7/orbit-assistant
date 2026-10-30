@@ -12,6 +12,11 @@ from orbit_api.db.database import Database
 from orbit_api.repositories.accounts import SqlAccountRepository, SqlLocalAuthRepository
 from orbit_api.repositories.avatars import SqlAvatarRepository
 from orbit_api.repositories.dashboard import SqlDashboardRepository
+from orbit_api.repositories.finance import (
+    SqlFinanceAccountRepository,
+    SqlFinanceCategoryRepository,
+    SqlFinanceTransactionRepository,
+)
 from orbit_api.repositories.notifications import SqlNotificationRepository
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.shopping import SqlShoppingItemRepository, SqlShoppingListRepository
@@ -21,6 +26,7 @@ from orbit_api.repositories.workspaces import SqlWorkspaceRepository
 from orbit_api.services.accounts.service import AccountService
 from orbit_api.services.avatars.service import AvatarService
 from orbit_api.services.dashboard.service import DashboardService
+from orbit_api.services.finance.service import FinanceService
 from orbit_api.services.local_auth.service import LocalAuthService, PasswordHasher
 from orbit_api.services.notifications.service import NotificationService
 from orbit_api.services.reminders.service import ReminderService
@@ -137,3 +143,15 @@ def get_notification_service(session: SessionDep) -> NotificationService:
 
 
 NotificationServiceDep = Annotated[NotificationService, Depends(get_notification_service)]
+
+
+def get_finance_service(session: SessionDep) -> FinanceService:
+    return FinanceService(
+        SqlFinanceAccountRepository(session),
+        SqlFinanceCategoryRepository(session),
+        SqlFinanceTransactionRepository(session),
+        SqlTransaction(session),
+    )
+
+
+FinanceServiceDep = Annotated[FinanceService, Depends(get_finance_service)]

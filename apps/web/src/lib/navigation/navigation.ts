@@ -61,7 +61,7 @@ export const navItems: readonly NavItem[] = [
     title: "Finance",
     href: "/finance",
     icon: Wallet,
-    description: "Keep an eye on spending and budgets.",
+    description: "Track accounts, income, spending, and transfers.",
     group: "workspace",
   },
   {
@@ -93,6 +93,7 @@ const dedicatedRoutes: ReadonlySet<string> = new Set([
   "/tasks",
   "/reminders",
   "/shopping",
+  "/finance",
   "/settings",
 ]);
 

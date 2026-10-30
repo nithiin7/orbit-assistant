@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/common";
 
 /** Placeholder block for content that is still loading. Decorative; announce loading separately. */
 function Skeleton({ className, ...props }: ComponentProps<"div">) {

@@ -2,7 +2,7 @@
 
 import { object, ref, string } from "yup";
 
-import { singleLineText } from "@/lib/validation";
+import { singleLineText } from "@/utils/validation";
 
 export const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_LENGTH = 128;

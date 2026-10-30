@@ -523,3 +523,202 @@ def test_reminder_migration_creates_and_drops_its_tables(migrated_settings: Sett
     assert "tasks" in tables(migrated_settings)
     columns = {row[1] for row in query(migrated_settings.sqlite_path, "PRAGMA table_info(users)")}
     assert "timezone" not in columns
+
+
+def insert_finance_account(database: Path, workspace_id: str, **overrides: object) -> str:
+    account_id = uuid.uuid4().hex
+    values: dict[str, object] = {
+        "type": "bank",
+        "currency": "INR",
+        "opening_balance": 0,
+        **overrides,
+    }
+    query(
+        database,
+        "INSERT INTO finance_accounts (id, workspace_id, name, type, currency, opening_balance,"
+        " notes, archived_at, created_at, updated_at) VALUES (?, ?, 'A', ?, ?, ?, '', NULL, ?, ?)",
+        account_id,
+        workspace_id,
+        values["type"],
+        values["currency"],
+        values["opening_balance"],
+        NOW,
+        NOW,
+    )
+    return account_id
+
+
+def insert_finance_category(database: Path, workspace_id: str, name: str = "C") -> str:
+    category_id = uuid.uuid4().hex
+    query(
+        database,
+        "INSERT INTO finance_categories (id, workspace_id, name, type, key, created_at,"
+        " updated_at) VALUES (?, ?, ?, 'expense', NULL, ?, ?)",
+        category_id,
+        workspace_id,
+        name,
+        NOW,
+        NOW,
+    )
+    return category_id
+
+
+def insert_finance_transaction(
+    database: Path, workspace_id: str, account_id: str, **overrides: object
+) -> str:
+    transaction_id = uuid.uuid4().hex
+    values: dict[str, object] = {
+        "type": "expense",
+        "amount": 100,
+        "currency": "INR",
+        "description": "T",
+        "category_id": None,
+        "to_account_id": None,
+        **overrides,
+    }
+    query(
+        database,
+        "INSERT INTO finance_transactions (id, workspace_id, type, amount, currency, occurred_on,"
+        " description, category_id, account_id, to_account_id, notes, created_at, updated_at)"
+        " VALUES (?, ?, ?, ?, ?, '2026-02-10', ?, ?, ?, ?, '', ?, ?)",
+        transaction_id,
+        workspace_id,
+        values["type"],
+        values["amount"],
+        values["currency"],
+        values["description"],
+        values["category_id"],
+        account_id,
+        values["to_account_id"],
+        NOW,
+        NOW,
+    )
+    return transaction_id
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"amount": 0},
+        {"amount": -1},
+        {"amount": 10**13 + 1},
+        {"type": "withdrawal"},
+        {"currency": "inr"},
+        {"description": ""},
+        # A transfer needs a different destination and no category; nothing else has one.
+        {"type": "transfer"},
+        {"type": "transfer", "to_account_id": "SELF"},
+        {"type": "transfer", "to_account_id": "OTHER", "category_id": "CATEGORY"},
+        {"to_account_id": "OTHER"},
+    ],
+)
+def test_database_enforces_finance_transaction_constraints(
+    migrated_settings: Settings, overrides: dict[str, object]
+) -> None:
+    database = migrated_settings.sqlite_path
+    workspace = insert_workspace(database, insert_user(database), is_personal=True)
+    account = insert_finance_account(database, workspace)
+    ids = {
+        "SELF": account,
+        "OTHER": insert_finance_account(database, workspace),
+        "CATEGORY": insert_finance_category(database, workspace),
+    }
+    insert_finance_transaction(
+        database, workspace, account, type="transfer", to_account_id=ids["OTHER"]
+    )
+
+    with pytest.raises(sqlite3.IntegrityError, match="CHECK"):
+        insert_finance_transaction(
+            database,
+            workspace,
+            account,
+            **{key: ids.get(str(value), value) for key, value in overrides.items()},
+        )
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [{"type": "loan"}, {"opening_balance": 10**13 + 1}, {"currency": "US"}],
+)
+def test_database_enforces_finance_account_constraints(
+    migrated_settings: Settings, overrides: dict[str, object]
+) -> None:
+    database = migrated_settings.sqlite_path
+    workspace = insert_workspace(database, insert_user(database), is_personal=True)
+
+    with pytest.raises(sqlite3.IntegrityError, match="CHECK"):
+        insert_finance_account(database, workspace, **overrides)
+
+
+def test_finance_transactions_stay_in_their_accounts_workspace_and_currency(
+    migrated_settings: Settings,
+) -> None:
+    database = migrated_settings.sqlite_path
+    owner = insert_user(database)
+    workspace = insert_workspace(database, owner, is_personal=True)
+    other = insert_workspace(database, owner, is_personal=False)
+    rupees = insert_finance_account(database, workspace)
+    dollars = insert_finance_account(database, workspace, currency="USD")
+    elsewhere = insert_finance_account(database, other)
+    foreign_category = insert_finance_category(database, other)
+
+    for account, overrides in (
+        # The transaction's currency must be its account's.
+        (rupees, {"currency": "USD"}),
+        # Both sides of a transfer share one currency.
+        (rupees, {"type": "transfer", "to_account_id": dollars}),
+        # Accounts and categories must be in the transaction's workspace.
+        (elsewhere, {}),
+        (rupees, {"type": "transfer", "to_account_id": elsewhere}),
+        (rupees, {"category_id": foreign_category}),
+    ):
+        with pytest.raises(sqlite3.IntegrityError, match="FOREIGN KEY"):
+            insert_finance_transaction(database, workspace, account, **overrides)
+
+
+def test_categories_in_use_cannot_be_deleted(migrated_settings: Settings) -> None:
+    database = migrated_settings.sqlite_path
+    workspace = insert_workspace(database, insert_user(database), is_personal=True)
+    used = insert_finance_category(database, workspace, "Used")
+    insert_finance_transaction(
+        database, workspace, insert_finance_account(database, workspace), category_id=used
+    )
+
+    with pytest.raises(sqlite3.IntegrityError, match="FOREIGN KEY"):
+        query(database, "DELETE FROM finance_categories WHERE id = ?", used)
+
+
+def test_deleting_a_workspace_deletes_its_finance_data(migrated_settings: Settings) -> None:
+    database = migrated_settings.sqlite_path
+    owner = insert_user(database)
+    doomed = insert_workspace(database, owner, is_personal=False)
+    kept_workspace = insert_workspace(database, owner, is_personal=True)
+    source = insert_finance_account(database, doomed)
+    insert_finance_transaction(
+        database,
+        doomed,
+        source,
+        type="transfer",
+        to_account_id=insert_finance_account(database, doomed),
+    )
+    insert_finance_transaction(
+        database, doomed, source, category_id=insert_finance_category(database, doomed)
+    )
+    kept_account = insert_finance_account(database, kept_workspace)
+    kept = insert_finance_transaction(database, kept_workspace, kept_account)
+
+    query(database, "DELETE FROM workspaces WHERE id = ?", doomed)
+
+    assert query(database, "SELECT id FROM finance_accounts") == [(kept_account,)]
+    assert query(database, "SELECT id FROM finance_categories") == []
+    assert query(database, "SELECT id FROM finance_transactions") == [(kept,)]
+
+
+def test_finance_migration_creates_and_drops_its_tables(migrated_settings: Settings) -> None:
+    finance_tables = {"finance_accounts", "finance_categories", "finance_transactions"}
+    assert finance_tables <= tables(migrated_settings)
+
+    downgrade(migrated_settings, "0007")
+
+    assert not finance_tables & tables(migrated_settings)
+    assert {"reminders", "tasks"} <= tables(migrated_settings)

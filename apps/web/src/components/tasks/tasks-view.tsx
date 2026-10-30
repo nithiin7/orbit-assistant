@@ -10,16 +10,11 @@ import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTaskList, useTaskMutations } from "@/hooks/use-tasks";
-import { isEditableTarget } from "@/lib/keyboard";
-import {
-  DEFAULT_TASK_FILTERS,
-  isNarrowed,
-  localDateString,
-  type TaskFilters,
-  toTaskListQuery,
-} from "@/lib/tasks";
-import { cn } from "@/lib/utils";
+import { DEFAULT_TASK_FILTERS, isNarrowed, type TaskFilters, toTaskListQuery } from "@/lib/tasks";
 import { useWorkspaces } from "@/providers/workspace";
+import { cn } from "@/utils/common";
+import { localDateString } from "@/utils/dates";
+import { isEditableTarget } from "@/utils/keyboard";
 
 import { TaskComposer } from "./task-composer";
 import { TaskEditDialog } from "./task-edit-dialog";

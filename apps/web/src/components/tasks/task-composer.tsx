@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { newTaskSchema } from "@/lib/tasks";
-import { mergeRefs } from "@/lib/utils";
+import { mergeRefs } from "@/utils/common";
 
 import { PrioritySelect } from "./priority-select";
 

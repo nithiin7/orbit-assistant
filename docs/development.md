@@ -206,7 +206,7 @@ pnpm db:migrate                       # upgrade to the latest revision (from the
 cd apps/api
 uv run alembic current                # revision the database is at
 uv run alembic history                # all revisions
-uv run alembic revision --autogenerate --rev-id 0005 -m "create notes table"
+uv run alembic revision --autogenerate --rev-id 0009 -m "create notes table"
 uv run alembic downgrade -1           # revert the latest revision
 ```
 
@@ -275,6 +275,27 @@ design and its guarantees are in
   text), and `orbit-worker status` counts them.
 - Tests never start the embedded worker; they drive it directly with a controllable clock
   (`tests/test_reminder_worker.py`).
+
+## Finance data
+
+Finance (see [architecture.md](architecture.md#finance)) needs migration `0008_create_finance`:
+run `pnpm db:migrate` after pulling it, or the API refuses to start. There is nothing to seed by
+hand; each workspace gets its default categories the first time they're read.
+
+- **Money is integers.** Amounts in the API, database, and tests are minor units (paise):
+  `125050` is ₹1,250.50. Use `services/finance/money.py` (API) and `@/lib/finance` (web) to
+  convert, never floats. API requests reject non-integer amounts.
+- **Balances are derived**, so there is no recalculation job. Fixing a transaction with
+  `PATCH` or deleting it updates every balance and report.
+- **Export:** Finance → Transactions → Export CSV downloads the filtered date range, or call
+  `GET /api/v1/workspaces/{id}/finance/transactions/export?date_from=…&date_to=…` with a bearer
+  token. It is a readable copy of your transactions, not a full backup; for that, copy the
+  SQLite file (see [Backups](#backups)).
+- **Tests:** `tests/test_finance.py` (routes, balances, reports, export, isolation),
+  `tests/test_finance_money.py` (pure helpers), finance cases in `tests/test_migrations.py`
+  (constraints), and `src/components/finance/finance-view.test.tsx` and
+  `src/lib/finance/finance.test.ts` in the web app. Test data uses fixed dates and passes
+  `month` explicitly, so nothing depends on today.
 
 ## Quality checks
 

@@ -4,7 +4,7 @@ import type { ShoppingListOverview } from "@orbit/contracts";
 import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/common";
 
 type ListTabsProps = {
   lists: ShoppingListOverview[];

@@ -5,7 +5,7 @@ import { Trash2 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/common";
 
 import { DueDateLabel, PriorityBadge } from "./task-meta";
 

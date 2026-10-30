@@ -15,9 +15,9 @@ import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShopping, useShoppingMutations } from "@/hooks/use-shopping";
-import { isEditableTarget } from "@/lib/keyboard";
-import { cn } from "@/lib/utils";
 import { useWorkspaces } from "@/providers/workspace";
+import { cn } from "@/utils/common";
+import { isEditableTarget } from "@/utils/keyboard";
 
 import { ItemComposer } from "./item-composer";
 import { ItemEditDialog } from "./item-edit-dialog";

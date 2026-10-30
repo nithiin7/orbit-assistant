@@ -3,7 +3,7 @@ import { CalendarDays, Flag } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { describeDueDate, type DueState, priorityLabel } from "@/lib/tasks";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/common";
 
 const PRIORITY_TONES: Record<TaskPriority, string> = {
   high: "border-destructive/30 text-destructive",

@@ -2812,6 +2812,1698 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/finance/accounts": {
+      "get": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "List accounts with balances",
+        "description": "Every account, archived ones included, with balances derived from its transactions.",
+        "operationId": "list_accounts_api_v1_workspaces__workspace_id__finance_accounts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "Create an account",
+        "description": "Track an account by hand. Orbit never asks for bank credentials or connects to banks.",
+        "operationId": "create_account_api_v1_workspaces__workspace_id__finance_accounts_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/accounts/{account_id}": {
+      "get": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "Get an account",
+        "operationId": "get_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The account's ID.",
+              "title": "Account Id"
+            },
+            "description": "The account's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "Update an account",
+        "operationId": "update_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The account's ID.",
+              "title": "Account Id"
+            },
+            "description": "The account's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/accounts/{account_id}/archive": {
+      "post": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "Archive an account",
+        "description": "Stop recording new transactions on the account. Its history and balance stay.\nIdempotent.",
+        "operationId": "archive_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__archive_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The account's ID.",
+              "title": "Account Id"
+            },
+            "description": "The account's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/accounts/{account_id}/restore": {
+      "post": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "Restore an archived account",
+        "operationId": "restore_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__restore_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The account's ID.",
+              "title": "Account Id"
+            },
+            "description": "The account's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/categories": {
+      "get": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "List categories",
+        "description": "The workspace's income and expense categories. Built-in ones are added the first time\nthey're read.",
+        "operationId": "list_categories_api_v1_workspaces__workspace_id__finance_categories_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "Create a category",
+        "operationId": "create_category_api_v1_workspaces__workspace_id__finance_categories_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCategoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The name is taken, or the category is built in or in use."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/categories/{category_id}": {
+      "patch": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "Rename a category",
+        "operationId": "rename_category_api_v1_workspaces__workspace_id__finance_categories__category_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The category's ID.",
+              "title": "Category Id"
+            },
+            "description": "The category's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameCategoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The name is taken, or the category is built in or in use."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "Delete a category",
+        "description": "Delete one of your own categories that no transaction uses.",
+        "operationId": "delete_category_api_v1_workspaces__workspace_id__finance_categories__category_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The category's ID.",
+              "title": "Category Id"
+            },
+            "description": "The category's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The name is taken, or the category is built in or in use."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/transactions": {
+      "get": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "List transactions",
+        "description": "Filter by date range, type, account, and category, search descriptions and notes, and\nsort by date or amount.",
+        "operationId": "list_transactions_api_v1_workspaces__workspace_id__finance_transactions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive.",
+              "title": "Date From"
+            },
+            "description": "Inclusive."
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive.",
+              "title": "Date To"
+            },
+            "description": "Inclusive."
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "income",
+                  "expense",
+                  "refund",
+                  "transfer"
+                ],
+                "type": "string"
+              },
+              "description": "Repeat to match any of several types. Omit for all.",
+              "title": "Type"
+            },
+            "description": "Repeat to match any of several types. Omit for all."
+          },
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Transactions on this account, either side of a transfer.",
+              "title": "Account Id"
+            },
+            "description": "Transactions on this account, either side of a transfer."
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category Id"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Case-insensitive text to find in descriptions and notes.",
+              "title": "Q"
+            },
+            "description": "Case-insensitive text to find in descriptions and notes."
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "date",
+                "amount"
+              ],
+              "type": "string",
+              "default": "date",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "asc",
+                    "desc"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Defaults to newest first, or largest first.",
+              "title": "Order"
+            },
+            "description": "Defaults to newest first, or largest first."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "Record a transaction",
+        "operationId": "create_transaction_api_v1_workspaces__workspace_id__finance_transactions_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTransactionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account or category outside this workspace, an archived account, a transfer between currencies, or a category of the wrong type."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/transactions/export": {
+      "get": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "Export transactions as CSV",
+        "description": "Every transaction in the inclusive date range (or all of them), oldest first. Amounts are\npositive decimal text in the major unit, beside their currency.",
+        "operationId": "export_transactions_api_v1_workspaces__workspace_id__finance_transactions_export_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive.",
+              "title": "Date From"
+            },
+            "description": "Inclusive."
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive.",
+              "title": "Date To"
+            },
+            "description": "Inclusive."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A CSV file.",
+            "content": {
+              "text/csv": {}
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/transactions/{transaction_id}": {
+      "get": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "Get a transaction",
+        "operationId": "get_transaction_api_v1_workspaces__workspace_id__finance_transactions__transaction_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "transaction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The transaction's ID.",
+              "title": "Transaction Id"
+            },
+            "description": "The transaction's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "Correct a transaction",
+        "description": "Balances and reports are derived from transactions, so they follow automatically.",
+        "operationId": "update_transaction_api_v1_workspaces__workspace_id__finance_transactions__transaction_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "transaction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The transaction's ID.",
+              "title": "Transaction Id"
+            },
+            "description": "The transaction's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTransactionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account or category outside this workspace, an archived account, a transfer between currencies, or a category of the wrong type."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "Delete a transaction",
+        "description": "Permanently delete a transaction, removing it from balances and reports.",
+        "operationId": "delete_transaction_api_v1_workspaces__workspace_id__finance_transactions__transaction_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "transaction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The transaction's ID.",
+              "title": "Transaction Id"
+            },
+            "description": "The transaction's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/transfers": {
+      "get": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "List transfers",
+        "description": "Transfers between accounts, newest first. The same as listing transactions with\n`type=transfer`.",
+        "operationId": "list_transfers_api_v1_workspaces__workspace_id__finance_transfers_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive.",
+              "title": "Date From"
+            },
+            "description": "Inclusive."
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive.",
+              "title": "Date To"
+            },
+            "description": "Inclusive."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "Transfer between accounts",
+        "operationId": "create_transfer_api_v1_workspaces__workspace_id__finance_transfers_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTransferRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account or category outside this workspace, an archived account, a transfer between currencies, or a category of the wrong type."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/summary": {
+      "get": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "Monthly income, spending, and savings",
+        "description": "Totals for one calendar month in one currency. Transfers are excluded; refunds reduce\nspending.",
+        "operationId": "monthly_summary_api_v1_workspaces__workspace_id__finance_summary_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A calendar month as `YYYY-MM`, in the user's time zone. Defaults to the current month in UTC.",
+              "title": "Month"
+            },
+            "description": "A calendar month as `YYYY-MM`, in the user's time zone. Defaults to the current month in UTC."
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "INR",
+                "USD",
+                "EUR",
+                "GBP",
+                "AED",
+                "SGD",
+                "AUD",
+                "CAD",
+                "CHF",
+                "JPY"
+              ],
+              "type": "string",
+              "description": "Reports cover one currency; amounts in different currencies are never added together.",
+              "default": "INR",
+              "title": "Currency"
+            },
+            "description": "Reports cover one currency; amounts in different currencies are never added together."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthlySummaryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/trend": {
+      "get": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "Income and spending per month",
+        "operationId": "monthly_trend_api_v1_workspaces__workspace_id__finance_trend_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A calendar month as `YYYY-MM`, in the user's time zone. Defaults to the current month in UTC.",
+              "title": "Month"
+            },
+            "description": "A calendar month as `YYYY-MM`, in the user's time zone. Defaults to the current month in UTC."
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "INR",
+                "USD",
+                "EUR",
+                "GBP",
+                "AED",
+                "SGD",
+                "AUD",
+                "CAD",
+                "CHF",
+                "JPY"
+              ],
+              "type": "string",
+              "description": "Reports cover one currency; amounts in different currencies are never added together.",
+              "default": "INR",
+              "title": "Currency"
+            },
+            "description": "Reports cover one currency; amounts in different currencies are never added together."
+          },
+          {
+            "name": "months",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 24,
+              "minimum": 1,
+              "description": "How many months, ending with `month`.",
+              "default": 6,
+              "title": "Months"
+            },
+            "description": "How many months, ending with `month`."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrendResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/spending": {
+      "get": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "Spending by category",
+        "description": "Net spending (expenses minus refunds) per category for one calendar month.",
+        "operationId": "spending_by_category_api_v1_workspaces__workspace_id__finance_spending_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A calendar month as `YYYY-MM`, in the user's time zone. Defaults to the current month in UTC.",
+              "title": "Month"
+            },
+            "description": "A calendar month as `YYYY-MM`, in the user's time zone. Defaults to the current month in UTC."
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "INR",
+                "USD",
+                "EUR",
+                "GBP",
+                "AED",
+                "SGD",
+                "AUD",
+                "CAD",
+                "CHF",
+                "JPY"
+              ],
+              "type": "string",
+              "description": "Reports cover one currency; amounts in different currencies are never added together.",
+              "default": "INR",
+              "title": "Currency"
+            },
+            "description": "Reports cover one currency; amounts in different currencies are never added together."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpendingResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/storage": {
       "get": {
         "tags": [
@@ -2873,6 +4565,183 @@
   },
   "components": {
     "schemas": {
+      "AccountListResponse": {
+        "properties": {
+          "accounts": {
+            "items": {
+              "$ref": "#/components/schemas/AccountResponse"
+            },
+            "type": "array",
+            "title": "Accounts",
+            "description": "Active accounts first, then archived ones, each by name."
+          },
+          "totals": {
+            "items": {
+              "$ref": "#/components/schemas/BalanceTotalsResponse"
+            },
+            "type": "array",
+            "title": "Totals",
+            "description": "Balances per currency, including archived accounts. Currencies are never added together."
+          }
+        },
+        "type": "object",
+        "required": [
+          "accounts",
+          "totals"
+        ],
+        "title": "AccountListResponse"
+      },
+      "AccountResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "bank",
+              "savings",
+              "cash",
+              "wallet",
+              "credit_card",
+              "investment",
+              "other"
+            ],
+            "title": "Type"
+          },
+          "account_class": {
+            "type": "string",
+            "enum": [
+              "asset",
+              "liability"
+            ],
+            "title": "Account Class",
+            "description": "`liability` for credit cards, whose balance is negative while money is owed; `asset` for everything else. Investment accounts hold what was moved into them, not market value."
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "opening_balance": {
+            "type": "integer",
+            "title": "Opening Balance",
+            "description": "Minor units, signed like `balance`."
+          },
+          "balance": {
+            "type": "integer",
+            "title": "Balance",
+            "description": "The opening balance plus every recorded transaction, in minor units. Positive is money held, negative is money owed."
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "archived": {
+            "type": "boolean",
+            "title": "Archived",
+            "description": "Archived accounts take no new transactions."
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "name",
+          "type",
+          "account_class",
+          "currency",
+          "opening_balance",
+          "balance",
+          "notes",
+          "archived",
+          "archived_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AccountResponse"
+      },
+      "BalanceTotalsResponse": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "assets": {
+            "type": "integer",
+            "title": "Assets",
+            "description": "The sum of asset accounts' balances, in minor units."
+          },
+          "liabilities": {
+            "type": "integer",
+            "title": "Liabilities",
+            "description": "What credit cards owe, as a positive amount in minor units."
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "assets",
+          "liabilities"
+        ],
+        "title": "BalanceTotalsResponse"
+      },
       "BulkChangeResponse": {
         "properties": {
           "count": {
@@ -2886,6 +4755,199 @@
           "count"
         ],
         "title": "BulkChangeResponse"
+      },
+      "CategoryListResponse": {
+        "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryResponse"
+            },
+            "type": "array",
+            "title": "Categories",
+            "description": "Income categories first, then expense categories, each by name."
+          }
+        },
+        "type": "object",
+        "required": [
+          "categories"
+        ],
+        "title": "CategoryListResponse"
+      },
+      "CategoryResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "income",
+              "expense"
+            ],
+            "title": "Type"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default",
+            "description": "A built-in category, which can be renamed but not deleted."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "name",
+          "type",
+          "is_default",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CategoryResponse"
+      },
+      "CategorySpendingResponse": {
+        "properties": {
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id",
+            "description": "`null` for uncategorized spending."
+          },
+          "expenses": {
+            "type": "integer",
+            "title": "Expenses"
+          },
+          "refunds": {
+            "type": "integer",
+            "title": "Refunds"
+          },
+          "net": {
+            "type": "integer",
+            "title": "Net",
+            "description": "`expenses` minus `refunds`."
+          }
+        },
+        "type": "object",
+        "required": [
+          "category_id",
+          "expenses",
+          "refunds",
+          "net"
+        ],
+        "title": "CategorySpendingResponse"
+      },
+      "CreateAccountRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "bank",
+              "savings",
+              "cash",
+              "wallet",
+              "credit_card",
+              "investment",
+              "other"
+            ],
+            "title": "Type"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency",
+            "default": "INR"
+          },
+          "opening_balance": {
+            "type": "integer",
+            "maximum": 10000000000000.0,
+            "minimum": -10000000000000.0,
+            "title": "Opening Balance",
+            "description": "Minor units. Positive is money held, negative is money owed: a credit card with ₹500 outstanding is -50000.",
+            "default": 0
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "type"
+        ],
+        "title": "CreateAccountRequest"
+      },
+      "CreateCategoryRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "income",
+              "expense"
+            ],
+            "title": "Type"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "type"
+        ],
+        "title": "CreateCategoryRequest"
       },
       "CreateItemRequest": {
         "properties": {
@@ -3053,6 +5115,133 @@
           "title"
         ],
         "title": "CreateTaskRequest"
+      },
+      "CreateTransactionRequest": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "income",
+              "expense",
+              "refund",
+              "transfer"
+            ],
+            "title": "Type"
+          },
+          "amount": {
+            "type": "integer",
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "Minor units, always positive: ₹12.50 is 1250."
+          },
+          "occurred_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Occurred On"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Description"
+          },
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id"
+          },
+          "to_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Account Id"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "amount",
+          "occurred_on",
+          "description",
+          "account_id"
+        ],
+        "title": "CreateTransactionRequest",
+        "description": "Record income, an expense, a refund, or a transfer. A transfer needs `to_account_id` and\nhas no category; the others have no `to_account_id`. The currency is the account's."
+      },
+      "CreateTransferRequest": {
+        "properties": {
+          "amount": {
+            "type": "integer",
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "Minor units, always positive: ₹12.50 is 1250."
+          },
+          "occurred_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Occurred On"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Description"
+          },
+          "from_account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "From Account Id"
+          },
+          "to_account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "To Account Id"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "amount",
+          "occurred_on",
+          "description",
+          "from_account_id",
+          "to_account_id"
+        ],
+        "title": "CreateTransferRequest",
+        "description": "Move money between two accounts in the same currency, such as paying a credit-card bill\nor putting money into an investment account. Never income or spending."
       },
       "CreateWorkspaceRequest": {
         "properties": {
@@ -3327,6 +5516,119 @@
           "count"
         ],
         "title": "MarkAllReadResponse"
+      },
+      "MonthCashFlowResponse": {
+        "properties": {
+          "income": {
+            "type": "integer",
+            "title": "Income"
+          },
+          "expenses": {
+            "type": "integer",
+            "title": "Expenses",
+            "description": "Spending before refunds."
+          },
+          "refunds": {
+            "type": "integer",
+            "title": "Refunds"
+          },
+          "net_expenses": {
+            "type": "integer",
+            "title": "Net Expenses",
+            "description": "`expenses` minus `refunds`."
+          },
+          "net": {
+            "type": "integer",
+            "title": "Net",
+            "description": "Net cash flow: `income` minus `net_expenses`. Negative when more was spent than earned. Transfers never count."
+          },
+          "transactions": {
+            "type": "integer",
+            "title": "Transactions",
+            "description": "Income, expense, and refund transactions counted."
+          },
+          "month": {
+            "type": "string",
+            "title": "Month",
+            "description": "`YYYY-MM`."
+          }
+        },
+        "type": "object",
+        "required": [
+          "income",
+          "expenses",
+          "refunds",
+          "net_expenses",
+          "net",
+          "transactions",
+          "month"
+        ],
+        "title": "MonthCashFlowResponse"
+      },
+      "MonthlySummaryResponse": {
+        "properties": {
+          "income": {
+            "type": "integer",
+            "title": "Income"
+          },
+          "expenses": {
+            "type": "integer",
+            "title": "Expenses",
+            "description": "Spending before refunds."
+          },
+          "refunds": {
+            "type": "integer",
+            "title": "Refunds"
+          },
+          "net_expenses": {
+            "type": "integer",
+            "title": "Net Expenses",
+            "description": "`expenses` minus `refunds`."
+          },
+          "net": {
+            "type": "integer",
+            "title": "Net",
+            "description": "Net cash flow: `income` minus `net_expenses`. Negative when more was spent than earned. Transfers never count."
+          },
+          "transactions": {
+            "type": "integer",
+            "title": "Transactions",
+            "description": "Income, expense, and refund transactions counted."
+          },
+          "month": {
+            "type": "string",
+            "title": "Month",
+            "description": "`YYYY-MM`."
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          }
+        },
+        "type": "object",
+        "required": [
+          "income",
+          "expenses",
+          "refunds",
+          "net_expenses",
+          "net",
+          "transactions",
+          "month",
+          "currency"
+        ],
+        "title": "MonthlySummaryResponse"
       },
       "NotificationListResponse": {
         "properties": {
@@ -3667,6 +5969,22 @@
         ],
         "title": "ReminderTaskResponse"
       },
+      "RenameCategoryRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "RenameCategoryRequest"
+      },
       "ShoppingItemResponse": {
         "properties": {
           "id": {
@@ -3912,6 +6230,52 @@
         ],
         "title": "ShoppingListsResponse"
       },
+      "SpendingResponse": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month",
+            "description": "`YYYY-MM`."
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Net spending across all categories."
+          },
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/CategorySpendingResponse"
+            },
+            "type": "array",
+            "title": "Categories",
+            "description": "Largest net spending first. Categories whose refunds cancel their spending are left out."
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "currency",
+          "total",
+          "categories"
+        ],
+        "title": "SpendingResponse"
+      },
       "StorageLocationResponse": {
         "properties": {
           "storage_mode": {
@@ -4117,6 +6481,180 @@
         ],
         "title": "TaskSummaryResponse"
       },
+      "TransactionListResponse": {
+        "properties": {
+          "transactions": {
+            "items": {
+              "$ref": "#/components/schemas/TransactionResponse"
+            },
+            "type": "array",
+            "title": "Transactions"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Transactions matching the filters, across all pages."
+          }
+        },
+        "type": "object",
+        "required": [
+          "transactions",
+          "total"
+        ],
+        "title": "TransactionListResponse"
+      },
+      "TransactionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "income",
+              "expense",
+              "refund",
+              "transfer"
+            ],
+            "title": "Type"
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount",
+            "description": "Minor units, always positive; `type` gives the direction."
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency",
+            "description": "The account's currency."
+          },
+          "occurred_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Occurred On",
+            "description": "A calendar date in the user's time zone."
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id",
+            "description": "Where income and refunds went in, expenses came out, or a transfer started."
+          },
+          "to_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Account Id",
+            "description": "A transfer's destination."
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "type",
+          "amount",
+          "currency",
+          "occurred_on",
+          "description",
+          "category_id",
+          "account_id",
+          "to_account_id",
+          "notes",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TransactionResponse"
+      },
+      "TrendResponse": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "months": {
+            "items": {
+              "$ref": "#/components/schemas/MonthCashFlowResponse"
+            },
+            "type": "array",
+            "title": "Months",
+            "description": "Oldest first, one per month, including months without transactions."
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "months"
+        ],
+        "title": "TrendResponse"
+      },
       "UnreadCountResponse": {
         "properties": {
           "unread": {
@@ -4145,6 +6683,53 @@
           "reminders"
         ],
         "title": "UpcomingRemindersResponse"
+      },
+      "UpdateAccountRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "opening_balance": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "minimum": -10000000000000.0,
+                "description": "Minor units. Positive is money held, negative is money owed: a credit card with ₹500 outstanding is -50000."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opening Balance"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateAccountRequest",
+        "description": "Change some of an account's fields. Its type and currency are fixed; archiving has its\nown endpoints."
       },
       "UpdateItemRequest": {
         "properties": {
@@ -4415,6 +7000,118 @@
         "type": "object",
         "title": "UpdateTaskRequest",
         "description": "Change some of a task's fields. Omitted fields keep their values; `due_date: null` clears\nthe due date. Completion has its own endpoints."
+      },
+      "UpdateTransactionRequest": {
+        "properties": {
+          "type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "income",
+                  "expense",
+                  "refund",
+                  "transfer"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
+                "description": "Minor units, always positive: ₹12.50 is 1250."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "occurred_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred On"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Id"
+          },
+          "to_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Account Id"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateTransactionRequest",
+        "description": "Correct some of a transaction's fields. Omitted fields keep their values;\n`category_id: null` and `to_account_id: null` clear them. The result must follow the same\nrules as a new transaction, so turning a transfer into an expense also clears\n`to_account_id`."
       },
       "UpdateWorkspaceRequest": {
         "properties": {

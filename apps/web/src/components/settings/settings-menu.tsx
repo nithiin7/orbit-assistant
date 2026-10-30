@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { settingsHref, settingsPanels } from "@/lib/settings";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/common";
 
 import { ProfileLink } from "./profile-link";
 

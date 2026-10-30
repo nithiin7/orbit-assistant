@@ -75,3 +75,40 @@ export type NotificationListQuery = NonNullable<
 >;
 export type UnreadNotificationCount = Schemas["UnreadCountResponse"];
 export type MarkAllNotificationsReadResponse = Schemas["MarkAllReadResponse"];
+export type FinanceAccount = Schemas["AccountResponse"];
+export type FinanceAccountType = FinanceAccount["type"];
+export type FinanceAccountClass = FinanceAccount["account_class"];
+export type Currency = FinanceAccount["currency"];
+export type FinanceAccountList = Schemas["AccountListResponse"];
+export type BalanceTotals = Schemas["BalanceTotalsResponse"];
+export type CreateFinanceAccountRequest = Schemas["CreateAccountRequest"];
+export type UpdateFinanceAccountRequest = Schemas["UpdateAccountRequest"];
+export type FinanceCategory = Schemas["CategoryResponse"];
+export type FinanceCategoryType = FinanceCategory["type"];
+export type FinanceCategoryList = Schemas["CategoryListResponse"];
+export type CreateFinanceCategoryRequest = Schemas["CreateCategoryRequest"];
+export type RenameFinanceCategoryRequest = Schemas["RenameCategoryRequest"];
+export type FinanceTransaction = Schemas["TransactionResponse"];
+export type FinanceTransactionType = FinanceTransaction["type"];
+export type FinanceTransactionList = Schemas["TransactionListResponse"];
+export type CreateFinanceTransactionRequest = Schemas["CreateTransactionRequest"];
+export type UpdateFinanceTransactionRequest = Schemas["UpdateTransactionRequest"];
+export type CreateTransferRequest = Schemas["CreateTransferRequest"];
+/** Filters, sorting, and paging accepted when listing transactions. */
+export type FinanceTransactionListQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/finance/transactions"]["get"]["parameters"]["query"]
+>;
+export type FinanceExportQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/finance/transactions/export"]["get"]["parameters"]["query"]
+>;
+export type FinanceReportQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/finance/summary"]["get"]["parameters"]["query"]
+>;
+export type FinanceTrendQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/finance/trend"]["get"]["parameters"]["query"]
+>;
+export type MonthlySummary = Schemas["MonthlySummaryResponse"];
+export type MonthCashFlow = Schemas["MonthCashFlowResponse"];
+export type FinanceTrend = Schemas["TrendResponse"];
+export type CategorySpending = Schemas["CategorySpendingResponse"];
+export type SpendingByCategory = Schemas["SpendingResponse"];

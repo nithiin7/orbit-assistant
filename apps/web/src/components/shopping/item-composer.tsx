@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { newItemSchema, optionalText } from "@/lib/shopping";
-import { mergeRefs } from "@/lib/utils";
+import { mergeRefs } from "@/utils/common";
 
 type ItemComposerProps = {
   listName: string;

@@ -5,7 +5,7 @@ import { Cloud, HardDrive, type LucideIcon, TriangleAlert, Unplug } from "lucide
 import { Badge } from "@/components/ui/badge";
 import { useStorageStatus } from "@/hooks/use-storage-status";
 import { storageModes, type StorageStatus } from "@/lib/storage";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/common";
 
 type Presentation = { icon: LucideIcon | null; label: string; detail: string; tone?: string };
 

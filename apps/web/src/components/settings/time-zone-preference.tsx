@@ -9,13 +9,13 @@ import { updateMe } from "@/api/profile";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
+import { useAuth, useCurrentUser } from "@/providers/auth";
 import {
   browserTimeZone,
   timeZoneLabel,
   timeZoneNames,
   timeZonePreferenceSchema,
-} from "@/lib/reminders";
-import { useAuth, useCurrentUser } from "@/providers/auth";
+} from "@/utils/time-zones";
 
 /** The account's time zone, which new reminders start in. */
 export function TimeZonePreference() {

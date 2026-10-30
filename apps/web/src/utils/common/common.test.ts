@@ -1,7 +1,7 @@
 import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { mergeRefs } from "./utils";
+import { mergeRefs } from "./common";
 
 describe("mergeRefs", () => {
   it("sets object and callback refs, and skips missing ones", () => {

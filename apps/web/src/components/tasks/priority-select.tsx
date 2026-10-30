@@ -4,7 +4,7 @@ import type { TaskPriority } from "@orbit/contracts";
 
 import { NativeSelect } from "@/components/ui/native-select";
 import { isTaskPriority, PRIORITIES } from "@/lib/tasks";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/common";
 
 type PrioritySelectProps = {
   id: string;

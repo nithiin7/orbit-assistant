@@ -3,7 +3,7 @@
 import unicodedata
 from typing import Annotated, Any
 
-from pydantic import AfterValidator, StringConstraints
+from pydantic import AfterValidator, BeforeValidator, StringConstraints
 
 from orbit_api.services.reminders.recurrence import is_valid_timezone
 
@@ -33,6 +33,20 @@ def blank_to_none(value: Any) -> Any:
     if isinstance(value, str) and not value.strip():
         return None
     return value
+
+
+SEARCH_MAX_LENGTH = 200
+
+# Blank searches are treated as no search.
+SearchText = Annotated[
+    Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, max_length=SEARCH_MAX_LENGTH),
+        AfterValidator(single_line),
+    ]
+    | None,
+    BeforeValidator(blank_to_none),
+]
 
 
 def _printable(value: str) -> str:

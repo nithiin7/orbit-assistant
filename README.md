@@ -32,8 +32,8 @@ control.
 > [!NOTE]
 > **Early development.** This repository contains the project foundation: the monorepo, tooling,
 > an application shell, an API with a database layer, and accounts with workspaces. Tasks,
-> shopping lists, and reminders (with in-app notifications) are built; calendar, finance, notes,
-> and the AI assistant are not.
+> shopping lists, reminders (with in-app notifications), and the first phase of finance are
+> built; calendar, notes, later finance phases, and the AI assistant are not.
 
 ## Scope
 
@@ -52,11 +52,16 @@ control.
 - Tasks, shopping lists, and reminders: one-time or recurring (daily, chosen weekdays, monthly),
   time-zone aware, optionally about a task, and delivered as in-app notifications by a
   database-backed worker.
+- Finance, phase 1: hand-entered accounts (bank, cash, wallet, credit card, investment),
+  income, expenses, refunds, and transfers in exact integer minor units, default categories for
+  India, a monthly overview (cash flow, balances, trend, spending by category), filterable
+  history, and CSV export. No bank connections.
 - Shared tooling for linting, formatting, type checking, testing, commit conventions, and CI.
 
 ### 🚫 Explicit non-goals for now
 
-- Calendar, finance, or notes functionality.
+- Calendar or notes functionality; loans, EMIs, recurring transactions, investment holdings,
+  budgets, or bank integrations in finance.
 - Shared workspaces, invitations, password recovery for local accounts, and account linking
   between local and cloud.
 - Synchronization or data migration between local and cloud storage.

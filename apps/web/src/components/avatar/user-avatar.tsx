@@ -1,9 +1,9 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import { workspaceInitial } from "@/lib/workspaces";
 import { useCurrentUser } from "@/providers/auth";
 import { useAvatar } from "@/providers/avatar";
+import { cn } from "@/utils/common";
 
 const sizes = {
   md: "size-12 text-lg",

@@ -22,7 +22,7 @@ Tasks and reminders:
 import uuid
 from collections.abc import Callable
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Protocol
 
 from orbit_api.services.reminders.models import (
@@ -38,8 +38,10 @@ from orbit_api.services.reminders.models import (
     ReminderView,
 )
 from orbit_api.services.reminders.recurrence import Schedule, next_occurrence
-from orbit_api.services.tasks.models import UNSET, Task
+from orbit_api.services.tasks.models import Task
 from orbit_api.services.transactions import Transaction
+from orbit_api.utils.changes import UNSET
+from orbit_api.utils.clock import utc_now
 
 DEFAULT_TIMEZONE = "UTC"
 
@@ -93,10 +95,6 @@ class TaskLookup(Protocol):
     async def get(self, workspace_id: uuid.UUID, task_id: uuid.UUID) -> Task | None: ...
 
 
-def _utc_now() -> datetime:
-    return datetime.now(UTC)
-
-
 async def schedule_next(
     occurrences: OccurrenceScheduler, reminder: Reminder, after: datetime, now: datetime
 ) -> Occurrence | None:
@@ -127,7 +125,7 @@ class ReminderService:
         occurrences: OccurrenceScheduler,
         tasks: TaskLookup,
         transaction: Transaction,
-        clock: Callable[[], datetime] = _utc_now,
+        clock: Callable[[], datetime] = utc_now,
     ) -> None:
         self._reminders = reminders
         self._occurrences = occurrences

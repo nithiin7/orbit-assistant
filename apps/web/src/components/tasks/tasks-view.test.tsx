@@ -3,9 +3,9 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { localDateString } from "@/lib/tasks";
 import { ada, json, mockApi, type MockRequest, personal, status } from "@/test/api-mock";
 import { renderSignedIn } from "@/test/session";
+import { localDateString } from "@/utils/dates";
 
 import { TasksPanel } from "./tasks-view";
 

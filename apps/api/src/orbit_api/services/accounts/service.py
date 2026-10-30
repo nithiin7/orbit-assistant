@@ -5,13 +5,13 @@ from datetime import UTC, datetime
 from typing import Protocol
 
 from orbit_api.services.accounts.models import AuthProvider, ExternalIdentity, User
-from orbit_api.services.tasks.models import UNSET, Change
 from orbit_api.services.transactions import ConflictError, Transaction
 from orbit_api.services.workspaces.service import (
     PERSONAL_WORKSPACE_NAME,
     WorkspaceRepository,
     new_workspace,
 )
+from orbit_api.utils.changes import UNSET, Change
 
 DISPLAY_NAME_MAX_LENGTH = 100
 

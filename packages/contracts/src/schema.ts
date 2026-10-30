@@ -631,6 +631,277 @@ export interface paths {
         patch: operations["update_reminder_api_v1_workspaces__workspace_id__reminders__reminder_id__patch"];
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/finance/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List accounts with balances
+         * @description Every account, archived ones included, with balances derived from its transactions.
+         */
+        get: operations["list_accounts_api_v1_workspaces__workspace_id__finance_accounts_get"];
+        put?: never;
+        /**
+         * Create an account
+         * @description Track an account by hand. Orbit never asks for bank credentials or connects to banks.
+         */
+        post: operations["create_account_api_v1_workspaces__workspace_id__finance_accounts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/accounts/{account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get an account */
+        get: operations["get_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update an account */
+        patch: operations["update_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/accounts/{account_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive an account
+         * @description Stop recording new transactions on the account. Its history and balance stay.
+         *     Idempotent.
+         */
+        post: operations["archive_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/accounts/{account_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore an archived account */
+        post: operations["restore_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List categories
+         * @description The workspace's income and expense categories. Built-in ones are added the first time
+         *     they're read.
+         */
+        get: operations["list_categories_api_v1_workspaces__workspace_id__finance_categories_get"];
+        put?: never;
+        /** Create a category */
+        post: operations["create_category_api_v1_workspaces__workspace_id__finance_categories_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/categories/{category_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a category
+         * @description Delete one of your own categories that no transaction uses.
+         */
+        delete: operations["delete_category_api_v1_workspaces__workspace_id__finance_categories__category_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename a category */
+        patch: operations["rename_category_api_v1_workspaces__workspace_id__finance_categories__category_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List transactions
+         * @description Filter by date range, type, account, and category, search descriptions and notes, and
+         *     sort by date or amount.
+         */
+        get: operations["list_transactions_api_v1_workspaces__workspace_id__finance_transactions_get"];
+        put?: never;
+        /** Record a transaction */
+        post: operations["create_transaction_api_v1_workspaces__workspace_id__finance_transactions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/transactions/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export transactions as CSV
+         * @description Every transaction in the inclusive date range (or all of them), oldest first. Amounts are
+         *     positive decimal text in the major unit, beside their currency.
+         */
+        get: operations["export_transactions_api_v1_workspaces__workspace_id__finance_transactions_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/transactions/{transaction_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a transaction */
+        get: operations["get_transaction_api_v1_workspaces__workspace_id__finance_transactions__transaction_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a transaction
+         * @description Permanently delete a transaction, removing it from balances and reports.
+         */
+        delete: operations["delete_transaction_api_v1_workspaces__workspace_id__finance_transactions__transaction_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Correct a transaction
+         * @description Balances and reports are derived from transactions, so they follow automatically.
+         */
+        patch: operations["update_transaction_api_v1_workspaces__workspace_id__finance_transactions__transaction_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List transfers
+         * @description Transfers between accounts, newest first. The same as listing transactions with
+         *     `type=transfer`.
+         */
+        get: operations["list_transfers_api_v1_workspaces__workspace_id__finance_transfers_get"];
+        put?: never;
+        /** Transfer between accounts */
+        post: operations["create_transfer_api_v1_workspaces__workspace_id__finance_transfers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Monthly income, spending, and savings
+         * @description Totals for one calendar month in one currency. Transfers are excluded; refunds reduce
+         *     spending.
+         */
+        get: operations["monthly_summary_api_v1_workspaces__workspace_id__finance_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/trend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Income and spending per month */
+        get: operations["monthly_trend_api_v1_workspaces__workspace_id__finance_trend_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/spending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Spending by category
+         * @description Net spending (expenses minus refunds) per category for one calendar month.
+         */
+        get: operations["spending_by_category_api_v1_workspaces__workspace_id__finance_spending_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/storage": {
         parameters: {
             query?: never;
@@ -673,6 +944,97 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccountListResponse */
+        AccountListResponse: {
+            /**
+             * Accounts
+             * @description Active accounts first, then archived ones, each by name.
+             */
+            accounts: components["schemas"]["AccountResponse"][];
+            /**
+             * Totals
+             * @description Balances per currency, including archived accounts. Currencies are never added together.
+             */
+            totals: components["schemas"]["BalanceTotalsResponse"][];
+        };
+        /** AccountResponse */
+        AccountResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "bank" | "savings" | "cash" | "wallet" | "credit_card" | "investment" | "other";
+            /**
+             * Account Class
+             * @description `liability` for credit cards, whose balance is negative while money is owed; `asset` for everything else. Investment accounts hold what was moved into them, not market value.
+             * @enum {string}
+             */
+            account_class: "asset" | "liability";
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Opening Balance
+             * @description Minor units, signed like `balance`.
+             */
+            opening_balance: number;
+            /**
+             * Balance
+             * @description The opening balance plus every recorded transaction, in minor units. Positive is money held, negative is money owed.
+             */
+            balance: number;
+            /** Notes */
+            notes: string;
+            /**
+             * Archived
+             * @description Archived accounts take no new transactions.
+             */
+            archived: boolean;
+            /** Archived At */
+            archived_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** BalanceTotalsResponse */
+        BalanceTotalsResponse: {
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Assets
+             * @description The sum of asset accounts' balances, in minor units.
+             */
+            assets: number;
+            /**
+             * Liabilities
+             * @description What credit cards owe, as a positive amount in minor units.
+             */
+            liabilities: number;
+        };
         /** BulkChangeResponse */
         BulkChangeResponse: {
             /**
@@ -680,6 +1042,103 @@ export interface components {
              * @description How many items changed.
              */
             count: number;
+        };
+        /** CategoryListResponse */
+        CategoryListResponse: {
+            /**
+             * Categories
+             * @description Income categories first, then expense categories, each by name.
+             */
+            categories: components["schemas"]["CategoryResponse"][];
+        };
+        /** CategoryResponse */
+        CategoryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "income" | "expense";
+            /**
+             * Is Default
+             * @description A built-in category, which can be renamed but not deleted.
+             */
+            is_default: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** CategorySpendingResponse */
+        CategorySpendingResponse: {
+            /**
+             * Category Id
+             * @description `null` for uncategorized spending.
+             */
+            category_id: string | null;
+            /** Expenses */
+            expenses: number;
+            /** Refunds */
+            refunds: number;
+            /**
+             * Net
+             * @description `expenses` minus `refunds`.
+             */
+            net: number;
+        };
+        /** CreateAccountRequest */
+        CreateAccountRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "bank" | "savings" | "cash" | "wallet" | "credit_card" | "investment" | "other";
+            /**
+             * Currency
+             * @default INR
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Opening Balance
+             * @description Minor units. Positive is money held, negative is money owed: a credit card with ₹500 outstanding is -50000.
+             * @default 0
+             */
+            opening_balance: number;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
+        /** CreateCategoryRequest */
+        CreateCategoryRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "income" | "expense";
         };
         /** CreateItemRequest */
         CreateItemRequest: {
@@ -748,6 +1207,78 @@ export interface components {
             priority: "none" | "low" | "medium" | "high";
             /** Due Date */
             due_date?: string | null;
+        };
+        /**
+         * CreateTransactionRequest
+         * @description Record income, an expense, a refund, or a transfer. A transfer needs `to_account_id` and
+         *     has no category; the others have no `to_account_id`. The currency is the account's.
+         */
+        CreateTransactionRequest: {
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "income" | "expense" | "refund" | "transfer";
+            /**
+             * Amount
+             * @description Minor units, always positive: ₹12.50 is 1250.
+             */
+            amount: number;
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /** Description */
+            description: string;
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** To Account Id */
+            to_account_id?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
+        /**
+         * CreateTransferRequest
+         * @description Move money between two accounts in the same currency, such as paying a credit-card bill
+         *     or putting money into an investment account. Never income or spending.
+         */
+        CreateTransferRequest: {
+            /**
+             * Amount
+             * @description Minor units, always positive: ₹12.50 is 1250.
+             */
+            amount: number;
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /** Description */
+            description: string;
+            /**
+             * From Account Id
+             * Format: uuid
+             */
+            from_account_id: string;
+            /**
+             * To Account Id
+             * Format: uuid
+             */
+            to_account_id: string;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
         };
         /** CreateWorkspaceRequest */
         CreateWorkspaceRequest: {
@@ -887,6 +1418,75 @@ export interface components {
              * @description How many notifications were marked read.
              */
             count: number;
+        };
+        /** MonthCashFlowResponse */
+        MonthCashFlowResponse: {
+            /** Income */
+            income: number;
+            /**
+             * Expenses
+             * @description Spending before refunds.
+             */
+            expenses: number;
+            /** Refunds */
+            refunds: number;
+            /**
+             * Net Expenses
+             * @description `expenses` minus `refunds`.
+             */
+            net_expenses: number;
+            /**
+             * Net
+             * @description Net cash flow: `income` minus `net_expenses`. Negative when more was spent than earned. Transfers never count.
+             */
+            net: number;
+            /**
+             * Transactions
+             * @description Income, expense, and refund transactions counted.
+             */
+            transactions: number;
+            /**
+             * Month
+             * @description `YYYY-MM`.
+             */
+            month: string;
+        };
+        /** MonthlySummaryResponse */
+        MonthlySummaryResponse: {
+            /** Income */
+            income: number;
+            /**
+             * Expenses
+             * @description Spending before refunds.
+             */
+            expenses: number;
+            /** Refunds */
+            refunds: number;
+            /**
+             * Net Expenses
+             * @description `expenses` minus `refunds`.
+             */
+            net_expenses: number;
+            /**
+             * Net
+             * @description Net cash flow: `income` minus `net_expenses`. Negative when more was spent than earned. Transfers never count.
+             */
+            net: number;
+            /**
+             * Transactions
+             * @description Income, expense, and refund transactions counted.
+             */
+            transactions: number;
+            /**
+             * Month
+             * @description `YYYY-MM`.
+             */
+            month: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
         };
         /** NotificationListResponse */
         NotificationListResponse: {
@@ -1059,6 +1659,11 @@ export interface components {
              */
             status: "open" | "completed";
         };
+        /** RenameCategoryRequest */
+        RenameCategoryRequest: {
+            /** Name */
+            name: string;
+        };
         /** ShoppingItemResponse */
         ShoppingItemResponse: {
             /**
@@ -1202,6 +1807,29 @@ export interface components {
              */
             lists: components["schemas"]["ShoppingListOverviewResponse"][];
         };
+        /** SpendingResponse */
+        SpendingResponse: {
+            /**
+             * Month
+             * @description `YYYY-MM`.
+             */
+            month: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Total
+             * @description Net spending across all categories.
+             */
+            total: number;
+            /**
+             * Categories
+             * @description Largest net spending first. Categories whose refunds cancel their spending are left out.
+             */
+            categories: components["schemas"]["CategorySpendingResponse"][];
+        };
         /**
          * StorageLocationResponse
          * @description Where this installation keeps its data, for signed-in users.
@@ -1315,6 +1943,91 @@ export interface components {
              */
             due_today: number;
         };
+        /** TransactionListResponse */
+        TransactionListResponse: {
+            /** Transactions */
+            transactions: components["schemas"]["TransactionResponse"][];
+            /**
+             * Total
+             * @description Transactions matching the filters, across all pages.
+             */
+            total: number;
+        };
+        /** TransactionResponse */
+        TransactionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "income" | "expense" | "refund" | "transfer";
+            /**
+             * Amount
+             * @description Minor units, always positive; `type` gives the direction.
+             */
+            amount: number;
+            /**
+             * Currency
+             * @description The account's currency.
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Occurred On
+             * Format: date
+             * @description A calendar date in the user's time zone.
+             */
+            occurred_on: string;
+            /** Description */
+            description: string;
+            /** Category Id */
+            category_id: string | null;
+            /**
+             * Account Id
+             * Format: uuid
+             * @description Where income and refunds went in, expenses came out, or a transfer started.
+             */
+            account_id: string;
+            /**
+             * To Account Id
+             * @description A transfer's destination.
+             */
+            to_account_id: string | null;
+            /** Notes */
+            notes: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** TrendResponse */
+        TrendResponse: {
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Months
+             * @description Oldest first, one per month, including months without transactions.
+             */
+            months: components["schemas"]["MonthCashFlowResponse"][];
+        };
         /** UnreadCountResponse */
         UnreadCountResponse: {
             /** Unread */
@@ -1324,6 +2037,19 @@ export interface components {
         UpcomingRemindersResponse: {
             /** Reminders */
             reminders: components["schemas"]["ReminderResponse"][];
+        };
+        /**
+         * UpdateAccountRequest
+         * @description Change some of an account's fields. Its type and currency are fixed; archiving has its
+         *     own endpoints.
+         */
+        UpdateAccountRequest: {
+            /** Name */
+            name?: string | null;
+            /** Opening Balance */
+            opening_balance?: number | null;
+            /** Notes */
+            notes?: string | null;
         };
         /**
          * UpdateItemRequest
@@ -1393,6 +2119,31 @@ export interface components {
             priority?: ("none" | "low" | "medium" | "high") | null;
             /** Due Date */
             due_date?: string | null;
+        };
+        /**
+         * UpdateTransactionRequest
+         * @description Correct some of a transaction's fields. Omitted fields keep their values;
+         *     `category_id: null` and `to_account_id: null` clear them. The result must follow the same
+         *     rules as a new transaction, so turning a transfer into an expense also clears
+         *     `to_account_id`.
+         */
+        UpdateTransactionRequest: {
+            /** Type */
+            type?: ("income" | "expense" | "refund" | "transfer") | null;
+            /** Amount */
+            amount?: number | null;
+            /** Occurred On */
+            occurred_on?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Account Id */
+            account_id?: string | null;
+            /** To Account Id */
+            to_account_id?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /** Notes */
+            notes?: string | null;
         };
         /** UpdateWorkspaceRequest */
         UpdateWorkspaceRequest: {
@@ -3552,6 +4303,1054 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_accounts_api_v1_workspaces__workspace_id__finance_accounts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_account_api_v1_workspaces__workspace_id__finance_accounts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account's ID. */
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account's ID. */
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account's ID. */
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account's ID. */
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_categories_api_v1_workspaces__workspace_id__finance_categories_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_category_api_v1_workspaces__workspace_id__finance_categories_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The name is taken, or the category is built in or in use. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_category_api_v1_workspaces__workspace_id__finance_categories__category_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The category's ID. */
+                category_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The name is taken, or the category is built in or in use. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_category_api_v1_workspaces__workspace_id__finance_categories__category_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The category's ID. */
+                category_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenameCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The name is taken, or the category is built in or in use. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_transactions_api_v1_workspaces__workspace_id__finance_transactions_get: {
+        parameters: {
+            query?: {
+                /** @description Inclusive. */
+                date_from?: string | null;
+                /** @description Inclusive. */
+                date_to?: string | null;
+                /** @description Repeat to match any of several types. Omit for all. */
+                type?: ("income" | "expense" | "refund" | "transfer")[];
+                /** @description Transactions on this account, either side of a transfer. */
+                account_id?: string | null;
+                category_id?: string | null;
+                /** @description Case-insensitive text to find in descriptions and notes. */
+                q?: string | null;
+                sort?: "date" | "amount";
+                /** @description Defaults to newest first, or largest first. */
+                order?: ("asc" | "desc") | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_transaction_api_v1_workspaces__workspace_id__finance_transactions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTransactionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account or category outside this workspace, an archived account, a transfer between currencies, or a category of the wrong type. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    export_transactions_api_v1_workspaces__workspace_id__finance_transactions_export_get: {
+        parameters: {
+            query?: {
+                /** @description Inclusive. */
+                date_from?: string | null;
+                /** @description Inclusive. */
+                date_to?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A CSV file. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_transaction_api_v1_workspaces__workspace_id__finance_transactions__transaction_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The transaction's ID. */
+                transaction_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_transaction_api_v1_workspaces__workspace_id__finance_transactions__transaction_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The transaction's ID. */
+                transaction_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_transaction_api_v1_workspaces__workspace_id__finance_transactions__transaction_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The transaction's ID. */
+                transaction_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTransactionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account or category outside this workspace, an archived account, a transfer between currencies, or a category of the wrong type. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_transfers_api_v1_workspaces__workspace_id__finance_transfers_get: {
+        parameters: {
+            query?: {
+                /** @description Inclusive. */
+                date_from?: string | null;
+                /** @description Inclusive. */
+                date_to?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_transfer_api_v1_workspaces__workspace_id__finance_transfers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTransferRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account or category outside this workspace, an archived account, a transfer between currencies, or a category of the wrong type. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    monthly_summary_api_v1_workspaces__workspace_id__finance_summary_get: {
+        parameters: {
+            query?: {
+                /** @description A calendar month as `YYYY-MM`, in the user's time zone. Defaults to the current month in UTC. */
+                month?: string | null;
+                /** @description Reports cover one currency; amounts in different currencies are never added together. */
+                currency?: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthlySummaryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    monthly_trend_api_v1_workspaces__workspace_id__finance_trend_get: {
+        parameters: {
+            query?: {
+                /** @description A calendar month as `YYYY-MM`, in the user's time zone. Defaults to the current month in UTC. */
+                month?: string | null;
+                /** @description Reports cover one currency; amounts in different currencies are never added together. */
+                currency?: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+                /** @description How many months, ending with `month`. */
+                months?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrendResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    spending_by_category_api_v1_workspaces__workspace_id__finance_spending_get: {
+        parameters: {
+            query?: {
+                /** @description A calendar month as `YYYY-MM`, in the user's time zone. Defaults to the current month in UTC. */
+                month?: string | null;
+                /** @description Reports cover one currency; amounts in different currencies are never added together. */
+                currency?: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpendingResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

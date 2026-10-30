@@ -12,15 +12,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useReminderList, useReminderMutations } from "@/hooks/use-reminders";
 import { useTaskList } from "@/hooks/use-tasks";
 import {
-  browserTimeZone,
   REMINDER_FILTERS,
   type ReminderFields,
   type ReminderFilter,
   toReminderListQuery,
 } from "@/lib/reminders";
-import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/providers/auth";
 import { useWorkspaces } from "@/providers/workspace";
+import { cn } from "@/utils/common";
+import { browserTimeZone } from "@/utils/time-zones";
 
 import { ReminderDialog } from "./reminder-dialog";
 import { ReminderItem } from "./reminder-item";

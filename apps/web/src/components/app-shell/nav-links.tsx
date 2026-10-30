@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { Tooltip } from "@/components/ui/tooltip";
 import { isActivePath, type NavItem, navItems } from "@/lib/navigation";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/common";
 
 import { useSidebarCollapsed } from "./sidebar-state";
 

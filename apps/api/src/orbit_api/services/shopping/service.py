@@ -11,7 +11,7 @@ never reaches a row: one in another workspace is indistinguishable from one that
 import uuid
 from collections.abc import Callable
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Protocol
 
 from orbit_api.services.shopping.models import (
@@ -24,8 +24,9 @@ from orbit_api.services.shopping.models import (
     ShoppingListNotFoundError,
     ShoppingListOverview,
 )
-from orbit_api.services.tasks.models import UNSET
 from orbit_api.services.transactions import ConflictError, Transaction
+from orbit_api.utils.changes import UNSET
+from orbit_api.utils.clock import utc_now
 
 DEFAULT_LIST_NAME = "Groceries"
 
@@ -82,17 +83,13 @@ class ShoppingItemRepository(Protocol):
         ...
 
 
-def _utc_now() -> datetime:
-    return datetime.now(UTC)
-
-
 class ShoppingService:
     def __init__(
         self,
         lists: ShoppingListRepository,
         items: ShoppingItemRepository,
         transaction: Transaction,
-        clock: Callable[[], datetime] = _utc_now,
+        clock: Callable[[], datetime] = utc_now,
     ) -> None:
         self._lists = lists
         self._items = items

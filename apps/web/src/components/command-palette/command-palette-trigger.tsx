@@ -4,7 +4,7 @@ import { Search } from "lucide-react";
 
 import { useIsMac } from "@/components/shortcut-hint";
 import { Button } from "@/components/ui/button";
-import { modKeyShortcut } from "@/lib/keyboard";
+import { modKeyShortcut } from "@/utils/keyboard";
 
 import { useCommandPalette } from "./command-palette";
 

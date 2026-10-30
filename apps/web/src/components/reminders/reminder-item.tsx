@@ -6,14 +6,9 @@ import { useEffect, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  describeRecurrence,
-  formatOccurrence,
-  STATUS_LABELS,
-  statusHint,
-  timeZoneLabel,
-} from "@/lib/reminders";
-import { cn } from "@/lib/utils";
+import { describeRecurrence, formatOccurrence, STATUS_LABELS, statusHint } from "@/lib/reminders";
+import { cn } from "@/utils/common";
+import { timeZoneLabel } from "@/utils/time-zones";
 
 type ReminderItemProps = {
   reminder: Reminder;

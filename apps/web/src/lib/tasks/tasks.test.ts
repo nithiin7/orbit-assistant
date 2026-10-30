@@ -3,11 +3,9 @@ import { describe, expect, it } from "vitest";
 import { fieldErrors } from "@/test/validation";
 
 import {
-  daysBetween,
   DEFAULT_TASK_FILTERS,
   describeDueDate,
   isNarrowed,
-  localDateString,
   TASK_PAGE_SIZE,
   taskSchema,
   toTaskListQuery,
@@ -92,18 +90,7 @@ describe("task description", () => {
   });
 });
 
-describe("dates", () => {
-  it("formats local dates like the API's due dates", () => {
-    expect(localDateString(new Date(2026, 0, 5, 23, 30))).toBe("2026-01-05");
-  });
-
-  it("counts calendar days across month and year ends", () => {
-    expect(daysBetween("2026-10-29", "2026-10-29")).toBe(0);
-    expect(daysBetween("2026-10-31", "2026-11-01")).toBe(1);
-    expect(daysBetween("2026-12-31", "2027-01-01")).toBe(1);
-    expect(daysBetween("2026-03-01", "2026-02-28")).toBe(-1);
-  });
-
+describe("describeDueDate", () => {
   it.each([
     ["2026-10-29", { state: "today", label: "Today" }],
     ["2026-10-30", { state: "soon", label: "Tomorrow" }],

@@ -3,8 +3,9 @@
 import type { TaskListQuery, TaskPriority, TaskStatus } from "@orbit/contracts";
 import { mixed, object, string } from "yup";
 
-import { type Option } from "@/lib/utils";
-import { multiLineText, singleLineText } from "@/lib/validation";
+import { type Option } from "@/utils/common";
+import { daysBetween, formatCalendarDate, parseCalendarDate } from "@/utils/dates";
+import { multiLineText, singleLineText } from "@/utils/validation";
 
 export const TASK_TITLE_MAX_LENGTH = 200;
 export const TASK_DESCRIPTION_MAX_LENGTH = 5000;
@@ -96,27 +97,6 @@ export const taskSchema = object({
   priority: priorityField,
 });
 
-/** A date as `YYYY-MM-DD` in the user's time zone, the format of a task's `due_date`. */
-export function localDateString(date: Date = new Date()): string {
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${date.getFullYear()}-${month}-${day}`;
-}
-
-function parseDate(value: string): { year: number; month: number; day: number } {
-  const [year = 0, month = 1, day = 1] = value.split("-").map(Number);
-  return { year, month, day };
-}
-
-/** Whole days from `from` to `to`, both `YYYY-MM-DD`. Calendar days, so DST doesn't matter. */
-export function daysBetween(from: string, to: string): number {
-  const a = parseDate(from);
-  const b = parseDate(to);
-  return Math.round(
-    (Date.UTC(b.year, b.month - 1, b.day) - Date.UTC(a.year, a.month - 1, a.day)) / 86_400_000,
-  );
-}
-
 export type DueState = "overdue" | "today" | "soon" | "later";
 
 export type DueDescription = { state: DueState; label: string };
@@ -128,15 +108,7 @@ export function describeDueDate(dueDate: string, today: string): DueDescription 
   if (days === 1) return { state: "soon", label: "Tomorrow" };
   if (days === -1) return { state: "overdue", label: "Yesterday" };
 
-  const { year, month, day } = parseDate(dueDate);
-  const sameYear = year === parseDate(today).year;
-  const label = new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    year: sameYear ? undefined : "numeric",
-    // Format the calendar date itself, independent of the viewer's time zone.
-    timeZone: "UTC",
-  }).format(new Date(Date.UTC(year, month - 1, day)));
+  const label = formatCalendarDate(dueDate, { omitYearIn: parseCalendarDate(today).year });
   if (days < 0) return { state: "overdue", label };
   return { state: days < 7 ? "soon" : "later", label };
 }

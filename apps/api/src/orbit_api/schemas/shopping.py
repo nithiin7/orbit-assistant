@@ -24,7 +24,7 @@ from orbit_api.services.shopping.models import (
     ShoppingList,
     ShoppingListOverview,
 )
-from orbit_api.services.tasks.models import UNSET
+from orbit_api.utils.changes import UNSET
 
 ITEM_NAME_MAX_LENGTH = 200
 QUANTITY_MAX_LENGTH = 50

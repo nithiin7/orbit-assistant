@@ -4,12 +4,9 @@ import { describe, expect, it } from "vitest";
 import {
   describeRecurrence,
   formatOccurrence,
-  localParts,
   nextHour,
   reminderSchema,
   statusHint,
-  timeZoneLabel,
-  timeZoneNames,
   toFormValues,
   toRecurrence,
   toReminderRequest,
@@ -92,19 +89,8 @@ describe("recurrence presets", () => {
   });
 });
 
-describe("time zones", () => {
-  it("read an instant on another zone's wall clock, across midnight and DST", () => {
-    const instant = new Date("2030-01-14T23:30:00Z");
-    expect(localParts(instant, "Asia/Tokyo")).toEqual({ date: "2030-01-15", time: "08:30" });
-    expect(localParts(instant, "America/Los_Angeles")).toEqual({
-      date: "2030-01-14",
-      time: "15:30",
-    });
-    // New York switches to daylight time at 02:00 on 2026-03-08.
-    expect(localParts(new Date("2026-03-08T07:30:00Z"), "America/New_York").time).toBe("03:30");
-  });
-
-  it("suggest the next whole hour in the reminder's zone", () => {
+describe("nextHour", () => {
+  it("suggests the next whole hour in the reminder's zone", () => {
     expect(nextHour("Asia/Kolkata", new Date("2030-01-15T08:10:00Z"))).toEqual({
       date: "2030-01-15",
       time: "14:30",
@@ -113,17 +99,6 @@ describe("time zones", () => {
       date: "2030-01-16",
       time: "00:00",
     });
-  });
-
-  it("list zones with UTC and the extras the form needs", () => {
-    const names = timeZoneNames("Europe/Paris", null, "Etc/GMT+5");
-    expect(names).toContain("UTC");
-    expect(names).toContain("Europe/Paris");
-    expect(names).toContain("Etc/GMT+5");
-    expect(new Set(names).size).toBe(names.length);
-    expect(timeZoneLabel("America/Argentina/Buenos_Aires")).toBe(
-      "America / Argentina / Buenos Aires",
-    );
   });
 });
 

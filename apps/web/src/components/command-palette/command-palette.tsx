@@ -19,9 +19,9 @@ import {
 import { Kbd } from "@/components/ui/kbd";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { filterCommands } from "@/lib/command-search";
-import { isMacPlatform, matchesModShortcut } from "@/lib/keyboard";
 import { isActivePath, navItems } from "@/lib/navigation";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/common";
+import { isMacPlatform, matchesModShortcut } from "@/utils/keyboard";
 
 type CommandGroup = "Go to" | "Theme";
 

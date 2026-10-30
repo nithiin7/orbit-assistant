@@ -2,9 +2,9 @@ import type { Task } from "@orbit/contracts";
 import { screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { localDateString } from "@/lib/tasks";
 import { ada, json, mockApi, personal, status } from "@/test/api-mock";
 import { renderSignedIn } from "@/test/session";
+import { localDateString } from "@/utils/dates";
 
 import { TaskOverview } from "./task-overview";
 

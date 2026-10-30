@@ -14,7 +14,7 @@ import {
   STATUS_FILTERS,
   type TaskFilters,
 } from "@/lib/tasks";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/common";
 
 type TaskToolbarProps = {
   /** The search box's text, which `filters.search` follows after a short pause. */

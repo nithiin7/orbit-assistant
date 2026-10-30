@@ -11,7 +11,7 @@ from orbit_api.db.models import LocalCredentialModel, LocalSessionModel, UserMod
 from orbit_api.repositories.transaction import flush
 from orbit_api.services.accounts.models import AuthProvider, User
 from orbit_api.services.local_auth.models import LocalCredential
-from orbit_api.services.tasks.models import UNSET, Change
+from orbit_api.utils.changes import UNSET, Change
 
 
 def _to_user(model: UserModel) -> User:

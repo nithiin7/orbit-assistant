@@ -7,7 +7,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { linkLabel } from "@/lib/shopping";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/common";
 
 type ShoppingItemRowProps = {
   item: ShoppingItem;

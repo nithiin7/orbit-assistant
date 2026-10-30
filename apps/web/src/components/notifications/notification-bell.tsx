@@ -14,8 +14,8 @@ import {
   useUnreadCount,
 } from "@/hooks/use-notifications";
 import { formatReceived } from "@/lib/reminders";
-import { cn } from "@/lib/utils";
 import { useWorkspaces } from "@/providers/workspace";
+import { cn } from "@/utils/common";
 
 const PANEL_WIDTH = 352;
 

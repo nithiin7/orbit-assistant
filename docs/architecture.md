@@ -19,8 +19,9 @@ Browser ──► apps/web (Next.js, :3000) ──HTTP/JSON──► apps/api (F
 - **apps/api** is a FastAPI service that owns data access and business logic. It exposes health
   endpoints, sign-in configuration and local accounts, the signed-in user's profile, and
   workspaces, on the database foundation described under [Storage](#storage). Identity is
-  described under [Identity and authorization](#identity-and-authorization). The only product
-  data so far is [tasks](#tasks); notes, finance, and the other modules store nothing yet.
+  described under [Identity and authorization](#identity-and-authorization). Product data:
+  [tasks](#tasks), shopping lists, [reminders](#reminders-and-notifications), and
+  [finance](#finance); notes and the other modules store nothing yet.
 
 The two apps communicate only over HTTP and share no runtime code. They share one thing: the
 API contract in `packages/contracts`, described below.
@@ -38,14 +39,16 @@ API contract in `packages/contracts`, described below.
 - Web and API communicate only over HTTP. All data and business rules live behind the API.
   The web app never connects to SQLite or PostgreSQL and never holds database credentials. The web app renders, navigates, and calls the API through the typed helpers in `src/api/`.
 - Within the web app, dependencies point one way:
-  `src/app` → `src/components` → `src/hooks` → `src/providers` → `src/api`, `src/lib`.
+  `src/app` → `src/components` → `src/hooks` → `src/providers` → `src/api`, `src/lib` →
+  `src/utils`.
   `src/providers` holds app-wide React context (auth, workspaces, avatar, query client, theme)
   and may use other providers, but never components or hooks. `src/hooks` (query hooks that
   need auth or the active workspace) never imports components. `src/api` and `src/lib` import
   none of the React layers; `src/api` depends only on `@orbit/contracts`,
   `@tanstack/react-query`, `src/lib/env`, and pure `src/lib` helpers (such as
   `src/lib/shopping` for sorting and counting). `src/components/ui` primitives depend only on
-  `src/lib/utils/utils.ts`. ESLint enforces the layer rules (`apps/web/eslint.config.mjs`).
+  `src/utils/common`. `src/utils` holds generic helpers shared across features and imports no
+  other app layer. ESLint enforces the layer rules (`apps/web/eslint.config.mjs`).
 - Server data is cached by TanStack Query, keyed by workspace (`["workspaces", id, …]`). The
   cache is cleared whenever the signed-in user changes, so one user's data is never shown to
   another.
@@ -126,6 +129,7 @@ apps/web/src/
 │   │   ├── page.tsx     # Dashboard: user-arranged widgets (components/dashboard/)
 │   │   ├── tasks/       # Tasks page
 │   │   ├── reminders/   # Reminders page
+│   │   ├── finance/     # Finance page: overview, transactions, accounts
 │   │   ├── settings/    # Settings: drill-down on small screens, split view on large; [panel]/ sub-pages
 │   │   └── [section]/   # Placeholder page for every other nav section
 │   ├── (auth)/          # Public routes without the shell: sign-in, sign-up
@@ -139,23 +143,29 @@ apps/web/src/
 │   ├── workspace/       # Workspace switcher, dashboard overview
 │   ├── tasks/           # Tasks page (composer, toolbar, list, edit dialog), dashboard summary
 │   ├── reminders/       # Reminders page (list, create/edit dialog), dashboard widget
+│   ├── finance/         # Finance page: overview and charts, history, dialogs, accounts
 │   ├── notifications/   # Notification bell and panel (in the sidebar and mobile top bar)
 │   ├── settings/        # Settings menu and the account, workspace, theme, and storage panels
 │   ├── storage/         # Storage-mode indicator and status card
 │   └── ui/              # Small shadcn/ui-compatible primitives
 ├── hooks/               # Query hooks bound to auth and the active workspace (use-tasks, …)
 ├── providers/           # App-wide context: auth, workspaces, avatar, query client, theme
-└── lib/
-    ├── navigation.ts    # Single source of truth for nav items and section routes
-    ├── settings.ts      # Single source of truth for settings panels and their routes
-    ├── avatar.ts        # Crop and resize profile photos in the browser before upload
-    ├── api.ts           # Typed API client (types from @orbit/contracts)
-    ├── auth/            # Auth clients (local, Supabase), session storage, validation
-    ├── workspaces.ts    # Active-workspace selection and per-user preference
-    ├── dashboard.ts     # Dashboard widget catalog and per-user layout preference
-    ├── tasks.ts         # Task filters, due-date display, validation mirroring the API
-    ├── env.ts           # Validated public configuration
-    └── utils.ts         # `cn()` class-name helper
+├── lib/
+│   ├── navigation.ts    # Single source of truth for nav items and section routes
+│   ├── settings.ts      # Single source of truth for settings panels and their routes
+│   ├── avatar.ts        # Crop and resize profile photos in the browser before upload
+│   ├── api.ts           # Typed API client (types from @orbit/contracts)
+│   ├── auth/            # Auth clients (local, Supabase), session storage, validation
+│   ├── workspaces.ts    # Active-workspace selection and per-user preference
+│   ├── dashboard.ts     # Dashboard widget catalog and per-user layout preference
+│   ├── tasks.ts         # Task filters, due-date display, validation mirroring the API
+│   └── env.ts           # Validated public configuration
+└── utils/               # Generic helpers shared across features; imports no other app layer
+    ├── common/          # `cn()`, `mergeRefs()`, `byId()`, and the `Option` type
+    ├── dates/           # Calendar dates and months (`YYYY-MM-DD`, `YYYY-MM`): today, arithmetic, labels
+    ├── time-zones/      # IANA zones: browser zone, list and labels, wall-clock parts, preference schema
+    ├── validation/      # Yup text-field builders mirroring the API's rules
+    └── keyboard/        # Keyboard shortcut helpers
 ```
 
 Design decisions:
@@ -195,10 +205,12 @@ apps/api/src/orbit_api/
 │       ├── workspaces.py # List, create, get, rename, and delete workspaces
 │       ├── tasks.py     # Workspace-scoped tasks: CRUD, complete/reopen, filters, summary
 │       ├── reminders.py # Workspace-scoped reminders: CRUD, enable/disable, upcoming
+│       ├── finance.py   # Workspace-scoped finance: accounts, categories, transactions, reports, CSV
 │       └── notifications.py # The signed-in user's notifications: list, unread count, read state
 ├── auth/                # Adapters: Argon2 password hashing, Supabase JWT verification
 ├── system/              # Adapter: opening the OS file manager on the API's machine
 ├── scheduler/           # Reminder worker (embedded in the API or `orbit-worker`) and its CLI
+├── utils/               # Plain-Python helpers any layer may use: UNSET, sort order, clock, LIKE patterns
 ├── schemas/             # Pydantic request/response models (the API contract)
 ├── services/            # Domain logic, one package per feature (no FastAPI/SQLAlchemy):
 │                        #   models.py (dataclasses, errors) and service.py (protocols, service)
@@ -211,7 +223,7 @@ apps/api/src/orbit_api/
     ├── database.py      # `open_database()`: connect, verify schema, sessions, dispose
     ├── migrate.py       # Programmatic Alembic: upgrade, downgrade, head revision
     └── migrations/      # Alembic environment and versioned revisions
-        └── versions/    # 0001_baseline … 0004_create_tasks
+        └── versions/    # 0001_baseline … 0008_create_finance
 ```
 
 Design decisions:
@@ -300,10 +312,13 @@ written once. SQLite is embedded in the API process; local mode needs no databas
   `local_sessions`, and `workspaces`, and enables RLS on them in PostgreSQL.
 - `0003_create_user_avatars` creates `user_avatars` (profile photos) with RLS.
 - `0004_create_tasks` creates `tasks` with RLS (see [Tasks](#tasks)).
+- `0005_create_shopping` creates `shopping_lists` and `shopping_items` with RLS.
 - `0006_create_dashboard_layouts` creates `dashboard_layouts` with RLS (see
   [Dashboard layout](#dashboard-layout)).
 - `0007_create_reminders` creates `reminders`, `reminder_occurrences`, and `notifications` with
   RLS, and adds `users.timezone` (see [Reminders and notifications](#reminders-and-notifications)).
+- `0008_create_finance` creates `finance_accounts`, `finance_categories`, and
+  `finance_transactions` with RLS (see [Finance](#finance)).
 - Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
   Startup only checks that the database is at the head revision. For a shared cloud database,
   schema changes should be deliberate and reviewable.
@@ -334,6 +349,13 @@ structure.
   `AsyncSession` adapter implements. Uniqueness violations surface as `ConflictError`, so services
   can handle races (two first requests for the same Supabase user) without importing SQLAlchemy.
 - Schemas and ORM models stay separate: API shape and storage shape evolve independently.
+- Helpers shared across features live by dependency: plain Python (the `UNSET` partial-update
+  sentinel, `SortOrder`, `utc_now`, LIKE patterns) in `utils/`, which imports nothing else from
+  Orbit; SQLAlchemy helpers (`flush`, `SqlTransaction`) in `repositories/transaction.py`; and
+  Pydantic field types (`Name`, `SearchText`, …) in `schemas/common.py`.
+  The web app's counterpart is `src/utils`: a helper used by more than one feature gets its own
+  module there (`@/utils/dates`, `@/utils/time-zones`, `@/utils/validation`, `@/utils/keyboard`,
+  `@/utils/common`) rather than living in one feature's module and being borrowed by others.
 - No generic repository base class or unit-of-work framework is planned. Add one only if
   several features demonstrably repeat the same code.
 
@@ -373,7 +395,8 @@ structure.
   1. Every migration that creates a table in PostgreSQL enables RLS on it in the same
      revision. `0002` does this for `users`, `local_credentials`, `local_sessions`, and
      `workspaces`; `0003` for `user_avatars`; `0004` for `tasks`; `0006` for `dashboard_layouts`;
-     `0007` for `reminders`, `reminder_occurrences`, and `notifications`.
+     `0007` for `reminders`, `reminder_occurrences`, and `notifications`; `0008` for
+     `finance_accounts`, `finance_categories`, and `finance_transactions`.
   2. **No policies exist**, deliberately: the browser never queries tables directly, so the
      Data API's `anon` and `authenticated` roles get no rows. Add `authenticated` policies
      (for example `owner_id = auth.uid()`) only if a client is ever allowed direct access.
@@ -402,7 +425,8 @@ structure.
 ```text
 users ──< workspaces ──< tasks    (owner_id → users.id, workspace_id → workspaces.id,
   │                 │                both ON DELETE CASCADE)
-  │                 └──< reminders   (see Reminders and notifications)
+  │                 ├──< reminders   (see Reminders and notifications)
+  │                 └──< finance_accounts, finance_categories, finance_transactions (see Finance)
   ├──< notifications              (in-app inbox, per recipient)
   │
   ├── user_avatars                (profile photo bytes and type, 1:1)
@@ -428,7 +452,7 @@ users ──< workspaces ──< tasks    (owner_id → users.id, workspace_id �
   `nosniff` and a locked-down CSP, or 204 when none is set. Because the API needs a bearer token,
   the web app fetches the photo as a blob and shows it through an object URL.
 - **Extensibility:** user data carries a non-null `workspace_id` foreign key, as `tasks` does;
-  future notes and expenses will too. Shared workspaces would add a `workspace_members` table and change
+  `finance_*` tables do, and future notes will too. Shared workspaces would add a `workspace_members` table and change
   only the authorization check described below; the API already reports a `role` (`owner`).
 - **`dashboard_layouts`** holds a user's optional dashboard arrangement (see
   [Dashboard layout](#dashboard-layout)). It belongs to the user, not a workspace, because it
@@ -808,6 +832,205 @@ Reminders are workspace-scoped (`/api/v1/workspaces/{workspace_id}/reminders`, a
 - No snooze, no end date or count for recurrences, no "every N days/weeks", and no history view
   beyond the inbox.
 
+## Finance
+
+Phase 1 of Orbit Finance: accounts tracked by hand, the transactions that move money in, out,
+and between them, categories, monthly reports, and CSV export. Orbit never asks for bank
+credentials and never connects to banks; there are no imports or synchronization.
+
+### Money and currency
+
+- **Integer minor units everywhere.** Every amount is a whole number of the currency's minor
+  unit (paise for INR: ₹1,234.50 is `123450`), stored as `BIGINT`, summed by the database as
+  integers, and sent as JSON integers. PostgreSQL's `SUM(bigint)` is `NUMERIC`, so repository
+  sums are cast back to `BIGINT`. Request amounts must be JSON integers (`Strict` in Pydantic):
+  `12.5`, `100.0`, and `"100"` are rejected rather than rounded.
+- **Decimal text only at the edges.** `services/finance/money.py` turns minor units into decimal
+  text with `divmod` (`to_decimal_string`); the web app (`lib/finance`) parses typed text such as
+  `1,00,000.50` and formats amounts with string operations and `Intl.NumberFormat` on the exact
+  decimal string. No floating-point arithmetic touches money. Percentages shown in the UI (share
+  of spending, savings rate) are display-only ratios.
+- **Explicit currency.** Each account has an ISO 4217 currency, fixed at creation. Supported:
+  INR (default), USD, EUR, GBP, AED, SGD, AUD, CAD, CHF (2 decimals), and JPY (0). Each
+  transaction stores its account's currency, and a composite foreign key guarantees they agree.
+  Amounts in different currencies are never added together: reports take a `currency` and
+  balance totals are per currency. There is no conversion; a transfer between currencies is
+  rejected.
+- **Range.** Amounts are at most 10^13 minor units (₹10,000 crore), far below the 64-bit limit.
+
+### Data model
+
+```text
+workspaces ──< finance_accounts ──< finance_transactions >── finance_categories
+     │                 ▲ (account_id, workspace_id, currency)        ▲ (category_id, workspace_id)
+     │                 └ (to_account_id, workspace_id, currency)     │
+     └──────────────────────────────────────────────────────────────┘  (all ON DELETE CASCADE
+                                                                           from workspaces)
+```
+
+| Table                  | Holds                                                                                                                                  |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `finance_accounts`     | Name, `type` (bank, savings, cash, wallet, credit_card, investment, other), `currency`, signed `opening_balance`, notes, `archived_at` |
+| `finance_categories`   | Name, `type` (income or expense), and `key` for built-in categories (`NULL` for the user's own)                                        |
+| `finance_transactions` | `type`, positive `amount`, `currency`, `occurred_on` (a date), description, `category_id`, `account_id`, `to_account_id`, notes        |
+
+- **Transaction types.** `income` (money in), `expense` (money out), `refund` (money back for
+  an earlier expense: it reduces spending in its expense category and is never income), and
+  `transfer` (money moved from `account_id` to `to_account_id`, never income or spending).
+- **Constraints** (CHECKs and keys, tested in `tests/test_migrations.py`): `amount` is 1 to 10^13;
+  a transfer has a different destination and no category, and nothing else has a destination;
+  composite foreign keys `(account_id, workspace_id, currency)` and
+  `(to_account_id, workspace_id, currency)` to `finance_accounts(id, workspace_id, currency)`
+  keep both accounts in the transaction's workspace and currency, and
+  `(category_id, workspace_id)` keeps the category in the workspace. The category foreign key has
+  no `ON DELETE` action, so a category in use can't be deleted. Category names are unique per
+  workspace and type (case-insensitively in the service, exactly in the database), and a
+  built-in key appears once per workspace.
+- **Indexes:** `(workspace_id, occurred_on)` for history and reports, and
+  `(workspace_id, account_id)`, `(workspace_id, to_account_id)`, `(workspace_id, category_id)`
+  for filters and the in-use check.
+- **Accounts are archived, not deleted.** An archived account keeps its history and balance,
+  takes no new transactions (422), and still lets its existing transactions be corrected. Its
+  type and currency can't change; its name, opening balance, and notes can.
+- Migration `0008_create_finance` creates the three tables with RLS on PostgreSQL. Nothing is
+  backfilled; default categories are seeded lazily (below).
+
+### Balances
+
+- **Derived, never stored.** `balance = opening_balance + Σ income + Σ refunds − Σ expenses −
+Σ transfers out + Σ transfers in`, computed by one grouped `UNION ALL` query over the
+  workspace's transactions whenever accounts are read. There is no cached balance column, so
+  editing or deleting a past transaction corrects every balance and report at once; there is
+  nothing to keep consistent.
+- **Signed from the owner's view.** Positive is money held, negative is money owed. A credit
+  card with ₹500 outstanding has balance `-50000`; the web app shows "₹500.00 owed" and asks for
+  a card's opening balance as the amount owed.
+- **Assets and liabilities.** Credit cards are `liability` accounts; every other type is an
+  `asset`. `GET …/accounts` returns per-currency `totals`: `assets` (sum of asset balances) and
+  `liabilities` (what cards owe, positive), including archived accounts, whose balances are still
+  real. The UI labels these "in your accounts" and "owed on credit cards" and states that they
+  are **not net worth**: loans and investment market values aren't tracked yet.
+- Balances include every recorded transaction, whatever its date.
+
+### Financial rules
+
+- **Credit cards.** A purchase on the card is an `expense` on the card account, counted as
+  spending on its date. Paying the bill is a `transfer` from a bank account to the card: it
+  settles the liability and is not spending, so nothing is counted twice.
+- **Investments.** Moving money into an investment account is a `transfer`, not spending. The
+  investment account's balance is what was moved in (cost), not market value.
+- **Refunds and corrections.** Refunds are their own transactions, so the original expense stays
+  as it happened. Mistakes are corrected by editing (`PATCH`) or deleting the transaction;
+  derived balances and reports follow. `updated_at` records the correction.
+- **Dates.** `occurred_on` is a calendar date with no time, in the user's own time zone, like a
+  task's due date. A month is all dates from its first to its last day inclusive, so month
+  boundaries never depend on a server time zone. Report endpoints take `month=YYYY-MM`; without
+  it they use the current month in UTC (the web app always sends the user's local month).
+- **Validation** (in `FinanceService`, mirrored by database constraints): accounts and categories
+  must exist in the workspace (otherwise 422 "…doesn't exist in this workspace.", the same for
+  another user's), income takes an income category and expenses and refunds an expense
+  category, transfers need two different active accounts in one currency, and the transaction's
+  currency is always its account's (a client can't send one).
+- **Multi-record operations.** Each request is one database transaction; seeding categories
+  inserts all missing defaults and commits once (a concurrent seed's unique-constraint conflict
+  rolls back and re-reads).
+
+### Categories
+
+`services/finance/categories.py` lists the defaults, chosen for personal finance in India:
+income (Salary, Freelance, Business income, Interest, Dividends, Rental income, Gifts received,
+Other income) and expenses (Rent, Groceries, Food and dining, Utilities, Mobile and internet,
+Transport, Fuel, Shopping, Healthcare, Entertainment, Travel, Education, Insurance, Personal
+care, Household, Taxes, Fees and charges, Gifts and donations, Other expenses). There is
+deliberately no category for investments, card bills, or loan principal: those are transfers.
+
+- Categories are rows in each workspace, seeded the first time the workspace's categories are
+  read (or before a custom one is created). Seeding adds only defaults whose `key` and name are
+  missing, so it is idempotent, never duplicates, and a renamed default isn't re-added.
+- Built-in categories can be renamed but not deleted (409). The user's own can be created,
+  renamed, and deleted once no transaction uses them (409 otherwise).
+
+### API
+
+All routes are under `/api/v1/workspaces/{workspace_id}/finance` and authorize the workspace
+through `WorkspaceDep` first. Another user's workspace is `404 Workspace not found.`; an
+account, category, or transaction ID from another workspace is a 404 like a missing one, and
+referencing one in a transaction is a 422.
+
+| Method   | Path                     | Purpose                                                                                                                                                                                      |
+| -------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/accounts`              | Accounts with derived balances (active first), and per-currency `totals`                                                                                                                     |
+| `POST`   | `/accounts`              | Create (`name`, `type`, `currency` = INR, `opening_balance`, `notes`)                                                                                                                        |
+| `GET`    | `/accounts/{id}`         | One account with its balance                                                                                                                                                                 |
+| `PATCH`  | `/accounts/{id}`         | Change `name`, `opening_balance`, `notes`                                                                                                                                                    |
+| `POST`   | `/accounts/{id}/archive` | Archive (idempotent); `/restore` undoes it                                                                                                                                                   |
+| `GET`    | `/categories`            | Income then expense categories, seeding defaults                                                                                                                                             |
+| `POST`   | `/categories`            | Create (`name`, `type`); 409 on a duplicate name                                                                                                                                             |
+| `PATCH`  | `/categories/{id}`       | Rename                                                                                                                                                                                       |
+| `DELETE` | `/categories/{id}`       | Delete one of your own, unused categories                                                                                                                                                    |
+| `GET`    | `/transactions`          | History: `date_from`, `date_to`, `type` (repeatable), `account_id` (either side), `category_id`, `q`, `sort` (`date`, `amount`), `order`, `limit` (≤ 200), `offset`; `transactions`, `total` |
+| `POST`   | `/transactions`          | Record income, an expense, a refund, or a transfer                                                                                                                                           |
+| `GET`    | `/transactions/{id}`     | One transaction                                                                                                                                                                              |
+| `PATCH`  | `/transactions/{id}`     | Correct any fields; the result is validated like a new one                                                                                                                                   |
+| `DELETE` | `/transactions/{id}`     | Delete permanently                                                                                                                                                                           |
+| `GET`    | `/transactions/export`   | CSV of the inclusive date range (or everything)                                                                                                                                              |
+| `GET`    | `/transfers`             | Transfers only (`date_from`, `date_to`, `limit`, `offset`)                                                                                                                                   |
+| `POST`   | `/transfers`             | Transfer with `from_account_id` and `to_account_id`                                                                                                                                          |
+| `GET`    | `/summary`               | One month's `income`, `expenses`, `refunds`, `net_expenses`, `net` (cash flow), and count; `month`, `currency`                                                                               |
+| `GET`    | `/trend`                 | The same per month for `months` (≤ 24, default 6) ending at `month`, zero-filled                                                                                                             |
+| `GET`    | `/spending`              | Net spending per category for `month`, largest first, uncategorized as `null`                                                                                                                |
+
+- Every report is a SQL aggregate (`SUM`/`COUNT` with `CASE`, grouped by category or by
+  `EXTRACT(year/month)`), so the web app never downloads transactions to add them up.
+- Search is a case-insensitive substring match on descriptions and notes, with `%`, `_`, and `\`
+  matched literally (the helper shared with tasks in `utils/text_search.py`).
+- Request models forbid unknown fields: a client can't set `currency`, `balance`, `workspace_id`,
+  or `id`. Validation errors never echo submitted values. Routes log nothing about transactions.
+
+### CSV export
+
+`GET …/transactions/export` returns `text/csv; charset=utf-8` as an attachment
+(`orbit-transactions[-from-to].csv`) with `Cache-Control: no-store`. One row per transaction,
+oldest first: Date, Type, Description, Category, Account, To account, Amount (positive decimal
+text in the major unit, such as `20000.50`), Currency, Notes, ID. Text starting with `=`, `+`,
+`-`, `@`, tab, or carriage return is prefixed with `'` so spreadsheets don't run it as a formula
+(CSV injection). There is no byte-order mark; Excel users may need to import the file as UTF-8.
+
+### Web app
+
+- `/finance` (`components/finance/`) has three views: **Overview** (month navigator; income,
+  spending, and net cash flow tiles; a six-month income-versus-spending bar chart; spending by
+  category; account balances; the month's latest transactions), **Transactions** (search, type,
+  account, category, date range, sort, 50 per page, CSV export, edit, delete with confirmation),
+  and **Accounts** (per-currency totals, add, edit, archive and restore, categories). Quick
+  actions record income, an expense, or a transfer from any view. A workspace without accounts
+  is asked to add one first.
+- When accounts use several currencies the overview offers a currency picker; otherwise it uses
+  the only one.
+- Lists are rows, not tables, so nothing scrolls sideways on phones. Chart colors are the
+  `--chart-1`/`--chart-2` tokens in `globals.css`, a pair checked for color-vision deficiency and
+  contrast in both themes; every chart has a legend or labels, and each month is focusable with
+  its figures in its accessible name.
+- `hooks/use-finance.ts` binds the queries; keys are `["workspaces", id, "finance", …]`. Every
+  change invalidates the workspace's finance queries, because balances and reports are derived
+  on the server.
+
+### Finance limitations and extension points (planned, not implemented)
+
+- **Loans and EMIs** would add a `loan` liability account type (and an amortization table).
+  Principal repayments would be transfers to the loan account, which reduce the liability and are
+  never spending; interest would be an expense in an interest category. Nothing about loans
+  exists yet.
+- **Recurring commitments and subscriptions** would add a schedule table that creates ordinary
+  transactions (or reminders, reusing the reminder worker's occurrence pattern). The ledger
+  wouldn't change.
+- **Investments** would add holdings and price tables keyed to investment accounts, giving
+  market value beside the cost balance tracked today. Only then can a net-worth figure be shown.
+- **Budgets** would add per-category monthly limits read against the existing
+  `spending-by-category` aggregate.
+- Not supported now: currency conversion, split transactions, attachments, imports, bank
+  connections, reconciliation, and undo (deletes are confirmed instead).
+
 ## Configuration
 
 | App | Source                                                    | Validation                                    | Visibility  |
@@ -824,16 +1047,16 @@ Reminders are workspace-scoped (`/api/v1/workspaces/{workspace_id}/reminders`, a
 
 ## Testing strategy
 
-| Layer                    | Tool                                            | Location                                                    | Current coverage                                                                                                                     |
-| ------------------------ | ----------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                  | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications                      |
-| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                           | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, cross-user isolation |
-| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_reminder_worker.py` | Recurrence, DST, month ends; delivery, concurrency, leases, retries, restarts                                                        |
-| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                          | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                         |
-| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                     | Startup checks, sessions, migrations, constraints, 503 errors                                                                        |
-| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                           | Migrations, connectivity, RLS; skipped by default                                                                                    |
-| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                   | Generated contract matches the API                                                                                                   |
-| End-to-end               | Not set up (**planned**)                        | —                                                           | —                                                                                                                                    |
+| Layer                    | Tool                                            | Location                                                    | Current coverage                                                                                                                              |
+| ------------------------ | ----------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                  | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance                      |
+| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                           | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, cross-user isolation |
+| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_reminder_worker.py` | Recurrence, DST, month ends; delivery, concurrency, leases, retries, restarts                                                                 |
+| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                          | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                  |
+| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                     | Startup checks, sessions, migrations, constraints, 503 errors                                                                                 |
+| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                           | Migrations, connectivity, RLS; skipped by default                                                                                             |
+| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                   | Generated contract matches the API                                                                                                            |
+| End-to-end               | Not set up (**planned**)                        | —                                                           | —                                                                                                                                             |
 
 Unit tests cover logic, route tests cover HTTP behavior and validation, and E2E tests will cover
 critical user journeys once real features exist. CI runs every layer on each pull request.
@@ -854,7 +1077,8 @@ vendor SDKs.
 
 The database foundation is implemented (see [Storage](#storage)). Still planned:
 
-- More product tables (notes, finance), following the pattern [tasks](#tasks) established.
+- More product tables (notes, later [finance](#finance) phases), following the pattern
+  [tasks](#tasks) established.
 - Shared workspaces (a membership table, invitations, roles), if the product needs them.
 - Any synchronization or migration between local and cloud storage. This is undecided and
   needs its own design.
@@ -868,8 +1092,8 @@ The database foundation is implemented (see [Storage](#storage)). Still planned:
 
 ### Evolution
 
-Workspace-scoped [tasks](#tasks) and [reminders](#reminders-and-notifications), with a
-database-backed worker, are in place. Next: more
+Workspace-scoped [tasks](#tasks), [reminders](#reminders-and-notifications) (with a
+database-backed worker), and the first phase of [finance](#finance) are in place. Next: more
 modules on the same pattern, AI-assisted features through the provider interface, then optional
 sync and extension points.
 Each step should leave the boundaries above intact.

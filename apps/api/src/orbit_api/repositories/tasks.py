@@ -19,13 +19,13 @@ from orbit_api.services.tasks.models import (
     TaskStatus,
     TaskSummary,
 )
+from orbit_api.utils.text_search import LIKE_ESCAPE, contains_pattern
 
 # Priorities are stored as ranks so that ordering by the column orders by importance.
 _PRIORITY_RANKS: dict[TaskPriority, int] = {"none": 0, "low": 1, "medium": 2, "high": 3}
 _PRIORITIES_BY_RANK: dict[int, TaskPriority] = {
     rank: name for name, rank in _PRIORITY_RANKS.items()
 }
-_LIKE_ESCAPE = "\\"
 
 
 def _to_task(model: TaskModel) -> Task:
@@ -44,13 +44,6 @@ def _to_task(model: TaskModel) -> Task:
     )
 
 
-def _contains(text: str) -> str:
-    """A LIKE pattern matching `text` anywhere, with LIKE's wildcards matched literally."""
-    for character in (_LIKE_ESCAPE, "%", "_"):
-        text = text.replace(character, _LIKE_ESCAPE + character)
-    return f"%{text}%"
-
-
 def _filters(workspace_id: uuid.UUID, query: TaskQuery) -> list[ColumnElement[bool]]:
     conditions = [TaskModel.workspace_id == workspace_id]
     if query.status is not None:
@@ -60,11 +53,11 @@ def _filters(workspace_id: uuid.UUID, query: TaskQuery) -> list[ColumnElement[bo
     if query.search:
         # `ilike` is case-insensitive on both databases. A substring search can't use an index;
         # it scans one workspace's tasks, which is fine at personal scale.
-        pattern = _contains(query.search)
+        pattern = contains_pattern(query.search)
         conditions.append(
             or_(
-                TaskModel.title.ilike(pattern, escape=_LIKE_ESCAPE),
-                TaskModel.description.ilike(pattern, escape=_LIKE_ESCAPE),
+                TaskModel.title.ilike(pattern, escape=LIKE_ESCAPE),
+                TaskModel.description.ilike(pattern, escape=LIKE_ESCAPE),
             )
         )
     return conditions

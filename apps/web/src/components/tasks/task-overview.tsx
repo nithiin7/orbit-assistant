@@ -7,7 +7,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type TaskOverviewData, useTaskOverview } from "@/hooks/use-tasks";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/common";
 
 import { DueDateLabel, PriorityBadge } from "./task-meta";
 

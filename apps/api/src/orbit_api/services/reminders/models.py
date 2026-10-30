@@ -6,7 +6,8 @@ from datetime import date, datetime, time
 from typing import Literal
 
 from orbit_api.services.reminders.recurrence import Recurrence, Schedule
-from orbit_api.services.tasks.models import UNSET, Change, TaskStatus
+from orbit_api.services.tasks.models import TaskStatus
+from orbit_api.utils.changes import UNSET, Change
 
 # Derived, never stored:
 # - `disabled`: switched off; nothing fires.

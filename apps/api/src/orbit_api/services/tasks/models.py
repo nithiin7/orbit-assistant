@@ -1,16 +1,17 @@
-"""Task types, and the `UNSET` sentinel for partial updates."""
+"""Task types."""
 
 import uuid
 from dataclasses import dataclass
 from datetime import date, datetime
-from enum import Enum, auto
-from typing import Final, Literal
+from typing import Literal
+
+from orbit_api.utils.changes import UNSET, Change
+from orbit_api.utils.sorting import SortOrder
 
 TaskStatus = Literal["open", "completed"]
 # Ordered from lowest to highest.
 TaskPriority = Literal["none", "low", "medium", "high"]
 TaskSort = Literal["due_date", "priority", "created_at"]
-SortOrder = Literal["asc", "desc"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,15 +37,6 @@ class TaskDraft:
     description: str = ""
     priority: TaskPriority = "none"
     due_date: date | None = None
-
-
-class _Unset(Enum):
-    UNSET = auto()
-
-
-UNSET: Final = _Unset.UNSET
-
-type Change[T] = T | Literal[_Unset.UNSET]
 
 
 @dataclass(frozen=True, slots=True)

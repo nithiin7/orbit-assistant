@@ -25,7 +25,8 @@ from orbit_api.services.reminders.models import (
     ReminderView,
 )
 from orbit_api.services.reminders.recurrence import WEEKDAYS, Frequency, Recurrence, Weekday
-from orbit_api.services.tasks.models import UNSET, TaskStatus
+from orbit_api.services.tasks.models import TaskStatus
+from orbit_api.utils.changes import UNSET
 
 DESCRIPTION_MAX_LENGTH = 2000
 PAGE_MAX_SIZE = 200

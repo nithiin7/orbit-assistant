@@ -38,6 +38,13 @@
   --success: oklch(0.55 0.13 155);
   --warning: oklch(0.62 0.14 70);
 
+  /*
+   * Chart series: a categorical pair (blue, orange) validated for color-vision deficiencies and
+   * contrast against the card surface in each mode. Used for income and spending; never status.
+   */
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+
   /* Lines */
   --border: oklch(0.92 0.004 265);
   --input: oklch(0.9 0.005 265);
@@ -82,6 +89,9 @@
   --destructive: oklch(0.7 0.18 22);
   --success: oklch(0.74 0.14 155);
   --warning: oklch(0.8 0.13 75);
+
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
 
   --border: oklch(1 0 0 / 9%);
   --input: oklch(1 0 0 / 14%);
@@ -132,6 +142,8 @@
   --color-destructive: var(--destructive);
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

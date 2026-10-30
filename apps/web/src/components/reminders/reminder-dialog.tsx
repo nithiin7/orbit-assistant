@@ -20,15 +20,14 @@ import {
   type ReminderFormValues,
   reminderSchema,
   REPEATS,
-  timeZoneLabel,
-  timeZoneNames,
   toFormValues,
   toRecurrence,
   toReminderRequest,
   weekdayOf,
   WEEKDAYS,
 } from "@/lib/reminders";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/common";
+import { timeZoneLabel, timeZoneNames } from "@/utils/time-zones";
 
 type ReminderDialogProps = {
   /** The reminder to edit, or `null` to create one. */

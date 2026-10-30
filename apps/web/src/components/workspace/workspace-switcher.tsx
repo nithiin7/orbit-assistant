@@ -13,10 +13,10 @@ import {
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 import { workspaceInitial } from "@/lib/workspaces";
 import { useAuth, useCurrentUser } from "@/providers/auth";
 import { useWorkspaces } from "@/providers/workspace";
+import { cn } from "@/utils/common";
 
 const itemClassName =
   "flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm outline-none hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring";
