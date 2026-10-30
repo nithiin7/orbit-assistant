@@ -1,6 +1,7 @@
 """The reminder worker: polls the database for due occurrences and delivers them. It also
-takes each workspace's month-end net worth snapshots (at most hourly), so Orbit has one
-scheduler rather than two.
+takes each workspace's month-end net worth snapshots (at most hourly) and checks budgets (every
+few minutes: closing finished periods and sending threshold alerts), so Orbit has one scheduler
+rather than several.
 
 It holds no schedule in memory. Each poll reads due work from the database, so a restart loses
 nothing, and any number of workers (the one embedded in each API process, plus standalone
@@ -15,11 +16,13 @@ from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from orbit_api.db.columns import utc_now
 from orbit_api.db.database import Database
+from orbit_api.repositories.budgets import build_budget_service
 from orbit_api.repositories.commitments import build_commitment_service
 from orbit_api.repositories.investments import SqlSnapshotRepository, build_net_worth_service
 from orbit_api.repositories.notifications import SqlNotificationRepository
@@ -41,6 +44,9 @@ DEFAULT_LEASE = timedelta(minutes=2)
 # How often the worker checks for month-end net worth snapshots to take. Taking one is
 # idempotent, so a check that finds nothing to do costs one query per workspace.
 DEFAULT_SNAPSHOT_INTERVAL = timedelta(hours=1)
+# How often the worker checks budgets. Alerts are recorded per period and threshold, so a check
+# never repeats one; this only bounds how soon after spending an alert arrives.
+DEFAULT_BUDGET_INTERVAL = timedelta(minutes=5)
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,10 +67,13 @@ class ReminderWorker:
         lease: timedelta = DEFAULT_LEASE,
         max_attempts: int = DEFAULT_MAX_ATTEMPTS,
         snapshot_interval: timedelta = DEFAULT_SNAPSHOT_INTERVAL,
+        budget_interval: timedelta = DEFAULT_BUDGET_INTERVAL,
     ) -> None:
         self._database = database
         self._snapshot_interval = snapshot_interval
         self._snapshots_checked_at: datetime | None = None
+        self._budget_interval = budget_interval
+        self._budgets_checked_at: datetime | None = None
         self._clock = clock
         self._batch_size = batch_size
         self._lease = lease
@@ -120,6 +129,42 @@ class ReminderWorker:
             # Deliberate boundary: snapshots must never stop reminder delivery.
             logger.exception("Checking net worth snapshots failed; retrying later.")
 
+    async def check_budgets(self) -> tuple[int, int]:
+        """Close finished budget periods and send threshold alerts in every workspace with an
+        active budget, each in its own transaction and on the owner's local date; return how
+        many periods were closed and alerts sent."""
+        async with self._database.session() as session:
+            owners = await build_budget_service(session, self._clock).owners()
+        closed = alerts = 0
+        now = self._clock()
+        for owner in owners:
+            today = now.astimezone(ZoneInfo(owner.timezone or "UTC")).date()
+            async with self._database.session() as session:
+                try:
+                    report = await build_budget_service(session, self._clock).check(owner, today)
+                    closed += report.closed
+                    alerts += report.alerts
+                except Exception:
+                    # Deliberate boundary: one workspace's failure must not stop the others;
+                    # the next check retries it. IDs only: amounts are personal data.
+                    await session.rollback()
+                    logger.exception("Checking budgets for %s failed.", owner.workspace_id)
+        if closed or alerts:
+            logger.info("Closed %d budget period(s); sent %d budget alert(s).", closed, alerts)
+        return closed, alerts
+
+    async def _maybe_check_budgets(self) -> None:
+        now = self._clock()
+        last = self._budgets_checked_at
+        if last is not None and now - last < self._budget_interval:
+            return
+        self._budgets_checked_at = now
+        try:
+            await self.check_budgets()
+        except Exception:
+            # Deliberate boundary: budgets must never stop reminder delivery.
+            logger.exception("Checking budgets failed; retrying later.")
+
     async def run(self, stop: asyncio.Event, poll_interval: float) -> None:
         """Poll until `stop` is set. A poll in progress finishes first, so shutdown never
         abandons a claimed occurrence mid-transaction."""
@@ -135,6 +180,7 @@ class ReminderWorker:
             if report.claimed >= self._batch_size:
                 continue  # More may be due: drain the backlog before sleeping.
             await self._maybe_take_snapshots()
+            await self._maybe_check_budgets()
             # Sleep until the next poll, waking early when asked to stop.
             with contextlib.suppress(TimeoutError):
                 await asyncio.wait_for(stop.wait(), timeout=poll_interval)

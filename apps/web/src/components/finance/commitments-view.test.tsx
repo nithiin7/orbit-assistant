@@ -155,6 +155,23 @@ function emptyMonth(month: string) {
   return { month, income: 0, expenses: 0, refunds: 0, net_expenses: 0, net: 0, transactions: 0 };
 }
 
+/** A workspace without budgets: the overview shows no budget card. */
+const emptyBudgetMonth = {
+  month: "2026-02",
+  currency: "INR",
+  total: null,
+  basis: null,
+  spent: 0,
+  remaining: null,
+  utilization_percent: null,
+  status: null,
+  budgets_counted: 0,
+  budgets_within: 0,
+  unbudgeted: null,
+  categories: [],
+  budgets: [],
+};
+
 function routes() {
   return {
     ...session,
@@ -173,6 +190,8 @@ function routes() {
     }),
     [`GET ${FINANCE}/transactions`]: json({ transactions: [], total: 0 }),
     [`GET ${FINANCE}/commitments/summary`]: json(summary),
+    [`GET ${FINANCE}/budgets/overview`]: json(emptyBudgetMonth),
+    [`GET ${FINANCE}/savings-goals`]: json({ goals: [] }),
     [`GET ${FINANCE}/loans`]: json({ loans: [loan] }),
     [`GET ${FINANCE}/loans/loan-1`]: json({ loan, installments: [installment] }),
   };

@@ -29,6 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from orbit_api.db.models import (
     FinanceAccountModel,
+    FinanceBudgetModel,
     FinanceCategoryModel,
     FinanceRecurringPaymentModel,
     FinanceTransactionModel,
@@ -277,6 +278,18 @@ class SqlFinanceCategoryRepository:
                     exists().where(
                         FinanceRecurringPaymentModel.workspace_id == workspace_id,
                         FinanceRecurringPaymentModel.category_id == category_id,
+                    )
+                )
+            )
+        )
+
+    async def is_used_by_budget(self, workspace_id: uuid.UUID, category_id: uuid.UUID) -> bool:
+        return bool(
+            await self._session.scalar(
+                select(
+                    exists().where(
+                        FinanceBudgetModel.workspace_id == workspace_id,
+                        FinanceBudgetModel.category_id == category_id,
                     )
                 )
             )

@@ -98,6 +98,23 @@ const emptyMonth = (month: string): MonthCashFlow => ({
   transactions: 0,
 });
 
+/** A workspace without budgets: the overview shows no budget card. */
+const emptyBudgetMonth = {
+  month: "2026-02",
+  currency: "INR",
+  total: null,
+  basis: null,
+  spent: 0,
+  remaining: null,
+  utilization_percent: null,
+  status: null,
+  budgets_counted: 0,
+  budgets_within: 0,
+  unbudgeted: null,
+  categories: [],
+  budgets: [],
+};
+
 /** Accounts, categories, and an empty month, which every test starts from. */
 function finance(accounts: FinanceAccount[] = [bank, card]) {
   return {
@@ -116,6 +133,8 @@ function finance(accounts: FinanceAccount[] = [bank, card]) {
     }),
     [`GET ${FINANCE}/transactions`]: json({ transactions: [], total: 0 }),
     [`GET ${FINANCE}/commitments/summary`]: json(emptySummary),
+    [`GET ${FINANCE}/budgets/overview`]: json(emptyBudgetMonth),
+    [`GET ${FINANCE}/savings-goals`]: json({ goals: [] }),
   };
 }
 

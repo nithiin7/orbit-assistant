@@ -23,13 +23,16 @@ import { cn, type Option } from "@/utils/common";
 import { AccountDialog } from "./account-dialog";
 import { AccountsView } from "./accounts-view";
 import { AssetsView } from "./assets-view";
+import { BudgetsView } from "./budgets-view";
 import { FinanceOverview } from "./finance-overview";
+import { GoalsView } from "./goals-view";
 import { InvestmentsView } from "./investments-view";
 import { LoanDialog } from "./loan-dialog";
 import { InstallmentDialog, RescheduleDialog } from "./loan-schedule-dialogs";
 import { LoansView } from "./loans-view";
 import { NetWorthView } from "./net-worth-view";
 import { PaymentDialog, type PaymentTarget } from "./payment-dialog";
+import { PlanView } from "./plan-view";
 import { RecurringDialog } from "./recurring-dialog";
 import { RecurringView } from "./recurring-view";
 import { TransactionDialog } from "./transaction-dialog";
@@ -38,6 +41,9 @@ import { UpcomingPayments } from "./upcoming-payments";
 
 export type FinanceTab =
   | "overview"
+  | "budgets"
+  | "plan"
+  | "goals"
   | "upcoming"
   | "transactions"
   | "accounts"
@@ -50,6 +56,9 @@ export type FinanceTab =
 
 const TABS: readonly Option<FinanceTab>[] = [
   { value: "overview", label: "Overview" },
+  { value: "budgets", label: "Budgets" },
+  { value: "plan", label: "Plan" },
+  { value: "goals", label: "Goals" },
   { value: "upcoming", label: "Upcoming" },
   { value: "transactions", label: "Transactions" },
   { value: "accounts", label: "Accounts" },
@@ -203,6 +212,12 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
         <div key={tab} className="animate-page-in">
           {tab === "overview" ? (
             <FinanceOverview {...data} />
+          ) : tab === "budgets" ? (
+            <BudgetsView {...data} />
+          ) : tab === "plan" ? (
+            <PlanView {...data} />
+          ) : tab === "goals" ? (
+            <GoalsView {...data} />
           ) : tab === "upcoming" ? (
             <UpcomingPayments {...data} onPay={pay} />
           ) : tab === "transactions" ? (

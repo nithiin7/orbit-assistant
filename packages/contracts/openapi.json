@@ -9021,6 +9021,1614 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/finance/budgets": {
+      "get": {
+        "tags": [
+          "finance budgets"
+        ],
+        "summary": "List budgets",
+        "description": "Every budget with its current period's spending, remaining amount, and status.",
+        "operationId": "list_budgets_api_v1_workspaces__workspace_id__finance_budgets_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or budget does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "finance budgets"
+        ],
+        "summary": "Create a budget",
+        "operationId": "create_budget_api_v1_workspaces__workspace_id__finance_budgets_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBudgetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or budget does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Another active budget covers the same spending in an overlapping period."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: a category outside this workspace or not an expense category, monthly dates that aren't whole months, rollover on a custom period, or a change to a finished period."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/budgets/overview": {
+      "get": {
+        "tags": [
+          "finance budgets"
+        ],
+        "summary": "One month's budgets and spending",
+        "description": "The month's total budget, spending, and each budget's period overlapping the month, with\nspending per category. Spending is the dashboard's net spending: transfers never count.",
+        "operationId": "budget_overview_api_v1_workspaces__workspace_id__finance_budgets_overview_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "`YYYY-MM` in your time zone. Defaults to the month of `today`.",
+              "title": "Month"
+            },
+            "description": "`YYYY-MM` in your time zone. Defaults to the month of `today`."
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "INR",
+                "USD",
+                "EUR",
+                "GBP",
+                "AED",
+                "SGD",
+                "AUD",
+                "CAD",
+                "CHF",
+                "JPY"
+              ],
+              "type": "string",
+              "default": "INR",
+              "title": "Currency"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetMonthResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or budget does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/budgets/history": {
+      "get": {
+        "tags": [
+          "finance budgets"
+        ],
+        "summary": "Budget against spending per month",
+        "description": "The overview for each of `months` months ending at `month`. Past months use the amounts\ntheir budgets had then.",
+        "operationId": "budget_history_api_v1_workspaces__workspace_id__finance_budgets_history_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "`YYYY-MM` in your time zone. Defaults to the month of `today`.",
+              "title": "Month"
+            },
+            "description": "`YYYY-MM` in your time zone. Defaults to the month of `today`."
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "INR",
+                "USD",
+                "EUR",
+                "GBP",
+                "AED",
+                "SGD",
+                "AUD",
+                "CAD",
+                "CHF",
+                "JPY"
+              ],
+              "type": "string",
+              "default": "INR",
+              "title": "Currency"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          },
+          {
+            "name": "months",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 24,
+              "minimum": 1,
+              "description": "How many months, ending with `month`.",
+              "default": 6,
+              "title": "Months"
+            },
+            "description": "How many months, ending with `month`."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetHistoryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or budget does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/budgets/copy": {
+      "post": {
+        "tags": [
+          "finance budgets"
+        ],
+        "summary": "Copy a month's budgets",
+        "description": "Copy `from_month`'s monthly budgets into `to_month` as one-month budgets with the amounts\nthey had. Budgets that already cover `to_month` are skipped.",
+        "operationId": "copy_budgets_api_v1_workspaces__workspace_id__finance_budgets_copy_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopyBudgetsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CopyBudgetsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or budget does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Another active budget covers the same spending in an overlapping period."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: a category outside this workspace or not an expense category, monthly dates that aren't whole months, rollover on a custom period, or a change to a finished period."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/budgets/{budget_id}": {
+      "get": {
+        "tags": [
+          "finance budgets"
+        ],
+        "summary": "Get a budget with its periods",
+        "operationId": "get_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "budget_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The budget's ID.",
+              "title": "Budget Id"
+            },
+            "description": "The budget's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or budget does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "finance budgets"
+        ],
+        "summary": "Update a budget",
+        "description": "Changes apply from the current period on; finished periods keep their amounts.",
+        "operationId": "update_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "budget_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The budget's ID.",
+              "title": "Budget Id"
+            },
+            "description": "The budget's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBudgetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or budget does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Another active budget covers the same spending in an overlapping period."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: a category outside this workspace or not an expense category, monthly dates that aren't whole months, rollover on a custom period, or a change to a finished period."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "finance budgets"
+        ],
+        "summary": "Delete a budget",
+        "description": "Delete it with its period history. Transactions are untouched; notifications stay.",
+        "operationId": "delete_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "budget_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The budget's ID.",
+              "title": "Budget Id"
+            },
+            "description": "The budget's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or budget does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/budgets/{budget_id}/archive": {
+      "post": {
+        "tags": [
+          "finance budgets"
+        ],
+        "summary": "Archive a budget",
+        "description": "Stop tracking it and sending alerts; its history stays. Idempotent.",
+        "operationId": "archive_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__archive_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "budget_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The budget's ID.",
+              "title": "Budget Id"
+            },
+            "description": "The budget's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or budget does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/budgets/{budget_id}/restore": {
+      "post": {
+        "tags": [
+          "finance budgets"
+        ],
+        "summary": "Restore an archived budget",
+        "operationId": "restore_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__restore_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "budget_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The budget's ID.",
+              "title": "Budget Id"
+            },
+            "description": "The budget's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or budget does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Another active budget covers the same spending in an overlapping period."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: a category outside this workspace or not an expense category, monthly dates that aren't whole months, rollover on a custom period, or a change to a finished period."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/savings-goals": {
+      "get": {
+        "tags": [
+          "finance goals"
+        ],
+        "summary": "List savings goals",
+        "operationId": "list_goals_api_v1_workspaces__workspace_id__finance_savings_goals_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, goal, or contribution does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "finance goals"
+        ],
+        "summary": "Create a savings goal",
+        "operationId": "create_goal_api_v1_workspaces__workspace_id__finance_savings_goals_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGoalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, goal, or contribution does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The transfer is already recorded, or the goal has history."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account or transaction outside this workspace, a currency mismatch, an account that can't hold savings, or a withdrawal of more than was saved."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/savings-goals/{goal_id}": {
+      "get": {
+        "tags": [
+          "finance goals"
+        ],
+        "summary": "Get a savings goal",
+        "operationId": "get_goal_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "goal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The savings goal's ID.",
+              "title": "Goal Id"
+            },
+            "description": "The savings goal's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, goal, or contribution does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "finance goals"
+        ],
+        "summary": "Update a savings goal",
+        "operationId": "update_goal_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "goal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The savings goal's ID.",
+              "title": "Goal Id"
+            },
+            "description": "The savings goal's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGoalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, goal, or contribution does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The transfer is already recorded, or the goal has history."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account or transaction outside this workspace, a currency mismatch, an account that can't hold savings, or a withdrawal of more than was saved."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "finance goals"
+        ],
+        "summary": "Delete a savings goal",
+        "description": "Only a goal without contributions; cancel one with history instead.",
+        "operationId": "delete_goal_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "goal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The savings goal's ID.",
+              "title": "Goal Id"
+            },
+            "description": "The savings goal's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, goal, or contribution does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The transfer is already recorded, or the goal has history."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account or transaction outside this workspace, a currency mismatch, an account that can't hold savings, or a withdrawal of more than was saved."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/savings-goals/{goal_id}/contributions": {
+      "get": {
+        "tags": [
+          "finance goals"
+        ],
+        "summary": "List a goal's contributions",
+        "operationId": "list_contributions_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__contributions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "goal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The savings goal's ID.",
+              "title": "Goal Id"
+            },
+            "description": "The savings goal's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContributionListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, goal, or contribution does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "finance goals"
+        ],
+        "summary": "Record a contribution or withdrawal",
+        "description": "Never an expense: an allocation records no ledger row, and a transfer between your own\naccounts is neither income nor spending.",
+        "operationId": "create_contribution_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__contributions_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "goal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The savings goal's ID.",
+              "title": "Goal Id"
+            },
+            "description": "The savings goal's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateContributionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContributionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, goal, or contribution does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The transfer is already recorded, or the goal has history."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account or transaction outside this workspace, a currency mismatch, an account that can't hold savings, or a withdrawal of more than was saved."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/savings-goals/{goal_id}/contributions/{contribution_id}": {
+      "delete": {
+        "tags": [
+          "finance goals"
+        ],
+        "summary": "Undo a contribution or withdrawal",
+        "operationId": "delete_contribution_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__contributions__contribution_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "goal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The savings goal's ID.",
+              "title": "Goal Id"
+            },
+            "description": "The savings goal's ID."
+          },
+          {
+            "name": "contribution_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The contribution's ID.",
+              "title": "Contribution Id"
+            },
+            "description": "The contribution's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "delete_transaction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Also delete the transfer it recorded from the ledger.",
+              "default": false,
+              "title": "Delete Transaction"
+            },
+            "description": "Also delete the transfer it recorded from the ledger."
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, goal, or contribution does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The transfer is already recorded, or the goal has history."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account or transaction outside this workspace, a currency mismatch, an account that can't hold savings, or a withdrawal of more than was saved."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/plan": {
+      "get": {
+        "tags": [
+          "finance planning"
+        ],
+        "summary": "A month's plan against actual cash flow",
+        "description": "Income, fixed commitments, variable spending, savings, and investments, planned and\nactual, and what remains. Loan principal, savings, and investments are allocations, not\nspending.",
+        "operationId": "get_plan_api_v1_workspaces__workspace_id__finance_plan_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "`YYYY-MM` in your time zone. Defaults to the month of `today`.",
+              "title": "Month"
+            },
+            "description": "`YYYY-MM` in your time zone. Defaults to the month of `today`."
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "INR",
+                "USD",
+                "EUR",
+                "GBP",
+                "AED",
+                "SGD",
+                "AUD",
+                "CAD",
+                "CHF",
+                "JPY"
+              ],
+              "type": "string",
+              "default": "INR",
+              "title": "Currency"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/plan/{month}": {
+      "put": {
+        "tags": [
+          "finance planning"
+        ],
+        "summary": "Set a month's expected income",
+        "description": "Later months without their own expected income use this one.",
+        "operationId": "set_plan_api_v1_workspaces__workspace_id__finance_plan__month__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "month",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "description": "`YYYY-MM`.",
+              "title": "Month"
+            },
+            "description": "`YYYY-MM`."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetIncomeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthlyPlanResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "finance planning"
+        ],
+        "summary": "Clear a month's income",
+        "description": "The month falls back to an earlier month's expected income, if any. Idempotent.",
+        "operationId": "clear_plan_api_v1_workspaces__workspace_id__finance_plan__month__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "month",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "description": "`YYYY-MM`.",
+              "title": "Month"
+            },
+            "description": "`YYYY-MM`."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "INR",
+                "USD",
+                "EUR",
+                "GBP",
+                "AED",
+                "SGD",
+                "AUD",
+                "CAD",
+                "CHF",
+                "JPY"
+              ],
+              "type": "string",
+              "default": "INR",
+              "title": "Currency"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/storage": {
       "get": {
         "tags": [
@@ -9527,6 +11135,550 @@
         ],
         "title": "BalanceTotalsResponse"
       },
+      "BudgetDetailResponse": {
+        "properties": {
+          "budget": {
+            "$ref": "#/components/schemas/BudgetResponse"
+          },
+          "periods": {
+            "items": {
+              "$ref": "#/components/schemas/BudgetPeriodResponse"
+            },
+            "type": "array",
+            "title": "Periods",
+            "description": "Every period from the start through the current one, newest first."
+          },
+          "periods_closed": {
+            "type": "integer",
+            "title": "Periods Closed"
+          },
+          "periods_within": {
+            "type": "integer",
+            "title": "Periods Within",
+            "description": "Closed periods that stayed within their budget."
+          }
+        },
+        "type": "object",
+        "required": [
+          "budget",
+          "periods",
+          "periods_closed",
+          "periods_within"
+        ],
+        "title": "BudgetDetailResponse"
+      },
+      "BudgetHistoryResponse": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "months": {
+            "items": {
+              "$ref": "#/components/schemas/BudgetMonthResponse"
+            },
+            "type": "array",
+            "title": "Months",
+            "description": "Oldest first, one per month."
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "months"
+        ],
+        "title": "BudgetHistoryResponse"
+      },
+      "BudgetListResponse": {
+        "properties": {
+          "budgets": {
+            "items": {
+              "$ref": "#/components/schemas/BudgetResponse"
+            },
+            "type": "array",
+            "title": "Budgets",
+            "description": "Active first, then upcoming, completed, and archived; each by name."
+          }
+        },
+        "type": "object",
+        "required": [
+          "budgets"
+        ],
+        "title": "BudgetListResponse"
+      },
+      "BudgetMonthResponse": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month",
+            "description": "`YYYY-MM`."
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total",
+            "description": "The month's total budget: its overall monthly budget, else the sum of its monthly category budgets; `null` without either."
+          },
+          "basis": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "overall",
+                  "categories"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis"
+          },
+          "spent": {
+            "type": "integer",
+            "title": "Spent",
+            "description": "The month's net spending, the dashboard's figure."
+          },
+          "remaining": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining"
+          },
+          "utilization_percent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utilization Percent"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "on_track",
+                  "approaching",
+                  "near",
+                  "exceeded"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "budgets_counted": {
+            "type": "integer",
+            "title": "Budgets Counted"
+          },
+          "budgets_within": {
+            "type": "integer",
+            "title": "Budgets Within",
+            "description": "Monthly budgets not exceeded."
+          },
+          "unbudgeted": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unbudgeted",
+            "description": "Net spending in categories without a category budget, when any category has one."
+          },
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryMonthResponse"
+            },
+            "type": "array",
+            "title": "Categories",
+            "description": "Categories with spending or a budget, largest spending first."
+          },
+          "budgets": {
+            "items": {
+              "$ref": "#/components/schemas/BudgetResponse"
+            },
+            "type": "array",
+            "title": "Budgets",
+            "description": "Budgets covering the month, each with its period overlapping it."
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "currency",
+          "total",
+          "basis",
+          "spent",
+          "remaining",
+          "utilization_percent",
+          "status",
+          "budgets_counted",
+          "budgets_within",
+          "unbudgeted",
+          "categories",
+          "budgets"
+        ],
+        "title": "BudgetMonthResponse"
+      },
+      "BudgetPeriodResponse": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date",
+            "title": "End"
+          },
+          "base_amount": {
+            "type": "integer",
+            "title": "Base Amount",
+            "description": "The budget's amount for this period."
+          },
+          "rollover_amount": {
+            "type": "integer",
+            "title": "Rollover Amount",
+            "description": "Carried from the previous period: positive for money left unspent, negative for overspending (with `full` rollover)."
+          },
+          "available": {
+            "type": "integer",
+            "title": "Available",
+            "description": "`base_amount` plus `rollover_amount`, never below zero: what can be spent."
+          },
+          "spent": {
+            "type": "integer",
+            "title": "Spent",
+            "description": "Net spending (expenses minus refunds) in the period, from the ledger; never below zero."
+          },
+          "remaining": {
+            "type": "integer",
+            "title": "Remaining",
+            "description": "`available` minus `spent`: negative when overspent."
+          },
+          "utilization_percent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utilization Percent",
+            "description": "`spent` as a percentage of `available`, two decimals; `null` when nothing is available."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "on_track",
+              "approaching",
+              "near",
+              "exceeded"
+            ],
+            "title": "Status",
+            "description": "`on_track` below 75%, `approaching` from 75%, `near` from 90%, `exceeded` once more than `available` is spent."
+          },
+          "projected": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Projected",
+            "description": "Spending at the period's end at its pace so far, once 7 days have passed; the final spending for a finished period; `null` otherwise."
+          },
+          "closed": {
+            "type": "boolean",
+            "title": "Closed",
+            "description": "Finished, with its rollover passed on."
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "spent_at_close": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spent At Close",
+            "description": "Spending recorded when the period closed, which decided its rollover. `spent` follows later corrections; this doesn't."
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "base_amount",
+          "rollover_amount",
+          "available",
+          "spent",
+          "remaining",
+          "utilization_percent",
+          "status",
+          "projected",
+          "closed",
+          "closed_at",
+          "spent_at_close"
+        ],
+        "title": "BudgetPeriodResponse"
+      },
+      "BudgetResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "overall",
+              "category"
+            ],
+            "title": "Scope"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount",
+            "description": "Each period's base amount from now on."
+          },
+          "period": {
+            "type": "string",
+            "enum": [
+              "monthly",
+              "custom"
+            ],
+            "title": "Period"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "`null` for a monthly budget without end."
+          },
+          "recurring": {
+            "type": "boolean",
+            "title": "Recurring",
+            "description": "A monthly budget covering more than one month."
+          },
+          "rollover": {
+            "type": "string",
+            "enum": [
+              "none",
+              "surplus",
+              "full"
+            ],
+            "title": "Rollover"
+          },
+          "alerts_enabled": {
+            "type": "boolean",
+            "title": "Alerts Enabled"
+          },
+          "alert_thresholds": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Alert Thresholds"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "archived"
+            ],
+            "title": "State"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "upcoming",
+              "active",
+              "completed",
+              "archived"
+            ],
+            "title": "Status",
+            "description": "`upcoming` before its start, `completed` after its end, `archived`, or `active`."
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "current_period": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BudgetPeriodResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The current period (or, for the month overview, the one overlapping that month); the first or last one for a budget that hasn't started or has ended."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "name",
+          "scope",
+          "category_id",
+          "currency",
+          "amount",
+          "period",
+          "start_date",
+          "end_date",
+          "recurring",
+          "rollover",
+          "alerts_enabled",
+          "alert_thresholds",
+          "state",
+          "status",
+          "notes",
+          "archived_at",
+          "created_at",
+          "updated_at",
+          "current_period"
+        ],
+        "title": "BudgetResponse"
+      },
       "BulkChangeResponse": {
         "properties": {
           "count": {
@@ -9557,6 +11709,47 @@
           "categories"
         ],
         "title": "CategoryListResponse"
+      },
+      "CategoryMonthResponse": {
+        "properties": {
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id",
+            "description": "`null` for uncategorized spending."
+          },
+          "spent": {
+            "type": "integer",
+            "title": "Spent",
+            "description": "Net spending; negative when refunds exceed it."
+          },
+          "budget": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget",
+            "description": "The category budget's available amount, if any."
+          }
+        },
+        "type": "object",
+        "required": [
+          "category_id",
+          "spent",
+          "budget"
+        ],
+        "title": "CategoryMonthResponse"
       },
       "CategoryResponse": {
         "properties": {
@@ -9770,6 +11963,138 @@
         ],
         "title": "CommitmentSummaryResponse"
       },
+      "ContributionListResponse": {
+        "properties": {
+          "contributions": {
+            "items": {
+              "$ref": "#/components/schemas/ContributionResponse"
+            },
+            "type": "array",
+            "title": "Contributions",
+            "description": "Newest first."
+          }
+        },
+        "type": "object",
+        "required": [
+          "contributions"
+        ],
+        "title": "ContributionListResponse"
+      },
+      "ContributionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "goal_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Goal Id"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "contribution",
+              "withdrawal"
+            ],
+            "title": "Type"
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount"
+          },
+          "occurred_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Occurred On"
+          },
+          "transaction_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transaction Id",
+            "description": "The ledger transfer that moved the money; `null` for an allocation."
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "goal_id",
+          "type",
+          "amount",
+          "occurred_on",
+          "transaction_id",
+          "notes",
+          "created_at"
+        ],
+        "title": "ContributionResponse"
+      },
+      "CopyBudgetsRequest": {
+        "properties": {
+          "from_month": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+            "title": "From Month",
+            "description": "`YYYY-MM`: the month whose budgets are copied."
+          },
+          "to_month": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+            "title": "To Month",
+            "description": "`YYYY-MM`: the month they're copied into."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "from_month",
+          "to_month"
+        ],
+        "title": "CopyBudgetsRequest"
+      },
+      "CopyBudgetsResponse": {
+        "properties": {
+          "created": {
+            "items": {
+              "$ref": "#/components/schemas/BudgetResponse"
+            },
+            "type": "array",
+            "title": "Created",
+            "description": "New one-month budgets in `to_month`."
+          },
+          "skipped": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Skipped",
+            "description": "Budgets not copied because `to_month` is already covered (a recurring budget, or one added there)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "created",
+          "skipped"
+        ],
+        "title": "CopyBudgetsResponse"
+      },
       "CreateAccountRequest": {
         "properties": {
           "name": {
@@ -9954,6 +12279,130 @@
         "title": "CreateAssetRequest",
         "description": "Track an asset valued by hand. `current_value` records its first valuation (on\n`valued_on`, default today). Names are unique per workspace."
       },
+      "CreateBudgetRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "overall",
+              "category"
+            ],
+            "title": "Scope"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id",
+            "description": "Required for `category` budgets: an expense category."
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency",
+            "default": "INR"
+          },
+          "amount": {
+            "type": "integer",
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "Minor units, always positive: ₹12.50 is 1250."
+          },
+          "period": {
+            "type": "string",
+            "enum": [
+              "monthly",
+              "custom"
+            ],
+            "title": "Period",
+            "default": "monthly"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "rollover": {
+            "type": "string",
+            "enum": [
+              "none",
+              "surplus",
+              "full"
+            ],
+            "title": "Rollover",
+            "description": "Monthly budgets only. `surplus` carries unspent money into the next month; `full` also carries overspending, which reduces the next month (never below zero).",
+            "default": "none"
+          },
+          "alerts_enabled": {
+            "type": "boolean",
+            "title": "Alerts Enabled",
+            "default": true
+          },
+          "alert_thresholds": {
+            "items": {
+              "type": "integer",
+              "maximum": 200.0,
+              "minimum": 1.0
+            },
+            "type": "array",
+            "maxItems": 6,
+            "title": "Alert Thresholds",
+            "description": "Whole percentages of the period's budget, 1 to 200; an in-app notification is sent the first time each is reached in a period."
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "scope",
+          "amount",
+          "start_date"
+        ],
+        "title": "CreateBudgetRequest",
+        "description": "Limit net spending, overall or in one expense category. A monthly budget runs from the\nfirst of `start_date`'s month, every month until `end_date` (a month's last day) or without\nend; a custom one covers `start_date` to `end_date` once."
+      },
       "CreateCategoryRequest": {
         "properties": {
           "name": {
@@ -9978,6 +12427,90 @@
           "type"
         ],
         "title": "CreateCategoryRequest"
+      },
+      "CreateContributionRequest": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "contribution",
+              "withdrawal"
+            ],
+            "title": "Type",
+            "default": "contribution"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "allocate",
+              "transfer",
+              "link"
+            ],
+            "title": "Mode",
+            "default": "allocate"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
+                "description": "Minor units, always positive: ₹12.50 is 1250."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "occurred_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred On",
+            "description": "Defaults to today in your time zone."
+          },
+          "account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Id"
+          },
+          "transaction_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transaction Id"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CreateContributionRequest",
+        "description": "Put money into a goal, or take it out.\n\n- `allocate`: earmark money you already hold (or release it); nothing is recorded in the\n  ledger. Needs `amount`.\n- `transfer`: Orbit records a transfer from `account_id` into the goal's linked account (or\n  out of it, for a withdrawal). Needs `amount` and `account_id`.\n- `link`: record an existing transfer into (or out of) the linked account. Needs\n  `transaction_id`; its amount and date are used."
       },
       "CreateDepositRequest": {
         "properties": {
@@ -10109,6 +12642,115 @@
         ],
         "title": "CreateDepositRequest",
         "description": "Open a fixed deposit (`amount`: the principal) or a recurring deposit (`amount`: the\nmonthly installment). The first deposit is recorded on `start_date`, settled as given."
+      },
+      "CreateGoalRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Description",
+            "default": ""
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "emergency_fund",
+              "vehicle",
+              "travel",
+              "home",
+              "electronics",
+              "education",
+              "wedding",
+              "other"
+            ],
+            "title": "Category",
+            "default": "other"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Priority",
+            "default": "medium"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency",
+            "default": "INR"
+          },
+          "target_amount": {
+            "type": "integer",
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Target Amount",
+            "description": "Minor units, always positive: ₹12.50 is 1250."
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "target_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Date"
+          },
+          "account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Id",
+            "description": "Where the savings are kept: a bank, savings, cash, wallet, or other account in the goal's currency. Omit to track the goal on its own."
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "target_amount",
+          "start_date"
+        ],
+        "title": "CreateGoalRequest"
       },
       "CreateHoldingRequest": {
         "properties": {
@@ -11465,6 +14107,311 @@
         "title": "DepositValueRequest",
         "description": "Set the deposit's value by hand (it replaces the estimate), or `value: null` to clear."
       },
+      "FixedCommitmentsResponse": {
+        "properties": {
+          "total": {
+            "$ref": "#/components/schemas/LineResponse"
+          },
+          "emi": {
+            "$ref": "#/components/schemas/LineResponse"
+          },
+          "rent": {
+            "$ref": "#/components/schemas/LineResponse",
+            "description": "Bills in the built-in Rent category."
+          },
+          "subscriptions": {
+            "$ref": "#/components/schemas/LineResponse"
+          },
+          "bills": {
+            "$ref": "#/components/schemas/LineResponse"
+          },
+          "planned_interest": {
+            "type": "integer",
+            "title": "Planned Interest"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "emi",
+          "rent",
+          "subscriptions",
+          "bills",
+          "planned_interest"
+        ],
+        "title": "FixedCommitmentsResponse",
+        "description": "Commitments due in the month: everything scheduled (except skipped) is planned; what\nwas paid is actual. An EMI's principal is a transfer to the loan, not spending; only its\ninterest is."
+      },
+      "FlowsResponse": {
+        "properties": {
+          "invested": {
+            "type": "integer",
+            "title": "Invested",
+            "description": "Moved into investment accounts from other accounts."
+          },
+          "divested": {
+            "type": "integer",
+            "title": "Divested",
+            "description": "Moved out of investment accounts to other accounts."
+          },
+          "loan_principal": {
+            "type": "integer",
+            "title": "Loan Principal",
+            "description": "Moved into loan accounts: principal repaid."
+          },
+          "commitment_expenses": {
+            "type": "integer",
+            "title": "Commitment Expenses",
+            "description": "Expenses paying subscriptions, bills, and EMI interest."
+          }
+        },
+        "type": "object",
+        "required": [
+          "invested",
+          "divested",
+          "loan_principal",
+          "commitment_expenses"
+        ],
+        "title": "FlowsResponse"
+      },
+      "GoalListResponse": {
+        "properties": {
+          "goals": {
+            "items": {
+              "$ref": "#/components/schemas/GoalResponse"
+            },
+            "type": "array",
+            "title": "Goals",
+            "description": "Active, paused, completed, then cancelled; by priority and target date."
+          }
+        },
+        "type": "object",
+        "required": [
+          "goals"
+        ],
+        "title": "GoalListResponse"
+      },
+      "GoalResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "emergency_fund",
+              "vehicle",
+              "travel",
+              "home",
+              "electronics",
+              "education",
+              "wedding",
+              "other"
+            ],
+            "title": "Category"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Priority"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "target_amount": {
+            "type": "integer",
+            "title": "Target Amount"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "target_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Date"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "completed",
+              "cancelled"
+            ],
+            "title": "State"
+          },
+          "account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Id"
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "saved": {
+            "type": "integer",
+            "title": "Saved",
+            "description": "Contributions minus withdrawals: allocated to the goal."
+          },
+          "remaining": {
+            "type": "integer",
+            "title": "Remaining",
+            "description": "What is left to reach the target, never below zero."
+          },
+          "progress_percent": {
+            "type": "string",
+            "title": "Progress Percent",
+            "description": "`saved` over the target, two decimals, ≤ 100."
+          },
+          "reached": {
+            "type": "boolean",
+            "title": "Reached"
+          },
+          "suggested_monthly": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Monthly",
+            "description": "What to save each month, from this month through the target date's, to reach the target (rounded up); everything remaining once the date has passed. `null` without a target date."
+          },
+          "months_left": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Months Left"
+          },
+          "this_month": {
+            "type": "integer",
+            "title": "This Month",
+            "description": "Net contributions this month."
+          },
+          "available": {
+            "type": "integer",
+            "title": "Available",
+            "description": "What can be withdrawn: `saved`, but no more than the linked account holds."
+          },
+          "account": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LinkedAccountResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "name",
+          "description",
+          "category",
+          "priority",
+          "currency",
+          "target_amount",
+          "start_date",
+          "target_date",
+          "state",
+          "account_id",
+          "notes",
+          "completed_at",
+          "created_at",
+          "updated_at",
+          "saved",
+          "remaining",
+          "progress_percent",
+          "reached",
+          "suggested_monthly",
+          "months_left",
+          "this_month",
+          "available",
+          "account"
+        ],
+        "title": "GoalResponse"
+      },
       "GroupTotalResponse": {
         "properties": {
           "key": {
@@ -12297,6 +15244,63 @@
         ],
         "title": "InvestmentTransactionResponse"
       },
+      "LineResponse": {
+        "properties": {
+          "planned": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned",
+            "description": "`null` when nothing is planned for the line."
+          },
+          "actual": {
+            "type": "integer",
+            "title": "Actual"
+          }
+        },
+        "type": "object",
+        "required": [
+          "planned",
+          "actual"
+        ],
+        "title": "LineResponse"
+      },
+      "LinkedAccountResponse": {
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "balance": {
+            "type": "integer",
+            "title": "Balance",
+            "description": "The account's ledger balance."
+          },
+          "allocated": {
+            "type": "integer",
+            "title": "Allocated",
+            "description": "Saved across every active or paused goal kept in this account. More than `balance` means the goals count on money the account doesn't hold."
+          }
+        },
+        "type": "object",
+        "required": [
+          "account_id",
+          "name",
+          "balance",
+          "allocated"
+        ],
+        "title": "LinkedAccountResponse"
+      },
       "LoanDetailResponse": {
         "properties": {
           "loan": {
@@ -12725,6 +15729,46 @@
           "month"
         ],
         "title": "MonthCashFlowResponse"
+      },
+      "MonthlyPlanResponse": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "expected_income": {
+            "type": "integer",
+            "title": "Expected Income"
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "currency",
+          "expected_income",
+          "notes"
+        ],
+        "title": "MonthlyPlanResponse"
       },
       "MonthlySummaryResponse": {
         "properties": {
@@ -13418,6 +16462,143 @@
           "change"
         ],
         "title": "PeriodChangeResponse"
+      },
+      "PlanResponse": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month",
+            "description": "`YYYY-MM`."
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "expected_income": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Income"
+          },
+          "income_source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "this_month",
+                  "earlier"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Income Source",
+            "description": "`this_month` when entered for this month; `earlier` when carried from `income_month`."
+          },
+          "income_month": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Income Month"
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "income": {
+            "$ref": "#/components/schemas/LineResponse"
+          },
+          "fixed": {
+            "$ref": "#/components/schemas/FixedCommitmentsResponse"
+          },
+          "variable": {
+            "$ref": "#/components/schemas/LineResponse",
+            "description": "Spending that pays no commitment. Planned from an overall budget (less the month's subscription, bill, and interest payments) or category budgets."
+          },
+          "variable_basis": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "overall_budget",
+                  "category_budgets"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variable Basis"
+          },
+          "savings": {
+            "$ref": "#/components/schemas/LineResponse",
+            "description": "Planned: active goals' suggested monthly contributions. Actual: contributions minus withdrawals recorded this month."
+          },
+          "investments": {
+            "$ref": "#/components/schemas/LineResponse",
+            "description": "Planned: SIPs due this month. Actual: money moved into investment accounts."
+          },
+          "remaining": {
+            "$ref": "#/components/schemas/LineResponse",
+            "description": "Income minus every line above: available to spend (planned) or left over (actual)."
+          },
+          "spending": {
+            "type": "integer",
+            "title": "Spending",
+            "description": "Consumption only: net expenses, including subscription, bill, and interest payments. Principal, savings, and investments aren't spending."
+          },
+          "allocations": {
+            "type": "integer",
+            "title": "Allocations",
+            "description": "Money moved to your own accounts: loan principal, net investments, and goal savings."
+          },
+          "flows": {
+            "$ref": "#/components/schemas/FlowsResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "currency",
+          "expected_income",
+          "income_source",
+          "income_month",
+          "notes",
+          "income",
+          "fixed",
+          "variable",
+          "variable_basis",
+          "savings",
+          "investments",
+          "remaining",
+          "spending",
+          "allocations",
+          "flows"
+        ],
+        "title": "PlanResponse"
       },
       "PortfolioResponse": {
         "properties": {
@@ -14678,6 +17859,47 @@
         "type": "object",
         "title": "RescheduleLoanRequest",
         "description": "Regenerate the unpaid installments from what is still owed, after a prepayment (a\ntransfer into the loan account) or a rate change. Without `emi_amount` the number of\ninstallments stays the same and the EMI is recomputed; with it, the tenure changes."
+      },
+      "SetIncomeRequest": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency",
+            "default": "INR"
+          },
+          "expected_income": {
+            "type": "integer",
+            "maximum": 10000000000000.0,
+            "minimum": 0.0,
+            "title": "Expected Income",
+            "description": "Minor units."
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_income"
+        ],
+        "title": "SetIncomeRequest",
+        "description": "A month's expected income. Later months without their own use it too."
       },
       "SettledOccurrenceListResponse": {
         "properties": {
@@ -16017,6 +19239,123 @@
         "title": "UpdateAssetRequest",
         "description": "`null` clears the purchase details or the linked account. `archived: true` records it as\nsold or disposed of; it stays as history but isn't counted."
       },
+      "UpdateBudgetRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
+                "description": "Minor units, always positive: ₹12.50 is 1250."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "`null` removes the end of a monthly budget."
+          },
+          "rollover": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "surplus",
+                  "full"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rollover"
+          },
+          "alerts_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alerts Enabled"
+          },
+          "alert_thresholds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer",
+                  "maximum": 200.0,
+                  "minimum": 1.0
+                },
+                "type": "array",
+                "maxItems": 6,
+                "description": "Whole percentages of the period's budget, 1 to 200; an in-app notification is sent the first time each is reached in a period."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alert Thresholds"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateBudgetRequest",
+        "description": "Change a budget from the current period on; finished periods keep their amounts. Scope,\ncategory, currency, and period type are fixed."
+      },
       "UpdateDepositRequest": {
         "properties": {
           "name": {
@@ -16143,6 +19482,157 @@
         "type": "object",
         "title": "UpdateDepositRequest",
         "description": "`null` clears `stated_maturity_amount` or `reminder`."
+      },
+      "UpdateGoalRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "emergency_fund",
+                  "vehicle",
+                  "travel",
+                  "home",
+                  "electronics",
+                  "education",
+                  "wedding",
+                  "other"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "medium",
+                  "high"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "target_amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
+                "description": "Minor units, always positive: ₹12.50 is 1250."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Amount"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "target_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Date",
+            "description": "`null` removes it."
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "paused",
+                  "completed",
+                  "cancelled"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Id",
+            "description": "`null` unlinks the account."
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateGoalRequest",
+        "description": "Change a goal; its contributions stay. `state` pauses, completes, cancels, or reopens it."
       },
       "UpdateHoldingRequest": {
         "properties": {

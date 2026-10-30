@@ -212,3 +212,44 @@ export type TakeSnapshotRequest = Schemas["TakeSnapshotRequest"];
 export type NetWorthQuery = NonNullable<
   paths["/api/v1/workspaces/{workspace_id}/finance/net-worth"]["get"]["parameters"]["query"]
 >;
+export type Budget = Schemas["BudgetResponse"];
+export type BudgetPeriod = Schemas["BudgetPeriodResponse"];
+export type BudgetScope = Budget["scope"];
+export type BudgetPeriodType = Budget["period"];
+export type BudgetStatus = Budget["status"];
+export type RolloverMode = Budget["rollover"];
+export type UtilizationStatus = BudgetPeriod["status"];
+export type BudgetList = Schemas["BudgetListResponse"];
+export type BudgetDetail = Schemas["BudgetDetailResponse"];
+export type BudgetMonth = Schemas["BudgetMonthResponse"];
+export type BudgetCategoryMonth = Schemas["CategoryMonthResponse"];
+export type BudgetHistory = Schemas["BudgetHistoryResponse"];
+export type CreateBudgetRequest = Schemas["CreateBudgetRequest"];
+export type UpdateBudgetRequest = Schemas["UpdateBudgetRequest"];
+export type CopyBudgetsRequest = Schemas["CopyBudgetsRequest"];
+export type CopyBudgetsResult = Schemas["CopyBudgetsResponse"];
+export type BudgetMonthQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/finance/budgets/overview"]["get"]["parameters"]["query"]
+>;
+export type BudgetHistoryQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/finance/budgets/history"]["get"]["parameters"]["query"]
+>;
+export type SavingsGoal = Schemas["GoalResponse"];
+export type GoalCategory = SavingsGoal["category"];
+export type GoalPriority = SavingsGoal["priority"];
+export type GoalState = SavingsGoal["state"];
+export type SavingsGoalList = Schemas["GoalListResponse"];
+export type CreateGoalRequest = Schemas["CreateGoalRequest"];
+export type UpdateGoalRequest = Schemas["UpdateGoalRequest"];
+export type GoalContribution = Schemas["ContributionResponse"];
+export type GoalContributionList = Schemas["ContributionListResponse"];
+export type CreateContributionRequest = Schemas["CreateContributionRequest"];
+export type ContributionType = GoalContribution["type"];
+export type ContributionMode = NonNullable<CreateContributionRequest["mode"]>;
+export type MonthPlan = Schemas["PlanResponse"];
+export type PlanLine = Schemas["LineResponse"];
+export type PlanQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/finance/plan"]["get"]["parameters"]["query"]
+>;
+export type SetIncomeRequest = Schemas["SetIncomeRequest"];
+export type MonthlyIncomePlan = Schemas["MonthlyPlanResponse"];

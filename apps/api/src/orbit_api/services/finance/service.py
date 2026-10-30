@@ -96,6 +96,10 @@ class CategoryRepository(Protocol):
         """Whether any subscription or bill has this category."""
         ...
 
+    async def is_used_by_budget(self, workspace_id: uuid.UUID, category_id: uuid.UUID) -> bool:
+        """Whether any budget limits spending in this category."""
+        ...
+
     async def delete(self, workspace_id: uuid.UUID, category_id: uuid.UUID) -> None: ...
 
 
@@ -327,6 +331,10 @@ class FinanceService:
         if await self._categories.is_used_by_recurring(workspace_id, category_id):
             raise CategoryConflictError(
                 "Subscriptions or bills use this category. Move them to another category first."
+            )
+        if await self._categories.is_used_by_budget(workspace_id, category_id):
+            raise CategoryConflictError(
+                "A budget limits spending in this category. Delete that budget first."
             )
         try:
             await self._categories.delete(workspace_id, category_id)

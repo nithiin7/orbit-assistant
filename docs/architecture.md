@@ -333,6 +333,10 @@ written once. SQLite is embedded in the API process; local mode needs no databas
   `finance_investment_transactions`, `finance_assets`, `finance_asset_valuations`, and
   `finance_net_worth_snapshots` with RLS, and adds the reminders' unique link to a deposit (see
   [Investments and net worth](#investments-and-net-worth-phase-3)).
+- `0011_create_budgets_and_goals` creates `finance_budgets`, `finance_budget_periods`,
+  `finance_budget_alerts`, `finance_savings_goals`, `finance_goal_contributions`, and
+  `finance_monthly_plans` with RLS (see
+  [Budgets, savings goals, and planning](#budgets-savings-goals-and-planning-phase-4)).
 - Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
   Startup only checks that the database is at the head revision. For a shared cloud database,
   schema changes should be deliberate and reviewable.
@@ -412,7 +416,8 @@ structure.
      `0007` for `reminders`, `reminder_occurrences`, and `notifications`; `0008` for
      `finance_accounts`, `finance_categories`, and `finance_transactions`; `0009` for
      `finance_loans`, `finance_loan_installments`, `finance_recurring_payments`, and
-     `finance_recurring_occurrences`; `0010` for the nine investment, asset, and snapshot tables.
+     `finance_recurring_occurrences`; `0010` for the nine investment, asset, and snapshot tables;
+     `0011` for the six budget, goal, and plan tables.
   2. **No policies exist**, deliberately: the browser never queries tables directly, so the
      Data API's `anon` and `authenticated` roles get no rows. Add `authenticated` policies
      (for example `owner_id = auth.uid()`) only if a client is ever allowed direct access.
@@ -858,7 +863,8 @@ Reminders are workspace-scoped (`/api/v1/workspaces/{workspace_id}/reminders`, a
 Phase 1 of Orbit Finance: accounts tracked by hand, the transactions that move money in, out,
 and between them, categories, monthly reports, and CSV export. Phase 2 adds commitments (loans,
 subscriptions, and bills) on top of this ledger; see
-[Financial commitments](#financial-commitments-phase-2). Orbit never asks for bank
+[Financial commitments](#financial-commitments-phase-2). Phase 3 adds investments and net worth,
+and phase 4 budgets, savings goals, and monthly plans, on the same ledger. Orbit never asks for bank
 credentials and never connects to banks; there are no imports or synchronization.
 
 ### Money and currency
@@ -1463,12 +1469,285 @@ must be JSON integers. Routes log nothing about holdings or values.
   only.
 - Return percentages are simple, not annualized (no XIRR).
 
-### Finance limitations and extension points (planned, not implemented)
+## Budgets, savings goals, and planning (phase 4)
+
+Budgets per month or custom period, threshold alerts, rollover, savings goals, and a monthly plan
+of expected income against everything that leaves it. Code: `services/budgets/`
+(`calculation.py` pure, `service.py` the rules), `services/goals/` (`calculation.py`,
+`service.py`), `services/planning/` (`calculation.py`, `service.py`), `repositories/budgets.py`,
+`repositories/goals.py`, `repositories/planning.py`, `schemas/budgets.py`, `schemas/goals.py`,
+`schemas/planning.py`, and `api/v1/budgets.py`, `api/v1/goals.py`, and `api/v1/planning.py`. Like
+phases 2 and 3 this sits **on top of** the phase 1 ledger: spending, balances, and transfers are
+read from `finance_transactions`, and no second transaction, account, or notification model
+exists.
+
+### Budget data model
+
+```text
+finance_categories ──< finance_budgets ──< finance_budget_periods ──< finance_budget_alerts ──> notifications
+                       (overall or one       (one per month, or the     (unique per period and      (ON DELETE
+                        expense category)     custom range; unique       threshold)                  SET NULL)
+                                              per budget and start)
+finance_accounts ──< finance_savings_goals ──< finance_goal_contributions ──> finance_transactions
+                     (optional account,        (unique transaction;           (no ON DELETE)
+                      same currency)            contribution or withdrawal)
+finance_monthly_plans   (unique workspace, currency, month)
+```
+
+| Table                        | Holds                                                                                                                                                                  |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `finance_budgets`            | Name, `scope` (overall or category) and `category_id`, currency, `amount`, `period` (monthly or custom), start and end dates, `rollover`, alert settings, state, notes |
+| `finance_budget_periods`     | One period of a budget: dates, `base_amount` (the budget's amount then), `rollover_amount` (carried in), and `closed_at` with `spent_at_close`                         |
+| `finance_budget_alerts`      | One threshold crossed in one period: the spending and amount available then, and the notification sent (if any)                                                        |
+| `finance_savings_goals`      | Name, description, category, priority, currency, target amount, start and target dates, state, optional `account_id`, notes, `completed_at`                            |
+| `finance_goal_contributions` | A contribution or withdrawal: amount, date, and the ledger transfer that moved it (if any)                                                                             |
+| `finance_monthly_plans`      | A month's expected income in one currency                                                                                                                              |
+
+- **Budgets.** A monthly budget starts on the first of a month and repeats until its end month's
+  last day, or without end (`end_date` NULL). A one-month budget ends in its own month. A custom
+  budget covers one range of up to a year. `upcoming`, `active`, and `completed` are derived from
+  the dates; `archived` is stored.
+- **One budget per spending, per period.** Two active budgets in one currency for the same scope
+  (overall, or the same category) can't overlap in time (409); a budget for another category,
+  currency, or non-overlapping period is fine. An overall budget and category budgets coexist:
+  the overall one caps all spending. Archiving frees the period; restoring checks again. The check
+  is in the service (date-range overlap can't be a portable unique key), so two simultaneous
+  creations could in principle both pass.
+- **Subcategories** don't exist in the category model, so budgets are per category only.
+- **Constraints** (tested in `tests/test_migrations.py`): amounts 1 to 10^13, a category exactly
+  for category budgets, a custom period with an end and no rollover, `end_date ≥ start_date`,
+  archived matching `archived_at`, a closed period having both `closed_at` and `spent_at_close`,
+  unique `(budget_id, period_start)` and `(period_id, threshold)`, composite foreign keys keeping
+  categories, periods, alerts, goal accounts (and their currency), and contribution transactions
+  in the row's workspace. The category foreign key has no `ON DELETE`: a category a budget uses
+  can't be deleted (409 "A budget limits spending in this category"). A goal account must use the
+  goal's currency.
+
+### Spending eligibility
+
+A budget's spending is the **net spending** (expenses minus refunds) dated in its period, in its
+currency, overall or in its category. It is read through `FinanceService.spending_by_category`, the
+aggregate behind the Overview's "Spending by category", so a budget and the dashboard always agree.
+There is no separate eligibility list to drift; the ledger's types decide:
+
+| Ledger row                                       | Counts toward a budget                   |
+| ------------------------------------------------ | ---------------------------------------- |
+| `expense` (purchases, card purchases, fees)      | Yes, in its category                     |
+| `refund`                                         | Reduces its category                     |
+| `income`                                         | No                                       |
+| `transfer` (card bills, moving money, savings)   | No                                       |
+| Investment purchase (a transfer, or nothing)     | No; its charges are an expense and count |
+| EMI principal (a transfer into the loan account) | No                                       |
+| EMI interest (an expense in "Loan interest")     | Yes                                      |
+| Subscription or bill payment (one expense)       | Yes, once                                |
+| An expected bill or renewal not yet recorded     | No                                       |
+
+- Uncategorized spending counts only toward an overall budget.
+- A period whose refunds exceed its spending (a refund of last month's purchase) has spent
+  nothing, never a negative amount.
+- Dates are calendar dates in the user's time zone, as everywhere in finance; a month is its
+  first to last day inclusive.
+
+### Utilization, statuses, and projections
+
+`services/budgets/calculation.py` is pure and unit-tested (`tests/test_budget_math.py`). Every
+figure is an integer: utilization is basis points (`spent × 10000 ÷ available`, rounded down) sent
+as two-decimal text (`"87.50"`) for display, and every threshold or status is decided by
+cross-multiplying (`spent × 100 ≥ threshold × available`), never by a percentage.
+
+- **Available** = `base_amount + rollover_amount`, never below zero. **Remaining** = available −
+  spent (negative when overspent).
+- **Status**: `on_track` below 75%, `approaching` from 75%, `near` from 90%, `exceeded` once
+  spending is more than what is available. With nothing available, any spending is `exceeded`.
+- **Projected** spending = spent × days in the period ÷ days elapsed, rounded half up, once seven
+  days have passed (earlier, one large purchase projects nonsense); the actual spending once the
+  period is over.
+
+### Periods, edits, and history
+
+- **Periods are stored as they start.** Creating a budget, editing it, and the worker store every
+  period from the start through the current one. Reads never write: a period that hasn't been
+  stored yet is computed from the budget as it is now, which is exactly what storing it would
+  record.
+- **Edits apply from the current period on.** Before an edit is applied, every finished period is
+  closed with the old amount; the current (open) period then takes the new amount. A budget with
+  a finished period can't move its start or end before that period (422), and a finished custom
+  period's dates are fixed. Past periods therefore keep the amount they had, and history
+  (`…/budgets/{id}`, `…/budgets/history`) reads those stored amounts.
+- **History** reports each month's total budget (the overall monthly budget's available amount,
+  else the sum of monthly category budgets'), spending, how many budgets stayed within, and
+  spending per category against its budget. A custom period overlapping a month is listed but not
+  added to the month's total, since it covers other days too.
+- **Copying a month** (`…/budgets/copy`) creates one-month budgets in the target month from the
+  source month's monthly budgets, with the amounts those periods had. Budgets that already cover
+  the target month (a recurring one, or one added there) are skipped, so copying twice adds
+  nothing. A recurring monthly budget is the way to repeat a budget every month.
+
+### Rollover
+
+Per budget, for monthly budgets only (a custom period has no next period):
+
+| Mode      | When a month closes, the next month gets                                          |
+| --------- | --------------------------------------------------------------------------------- |
+| `none`    | Nothing: it starts with its own amount                                            |
+| `surplus` | What was left unspent; overspending carries nothing                               |
+| `full`    | What was left, positive or negative, but never more negative than its base amount |
+
+- The leftover is `available − spent`, so rollover compounds: ₹2,000 left of ₹10,000 makes the
+  next month ₹12,000, and anything left of that carries on.
+- **Negative rollover** (with `full`) is capped at the next month's base amount, so a month starts
+  at zero at worst. Any deficit beyond that is dropped, not carried twice. Positive rollover is
+  capped at 10^15 minor units (a CHECK backs it).
+- **Closing happens once.** When a period has ended (the day after its last, in the owner's time
+  zone), the worker (or the next edit) records its spending as `spent_at_close`, sets `closed_at`
+  with a conditional `UPDATE … WHERE closed_at IS NULL` (of two concurrent closings exactly one
+  writes), and writes the rollover into the next period, in one transaction. Closed periods are
+  never changed again.
+- **Late corrections.** A transaction added or edited in a closed month changes that month's
+  spending in history (`spent` follows the ledger), but not the rollover it already passed on
+  (`spent_at_close` is what decided it, and the UI shows both when they differ).
+- The base amount and the rollover are always reported separately.
+
+### Alerts and deduplication
+
+- Each budget has `alerts_enabled` and up to six thresholds, whole percentages from 1 to 200
+  (above 100 alerts on overspending). Defaults: 50, 75, 90, 100.
+- **The existing worker checks**: `ReminderWorker` runs `check_budgets` at most every five minutes
+  (after a poll, like net worth snapshots). For every workspace with an active budget it closes
+  finished periods, then compares each active budget's current period with its thresholds, on
+  the owner's local date (`users.timezone`, else UTC). No other scheduler exists.
+- **One alert per threshold and period.** A crossed threshold is recorded in
+  `finance_budget_alerts`, unique per period and threshold, in the same transaction as the
+  notification, so concurrent workers send it once (tested with three workers). Of several
+  thresholds crossed at once, only the highest notifies ("75% used" rather than "50%" and "75%").
+- **No misleading repeats.** Spending that falls back under a threshold (a refund, a raised
+  budget) and rises again never re-sends it. A threshold added below one already sent is recorded
+  silently. Changing a budget's amount or rollover doesn't reset what was sent this period.
+- **Notifications are ordinary rows** in `notifications` for the workspace's owner, without a
+  reminder link, and appear in the bell like reminders: "Groceries: 90% of budget used", "INR
+  9000.00 of INR 10000.00 spent (October 2026)." Archived budgets and budgets with alerts off are
+  never checked.
+- Alerts arrive within about five minutes of the spending being recorded, not instantly.
+
+### Savings goal accounting
+
+- **A goal earmarks money; it is never an account.** Its saved amount is contributions minus
+  withdrawals, derived on read. Goals add nothing to balances or net worth, so nothing is counted
+  twice.
+- **Saving is never spending.** A contribution never creates an expense:
+  - `allocate` earmarks money already held (or releases it); no ledger row. This is how a goal is
+    tracked without a separate account.
+  - `transfer` records an ordinary ledger `transfer` from another account into the goal's linked
+    account (or out of it, for a withdrawal), in the same database transaction.
+  - `link` records an existing transfer into (or out of) the linked account; its amount and date
+    are used.
+- **No duplicates.** A transfer backs at most one contribution (unique key, checked first for a
+  clear 409), and the ledger refuses to delete a transfer a contribution records (409). Undoing a
+  contribution keeps its transfer unless `delete_transaction=true`.
+- **Linked accounts** must be bank, savings, cash, wallet, or other accounts in the goal's
+  currency. Investment accounts are excluded (the money would appear as both savings and an
+  investment in a plan); cards and loans owe money. The account can't change once transfers into
+  it are recorded against the goal.
+- **What is shown:** the target; the **saved** (allocated) amount; the linked account's
+  **balance**; what all active and paused goals in that account have **allocated** (more than the
+  balance is flagged); and what is **available to withdraw** (saved, but no more than the
+  account holds). Withdrawals can't exceed what was saved (422), and a contribution that later
+  withdrawals depend on can't be undone first.
+- **Suggested monthly contribution** (`services/goals/calculation.py`, `tests/test_goal_math.py`)
+  = remaining ÷ months from this month through the target date's month, inclusive, **rounded up**
+  to the minor unit so the target is never missed; everything remaining once the target month has
+  passed; none without a target date. Progress is basis points of the target, capped at 100%.
+- **States**: `active` (takes contributions), `paused` (withdrawals only), `completed`
+  (`completed_at` recorded; reopening clears it), `cancelled`. A goal with contributions can't be
+  deleted (cancel it instead), so history is kept. Targets and dates can change at any time.
+
+### Monthly planning
+
+`GET …/plan` brings the month together, planned against actual (`services/planning/calculation.py`,
+`tests/test_planning_math.py`, `tests/test_planning.py`):
+
+| Line              | Planned                                                                                                          | Actual                                                 |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Income            | Expected income: this month's, else the latest earlier month's                                                   | Income recorded                                        |
+| Fixed commitments | Loan EMIs, rent (bills in the built-in Rent category), subscriptions, and bills due in the month, except skipped | Those marked paid                                      |
+| Variable spending | An overall budget less the month's planned rent, subscription, bill, and EMI interest; else category budgets     | Net spending less expenses that paid a commitment      |
+| Savings goals     | Active goals' suggested monthly contributions                                                                    | Contributions minus withdrawals recorded               |
+| Investments       | SIPs due in the month                                                                                            | Transfers into investment accounts from other accounts |
+| **Remaining**     | Expected income − every planned line                                                                             | Income − every actual line                             |
+
+- **Cash flow isn't spending.** The lines don't overlap: commitment payments are taken out of
+  variable spending, goals can't live in investment accounts, and transfers are never spending.
+  The response also reports **spending** (net expenses only: consumption, including interest and
+  paid bills) and **allocations** (loan principal, net investments, and goal savings), which are
+  money moved to the user's own accounts.
+- Only expected income is stored (`PUT …/plan/{month}`), per month and currency; later months use
+  it until another is entered. Everything else planned comes from commitments, budgets, goals, and
+  SIPs. Commitments are grouped by due date.
+
+### Budgets, goals, and planning API
+
+Under `/api/v1/workspaces/{workspace_id}/finance`, authorized through `WorkspaceDep`. Another
+workspace's budget or goal is a 404; referencing its category, account, or transaction is a 422.
+Reads take `today` (the user's local date; default: today in their time-zone preference, else
+UTC).
+
+| Method                   | Path                                             | Purpose                                                                |
+| ------------------------ | ------------------------------------------------ | ---------------------------------------------------------------------- |
+| `GET`, `POST`            | `/budgets`                                       | List with each current period; create (409 on an overlap)              |
+| `GET`                    | `/budgets/overview`                              | One month (`month`, `currency`): total, spent, per budget and category |
+| `GET`                    | `/budgets/history`                               | The overview for `months` (≤ 24) months ending at `month`              |
+| `POST`                   | `/budgets/copy`                                  | Copy `from_month`'s monthly budgets into `to_month`                    |
+| `GET`, `PATCH`, `DELETE` | `/budgets/{id}`                                  | Detail with every period; edit from the current period on; delete      |
+| `POST`                   | `/budgets/{id}/archive`, `/budgets/{id}/restore` | Archive (idempotent); restore                                          |
+| `GET`, `POST`            | `/savings-goals`                                 | List with progress; create                                             |
+| `GET`, `PATCH`, `DELETE` | `/savings-goals/{id}`                            | One; edit (including `state`); delete one without contributions        |
+| `GET`, `POST`            | `/savings-goals/{id}/contributions`              | History; record (`type`, `mode`: allocate, transfer, link)             |
+| `DELETE`                 | `/savings-goals/{id}/contributions/{cid}`        | Undo (`delete_transaction`)                                            |
+| `GET`                    | `/plan`                                          | The month's plan (`month`, `currency`, `today`)                        |
+| `PUT`, `DELETE`          | `/plan/{month}`                                  | Set or clear the month's expected income                               |
+
+Request models forbid unknown fields; amounts must be JSON integers. Routes log nothing about
+budgets, goals, or amounts.
+
+### Budgets, goals, and plans in the web app
+
+- `/finance` gains **Budgets** (a month navigator that can look ahead; budget, spent, and
+  remaining tiles with the overall bar; budgets ordered by attention with a progress bar, status,
+  base and rollover amounts, the projection, and their period history with adherence; spending by
+  category against its budget; six months of budget against spending, each month selectable;
+  copy last month; archive, restore, and delete with confirmation; archived and finished budgets
+  collapsed), **Plan** (planned and actual lines in a table, available to spend and left over,
+  expected income, and spending kept apart from allocations), and **Goals** (totals per currency;
+  each goal's progress, suggested monthly amount, months left, linked account balance, what's
+  available, and over-allocation; add money, withdraw, history with undo, pause, complete, cancel,
+  and delete).
+- The **Overview** shows the month's budget and the goals in progress when they exist.
+- Dialogs use React Hook Form with Yup schemas in `lib/budgets` and `lib/goals`. The web app
+  computes no spending, status, or progress: bars and badges show what the API returned.
+  Queries live under `["workspaces", id, "finance", "budgets" | "goals" | "plan", …]`, so any
+  finance change refetches them.
+
+### Budget and goal limitations
+
+- No subcategory budgets (categories have no hierarchy), no weekly or yearly budget periods, and
+  no per-month overrides of a recurring budget's amount (end it and add another, or use a
+  one-month budget).
+- The overlap check for budgets is in the service, not a database constraint.
+- Alerts are in-app only and arrive within the worker's check interval (about five minutes); a
+  threshold crossed on a period's last day after the final check is not announced once the period
+  has closed.
+- Rollover decided at closing ignores later corrections to that month.
+- Planned commitments are grouped by due date and actual ones by the same due date; a loan
+  prepayment appears in allocations but not in the EMI line; recurring deposit installments are
+  not planned. Planned savings assume each goal's suggested amount; there is no per-month savings
+  plan.
+- Different currencies are never combined; each view shows one currency at a time.
+- No AI insights, bank connections, or automatic categorization.
+
+## Finance limitations and extension points (planned, not implemented)
 
 - **Price providers** (mutual fund NAVs, market prices, statement imports) would implement
   `PriceFeed` (see [Valuation strategy](#valuation-strategy)); none is integrated.
-- **Budgets** would add per-category monthly limits read against the existing
-  `spending-by-category` aggregate.
 - Commitments don't create transactions automatically (no auto-debit); each payment is recorded
   or linked. Overdue occurrences of a subscription or bill are listed up to the 60 most recent.
 - A loan's earlier history (before it was added) isn't reconstructed, floating rates are
@@ -1495,16 +1774,16 @@ must be JSON integers. Routes log nothing about holdings or values.
 
 ## Testing strategy
 
-| Layer                    | Tool                                            | Location                                                    | Current coverage                                                                                                                                 |
-| ------------------------ | ----------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                  | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth |
-| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                           | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, cross-user isolation    |
-| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_reminder_worker.py` | Recurrence, DST, month ends; delivery, concurrency, leases, retries, restarts                                                                    |
-| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                          | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                     |
-| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                     | Startup checks, sessions, migrations, constraints, 503 errors                                                                                    |
-| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                           | Migrations, connectivity, RLS; skipped by default                                                                                                |
-| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                   | Generated contract matches the API                                                                                                               |
-| End-to-end               | Not set up (**planned**)                        | —                                                           | —                                                                                                                                                |
+| Layer                    | Tool                                            | Location                                                                                   | Current coverage                                                                                                                                                        |
+| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                                                 | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth, budgets, goals, plans |
+| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                                                          | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, budgets, goals, plans, cross-user isolation    |
+| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_reminder_worker.py`, `tests/test_budget_alerts.py` | Recurrence, DST, month ends; delivery, concurrency, leases, retries, restarts; budget alerts and period closing                                                         |
+| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                                                         | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                                            |
+| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                                                    | Startup checks, sessions, migrations, constraints, 503 errors                                                                                                           |
+| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                                                          | Migrations, connectivity, RLS; skipped by default                                                                                                                       |
+| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                                                  | Generated contract matches the API                                                                                                                                      |
+| End-to-end               | Not set up (**planned**)                        | —                                                                                          | —                                                                                                                                                                       |
 
 Unit tests cover logic, route tests cover HTTP behavior and validation, and E2E tests will cover
 critical user journeys once real features exist. CI runs every layer on each pull request.
@@ -1541,8 +1820,9 @@ The database foundation is implemented (see [Storage](#storage)). Still planned:
 ### Evolution
 
 Workspace-scoped [tasks](#tasks), [reminders](#reminders-and-notifications) (with a
-database-backed worker), and three phases of [finance](#finance) (ledger, commitments, and
-[investments and net worth](#investments-and-net-worth-phase-3)) are in place. Next: more
+database-backed worker), and four phases of [finance](#finance) (ledger, commitments,
+[investments and net worth](#investments-and-net-worth-phase-3), and
+[budgets, savings goals, and planning](#budgets-savings-goals-and-planning-phase-4)) are in place. Next: more
 modules on the same pattern, AI-assisted features through the provider interface, then optional
 sync and extension points.
 Each step should leave the boundaries above intact.

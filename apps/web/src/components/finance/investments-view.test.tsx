@@ -197,6 +197,8 @@ function routes(overrides: Record<string, ReturnType<typeof json>> = {}) {
     }),
     [`GET ${FINANCE}/transactions`]: json({ transactions: [], total: 0 }),
     [`GET ${FINANCE}/commitments/summary`]: status(404),
+    [`GET ${FINANCE}/budgets/overview`]: status(404),
+    [`GET ${FINANCE}/savings-goals`]: status(404),
     [`GET ${FINANCE}/investment-accounts`]: json({ accounts: [broker] }),
     [`GET ${FINANCE}/holdings`]: json({ holdings: [holding()] }),
     [`GET ${FINANCE}/deposits`]: json({ deposits: [deposit] }),

@@ -19,6 +19,7 @@ import {
 import { byId, cn } from "@/utils/common";
 import { localMonthString, monthLabel, shiftMonth } from "@/utils/dates";
 
+import { BudgetSummary } from "./budget-summary";
 import { CommitmentsSummary } from "./commitments-summary";
 import { CategoryBreakdown, TrendChart } from "./finance-charts";
 import type { FinanceData } from "./finance-view";
@@ -111,6 +112,14 @@ export function FinanceOverview({
             workspaceId={workspaceId}
             currency={currency}
             onOpenUpcoming={() => onShowTab("upcoming")}
+          />
+
+          <BudgetSummary
+            workspaceId={workspaceId}
+            month={month}
+            currency={currency}
+            onOpenBudgets={() => onShowTab("budgets")}
+            onOpenGoals={() => onShowTab("goals")}
           />
 
           <div className="grid gap-6 xl:grid-cols-2">

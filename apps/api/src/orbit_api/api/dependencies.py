@@ -11,6 +11,7 @@ from orbit_api.config import Settings
 from orbit_api.db.database import Database
 from orbit_api.repositories.accounts import SqlAccountRepository, SqlLocalAuthRepository
 from orbit_api.repositories.avatars import SqlAvatarRepository
+from orbit_api.repositories.budgets import build_budget_service
 from orbit_api.repositories.commitments import build_commitment_service
 from orbit_api.repositories.dashboard import SqlDashboardRepository
 from orbit_api.repositories.finance import (
@@ -18,12 +19,14 @@ from orbit_api.repositories.finance import (
     SqlFinanceCategoryRepository,
     SqlFinanceTransactionRepository,
 )
+from orbit_api.repositories.goals import build_goal_service
 from orbit_api.repositories.investments import (
     build_asset_service,
     build_investment_service,
     build_net_worth_service,
 )
 from orbit_api.repositories.notifications import SqlNotificationRepository
+from orbit_api.repositories.planning import build_planning_service
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.shopping import SqlShoppingItemRepository, SqlShoppingListRepository
 from orbit_api.repositories.tasks import SqlTaskRepository
@@ -31,14 +34,17 @@ from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.repositories.workspaces import SqlWorkspaceRepository
 from orbit_api.services.accounts.service import AccountService
 from orbit_api.services.avatars.service import AvatarService
+from orbit_api.services.budgets.service import BudgetService
 from orbit_api.services.commitments.service import CommitmentService
 from orbit_api.services.dashboard.service import DashboardService
 from orbit_api.services.finance.service import FinanceService
+from orbit_api.services.goals.service import GoalService
 from orbit_api.services.investments.assets import AssetService
 from orbit_api.services.investments.service import InvestmentService
 from orbit_api.services.local_auth.service import LocalAuthService, PasswordHasher
 from orbit_api.services.networth.service import NetWorthService
 from orbit_api.services.notifications.service import NotificationService
+from orbit_api.services.planning.service import PlanningService
 from orbit_api.services.reminders.service import ReminderService
 from orbit_api.services.shopping.service import ShoppingService
 from orbit_api.services.tasks.service import TaskService
@@ -193,3 +199,24 @@ def get_net_worth_service(session: SessionDep) -> NetWorthService:
 
 
 NetWorthServiceDep = Annotated[NetWorthService, Depends(get_net_worth_service)]
+
+
+def get_budget_service(session: SessionDep) -> BudgetService:
+    return build_budget_service(session)
+
+
+BudgetServiceDep = Annotated[BudgetService, Depends(get_budget_service)]
+
+
+def get_goal_service(session: SessionDep) -> GoalService:
+    return build_goal_service(session)
+
+
+GoalServiceDep = Annotated[GoalService, Depends(get_goal_service)]
+
+
+def get_planning_service(session: SessionDep) -> PlanningService:
+    return build_planning_service(session)
+
+
+PlanningServiceDep = Annotated[PlanningService, Depends(get_planning_service)]

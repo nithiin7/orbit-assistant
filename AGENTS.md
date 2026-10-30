@@ -24,9 +24,12 @@ CSV export), phase 2 commitments (loans with EMI schedules, subscriptions, recur
 upcoming payments, and payment reminders), and phase 3 investments (investment accounts, mutual
 fund, stock, and ETF holdings with FIFO cost basis and hand-entered prices, SIP plans, fixed and
 recurring deposits, other assets with valuations, a portfolio summary, net worth, and monthly
-net worth snapshots), all recorded through the phase 1 ledger. There are no other product
-features (calendar, notes), no recurring tasks, no automatically created transactions, no live
-market prices, budgets, or bank integrations, no push, email, or mobile notifications, and no AI
+net worth snapshots), and phase 4 planning (overall and category budgets per month or custom
+period with rollover and threshold alerts, savings goals with contributions and withdrawals, and
+a monthly plan of expected income against commitments, budgets, savings, and investments), all
+recorded through the phase 1 ledger. There are no other product features (calendar, notes), no
+recurring tasks, no automatically created transactions, no live market prices or bank
+integrations, no AI financial insights, no push, email, or mobile notifications, and no AI
 integration yet. Do not describe or build on capabilities that do not exist.
 
 ## Principles
@@ -52,8 +55,7 @@ integration yet. Do not describe or build on capabilities that do not exist.
 | `.github/workflows/ci.yml`     | CI: web, API, and commit-message jobs                                            |
 | `.husky/`, `.lintstagedrc.mjs` | Git hooks: staged-file lint/format and commitlint                                |
 
-Not present yet (planned; see `docs/architecture.md`): product tables for notes, later finance
-phases (budgets, price providers),
+Not present yet (planned; see `docs/architecture.md`): product tables for notes, price providers,
 shared workspaces, AI provider abstractions, end-to-end tests, and a `scripts/` directory.
 
 ### Boundaries

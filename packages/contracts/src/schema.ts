@@ -1646,6 +1646,277 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/finance/budgets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List budgets
+         * @description Every budget with its current period's spending, remaining amount, and status.
+         */
+        get: operations["list_budgets_api_v1_workspaces__workspace_id__finance_budgets_get"];
+        put?: never;
+        /** Create a budget */
+        post: operations["create_budget_api_v1_workspaces__workspace_id__finance_budgets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/budgets/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One month's budgets and spending
+         * @description The month's total budget, spending, and each budget's period overlapping the month, with
+         *     spending per category. Spending is the dashboard's net spending: transfers never count.
+         */
+        get: operations["budget_overview_api_v1_workspaces__workspace_id__finance_budgets_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/budgets/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Budget against spending per month
+         * @description The overview for each of `months` months ending at `month`. Past months use the amounts
+         *     their budgets had then.
+         */
+        get: operations["budget_history_api_v1_workspaces__workspace_id__finance_budgets_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/budgets/copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Copy a month's budgets
+         * @description Copy `from_month`'s monthly budgets into `to_month` as one-month budgets with the amounts
+         *     they had. Budgets that already cover `to_month` are skipped.
+         */
+        post: operations["copy_budgets_api_v1_workspaces__workspace_id__finance_budgets_copy_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/budgets/{budget_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a budget with its periods */
+        get: operations["get_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a budget
+         * @description Delete it with its period history. Transactions are untouched; notifications stay.
+         */
+        delete: operations["delete_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update a budget
+         * @description Changes apply from the current period on; finished periods keep their amounts.
+         */
+        patch: operations["update_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/budgets/{budget_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive a budget
+         * @description Stop tracking it and sending alerts; its history stays. Idempotent.
+         */
+        post: operations["archive_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/budgets/{budget_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore an archived budget */
+        post: operations["restore_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/savings-goals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List savings goals */
+        get: operations["list_goals_api_v1_workspaces__workspace_id__finance_savings_goals_get"];
+        put?: never;
+        /** Create a savings goal */
+        post: operations["create_goal_api_v1_workspaces__workspace_id__finance_savings_goals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/savings-goals/{goal_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a savings goal */
+        get: operations["get_goal_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a savings goal
+         * @description Only a goal without contributions; cancel one with history instead.
+         */
+        delete: operations["delete_goal_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update a savings goal */
+        patch: operations["update_goal_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/savings-goals/{goal_id}/contributions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List a goal's contributions */
+        get: operations["list_contributions_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__contributions_get"];
+        put?: never;
+        /**
+         * Record a contribution or withdrawal
+         * @description Never an expense: an allocation records no ledger row, and a transfer between your own
+         *     accounts is neither income nor spending.
+         */
+        post: operations["create_contribution_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__contributions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/savings-goals/{goal_id}/contributions/{contribution_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Undo a contribution or withdrawal */
+        delete: operations["delete_contribution_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__contributions__contribution_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A month's plan against actual cash flow
+         * @description Income, fixed commitments, variable spending, savings, and investments, planned and
+         *     actual, and what remains. Loan principal, savings, and investments are allocations, not
+         *     spending.
+         */
+        get: operations["get_plan_api_v1_workspaces__workspace_id__finance_plan_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/plan/{month}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set a month's expected income
+         * @description Later months without their own expected income use this one.
+         */
+        put: operations["set_plan_api_v1_workspaces__workspace_id__finance_plan__month__put"];
+        post?: never;
+        /**
+         * Clear a month's income
+         * @description The month falls back to an earlier month's expected income, if any. Idempotent.
+         */
+        delete: operations["clear_plan_api_v1_workspaces__workspace_id__finance_plan__month__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/storage": {
         parameters: {
             query?: never;
@@ -1898,6 +2169,250 @@ export interface components {
              */
             liabilities: number;
         };
+        /** BudgetDetailResponse */
+        BudgetDetailResponse: {
+            budget: components["schemas"]["BudgetResponse"];
+            /**
+             * Periods
+             * @description Every period from the start through the current one, newest first.
+             */
+            periods: components["schemas"]["BudgetPeriodResponse"][];
+            /** Periods Closed */
+            periods_closed: number;
+            /**
+             * Periods Within
+             * @description Closed periods that stayed within their budget.
+             */
+            periods_within: number;
+        };
+        /** BudgetHistoryResponse */
+        BudgetHistoryResponse: {
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Months
+             * @description Oldest first, one per month.
+             */
+            months: components["schemas"]["BudgetMonthResponse"][];
+        };
+        /** BudgetListResponse */
+        BudgetListResponse: {
+            /**
+             * Budgets
+             * @description Active first, then upcoming, completed, and archived; each by name.
+             */
+            budgets: components["schemas"]["BudgetResponse"][];
+        };
+        /** BudgetMonthResponse */
+        BudgetMonthResponse: {
+            /**
+             * Month
+             * @description `YYYY-MM`.
+             */
+            month: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Total
+             * @description The month's total budget: its overall monthly budget, else the sum of its monthly category budgets; `null` without either.
+             */
+            total: number | null;
+            /** Basis */
+            basis: ("overall" | "categories") | null;
+            /**
+             * Spent
+             * @description The month's net spending, the dashboard's figure.
+             */
+            spent: number;
+            /** Remaining */
+            remaining: number | null;
+            /** Utilization Percent */
+            utilization_percent: string | null;
+            /** Status */
+            status: ("on_track" | "approaching" | "near" | "exceeded") | null;
+            /** Budgets Counted */
+            budgets_counted: number;
+            /**
+             * Budgets Within
+             * @description Monthly budgets not exceeded.
+             */
+            budgets_within: number;
+            /**
+             * Unbudgeted
+             * @description Net spending in categories without a category budget, when any category has one.
+             */
+            unbudgeted: number | null;
+            /**
+             * Categories
+             * @description Categories with spending or a budget, largest spending first.
+             */
+            categories: components["schemas"]["CategoryMonthResponse"][];
+            /**
+             * Budgets
+             * @description Budgets covering the month, each with its period overlapping it.
+             */
+            budgets: components["schemas"]["BudgetResponse"][];
+        };
+        /** BudgetPeriodResponse */
+        BudgetPeriodResponse: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /**
+             * Base Amount
+             * @description The budget's amount for this period.
+             */
+            base_amount: number;
+            /**
+             * Rollover Amount
+             * @description Carried from the previous period: positive for money left unspent, negative for overspending (with `full` rollover).
+             */
+            rollover_amount: number;
+            /**
+             * Available
+             * @description `base_amount` plus `rollover_amount`, never below zero: what can be spent.
+             */
+            available: number;
+            /**
+             * Spent
+             * @description Net spending (expenses minus refunds) in the period, from the ledger; never below zero.
+             */
+            spent: number;
+            /**
+             * Remaining
+             * @description `available` minus `spent`: negative when overspent.
+             */
+            remaining: number;
+            /**
+             * Utilization Percent
+             * @description `spent` as a percentage of `available`, two decimals; `null` when nothing is available.
+             */
+            utilization_percent: string | null;
+            /**
+             * Status
+             * @description `on_track` below 75%, `approaching` from 75%, `near` from 90%, `exceeded` once more than `available` is spent.
+             * @enum {string}
+             */
+            status: "on_track" | "approaching" | "near" | "exceeded";
+            /**
+             * Projected
+             * @description Spending at the period's end at its pace so far, once 7 days have passed; the final spending for a finished period; `null` otherwise.
+             */
+            projected: number | null;
+            /**
+             * Closed
+             * @description Finished, with its rollover passed on.
+             */
+            closed: boolean;
+            /** Closed At */
+            closed_at: string | null;
+            /**
+             * Spent At Close
+             * @description Spending recorded when the period closed, which decided its rollover. `spent` follows later corrections; this doesn't.
+             */
+            spent_at_close: number | null;
+        };
+        /** BudgetResponse */
+        BudgetResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "overall" | "category";
+            /** Category Id */
+            category_id: string | null;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Amount
+             * @description Each period's base amount from now on.
+             */
+            amount: number;
+            /**
+             * Period
+             * @enum {string}
+             */
+            period: "monthly" | "custom";
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /**
+             * End Date
+             * @description `null` for a monthly budget without end.
+             */
+            end_date: string | null;
+            /**
+             * Recurring
+             * @description A monthly budget covering more than one month.
+             */
+            recurring: boolean;
+            /**
+             * Rollover
+             * @enum {string}
+             */
+            rollover: "none" | "surplus" | "full";
+            /** Alerts Enabled */
+            alerts_enabled: boolean;
+            /** Alert Thresholds */
+            alert_thresholds: number[];
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "active" | "archived";
+            /**
+             * Status
+             * @description `upcoming` before its start, `completed` after its end, `archived`, or `active`.
+             * @enum {string}
+             */
+            status: "upcoming" | "active" | "completed" | "archived";
+            /** Notes */
+            notes: string;
+            /** Archived At */
+            archived_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** @description The current period (or, for the month overview, the one overlapping that month); the first or last one for a budget that hasn't started or has ended. */
+            current_period: components["schemas"]["BudgetPeriodResponse"] | null;
+        };
         /** BulkChangeResponse */
         BulkChangeResponse: {
             /**
@@ -1913,6 +2428,24 @@ export interface components {
              * @description Income categories first, then expense categories, each by name.
              */
             categories: components["schemas"]["CategoryResponse"][];
+        };
+        /** CategoryMonthResponse */
+        CategoryMonthResponse: {
+            /**
+             * Category Id
+             * @description `null` for uncategorized spending.
+             */
+            category_id: string | null;
+            /**
+             * Spent
+             * @description Net spending; negative when refunds exceed it.
+             */
+            spent: number;
+            /**
+             * Budget
+             * @description The category budget's available amount, if any.
+             */
+            budget: number | null;
         };
         /** CategoryResponse */
         CategoryResponse: {
@@ -2027,6 +2560,77 @@ export interface components {
             due_this_month: components["schemas"]["TotalResponse"];
             overdue: components["schemas"]["TotalResponse"];
         };
+        /** ContributionListResponse */
+        ContributionListResponse: {
+            /**
+             * Contributions
+             * @description Newest first.
+             */
+            contributions: components["schemas"]["ContributionResponse"][];
+        };
+        /** ContributionResponse */
+        ContributionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Goal Id
+             * Format: uuid
+             */
+            goal_id: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "contribution" | "withdrawal";
+            /** Amount */
+            amount: number;
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /**
+             * Transaction Id
+             * @description The ledger transfer that moved the money; `null` for an allocation.
+             */
+            transaction_id: string | null;
+            /** Notes */
+            notes: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** CopyBudgetsRequest */
+        CopyBudgetsRequest: {
+            /**
+             * From Month
+             * @description `YYYY-MM`: the month whose budgets are copied.
+             */
+            from_month: string;
+            /**
+             * To Month
+             * @description `YYYY-MM`: the month they're copied into.
+             */
+            to_month: string;
+        };
+        /** CopyBudgetsResponse */
+        CopyBudgetsResponse: {
+            /**
+             * Created
+             * @description New one-month budgets in `to_month`.
+             */
+            created: components["schemas"]["BudgetResponse"][];
+            /**
+             * Skipped
+             * @description Budgets not copied because `to_month` is already covered (a recurring budget, or one added there).
+             */
+            skipped: string[];
+        };
         /** CreateAccountRequest */
         CreateAccountRequest: {
             /** Name */
@@ -2098,6 +2702,72 @@ export interface components {
              */
             notes: string;
         };
+        /**
+         * CreateBudgetRequest
+         * @description Limit net spending, overall or in one expense category. A monthly budget runs from the
+         *     first of `start_date`'s month, every month until `end_date` (a month's last day) or without
+         *     end; a custom one covers `start_date` to `end_date` once.
+         */
+        CreateBudgetRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "overall" | "category";
+            /**
+             * Category Id
+             * @description Required for `category` budgets: an expense category.
+             */
+            category_id?: string | null;
+            /**
+             * Currency
+             * @default INR
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Amount
+             * @description Minor units, always positive: ₹12.50 is 1250.
+             */
+            amount: number;
+            /**
+             * Period
+             * @default monthly
+             * @enum {string}
+             */
+            period: "monthly" | "custom";
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** End Date */
+            end_date?: string | null;
+            /**
+             * Rollover
+             * @description Monthly budgets only. `surplus` carries unspent money into the next month; `full` also carries overspending, which reduces the next month (never below zero).
+             * @default none
+             * @enum {string}
+             */
+            rollover: "none" | "surplus" | "full";
+            /**
+             * Alerts Enabled
+             * @default true
+             */
+            alerts_enabled: boolean;
+            /**
+             * Alert Thresholds
+             * @description Whole percentages of the period's budget, 1 to 200; an in-app notification is sent the first time each is reached in a period.
+             */
+            alert_thresholds?: number[];
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
         /** CreateCategoryRequest */
         CreateCategoryRequest: {
             /** Name */
@@ -2107,6 +2777,47 @@ export interface components {
              * @enum {string}
              */
             type: "income" | "expense";
+        };
+        /**
+         * CreateContributionRequest
+         * @description Put money into a goal, or take it out.
+         *
+         *     - `allocate`: earmark money you already hold (or release it); nothing is recorded in the
+         *       ledger. Needs `amount`.
+         *     - `transfer`: Orbit records a transfer from `account_id` into the goal's linked account (or
+         *       out of it, for a withdrawal). Needs `amount` and `account_id`.
+         *     - `link`: record an existing transfer into (or out of) the linked account. Needs
+         *       `transaction_id`; its amount and date are used.
+         */
+        CreateContributionRequest: {
+            /**
+             * Type
+             * @default contribution
+             * @enum {string}
+             */
+            type: "contribution" | "withdrawal";
+            /**
+             * Mode
+             * @default allocate
+             * @enum {string}
+             */
+            mode: "allocate" | "transfer" | "link";
+            /** Amount */
+            amount?: number | null;
+            /**
+             * Occurred On
+             * @description Defaults to today in your time zone.
+             */
+            occurred_on?: string | null;
+            /** Account Id */
+            account_id?: string | null;
+            /** Transaction Id */
+            transaction_id?: string | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
         };
         /**
          * CreateDepositRequest
@@ -2174,6 +2885,56 @@ export interface components {
             notes: string;
             /** @description Remind before the maturity date. */
             reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
+        };
+        /** CreateGoalRequest */
+        CreateGoalRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Category
+             * @default other
+             * @enum {string}
+             */
+            category: "emergency_fund" | "vehicle" | "travel" | "home" | "electronics" | "education" | "wedding" | "other";
+            /**
+             * Priority
+             * @default medium
+             * @enum {string}
+             */
+            priority: "low" | "medium" | "high";
+            /**
+             * Currency
+             * @default INR
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Target Amount
+             * @description Minor units, always positive: ₹12.50 is 1250.
+             */
+            target_amount: number;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Target Date */
+            target_date?: string | null;
+            /**
+             * Account Id
+             * @description Where the savings are kept: a bank, savings, cash, wallet, or other account in the goal's currency. Omit to track the goal on its own.
+             */
+            account_id?: string | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
         };
         /**
          * CreateHoldingRequest
@@ -2820,6 +3581,150 @@ export interface components {
             /** Valued On */
             valued_on?: string | null;
         };
+        /**
+         * FixedCommitmentsResponse
+         * @description Commitments due in the month: everything scheduled (except skipped) is planned; what
+         *     was paid is actual. An EMI's principal is a transfer to the loan, not spending; only its
+         *     interest is.
+         */
+        FixedCommitmentsResponse: {
+            total: components["schemas"]["LineResponse"];
+            emi: components["schemas"]["LineResponse"];
+            /** @description Bills in the built-in Rent category. */
+            rent: components["schemas"]["LineResponse"];
+            subscriptions: components["schemas"]["LineResponse"];
+            bills: components["schemas"]["LineResponse"];
+            /** Planned Interest */
+            planned_interest: number;
+        };
+        /** FlowsResponse */
+        FlowsResponse: {
+            /**
+             * Invested
+             * @description Moved into investment accounts from other accounts.
+             */
+            invested: number;
+            /**
+             * Divested
+             * @description Moved out of investment accounts to other accounts.
+             */
+            divested: number;
+            /**
+             * Loan Principal
+             * @description Moved into loan accounts: principal repaid.
+             */
+            loan_principal: number;
+            /**
+             * Commitment Expenses
+             * @description Expenses paying subscriptions, bills, and EMI interest.
+             */
+            commitment_expenses: number;
+        };
+        /** GoalListResponse */
+        GoalListResponse: {
+            /**
+             * Goals
+             * @description Active, paused, completed, then cancelled; by priority and target date.
+             */
+            goals: components["schemas"]["GoalResponse"][];
+        };
+        /** GoalResponse */
+        GoalResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "emergency_fund" | "vehicle" | "travel" | "home" | "electronics" | "education" | "wedding" | "other";
+            /**
+             * Priority
+             * @enum {string}
+             */
+            priority: "low" | "medium" | "high";
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /** Target Amount */
+            target_amount: number;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Target Date */
+            target_date: string | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "active" | "paused" | "completed" | "cancelled";
+            /** Account Id */
+            account_id: string | null;
+            /** Notes */
+            notes: string;
+            /** Completed At */
+            completed_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Saved
+             * @description Contributions minus withdrawals: allocated to the goal.
+             */
+            saved: number;
+            /**
+             * Remaining
+             * @description What is left to reach the target, never below zero.
+             */
+            remaining: number;
+            /**
+             * Progress Percent
+             * @description `saved` over the target, two decimals, ≤ 100.
+             */
+            progress_percent: string;
+            /** Reached */
+            reached: boolean;
+            /**
+             * Suggested Monthly
+             * @description What to save each month, from this month through the target date's, to reach the target (rounded up); everything remaining once the date has passed. `null` without a target date.
+             */
+            suggested_monthly: number | null;
+            /** Months Left */
+            months_left: number | null;
+            /**
+             * This Month
+             * @description Net contributions this month.
+             */
+            this_month: number;
+            /**
+             * Available
+             * @description What can be withdrawn: `saved`, but no more than the linked account holds.
+             */
+            available: number;
+            account: components["schemas"]["LinkedAccountResponse"] | null;
+        };
         /** GroupTotalResponse */
         GroupTotalResponse: {
             /**
@@ -3214,6 +4119,36 @@ export interface components {
              */
             created_at: string;
         };
+        /** LineResponse */
+        LineResponse: {
+            /**
+             * Planned
+             * @description `null` when nothing is planned for the line.
+             */
+            planned: number | null;
+            /** Actual */
+            actual: number;
+        };
+        /** LinkedAccountResponse */
+        LinkedAccountResponse: {
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Balance
+             * @description The account's ledger balance.
+             */
+            balance: number;
+            /**
+             * Allocated
+             * @description Saved across every active or paused goal kept in this account. More than `balance` means the goals count on money the account doesn't hold.
+             */
+            allocated: number;
+        };
         /** LoanDetailResponse */
         LoanDetailResponse: {
             loan: components["schemas"]["LoanResponse"];
@@ -3434,6 +4369,20 @@ export interface components {
              * @description `YYYY-MM`.
              */
             month: string;
+        };
+        /** MonthlyPlanResponse */
+        MonthlyPlanResponse: {
+            /** Month */
+            month: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /** Expected Income */
+            expected_income: number;
+            /** Notes */
+            notes: string;
         };
         /** MonthlySummaryResponse */
         MonthlySummaryResponse: {
@@ -3750,6 +4699,53 @@ export interface components {
              * @description Net worth now minus then.
              */
             change: number | null;
+        };
+        /** PlanResponse */
+        PlanResponse: {
+            /**
+             * Month
+             * @description `YYYY-MM`.
+             */
+            month: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /** Expected Income */
+            expected_income: number | null;
+            /**
+             * Income Source
+             * @description `this_month` when entered for this month; `earlier` when carried from `income_month`.
+             */
+            income_source: ("this_month" | "earlier") | null;
+            /** Income Month */
+            income_month: string | null;
+            /** Notes */
+            notes: string;
+            income: components["schemas"]["LineResponse"];
+            fixed: components["schemas"]["FixedCommitmentsResponse"];
+            /** @description Spending that pays no commitment. Planned from an overall budget (less the month's subscription, bill, and interest payments) or category budgets. */
+            variable: components["schemas"]["LineResponse"];
+            /** Variable Basis */
+            variable_basis: ("overall_budget" | "category_budgets") | null;
+            /** @description Planned: active goals' suggested monthly contributions. Actual: contributions minus withdrawals recorded this month. */
+            savings: components["schemas"]["LineResponse"];
+            /** @description Planned: SIPs due this month. Actual: money moved into investment accounts. */
+            investments: components["schemas"]["LineResponse"];
+            /** @description Income minus every line above: available to spend (planned) or left over (actual). */
+            remaining: components["schemas"]["LineResponse"];
+            /**
+             * Spending
+             * @description Consumption only: net expenses, including subscription, bill, and interest payments. Principal, savings, and investments aren't spending.
+             */
+            spending: number;
+            /**
+             * Allocations
+             * @description Money moved to your own accounts: loan principal, net investments, and goal savings.
+             */
+            allocations: number;
+            flows: components["schemas"]["FlowsResponse"];
         };
         /** PortfolioResponse */
         PortfolioResponse: {
@@ -4342,6 +5338,28 @@ export interface components {
             emi_amount?: number | null;
             /** Next Payment Date */
             next_payment_date?: string | null;
+        };
+        /**
+         * SetIncomeRequest
+         * @description A month's expected income. Later months without their own use it too.
+         */
+        SetIncomeRequest: {
+            /**
+             * Currency
+             * @default INR
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Expected Income
+             * @description Minor units.
+             */
+            expected_income: number;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
         };
         /** SettledOccurrenceListResponse */
         SettledOccurrenceListResponse: {
@@ -4973,6 +5991,32 @@ export interface components {
             archived?: boolean | null;
         };
         /**
+         * UpdateBudgetRequest
+         * @description Change a budget from the current period on; finished periods keep their amounts. Scope,
+         *     category, currency, and period type are fixed.
+         */
+        UpdateBudgetRequest: {
+            /** Name */
+            name?: string | null;
+            /** Amount */
+            amount?: number | null;
+            /** Start Date */
+            start_date?: string | null;
+            /**
+             * End Date
+             * @description `null` removes the end of a monthly budget.
+             */
+            end_date?: string | null;
+            /** Rollover */
+            rollover?: ("none" | "surplus" | "full") | null;
+            /** Alerts Enabled */
+            alerts_enabled?: boolean | null;
+            /** Alert Thresholds */
+            alert_thresholds?: number[] | null;
+            /** Notes */
+            notes?: string | null;
+        };
+        /**
          * UpdateDepositRequest
          * @description `null` clears `stated_maturity_amount` or `reminder`.
          */
@@ -4994,6 +6038,38 @@ export interface components {
             /** Notes */
             notes?: string | null;
             reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
+        };
+        /**
+         * UpdateGoalRequest
+         * @description Change a goal; its contributions stay. `state` pauses, completes, cancels, or reopens it.
+         */
+        UpdateGoalRequest: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Category */
+            category?: ("emergency_fund" | "vehicle" | "travel" | "home" | "electronics" | "education" | "wedding" | "other") | null;
+            /** Priority */
+            priority?: ("low" | "medium" | "high") | null;
+            /** Target Amount */
+            target_amount?: number | null;
+            /** Start Date */
+            start_date?: string | null;
+            /**
+             * Target Date
+             * @description `null` removes it.
+             */
+            target_date?: string | null;
+            /** State */
+            state?: ("active" | "paused" | "completed" | "cancelled") | null;
+            /**
+             * Account Id
+             * @description `null` unlinks the account.
+             */
+            account_id?: string | null;
+            /** Notes */
+            notes?: string | null;
         };
         /** UpdateHoldingRequest */
         UpdateHoldingRequest: {
@@ -11497,6 +12573,1081 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_budgets_api_v1_workspaces__workspace_id__finance_budgets_get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or budget does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_budget_api_v1_workspaces__workspace_id__finance_budgets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBudgetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or budget does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Another active budget covers the same spending in an overlapping period. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: a category outside this workspace or not an expense category, monthly dates that aren't whole months, rollover on a custom period, or a change to a finished period. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    budget_overview_api_v1_workspaces__workspace_id__finance_budgets_overview_get: {
+        parameters: {
+            query?: {
+                /** @description `YYYY-MM` in your time zone. Defaults to the month of `today`. */
+                month?: string | null;
+                currency?: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetMonthResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or budget does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    budget_history_api_v1_workspaces__workspace_id__finance_budgets_history_get: {
+        parameters: {
+            query?: {
+                /** @description `YYYY-MM` in your time zone. Defaults to the month of `today`. */
+                month?: string | null;
+                currency?: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+                /** @description How many months, ending with `month`. */
+                months?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetHistoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or budget does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    copy_budgets_api_v1_workspaces__workspace_id__finance_budgets_copy_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CopyBudgetsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CopyBudgetsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or budget does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Another active budget covers the same spending in an overlapping period. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: a category outside this workspace or not an expense category, monthly dates that aren't whole months, rollover on a custom period, or a change to a finished period. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description The budget's ID. */
+                budget_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or budget does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The budget's ID. */
+                budget_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or budget does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The budget's ID. */
+                budget_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBudgetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or budget does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Another active budget covers the same spending in an overlapping period. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: a category outside this workspace or not an expense category, monthly dates that aren't whole months, rollover on a custom period, or a change to a finished period. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    archive_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The budget's ID. */
+                budget_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or budget does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The budget's ID. */
+                budget_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or budget does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Another active budget covers the same spending in an overlapping period. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: a category outside this workspace or not an expense category, monthly dates that aren't whole months, rollover on a custom period, or a change to a finished period. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_goals_api_v1_workspaces__workspace_id__finance_savings_goals_get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, goal, or contribution does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_goal_api_v1_workspaces__workspace_id__finance_savings_goals_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGoalRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, goal, or contribution does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The transfer is already recorded, or the goal has history. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account or transaction outside this workspace, a currency mismatch, an account that can't hold savings, or a withdrawal of more than was saved. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_goal_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description The savings goal's ID. */
+                goal_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, goal, or contribution does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_goal_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The savings goal's ID. */
+                goal_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, goal, or contribution does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The transfer is already recorded, or the goal has history. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account or transaction outside this workspace, a currency mismatch, an account that can't hold savings, or a withdrawal of more than was saved. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_goal_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The savings goal's ID. */
+                goal_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateGoalRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, goal, or contribution does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The transfer is already recorded, or the goal has history. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account or transaction outside this workspace, a currency mismatch, an account that can't hold savings, or a withdrawal of more than was saved. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_contributions_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__contributions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The savings goal's ID. */
+                goal_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContributionListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, goal, or contribution does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_contribution_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__contributions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The savings goal's ID. */
+                goal_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateContributionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContributionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, goal, or contribution does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The transfer is already recorded, or the goal has history. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account or transaction outside this workspace, a currency mismatch, an account that can't hold savings, or a withdrawal of more than was saved. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_contribution_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__contributions__contribution_id__delete: {
+        parameters: {
+            query?: {
+                /** @description Also delete the transfer it recorded from the ledger. */
+                delete_transaction?: boolean;
+            };
+            header?: never;
+            path: {
+                /** @description The savings goal's ID. */
+                goal_id: string;
+                /** @description The contribution's ID. */
+                contribution_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, goal, or contribution does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The transfer is already recorded, or the goal has history. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account or transaction outside this workspace, a currency mismatch, an account that can't hold savings, or a withdrawal of more than was saved. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_plan_api_v1_workspaces__workspace_id__finance_plan_get: {
+        parameters: {
+            query?: {
+                /** @description `YYYY-MM` in your time zone. Defaults to the month of `today`. */
+                month?: string | null;
+                currency?: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_plan_api_v1_workspaces__workspace_id__finance_plan__month__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description `YYYY-MM`. */
+                month: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetIncomeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthlyPlanResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clear_plan_api_v1_workspaces__workspace_id__finance_plan__month__delete: {
+        parameters: {
+            query?: {
+                currency?: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            };
+            header?: never;
+            path: {
+                /** @description `YYYY-MM`. */
+                month: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
