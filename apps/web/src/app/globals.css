@@ -289,6 +289,39 @@
   }
 }
 
+/* Scrolls without drawing a scrollbar, for strips that show their overflow another way. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/*
+ * Fades a horizontal scroller's edge where more content is hidden. Set `data-overflow-start`
+ * or `data-overflow-end` to show each fade; without them the mask is fully opaque.
+ */
+@utility scroll-fade-x {
+  --scroll-fade-start: 0px;
+  --scroll-fade-end: 0px;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 var(--scroll-fade-start),
+    #000 calc(100% - var(--scroll-fade-end)),
+    transparent
+  );
+
+  &[data-overflow-start] {
+    --scroll-fade-start: 1.5rem;
+  }
+
+  &[data-overflow-end] {
+    --scroll-fade-end: 1.5rem;
+  }
+}
+
 /* Honor reduced-motion preferences everywhere, including third-party and native elements. */
 @media (prefers-reduced-motion: reduce) {
   *,

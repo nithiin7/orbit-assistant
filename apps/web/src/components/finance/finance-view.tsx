@@ -15,6 +15,7 @@ import { useCallback, useState } from "react";
 
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
+import { ScrollStrip } from "@/components/ui/scroll-strip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFinanceSetup } from "@/hooks/use-finance";
 import { useWorkspaces } from "@/providers/workspace";
@@ -153,10 +154,12 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div
+        <ScrollStrip
           role="group"
           aria-label="Finance view"
-          className="inline-flex h-9 w-full max-w-full items-center overflow-x-auto rounded-md border bg-muted/60 p-0.5 sm:w-auto"
+          selected={tab}
+          className="h-9 w-full max-w-full rounded-md border bg-muted/60 p-0.5 sm:w-auto"
+          contentClassName="h-full"
         >
           {TABS.map((option) => {
             const selected = tab === option.value;
@@ -177,7 +180,7 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
               </button>
             );
           })}
-        </div>
+        </ScrollStrip>
 
         {hasActiveAccount ? (
           <div className="grid grid-cols-3 gap-2 sm:flex">
