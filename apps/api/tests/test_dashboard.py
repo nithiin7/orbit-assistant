@@ -5,6 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from orbit_api.config import Settings
+from orbit_api.services.dashboard.models import WIDGET_IDS
 from tests.support import bearer, query, sign_up
 
 DASHBOARD = "/api/v1/me/dashboard"
@@ -42,6 +43,17 @@ def test_save_replace_and_reset_layout(client: TestClient) -> None:
     assert client.delete(DASHBOARD, headers=ada).status_code == 204
 
 
+def test_accepts_every_widget_including_finance(client: TestClient) -> None:
+    ada = bearer(sign_up(client))
+    every = [{"id": widget_id, "size": "half"} for widget_id in WIDGET_IDS]
+
+    response = client.put(DASHBOARD, json={"widgets": every}, headers=ada)
+
+    assert response.status_code == 200
+    assert response.json()["widgets"] == every
+    assert {"cash_flow", "upcoming_payments", "budget", "net_worth"} <= set(WIDGET_IDS)
+
+
 def test_an_empty_dashboard_is_a_saved_layout(client: TestClient) -> None:
     ada = bearer(sign_up(client))
 
@@ -61,7 +73,8 @@ def test_an_empty_dashboard_is_a_saved_layout(client: TestClient) -> None:
         {"widgets": [{"id": "tasks"}]},
         {"widgets": [{"id": "tasks", "size": "full", "color": "red"}]},
         {"widgets": LAYOUT, "user_id": "someone-else"},
-        {"widgets": [{"id": "tasks", "size": "full"}] * 6},
+        # More widgets than exist.
+        {"widgets": [{"id": "tasks", "size": "full"}] * (len(WIDGET_IDS) + 1)},
     ],
 )
 def test_rejects_invalid_layouts(client: TestClient, body: dict[str, Any]) -> None:

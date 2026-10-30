@@ -13647,7 +13647,7 @@
               "$ref": "#/components/schemas/DashboardWidgetModel"
             },
             "type": "array",
-            "maxItems": 6,
+            "maxItems": 10,
             "title": "Widgets",
             "description": "The widgets to show, in order. Each widget may appear once; an empty list is an empty dashboard."
           }
@@ -13691,6 +13691,10 @@
               "tasks",
               "reminders",
               "shopping",
+              "cash_flow",
+              "upcoming_payments",
+              "budget",
+              "net_worth",
               "modules"
             ],
             "title": "Id"

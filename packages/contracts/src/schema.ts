@@ -3385,7 +3385,7 @@ export interface components {
              * Id
              * @enum {string}
              */
-            id: "workspace" | "status" | "tasks" | "reminders" | "shopping" | "modules";
+            id: "workspace" | "status" | "tasks" | "reminders" | "shopping" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "modules";
             /**
              * Size
              * @description `half` widgets sit side by side on wide screens.

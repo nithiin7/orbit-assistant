@@ -34,6 +34,40 @@ const routes = {
   [`GET ${WORKSPACE}/tasks`]: json({ tasks: [], total: 0 }),
   [`GET ${WORKSPACE}/shopping/lists`]: json({ lists: [] }),
   [`GET ${WORKSPACE}/reminders/upcoming`]: json({ reminders: [] }),
+  [`GET ${WORKSPACE}/finance/accounts`]: json({ accounts: [], totals: [] }),
+  [`GET ${WORKSPACE}/finance/payments`]: json({
+    today: "2026-10-29",
+    date_from: "2026-10-29",
+    date_to: "2026-11-28",
+    payments: [],
+  }),
+  [`GET ${WORKSPACE}/finance/budgets/overview`]: json({
+    month: "2026-10",
+    currency: "INR",
+    total: null,
+    basis: null,
+    spent: 0,
+    remaining: null,
+    utilization_percent: null,
+    status: null,
+    budgets_counted: 0,
+    budgets_within: 0,
+    unbudgeted: null,
+    categories: [],
+    budgets: [],
+  }),
+  [`GET ${WORKSPACE}/finance/net-worth`]: json({
+    currency: "INR",
+    currencies: [],
+    as_of: "2026-10-29",
+    assets: 0,
+    liabilities: 0,
+    net_worth: 0,
+    groups: [],
+    items: [],
+    quality: { estimated: 0, manual: 0, stale: 0, missing: 0 },
+    changes: [],
+  }),
 };
 
 /** Bodies of the layouts the dashboard saved to the account, oldest first. */
@@ -67,6 +101,9 @@ describe("Dashboard", () => {
 
     expect(screen.getByRole("heading", { name: "Tasks" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Shopping" })).toBeInTheDocument();
+    for (const name of ["This month", "Upcoming payments", "Budget", "Net worth"]) {
+      expect(screen.getByRole("heading", { name })).toBeInTheDocument();
+    }
     expect(screen.getByRole("heading", { name: "Planned modules" })).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Orbit is in early development" }),
@@ -213,6 +250,10 @@ describe("Dashboard account sync", () => {
         { id: "status", size: "half" },
         { id: "tasks", size: "full" },
         { id: "reminders", size: "full" },
+        { id: "cash_flow", size: "half" },
+        { id: "upcoming_payments", size: "half" },
+        { id: "budget", size: "half" },
+        { id: "net_worth", size: "half" },
       ],
     });
 
@@ -281,6 +322,10 @@ describe("Dashboard account sync", () => {
         { id: "status", size: "half" },
         { id: "tasks", size: "full" },
         { id: "reminders", size: "full" },
+        { id: "cash_flow", size: "half" },
+        { id: "upcoming_payments", size: "half" },
+        { id: "budget", size: "half" },
+        { id: "net_worth", size: "half" },
         { id: "modules", size: "full" },
       ],
     });
@@ -289,6 +334,10 @@ describe("Dashboard account sync", () => {
       "workspace",
       "status",
       "reminders",
+      "cash_flow",
+      "upcoming_payments",
+      "budget",
+      "net_worth",
     ]);
   });
 });

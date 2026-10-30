@@ -568,7 +568,9 @@ All rules live in `api/auth.py` and `services/workspaces/service.py`:
 ### Dashboard layout
 
 - The dashboard is a grid of widgets listed in `lib/dashboard/dashboard.ts` (workspace, Orbit status,
-  tasks, shopping, planned modules). **Customize** lets the user add, remove, reorder, and resize
+  tasks, reminders, shopping, finance, planned modules). The finance widgets (this month's cash
+  flow, upcoming payments, budget, net worth; `components/finance/finance-widgets.tsx`) report in
+  the currency most of the active workspace's open accounts use, like the Finance page. **Customize** lets the user add, remove, reorder, and resize
   them. Each widget is half or full width; half-width widgets sit side by side from the `xl`
   breakpoint, and every widget is full width below it.
 - The layout is saved per user in the `dashboard_layouts` table: one row per user with an

@@ -93,6 +93,10 @@ describe("layout changes", () => {
       "status",
       "tasks",
       "reminders",
+      "cash_flow",
+      "upcoming_payments",
+      "budget",
+      "net_worth",
       "modules",
     ]);
     expect(hiddenWidgets(defaultLayout)).toEqual([]);
