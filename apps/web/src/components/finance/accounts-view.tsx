@@ -39,8 +39,12 @@ export function AccountsView({
   const { archiveAccount } = useFinanceMutations(workspaceId);
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const active = accounts.filter((account) => !account.archived);
-  const archived = accounts.filter((account) => account.archived);
+  const [showLoans, setShowLoans] = useState(false);
+  const loanCount = accounts.filter((account) => account.type === "loan").length;
+  // Loan accounts are opened by their loan, not added here, so they stay out of the way unless asked for.
+  const listed = showLoans ? accounts : accounts.filter((account) => account.type !== "loan");
+  const active = listed.filter((account) => !account.archived);
+  const archived = listed.filter((account) => account.archived);
 
   const setArchived = async (account: FinanceAccount, value: boolean) => {
     setError(null);
@@ -124,10 +128,23 @@ export function AccountsView({
           <h2 id="finance-accounts-heading" className="text-base font-semibold">
             Accounts
           </h2>
-          <Button size="sm" onClick={onAddAccount}>
-            <Plus aria-hidden="true" />
-            Add account
-          </Button>
+          <div className="flex items-center gap-4">
+            {loanCount > 0 ? (
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <input
+                  type="checkbox"
+                  className="accent-brand"
+                  checked={showLoans}
+                  onChange={(event) => setShowLoans(event.target.checked)}
+                />
+                Show loan accounts ({loanCount})
+              </label>
+            ) : null}
+            <Button size="sm" onClick={onAddAccount}>
+              <Plus aria-hidden="true" />
+              Add account
+            </Button>
+          </div>
         </div>
         <FormAlert message={error} />
         {active.length === 0 ? (

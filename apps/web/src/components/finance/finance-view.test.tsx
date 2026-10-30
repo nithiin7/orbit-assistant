@@ -222,6 +222,34 @@ describe("FinancePanel", () => {
     );
   });
 
+  it("hides loan accounts on the accounts tab until asked for", async () => {
+    const loan = account({
+      id: "acc-loan",
+      name: "Home loan",
+      type: "loan",
+      account_class: "liability",
+      balance: -5_000_000,
+    });
+    mockApi({ ...session, ...finance([bank, card, loan]) });
+    const user = userEvent.setup();
+
+    await renderSignedIn(<FinancePanel />);
+    await user.click(await screen.findByRole("button", { name: "Accounts" }));
+
+    const list = await screen.findByRole("list", { name: "Active accounts" });
+    expect(within(list).getByText("HDFC Savings")).toBeInTheDocument();
+    expect(within(list).getByText("Amex")).toBeInTheDocument();
+    expect(within(list).queryByText("Home loan")).not.toBeInTheDocument();
+
+    const toggle = screen.getByRole("checkbox", { name: "Show loan accounts (1)" });
+    expect(toggle).not.toBeChecked();
+    await user.click(toggle);
+    expect(within(list).getByText("Home loan")).toBeInTheDocument();
+
+    await user.click(toggle);
+    expect(within(list).queryByText("Home loan")).not.toBeInTheDocument();
+  });
+
   it("records an expense in exact paise", async () => {
     const user = userEvent.setup();
     const posted: unknown[] = [];
