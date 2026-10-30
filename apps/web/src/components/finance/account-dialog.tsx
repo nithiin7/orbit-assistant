@@ -56,7 +56,8 @@ export function AccountDialog({ workspaceId, account, onSaved, onClose }: Accoun
     defaultValues: account
       ? {
           name: account.name,
-          type: account.type,
+          // Fixed once created; the field is only shown for new accounts.
+          type: account.type === "loan" ? "other" : account.type,
           currency: account.currency,
           openingBalance:
             account.opening_balance === 0
@@ -72,11 +73,11 @@ export function AccountDialog({ workspaceId, account, onSaved, onClose }: Accoun
   const { close, dialogProps } = useModalDialog({ onClose, dismissible: !saving });
   const type = useWatch({ control, name: "type" });
   const currency = useWatch({ control, name: "currency" });
-  const liability = isLiability({ type });
+  const liability = isLiability({ type: account?.type ?? type });
 
   async function save(values: Values) {
     const entered = parseSignedAmount(values.openingBalance, values.currency) ?? 0;
-    const openingBalance = owedOnCard(entered, values.type);
+    const openingBalance = owedOnCard(entered, account?.type ?? values.type);
     try {
       if (account) {
         const changes: UpdateFinanceAccountRequest = {};
@@ -172,9 +173,11 @@ export function AccountDialog({ workspaceId, account, onSaved, onClose }: Accoun
           autoComplete="off"
           placeholder="0.00"
           hint={
-            liability
-              ? "The outstanding card balance before the first transaction you record."
-              : "The balance before the first transaction you record. Negative if overdrawn."
+            account?.type === "loan"
+              ? "The principal owed before the first payment you record. Normally set by the loan."
+              : liability
+                ? "The outstanding card balance before the first transaction you record."
+                : "The balance before the first transaction you record. Negative if overdrawn."
           }
           {...register("openingBalance")}
           error={errors.openingBalance?.message}

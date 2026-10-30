@@ -112,3 +112,41 @@ export type MonthCashFlow = Schemas["MonthCashFlowResponse"];
 export type FinanceTrend = Schemas["TrendResponse"];
 export type CategorySpending = Schemas["CategorySpendingResponse"];
 export type SpendingByCategory = Schemas["SpendingResponse"];
+export type Loan = Schemas["LoanResponse"];
+export type LoanType = Loan["loan_type"];
+export type LoanStatus = Loan["status"];
+export type InterestMethod = Loan["interest_method"];
+export type EmiFrequency = Loan["emi_frequency"];
+export type LoanList = Schemas["LoanListResponse"];
+export type LoanDetail = Schemas["LoanDetailResponse"];
+export type Installment = Schemas["InstallmentResponse"];
+export type CreateLoanRequest = Schemas["CreateLoanRequest"];
+export type UpdateLoanRequest = Schemas["UpdateLoanRequest"];
+export type RescheduleLoanRequest = Schemas["RescheduleLoanRequest"];
+export type UpdateInstallmentRequest = Schemas["UpdateInstallmentRequest"];
+export type PayInstallmentRequest = Schemas["PayInstallmentRequest"];
+export type ReminderSettings = Schemas["ReminderSettingsResponse"];
+export type ReminderSettingsRequest = Schemas["ReminderSettingsRequest"];
+export type RecurringPayment = Schemas["RecurringPaymentResponse"];
+export type RecurringKind = RecurringPayment["kind"];
+export type RecurringFrequency = RecurringPayment["frequency"];
+export type RecurringStatus = RecurringPayment["status"];
+export type RecurringPaymentList = Schemas["RecurringPaymentListResponse"];
+export type CreateRecurringPaymentRequest = Schemas["CreateRecurringPaymentRequest"];
+export type UpdateRecurringPaymentRequest = Schemas["UpdateRecurringPaymentRequest"];
+export type RecordRecurringPaymentRequest = Schemas["RecordRecurringPaymentRequest"];
+export type SettledOccurrence = Schemas["SettledOccurrenceResponse"];
+export type SettledOccurrenceList = Schemas["SettledOccurrenceListResponse"];
+export type PaymentItem = Schemas["PaymentItemResponse"];
+export type PaymentStatus = PaymentItem["status"];
+export type CommitmentKind = PaymentItem["kind"];
+export type PaymentList = Schemas["PaymentListResponse"];
+/** Filters accepted when listing upcoming and recent payments. */
+export type PaymentListQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/finance/payments"]["get"]["parameters"]["query"]
+>;
+export type CommitmentSummary = Schemas["CommitmentSummaryResponse"];
+export type CommitmentSummaryQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/finance/commitments/summary"]["get"]["parameters"]["query"]
+>;
+export type ReminderCommitment = Schemas["ReminderCommitmentResponse"];

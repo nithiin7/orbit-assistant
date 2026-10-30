@@ -1,6 +1,12 @@
 """ORM models. Importing this package registers every table on `Base.metadata`."""
 
 from orbit_api.db.models.avatars import UserAvatarModel
+from orbit_api.db.models.commitments import (
+    FinanceLoanInstallmentModel,
+    FinanceLoanModel,
+    FinanceRecurringOccurrenceModel,
+    FinanceRecurringPaymentModel,
+)
 from orbit_api.db.models.dashboard import DashboardLayoutModel
 from orbit_api.db.models.finance import (
     FinanceAccountModel,
@@ -21,6 +27,10 @@ __all__ = [
     "DashboardLayoutModel",
     "FinanceAccountModel",
     "FinanceCategoryModel",
+    "FinanceLoanInstallmentModel",
+    "FinanceLoanModel",
+    "FinanceRecurringOccurrenceModel",
+    "FinanceRecurringPaymentModel",
     "FinanceTransactionModel",
     "LocalCredentialModel",
     "LocalSessionModel",

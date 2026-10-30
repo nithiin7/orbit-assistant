@@ -5,6 +5,10 @@ import type {
   FinanceCategory,
   FinanceTransaction,
   FinanceTransactionType,
+  Installment,
+  Loan,
+  RecurringKind,
+  RecurringPayment,
 } from "@orbit/contracts";
 import { ArrowLeftRight, Landmark, Minus, Plus } from "lucide-react";
 import { useCallback, useState } from "react";
@@ -19,20 +23,40 @@ import { cn, type Option } from "@/utils/common";
 import { AccountDialog } from "./account-dialog";
 import { AccountsView } from "./accounts-view";
 import { FinanceOverview } from "./finance-overview";
+import { LoanDialog } from "./loan-dialog";
+import { InstallmentDialog, RescheduleDialog } from "./loan-schedule-dialogs";
+import { LoansView } from "./loans-view";
+import { PaymentDialog, type PaymentTarget } from "./payment-dialog";
+import { RecurringDialog } from "./recurring-dialog";
+import { RecurringView } from "./recurring-view";
 import { TransactionDialog } from "./transaction-dialog";
 import { TransactionHistory } from "./transaction-history";
+import { UpcomingPayments } from "./upcoming-payments";
 
-type Tab = "overview" | "transactions" | "accounts";
+export type FinanceTab =
+  "overview" | "upcoming" | "transactions" | "accounts" | "loans" | "subscriptions" | "bills";
 
-const TABS: readonly Option<Tab>[] = [
+const TABS: readonly Option<FinanceTab>[] = [
   { value: "overview", label: "Overview" },
+  { value: "upcoming", label: "Upcoming" },
   { value: "transactions", label: "Transactions" },
   { value: "accounts", label: "Accounts" },
+  { value: "loans", label: "Loans" },
+  { value: "subscriptions", label: "Subscriptions" },
+  { value: "bills", label: "Bills" },
 ];
+
+/** Views that need an account to show anything useful. */
+const NEEDS_ACCOUNT: ReadonlySet<FinanceTab> = new Set(["overview", "transactions"]);
 
 type Dialog =
   | { kind: "transaction"; type: FinanceTransactionType; transaction?: FinanceTransaction }
-  | { kind: "account"; account?: FinanceAccount };
+  | { kind: "account"; account?: FinanceAccount }
+  | { kind: "loan"; loan?: Loan }
+  | { kind: "reschedule"; loan: Loan }
+  | { kind: "installment"; loan: Loan; installment: Installment }
+  | { kind: "recurring"; recurringKind: RecurringKind; payment?: RecurringPayment }
+  | { kind: "pay"; target: PaymentTarget };
 
 /** What every finance view gets from the page: the workspace's accounts and categories. */
 export type FinanceData = {
@@ -41,6 +65,7 @@ export type FinanceData = {
   categories: FinanceCategory[];
   onEditTransaction: (transaction: FinanceTransaction) => void;
   onAnnounce: (message: string) => void;
+  onShowTab: (tab: FinanceTab) => void;
 };
 
 /** The Finance page for the active workspace. Remounts (and resets) when the workspace changes. */
@@ -63,7 +88,7 @@ export function FinancePanel() {
 
 function FinanceView({ workspaceId }: { workspaceId: string }) {
   const { accounts, categories, reload } = useFinanceSetup(workspaceId);
-  const [tab, setTab] = useState<Tab>("overview");
+  const [tab, setTab] = useState<FinanceTab>("overview");
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [announcement, setAnnouncement] = useState("");
 
@@ -96,7 +121,9 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
     categories: categories.data,
     onEditTransaction: editTransaction,
     onAnnounce: setAnnouncement,
+    onShowTab: setTab,
   };
+  const pay = (target: PaymentTarget) => setDialog({ kind: "pay", target });
   const record = (type: FinanceTransactionType) => setDialog({ kind: "transaction", type });
 
   return (
@@ -105,7 +132,7 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
         <div
           role="group"
           aria-label="Finance view"
-          className="inline-flex h-9 w-full items-center rounded-md border bg-muted/60 p-0.5 sm:w-auto"
+          className="inline-flex h-9 w-full max-w-full items-center overflow-x-auto rounded-md border bg-muted/60 p-0.5 sm:w-auto"
         >
           {TABS.map((option) => {
             const selected = tab === option.value;
@@ -116,7 +143,7 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
                 aria-pressed={selected}
                 onClick={() => setTab(option.value)}
                 className={cn(
-                  "h-full flex-1 rounded-[calc(var(--radius-md)-2px)] px-3 text-sm font-medium transition-[color,background-color,box-shadow] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-none",
+                  "h-full flex-none rounded-[calc(var(--radius-md)-2px)] px-3 text-sm font-medium whitespace-nowrap transition-[color,background-color,box-shadow] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   selected
                     ? "bg-card text-foreground shadow-elevation-1"
                     : "text-muted-foreground hover:text-foreground",
@@ -146,7 +173,7 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
         ) : null}
       </div>
 
-      {!hasActiveAccount && tab !== "accounts" ? (
+      {!hasActiveAccount && NEEDS_ACCOUNT.has(tab) ? (
         <EmptyState
           icon={Landmark}
           title="Add an account to get started"
@@ -161,8 +188,37 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
         <div key={tab} className="animate-page-in">
           {tab === "overview" ? (
             <FinanceOverview {...data} />
+          ) : tab === "upcoming" ? (
+            <UpcomingPayments {...data} onPay={pay} />
           ) : tab === "transactions" ? (
             <TransactionHistory {...data} />
+          ) : tab === "loans" ? (
+            <LoansView
+              {...data}
+              onAddLoan={() => setDialog({ kind: "loan" })}
+              onEditLoan={(loan) => setDialog({ kind: "loan", loan })}
+              onReschedule={(loan) => setDialog({ kind: "reschedule", loan })}
+              onAdjust={(loan, installment) =>
+                setDialog({ kind: "installment", loan, installment })
+              }
+              onPay={pay}
+            />
+          ) : tab === "subscriptions" || tab === "bills" ? (
+            <RecurringView
+              key={tab}
+              {...data}
+              kind={tab === "subscriptions" ? "subscription" : "bill"}
+              onAdd={() =>
+                setDialog({
+                  kind: "recurring",
+                  recurringKind: tab === "subscriptions" ? "subscription" : "bill",
+                })
+              }
+              onEdit={(payment) =>
+                setDialog({ kind: "recurring", recurringKind: payment.kind, payment })
+              }
+              onPay={pay}
+            />
           ) : (
             <AccountsView
               {...data}
@@ -192,6 +248,47 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
         <AccountDialog
           workspaceId={workspaceId}
           account={dialog.account}
+          onSaved={setAnnouncement}
+          onClose={() => setDialog(null)}
+        />
+      ) : dialog?.kind === "loan" ? (
+        <LoanDialog
+          workspaceId={workspaceId}
+          loan={dialog.loan}
+          accounts={allAccounts}
+          onSaved={setAnnouncement}
+          onClose={() => setDialog(null)}
+        />
+      ) : dialog?.kind === "reschedule" ? (
+        <RescheduleDialog
+          workspaceId={workspaceId}
+          loan={dialog.loan}
+          onSaved={setAnnouncement}
+          onClose={() => setDialog(null)}
+        />
+      ) : dialog?.kind === "installment" ? (
+        <InstallmentDialog
+          workspaceId={workspaceId}
+          loan={dialog.loan}
+          installment={dialog.installment}
+          onSaved={setAnnouncement}
+          onClose={() => setDialog(null)}
+        />
+      ) : dialog?.kind === "recurring" ? (
+        <RecurringDialog
+          workspaceId={workspaceId}
+          kind={dialog.recurringKind}
+          payment={dialog.payment}
+          accounts={allAccounts}
+          categories={categories.data}
+          onSaved={setAnnouncement}
+          onClose={() => setDialog(null)}
+        />
+      ) : dialog?.kind === "pay" ? (
+        <PaymentDialog
+          workspaceId={workspaceId}
+          target={dialog.target}
+          accounts={allAccounts}
           onSaved={setAnnouncement}
           onClose={() => setDialog(null)}
         />

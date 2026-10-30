@@ -810,7 +810,9 @@ export interface paths {
         post?: never;
         /**
          * Delete a transaction
-         * @description Permanently delete a transaction, removing it from balances and reports.
+         * @description Permanently delete a transaction, removing it from balances and reports. A transaction
+         *     that records a loan, subscription, or bill payment can't be deleted until that payment is
+         *     undone (409).
          */
         delete: operations["delete_transaction_api_v1_workspaces__workspace_id__finance_transactions__transaction_id__delete"];
         options?: never;
@@ -902,6 +904,285 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/finance/loans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List loans
+         * @description Every loan with its outstanding principal, derived from its loan account's ledger.
+         */
+        get: operations["list_loans_api_v1_workspaces__workspace_id__finance_loans_get"];
+        put?: never;
+        /**
+         * Add a loan
+         * @description Creates the loan, its loan account, and the EMI schedule still ahead, in one step.
+         */
+        post: operations["create_loan_api_v1_workspaces__workspace_id__finance_loans_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/loans/{loan_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a loan and its EMI schedule */
+        get: operations["get_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update a loan */
+        patch: operations["update_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/loans/{loan_id}/reschedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Regenerate unpaid installments
+         * @description Replaces the scheduled installments with ones that repay what the ledger says is still
+         *     owed. Paid and skipped installments stay as history.
+         */
+        post: operations["reschedule_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__reschedule_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/loans/{loan_id}/installments/{installment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Adjust a scheduled installment
+         * @description Change a scheduled installment's due date or principal and interest split by hand.
+         */
+        patch: operations["adjust_installment_api_v1_workspaces__workspace_id__finance_loans__loan_id__installments__installment_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/loans/{loan_id}/installments/{installment_id}/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record an EMI payment
+         * @description The principal becomes a transfer into the loan account (reducing what's owed, never
+         *     spending) and the interest a "Loan interest" expense, or link transactions already
+         *     recorded. Recorded once: paying again is a 409.
+         */
+        post: operations["pay_installment_api_v1_workspaces__workspace_id__finance_loans__loan_id__installments__installment_id__pay_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/loans/{loan_id}/installments/{installment_id}/skip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Skip an installment */
+        post: operations["skip_installment_api_v1_workspaces__workspace_id__finance_loans__loan_id__installments__installment_id__skip_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/loans/{loan_id}/installments/{installment_id}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Undo an installment's payment or skip */
+        post: operations["undo_installment_api_v1_workspaces__workspace_id__finance_loans__loan_id__installments__installment_id__undo_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/recurring-payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List subscriptions and bills */
+        get: operations["list_recurring_payments_api_v1_workspaces__workspace_id__finance_recurring_payments_get"];
+        put?: never;
+        /** Add a subscription or bill */
+        post: operations["create_recurring_payment_api_v1_workspaces__workspace_id__finance_recurring_payments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/recurring-payments/{payment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a subscription or bill */
+        get: operations["get_recurring_payment_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update, pause, cancel, or resume a subscription or bill
+         * @description Cancelling keeps every recorded payment; nothing is deleted.
+         */
+        patch: operations["update_recurring_payment_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/recurring-payments/{payment_id}/occurrences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Payment and renewal history */
+        get: operations["list_occurrences_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__occurrences_get"];
+        put?: never;
+        /**
+         * Record a payment or renewal
+         * @description Each due date can be settled once; recording it again is a 409.
+         */
+        post: operations["record_recurring_payment_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__occurrences_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/recurring-payments/{payment_id}/occurrences/skip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Skip a payment or renewal */
+        post: operations["skip_recurring_occurrence_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__occurrences_skip_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/recurring-payments/{payment_id}/occurrences/{occurrence_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Undo a recorded payment or skip
+         * @description The payment becomes expected again. Its expense stays in the ledger unless
+         *     `delete_transaction` is set.
+         */
+        delete: operations["undo_recurring_occurrence_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__occurrences__occurrence_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Upcoming, due, overdue, and recent payments
+         * @description Loan EMIs, subscription renewals, and bills in one list, by due date. Expected payments
+         *     are not spending until recorded.
+         */
+        get: operations["list_payments_api_v1_workspaces__workspace_id__finance_payments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/commitments/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Commitment totals for the dashboard
+         * @description Outstanding loans, monthly EMIs and subscriptions, bills due soon, what's left to pay this
+         *     month, and what's overdue, in one currency.
+         */
+        get: operations["commitment_summary_api_v1_workspaces__workspace_id__finance_commitments_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/storage": {
         parameters: {
             query?: never;
@@ -975,10 +1256,10 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "bank" | "savings" | "cash" | "wallet" | "credit_card" | "investment" | "other";
+            type: "bank" | "savings" | "cash" | "wallet" | "credit_card" | "investment" | "loan" | "other";
             /**
              * Account Class
-             * @description `liability` for credit cards, whose balance is negative while money is owed; `asset` for everything else. Investment accounts hold what was moved into them, not market value.
+             * @description `liability` for credit cards and loans, whose balance is negative while money is owed; `asset` for everything else. Investment accounts hold what was moved into them, not market value.
              * @enum {string}
              */
             account_class: "asset" | "liability";
@@ -1031,7 +1312,7 @@ export interface components {
             assets: number;
             /**
              * Liabilities
-             * @description What credit cards owe, as a positive amount in minor units.
+             * @description What credit cards and loans owe, as a positive amount in minor units.
              */
             liabilities: number;
         };
@@ -1103,12 +1384,49 @@ export interface components {
              */
             net: number;
         };
+        /** CommitmentSummaryResponse */
+        CommitmentSummaryResponse: {
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Today
+             * Format: date
+             */
+            today: string;
+            /**
+             * Loans Outstanding
+             * @description Outstanding principal on active loans.
+             */
+            loans_outstanding: number;
+            /** Active Loans */
+            active_loans: number;
+            /**
+             * Monthly Emi
+             * @description Active loans' EMIs as a monthly average.
+             */
+            monthly_emi: number;
+            /** Monthly Subscriptions */
+            monthly_subscriptions: number;
+            /** Annual Subscriptions */
+            annual_subscriptions: number;
+            /** Active Subscriptions */
+            active_subscriptions: number;
+            /** @description Expected bills due in the next 30 days. */
+            upcoming_bills: components["schemas"]["TotalResponse"];
+            /** @description Expected payments of any kind due from today to the end of the month. */
+            due_this_month: components["schemas"]["TotalResponse"];
+            overdue: components["schemas"]["TotalResponse"];
+        };
         /** CreateAccountRequest */
         CreateAccountRequest: {
             /** Name */
             name: string;
             /**
              * Type
+             * @description Loan accounts are created with a loan, not on their own.
              * @enum {string}
              */
             type: "bank" | "savings" | "cash" | "wallet" | "credit_card" | "investment" | "other";
@@ -1153,6 +1471,164 @@ export interface components {
              * @default
              */
             notes: string;
+        };
+        /**
+         * CreateLoanRequest
+         * @description Track a loan. Orbit creates a `loan` account for it whose opening balance is the
+         *     outstanding principal (owed), and generates the installments still ahead.
+         */
+        CreateLoanRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Lender
+             * @default
+             */
+            lender: string;
+            /**
+             * Loan Type
+             * @enum {string}
+             */
+            loan_type: "personal" | "vehicle" | "home" | "education" | "other";
+            /**
+             * Currency
+             * @default INR
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Principal
+             * @description The amount originally borrowed.
+             */
+            principal: number;
+            /**
+             * Outstanding Principal
+             * @description For a loan already being repaid: what is still owed. Defaults to `principal`.
+             */
+            outstanding_principal?: number | null;
+            /**
+             * Interest Rate Bps
+             * @description Annual interest rate in basis points: 8.5% is 850.
+             */
+            interest_rate_bps: number;
+            /**
+             * Interest Method
+             * @description `reducing`: interest on the outstanding balance (most loans). `flat`: interest on the original principal for the whole tenure.
+             * @default reducing
+             * @enum {string}
+             */
+            interest_method: "reducing" | "flat";
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /**
+             * Tenure Months
+             * @description The loan's term in months.
+             */
+            tenure_months: number;
+            /**
+             * Emi Frequency
+             * @default monthly
+             * @enum {string}
+             */
+            emi_frequency: "monthly" | "quarterly" | "half_yearly" | "yearly";
+            /**
+             * First Payment Date
+             * Format: date
+             */
+            first_payment_date: string;
+            /**
+             * Next Payment Date
+             * @description For a loan already being repaid: the next installment's date. Defaults to `first_payment_date`.
+             */
+            next_payment_date?: string | null;
+            /**
+             * Emi Amount
+             * @description The lender's EMI. Defaults to the standard EMI for the terms.
+             */
+            emi_amount?: number | null;
+            /** Payment Account Id */
+            payment_account_id?: string | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
+        };
+        /**
+         * CreateRecurringPaymentRequest
+         * @description Track a subscription or a recurring bill. Its due dates repeat from `next_due_date`.
+         */
+        CreateRecurringPaymentRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "subscription" | "bill";
+            /** Name */
+            name: string;
+            /**
+             * Provider
+             * @default
+             */
+            provider: string;
+            /**
+             * Category Id
+             * @description An expense category.
+             */
+            category_id?: string | null;
+            /** Account Id */
+            account_id?: string | null;
+            /**
+             * Amount
+             * @description Minor units, always positive: ₹12.50 is 1250.
+             */
+            amount: number;
+            /**
+             * Currency
+             * @default INR
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Amount Varies
+             * @description For bills like electricity: `amount` is an estimate.
+             * @default false
+             */
+            amount_varies: boolean;
+            /**
+             * Frequency
+             * @enum {string}
+             */
+            frequency: "weekly" | "monthly" | "quarterly" | "half_yearly" | "yearly";
+            /**
+             * Start Date
+             * @description When it began. Defaults to `next_due_date`.
+             */
+            start_date?: string | null;
+            /**
+             * Next Due Date
+             * Format: date
+             */
+            next_due_date: string;
+            /** End Date */
+            end_date?: string | null;
+            /** Trial Ends On */
+            trial_ends_on?: string | null;
+            /**
+             * Auto Renew
+             * @default true
+             */
+            auto_renew: boolean;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
         };
         /** CreateReminderRequest */
         CreateReminderRequest: {
@@ -1363,6 +1839,209 @@ export interface components {
              */
             version: string;
         };
+        /** InstallmentResponse */
+        InstallmentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Loan Id
+             * Format: uuid
+             */
+            loan_id: string;
+            /**
+             * Sequence
+             * @description The installment's number within the loan's tenure.
+             */
+            sequence: number;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /**
+             * Amount
+             * @description `principal` plus `interest`.
+             */
+            amount: number;
+            /**
+             * Principal
+             * @description Repays the loan: a transfer, never spending.
+             */
+            principal: number;
+            /**
+             * Interest
+             * @description The cost of borrowing: an expense.
+             */
+            interest: number;
+            /**
+             * Balance After
+             * @description Principal still owed after this installment: projected from the ledger while scheduled, as recorded once paid.
+             */
+            balance_after: number;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "scheduled" | "paid" | "skipped";
+            /**
+             * Status
+             * @description `state` as of `today`: upcoming, due, or overdue.
+             * @enum {string}
+             */
+            status: "upcoming" | "due" | "overdue" | "paid" | "skipped";
+            /** Paid On */
+            paid_on: string | null;
+            /** Principal Transaction Id */
+            principal_transaction_id: string | null;
+            /** Interest Transaction Id */
+            interest_transaction_id: string | null;
+            /**
+             * Adjusted
+             * @description Edited by hand rather than generated.
+             */
+            adjusted: boolean;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** LoanDetailResponse */
+        LoanDetailResponse: {
+            loan: components["schemas"]["LoanResponse"];
+            /**
+             * Installments
+             * @description By due date.
+             */
+            installments: components["schemas"]["InstallmentResponse"][];
+        };
+        /** LoanListResponse */
+        LoanListResponse: {
+            /**
+             * Loans
+             * @description Active first, then closed, then archived, each by name.
+             */
+            loans: components["schemas"]["LoanResponse"][];
+        };
+        /** LoanResponse */
+        LoanResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /**
+             * Account Id
+             * Format: uuid
+             * @description The loan's liability account. Its balance is the outstanding principal.
+             */
+            account_id: string;
+            /**
+             * Payment Account Id
+             * @description The account EMIs are usually paid from.
+             */
+            payment_account_id: string | null;
+            /** Name */
+            name: string;
+            /** Lender */
+            lender: string;
+            /**
+             * Loan Type
+             * @enum {string}
+             */
+            loan_type: "personal" | "vehicle" | "home" | "education" | "other";
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Principal
+             * @description The amount originally borrowed.
+             */
+            principal: number;
+            /**
+             * Outstanding Principal
+             * @description What the loan account's balance says is still owed, derived from the ledger. Never stored.
+             */
+            outstanding_principal: number;
+            /**
+             * Repaid Principal
+             * @description `principal` minus `outstanding_principal`.
+             */
+            repaid_principal: number;
+            /** Interest Rate Bps */
+            interest_rate_bps: number;
+            /**
+             * Interest Method
+             * @enum {string}
+             */
+            interest_method: "reducing" | "flat";
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Tenure Months */
+            tenure_months: number;
+            /** Emi Amount */
+            emi_amount: number;
+            /**
+             * Emi Frequency
+             * @enum {string}
+             */
+            emi_frequency: "monthly" | "quarterly" | "half_yearly" | "yearly";
+            /**
+             * First Payment Date
+             * Format: date
+             */
+            first_payment_date: string;
+            /**
+             * Next Payment Date
+             * @description The earliest scheduled installment.
+             */
+            next_payment_date: string | null;
+            /** Next Payment Amount */
+            next_payment_amount: number | null;
+            /** Paid Installments */
+            paid_installments: number;
+            /**
+             * Total Installments
+             * @description Installments Orbit tracks: those still ahead when the loan was added, plus any added by rescheduling.
+             */
+            total_installments: number;
+            /**
+             * Remaining Interest
+             * @description Interest on the scheduled installments.
+             */
+            remaining_interest: number;
+            /** Notes */
+            notes: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "closed" | "archived";
+            reminder: components["schemas"]["ReminderSettingsResponse"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /** LocalAuthConfig */
         LocalAuthConfig: {
             /**
@@ -1547,6 +2226,163 @@ export interface components {
             read_at: string | null;
         };
         /**
+         * PayInstallmentRequest
+         * @description Record an installment as paid. Either give `from_account_id`, and Orbit records the
+         *     principal as a transfer into the loan account and the interest as a "Loan interest" expense,
+         *     or link the transactions you already recorded.
+         */
+        PayInstallmentRequest: {
+            /**
+             * Paid On
+             * Format: date
+             */
+            paid_on: string;
+            /** From Account Id */
+            from_account_id?: string | null;
+            /**
+             * Principal
+             * @description What was actually paid; defaults to the scheduled principal.
+             */
+            principal?: number | null;
+            /**
+             * Interest
+             * @description What was actually paid; defaults to the scheduled interest.
+             */
+            interest?: number | null;
+            /**
+             * Principal Transaction Id
+             * @description A transfer into the loan account.
+             */
+            principal_transaction_id?: string | null;
+            /**
+             * Interest Transaction Id
+             * @description An expense.
+             */
+            interest_transaction_id?: string | null;
+        };
+        /** PaymentItemResponse */
+        PaymentItemResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "loan" | "subscription" | "bill";
+            /**
+             * Commitment Id
+             * Format: uuid
+             * @description The loan, subscription, or bill.
+             */
+            commitment_id: string;
+            /**
+             * Occurrence Id
+             * @description The installment, or the settled occurrence. `null` for a subscription or bill payment that is still expected.
+             */
+            occurrence_id: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Counterparty
+             * @description The lender or provider; may be empty.
+             */
+            counterparty: string;
+            /** Amount */
+            amount: number;
+            /**
+             * Estimated
+             * @description True for an expected bill whose amount varies.
+             */
+            estimated: boolean;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "upcoming" | "due" | "overdue" | "paid" | "skipped";
+            /** Account Id */
+            account_id: string | null;
+            /** Paid On */
+            paid_on: string | null;
+            /** Transaction Ids */
+            transaction_ids: string[];
+            /**
+             * Principal
+             * @description Loans only.
+             */
+            principal: number | null;
+            /**
+             * Interest
+             * @description Loans only.
+             */
+            interest: number | null;
+        };
+        /** PaymentListResponse */
+        PaymentListResponse: {
+            /**
+             * Today
+             * Format: date
+             */
+            today: string;
+            /**
+             * Date From
+             * Format: date
+             */
+            date_from: string;
+            /**
+             * Date To
+             * Format: date
+             */
+            date_to: string;
+            /**
+             * Payments
+             * @description By due date.
+             */
+            payments: components["schemas"]["PaymentItemResponse"][];
+        };
+        /**
+         * RecordRecurringPaymentRequest
+         * @description Record one occurrence as paid. `create` records an expense from `account_id` (default:
+         *     the usual account) in the subscription's or bill's category; `link` uses an expense already
+         *     recorded (`transaction_id`); `manual` marks it paid without a transaction, so it isn't
+         *     counted as spending.
+         */
+        RecordRecurringPaymentRequest: {
+            /**
+             * Due Date
+             * Format: date
+             * @description The occurrence being paid.
+             */
+            due_date: string;
+            /**
+             * Paid On
+             * Format: date
+             */
+            paid_on: string;
+            /**
+             * Mode
+             * @default create
+             * @enum {string}
+             */
+            mode: "create" | "link" | "manual";
+            /**
+             * Amount
+             * @description What was paid; defaults to the expected amount.
+             */
+            amount?: number | null;
+            /** Account Id */
+            account_id?: string | null;
+            /** Transaction Id */
+            transaction_id?: string | null;
+        };
+        /**
          * RecurrenceModel
          * @description How a reminder repeats. Monthly reminders on a day a month lacks (29 to 31) fire on that
          *     month's last day.
@@ -1562,6 +2398,123 @@ export interface components {
              * @description Weekly only, and required for it: the days it repeats on.
              */
             weekdays?: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[];
+        };
+        /** RecurringPaymentListResponse */
+        RecurringPaymentListResponse: {
+            /**
+             * Recurring Payments
+             * @description Active first, then paused, then cancelled, each by name.
+             */
+            recurring_payments: components["schemas"]["RecurringPaymentResponse"][];
+        };
+        /** RecurringPaymentResponse */
+        RecurringPaymentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "subscription" | "bill";
+            /** Name */
+            name: string;
+            /** Provider */
+            provider: string;
+            /** Category Id */
+            category_id: string | null;
+            /**
+             * Account Id
+             * @description The account it's usually paid from.
+             */
+            account_id: string | null;
+            /**
+             * Amount
+             * @description The expected amount; an estimate when `amount_varies`.
+             */
+            amount: number;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /** Amount Varies */
+            amount_varies: boolean;
+            /**
+             * Frequency
+             * @enum {string}
+             */
+            frequency: "weekly" | "monthly" | "quarterly" | "half_yearly" | "yearly";
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /**
+             * Next Due Date
+             * @description The earliest unsettled due date, possibly overdue; `null` when nothing is expected (paused, cancelled, or past its end date).
+             */
+            next_due_date: string | null;
+            /** End Date */
+            end_date: string | null;
+            /** Trial Ends On */
+            trial_ends_on: string | null;
+            /** Auto Renew */
+            auto_renew: boolean;
+            /**
+             * Status
+             * @description `active`, `paused`, `cancelled`, or `expired` (active, past its end date).
+             * @enum {string}
+             */
+            status: "active" | "paused" | "cancelled" | "expired";
+            /**
+             * Overdue
+             * @description Unsettled occurrences due before today.
+             */
+            overdue: number;
+            /**
+             * Monthly Cost
+             * @description `amount` as a monthly average, rounded half up.
+             */
+            monthly_cost: number;
+            /** Annual Cost */
+            annual_cost: number;
+            /** Last Paid On */
+            last_paid_on: string | null;
+            /** Notes */
+            notes: string;
+            reminder: components["schemas"]["ReminderSettingsResponse"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ReminderCommitmentResponse */
+        ReminderCommitmentResponse: {
+            /**
+             * Kind
+             * @description `loan`, or `recurring_payment` for a subscription or bill.
+             * @enum {string}
+             */
+            kind: "loan" | "recurring_payment";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
         };
         /** ReminderListResponse */
         ReminderListResponse: {
@@ -1587,6 +2540,8 @@ export interface components {
             workspace_id: string;
             /** @description The task this reminder is about, or `null` for a standalone reminder. */
             task: components["schemas"]["ReminderTaskResponse"] | null;
+            /** @description The loan, subscription, or bill that manages this reminder. Such reminders follow its next payment and can't be edited or deleted here (409). */
+            commitment?: components["schemas"]["ReminderCommitmentResponse"] | null;
             /** Title */
             title: string;
             /**
@@ -1644,6 +2599,40 @@ export interface components {
              */
             updated_at: string;
         };
+        /**
+         * ReminderSettingsRequest
+         * @description Remind about each payment `days_before` its due date, at `time_of_day`.
+         */
+        ReminderSettingsRequest: {
+            /**
+             * Days Before
+             * @description 0 reminds on the due date itself.
+             */
+            days_before: number;
+            /**
+             * Time Of Day
+             * Format: time
+             * @default 09:00:00
+             */
+            time_of_day: string;
+            /**
+             * Timezone
+             * @description Defaults to your time zone preference, else UTC.
+             */
+            timezone?: string | null;
+        };
+        /** ReminderSettingsResponse */
+        ReminderSettingsResponse: {
+            /** Days Before */
+            days_before: number;
+            /**
+             * Time Of Day
+             * Format: time
+             */
+            time_of_day: string;
+            /** Timezone */
+            timezone: string;
+        };
         /** ReminderTaskResponse */
         ReminderTaskResponse: {
             /**
@@ -1663,6 +2652,68 @@ export interface components {
         RenameCategoryRequest: {
             /** Name */
             name: string;
+        };
+        /**
+         * RescheduleLoanRequest
+         * @description Regenerate the unpaid installments from what is still owed, after a prepayment (a
+         *     transfer into the loan account) or a rate change. Without `emi_amount` the number of
+         *     installments stays the same and the EMI is recomputed; with it, the tenure changes.
+         */
+        RescheduleLoanRequest: {
+            /** Interest Rate Bps */
+            interest_rate_bps?: number | null;
+            /** Emi Amount */
+            emi_amount?: number | null;
+            /** Next Payment Date */
+            next_payment_date?: string | null;
+        };
+        /** SettledOccurrenceListResponse */
+        SettledOccurrenceListResponse: {
+            /**
+             * Occurrences
+             * @description Newest due date first.
+             */
+            occurrences: components["schemas"]["SettledOccurrenceResponse"][];
+        };
+        /** SettledOccurrenceResponse */
+        SettledOccurrenceResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Recurring Payment Id
+             * Format: uuid
+             */
+            recurring_payment_id: string;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "paid" | "skipped";
+            /**
+             * Amount
+             * @description What was paid; `null` when skipped.
+             */
+            amount: number | null;
+            /** Paid On */
+            paid_on: string | null;
+            /**
+             * Transaction Id
+             * @description The expense that recorded it; `null` when skipped or marked paid without a transaction (not counted as spending).
+             */
+            transaction_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** ShoppingItemResponse */
         ShoppingItemResponse: {
@@ -1807,6 +2858,14 @@ export interface components {
              */
             lists: components["schemas"]["ShoppingListOverviewResponse"][];
         };
+        /** SkipOccurrenceRequest */
+        SkipOccurrenceRequest: {
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+        };
         /** SpendingResponse */
         SpendingResponse: {
             /**
@@ -1943,6 +3002,13 @@ export interface components {
              */
             due_today: number;
         };
+        /** TotalResponse */
+        TotalResponse: {
+            /** Count */
+            count: number;
+            /** Amount */
+            amount: number;
+        };
         /** TransactionListResponse */
         TransactionListResponse: {
             /** Transactions */
@@ -2052,6 +3118,18 @@ export interface components {
             notes?: string | null;
         };
         /**
+         * UpdateInstallmentRequest
+         * @description Adjust a scheduled installment by hand.
+         */
+        UpdateInstallmentRequest: {
+            /** Due Date */
+            due_date?: string | null;
+            /** Principal */
+            principal?: number | null;
+            /** Interest */
+            interest?: number | null;
+        };
+        /**
          * UpdateItemRequest
          * @description Change some of an item's fields. Omitted fields keep their values; `quantity: null` and
          *     `url: null` clear them. Purchasing has its own endpoints.
@@ -2065,6 +3143,29 @@ export interface components {
             url?: string | null;
             /** Notes */
             notes?: string | null;
+        };
+        /**
+         * UpdateLoanRequest
+         * @description Change a loan's details or status. `payment_account_id: null` and `reminder: null`
+         *     clear them. Rate and EMI changes go through `/reschedule`.
+         */
+        UpdateLoanRequest: {
+            /** Name */
+            name?: string | null;
+            /** Lender */
+            lender?: string | null;
+            /** Loan Type */
+            loan_type?: ("personal" | "vehicle" | "home" | "education" | "other") | null;
+            /** Payment Account Id */
+            payment_account_id?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Status
+             * @description `closed` when repaid or foreclosed, `archived` to hide it. Either stops expecting its scheduled installments; `active` resumes them.
+             */
+            status?: ("active" | "closed" | "archived") | null;
+            reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
         };
         /** UpdateNotificationRequest */
         UpdateNotificationRequest: {
@@ -2081,6 +3182,44 @@ export interface components {
             display_name?: string | null;
             /** Timezone */
             timezone?: string | null;
+        };
+        /**
+         * UpdateRecurringPaymentRequest
+         * @description Change some fields; `null` clears `category_id`, `account_id`, `end_date`,
+         *     `trial_ends_on`, or `reminder`. `state` pauses (`paused`), cancels (`cancelled`), or resumes
+         *     (`active`) it; history is always kept. Changing `frequency` or `next_due_date`, or resuming,
+         *     restarts the schedule.
+         */
+        UpdateRecurringPaymentRequest: {
+            /** Name */
+            name?: string | null;
+            /** Provider */
+            provider?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /** Account Id */
+            account_id?: string | null;
+            /** Amount */
+            amount?: number | null;
+            /** Amount Varies */
+            amount_varies?: boolean | null;
+            /** Frequency */
+            frequency?: ("weekly" | "monthly" | "quarterly" | "half_yearly" | "yearly") | null;
+            /** Start Date */
+            start_date?: string | null;
+            /** Next Due Date */
+            next_due_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Trial Ends On */
+            trial_ends_on?: string | null;
+            /** Auto Renew */
+            auto_renew?: boolean | null;
+            /** State */
+            state?: ("active" | "paused" | "cancelled") | null;
+            /** Notes */
+            notes?: string | null;
+            reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
         };
         /**
          * UpdateReminderRequest
@@ -4246,6 +5385,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description The reminder is managed by a loan, subscription, or bill. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -4292,6 +5438,13 @@ export interface operations {
             };
             /** @description The workspace or reminder does not exist or is not accessible. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The reminder is managed by a loan, subscription, or bill. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5043,6 +6196,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description The transaction records a commitment payment. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -5337,6 +6497,1019 @@ export interface operations {
                 content?: never;
             };
             /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_loans_api_v1_workspaces__workspace_id__finance_loans_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_loan_api_v1_workspaces__workspace_id__finance_loans_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateLoanRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description The loan's ID. */
+                loan_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The loan's ID. */
+                loan_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateLoanRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reschedule_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__reschedule_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The loan's ID. */
+                loan_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RescheduleLoanRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adjust_installment_api_v1_workspaces__workspace_id__finance_loans__loan_id__installments__installment_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The loan's ID. */
+                loan_id: string;
+                /** @description The installment's ID. */
+                installment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateInstallmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstallmentResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    pay_installment_api_v1_workspaces__workspace_id__finance_loans__loan_id__installments__installment_id__pay_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The loan's ID. */
+                loan_id: string;
+                /** @description The installment's ID. */
+                installment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayInstallmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstallmentResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    skip_installment_api_v1_workspaces__workspace_id__finance_loans__loan_id__installments__installment_id__skip_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The loan's ID. */
+                loan_id: string;
+                /** @description The installment's ID. */
+                installment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstallmentResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    undo_installment_api_v1_workspaces__workspace_id__finance_loans__loan_id__installments__installment_id__undo_post: {
+        parameters: {
+            query?: {
+                /** @description Also delete the transactions that recorded the payment. Otherwise they stay in the ledger, unlinked. */
+                delete_transactions?: boolean;
+            };
+            header?: never;
+            path: {
+                /** @description The loan's ID. */
+                loan_id: string;
+                /** @description The installment's ID. */
+                installment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstallmentResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_recurring_payments_api_v1_workspaces__workspace_id__finance_recurring_payments_get: {
+        parameters: {
+            query?: {
+                kind?: ("subscription" | "bill") | null;
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringPaymentListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_recurring_payment_api_v1_workspaces__workspace_id__finance_recurring_payments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRecurringPaymentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringPaymentResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_recurring_payment_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description The subscription's or bill's ID. */
+                payment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringPaymentResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_recurring_payment_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The subscription's or bill's ID. */
+                payment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRecurringPaymentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringPaymentResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_occurrences_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__occurrences_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The subscription's or bill's ID. */
+                payment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettledOccurrenceListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_recurring_payment_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__occurrences_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The subscription's or bill's ID. */
+                payment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordRecurringPaymentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettledOccurrenceResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    skip_recurring_occurrence_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__occurrences_skip_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The subscription's or bill's ID. */
+                payment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkipOccurrenceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettledOccurrenceResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    undo_recurring_occurrence_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__occurrences__occurrence_id__delete: {
+        parameters: {
+            query?: {
+                /** @description Also delete the expense that recorded the payment. Otherwise it stays in the ledger, unlinked. */
+                delete_transaction?: boolean;
+            };
+            header?: never;
+            path: {
+                /** @description The subscription's or bill's ID. */
+                payment_id: string;
+                /** @description The settled occurrence's ID. */
+                occurrence_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_payments_api_v1_workspaces__workspace_id__finance_payments_get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+                /** @description Inclusive. Defaults to 30 days before `today`. */
+                date_from?: string | null;
+                /** @description Inclusive. Defaults to 30 days after `today`. */
+                date_to?: string | null;
+                /** @description Repeat for several. Omit for all. */
+                kind?: ("loan" | "subscription" | "bill")[];
+                /** @description Repeat for several. Omit for all. */
+                status?: ("upcoming" | "due" | "overdue" | "paid" | "skipped")[];
+                /** @description Also list unsettled payments due before `date_from`. */
+                include_overdue?: boolean;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    commitment_summary_api_v1_workspaces__workspace_id__finance_commitments_summary_get: {
+        parameters: {
+            query?: {
+                currency?: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommitmentSummaryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
             404: {
                 headers: {
                     [name: string]: unknown;

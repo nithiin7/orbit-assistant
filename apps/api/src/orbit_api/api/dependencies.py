@@ -11,6 +11,7 @@ from orbit_api.config import Settings
 from orbit_api.db.database import Database
 from orbit_api.repositories.accounts import SqlAccountRepository, SqlLocalAuthRepository
 from orbit_api.repositories.avatars import SqlAvatarRepository
+from orbit_api.repositories.commitments import build_commitment_service
 from orbit_api.repositories.dashboard import SqlDashboardRepository
 from orbit_api.repositories.finance import (
     SqlFinanceAccountRepository,
@@ -25,6 +26,7 @@ from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.repositories.workspaces import SqlWorkspaceRepository
 from orbit_api.services.accounts.service import AccountService
 from orbit_api.services.avatars.service import AvatarService
+from orbit_api.services.commitments.service import CommitmentService
 from orbit_api.services.dashboard.service import DashboardService
 from orbit_api.services.finance.service import FinanceService
 from orbit_api.services.local_auth.service import LocalAuthService, PasswordHasher
@@ -155,3 +157,10 @@ def get_finance_service(session: SessionDep) -> FinanceService:
 
 
 FinanceServiceDep = Annotated[FinanceService, Depends(get_finance_service)]
+
+
+def get_commitment_service(session: SessionDep) -> CommitmentService:
+    return build_commitment_service(session)
+
+
+CommitmentServiceDep = Annotated[CommitmentService, Depends(get_commitment_service)]

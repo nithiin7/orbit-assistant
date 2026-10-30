@@ -45,6 +45,7 @@ from orbit_api.services.finance.models import (
     CategoryConflictError,
     CategoryNotFoundError,
     InvalidTransactionError,
+    TransactionInUseError,
     TransactionNotFoundError,
     TransactionQuery,
 )
@@ -333,15 +334,24 @@ async def update_transaction(
     "/transactions/{transaction_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a transaction",
+    responses={409: {"description": "The transaction records a commitment payment."}},
 )
 async def delete_transaction(
     transaction_id: TransactionId, workspace: WorkspaceDep, finance: FinanceServiceDep
 ) -> Response:
-    """Permanently delete a transaction, removing it from balances and reports."""
+    """Permanently delete a transaction, removing it from balances and reports. A transaction
+    that records a loan, subscription, or bill payment can't be deleted until that payment is
+    undone (409)."""
     try:
         await finance.delete(workspace.id, transaction_id)
     except TransactionNotFoundError:
         raise transaction_not_found() from None
+    except TransactionInUseError:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "This transaction records a loan, subscription, or bill payment. Undo that payment "
+            "first.",
+        ) from None
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

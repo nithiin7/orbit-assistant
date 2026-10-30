@@ -35,6 +35,7 @@ from orbit_api.services.finance.models import (
     Transaction,
     TransactionChanges,
     TransactionDraft,
+    TransactionInUseError,
     TransactionNotFoundError,
     TransactionPage,
     TransactionQuery,
@@ -87,6 +88,10 @@ class CategoryRepository(Protocol):
         """Whether any transaction has this category."""
         ...
 
+    async def is_used_by_recurring(self, workspace_id: uuid.UUID, category_id: uuid.UUID) -> bool:
+        """Whether any subscription or bill has this category."""
+        ...
+
     async def delete(self, workspace_id: uuid.UUID, category_id: uuid.UUID) -> None: ...
 
 
@@ -110,7 +115,8 @@ class TransactionRepository(Protocol):
         ...
 
     async def delete(self, workspace_id: uuid.UUID, transaction_id: uuid.UUID) -> bool:
-        """Delete the transaction if it belongs to `workspace_id`; report whether it did."""
+        """Delete the transaction if it belongs to `workspace_id`; report whether it did.
+        Raises `ConflictError` if a loan, subscription, or bill payment links to it."""
         ...
 
     async def cash_flow(
@@ -179,7 +185,10 @@ class FinanceService:
             raise AccountNotFoundError
         return views[0]
 
-    async def create_account(self, workspace_id: uuid.UUID, draft: AccountDraft) -> AccountView:
+    async def create_account(
+        self, workspace_id: uuid.UUID, draft: AccountDraft, *, commit: bool = True
+    ) -> AccountView:
+        """With `commit=False` the caller commits, as when a loan creates its account."""
         now = self._clock()
         account = Account(
             id=uuid.uuid4(),
@@ -194,7 +203,8 @@ class FinanceService:
             updated_at=now,
         )
         await self._accounts.add(account)
-        await self._unit_of_work.commit()
+        if commit:
+            await self._unit_of_work.commit()
         return AccountView(account=account, balance=account.opening_balance)
 
     async def update_account(
@@ -307,6 +317,10 @@ class FinanceService:
             raise CategoryConflictError("Built-in categories can't be deleted. Rename it instead.")
         if await self._categories.is_used(workspace_id, category_id):
             raise _category_in_use()
+        if await self._categories.is_used_by_recurring(workspace_id, category_id):
+            raise CategoryConflictError(
+                "Subscriptions or bills use this category. Move them to another category first."
+            )
         try:
             await self._categories.delete(workspace_id, category_id)
             await self._unit_of_work.commit()
@@ -326,7 +340,11 @@ class FinanceService:
             raise TransactionNotFoundError
         return transaction
 
-    async def create(self, workspace_id: uuid.UUID, draft: TransactionDraft) -> Transaction:
+    async def create(
+        self, workspace_id: uuid.UUID, draft: TransactionDraft, *, commit: bool = True
+    ) -> Transaction:
+        """Validate and record a transaction. With `commit=False` the caller commits, so the
+        transaction can be written atomically with related records (a commitment payment)."""
         currency = await self._check(workspace_id, draft, previous=None)
         now = self._clock()
         transaction = Transaction(
@@ -345,7 +363,8 @@ class FinanceService:
             updated_at=now,
         )
         await self._transactions.add(transaction)
-        await self._unit_of_work.commit()
+        if commit:
+            await self._unit_of_work.commit()
         return transaction
 
     async def update(
@@ -397,10 +416,20 @@ class FinanceService:
         await self._unit_of_work.commit()
         return updated
 
-    async def delete(self, workspace_id: uuid.UUID, transaction_id: uuid.UUID) -> None:
-        if not await self._transactions.delete(workspace_id, transaction_id):
+    async def delete(
+        self, workspace_id: uuid.UUID, transaction_id: uuid.UUID, *, commit: bool = True
+    ) -> None:
+        """Delete a transaction. One that records a commitment payment raises
+        `TransactionInUseError`: the database refuses to orphan the payment."""
+        try:
+            deleted = await self._transactions.delete(workspace_id, transaction_id)
+        except ConflictError:
+            await self._unit_of_work.rollback()
+            raise TransactionInUseError from None
+        if not deleted:
             raise TransactionNotFoundError
-        await self._unit_of_work.commit()
+        if commit:
+            await self._unit_of_work.commit()
 
     async def export(
         self, workspace_id: uuid.UUID, date_from: date | None, date_to: date | None

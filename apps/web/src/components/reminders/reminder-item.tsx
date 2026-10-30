@@ -1,7 +1,7 @@
 "use client";
 
 import type { Reminder } from "@orbit/contracts";
-import { AlarmClock, CheckSquare, Globe, Repeat, Trash2 } from "lucide-react";
+import { AlarmClock, CheckSquare, Globe, Landmark, Repeat, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +61,8 @@ export function ReminderItem({
   const deleteRef = useRef<HTMLButtonElement>(null);
   const hint = statusHint(reminder);
   const muted = reminder.status === "disabled" || reminder.status === "completed";
+  // A loan, subscription, or bill keeps this reminder on its next payment; change it in Finance.
+  const managed = reminder.commitment !== null && reminder.commitment !== undefined;
 
   useEffect(() => {
     if (confirming) confirmRef.current?.focus();
@@ -83,7 +85,8 @@ export function ReminderItem({
         role="switch"
         aria-checked={reminder.enabled}
         aria-label={`${reminder.enabled ? "Disable" : "Enable"} “${reminder.title}”`}
-        disabled={pending}
+        disabled={pending || managed}
+        title={managed ? "Change this reminder in Finance" : undefined}
         onClick={() => onToggle(reminder)}
         className={cn(
           "relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-wait motion-reduce:transition-none",
@@ -100,17 +103,23 @@ export function ReminderItem({
       </button>
 
       <div className="min-w-0 flex-1 space-y-1">
-        <button
-          type="button"
-          onClick={() => onEdit(reminder)}
-          aria-label={`Edit “${reminder.title}”`}
-          className={cn(
-            "block max-w-full rounded-sm text-left text-sm font-medium break-words outline-none hover:underline hover:decoration-muted-foreground/50 hover:underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring",
-            muted && "text-muted-foreground",
-          )}
-        >
-          {reminder.title}
-        </button>
+        {managed ? (
+          <p className={cn("text-sm font-medium break-words", muted && "text-muted-foreground")}>
+            {reminder.title}
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onEdit(reminder)}
+            aria-label={`Edit “${reminder.title}”`}
+            className={cn(
+              "block max-w-full rounded-sm text-left text-sm font-medium break-words outline-none hover:underline hover:decoration-muted-foreground/50 hover:underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring",
+              muted && "text-muted-foreground",
+            )}
+          >
+            {reminder.title}
+          </button>
+        )}
         {reminder.description ? (
           <p className="line-clamp-2 text-sm break-words whitespace-pre-line text-muted-foreground">
             {reminder.description}
@@ -136,6 +145,12 @@ export function ReminderItem({
               {timeZoneLabel(reminder.timezone)}
             </span>
           ) : null}
+          {managed ? (
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              <Landmark className="size-3.5" aria-hidden="true" />
+              Managed in Finance
+            </span>
+          ) : null}
           {reminder.task ? (
             <span className="inline-flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
               <CheckSquare className="size-3.5 shrink-0" aria-hidden="true" />
@@ -155,7 +170,7 @@ export function ReminderItem({
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
-        {confirming ? (
+        {managed ? null : confirming ? (
           <div
             role="group"
             aria-label={`Delete “${reminder.title}”?`}

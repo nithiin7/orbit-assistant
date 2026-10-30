@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from orbit_api.db.columns import utc_now
 from orbit_api.db.database import Database
+from orbit_api.repositories.commitments import build_commitment_service
 from orbit_api.repositories.notifications import SqlNotificationRepository
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.transaction import SqlTransaction
@@ -142,4 +143,6 @@ class ReminderWorker:
             SqlTransaction(session),
             clock=self._clock,
             max_attempts=self._max_attempts,
+            # Loan, subscription, and bill reminders move on to the next payment once delivered.
+            follow_up=build_commitment_service(session, self._clock),
         )

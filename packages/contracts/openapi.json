@@ -2750,6 +2750,9 @@
           },
           "422": {
             "description": "Invalid input, a task outside this workspace, or a one-time reminder in the past."
+          },
+          "409": {
+            "description": "The reminder is managed by a loan, subscription, or bill."
           }
         }
       },
@@ -2798,6 +2801,9 @@
           },
           "404": {
             "description": "The workspace or reminder does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The reminder is managed by a loan, subscription, or bill."
           },
           "422": {
             "description": "Validation Error",
@@ -3972,7 +3978,7 @@
           "finance"
         ],
         "summary": "Delete a transaction",
-        "description": "Permanently delete a transaction, removing it from balances and reports.",
+        "description": "Permanently delete a transaction, removing it from balances and reports. A transaction\nthat records a loan, subscription, or bill payment can't be deleted until that payment is\nundone (409).",
         "operationId": "delete_transaction_api_v1_workspaces__workspace_id__finance_transactions__transaction_id__delete",
         "security": [
           {
@@ -4012,6 +4018,9 @@
           },
           "404": {
             "description": "The workspace, account, category, or transaction does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The transaction records a commitment payment."
           },
           "422": {
             "description": "Validation Error",
@@ -4504,6 +4513,1538 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/finance/loans": {
+      "get": {
+        "tags": [
+          "finance commitments"
+        ],
+        "summary": "List loans",
+        "description": "Every loan with its outstanding principal, derived from its loan account's ledger.",
+        "operationId": "list_loans_api_v1_workspaces__workspace_id__finance_loans_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, loan, installment, subscription, or bill does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "finance commitments"
+        ],
+        "summary": "Add a loan",
+        "description": "Creates the loan, its loan account, and the EMI schedule still ahead, in one step.",
+        "operationId": "create_loan_api_v1_workspaces__workspace_id__finance_loans_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLoanRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, loan, installment, subscription, or bill does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Already paid or skipped, or the transaction pays something else."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/loans/{loan_id}": {
+      "get": {
+        "tags": [
+          "finance commitments"
+        ],
+        "summary": "Get a loan and its EMI schedule",
+        "operationId": "get_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "loan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The loan's ID.",
+              "title": "Loan Id"
+            },
+            "description": "The loan's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, loan, installment, subscription, or bill does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "finance commitments"
+        ],
+        "summary": "Update a loan",
+        "operationId": "update_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "loan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The loan's ID.",
+              "title": "Loan Id"
+            },
+            "description": "The loan's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLoanRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, loan, installment, subscription, or bill does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Already paid or skipped, or the transaction pays something else."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/loans/{loan_id}/reschedule": {
+      "post": {
+        "tags": [
+          "finance commitments"
+        ],
+        "summary": "Regenerate unpaid installments",
+        "description": "Replaces the scheduled installments with ones that repay what the ledger says is still\nowed. Paid and skipped installments stay as history.",
+        "operationId": "reschedule_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__reschedule_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "loan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The loan's ID.",
+              "title": "Loan Id"
+            },
+            "description": "The loan's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RescheduleLoanRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, loan, installment, subscription, or bill does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Already paid or skipped, or the transaction pays something else."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/loans/{loan_id}/installments/{installment_id}": {
+      "patch": {
+        "tags": [
+          "finance commitments"
+        ],
+        "summary": "Adjust a scheduled installment",
+        "description": "Change a scheduled installment's due date or principal and interest split by hand.",
+        "operationId": "adjust_installment_api_v1_workspaces__workspace_id__finance_loans__loan_id__installments__installment_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "loan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The loan's ID.",
+              "title": "Loan Id"
+            },
+            "description": "The loan's ID."
+          },
+          {
+            "name": "installment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The installment's ID.",
+              "title": "Installment Id"
+            },
+            "description": "The installment's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInstallmentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstallmentResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, loan, installment, subscription, or bill does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Already paid or skipped, or the transaction pays something else."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/loans/{loan_id}/installments/{installment_id}/pay": {
+      "post": {
+        "tags": [
+          "finance commitments"
+        ],
+        "summary": "Record an EMI payment",
+        "description": "The principal becomes a transfer into the loan account (reducing what's owed, never\nspending) and the interest a \"Loan interest\" expense, or link transactions already\nrecorded. Recorded once: paying again is a 409.",
+        "operationId": "pay_installment_api_v1_workspaces__workspace_id__finance_loans__loan_id__installments__installment_id__pay_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "loan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The loan's ID.",
+              "title": "Loan Id"
+            },
+            "description": "The loan's ID."
+          },
+          {
+            "name": "installment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The installment's ID.",
+              "title": "Installment Id"
+            },
+            "description": "The installment's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PayInstallmentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstallmentResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, loan, installment, subscription, or bill does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Already paid or skipped, or the transaction pays something else."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/loans/{loan_id}/installments/{installment_id}/skip": {
+      "post": {
+        "tags": [
+          "finance commitments"
+        ],
+        "summary": "Skip an installment",
+        "operationId": "skip_installment_api_v1_workspaces__workspace_id__finance_loans__loan_id__installments__installment_id__skip_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "loan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The loan's ID.",
+              "title": "Loan Id"
+            },
+            "description": "The loan's ID."
+          },
+          {
+            "name": "installment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The installment's ID.",
+              "title": "Installment Id"
+            },
+            "description": "The installment's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstallmentResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, loan, installment, subscription, or bill does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Already paid or skipped, or the transaction pays something else."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/loans/{loan_id}/installments/{installment_id}/undo": {
+      "post": {
+        "tags": [
+          "finance commitments"
+        ],
+        "summary": "Undo an installment's payment or skip",
+        "operationId": "undo_installment_api_v1_workspaces__workspace_id__finance_loans__loan_id__installments__installment_id__undo_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "loan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The loan's ID.",
+              "title": "Loan Id"
+            },
+            "description": "The loan's ID."
+          },
+          {
+            "name": "installment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The installment's ID.",
+              "title": "Installment Id"
+            },
+            "description": "The installment's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "delete_transactions",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Also delete the transactions that recorded the payment. Otherwise they stay in the ledger, unlinked.",
+              "default": false,
+              "title": "Delete Transactions"
+            },
+            "description": "Also delete the transactions that recorded the payment. Otherwise they stay in the ledger, unlinked."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstallmentResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, loan, installment, subscription, or bill does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Already paid or skipped, or the transaction pays something else."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/recurring-payments": {
+      "get": {
+        "tags": [
+          "finance commitments"
+        ],
+        "summary": "List subscriptions and bills",
+        "operationId": "list_recurring_payments_api_v1_workspaces__workspace_id__finance_recurring_payments_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "subscription",
+                    "bill"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringPaymentListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, loan, installment, subscription, or bill does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "finance commitments"
+        ],
+        "summary": "Add a subscription or bill",
+        "operationId": "create_recurring_payment_api_v1_workspaces__workspace_id__finance_recurring_payments_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRecurringPaymentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringPaymentResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, loan, installment, subscription, or bill does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Already paid or skipped, or the transaction pays something else."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/recurring-payments/{payment_id}": {
+      "get": {
+        "tags": [
+          "finance commitments"
+        ],
+        "summary": "Get a subscription or bill",
+        "operationId": "get_recurring_payment_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "payment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The subscription's or bill's ID.",
+              "title": "Payment Id"
+            },
+            "description": "The subscription's or bill's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringPaymentResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, loan, installment, subscription, or bill does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "finance commitments"
+        ],
+        "summary": "Update, pause, cancel, or resume a subscription or bill",
+        "description": "Cancelling keeps every recorded payment; nothing is deleted.",
+        "operationId": "update_recurring_payment_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "payment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The subscription's or bill's ID.",
+              "title": "Payment Id"
+            },
+            "description": "The subscription's or bill's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRecurringPaymentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringPaymentResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, loan, installment, subscription, or bill does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Already paid or skipped, or the transaction pays something else."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/recurring-payments/{payment_id}/occurrences": {
+      "get": {
+        "tags": [
+          "finance commitments"
+        ],
+        "summary": "Payment and renewal history",
+        "operationId": "list_occurrences_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__occurrences_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "payment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The subscription's or bill's ID.",
+              "title": "Payment Id"
+            },
+            "description": "The subscription's or bill's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettledOccurrenceListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, loan, installment, subscription, or bill does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "finance commitments"
+        ],
+        "summary": "Record a payment or renewal",
+        "description": "Each due date can be settled once; recording it again is a 409.",
+        "operationId": "record_recurring_payment_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__occurrences_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "payment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The subscription's or bill's ID.",
+              "title": "Payment Id"
+            },
+            "description": "The subscription's or bill's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordRecurringPaymentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettledOccurrenceResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, loan, installment, subscription, or bill does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Already paid or skipped, or the transaction pays something else."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/recurring-payments/{payment_id}/occurrences/skip": {
+      "post": {
+        "tags": [
+          "finance commitments"
+        ],
+        "summary": "Skip a payment or renewal",
+        "operationId": "skip_recurring_occurrence_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__occurrences_skip_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "payment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The subscription's or bill's ID.",
+              "title": "Payment Id"
+            },
+            "description": "The subscription's or bill's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkipOccurrenceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettledOccurrenceResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, loan, installment, subscription, or bill does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Already paid or skipped, or the transaction pays something else."
+          },
+          "422": {
+            "description": "Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/recurring-payments/{payment_id}/occurrences/{occurrence_id}": {
+      "delete": {
+        "tags": [
+          "finance commitments"
+        ],
+        "summary": "Undo a recorded payment or skip",
+        "description": "The payment becomes expected again. Its expense stays in the ledger unless\n`delete_transaction` is set.",
+        "operationId": "undo_recurring_occurrence_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__occurrences__occurrence_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "payment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The subscription's or bill's ID.",
+              "title": "Payment Id"
+            },
+            "description": "The subscription's or bill's ID."
+          },
+          {
+            "name": "occurrence_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The settled occurrence's ID.",
+              "title": "Occurrence Id"
+            },
+            "description": "The settled occurrence's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "delete_transaction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Also delete the expense that recorded the payment. Otherwise it stays in the ledger, unlinked.",
+              "default": false,
+              "title": "Delete Transaction"
+            },
+            "description": "Also delete the expense that recorded the payment. Otherwise it stays in the ledger, unlinked."
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, loan, installment, subscription, or bill does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/payments": {
+      "get": {
+        "tags": [
+          "finance commitments"
+        ],
+        "summary": "Upcoming, due, overdue, and recent payments",
+        "description": "Loan EMIs, subscription renewals, and bills in one list, by due date. Expected payments\nare not spending until recorded.",
+        "operationId": "list_payments_api_v1_workspaces__workspace_id__finance_payments_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive. Defaults to 30 days before `today`.",
+              "title": "Date From"
+            },
+            "description": "Inclusive. Defaults to 30 days before `today`."
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive. Defaults to 30 days after `today`.",
+              "title": "Date To"
+            },
+            "description": "Inclusive. Defaults to 30 days after `today`."
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "loan",
+                  "subscription",
+                  "bill"
+                ],
+                "type": "string"
+              },
+              "description": "Repeat for several. Omit for all.",
+              "title": "Kind"
+            },
+            "description": "Repeat for several. Omit for all."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "upcoming",
+                  "due",
+                  "overdue",
+                  "paid",
+                  "skipped"
+                ],
+                "type": "string"
+              },
+              "description": "Repeat for several. Omit for all.",
+              "title": "Status"
+            },
+            "description": "Repeat for several. Omit for all."
+          },
+          {
+            "name": "include_overdue",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Also list unsettled payments due before `date_from`.",
+              "default": true,
+              "title": "Include Overdue"
+            },
+            "description": "Also list unsettled payments due before `date_from`."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, loan, installment, subscription, or bill does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/commitments/summary": {
+      "get": {
+        "tags": [
+          "finance commitments"
+        ],
+        "summary": "Commitment totals for the dashboard",
+        "description": "Outstanding loans, monthly EMIs and subscriptions, bills due soon, what's left to pay this\nmonth, and what's overdue, in one currency.",
+        "operationId": "commitment_summary_api_v1_workspaces__workspace_id__finance_commitments_summary_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "INR",
+                "USD",
+                "EUR",
+                "GBP",
+                "AED",
+                "SGD",
+                "AUD",
+                "CAD",
+                "CHF",
+                "JPY"
+              ],
+              "type": "string",
+              "default": "INR",
+              "title": "Currency"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Your local date. Defaults to today in your time zone preference, else UTC.",
+              "title": "Today"
+            },
+            "description": "Your local date. Defaults to today in your time zone preference, else UTC."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommitmentSummaryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, loan, installment, subscription, or bill does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/storage": {
       "get": {
         "tags": [
@@ -4616,6 +6157,7 @@
               "wallet",
               "credit_card",
               "investment",
+              "loan",
               "other"
             ],
             "title": "Type"
@@ -4627,7 +6169,7 @@
               "liability"
             ],
             "title": "Account Class",
-            "description": "`liability` for credit cards, whose balance is negative while money is owed; `asset` for everything else. Investment accounts hold what was moved into them, not market value."
+            "description": "`liability` for credit cards and loans, whose balance is negative while money is owed; `asset` for everything else. Investment accounts hold what was moved into them, not market value."
           },
           "currency": {
             "type": "string",
@@ -4731,7 +6273,7 @@
           "liabilities": {
             "type": "integer",
             "title": "Liabilities",
-            "description": "What credit cards owe, as a positive amount in minor units."
+            "description": "What credit cards and loans owe, as a positive amount in minor units."
           }
         },
         "type": "object",
@@ -4863,6 +6405,83 @@
         ],
         "title": "CategorySpendingResponse"
       },
+      "CommitmentSummaryResponse": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "today": {
+            "type": "string",
+            "format": "date",
+            "title": "Today"
+          },
+          "loans_outstanding": {
+            "type": "integer",
+            "title": "Loans Outstanding",
+            "description": "Outstanding principal on active loans."
+          },
+          "active_loans": {
+            "type": "integer",
+            "title": "Active Loans"
+          },
+          "monthly_emi": {
+            "type": "integer",
+            "title": "Monthly Emi",
+            "description": "Active loans' EMIs as a monthly average."
+          },
+          "monthly_subscriptions": {
+            "type": "integer",
+            "title": "Monthly Subscriptions"
+          },
+          "annual_subscriptions": {
+            "type": "integer",
+            "title": "Annual Subscriptions"
+          },
+          "active_subscriptions": {
+            "type": "integer",
+            "title": "Active Subscriptions"
+          },
+          "upcoming_bills": {
+            "$ref": "#/components/schemas/TotalResponse",
+            "description": "Expected bills due in the next 30 days."
+          },
+          "due_this_month": {
+            "$ref": "#/components/schemas/TotalResponse",
+            "description": "Expected payments of any kind due from today to the end of the month."
+          },
+          "overdue": {
+            "$ref": "#/components/schemas/TotalResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "today",
+          "loans_outstanding",
+          "active_loans",
+          "monthly_emi",
+          "monthly_subscriptions",
+          "annual_subscriptions",
+          "active_subscriptions",
+          "upcoming_bills",
+          "due_this_month",
+          "overdue"
+        ],
+        "title": "CommitmentSummaryResponse"
+      },
       "CreateAccountRequest": {
         "properties": {
           "name": {
@@ -4882,7 +6501,8 @@
               "investment",
               "other"
             ],
-            "title": "Type"
+            "title": "Type",
+            "description": "Loan accounts are created with a loan, not on their own."
           },
           "currency": {
             "type": "string",
@@ -4994,6 +6614,350 @@
           "name"
         ],
         "title": "CreateItemRequest"
+      },
+      "CreateLoanRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "lender": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Lender",
+            "default": ""
+          },
+          "loan_type": {
+            "type": "string",
+            "enum": [
+              "personal",
+              "vehicle",
+              "home",
+              "education",
+              "other"
+            ],
+            "title": "Loan Type"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency",
+            "default": "INR"
+          },
+          "principal": {
+            "type": "integer",
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Principal",
+            "description": "The amount originally borrowed."
+          },
+          "outstanding_principal": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
+                "description": "Minor units, always positive: ₹12.50 is 1250."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outstanding Principal",
+            "description": "For a loan already being repaid: what is still owed. Defaults to `principal`."
+          },
+          "interest_rate_bps": {
+            "type": "integer",
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Interest Rate Bps",
+            "description": "Annual interest rate in basis points: 8.5% is 850."
+          },
+          "interest_method": {
+            "type": "string",
+            "enum": [
+              "reducing",
+              "flat"
+            ],
+            "title": "Interest Method",
+            "description": "`reducing`: interest on the outstanding balance (most loans). `flat`: interest on the original principal for the whole tenure.",
+            "default": "reducing"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "tenure_months": {
+            "type": "integer",
+            "maximum": 7200.0,
+            "minimum": 1.0,
+            "title": "Tenure Months",
+            "description": "The loan's term in months."
+          },
+          "emi_frequency": {
+            "type": "string",
+            "enum": [
+              "monthly",
+              "quarterly",
+              "half_yearly",
+              "yearly"
+            ],
+            "title": "Emi Frequency",
+            "default": "monthly"
+          },
+          "first_payment_date": {
+            "type": "string",
+            "format": "date",
+            "title": "First Payment Date"
+          },
+          "next_payment_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Payment Date",
+            "description": "For a loan already being repaid: the next installment's date. Defaults to `first_payment_date`."
+          },
+          "emi_amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
+                "description": "Minor units, always positive: ₹12.50 is 1250."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emi Amount",
+            "description": "The lender's EMI. Defaults to the standard EMI for the terms."
+          },
+          "payment_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Account Id"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          },
+          "reminder": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReminderSettingsRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "loan_type",
+          "principal",
+          "interest_rate_bps",
+          "start_date",
+          "tenure_months",
+          "first_payment_date"
+        ],
+        "title": "CreateLoanRequest",
+        "description": "Track a loan. Orbit creates a `loan` account for it whose opening balance is the\noutstanding principal (owed), and generates the installments still ahead."
+      },
+      "CreateRecurringPaymentRequest": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "subscription",
+              "bill"
+            ],
+            "title": "Kind"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "provider": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Provider",
+            "default": ""
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id",
+            "description": "An expense category."
+          },
+          "account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Id"
+          },
+          "amount": {
+            "type": "integer",
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "Minor units, always positive: ₹12.50 is 1250."
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency",
+            "default": "INR"
+          },
+          "amount_varies": {
+            "type": "boolean",
+            "title": "Amount Varies",
+            "description": "For bills like electricity: `amount` is an estimate.",
+            "default": false
+          },
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "weekly",
+              "monthly",
+              "quarterly",
+              "half_yearly",
+              "yearly"
+            ],
+            "title": "Frequency"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date",
+            "description": "When it began. Defaults to `next_due_date`."
+          },
+          "next_due_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Next Due Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "trial_ends_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Ends On"
+          },
+          "auto_renew": {
+            "type": "boolean",
+            "title": "Auto Renew",
+            "default": true
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          },
+          "reminder": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReminderSettingsRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "name",
+          "amount",
+          "frequency",
+          "next_due_date"
+        ],
+        "title": "CreateRecurringPaymentRequest",
+        "description": "Track a subscription or a recurring bill. Its due dates repeat from `next_due_date`."
       },
       "CreateReminderRequest": {
         "properties": {
@@ -5400,6 +7364,400 @@
         "title": "HealthResponse",
         "description": "Reports that the API process is running and able to serve requests."
       },
+      "InstallmentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "loan_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Loan Id"
+          },
+          "sequence": {
+            "type": "integer",
+            "title": "Sequence",
+            "description": "The installment's number within the loan's tenure."
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Due Date"
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount",
+            "description": "`principal` plus `interest`."
+          },
+          "principal": {
+            "type": "integer",
+            "title": "Principal",
+            "description": "Repays the loan: a transfer, never spending."
+          },
+          "interest": {
+            "type": "integer",
+            "title": "Interest",
+            "description": "The cost of borrowing: an expense."
+          },
+          "balance_after": {
+            "type": "integer",
+            "title": "Balance After",
+            "description": "Principal still owed after this installment: projected from the ledger while scheduled, as recorded once paid."
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "scheduled",
+              "paid",
+              "skipped"
+            ],
+            "title": "State"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "upcoming",
+              "due",
+              "overdue",
+              "paid",
+              "skipped"
+            ],
+            "title": "Status",
+            "description": "`state` as of `today`: upcoming, due, or overdue."
+          },
+          "paid_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paid On"
+          },
+          "principal_transaction_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Principal Transaction Id"
+          },
+          "interest_transaction_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interest Transaction Id"
+          },
+          "adjusted": {
+            "type": "boolean",
+            "title": "Adjusted",
+            "description": "Edited by hand rather than generated."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "loan_id",
+          "sequence",
+          "due_date",
+          "amount",
+          "principal",
+          "interest",
+          "balance_after",
+          "state",
+          "status",
+          "paid_on",
+          "principal_transaction_id",
+          "interest_transaction_id",
+          "adjusted",
+          "updated_at"
+        ],
+        "title": "InstallmentResponse"
+      },
+      "LoanDetailResponse": {
+        "properties": {
+          "loan": {
+            "$ref": "#/components/schemas/LoanResponse"
+          },
+          "installments": {
+            "items": {
+              "$ref": "#/components/schemas/InstallmentResponse"
+            },
+            "type": "array",
+            "title": "Installments",
+            "description": "By due date."
+          }
+        },
+        "type": "object",
+        "required": [
+          "loan",
+          "installments"
+        ],
+        "title": "LoanDetailResponse"
+      },
+      "LoanListResponse": {
+        "properties": {
+          "loans": {
+            "items": {
+              "$ref": "#/components/schemas/LoanResponse"
+            },
+            "type": "array",
+            "title": "Loans",
+            "description": "Active first, then closed, then archived, each by name."
+          }
+        },
+        "type": "object",
+        "required": [
+          "loans"
+        ],
+        "title": "LoanListResponse"
+      },
+      "LoanResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id",
+            "description": "The loan's liability account. Its balance is the outstanding principal."
+          },
+          "payment_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Account Id",
+            "description": "The account EMIs are usually paid from."
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lender": {
+            "type": "string",
+            "title": "Lender"
+          },
+          "loan_type": {
+            "type": "string",
+            "enum": [
+              "personal",
+              "vehicle",
+              "home",
+              "education",
+              "other"
+            ],
+            "title": "Loan Type"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "principal": {
+            "type": "integer",
+            "title": "Principal",
+            "description": "The amount originally borrowed."
+          },
+          "outstanding_principal": {
+            "type": "integer",
+            "title": "Outstanding Principal",
+            "description": "What the loan account's balance says is still owed, derived from the ledger. Never stored."
+          },
+          "repaid_principal": {
+            "type": "integer",
+            "title": "Repaid Principal",
+            "description": "`principal` minus `outstanding_principal`."
+          },
+          "interest_rate_bps": {
+            "type": "integer",
+            "title": "Interest Rate Bps"
+          },
+          "interest_method": {
+            "type": "string",
+            "enum": [
+              "reducing",
+              "flat"
+            ],
+            "title": "Interest Method"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "tenure_months": {
+            "type": "integer",
+            "title": "Tenure Months"
+          },
+          "emi_amount": {
+            "type": "integer",
+            "title": "Emi Amount"
+          },
+          "emi_frequency": {
+            "type": "string",
+            "enum": [
+              "monthly",
+              "quarterly",
+              "half_yearly",
+              "yearly"
+            ],
+            "title": "Emi Frequency"
+          },
+          "first_payment_date": {
+            "type": "string",
+            "format": "date",
+            "title": "First Payment Date"
+          },
+          "next_payment_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Payment Date",
+            "description": "The earliest scheduled installment."
+          },
+          "next_payment_amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Payment Amount"
+          },
+          "paid_installments": {
+            "type": "integer",
+            "title": "Paid Installments"
+          },
+          "total_installments": {
+            "type": "integer",
+            "title": "Total Installments",
+            "description": "Installments Orbit tracks: those still ahead when the loan was added, plus any added by rescheduling."
+          },
+          "remaining_interest": {
+            "type": "integer",
+            "title": "Remaining Interest",
+            "description": "Interest on the scheduled installments."
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "closed",
+              "archived"
+            ],
+            "title": "Status"
+          },
+          "reminder": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReminderSettingsResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "account_id",
+          "payment_account_id",
+          "name",
+          "lender",
+          "loan_type",
+          "currency",
+          "principal",
+          "outstanding_principal",
+          "repaid_principal",
+          "interest_rate_bps",
+          "interest_method",
+          "start_date",
+          "tenure_months",
+          "emi_amount",
+          "emi_frequency",
+          "first_payment_date",
+          "next_payment_date",
+          "next_payment_amount",
+          "paid_installments",
+          "total_installments",
+          "remaining_interest",
+          "notes",
+          "status",
+          "reminder",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "LoanResponse"
+      },
       "LocalAuthConfig": {
         "properties": {
           "provider": {
@@ -5732,6 +8090,352 @@
         ],
         "title": "NotificationResponse"
       },
+      "PayInstallmentRequest": {
+        "properties": {
+          "paid_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Paid On"
+          },
+          "from_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Account Id"
+          },
+          "principal": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Principal",
+            "description": "What was actually paid; defaults to the scheduled principal."
+          },
+          "interest": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interest",
+            "description": "What was actually paid; defaults to the scheduled interest."
+          },
+          "principal_transaction_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Principal Transaction Id",
+            "description": "A transfer into the loan account."
+          },
+          "interest_transaction_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interest Transaction Id",
+            "description": "An expense."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "paid_on"
+        ],
+        "title": "PayInstallmentRequest",
+        "description": "Record an installment as paid. Either give `from_account_id`, and Orbit records the\nprincipal as a transfer into the loan account and the interest as a \"Loan interest\" expense,\nor link the transactions you already recorded."
+      },
+      "PaymentItemResponse": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "loan",
+              "subscription",
+              "bill"
+            ],
+            "title": "Kind"
+          },
+          "commitment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Commitment Id",
+            "description": "The loan, subscription, or bill."
+          },
+          "occurrence_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurrence Id",
+            "description": "The installment, or the settled occurrence. `null` for a subscription or bill payment that is still expected."
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "counterparty": {
+            "type": "string",
+            "title": "Counterparty",
+            "description": "The lender or provider; may be empty."
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount"
+          },
+          "estimated": {
+            "type": "boolean",
+            "title": "Estimated",
+            "description": "True for an expected bill whose amount varies."
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Due Date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "upcoming",
+              "due",
+              "overdue",
+              "paid",
+              "skipped"
+            ],
+            "title": "Status"
+          },
+          "account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Id"
+          },
+          "paid_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paid On"
+          },
+          "transaction_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Transaction Ids"
+          },
+          "principal": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Principal",
+            "description": "Loans only."
+          },
+          "interest": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interest",
+            "description": "Loans only."
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "commitment_id",
+          "occurrence_id",
+          "name",
+          "counterparty",
+          "amount",
+          "estimated",
+          "currency",
+          "due_date",
+          "status",
+          "account_id",
+          "paid_on",
+          "transaction_ids",
+          "principal",
+          "interest"
+        ],
+        "title": "PaymentItemResponse"
+      },
+      "PaymentListResponse": {
+        "properties": {
+          "today": {
+            "type": "string",
+            "format": "date",
+            "title": "Today"
+          },
+          "date_from": {
+            "type": "string",
+            "format": "date",
+            "title": "Date From"
+          },
+          "date_to": {
+            "type": "string",
+            "format": "date",
+            "title": "Date To"
+          },
+          "payments": {
+            "items": {
+              "$ref": "#/components/schemas/PaymentItemResponse"
+            },
+            "type": "array",
+            "title": "Payments",
+            "description": "By due date."
+          }
+        },
+        "type": "object",
+        "required": [
+          "today",
+          "date_from",
+          "date_to",
+          "payments"
+        ],
+        "title": "PaymentListResponse"
+      },
+      "RecordRecurringPaymentRequest": {
+        "properties": {
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Due Date",
+            "description": "The occurrence being paid."
+          },
+          "paid_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Paid On"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "create",
+              "link",
+              "manual"
+            ],
+            "title": "Mode",
+            "default": "create"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
+                "description": "Minor units, always positive: ₹12.50 is 1250."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount",
+            "description": "What was paid; defaults to the expected amount."
+          },
+          "account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Id"
+          },
+          "transaction_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transaction Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "due_date",
+          "paid_on"
+        ],
+        "title": "RecordRecurringPaymentRequest",
+        "description": "Record one occurrence as paid. `create` records an expense from `account_id` (default:\nthe usual account) in the subscription's or bill's category; `link` uses an expense already\nrecorded (`transaction_id`); `manual` marks it paid without a transaction, so it isn't\ncounted as spending."
+      },
       "RecurrenceModel": {
         "properties": {
           "frequency": {
@@ -5769,6 +8473,274 @@
         ],
         "title": "RecurrenceModel",
         "description": "How a reminder repeats. Monthly reminders on a day a month lacks (29 to 31) fire on that\nmonth's last day."
+      },
+      "RecurringPaymentListResponse": {
+        "properties": {
+          "recurring_payments": {
+            "items": {
+              "$ref": "#/components/schemas/RecurringPaymentResponse"
+            },
+            "type": "array",
+            "title": "Recurring Payments",
+            "description": "Active first, then paused, then cancelled, each by name."
+          }
+        },
+        "type": "object",
+        "required": [
+          "recurring_payments"
+        ],
+        "title": "RecurringPaymentListResponse"
+      },
+      "RecurringPaymentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "subscription",
+              "bill"
+            ],
+            "title": "Kind"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Id",
+            "description": "The account it's usually paid from."
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount",
+            "description": "The expected amount; an estimate when `amount_varies`."
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "amount_varies": {
+            "type": "boolean",
+            "title": "Amount Varies"
+          },
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "weekly",
+              "monthly",
+              "quarterly",
+              "half_yearly",
+              "yearly"
+            ],
+            "title": "Frequency"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "next_due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Due Date",
+            "description": "The earliest unsettled due date, possibly overdue; `null` when nothing is expected (paused, cancelled, or past its end date)."
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "trial_ends_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Ends On"
+          },
+          "auto_renew": {
+            "type": "boolean",
+            "title": "Auto Renew"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "cancelled",
+              "expired"
+            ],
+            "title": "Status",
+            "description": "`active`, `paused`, `cancelled`, or `expired` (active, past its end date)."
+          },
+          "overdue": {
+            "type": "integer",
+            "title": "Overdue",
+            "description": "Unsettled occurrences due before today."
+          },
+          "monthly_cost": {
+            "type": "integer",
+            "title": "Monthly Cost",
+            "description": "`amount` as a monthly average, rounded half up."
+          },
+          "annual_cost": {
+            "type": "integer",
+            "title": "Annual Cost"
+          },
+          "last_paid_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Paid On"
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "reminder": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReminderSettingsResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "kind",
+          "name",
+          "provider",
+          "category_id",
+          "account_id",
+          "amount",
+          "currency",
+          "amount_varies",
+          "frequency",
+          "start_date",
+          "next_due_date",
+          "end_date",
+          "trial_ends_on",
+          "auto_renew",
+          "status",
+          "overdue",
+          "monthly_cost",
+          "annual_cost",
+          "last_paid_on",
+          "notes",
+          "reminder",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RecurringPaymentResponse"
+      },
+      "ReminderCommitmentResponse": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "loan",
+              "recurring_payment"
+            ],
+            "title": "Kind",
+            "description": "`loan`, or `recurring_payment` for a subscription or bill."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "id"
+        ],
+        "title": "ReminderCommitmentResponse"
       },
       "ReminderListResponse": {
         "properties": {
@@ -5814,6 +8786,17 @@
               }
             ],
             "description": "The task this reminder is about, or `null` for a standalone reminder."
+          },
+          "commitment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReminderCommitmentResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The loan, subscription, or bill that manages this reminder. Such reminders follow its next payment and can't be edited or deleted here (409)."
           },
           "title": {
             "type": "string",
@@ -5941,6 +8924,68 @@
         ],
         "title": "ReminderResponse"
       },
+      "ReminderSettingsRequest": {
+        "properties": {
+          "days_before": {
+            "type": "integer",
+            "maximum": 30.0,
+            "minimum": 0.0,
+            "title": "Days Before",
+            "description": "0 reminds on the due date itself."
+          },
+          "time_of_day": {
+            "type": "string",
+            "format": "time",
+            "title": "Time Of Day",
+            "default": "09:00:00"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone",
+            "description": "Defaults to your time zone preference, else UTC."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "days_before"
+        ],
+        "title": "ReminderSettingsRequest",
+        "description": "Remind about each payment `days_before` its due date, at `time_of_day`."
+      },
+      "ReminderSettingsResponse": {
+        "properties": {
+          "days_before": {
+            "type": "integer",
+            "title": "Days Before"
+          },
+          "time_of_day": {
+            "type": "string",
+            "format": "time",
+            "title": "Time Of Day"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          }
+        },
+        "type": "object",
+        "required": [
+          "days_before",
+          "time_of_day",
+          "timezone"
+        ],
+        "title": "ReminderSettingsResponse"
+      },
       "ReminderTaskResponse": {
         "properties": {
           "id": {
@@ -5984,6 +9029,152 @@
           "name"
         ],
         "title": "RenameCategoryRequest"
+      },
+      "RescheduleLoanRequest": {
+        "properties": {
+          "interest_rate_bps": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000.0,
+                "minimum": 0.0,
+                "description": "Annual interest rate in basis points: 8.5% is 850."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interest Rate Bps"
+          },
+          "emi_amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
+                "description": "Minor units, always positive: ₹12.50 is 1250."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emi Amount"
+          },
+          "next_payment_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Payment Date"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "RescheduleLoanRequest",
+        "description": "Regenerate the unpaid installments from what is still owed, after a prepayment (a\ntransfer into the loan account) or a rate change. Without `emi_amount` the number of\ninstallments stays the same and the EMI is recomputed; with it, the tenure changes."
+      },
+      "SettledOccurrenceListResponse": {
+        "properties": {
+          "occurrences": {
+            "items": {
+              "$ref": "#/components/schemas/SettledOccurrenceResponse"
+            },
+            "type": "array",
+            "title": "Occurrences",
+            "description": "Newest due date first."
+          }
+        },
+        "type": "object",
+        "required": [
+          "occurrences"
+        ],
+        "title": "SettledOccurrenceListResponse"
+      },
+      "SettledOccurrenceResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "recurring_payment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Recurring Payment Id"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Due Date"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "paid",
+              "skipped"
+            ],
+            "title": "State"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount",
+            "description": "What was paid; `null` when skipped."
+          },
+          "paid_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paid On"
+          },
+          "transaction_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transaction Id",
+            "description": "The expense that recorded it; `null` when skipped or marked paid without a transaction (not counted as spending)."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "recurring_payment_id",
+          "due_date",
+          "state",
+          "amount",
+          "paid_on",
+          "transaction_id",
+          "created_at"
+        ],
+        "title": "SettledOccurrenceResponse"
       },
       "ShoppingItemResponse": {
         "properties": {
@@ -6229,6 +9420,21 @@
           "lists"
         ],
         "title": "ShoppingListsResponse"
+      },
+      "SkipOccurrenceRequest": {
+        "properties": {
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Due Date"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "due_date"
+        ],
+        "title": "SkipOccurrenceRequest"
       },
       "SpendingResponse": {
         "properties": {
@@ -6481,6 +9687,24 @@
         ],
         "title": "TaskSummaryResponse"
       },
+      "TotalResponse": {
+        "properties": {
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount"
+          }
+        },
+        "type": "object",
+        "required": [
+          "count",
+          "amount"
+        ],
+        "title": "TotalResponse"
+      },
       "TransactionListResponse": {
         "properties": {
           "transactions": {
@@ -6731,6 +9955,52 @@
         "title": "UpdateAccountRequest",
         "description": "Change some of an account's fields. Its type and currency are fixed; archiving has its\nown endpoints."
       },
+      "UpdateInstallmentRequest": {
+        "properties": {
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "principal": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Principal"
+          },
+          "interest": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interest"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateInstallmentRequest",
+        "description": "Adjust a scheduled installment by hand."
+      },
       "UpdateItemRequest": {
         "properties": {
           "name": {
@@ -6788,6 +10058,108 @@
         "title": "UpdateItemRequest",
         "description": "Change some of an item's fields. Omitted fields keep their values; `quantity: null` and\n`url: null` clear them. Purchasing has its own endpoints."
       },
+      "UpdateLoanRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "lender": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lender"
+          },
+          "loan_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "personal",
+                  "vehicle",
+                  "home",
+                  "education",
+                  "other"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loan Type"
+          },
+          "payment_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Account Id"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "closed",
+                  "archived"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status",
+            "description": "`closed` when repaid or foreclosed, `archived` to hide it. Either stops expecting its scheduled installments; `active` resumes them."
+          },
+          "reminder": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReminderSettingsRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateLoanRequest",
+        "description": "Change a loan's details or status. `payment_account_id: null` and `reminder: null`\nclear them. Rate and EMI changes go through `/reschedule`."
+      },
       "UpdateNotificationRequest": {
         "properties": {
           "read": {
@@ -6835,6 +10207,203 @@
         "type": "object",
         "title": "UpdateProfileRequest",
         "description": "Change some profile fields. Omitted fields keep their values; `timezone: null` clears\nthe time zone preference."
+      },
+      "UpdateRecurringPaymentRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Id"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
+                "description": "Minor units, always positive: ₹12.50 is 1250."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "amount_varies": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount Varies"
+          },
+          "frequency": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "weekly",
+                  "monthly",
+                  "quarterly",
+                  "half_yearly",
+                  "yearly"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frequency"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "next_due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Due Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "trial_ends_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Ends On"
+          },
+          "auto_renew": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auto Renew"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "paused",
+                  "cancelled"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "reminder": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReminderSettingsRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateRecurringPaymentRequest",
+        "description": "Change some fields; `null` clears `category_id`, `account_id`, `end_date`,\n`trial_ends_on`, or `reminder`. `state` pauses (`paused`), cancels (`cancelled`), or resumes\n(`active`) it; history is always kept. Changing `frequency` or `next_due_date`, or resuming,\nrestarts the schedule."
       },
       "UpdateReminderRequest": {
         "properties": {

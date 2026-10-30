@@ -34,7 +34,8 @@ class FinanceAccountModel(Base):
     __table_args__ = (
         CheckConstraint("length(name) BETWEEN 1 AND 100", name="name_length"),
         CheckConstraint(
-            "type IN ('bank', 'savings', 'cash', 'wallet', 'credit_card', 'investment', 'other')",
+            "type IN ('bank', 'savings', 'cash', 'wallet', 'credit_card', 'investment', 'loan',"
+            " 'other')",
             name="type",
         ),
         CheckConstraint("length(currency) = 3 AND currency = upper(currency)", name="currency"),
@@ -135,6 +136,9 @@ class FinanceTransactionModel(Base):
             ["category_id", "workspace_id"],
             ["finance_categories.id", "finance_categories.workspace_id"],
         ),
+        # The target of the commitment payments' composite foreign keys, which keep a payment's
+        # transaction in its workspace.
+        UniqueConstraint("id", "workspace_id"),
         # History and reports read one workspace's date range; account and category filters
         # (and the in-use check before deleting a category) look up by reference.
         Index("ix_finance_transactions_workspace_date", "workspace_id", "occurred_on"),

@@ -23,6 +23,16 @@ OccurrenceStatus = Literal["pending", "processing", "delivered", "cancelled", "f
 DeliveryOutcome = Literal["delivered", "cancelled", "failed"]
 
 
+# The financial commitment a reminder is managed by: a loan, or a subscription or bill.
+CommitmentLinkKind = Literal["loan", "recurring_payment"]
+
+
+@dataclass(frozen=True, slots=True)
+class CommitmentLink:
+    kind: CommitmentLinkKind
+    id: uuid.UUID
+
+
 @dataclass(frozen=True, slots=True)
 class Reminder:
     id: uuid.UUID
@@ -38,6 +48,9 @@ class Reminder:
     last_outcome: DeliveryOutcome | None
     created_at: datetime
     updated_at: datetime
+    # Set for reminders a financial commitment manages (`services.commitments.reminders`): the
+    # commitment keeps them pointed at its next payment, and they can't be edited directly.
+    commitment: CommitmentLink | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -141,6 +154,10 @@ class ReminderNotFoundError(Exception):
 
 class ReminderTaskNotFoundError(Exception):
     """The task a reminder should be about does not exist in the reminder's workspace."""
+
+
+class ReminderManagedError(Exception):
+    """The reminder belongs to a loan, subscription, or bill, which manages its schedule."""
 
 
 class ReminderInPastError(Exception):

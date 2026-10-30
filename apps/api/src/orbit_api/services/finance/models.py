@@ -14,7 +14,14 @@ from orbit_api.services.finance.money import Currency
 from orbit_api.utils.changes import UNSET, Change
 from orbit_api.utils.sorting import SortOrder
 
-AccountType = Literal["bank", "savings", "cash", "wallet", "credit_card", "investment", "other"]
+# `loan` accounts are created with a loan (`services.commitments`) and hold its outstanding
+# principal; they can't be created on their own, so `ManualAccountType` leaves them out.
+AccountType = Literal[
+    "bank", "savings", "cash", "wallet", "credit_card", "investment", "loan", "other"
+]
+ManualAccountType = Literal[
+    "bank", "savings", "cash", "wallet", "credit_card", "investment", "other"
+]
 # Whether an account's balance is something owned or something owed. Investment accounts are
 # assets, valued at what was moved into them, not at market value: Orbit tracks no holdings.
 AccountClass = Literal["asset", "liability"]
@@ -25,6 +32,7 @@ ACCOUNT_CLASSES: Final[dict[AccountType, AccountClass]] = {
     "wallet": "asset",
     "credit_card": "liability",
     "investment": "asset",
+    "loan": "liability",
     "other": "asset",
 }
 
@@ -236,6 +244,11 @@ class CategoryNotFoundError(Exception):
 
 class TransactionNotFoundError(Exception):
     """The transaction does not exist in this workspace."""
+
+
+class TransactionInUseError(Exception):
+    """The transaction records a loan, subscription, or bill payment, so deleting it would
+    rewrite that payment's history. Undo the payment first."""
 
 
 class InvalidTransactionError(Exception):

@@ -69,3 +69,10 @@ export function monthLabel(month: string, { short = false }: { short?: boolean }
     timeZone: "UTC",
   }).format(utcDate(month));
 }
+
+/** `value` (`YYYY-MM-DD`) moved by `days` calendar days. */
+export function addDays(value: string, days: number): string {
+  const moved = utcDate(value);
+  moved.setUTCDate(moved.getUTCDate() + days);
+  return moved.toISOString().slice(0, 10);
+}

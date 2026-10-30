@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  addDays,
   daysBetween,
   formatCalendarDate,
   localDateString,
@@ -44,5 +45,14 @@ describe("months", () => {
   it("labels months", () => {
     expect(monthLabel("2026-10")).toBe("October 2026");
     expect(monthLabel("2026-10", { short: true })).toBe("Oct");
+  });
+});
+
+describe("addDays", () => {
+  it("moves across month, year, and leap-day boundaries", () => {
+    expect(addDays("2026-01-31", 1)).toBe("2026-02-01");
+    expect(addDays("2026-12-31", 1)).toBe("2027-01-01");
+    expect(addDays("2028-03-01", -1)).toBe("2028-02-29");
+    expect(addDays("2026-03-15", -30)).toBe("2026-02-13");
   });
 });

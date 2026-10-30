@@ -19,6 +19,7 @@ import {
 import { byId, cn } from "@/utils/common";
 import { localMonthString, monthLabel, shiftMonth } from "@/utils/dates";
 
+import { CommitmentsSummary } from "./commitments-summary";
 import { CategoryBreakdown, TrendChart } from "./finance-charts";
 import type { FinanceData } from "./finance-view";
 import { TransactionItem } from "./transaction-item";
@@ -29,6 +30,7 @@ export function FinanceOverview({
   accounts,
   categories,
   onEditTransaction,
+  onShowTab,
 }: FinanceData) {
   const id = useId();
   const thisMonth = localMonthString();
@@ -111,6 +113,12 @@ export function FinanceOverview({
           className={cn("space-y-6 transition-opacity duration-150", refreshing && "opacity-70")}
         >
           <CashFlowTiles {...resource.data.summary} currency={currency} />
+
+          <CommitmentsSummary
+            workspaceId={workspaceId}
+            currency={currency}
+            onOpenUpcoming={() => onShowTab("upcoming")}
+          />
 
           <div className="grid gap-6 xl:grid-cols-2">
             <Panel title="Income and spending" description="The last six months.">
@@ -278,7 +286,7 @@ function Balances({ accounts, currency }: { accounts: FinanceAccount[]; currency
   return (
     <Panel
       title="Account balances"
-      description="Opening balances plus everything recorded. Not net worth: loans and investment market values aren’t tracked yet."
+      description="Opening balances plus everything recorded. Not net worth: investment market values aren’t tracked."
       flush
     >
       <dl className="grid grid-cols-2 gap-4 px-5 pb-4">
@@ -287,7 +295,7 @@ function Balances({ accounts, currency }: { accounts: FinanceAccount[]; currency
           <dd className="text-lg font-semibold tabular-nums">{formatMoney(held, currency)}</dd>
         </div>
         <div>
-          <dt className="text-xs text-muted-foreground">Owed on credit cards</dt>
+          <dt className="text-xs text-muted-foreground">Owed on cards and loans</dt>
           <dd className="text-lg font-semibold tabular-nums">{formatMoney(owed, currency)}</dd>
         </div>
       </dl>

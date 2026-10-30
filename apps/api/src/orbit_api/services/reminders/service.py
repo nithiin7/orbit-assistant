@@ -17,6 +17,10 @@ Tasks and reminders:
   cancelled, and recurring reminders keep their schedule, so reopening the task resumes them.
 - Deleting the task deletes its reminders (a database cascade). Notifications already delivered
   stay in the inbox.
+
+Reminders managed by a loan, subscription, or bill (`Reminder.commitment`) are listed like any
+other, but only the commitment changes them (`services.commitments.reminders`); editing or
+deleting one here raises `ReminderManagedError`.
 """
 
 import uuid
@@ -31,6 +35,7 @@ from orbit_api.services.reminders.models import (
     ReminderChanges,
     ReminderDraft,
     ReminderInPastError,
+    ReminderManagedError,
     ReminderNotFoundError,
     ReminderPage,
     ReminderQuery,
@@ -183,6 +188,8 @@ class ReminderService:
         reminder = await self._reminders.get(workspace_id, reminder_id)
         if reminder is None:
             raise ReminderNotFoundError
+        if reminder.commitment is not None:
+            raise ReminderManagedError
         if changes.task_id is not UNSET and changes.task_id is not None:
             await self._require_task(workspace_id, changes.task_id)
 
@@ -226,6 +233,11 @@ class ReminderService:
         return await self.get(workspace_id, reminder_id)
 
     async def delete(self, workspace_id: uuid.UUID, reminder_id: uuid.UUID) -> None:
+        reminder = await self._reminders.get(workspace_id, reminder_id)
+        if reminder is None:
+            raise ReminderNotFoundError
+        if reminder.commitment is not None:
+            raise ReminderManagedError
         if not await self._reminders.delete(workspace_id, reminder_id):
             raise ReminderNotFoundError
         await self._transaction.commit()

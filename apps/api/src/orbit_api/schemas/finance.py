@@ -30,6 +30,7 @@ from orbit_api.services.finance.models import (
     Category,
     CategorySpending,
     CategoryType,
+    ManualAccountType,
     MonthlyCashFlow,
     Transaction,
     TransactionChanges,
@@ -125,9 +126,9 @@ class AccountResponse(BaseModel):
     name: str
     type: AccountType
     account_class: AccountClass = Field(
-        description="`liability` for credit cards, whose balance is negative while money is "
-        "owed; `asset` for everything else. Investment accounts hold what was moved into them, "
-        "not market value."
+        description="`liability` for credit cards and loans, whose balance is negative while "
+        "money is owed; `asset` for everything else. Investment accounts hold what was moved "
+        "into them, not market value."
     )
     currency: Currency
     opening_balance: int = Field(description="Minor units, signed like `balance`.")
@@ -165,7 +166,7 @@ class BalanceTotalsResponse(BaseModel):
     currency: Currency
     assets: int = Field(description="The sum of asset accounts' balances, in minor units.")
     liabilities: int = Field(
-        description="What credit cards owe, as a positive amount in minor units."
+        description="What credit cards and loans owe, as a positive amount in minor units."
     )
 
     @classmethod
@@ -187,7 +188,9 @@ class CreateAccountRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: Name
-    type: AccountType
+    type: ManualAccountType = Field(
+        description="Loan accounts are created with a loan, not on their own."
+    )
     currency: Currency = DEFAULT_CURRENCY
     opening_balance: SignedAmount = 0
     notes: Notes = ""

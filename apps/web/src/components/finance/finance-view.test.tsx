@@ -114,8 +114,24 @@ function finance(accounts: FinanceAccount[] = [bank, card]) {
       categories: [],
     }),
     [`GET ${FINANCE}/transactions`]: json({ transactions: [], total: 0 }),
+    [`GET ${FINANCE}/commitments/summary`]: json(emptySummary),
   };
 }
+
+/** A workspace without loans, subscriptions, or bills: the overview shows no commitments. */
+const emptySummary = {
+  currency: "INR",
+  today: "2026-02-10",
+  loans_outstanding: 0,
+  active_loans: 0,
+  monthly_emi: 0,
+  monthly_subscriptions: 0,
+  annual_subscriptions: 0,
+  active_subscriptions: 0,
+  upcoming_bills: { count: 0, amount: 0 },
+  due_this_month: { count: 0, amount: 0 },
+  overdue: { count: 0, amount: 0 },
+};
 
 /** Query strings of every transaction-history request, in order. */
 function historyQueries(api: ReturnType<typeof mockApi>): URLSearchParams[] {
@@ -177,7 +193,7 @@ describe("FinancePanel", () => {
 
     const balances = screen.getByRole("region", { name: "Account balances" });
     expect(balances).toHaveTextContent(/Not net worth/);
-    expect(within(balances).getByText("Owed on credit cards").nextSibling).toHaveTextContent(
+    expect(within(balances).getByText("Owed on cards and loans").nextSibling).toHaveTextContent(
       "₹3,000.00",
     );
     expect(balances).toHaveTextContent(/Amex.*₹3,000.00 owed/);

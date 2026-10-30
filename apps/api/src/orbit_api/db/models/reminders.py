@@ -24,7 +24,8 @@ from orbit_api.db.columns import UTCDateTime, utc_now
 
 
 class ReminderModel(Base):
-    """A reminder in one workspace, optionally about one of its tasks.
+    """A reminder in one workspace, optionally about one of its tasks or managed by one of its
+    financial commitments.
 
     The schedule is stored in local terms (`start_date`, `time_of_day`, an IANA `timezone`, and a
     versioned `recurrence` document) so recurring reminders keep their wall-clock time across
@@ -44,6 +45,28 @@ class ReminderModel(Base):
         ForeignKeyConstraint(
             ["task_id", "workspace_id"], ["tasks.id", "tasks.workspace_id"], ondelete="CASCADE"
         ),
+        # A reminder managed by a financial commitment, kept in the commitment's workspace.
+        # Each commitment has at most one reminder, so syncing it never makes duplicates.
+        ForeignKeyConstraint(
+            ["finance_loan_id", "workspace_id"],
+            ["finance_loans.id", "finance_loans.workspace_id"],
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["finance_recurring_payment_id", "workspace_id"],
+            ["finance_recurring_payments.id", "finance_recurring_payments.workspace_id"],
+            ondelete="CASCADE",
+            # The conventional name exceeds PostgreSQL's 63-character limit.
+            name="fk_reminders_finance_recurring_payment",
+        ),
+        UniqueConstraint("finance_loan_id", name="uq_reminders_finance_loan_id"),
+        UniqueConstraint(
+            "finance_recurring_payment_id", name="uq_reminders_finance_recurring_payment_id"
+        ),
+        CheckConstraint(
+            "finance_loan_id IS NULL OR finance_recurring_payment_id IS NULL",
+            name="one_commitment",
+        ),
         Index("ix_reminders_workspace_created_at", "workspace_id", "created_at"),
         Index("ix_reminders_task_id", "task_id"),
     )
@@ -51,6 +74,8 @@ class ReminderModel(Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     workspace_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"))
     task_id: Mapped[uuid.UUID | None]
+    finance_loan_id: Mapped[uuid.UUID | None]
+    finance_recurring_payment_id: Mapped[uuid.UUID | None]
     title: Mapped[str] = mapped_column(String(200))
     description: Mapped[str] = mapped_column(Text)
     enabled: Mapped[bool]

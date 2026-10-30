@@ -62,15 +62,18 @@ async function readDetail(response: Response): Promise<string | undefined> {
   return undefined;
 }
 
-type QueryValue = string | number | readonly string[] | null | undefined;
+type QueryValue = string | number | boolean | readonly string[] | null | undefined;
 
 /** `?a=1&b=x&b=y` from defined values; arrays repeat their key. */
 export function toQueryString(params: Record<string, QueryValue>): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value === null || value === undefined) continue;
-    if (typeof value === "string" || typeof value === "number") search.append(key, String(value));
-    else for (const item of value) search.append(key, item);
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      search.append(key, String(value));
+    } else {
+      for (const item of value) search.append(key, item);
+    }
   }
   const query = search.toString();
   return query ? `?${query}` : "";

@@ -9,6 +9,7 @@
  */
 
 import type {
+  CreateFinanceAccountRequest,
   Currency,
   FinanceAccount,
   FinanceAccountType,
@@ -119,7 +120,10 @@ export function formatMoney(
 
 // Labels
 
-export const ACCOUNT_TYPES: readonly Option<FinanceAccountType>[] = [
+/** Account types a person can create; loan accounts are created with a loan. */
+export type ManualAccountType = CreateFinanceAccountRequest["type"];
+
+export const ACCOUNT_TYPES: readonly Option<ManualAccountType>[] = [
   { value: "bank", label: "Bank account" },
   { value: "savings", label: "Savings account" },
   { value: "cash", label: "Cash" },
@@ -130,6 +134,7 @@ export const ACCOUNT_TYPES: readonly Option<FinanceAccountType>[] = [
 ];
 
 export function accountTypeLabel(type: FinanceAccountType): string {
+  if (type === "loan") return "Loan";
   return ACCOUNT_TYPES.find((item) => item.value === type)?.label ?? type;
 }
 
@@ -172,9 +177,22 @@ export function signedAmount(transaction: FinanceTransaction, accountId?: string
   }
 }
 
-/** For a credit card, the opening balance is entered as the amount owed. */
+/** For a credit card or loan, the opening balance is entered as the amount owed. */
 export function isLiability(account: Pick<FinanceAccount, "type">): boolean {
-  return account.type === "credit_card";
+  return account.type === "credit_card" || account.type === "loan";
+}
+
+/** Accounts money can be paid from: active, and not a loan's own account. */
+export function payingAccounts(
+  accounts: readonly FinanceAccount[],
+  currency?: Currency,
+): FinanceAccount[] {
+  return accounts.filter(
+    (account) =>
+      !account.archived &&
+      account.type !== "loan" &&
+      (currency === undefined || account.currency === currency),
+  );
 }
 
 /** The distinct currencies of the given accounts, the most common first, INR breaking ties. */
@@ -284,13 +302,13 @@ export const accountSchema = object({
   name: singleLineText(ACCOUNT_NAME_MAX_LENGTH, "Remove line breaks and unsupported characters.")
     .required("Enter a name.")
     .test("printable", "Remove unsupported characters.", (value) => !/\p{C}/u.test(value)),
-  type: mixed<FinanceAccountType>()
+  type: mixed<ManualAccountType>()
     .oneOf(ACCOUNT_TYPES.map((item) => item.value))
     .defined(),
   currency: mixed<Currency>()
     .oneOf([...CURRENCIES])
     .defined(),
-  /** Blank is zero. For a credit card, the amount owed. */
+  /** Blank is zero. For a credit card or loan, the amount owed. */
   openingBalance: string()
     .trim()
     .defined()

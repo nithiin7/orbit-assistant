@@ -206,6 +206,7 @@ apps/api/src/orbit_api/
 │       ├── tasks.py     # Workspace-scoped tasks: CRUD, complete/reopen, filters, summary
 │       ├── reminders.py # Workspace-scoped reminders: CRUD, enable/disable, upcoming
 │       ├── finance.py   # Workspace-scoped finance: accounts, categories, transactions, reports, CSV
+│       ├── commitments.py # Loans and EMIs, subscriptions and bills, payments, upcoming, summary
 │       └── notifications.py # The signed-in user's notifications: list, unread count, read state
 ├── auth/                # Adapters: Argon2 password hashing, Supabase JWT verification
 ├── system/              # Adapter: opening the OS file manager on the API's machine
@@ -223,7 +224,7 @@ apps/api/src/orbit_api/
     ├── database.py      # `open_database()`: connect, verify schema, sessions, dispose
     ├── migrate.py       # Programmatic Alembic: upgrade, downgrade, head revision
     └── migrations/      # Alembic environment and versioned revisions
-        └── versions/    # 0001_baseline … 0008_create_finance
+        └── versions/    # 0001_baseline … 0009_create_commitments
 ```
 
 Design decisions:
@@ -319,6 +320,10 @@ written once. SQLite is embedded in the API process; local mode needs no databas
   RLS, and adds `users.timezone` (see [Reminders and notifications](#reminders-and-notifications)).
 - `0008_create_finance` creates `finance_accounts`, `finance_categories`, and
   `finance_transactions` with RLS (see [Finance](#finance)).
+- `0009_create_commitments` creates `finance_loans`, `finance_loan_installments`,
+  `finance_recurring_payments`, and `finance_recurring_occurrences` with RLS, adds the `loan`
+  account type, a unique `finance_transactions(id, workspace_id)` key, and the reminders' links to
+  commitments (see [Financial commitments](#financial-commitments-phase-2)).
 - Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
   Startup only checks that the database is at the head revision. For a shared cloud database,
   schema changes should be deliberate and reviewable.
@@ -396,7 +401,9 @@ structure.
      revision. `0002` does this for `users`, `local_credentials`, `local_sessions`, and
      `workspaces`; `0003` for `user_avatars`; `0004` for `tasks`; `0006` for `dashboard_layouts`;
      `0007` for `reminders`, `reminder_occurrences`, and `notifications`; `0008` for
-     `finance_accounts`, `finance_categories`, and `finance_transactions`.
+     `finance_accounts`, `finance_categories`, and `finance_transactions`; `0009` for
+     `finance_loans`, `finance_loan_installments`, `finance_recurring_payments`, and
+     `finance_recurring_occurrences`.
   2. **No policies exist**, deliberately: the browser never queries tables directly, so the
      Data API's `anon` and `authenticated` roles get no rows. Add `authenticated` policies
      (for example `owner_id = auth.uid()`) only if a client is ever allowed direct access.
@@ -725,6 +732,10 @@ cluttering reminders, and lets notifications outlive edits and deletions of thei
   resumes them. Such reminders show as `completed` and are left out of "upcoming".
 - **Deleting** the task deletes its reminders and their pending occurrences (database cascade).
   Delivered notifications stay in the inbox, without the link.
+- **Finance-managed reminders.** A loan, subscription, or bill with reminders turned on owns one
+  reminder (`reminders.finance_loan_id` or `finance_recurring_payment_id`, unique). It appears in
+  the reminders list marked "Managed in Finance"; the reminders API refuses to edit or delete it
+  (409). See [Reminder integration](#reminder-integration).
 
 ### Scheduling and delivery
 
@@ -835,7 +846,9 @@ Reminders are workspace-scoped (`/api/v1/workspaces/{workspace_id}/reminders`, a
 ## Finance
 
 Phase 1 of Orbit Finance: accounts tracked by hand, the transactions that move money in, out,
-and between them, categories, monthly reports, and CSV export. Orbit never asks for bank
+and between them, categories, monthly reports, and CSV export. Phase 2 adds commitments (loans,
+subscriptions, and bills) on top of this ledger; see
+[Financial commitments](#financial-commitments-phase-2). Orbit never asks for bank
 credentials and never connects to banks; there are no imports or synchronization.
 
 ### Money and currency
@@ -905,11 +918,11 @@ workspaces ──< finance_accounts ──< finance_transactions >── finance
 - **Signed from the owner's view.** Positive is money held, negative is money owed. A credit
   card with ₹500 outstanding has balance `-50000`; the web app shows "₹500.00 owed" and asks for
   a card's opening balance as the amount owed.
-- **Assets and liabilities.** Credit cards are `liability` accounts; every other type is an
-  `asset`. `GET …/accounts` returns per-currency `totals`: `assets` (sum of asset balances) and
-  `liabilities` (what cards owe, positive), including archived accounts, whose balances are still
-  real. The UI labels these "in your accounts" and "owed on credit cards" and states that they
-  are **not net worth**: loans and investment market values aren't tracked yet.
+- **Assets and liabilities.** Credit cards and loans are `liability` accounts; every other type
+  is an `asset`. `GET …/accounts` returns per-currency `totals`: `assets` (sum of asset balances)
+  and `liabilities` (what cards and loans owe, positive), including archived accounts, whose
+  balances are still real. The UI labels these "in your accounts" and "owed on cards and loans"
+  and states that they are **not net worth**: investment market values aren't tracked.
 - Balances include every recorded transaction, whatever its date.
 
 ### Financial rules
@@ -941,8 +954,10 @@ workspaces ──< finance_accounts ──< finance_transactions >── finance
 income (Salary, Freelance, Business income, Interest, Dividends, Rental income, Gifts received,
 Other income) and expenses (Rent, Groceries, Food and dining, Utilities, Mobile and internet,
 Transport, Fuel, Shopping, Healthcare, Entertainment, Travel, Education, Insurance, Personal
-care, Household, Taxes, Fees and charges, Gifts and donations, Other expenses). There is
-deliberately no category for investments, card bills, or loan principal: those are transfers.
+care, Household, Taxes, Fees and charges, Loan interest, Gifts and donations, Other expenses).
+There is deliberately no category for investments, card bills, or loan principal: those are
+transfers. Loan interest is spending, and EMI payments record it in "Loan interest"; existing
+workspaces get it the next time their categories are read.
 
 - Categories are rows in each workspace, seeded the first time the workspace's categories are
   read (or before a custom one is created). Seeding adds only defaults whose `key` and name are
@@ -1015,19 +1030,185 @@ text in the major unit, such as `20000.50`), Currency, Notes, ID. Text starting 
   change invalidates the workspace's finance queries, because balances and reports are derived
   on the server.
 
+## Financial commitments (phase 2)
+
+Loans and their EMI schedules, subscriptions, recurring bills, a unified view of upcoming
+payments, and reminders before each one. Code: `services/commitments/` (`schedule.py` is the
+pure arithmetic, `service.py` the rules), `repositories/commitments.py`,
+`schemas/commitments.py`, and `api/v1/commitments.py`. Commitments sit **on top of** the phase 1
+ledger: every rupee actually paid is an ordinary `finance_transactions` row, and no second
+transaction model exists.
+
+### Commitment data model
+
+```text
+finance_accounts (type 'loan') ──1:1── finance_loans ──< finance_loan_installments ──┐
+                                            │                                        ├─> finance_transactions
+finance_recurring_payments ──< finance_recurring_occurrences ───────────────────────┘   (no ON DELETE)
+        │ (kind: subscription | bill)
+reminders.finance_loan_id / reminders.finance_recurring_payment_id  (unique, ON DELETE CASCADE)
+```
+
+| Table                           | Holds                                                                                                                                                                                       |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `finance_loans`                 | Name, lender, type, currency, original `principal`, `interest_rate_bps`, `interest_method`, tenure, EMI and frequency, dates, status, reminder settings, `account_id`, `payment_account_id` |
+| `finance_loan_installments`     | One EMI: `sequence`, `due_date`, `principal`, `interest`, `balance_after`, `state` (scheduled, paid, skipped), `paid_on`, and the principal and interest transaction IDs                    |
+| `finance_recurring_payments`    | A subscription or bill: amount (an estimate when `amount_varies`), currency, frequency, `anchor_date`, optional end and trial dates, `state`, category, usual account, reminder             |
+| `finance_recurring_occurrences` | One **settled** occurrence: `due_date`, `state` (paid or skipped), amount paid, `paid_on`, and the expense's transaction ID (none when marked paid by hand)                                 |
+
+- **Every relationship stays in one workspace**: composite foreign keys tie installments,
+  occurrences, accounts, categories, transactions, and reminders to the commitment's
+  `workspace_id` (and accounts to its currency), like phase 1.
+- **Loans are backed by a `loan` account**, a liability type created only with a loan (`POST
+…/accounts` rejects `loan`). Its opening balance is minus the outstanding principal when the
+  loan is added. Loan accounts appear in Accounts and in the liabilities totals.
+- **Money and rates are integers**: minor units as everywhere in finance, and interest rates in
+  basis points (8.5% is `850`). Rates are parsed and formatted as text in the web app.
+- **Subscriptions and bills share one table** (`kind`), because they share recurrence, payment
+  recording, and reminders; the API and UI present them separately.
+- **Nothing is deleted through the API.** Loans are closed or archived; subscriptions and bills
+  are paused or cancelled. Settled history stays.
+
+### EMI calculation assumptions
+
+All arithmetic is in `services/commitments/schedule.py`, pure and unit-tested
+(`tests/test_commitment_schedule.py`). Interest uses `Decimal` (60 significant digits) and is
+rounded **half up to the minor unit once per installment**; no floats.
+
+- **Reducing balance** (default): interest = outstanding principal × annual rate ÷ installments
+  per year. Standard EMI = `P·r·(1+r)^n / ((1+r)^n − 1)`, or `P / n` at 0%.
+- **Flat rate**: total interest = `P × rate × tenure in years`, spread evenly; the rounding
+  remainder goes to the last installment.
+- **The last installment settles exactly**: whatever principal is left, so the principal
+  components always sum to the outstanding principal.
+- The lender's EMI can be entered instead of the standard one; an EMI that doesn't cover a
+  reducing installment's interest is rejected (422).
+- **Loans already being repaid**: give the outstanding principal and the next EMI date; Orbit
+  tracks only the installments still ahead (numbered within the full tenure). Earlier history
+  isn't reconstructed.
+- **Manual adjustments**: a scheduled installment's date, principal, and interest can be edited
+  (`adjusted`), skipped (a payment holiday), or the remaining schedule regenerated from what the
+  ledger says is owed (`/reschedule`): keeping the number of EMIs (new EMI), or a new EMI
+  (new tenure). Prepayments are recorded as a transfer into the loan account, then rescheduled.
+- **Projected balances**: a scheduled installment's `balance_after` is recomputed on read from
+  today's outstanding principal; a paid one keeps what the ledger said when it was paid.
+
+### Recurrence rules
+
+- Frequencies: weekly, monthly, quarterly, every 6 months, yearly. Due dates repeat from
+  `anchor_date` (the "next due date" given when it was added); monthly-based ones keep the
+  anchor's day and use the month's last day when shorter (31 Jan → 28 Feb → 31 Mar).
+- **Unsettled occurrences are computed, never stored.** Only paid and skipped occurrences are
+  rows, with `unique(recurring_payment_id, due_date)`. Generating occurrences is therefore
+  idempotent: computing the same window twice yields the same dates, and nothing can be created
+  twice. A loan's schedule is generated once, at creation or reschedule.
+- **Changing the schedule** (frequency or next due date) moves the anchor; **resuming** after a
+  pause or cancellation anchors on the cadence's first date from today, so a backlog isn't
+  created. Settled history keeps its dates and amounts either way.
+- Status: `active`, `paused`, `cancelled` (stored), and `expired` (derived: active, past its end
+  date). Payment status (derived per day): `paid`, `skipped`, `overdue` (before today), `due`
+  (today), `upcoming`. "Today" is the date the web app sends, else today in the user's time-zone
+  preference, else UTC.
+
+### Payments and accounting
+
+| Payment          | Records                                                                                                                | Counts as spending |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| Loan EMI         | `transfer` of the principal from the paying account into the loan account; `expense` of the interest ("Loan interest") | Interest only      |
+| Subscription     | `expense` in its category                                                                                              | Yes                |
+| Bill             | `expense` in its category, at the actual amount                                                                        | Yes                |
+| Marked paid only | Nothing in the ledger (subscriptions and bills)                                                                        | No                 |
+
+- **No double counting.** The EMI itself is never an expense; principal is a transfer (reduces
+  the liability, never spending), interest is an expense. The outstanding principal is the loan
+  account's derived balance, so it can't drift from the ledger.
+- **Expected is not actual.** Scheduled installments, renewals, and bills are never in reports
+  until a payment is recorded and its transaction exists.
+- **Create or link.** Recording a payment either creates the transactions in the same database
+  transaction, or links transactions already recorded (a principal link must be a transfer into
+  the loan account; interest and subscription/bill links must be expenses in the same currency).
+- **No duplicates.** An installment moves out of `scheduled` with a conditional update (two
+  concurrent payments: one wins, the other is 409); an occurrence is unique per due date; each
+  transaction pays at most one thing (unique foreign keys, checked first for a clear message).
+- **History is protected.** The foreign keys to `finance_transactions` have no `ON DELETE`
+  action, so the ledger refuses to delete a transaction that records a payment (409 "Undo that
+  payment first"). Undoing a payment unlinks its transactions, and deletes them only when asked.
+  Editing a linked transaction later doesn't change the installment's or occurrence's recorded
+  amounts (the loan's outstanding principal, being derived, always follows the ledger).
+- **Atomic.** Phase 1's `FinanceService.create`, `create_account`, and `delete` take
+  `commit=False`, so a payment's transactions, the installment or occurrence, and the reminder
+  change commit together.
+
+### Reminder integration
+
+- Reminder settings per commitment: `days_before` (0 to 30), `time_of_day`, and an IANA time
+  zone (default: the user's preference, else UTC; the web app sends the browser's).
+- **One reminder per commitment**, in the existing `reminders` table, delivered by the existing
+  worker as an in-app notification. It is a one-time reminder for the next unsettled payment
+  whose reminder time is still ahead ("Rent due 16 Feb 2030", "INR 25000.00").
+- **Kept in sync in the same transaction** as every change: creating, editing, paying,
+  skipping, undoing, rescheduling, pausing, cancelling, or closing re-points it (or deletes it
+  when there is nothing to announce or reminders are turned off). The sync is idempotent and
+  the unique link prevents a second reminder.
+- **After it fires**, `ReminderDelivery` calls a follow-up hook
+  (`ReminderFollowUp.after_delivery`, implemented by `CommitmentService`) inside the delivery
+  transaction, which moves it to the next payment. No separate scheduler exists.
+
+### Commitments API
+
+Under `/api/v1/workspaces/{workspace_id}/finance`, authorized through `WorkspaceDep`. Another
+workspace's loan, subscription, or installment is a 404; referencing its account, category, or
+transaction is a 422.
+
+| Method   | Path                                         | Purpose                                                                                         |
+| -------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `GET`    | `/loans`                                     | Loans with derived outstanding principal                                                        |
+| `POST`   | `/loans`                                     | Add a loan: its account and remaining schedule                                                  |
+| `GET`    | `/loans/{id}`                                | The loan and its installments (`today`)                                                         |
+| `PATCH`  | `/loans/{id}`                                | Details, payment account, `status` (active, closed, archived), `reminder`                       |
+| `POST`   | `/loans/{id}/reschedule`                     | Regenerate unpaid installments (`interest_rate_bps`, `emi_amount`, date)                        |
+| `PATCH`  | `/loans/{id}/installments/{iid}`             | Adjust a scheduled installment                                                                  |
+| `POST`   | `/loans/{id}/installments/{iid}/pay`         | Pay (`from_account_id`, or link `principal_/interest_transaction_id`)                           |
+| `POST`   | `/loans/{id}/installments/{iid}/skip`        | Skip                                                                                            |
+| `POST`   | `/loans/{id}/installments/{iid}/undo`        | Undo (`delete_transactions`)                                                                    |
+| `GET`    | `/recurring-payments`                        | Subscriptions and bills (`kind`, `today`) with costs and next due date                          |
+| `POST`   | `/recurring-payments`                        | Add one                                                                                         |
+| `GET`    | `/recurring-payments/{id}`                   | One                                                                                             |
+| `PATCH`  | `/recurring-payments/{id}`                   | Change, pause, cancel, or resume (`state`)                                                      |
+| `GET`    | `/recurring-payments/{id}/occurrences`       | Payment and renewal history                                                                     |
+| `POST`   | `/recurring-payments/{id}/occurrences`       | Record a payment (`mode`: create, link, manual)                                                 |
+| `POST`   | `/recurring-payments/{id}/occurrences/skip`  | Skip a due date                                                                                 |
+| `DELETE` | `/recurring-payments/{id}/occurrences/{oid}` | Undo (`delete_transaction`)                                                                     |
+| `GET`    | `/payments`                                  | Unified list: `today`, `date_from`, `date_to` (≤ 400 days), `kind`, `status`, `include_overdue` |
+| `GET`    | `/commitments/summary`                       | Dashboard totals in one `currency`                                                              |
+
+### Commitments in the web app
+
+- `/finance` gains **Upcoming** (overdue, due today, upcoming, recently paid; filters by dates,
+  type, and status; record a payment from any row), **Loans** (outstanding, progress, EMI, next
+  EMI, the schedule with pay, adjust, skip, and undo; reschedule, close, archive),
+  **Subscriptions** and **Bills** (monthly and yearly cost per currency, next due date and
+  overdue count, record, skip, pause, resume, cancel with confirmation, history with undo).
+- The **Overview** shows a compact Commitments card (loans outstanding and monthly EMIs,
+  subscriptions per month, left to pay this month, overdue) only when commitments exist.
+- One payment dialog (`payment-dialog.tsx`) records, links, or marks paid; forms use React Hook
+  Form with Yup schemas in `lib/commitments`. Queries live under
+  `["workspaces", id, "finance", "commitments", …]`, so any finance change refetches them;
+  commitment changes also refetch reminders.
+
 ### Finance limitations and extension points (planned, not implemented)
 
-- **Loans and EMIs** would add a `loan` liability account type (and an amortization table).
-  Principal repayments would be transfers to the loan account, which reduce the liability and are
-  never spending; interest would be an expense in an interest category. Nothing about loans
-  exists yet.
-- **Recurring commitments and subscriptions** would add a schedule table that creates ordinary
-  transactions (or reminders, reusing the reminder worker's occurrence pattern). The ledger
-  wouldn't change.
 - **Investments** would add holdings and price tables keyed to investment accounts, giving
   market value beside the cost balance tracked today. Only then can a net-worth figure be shown.
 - **Budgets** would add per-category monthly limits read against the existing
   `spending-by-category` aggregate.
+- Commitments don't create transactions automatically (no auto-debit); each payment is recorded
+  or linked. Overdue occurrences of a subscription or bill are listed up to the 60 most recent.
+- A loan's earlier history (before it was added) isn't reconstructed, floating rates are
+  modelled by rescheduling, and interest is per installment period (no daily-balance interest,
+  fees, or insurance bundled into EMIs).
+- Editing or retyping a transaction that records a payment isn't blocked; the payment keeps the
+  amounts recorded when it was paid.
 - Not supported now: currency conversion, split transactions, attachments, imports, bank
   connections, reconciliation, and undo (deletes are confirmed instead).
 

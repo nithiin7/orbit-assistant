@@ -638,7 +638,7 @@ def test_database_enforces_finance_transaction_constraints(
 
 @pytest.mark.parametrize(
     "overrides",
-    [{"type": "loan"}, {"opening_balance": 10**13 + 1}, {"currency": "US"}],
+    [{"type": "mortgage"}, {"opening_balance": 10**13 + 1}, {"currency": "US"}],
 )
 def test_database_enforces_finance_account_constraints(
     migrated_settings: Settings, overrides: dict[str, object]

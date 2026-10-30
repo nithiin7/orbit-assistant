@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from orbit_api.api.v1 import (
     auth,
+    commitments,
     finance,
     health,
     me,
@@ -25,4 +26,5 @@ router.include_router(tasks.router)
 router.include_router(shopping.router)
 router.include_router(reminders.router)
 router.include_router(finance.router)
+router.include_router(commitments.router)
 router.include_router(storage.router)

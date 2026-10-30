@@ -3,13 +3,16 @@
 Each has a stable `key`, so seeding is idempotent: a workspace gets the defaults it is missing,
 never duplicates, and a renamed default keeps its key. There is deliberately no category for
 investments, credit-card bills, or loan principal: those are transfers between accounts, not
-spending.
+spending. Loan interest is spending, so it has one; paying an EMI records it there.
 """
 
 from dataclasses import dataclass
 from typing import Final
 
 from orbit_api.services.finance.models import CategoryType
+
+# The category EMI interest is recorded in.
+LOAN_INTEREST_KEY: Final = "loan_interest"
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,6 +48,7 @@ DEFAULT_CATEGORIES: Final[tuple[DefaultCategory, ...]] = (
     DefaultCategory("household", "Household", "expense"),
     DefaultCategory("taxes", "Taxes", "expense"),
     DefaultCategory("fees_charges", "Fees and charges", "expense"),
+    DefaultCategory("loan_interest", "Loan interest", "expense"),
     DefaultCategory("gifts_donations", "Gifts and donations", "expense"),
     DefaultCategory("other_expense", "Other expenses", "expense"),
 )

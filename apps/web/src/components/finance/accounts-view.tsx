@@ -105,7 +105,9 @@ export function AccountsView({
                   </span>
                 </span>
                 <span>
-                  <span className="block text-xs text-muted-foreground">Owed on cards</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Owed on cards and loans
+                  </span>
                   <span className="text-lg font-semibold tabular-nums">
                     {formatMoney(total.liabilities, total.currency)}
                   </span>

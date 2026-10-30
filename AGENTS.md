@@ -18,11 +18,13 @@ a database foundation (SQLAlchemy and Alembic over SQLite in local mode, or Post
 Supabase in cloud mode), and an identity foundation: user profiles, local accounts or Supabase
 Auth, workspaces, and centralized authorization. The product features are workspace-scoped
 **tasks**, **shopping lists**, **reminders** (one-time or recurring, optionally about a task),
-delivered as in-app **notifications** by a database-backed worker, and **finance** phase 1
+delivered as in-app **notifications** by a database-backed worker, and **finance**: phase 1
 (hand-entered accounts, income, expenses, refunds, transfers, categories, monthly reports, and
-CSV export). There are no other product features (calendar, notes), no recurring tasks or
-recurring transactions, no loans, investments holdings, budgets, or bank integrations, no push,
-email, or mobile notifications, and no AI integration yet. Do not describe or build on capabilities that do not exist.
+CSV export) and phase 2 commitments (loans with EMI schedules, subscriptions, recurring bills,
+upcoming payments, and payment reminders, all recorded through the phase 1 ledger). There are no
+other product features (calendar, notes), no recurring tasks, no automatically created
+transactions, no investment holdings, budgets, or bank integrations, no push, email, or mobile
+notifications, and no AI integration yet. Do not describe or build on capabilities that do not exist.
 
 ## Principles
 
@@ -48,7 +50,7 @@ email, or mobile notifications, and no AI integration yet. Do not describe or bu
 | `.husky/`, `.lintstagedrc.mjs` | Git hooks: staged-file lint/format and commitlint                                |
 
 Not present yet (planned; see `docs/architecture.md`): product tables for notes, later finance
-phases (loans, recurring commitments, investments, budgets),
+phases (investments, budgets),
 shared workspaces, AI provider abstractions, end-to-end tests, and a `scripts/` directory.
 
 ### Boundaries

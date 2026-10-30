@@ -16,6 +16,7 @@ from sqlalchemy import (
     Select,
     case,
     delete,
+    exists,
     extract,
     func,
     or_,
@@ -26,7 +27,12 @@ from sqlalchemy import cast as sql_cast
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from orbit_api.db.models import FinanceAccountModel, FinanceCategoryModel, FinanceTransactionModel
+from orbit_api.db.models import (
+    FinanceAccountModel,
+    FinanceCategoryModel,
+    FinanceRecurringPaymentModel,
+    FinanceTransactionModel,
+)
 from orbit_api.repositories.transaction import flush
 from orbit_api.services.finance.models import (
     Account,
@@ -247,15 +253,28 @@ class SqlFinanceCategoryRepository:
         await flush(self._session)
 
     async def is_used(self, workspace_id: uuid.UUID, category_id: uuid.UUID) -> bool:
-        found = await self._session.scalar(
-            select(_Transaction.id)
-            .where(
-                _Transaction.workspace_id == workspace_id,
-                _Transaction.category_id == category_id,
+        return bool(
+            await self._session.scalar(
+                select(
+                    exists().where(
+                        _Transaction.workspace_id == workspace_id,
+                        _Transaction.category_id == category_id,
+                    )
+                )
             )
-            .limit(1)
         )
-        return found is not None
+
+    async def is_used_by_recurring(self, workspace_id: uuid.UUID, category_id: uuid.UUID) -> bool:
+        return bool(
+            await self._session.scalar(
+                select(
+                    exists().where(
+                        FinanceRecurringPaymentModel.workspace_id == workspace_id,
+                        FinanceRecurringPaymentModel.category_id == category_id,
+                    )
+                )
+            )
+        )
 
     async def delete(self, workspace_id: uuid.UUID, category_id: uuid.UUID) -> None:
         try:
@@ -406,12 +425,16 @@ class SqlFinanceTransactionRepository:
         await flush(self._session)
 
     async def delete(self, workspace_id: uuid.UUID, transaction_id: uuid.UUID) -> bool:
-        deleted = await self._session.scalars(
-            delete(_Transaction)
-            .where(_Transaction.id == transaction_id, _Transaction.workspace_id == workspace_id)
-            .returning(_Transaction.id)
-        )
-        return deleted.first() is not None
+        try:
+            deleted = await self._session.scalars(
+                delete(_Transaction)
+                .where(_Transaction.id == transaction_id, _Transaction.workspace_id == workspace_id)
+                .returning(_Transaction.id)
+            )
+            return deleted.first() is not None
+        except IntegrityError as exc:
+            # A commitment payment's foreign key refuses to lose its transaction.
+            raise ConflictError from exc
 
     async def cash_flow(
         self, workspace_id: uuid.UUID, currency: Currency, start: date, end: date

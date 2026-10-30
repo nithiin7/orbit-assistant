@@ -55,6 +55,10 @@ PROTECTED_TABLES = (
     "finance_accounts",
     "finance_categories",
     "finance_transactions",
+    "finance_loans",
+    "finance_loan_installments",
+    "finance_recurring_payments",
+    "finance_recurring_occurrences",
 )
 
 

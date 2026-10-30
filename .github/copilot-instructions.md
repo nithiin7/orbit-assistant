@@ -16,8 +16,9 @@ non-trivial work. The essentials are repeated here because Copilot may not load 
   `cloud` mode) with Alembic migrations. The web app never touches a database. Identity
   exists (profiles, local or Supabase auth, workspaces; dependencies in `api/auth.py`). The
   product features are tasks, shopping lists, reminders with in-app notifications
-  (delivered by the worker in `scheduler/`), and finance phase 1 (accounts, transactions,
-  categories, monthly reports, CSV export); no other features or AI integration exist yet.
+  (delivered by the worker in `scheduler/`), and finance (accounts, transactions, categories,
+  monthly reports, CSV export, loans and EMIs, subscriptions, recurring bills, upcoming
+  payments); no other features or AI integration exist yet.
   Don't build on them unless the task asks.
 
 ## Rules

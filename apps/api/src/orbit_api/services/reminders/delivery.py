@@ -85,6 +85,14 @@ class NotificationWriter(Protocol):
     async def add(self, notification: Notification) -> None: ...
 
 
+class ReminderFollowUp(Protocol):
+    """Reschedules reminders that a financial commitment manages. Such a reminder fires once per
+    payment; after each firing the commitment points it at its next unpaid payment, in the same
+    transaction as the delivery."""
+
+    async def after_delivery(self, reminder: Reminder, now: datetime) -> None: ...
+
+
 def retry_delay(attempts: int) -> timedelta:
     """Exponential backoff after the `attempts`-th failed attempt: 30 s, 1 min, 2 min, …"""
     return min(RETRY_BASE_DELAY * 2 ** max(attempts - 1, 0), RETRY_MAX_DELAY)
@@ -99,7 +107,9 @@ class ReminderDelivery:
         transaction: Transaction,
         clock: Callable[[], datetime],
         max_attempts: int = DEFAULT_MAX_ATTEMPTS,
+        follow_up: ReminderFollowUp | None = None,
     ) -> None:
+        self._follow_up = follow_up
         self._reminders = reminders
         self._occurrences = occurrences
         self._notifications = notifications
@@ -156,9 +166,7 @@ class ReminderDelivery:
         target = await self._reminders.get_for_delivery(claim.reminder_id)
         if target is not None:
             await self._reminders.record_outcome(claim.reminder_id, claim.scheduled_for, "failed")
-            await schedule_next(
-                self._occurrences, target.reminder, max(claim.scheduled_for, now), now
-            )
+            await self._schedule_after(target.reminder, max(claim.scheduled_for, now), now)
         await self._transaction.commit()
         return "failed"
 
@@ -174,7 +182,13 @@ class ReminderDelivery:
             raise RuntimeError("The occurrence's claim was lost during delivery.")
         await self._reminders.record_outcome(reminder.id, claim.scheduled_for, outcome)
         # Skip occurrences missed while no worker ran: the next is after both this one and now.
-        await schedule_next(self._occurrences, reminder, max(claim.scheduled_for, now), now)
+        await self._schedule_after(reminder, max(claim.scheduled_for, now), now)
+
+    async def _schedule_after(self, reminder: Reminder, after: datetime, now: datetime) -> None:
+        if reminder.commitment is not None and self._follow_up is not None:
+            await self._follow_up.after_delivery(reminder, now)
+        else:
+            await schedule_next(self._occurrences, reminder, after, now)
 
 
 def _notification(
