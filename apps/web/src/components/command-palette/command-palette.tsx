@@ -1,6 +1,19 @@
 "use client";
 
-import { Check, CornerDownLeft, type LucideIcon, Monitor, Moon, Search, Sun } from "lucide-react";
+import {
+  BookOpen,
+  Check,
+  CornerDownLeft,
+  FileText,
+  Folder,
+  type LucideIcon,
+  Monitor,
+  Moon,
+  NotebookPen,
+  Search,
+  Sun,
+  Zap,
+} from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
@@ -16,14 +29,20 @@ import {
   useState,
 } from "react";
 
+import { useQuickCapture } from "@/components/notes/quick-capture";
 import { Kbd } from "@/components/ui/kbd";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { useNoteFolders, useNoteList, useNoteMutations } from "@/hooks/use-notes";
 import { filterCommands } from "@/lib/command-search";
 import { isActivePath, navItems } from "@/lib/navigation";
+import { journalToday, noteDisplayTitle, notesHref } from "@/lib/notes";
+import { useCurrentUser } from "@/providers/auth";
+import { useWorkspaces } from "@/providers/workspace";
 import { cn } from "@/utils/common";
 import { isMacPlatform, matchesModShortcut } from "@/utils/keyboard";
 
-type CommandGroup = "Go to" | "Theme";
+type CommandGroup =
+  "Notes" | "Matching notes" | "Recent notes" | "Folders" | "Go to" | "Theme" | "Search";
 
 type Command = {
   id: string;
@@ -34,10 +53,145 @@ type Command = {
   icon: LucideIcon;
   /** Shown as a check mark, e.g. the current page or theme. */
   current: boolean;
+  /** Already matched by the API's search; shown whatever the query. */
+  matched?: boolean;
   run: () => void;
 };
 
-const GROUPS: readonly CommandGroup[] = ["Go to", "Theme"];
+const GROUPS: readonly CommandGroup[] = [
+  "Matching notes",
+  "Notes",
+  "Go to",
+  "Recent notes",
+  "Folders",
+  "Theme",
+  "Search",
+];
+
+const NOTE_SEARCH_DELAY_MS = 200;
+
+/**
+ * Notes commands for the palette: create, capture, journal, search, recent notes, and folders.
+ * Data loads only while the palette is open.
+ */
+function useNoteCommands(open: boolean, query: string): Command[] {
+  const router = useRouter();
+  const { state } = useWorkspaces();
+  const user = useCurrentUser();
+  const workspaceId = state.status === "ready" ? state.active.id : null;
+  const quickCapture = useQuickCapture();
+  const mutations = useNoteMutations(workspaceId ?? "");
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSearch(query.trim()), NOTE_SEARCH_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+
+  const searching = open && search.length >= 2;
+  const recent = useNoteList(workspaceId, { sort: "recent", limit: 5 }, open && !search);
+  const matches = useNoteList(workspaceId, { q: search, limit: 6 }, searching);
+  const { folders } = useNoteFolders(open ? workspaceId : null);
+
+  const openNote = (id: string) => router.push(notesHref({ noteId: id }));
+  const recentNotes = recent.state.status === "success" ? recent.state.data.notes : [];
+  const matchingNotes =
+    searching && matches.state.status === "success" ? matches.state.data.notes : [];
+
+  if (!workspaceId) return [];
+  const commands: Command[] = [
+    {
+      id: "notes-new",
+      group: "Notes",
+      label: "New note",
+      description: "Start a note in the Inbox",
+      keywords: ["create", "add", "write", "note"],
+      icon: NotebookPen,
+      current: false,
+      run: () => {
+        mutations.create.mutateAsync({ title: "", note_type: "note" }).then(
+          (note) => router.push(notesHref({ view: "inbox", noteId: note.id })),
+          () => router.push(notesHref({ view: "inbox" })),
+        );
+      },
+    },
+    {
+      id: "notes-quick",
+      group: "Notes",
+      label: "Quick note",
+      description: "Capture a thought without leaving this page",
+      keywords: ["capture", "jot", "inbox", "note", "quick"],
+      icon: Zap,
+      current: false,
+      run: quickCapture.open,
+    },
+    {
+      id: "notes-journal",
+      group: "Notes",
+      label: "Open today’s journal",
+      keywords: ["journal", "diary", "daily", "today", "entry"],
+      icon: BookOpen,
+      current: false,
+      run: () => {
+        mutations.openJournal.mutateAsync(journalToday(user.timezone)).then(
+          (entry) => router.push(notesHref({ view: "journal", noteId: entry.id })),
+          () => router.push(notesHref({ view: "journal" })),
+        );
+      },
+    },
+  ];
+  if (query.trim()) {
+    commands.push({
+      id: "notes-search",
+      group: "Search",
+      label: `Search notes for “${query.trim()}”`,
+      keywords: [],
+      icon: Search,
+      current: false,
+      matched: true,
+      run: () => router.push(notesHref({ view: "all", search: query.trim() })),
+    });
+  }
+  for (const note of matchingNotes) {
+    commands.push({
+      id: `note-match-${note.id}`,
+      group: "Matching notes",
+      label: noteDisplayTitle(note),
+      description: note.excerpt || undefined,
+      keywords: [],
+      icon: FileText,
+      current: false,
+      matched: true,
+      run: () => openNote(note.id),
+    });
+  }
+  if (!query.trim()) {
+    for (const note of recentNotes) {
+      commands.push({
+        id: `note-recent-${note.id}`,
+        group: "Recent notes",
+        label: noteDisplayTitle(note),
+        keywords: [],
+        icon: FileText,
+        current: false,
+        run: () => openNote(note.id),
+      });
+    }
+  }
+  for (const folder of folders) {
+    commands.push({
+      id: `note-folder-${folder.id}`,
+      group: "Folders",
+      label: folder.name,
+      description: "Notes folder",
+      keywords: ["folder", "notes"],
+      icon: Folder,
+      current: false,
+      run: () => router.push(notesHref({ folderId: folder.id })),
+    });
+  }
+  return commands;
+}
 
 const THEMES = [
   { value: "light", label: "Light theme", icon: Sun },
@@ -67,6 +221,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
@@ -81,6 +236,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setQuery("");
     setActiveIndex(0);
+    setIsOpen(true);
     dialog.showModal();
     inputRef.current?.focus();
   }, []);
@@ -98,6 +254,8 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, close]);
+
+  const noteCommands = useNoteCommands(isOpen, query);
 
   const commands = useMemo<Command[]>(
     () => [
@@ -124,11 +282,18 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
     [pathname, router, hydrated, theme, setTheme],
   );
 
-  // Order results by group so arrow-key order matches what is on screen.
+  // Order results by group so arrow-key order matches what is on screen. Notes the API already
+  // matched skip the local filter.
   const results = useMemo(() => {
-    const matches = filterCommands(commands, query);
+    const matches = [
+      ...noteCommands.filter((command) => command.matched),
+      ...filterCommands(
+        [...noteCommands.filter((command) => !command.matched), ...commands],
+        query,
+      ),
+    ];
     return GROUPS.flatMap((group) => matches.filter((command) => command.group === group));
-  }, [commands, query]);
+  }, [commands, noteCommands, query]);
 
   const active = results.length > 0 ? Math.min(activeIndex, results.length - 1) : -1;
   const optionId = (command: Command) => `${listboxId}-${command.id}`;
@@ -169,6 +334,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
         aria-label="Command palette"
         className="dialog-motion dialog-pop mx-auto mt-[12vh] w-[calc(100%-2rem)] max-w-lg overflow-hidden rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
         onClose={() => {
+          setIsOpen(false);
           returnFocusRef.current?.focus();
           returnFocusRef.current = null;
         }}
@@ -183,14 +349,14 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
             ref={inputRef}
             type="text"
             role="combobox"
-            aria-label="Search pages and actions"
+            aria-label="Search pages, notes, and actions"
             aria-expanded="true"
             aria-controls={listboxId}
             aria-autocomplete="list"
             aria-activedescendant={activeOptionId}
             autoComplete="off"
             spellCheck={false}
-            placeholder="Search pages and actions…"
+            placeholder="Search pages, notes, and actions…"
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);

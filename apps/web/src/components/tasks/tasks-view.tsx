@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTaskList, useTaskMutations, useTaskSummary } from "@/hooks/use-tasks";
+import { useLinkedTask, useTaskList, useTaskMutations, useTaskSummary } from "@/hooks/use-tasks";
 import {
   DEFAULT_TASK_FILTERS,
   groupTasksByDue,
@@ -58,6 +58,8 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
   const mutations = useTaskMutations(workspaceId);
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [editing, setEditing] = useState<Task | null>(null);
+  // A note's link to a task opens it here.
+  useLinkedTask(workspaceId, setEditing);
   const [actionError, setActionError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const titleRef = useRef<HTMLInputElement>(null);

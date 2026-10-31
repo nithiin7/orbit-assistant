@@ -9,13 +9,14 @@ import type {
   UpdateTaskRequest,
 } from "@orbit/contracts";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 
 import { describeApiError } from "@/api/client";
 import {
   completeTask,
   createTask,
   deleteTask,
+  getTask,
   removeCachedTask,
   reopenTask,
   replaceCachedTask,
@@ -173,4 +174,28 @@ export function useTaskMutations(workspaceId: string) {
   });
 
   return { create, update, toggle, remove };
+}
+
+/**
+ * The task named by the page's `?task=` (a link from a note), fetched once, so the page can open
+ * it. The parameter is removed from the address afterwards, so a reload doesn't reopen it.
+ */
+export function useLinkedTask(workspaceId: string, onFound: (task: Task) => void) {
+  const { withToken } = useAuth();
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const taskId = url.searchParams.get("task");
+    if (!taskId) return;
+    url.searchParams.delete("task");
+    window.history.replaceState(window.history.state, "", url);
+    const controller = new AbortController();
+    withToken((token) => getTask(token, workspaceId, taskId, { signal: controller.signal })).then(
+      onFound,
+      // A task that no longer exists (or a stale link) simply opens nothing.
+      () => undefined,
+    );
+    return () => controller.abort();
+    // Once per page visit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
+  }, [workspaceId]);
 }

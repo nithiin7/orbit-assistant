@@ -6,6 +6,7 @@
  *   motion.css      durations, easings, keyframes, and reduced-motion handling
  *   base.css        element defaults (body, selection, cursors)
  *   components.css  shared component classes (dialog transitions)
+ *   editor.css      the note editor's document typography
  *   utilities.css   custom Tailwind utilities
  */
 @import "tailwindcss";
@@ -14,6 +15,7 @@
 @import "./motion.css";
 @import "./base.css";
 @import "./components.css";
+@import "./editor.css";
 @import "./utilities.css";
 
 @custom-variant dark (&:where(.dark, .dark *));

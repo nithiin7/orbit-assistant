@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CommandPaletteProvider } from "@/components/command-palette/command-palette";
+import { QuickCaptureProvider } from "@/components/notes/quick-capture";
 import { ada, json, mockApi, personal, status } from "@/test/api-mock";
 import { renderSignedIn } from "@/test/session";
 
@@ -29,9 +30,11 @@ afterEach(() => {
 
 async function renderMobileNav() {
   await renderSignedIn(
-    <CommandPaletteProvider>
-      <MobileNav />
-    </CommandPaletteProvider>,
+    <QuickCaptureProvider>
+      <CommandPaletteProvider>
+        <MobileNav />
+      </CommandPaletteProvider>
+    </QuickCaptureProvider>,
   );
   return screen.getByLabelText("Navigation", { selector: "dialog" });
 }

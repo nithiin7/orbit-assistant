@@ -68,7 +68,7 @@ export const navItems: readonly NavItem[] = [
     title: "Notes",
     href: "/notes",
     icon: NotebookPen,
-    description: "Capture ideas and reference material.",
+    description: "Capture, organize, and connect your notes and journal.",
     group: "workspace",
   },
   {
@@ -94,6 +94,7 @@ const dedicatedRoutes: ReadonlySet<string> = new Set([
   "/reminders",
   "/shopping",
   "/finance",
+  "/notes",
   "/settings",
 ]);
 

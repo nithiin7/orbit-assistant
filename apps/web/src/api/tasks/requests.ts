@@ -40,6 +40,15 @@ export function getTaskSummary(
   });
 }
 
+export function getTask(
+  token: string,
+  workspaceId: string,
+  taskId: string,
+  { signal }: Signal = {},
+): Promise<Task> {
+  return request<Task>(taskPath(workspaceId, taskId), { token, signal });
+}
+
 export function createTask(
   token: string,
   workspaceId: string,

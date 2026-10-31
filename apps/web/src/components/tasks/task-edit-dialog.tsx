@@ -9,6 +9,7 @@ import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
 import { FormAlert, FormField } from "@/components/form-field";
+import { TaskNotes } from "@/components/notes/task-notes";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
@@ -172,6 +173,8 @@ export function TaskEditDialog({ task, onSave, onClose }: TaskEditDialogProps) {
             )}
           />
         </div>
+
+        <TaskNotes taskId={task.id} />
 
         <FormAlert message={errors.root?.server?.message ?? null} />
 
