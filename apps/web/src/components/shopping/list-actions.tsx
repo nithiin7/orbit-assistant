@@ -1,10 +1,11 @@
 "use client";
 
 import type { ShoppingListOverview } from "@orbit/contracts";
-import { Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Menu, type MenuItem } from "@/components/ui/menu";
 
 type ListActionsProps = {
   list: ShoppingListOverview;
@@ -13,12 +14,15 @@ type ListActionsProps = {
   onDelete: (list: ShoppingListOverview) => Promise<void>;
 };
 
-/** Rename and delete for the selected list. The default list can be renamed but not deleted. */
+/**
+ * Rename and delete for the selected list, in a menu so the page keeps one primary action. The
+ * default list can be renamed but not deleted. Deleting asks for confirmation in place.
+ */
 export function ListActions({ list, onRename, onDelete }: ListActionsProps) {
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const confirmRef = useRef<HTMLButtonElement>(null);
-  const deleteRef = useRef<HTMLButtonElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (confirming) confirmRef.current?.focus();
@@ -26,7 +30,8 @@ export function ListActions({ list, onRename, onDelete }: ListActionsProps) {
 
   const cancel = () => {
     setConfirming(false);
-    requestAnimationFrame(() => deleteRef.current?.focus());
+    // The confirmation unmounts; put focus back on the menu button that opened it.
+    requestAnimationFrame(() => wrapperRef.current?.querySelector("button")?.focus());
   };
 
   if (confirming) {
@@ -66,24 +71,27 @@ export function ListActions({ list, onRename, onDelete }: ListActionsProps) {
     );
   }
 
+  const items: MenuItem[] = [
+    { id: "rename", label: "Rename list", icon: Pencil, onSelect: onRename },
+    ...(list.is_default
+      ? []
+      : [
+          {
+            id: "delete",
+            label: "Delete list",
+            description: "Removes the list and its items.",
+            icon: Trash2,
+            onSelect: () => setConfirming(true),
+          },
+        ]),
+  ];
+
   return (
-    <div className="flex items-center gap-1">
-      <Button variant="ghost" size="sm" onClick={onRename}>
-        <Pencil aria-hidden="true" />
-        Rename
-      </Button>
-      {list.is_default ? null : (
-        <Button
-          ref={deleteRef}
-          variant="ghost"
-          size="sm"
-          className="text-muted-foreground hover:text-destructive"
-          onClick={() => setConfirming(true)}
-        >
-          <Trash2 aria-hidden="true" />
-          Delete
-        </Button>
-      )}
+    <div ref={wrapperRef}>
+      <Menu items={items} variant="outline" align="end" aria-label="List options">
+        <MoreHorizontal aria-hidden="true" />
+        <span className="hidden @md/list:inline">Options</span>
+      </Menu>
     </div>
   );
 }

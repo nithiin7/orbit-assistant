@@ -4,8 +4,8 @@ import type { ShoppingItem } from "@orbit/contracts";
 import { ExternalLink, Trash2 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { linkLabel } from "@/lib/shopping";
 import { cn } from "@/utils/common";
 
@@ -44,57 +44,67 @@ export function ShoppingItemRow({
   return (
     <li
       className={cn(
-        "group flex items-start gap-3 px-3 py-3 transition-colors duration-150 hover:bg-accent/40 sm:px-4",
+        "group flex items-start gap-3 px-3 py-3 transition-[background-color,opacity] duration-150 hover:bg-accent/40 sm:px-4 @lg/rows:items-center pointer-coarse:py-3.5",
         pending && "opacity-70",
+        purchased && "bg-muted/20",
       )}
     >
-      <input
-        type="checkbox"
+      <Checkbox
+        shape="round"
         checked={purchased}
         disabled={pending}
         onChange={() => onToggle(item)}
         aria-labelledby={nameId}
-        className="mt-0.5 size-4.5 shrink-0 cursor-pointer rounded accent-brand focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:cursor-wait"
+        // A bigger target for ticking items off on a phone in the shop.
+        className="mt-0.5 @lg/rows:mt-0 pointer-coarse:size-6"
       />
 
-      <div className="min-w-0 flex-1 space-y-1">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5 @lg/rows:flex-row @lg/rows:items-center @lg/rows:gap-4">
+        <div className="min-w-0 flex-1 space-y-0.5">
           <button
             type="button"
             onClick={() => onEdit(item)}
             aria-label={`Edit “${item.name}”`}
-            className="max-w-full rounded-sm text-left text-sm font-medium break-words outline-none hover:underline hover:decoration-muted-foreground/50 hover:underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring"
+            className="block max-w-full rounded-sm text-left text-sm font-medium break-words outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:text-base"
           >
             <span
               id={nameId}
-              className={cn(purchased && "text-muted-foreground line-through decoration-1")}
+              className={cn(
+                "transition-colors duration-150",
+                purchased && "text-muted-foreground line-through decoration-1",
+              )}
             >
               {item.name}
             </span>
           </button>
-          {item.quantity ? (
-            <Badge variant="outline" aria-label={`Quantity ${item.quantity}`}>
-              {item.quantity}
-            </Badge>
+          {item.notes ? (
+            <p className="line-clamp-1 text-sm break-words text-muted-foreground">{item.notes}</p>
           ) : null}
         </div>
-        {item.notes ? (
-          <p className="line-clamp-2 text-sm break-words whitespace-pre-line text-muted-foreground">
-            {item.notes}
-          </p>
-        ) : null}
-        {item.url ? (
-          <a
-            href={item.url}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            referrerPolicy="no-referrer"
-            className="inline-flex max-w-full items-center gap-1 rounded-sm text-xs text-muted-foreground outline-none hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <ExternalLink className="size-3 shrink-0" aria-hidden="true" />
-            <span className="truncate">{linkLabel(item.url)}</span>
-            <span className="sr-only">(opens in a new tab)</span>
-          </a>
+        {item.quantity || item.url ? (
+          <div className="flex min-w-0 shrink-0 flex-wrap items-center gap-1.5 @lg/rows:justify-end">
+            {item.quantity ? (
+              <span
+                aria-label={`Quantity ${item.quantity}`}
+                className="inline-flex h-6 items-center rounded-full bg-muted/70 px-2 text-xs font-medium tabular-nums"
+              >
+                {item.quantity}
+              </span>
+            ) : null}
+            {item.url ? (
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                referrerPolicy="no-referrer"
+                className="inline-flex h-6 max-w-48 items-center gap-1 rounded-full bg-muted/70 px-2 text-xs font-medium text-muted-foreground outline-none hover:bg-brand-subtle hover:text-brand focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <ExternalLink className="size-3 shrink-0" aria-hidden="true" />
+                <span className="truncate">{linkLabel(item.url)}</span>
+                <span className="sr-only">(opens in a new tab)</span>
+              </a>
+            ) : null}
+          </div>
         ) : null}
       </div>
 
