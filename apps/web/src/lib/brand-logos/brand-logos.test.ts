@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { brandLogo, readableOn } from "./brand-logos";
+import { brandLogo, readableOn, vehicleLogo } from "./brand-logos";
 
 describe("brandLogo", () => {
   it("matches a brand anywhere in the name, ignoring case and punctuation", () => {
@@ -40,5 +40,24 @@ describe("readableOn", () => {
     expect(readableOn("FFE01B")).toBe("#000000");
     expect(readableOn("000000")).toBe("#FFFFFF");
     expect(readableOn("0061FF")).toBe("#FFFFFF");
+  });
+});
+
+describe("vehicleLogo", () => {
+  it("matches the maker, or a well-known model, in a vehicle's name", () => {
+    expect(vehicleLogo("Honda City 2019")?.title).toBe("Honda");
+    expect(vehicleLogo("Maruti Swift")?.title).toBe("Suzuki");
+    expect(vehicleLogo("My Creta")?.title).toBe("Hyundai");
+    expect(vehicleLogo("MG Hector")?.title).toBe("MG");
+  });
+
+  it("returns null for vehicles it doesn't know", () => {
+    expect(vehicleLogo("Royal Enfield Classic")).toBeNull();
+    expect(vehicleLogo("Family car")).toBeNull();
+  });
+
+  it("keeps vehicle makers out of subscription matches", () => {
+    expect(brandLogo("Kia Connect")).toBeNull();
+    expect(brandLogo("MG app")).toBeNull();
   });
 });

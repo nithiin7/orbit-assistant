@@ -109,6 +109,85 @@ export const transactionTypeLabel = (type: InvestmentTransactionType) =>
 export const compoundingLabel = (value: Compounding) => labelOf(COMPOUNDING, value);
 export const assetCategoryLabel = (category: AssetCategory) => labelOf(ASSET_CATEGORIES, category);
 
+/** What an asset is, finer than its category, for the icon it shows. */
+export type AssetLook =
+  | "car"
+  | "bike"
+  | "apartment"
+  | "house"
+  | "land"
+  | "commercial"
+  | "gold"
+  | "jewellery"
+  | "cash"
+  | "watch"
+  | "gadget"
+  | "art"
+  | "other";
+
+/** Words in a name that say what it is. The first rule with a matching word wins. */
+const ASSET_WORDS: readonly [AssetLook, readonly string[]][] = [
+  ["bike", ["bike", "motorbike", "motorcycle", "scooter", "scooty", "activa", "bullet", "moped"]],
+  ["car", ["car", "sedan", "suv", "hatchback", "jeep"]],
+  ["apartment", ["flat", "apartment", "apartments", "condo", "bhk", "penthouse"]],
+  ["house", ["house", "home", "villa", "bungalow", "cottage"]],
+  ["land", ["land", "plot", "plots", "acre", "acres", "farm", "farmland", "site"]],
+  ["commercial", ["shop", "office", "commercial", "warehouse", "godown", "showroom"]],
+  [
+    "jewellery",
+    [
+      "jewellery",
+      "jewelry",
+      "ring",
+      "necklace",
+      "chain",
+      "bangle",
+      "bangles",
+      "earrings",
+      "diamond",
+    ],
+  ],
+  ["gold", ["gold", "silver", "coin", "coins", "bar", "bars", "biscuit", "bullion"]],
+  ["cash", ["cash", "savings", "locker"]],
+  ["watch", ["watch", "rolex"]],
+  ["gadget", ["laptop", "macbook", "phone", "iphone", "camera", "computer", "tv"]],
+  ["art", ["art", "painting", "artwork", "sculpture", "collectible", "collectibles"]],
+];
+
+const CATEGORY_LOOKS: Readonly<Record<AssetCategory, AssetLook>> = {
+  gold: "gold",
+  property: "house",
+  vehicle: "car",
+  cash: "cash",
+  other: "other",
+};
+
+/**
+ * What an asset is, read from its name ("Flat in Pune" is an apartment, "Activa" a bike), or
+ * from its category when the name doesn't say. Within a category, only looks that fit it count,
+ * so a vehicle named "Home car" stays a car.
+ */
+export function assetLook(name: string, category: AssetCategory): AssetLook {
+  // "2BHK" reads as "2 bhk".
+  const words = new Set(
+    name
+      .toLowerCase()
+      .replace(/(\d)([a-z])/g, "$1 $2")
+      .split(/[^a-z0-9]+/),
+  );
+  const fits: Partial<Record<AssetCategory, readonly AssetLook[]>> = {
+    vehicle: ["car", "bike"],
+    property: ["apartment", "house", "land", "commercial"],
+    gold: ["gold", "jewellery"],
+  };
+  const allowed = fits[category];
+  for (const [look, keywords] of ASSET_WORDS) {
+    if (allowed && !allowed.includes(look)) continue;
+    if (keywords.some((keyword) => words.has(keyword))) return look;
+  }
+  return CATEGORY_LOOKS[category];
+}
+
 const UNITS = /^(\d{1,12})(?:\.(\d{1,6}))?$/;
 
 /**

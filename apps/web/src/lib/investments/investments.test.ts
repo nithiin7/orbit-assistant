@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  assetLook,
   formatPercent,
   formatUnits,
   gainTone,
@@ -102,5 +103,31 @@ describe("schemas", () => {
     };
     await expect(holdingSchema.validate(holding)).resolves.toBeTruthy();
     await expect(holdingSchema.validate({ ...holding, isin: "123" })).rejects.toThrow(/ISIN/);
+  });
+});
+
+describe("assetLook", () => {
+  it("reads what an asset is from its name", () => {
+    expect(assetLook("Flat in Pune", "property")).toBe("apartment");
+    expect(assetLook("2BHK Whitefield", "property")).toBe("apartment");
+    expect(assetLook("Farm land, Mysuru", "property")).toBe("land");
+    expect(assetLook("Honda Activa", "vehicle")).toBe("bike");
+    expect(assetLook("Wedding jewellery", "gold")).toBe("jewellery");
+    expect(assetLook("MacBook Pro", "other")).toBe("gadget");
+    expect(assetLook("Rolex watch", "other")).toBe("watch");
+  });
+
+  it("falls back to the category when the name doesn't say", () => {
+    expect(assetLook("Honda City", "vehicle")).toBe("car");
+    expect(assetLook("Our place", "property")).toBe("house");
+    expect(assetLook("SGB 2023", "gold")).toBe("gold");
+    expect(assetLook("Emergency stash", "cash")).toBe("cash");
+    expect(assetLook("Something", "other")).toBe("other");
+  });
+
+  it("only picks looks that fit the category", () => {
+    expect(assetLook("Home car", "vehicle")).toBe("car");
+    expect(assetLook("Gold coin locker", "gold")).toBe("gold");
+    expect(assetLook("Office", "vehicle")).toBe("car");
   });
 });

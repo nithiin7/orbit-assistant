@@ -1,5 +1,5 @@
 /**
- * Brand logos for subscriptions, matched from the name and provider the user typed. The logos
+ * Brand logos for subscriptions and vehicles, matched from the names the user typed. The logos
  * are bundled (simple-icons, CC0), so nothing about a subscription leaves the device to fetch
  * one. Some well-known brands are missing because simple-icons removes logos on request; those
  * fall back to the generic icon.
@@ -13,8 +13,11 @@ import {
   siApplemusic,
   siApplepodcasts,
   siAppletv,
+  siAudi,
   siAudible,
   siBitwarden,
+  siBmw,
+  siCitroen,
   siClaude,
   siCoursera,
   siCrunchyroll,
@@ -22,10 +25,12 @@ import {
   siDeezer,
   siDiscord,
   siDropbox,
+  siDucati,
   siDuolingo,
   siEvernote,
   siExpressvpn,
   siFigma,
+  siFord,
   siGithub,
   siGithubcopilot,
   siGoogle,
@@ -35,14 +40,22 @@ import {
   siGrammarly,
   siHbomax,
   siHeadspace,
+  siHonda,
+  siHyundai,
   siIcloud,
+  siJeep,
   siJetbrains,
   siJio,
   siKagi,
+  siKia,
+  siKtm,
   siLinear,
+  siMahindra,
   siMedium,
+  siMg,
   type SimpleIcon,
   siNetflix,
+  siNissan,
   siNordvpn,
   siNotion,
   siObsidian,
@@ -50,26 +63,36 @@ import {
   siPatreon,
   siPerplexity,
   siPlaystation,
+  siPorsche,
   siProton,
   siProtonmail,
   siProtonvpn,
   siRaycast,
+  siRenault,
   siSetapp,
+  siSkoda,
   siSoundcloud,
   siSpotify,
   siSteam,
   siStrava,
   siSubstack,
   siSurfshark,
+  siSuzuki,
   siSwiggy,
+  siTata,
   siTelegram,
+  siTesla,
   siTidal,
   siTodoist,
+  siToyota,
   siTwitch,
   siUber,
   siUdemy,
   siVodafone,
+  siVolkswagen,
+  siVolvo,
   siX,
+  siYamahamotorcorporation,
   siYoutube,
   siYoutubemusic,
   siZomato,
@@ -161,6 +184,37 @@ const BRANDS: [SimpleIcon, ...string[]][] = [
   [siZoom, "zoom"],
 ];
 
+/**
+ * Car and motorcycle makers. Matched only for vehicles, so a short name like "MG" or "Kia" can't
+ * turn up in a subscription. Some makers (Maruti's own mark, Mercedes, Royal Enfield, Bajaj,
+ * TVS, Hero) aren't in simple-icons; Maruti uses Suzuki's mark, the rest the generic icon.
+ */
+const VEHICLE_BRANDS: [SimpleIcon, ...string[]][] = [
+  [siAudi, "audi"],
+  [siBmw, "bmw"],
+  [siCitroen, "citroen"],
+  [siDucati, "ducati"],
+  [siFord, "ford"],
+  [siHonda, "honda", "activa"],
+  [siHyundai, "hyundai", "creta", "i20", "verna"],
+  [siJeep, "jeep"],
+  [siKia, "kia", "seltos", "sonet"],
+  [siKtm, "ktm"],
+  [siMahindra, "mahindra", "thar", "xuv700", "scorpio"],
+  [siMg, "mg", "mg motor"],
+  [siNissan, "nissan"],
+  [siPorsche, "porsche"],
+  [siRenault, "renault"],
+  [siSkoda, "skoda"],
+  [siSuzuki, "suzuki", "maruti", "maruti suzuki", "swift", "baleno", "brezza"],
+  [siTata, "tata", "nexon", "punch", "harrier"],
+  [siTesla, "tesla"],
+  [siToyota, "toyota", "innova", "fortuner"],
+  [siVolkswagen, "volkswagen", "vw"],
+  [siVolvo, "volvo"],
+  [siYamahamotorcorporation, "yamaha"],
+];
+
 function words(text: string): string[] {
   return text
     .toLowerCase()
@@ -175,10 +229,17 @@ function containsPhrase(haystack: string[], phrase: string[]): boolean {
   return false;
 }
 
+type Phrase = { icon: SimpleIcon; words: string[] };
+
 /** Longest phrases first, so the most specific brand wins. */
-const PHRASES = BRANDS.flatMap(([icon, ...phrases]) =>
-  phrases.map((phrase) => ({ icon, words: words(phrase) })),
-).sort((a, b) => b.words.length - a.words.length);
+function phrasesOf(brands: [SimpleIcon, ...string[]][]): Phrase[] {
+  return brands
+    .flatMap(([icon, ...phrases]) => phrases.map((phrase) => ({ icon, words: words(phrase) })))
+    .sort((a, b) => b.words.length - a.words.length);
+}
+
+const SUBSCRIPTION_PHRASES = phrasesOf(BRANDS);
+const VEHICLE_PHRASES = phrasesOf(VEHICLE_BRANDS);
 
 function channel(hex: string): number {
   const value = Number.parseInt(hex, 16) / 255;
@@ -195,20 +256,29 @@ export function readableOn(hex: string): "#000000" | "#FFFFFF" {
   return (luminance + 0.05) / 0.05 > 1.05 / (luminance + 0.05) ? "#000000" : "#FFFFFF";
 }
 
-/** The logo for a subscription, from its name or provider, or `null` when none is known. */
-export function brandLogo(...labels: (string | null | undefined)[]): BrandLogo | null {
+function match(phrases: Phrase[], labels: (string | null | undefined)[]): BrandLogo | null {
   for (const label of labels) {
     if (!label) continue;
     const haystack = words(label);
-    const match = PHRASES.find((phrase) => containsPhrase(haystack, phrase.words));
-    if (match) {
+    const found = phrases.find((phrase) => containsPhrase(haystack, phrase.words));
+    if (found) {
       return {
-        title: match.icon.title,
-        path: match.icon.path,
-        background: `#${match.icon.hex}`,
-        foreground: readableOn(match.icon.hex),
+        title: found.icon.title,
+        path: found.icon.path,
+        background: `#${found.icon.hex}`,
+        foreground: readableOn(found.icon.hex),
       };
     }
   }
   return null;
+}
+
+/** The logo for a subscription, from its name or provider, or `null` when none is known. */
+export function brandLogo(...labels: (string | null | undefined)[]): BrandLogo | null {
+  return match(SUBSCRIPTION_PHRASES, labels);
+}
+
+/** The maker's logo for a vehicle, from its name, or `null` when none is known. */
+export function vehicleLogo(...labels: (string | null | undefined)[]): BrandLogo | null {
+  return match(VEHICLE_PHRASES, labels);
 }

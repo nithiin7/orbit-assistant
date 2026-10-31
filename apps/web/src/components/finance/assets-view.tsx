@@ -1,8 +1,28 @@
 "use client";
 
 import { yupResolver } from "@hookform/resolvers/yup";
-import type { Asset, FinanceAccount } from "@orbit/contracts";
-import { Archive, ArchiveRestore, Gem, History, Pencil, Plus } from "lucide-react";
+import type { Asset, AssetCategory, FinanceAccount } from "@orbit/contracts";
+import {
+  Archive,
+  ArchiveRestore,
+  Banknote,
+  Bike,
+  Building2,
+  Car,
+  Coins,
+  Gem,
+  History,
+  House,
+  LandPlot,
+  Laptop,
+  type LucideIcon,
+  Package,
+  Palette,
+  Pencil,
+  Plus,
+  Store,
+  Watch,
+} from "lucide-react";
 import { useId, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
@@ -15,6 +35,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useAssets, useInvestmentMutations, useValuations } from "@/hooks/use-investments";
+import { vehicleLogo } from "@/lib/brand-logos";
 import {
   CURRENCY_OPTIONS,
   DEFAULT_CURRENCY,
@@ -25,6 +46,8 @@ import {
 import {
   ASSET_CATEGORIES,
   assetCategoryLabel,
+  type AssetLook,
+  assetLook,
   assetSchema,
   parseValue,
   valuationSchema,
@@ -171,6 +194,62 @@ export function AssetsView({ workspaceId, accounts, onAnnounce, currency }: Fina
   );
 }
 
+const LOOK_ICONS: Record<AssetLook, LucideIcon> = {
+  car: Car,
+  bike: Bike,
+  apartment: Building2,
+  house: House,
+  land: LandPlot,
+  commercial: Store,
+  gold: Coins,
+  jewellery: Gem,
+  cash: Banknote,
+  watch: Watch,
+  gadget: Laptop,
+  art: Palette,
+  other: Package,
+};
+
+/** A soft tint per category, so property, vehicles, and gold are told apart at a glance. */
+const CATEGORY_TINTS: Record<AssetCategory, string> = {
+  property: "bg-brand-subtle text-brand",
+  vehicle: "bg-chart-1/12 text-chart-1",
+  gold: "bg-warning/12 text-warning",
+  cash: "bg-success/12 text-success",
+  other: "bg-muted text-muted-foreground",
+};
+
+/** What the asset is, as an icon, or its maker's logo for a vehicle Orbit recognizes. */
+function AssetIcon({ asset }: { asset: Asset }) {
+  const logo = asset.category === "vehicle" ? vehicleLogo(asset.name) : null;
+  if (logo) {
+    return (
+      <span
+        aria-hidden="true"
+        title={logo.title}
+        className="flex size-10 shrink-0 items-center justify-center rounded-lg ring-1 ring-border"
+        style={{ backgroundColor: logo.background, color: logo.foreground }}
+      >
+        <svg viewBox="0 0 24 24" fill="currentColor" className="size-5">
+          <path d={logo.path} />
+        </svg>
+      </span>
+    );
+  }
+  const Icon = LOOK_ICONS[assetLook(asset.name, asset.category)];
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "flex size-10 shrink-0 items-center justify-center rounded-lg",
+        CATEGORY_TINTS[asset.category],
+      )}
+    >
+      <Icon className="size-5" />
+    </span>
+  );
+}
+
 function AssetRow({
   asset,
   workspaceId,
@@ -189,8 +268,9 @@ function AssetRow({
   const historyId = useId();
   return (
     <li className="min-w-0 space-y-3 px-4 py-3.5 @md/rows:px-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1">
+      <div className="flex items-start gap-3">
+        <AssetIcon asset={asset} />
+        <div className="min-w-0 flex-1 space-y-1">
           <button
             type="button"
             onClick={onEdit}
@@ -227,6 +307,8 @@ function AssetRow({
       </div>
       <RowActions
         name={asset.name}
+        // In line with the name, past the icon.
+        className="pl-13"
         primary={
           asset.archived ? null : (
             <Button size="sm" variant="outline" onClick={onValue}>
@@ -264,7 +346,7 @@ function AssetRow({
         ]}
       />
       {open ? (
-        <div id={historyId} className="animate-page-in">
+        <div id={historyId} className="animate-page-in pl-13">
           {history.state.status === "loading" ? (
             <Skeleton className="h-12" />
           ) : history.state.status === "error" ? (
