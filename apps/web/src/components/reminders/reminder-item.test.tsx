@@ -49,6 +49,18 @@ describe("ReminderItem", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows recurrence, the linked task, and another time zone as chips", () => {
+    renderItem({
+      ...reminder,
+      timezone: "Asia/Tokyo",
+      recurrence: { frequency: "weekly", weekdays: ["mon", "thu"] },
+      task: { id: "t1", title: "File taxes", status: "completed" },
+    });
+    expect(screen.getByText("Weekly on Mon, Thu")).toBeInTheDocument();
+    expect(screen.getByText("File taxes")).toHaveClass("line-through");
+    expect(screen.getByText("Asia / Tokyo")).toBeInTheDocument();
+  });
+
   it("is read-only when a bill, subscription, or loan manages it", () => {
     renderItem({ ...reminder, commitment: { kind: "recurring_payment", id: "bill-1" } });
     expect(screen.getByText("Managed in Finance")).toBeInTheDocument();

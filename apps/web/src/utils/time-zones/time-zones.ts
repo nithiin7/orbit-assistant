@@ -11,6 +11,22 @@ export function browserTimeZone(): string {
   }
 }
 
+/**
+ * Whether two IANA names are the same zone. Browsers canonicalize some names differently (one
+ * reports `Asia/Calcutta` where another says `Asia/Kolkata`), so compare what each resolves to.
+ */
+export function sameTimeZone(a: string, b: string): boolean {
+  if (a === b) return true;
+  try {
+    const resolve = (name: string) =>
+      new Intl.DateTimeFormat("en", { timeZone: name }).resolvedOptions().timeZone;
+    return resolve(a) === resolve(b);
+  } catch {
+    // An unknown name matches only itself.
+    return false;
+  }
+}
+
 /** Every IANA time zone the browser knows, always including `UTC` and the given extras. */
 export function timeZoneNames(...include: (string | null | undefined)[]): string[] {
   let names: string[] = [];

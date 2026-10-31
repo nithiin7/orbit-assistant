@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { localParts, timeZoneLabel, timeZoneNames } from "./time-zones";
+import { localParts, sameTimeZone, timeZoneLabel, timeZoneNames } from "./time-zones";
 
 describe("time zones", () => {
+  it("treat aliases of one zone as the same zone", () => {
+    expect(sameTimeZone("Asia/Kolkata", "Asia/Calcutta")).toBe(true);
+    expect(sameTimeZone("Europe/Paris", "Europe/Paris")).toBe(true);
+    expect(sameTimeZone("Europe/Paris", "Europe/Berlin")).toBe(false);
+    expect(sameTimeZone("Not/AZone", "UTC")).toBe(false);
+  });
+
   it("read an instant on another zone's wall clock, across midnight and DST", () => {
     const instant = new Date("2030-01-14T23:30:00Z");
     expect(localParts(instant, "Asia/Tokyo")).toEqual({ date: "2030-01-15", time: "08:30" });

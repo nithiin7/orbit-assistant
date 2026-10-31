@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   describeRecurrence,
   formatOccurrence,
+  groupRemindersByFire,
   nextHour,
   reminderSchema,
   statusHint,
@@ -178,5 +179,51 @@ describe("statusHint", () => {
         reminder({ status: "completed", task: { id: "t", title: "T", status: "completed" } }),
       ),
     ).toMatch(/task is completed/);
+  });
+});
+
+describe("groupRemindersByFire", () => {
+  // 10:00 on Wed 2030-01-16 in Asia/Tokyo (01:00 UTC).
+  const now = new Date("2030-01-16T01:00:00Z");
+  const at = (id: string, next: string | null, status: Reminder["status"] = "scheduled") =>
+    reminder({ id, status, next_occurrence_at: next });
+
+  it("sorts reminders into sections by the viewer's calendar day", () => {
+    const groups = groupRemindersByFire(
+      [
+        at("late", "2030-01-15T23:00:00Z", "overdue"),
+        at("tonight", "2030-01-16T14:00:00Z"),
+        // 00:30 on Jan 17 in Tokyo, though still Jan 16 in UTC.
+        at("tomorrow", "2030-01-16T15:30:00Z"),
+        at("sunday", "2030-01-20T00:00:00Z"),
+        at("next-week", "2030-01-23T03:00:00Z"),
+        at("done", null, "completed"),
+      ],
+      "Asia/Tokyo",
+      now,
+    );
+    expect(groups.map((group) => [group.key, group.reminders.map((r) => r.id)])).toEqual([
+      ["overdue", ["late"]],
+      ["today", ["tonight"]],
+      ["tomorrow", ["tomorrow"]],
+      ["week", ["sunday"]],
+      ["later", ["next-week"]],
+      ["none", ["done"]],
+    ]);
+  });
+
+  it("leaves out empty sections and keeps order within one", () => {
+    const groups = groupRemindersByFire(
+      [at("a", "2030-01-16T05:00:00Z"), at("b", "2030-01-16T09:00:00Z")],
+      "Asia/Tokyo",
+      now,
+    );
+    expect(groups).toEqual([
+      {
+        key: "today",
+        label: "Today",
+        reminders: [expect.objectContaining({ id: "a" }), expect.objectContaining({ id: "b" })],
+      },
+    ]);
   });
 });

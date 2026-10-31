@@ -11,6 +11,7 @@ import type {
 import { array, mixed, object, string } from "yup";
 
 import { type Option } from "@/utils/common";
+import { daysBetween } from "@/utils/dates";
 import { localParts } from "@/utils/time-zones";
 import { multiLineText, singleLineText } from "@/utils/validation";
 
@@ -162,6 +163,61 @@ export function formatReceived(at: string, now: Date = new Date()): string {
 export function nextHour(timeZone: string, now: Date = new Date()): { date: string; time: string } {
   const hour = new Date(Math.ceil((now.getTime() + 1) / 3_600_000) * 3_600_000);
   return localParts(hour, timeZone);
+}
+
+export type FireGroupKey = "overdue" | "today" | "tomorrow" | "week" | "later" | "none";
+
+export type FireGroup<T> = { key: FireGroupKey; label: string; reminders: T[] };
+
+const FIRE_GROUPS: readonly Option<FireGroupKey>[] = [
+  { value: "overdue", label: "Overdue" },
+  { value: "today", label: "Today" },
+  { value: "tomorrow", label: "Tomorrow" },
+  { value: "week", label: "Next 7 days" },
+  { value: "later", label: "Later" },
+  { value: "none", label: "Not scheduled" },
+];
+
+type Groupable = Pick<Reminder, "status" | "next_occurrence_at">;
+
+/** Which section a reminder falls in by when it next fires, on the calendar of `timeZone`. */
+export function fireGroupOf(
+  reminder: Groupable,
+  timeZone: string,
+  now: Date = new Date(),
+): FireGroupKey {
+  if (reminder.status === "overdue") return "overdue";
+  if (!reminder.next_occurrence_at) return "none";
+  const days = daysBetween(
+    localParts(now, timeZone).date,
+    localParts(new Date(reminder.next_occurrence_at), timeZone).date,
+  );
+  if (days <= 0) return "today";
+  if (days === 1) return "tomorrow";
+  return days < 7 ? "week" : "later";
+}
+
+/**
+ * Reminders split into sections by when they next fire, judged by the calendar in `timeZone`
+ * (the viewer's), soonest first. Overdue reminders lead; those with nothing left to fire come
+ * last. Reminders keep their order within a section, and empty sections are left out.
+ */
+export function groupRemindersByFire<T extends Groupable>(
+  reminders: readonly T[],
+  timeZone: string,
+  now: Date = new Date(),
+): FireGroup<T>[] {
+  const buckets = new Map<FireGroupKey, T[]>();
+  for (const reminder of reminders) {
+    const key = fireGroupOf(reminder, timeZone, now);
+    const bucket = buckets.get(key);
+    if (bucket) bucket.push(reminder);
+    else buckets.set(key, [reminder]);
+  }
+  return FIRE_GROUPS.flatMap(({ value, label }) => {
+    const group = buckets.get(value);
+    return group ? [{ key: value, label, reminders: group }] : [];
+  });
 }
 
 export const STATUS_LABELS: Record<ReminderStatus, string> = {
