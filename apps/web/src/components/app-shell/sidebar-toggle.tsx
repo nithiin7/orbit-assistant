@@ -6,14 +6,14 @@ import { useEffect } from "react";
 import { useIsMac } from "@/components/shortcut-hint";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
+import { readSidebarCollapsed } from "@/lib/sidebar-preference";
 import {
   isEditableTarget,
   isMacPlatform,
   matchesModShortcut,
   modKeyLabel,
   modKeyShortcut,
-} from "@/lib/keyboard";
-import { readSidebarCollapsed } from "@/lib/sidebar-preference";
+} from "@/utils/keyboard";
 
 import { setSidebarCollapsed, useSidebarCollapsed } from "./sidebar-state";
 

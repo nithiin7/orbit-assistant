@@ -3,11 +3,10 @@ import { describe, expect, it } from "vitest";
 import { fieldErrors } from "@/test/validation";
 
 import {
-  daysBetween,
   DEFAULT_TASK_FILTERS,
   describeDueDate,
+  groupTasksByDue,
   isNarrowed,
-  localDateString,
   TASK_PAGE_SIZE,
   taskSchema,
   toTaskListQuery,
@@ -92,18 +91,7 @@ describe("task description", () => {
   });
 });
 
-describe("dates", () => {
-  it("formats local dates like the API's due dates", () => {
-    expect(localDateString(new Date(2026, 0, 5, 23, 30))).toBe("2026-01-05");
-  });
-
-  it("counts calendar days across month and year ends", () => {
-    expect(daysBetween("2026-10-29", "2026-10-29")).toBe(0);
-    expect(daysBetween("2026-10-31", "2026-11-01")).toBe(1);
-    expect(daysBetween("2026-12-31", "2027-01-01")).toBe(1);
-    expect(daysBetween("2026-03-01", "2026-02-28")).toBe(-1);
-  });
-
+describe("describeDueDate", () => {
   it.each([
     ["2026-10-29", { state: "today", label: "Today" }],
     ["2026-10-30", { state: "soon", label: "Tomorrow" }],
@@ -118,5 +106,47 @@ describe("dates", () => {
     expect(describeDueDate("2026-11-20", "2026-10-29").state).toBe("later");
     expect(describeDueDate("2027-02-01", "2026-10-29").label).toMatch(/2027/);
     expect(describeDueDate("2026-11-20", "2026-10-29").label).not.toMatch(/2026/);
+  });
+});
+
+describe("groupTasksByDue", () => {
+  const today = "2026-10-30";
+  const due = (id: string, dueDate: string | null) => ({ id, due_date: dueDate });
+
+  it("puts each task in the section for its due date, soonest section first", () => {
+    const groups = groupTasksByDue(
+      [
+        due("none", null),
+        due("later", "2026-11-06"),
+        due("week", "2026-11-05"),
+        due("tomorrow", "2026-10-31"),
+        due("today", "2026-10-30"),
+        due("overdue", "2026-10-29"),
+      ],
+      today,
+    );
+
+    expect(groups.map((group) => [group.label, group.tasks.map((task) => task.id)])).toEqual([
+      ["Overdue", ["overdue"]],
+      ["Today", ["today"]],
+      ["Tomorrow", ["tomorrow"]],
+      ["Next 7 days", ["week"]],
+      ["Later", ["later"]],
+      ["No due date", ["none"]],
+    ]);
+  });
+
+  it("keeps the given order within a section and leaves out empty sections", () => {
+    const groups = groupTasksByDue(
+      [due("b", "2026-10-30"), due("a", "2026-10-30"), due("c", null)],
+      today,
+    );
+
+    expect(groups.map((group) => group.key)).toEqual(["today", "none"]);
+    expect(groups[0]?.tasks.map((task) => task.id)).toEqual(["b", "a"]);
+  });
+
+  it("returns no sections for no tasks", () => {
+    expect(groupTasksByDue([], today)).toEqual([]);
   });
 });

@@ -1,14 +1,14 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createContext, type ReactNode, useContext, useEffect, useMemo } from "react";
+import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from "react";
 
 import { avatarOptions, deleteMyAvatar, profileKeys, putMyAvatar } from "@/api/profile";
-import { prepareAvatar } from "@/lib/avatar";
+import { prepareAvatar, readAsDataUrl } from "@/lib/avatar";
 import { useAuth } from "@/providers/auth";
 
 type AvatarContextValue = {
-  /** An object URL for the photo; `null` when none is set or it hasn't loaded. */
+  /** A `data:` URL for the photo; `null` when none is set or it hasn't loaded. */
   url: string | null;
   loading: boolean;
   /** Resize and upload a photo. Rejects with `AvatarImageError` or `ApiError`. */
@@ -26,7 +26,7 @@ export function useAvatar(): AvatarContextValue {
 
 /**
  * Loads the signed-in user's profile photo once and shares it. The API requires a bearer token,
- * so the image is fetched as a blob and shown through an object URL rather than a plain `src`.
+ * so the image is fetched as a blob and shown through a data URL rather than a plain `src`.
  */
 export function AvatarProvider({ children }: { children: ReactNode }) {
   const { withToken } = useAuth();
@@ -34,15 +34,27 @@ export function AvatarProvider({ children }: { children: ReactNode }) {
   // A missing photo is cosmetic: on failure, `url` stays null and the initial shows instead.
   const photo = useQuery(avatarOptions(withToken));
   const blob = photo.data ?? null;
-  const url = useMemo(() => (blob ? URL.createObjectURL(blob) : null), [blob]);
+  const [read, setRead] = useState<{ blob: Blob; url: string } | null>(null);
 
-  // Release each object URL once it is replaced, and the last one on unmount.
-  useEffect(
-    () => () => {
-      if (url) URL.revokeObjectURL(url);
-    },
-    [url],
-  );
+  // A data URL rather than an object URL: an object URL revoked by an effect cleanup that re-runs
+  // without a new render (Strict Mode, Fast Refresh, a remount) leaves a broken image on screen.
+  useEffect(() => {
+    if (!blob) return;
+    let current = true;
+    readAsDataUrl(blob).then(
+      (dataUrl) => {
+        if (current) setRead({ blob, url: dataUrl });
+      },
+      () => {
+        // Unreadable: fall back to the initial, as for a failed download.
+        if (current) setRead(null);
+      },
+    );
+    return () => {
+      current = false;
+    };
+  }, [blob]);
+  const url = blob && read?.blob === blob ? read.url : null;
 
   const { mutateAsync: upload } = useMutation({
     mutationFn: async (file: File) => {

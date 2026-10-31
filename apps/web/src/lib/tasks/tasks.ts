@@ -3,8 +3,9 @@
 import type { TaskListQuery, TaskPriority, TaskStatus } from "@orbit/contracts";
 import { mixed, object, string } from "yup";
 
-import { type Option } from "@/lib/utils";
-import { multiLineText, singleLineText } from "@/lib/validation";
+import { type Option } from "@/utils/common";
+import { daysBetween, formatCalendarDate, parseCalendarDate } from "@/utils/dates";
+import { multiLineText, singleLineText } from "@/utils/validation";
 
 export const TASK_TITLE_MAX_LENGTH = 200;
 export const TASK_DESCRIPTION_MAX_LENGTH = 5000;
@@ -96,27 +97,6 @@ export const taskSchema = object({
   priority: priorityField,
 });
 
-/** A date as `YYYY-MM-DD` in the user's time zone, the format of a task's `due_date`. */
-export function localDateString(date: Date = new Date()): string {
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${date.getFullYear()}-${month}-${day}`;
-}
-
-function parseDate(value: string): { year: number; month: number; day: number } {
-  const [year = 0, month = 1, day = 1] = value.split("-").map(Number);
-  return { year, month, day };
-}
-
-/** Whole days from `from` to `to`, both `YYYY-MM-DD`. Calendar days, so DST doesn't matter. */
-export function daysBetween(from: string, to: string): number {
-  const a = parseDate(from);
-  const b = parseDate(to);
-  return Math.round(
-    (Date.UTC(b.year, b.month - 1, b.day) - Date.UTC(a.year, a.month - 1, a.day)) / 86_400_000,
-  );
-}
-
 export type DueState = "overdue" | "today" | "soon" | "later";
 
 export type DueDescription = { state: DueState; label: string };
@@ -128,15 +108,50 @@ export function describeDueDate(dueDate: string, today: string): DueDescription 
   if (days === 1) return { state: "soon", label: "Tomorrow" };
   if (days === -1) return { state: "overdue", label: "Yesterday" };
 
-  const { year, month, day } = parseDate(dueDate);
-  const sameYear = year === parseDate(today).year;
-  const label = new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    year: sameYear ? undefined : "numeric",
-    // Format the calendar date itself, independent of the viewer's time zone.
-    timeZone: "UTC",
-  }).format(new Date(Date.UTC(year, month - 1, day)));
+  const label = formatCalendarDate(dueDate, { omitYearIn: parseCalendarDate(today).year });
   if (days < 0) return { state: "overdue", label };
   return { state: days < 7 ? "soon" : "later", label };
+}
+
+export type DueGroupKey = "overdue" | "today" | "tomorrow" | "week" | "later" | "none";
+
+export type DueGroup<T> = { key: DueGroupKey; label: string; tasks: T[] };
+
+const DUE_GROUPS: readonly Option<DueGroupKey>[] = [
+  { value: "overdue", label: "Overdue" },
+  { value: "today", label: "Today" },
+  { value: "tomorrow", label: "Tomorrow" },
+  { value: "week", label: "Next 7 days" },
+  { value: "later", label: "Later" },
+  { value: "none", label: "No due date" },
+];
+
+function dueGroupOf(dueDate: string | null, today: string): DueGroupKey {
+  if (dueDate === null) return "none";
+  const days = daysBetween(today, dueDate);
+  if (days < 0) return "overdue";
+  if (days === 0) return "today";
+  if (days === 1) return "tomorrow";
+  return days < 7 ? "week" : "later";
+}
+
+/**
+ * Tasks split into sections by when they're due relative to `today`, soonest first. Tasks keep
+ * their order within a section, and empty sections are left out.
+ */
+export function groupTasksByDue<T extends { due_date: string | null }>(
+  tasks: readonly T[],
+  today: string,
+): DueGroup<T>[] {
+  const buckets = new Map<DueGroupKey, T[]>();
+  for (const task of tasks) {
+    const key = dueGroupOf(task.due_date, today);
+    const bucket = buckets.get(key);
+    if (bucket) bucket.push(task);
+    else buckets.set(key, [task]);
+  }
+  return DUE_GROUPS.flatMap(({ value, label }) => {
+    const group = buckets.get(value);
+    return group ? [{ key: value, label, tasks: group }] : [];
+  });
 }

@@ -1,7 +1,46 @@
 """ORM models. Importing this package registers every table on `Base.metadata`."""
 
 from orbit_api.db.models.avatars import UserAvatarModel
+from orbit_api.db.models.budgets import (
+    FinanceBudgetAlertModel,
+    FinanceBudgetModel,
+    FinanceBudgetPeriodModel,
+    FinanceGoalContributionModel,
+    FinanceMonthlyPlanModel,
+    FinanceSavingsGoalModel,
+)
+from orbit_api.db.models.commitments import (
+    FinanceLoanInstallmentModel,
+    FinanceLoanModel,
+    FinanceRecurringOccurrenceModel,
+    FinanceRecurringPaymentModel,
+)
 from orbit_api.db.models.dashboard import DashboardLayoutModel
+from orbit_api.db.models.finance import (
+    FinanceAccountModel,
+    FinanceCategoryModel,
+    FinanceTransactionModel,
+)
+from orbit_api.db.models.investments import (
+    FinanceAssetModel,
+    FinanceAssetValuationModel,
+    FinanceDepositModel,
+    FinanceHoldingModel,
+    FinanceHoldingPriceModel,
+    FinanceInvestmentAccountModel,
+    FinanceInvestmentTransactionModel,
+    FinanceNetWorthSnapshotModel,
+    FinanceSipPlanModel,
+)
+from orbit_api.db.models.notes import (
+    NoteAttachmentModel,
+    NoteFolderModel,
+    NoteLinkModel,
+    NoteModel,
+    NoteTagAssignmentModel,
+    NoteTagModel,
+    NoteTaskLinkModel,
+)
 from orbit_api.db.models.reminders import (
     NotificationModel,
     ReminderModel,
@@ -14,8 +53,37 @@ from orbit_api.db.models.workspaces import WorkspaceModel
 
 __all__ = [
     "DashboardLayoutModel",
+    "FinanceAccountModel",
+    "FinanceAssetModel",
+    "FinanceAssetValuationModel",
+    "FinanceBudgetAlertModel",
+    "FinanceBudgetModel",
+    "FinanceBudgetPeriodModel",
+    "FinanceCategoryModel",
+    "FinanceDepositModel",
+    "FinanceGoalContributionModel",
+    "FinanceHoldingModel",
+    "FinanceHoldingPriceModel",
+    "FinanceInvestmentAccountModel",
+    "FinanceInvestmentTransactionModel",
+    "FinanceLoanInstallmentModel",
+    "FinanceLoanModel",
+    "FinanceMonthlyPlanModel",
+    "FinanceNetWorthSnapshotModel",
+    "FinanceRecurringOccurrenceModel",
+    "FinanceRecurringPaymentModel",
+    "FinanceSavingsGoalModel",
+    "FinanceSipPlanModel",
+    "FinanceTransactionModel",
     "LocalCredentialModel",
     "LocalSessionModel",
+    "NoteAttachmentModel",
+    "NoteFolderModel",
+    "NoteLinkModel",
+    "NoteModel",
+    "NoteTagAssignmentModel",
+    "NoteTagModel",
+    "NoteTaskLinkModel",
     "NotificationModel",
     "ReminderModel",
     "ReminderOccurrenceModel",

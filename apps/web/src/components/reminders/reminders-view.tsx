@@ -1,29 +1,32 @@
 "use client";
 
-import type { Reminder, TaskListQuery } from "@orbit/contracts";
+import type { Reminder, ReminderList, TaskListQuery } from "@orbit/contracts";
 import { AlarmClock, BellOff, CheckCheck, Plus } from "lucide-react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useId, useMemo, useRef, useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { Resource } from "@/hooks/query-resource";
 import { useReminderList, useReminderMutations } from "@/hooks/use-reminders";
 import { useTaskList } from "@/hooks/use-tasks";
 import {
-  browserTimeZone,
-  REMINDER_FILTERS,
+  formatOccurrence,
+  groupRemindersByFire,
   type ReminderFields,
   type ReminderFilter,
   toReminderListQuery,
 } from "@/lib/reminders";
-import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/providers/auth";
 import { useWorkspaces } from "@/providers/workspace";
+import { cn } from "@/utils/common";
+import { browserTimeZone } from "@/utils/time-zones";
 
 import { ReminderDialog } from "./reminder-dialog";
 import { ReminderItem } from "./reminder-item";
+import { ReminderViews } from "./reminder-views";
 
 const OPEN_TASKS: TaskListQuery = { status: "open", sort: "due_date", limit: 200 };
 
@@ -60,6 +63,7 @@ function RemindersView({ workspaceId }: { workspaceId: string }) {
   const [actionError, setActionError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
+  const groupIdPrefix = useId();
   const viewerTimeZone = browserTimeZone();
   const defaultTimeZone = user.timezone ?? viewerTimeZone;
 
@@ -123,93 +127,143 @@ function RemindersView({ workspaceId }: { workspaceId: string }) {
     [mutations.remove, setReminderPending],
   );
 
+  const renderRow = (reminder: Reminder) => (
+    <ReminderItem
+      key={reminder.id}
+      reminder={reminder}
+      viewerTimeZone={viewerTimeZone}
+      pending={pending.has(reminder.id)}
+      onToggle={(item) => void toggle(item)}
+      onEdit={setDialog}
+      onDelete={remove}
+    />
+  );
+  const listClassName = cn(
+    "@container/rows divide-y overflow-hidden rounded-xl border bg-card shadow-elevation-1 transition-opacity duration-150",
+    refreshing && "opacity-70",
+  );
+  // Sections by when they fire help where reminders have times ahead; other views read as one list.
+  const grouped = filter === "scheduled" || filter === "all";
+
+  // Layout follows the space the page actually gets (which depends on the app sidebar), not the
+  // screen: container queries place the views rail, the header, and the list columns.
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div
-          role="group"
-          aria-label="Show"
-          className="inline-flex h-9 max-w-full items-center self-start overflow-x-auto rounded-md border bg-muted/60 p-0.5"
-        >
-          {REMINDER_FILTERS.map((option) => {
-            const selected = filter === option.value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => setFilter(option.value)}
-                className={cn(
-                  "h-full shrink-0 rounded-[calc(var(--radius-md)-2px)] px-3 text-sm font-medium transition-[color,background-color,box-shadow] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  selected
-                    ? "bg-card text-foreground shadow-elevation-1"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
-        <Button onClick={() => setDialog("new")} className="self-start sm:self-auto">
-          <Plus aria-hidden="true" />
-          New reminder
-        </Button>
-      </div>
+    <div className="@container/reminders">
+      <div className="grid gap-6 @4xl/reminders:grid-cols-[13rem_minmax(0,1fr)] @4xl/reminders:gap-8 @7xl/reminders:grid-cols-[15rem_minmax(0,1fr)] @7xl/reminders:gap-12">
+        <aside className="min-w-0 @4xl/reminders:sticky @4xl/reminders:top-6 @4xl/reminders:self-start">
+          <ReminderViews
+            filter={filter}
+            onFilterChange={(next) => {
+              setActionError(null);
+              setFilter(next);
+            }}
+          />
+        </aside>
 
-      <FormAlert message={actionError} />
-
-      <section aria-labelledby="reminder-list-heading">
-        <h2 id="reminder-list-heading" className="sr-only">
-          Reminder list
-        </h2>
-        <div
-          ref={listRef}
-          tabIndex={-1}
-          aria-busy={state.status === "loading" || refreshing}
-          className="rounded-xl outline-none"
+        <section
+          aria-labelledby="reminder-list-heading"
+          className="@container/list min-w-0 space-y-5"
         >
-          {state.status === "loading" ? (
-            <ReminderListSkeleton />
-          ) : state.status === "error" ? (
-            <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
-              <p>{state.message}</p>
-              <Button variant="outline" size="sm" onClick={reload}>
-                Try again
-              </Button>
+          <div className="flex flex-col gap-3 @lg/list:flex-row @lg/list:items-end @lg/list:justify-between">
+            <div className="min-w-0 space-y-1.5">
+              <h2 id="reminder-list-heading" className="text-lg font-semibold tracking-tight">
+                {VIEW_TITLES[filter]}
+              </h2>
+              <ListSummary state={state} filter={filter} />
             </div>
-          ) : state.data.reminders.length === 0 ? (
-            <ReminderEmptyState filter={filter} onCreate={() => setDialog("new")} />
-          ) : (
-            <div className="space-y-2">
-              <ul
-                aria-label={`${state.data.total} ${state.data.total === 1 ? "reminder" : "reminders"}`}
-                className={cn(
-                  "divide-y overflow-hidden rounded-xl border bg-card shadow-elevation-1 transition-opacity duration-150",
-                  refreshing && "opacity-70",
+            <Button
+              onClick={() => setDialog("new")}
+              className="shrink-0 self-start @lg/list:self-auto"
+            >
+              <Plus aria-hidden="true" />
+              New reminder
+            </Button>
+          </div>
+
+          <FormAlert message={actionError} />
+
+          <div
+            ref={listRef}
+            tabIndex={-1}
+            aria-busy={state.status === "loading" || refreshing}
+            className="rounded-xl outline-none"
+          >
+            {state.status === "loading" ? (
+              <ReminderListSkeleton />
+            ) : state.status === "error" ? (
+              <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
+                <p>{state.message}</p>
+                <Button variant="outline" size="sm" onClick={reload}>
+                  Try again
+                </Button>
+              </div>
+            ) : state.data.reminders.length === 0 ? (
+              <ReminderEmptyState filter={filter} onCreate={() => setDialog("new")} />
+            ) : (
+              <div className="space-y-6">
+                {grouped ? (
+                  // On very wide screens the sections sit side by side, like a board.
+                  <div className="gap-6 @5xl/list:columns-2 @min-[100rem]/list:columns-3">
+                    {groupRemindersByFire(state.data.reminders, viewerTimeZone).map((group) => {
+                      const headingId = `${groupIdPrefix}-${group.key}`;
+                      return (
+                        <section
+                          key={group.key}
+                          aria-labelledby={headingId}
+                          className="mb-6 break-inside-avoid space-y-2 last:mb-0"
+                        >
+                          <h3
+                            id={headingId}
+                            className={cn(
+                              "flex items-center gap-2 px-1 text-xs font-semibold tracking-wide uppercase",
+                              group.key === "overdue"
+                                ? "text-destructive"
+                                : group.key === "today"
+                                  ? "text-brand"
+                                  : "text-muted-foreground",
+                            )}
+                          >
+                            {group.label}
+                            <span
+                              aria-hidden="true"
+                              className="rounded-full bg-muted px-1.5 font-medium text-muted-foreground tabular-nums"
+                            >
+                              {group.reminders.length}
+                            </span>
+                          </h3>
+                          <ul
+                            aria-label={`${group.label}, ${countLabel(group.reminders.length)}`}
+                            className={listClassName}
+                          >
+                            {group.reminders.map(renderRow)}
+                          </ul>
+                        </section>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <ul
+                    aria-label={countLabel(state.data.total)}
+                    className={cn(
+                      listClassName,
+                      // Two columns of rows on very wide screens, with a rule between them.
+                      state.data.reminders.length > 1 &&
+                        "grid @5xl/list:grid-cols-2 @5xl/list:divide-y-0 @5xl/list:*:-mb-px @5xl/list:*:border-b @5xl/list:*:odd:border-r @5xl/list:*:odd:last:border-r-0",
+                    )}
+                  >
+                    {state.data.reminders.map(renderRow)}
+                  </ul>
                 )}
-              >
-                {state.data.reminders.map((reminder) => (
-                  <ReminderItem
-                    key={reminder.id}
-                    reminder={reminder}
-                    viewerTimeZone={viewerTimeZone}
-                    pending={pending.has(reminder.id)}
-                    onToggle={(item) => void toggle(item)}
-                    onEdit={setDialog}
-                    onDelete={remove}
-                  />
-                ))}
-              </ul>
-              {state.data.total > state.data.reminders.length ? (
                 <p className="px-1 text-xs text-muted-foreground">
-                  Showing {state.data.reminders.length} of {state.data.total} reminders.
+                  {state.data.total > state.data.reminders.length
+                    ? `Showing ${state.data.reminders.length} of ${state.data.total} reminders.`
+                    : countLabel(state.data.total)}
                 </p>
-              ) : null}
-            </div>
-          )}
-        </div>
-      </section>
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
 
       <p role="status" className="sr-only">
         {announcement}
@@ -225,6 +279,49 @@ function RemindersView({ workspaceId }: { workspaceId: string }) {
         />
       ) : null}
     </div>
+  );
+}
+
+const VIEW_TITLES: Record<ReminderFilter, string> = {
+  scheduled: "Upcoming reminders",
+  overdue: "Overdue reminders",
+  completed: "Completed reminders",
+  disabled: "Disabled reminders",
+  all: "All reminders",
+};
+
+function countLabel(count: number): string {
+  return `${count} ${count === 1 ? "reminder" : "reminders"}`;
+}
+
+/** How many reminders the view holds and, for upcoming ones, when the next one fires. */
+function ListSummary({ state, filter }: { state: Resource<ReminderList>; filter: ReminderFilter }) {
+  if (state.status !== "success") {
+    return <p className="text-sm text-muted-foreground">&nbsp;</p>;
+  }
+  const { reminders, total } = state.data;
+  const next =
+    filter === "scheduled"
+      ? reminders.find((r) => r.status === "scheduled" && r.next_occurrence_at)
+      : undefined;
+  return (
+    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+      <span>{total === 0 ? "None right now" : countLabel(total)}</span>
+      {next?.next_occurrence_at ? (
+        <>
+          <span aria-hidden="true">·</span>
+          <span className="inline-flex min-w-0 items-center gap-1.5">
+            <AlarmClock className="size-3.5 shrink-0 text-brand" aria-hidden="true" />
+            <span>
+              Next{" "}
+              <time dateTime={next.next_occurrence_at} className="font-medium text-foreground">
+                {formatOccurrence(next.next_occurrence_at, next.timezone)}
+              </time>
+            </span>
+          </span>
+        </>
+      ) : null}
+    </p>
   );
 }
 
@@ -278,15 +375,13 @@ function ReminderEmptyState({
 
 function ReminderListSkeleton() {
   return (
-    <div className="divide-y rounded-xl border bg-card">
+    <div className="divide-y overflow-hidden rounded-xl border bg-card">
       <span className="sr-only">Loading reminders…</span>
-      {[0, 1, 2].map((row) => (
-        <div key={row} className="flex items-start gap-3 px-4 py-3.5">
+      {[0, 1, 2, 3].map((row) => (
+        <div key={row} className="flex items-center gap-3 px-4 py-3.5">
           <Skeleton className="h-5 w-9 rounded-full" />
-          <div className="flex-1 space-y-2">
-            <Skeleton className={cn("h-4", row === 1 ? "w-1/3" : "w-1/2")} />
-            <Skeleton className="h-3 w-40" />
-          </div>
+          <Skeleton className={cn("h-4", row % 2 === 1 ? "w-1/3" : "w-1/2")} />
+          <Skeleton className="ml-auto hidden h-6 w-28 rounded-full md:block" />
         </div>
       ))}
     </div>

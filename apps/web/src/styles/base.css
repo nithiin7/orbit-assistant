@@ -1,0 +1,49 @@
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    color-scheme: light;
+    /*
+     * Scale the whole interface on very wide screens. Everything is sized in rem, so beyond
+     * 2844px (0.5625vw = 16px) a 4K display at 100% scaling gets a proportionally larger UI
+     * instead of a tiny one. `100%` keeps the browser's font-size setting as the floor; the cap
+     * keeps ultrawide displays readable. Media queries resolve rem against the initial font size,
+     * so breakpoints are unaffected.
+     */
+    font-size: clamp(100%, 0.5625vw, 137.5%);
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    /* A faint wash of brand color behind the top of every page; cards sit on it as clean surfaces. */
+    background-image:
+      radial-gradient(
+        60rem 28rem at 10% -8rem,
+        color-mix(in oklch, var(--brand) 6%, transparent),
+        transparent
+      ),
+      radial-gradient(
+        50rem 24rem at 95% -10rem,
+        color-mix(in oklch, var(--brand-2) 7%, transparent),
+        transparent
+      );
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+
+  /* Tailwind v4 resets buttons to the default cursor; interactive controls should read as such. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  ::selection {
+    background-color: color-mix(in oklch, var(--brand) 22%, transparent);
+  }
+}

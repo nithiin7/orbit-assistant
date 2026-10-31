@@ -69,6 +69,7 @@ afterEach(() => {
 
 describe("ShoppingPanel", () => {
   it("opens the default list with its items, quantities, and links", async () => {
+    const user = userEvent.setup();
     mockApi({ ...session, ...listsRoute, ...itemsRoutes });
 
     await renderSignedIn(<ShoppingPanel />);
@@ -85,9 +86,12 @@ describe("ShoppingPanel", () => {
       "aria-pressed",
       "true",
     );
+    expect(screen.getByText("0 of 2 bought")).toBeInTheDocument();
     // The default list can be renamed but not deleted.
-    expect(screen.getByRole("button", { name: "Rename" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "List options" }));
+    const options = screen.getByRole("menu", { name: "List options" });
+    expect(within(options).getByRole("menuitem", { name: "Rename list" })).toBeInTheDocument();
+    expect(within(options).queryByRole("menuitem", { name: /Delete/ })).not.toBeInTheDocument();
   });
 
   it("switches between lists", async () => {
@@ -292,12 +296,77 @@ describe("ShoppingPanel", () => {
     await user.click(await screen.findByRole("button", { name: "Electronics, 1 to buy" }));
     await screen.findByRole("checkbox", { name: "USB-C cable" });
 
-    await user.click(screen.getByRole("button", { name: "Delete" }));
-    await user.click(screen.getByRole("button", { name: "Delete list" }));
+    await user.click(screen.getByRole("button", { name: "List options" }));
+    await user.click(screen.getByRole("menuitem", { name: "Delete list" }));
+    const confirm = within(
+      screen.getByRole("group", { name: "Delete “Electronics” and its items?" }),
+    );
+    expect(confirm.getByRole("button", { name: "Delete list" })).toHaveFocus();
+    await user.click(confirm.getByRole("button", { name: "Delete list" }));
 
     expect(await screen.findByRole("heading", { name: "Groceries" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Electronics/ })).not.toBeInTheDocument();
     expect(deleted).toBe(true);
+  });
+
+  it("cancels a list deletion and returns focus to the options menu", async () => {
+    const user = userEvent.setup();
+    const api = mockApi({ ...session, ...listsRoute, ...itemsRoutes });
+    await renderSignedIn(<ShoppingPanel />);
+    await user.click(await screen.findByRole("button", { name: "Electronics, 1 to buy" }));
+    await screen.findByRole("checkbox", { name: "USB-C cable" });
+
+    await user.click(screen.getByRole("button", { name: "List options" }));
+    await user.click(screen.getByRole("menuitem", { name: "Delete list" }));
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "List options" })).toHaveFocus());
+    expect(screen.getByRole("heading", { name: "Electronics" })).toBeInTheDocument();
+    expect(api.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
+  });
+
+  it("renames a list from the options menu", async () => {
+    const user = userEvent.setup();
+    const sent: unknown[] = [];
+    mockApi({
+      ...session,
+      ...listsRoute,
+      ...itemsRoutes,
+      [`PATCH ${SHOP}/lists/${groceries.id}`]: ({ body }: MockRequest) => {
+        sent.push(body);
+        return Response.json({ ...groceries, name: "Weekly shop" });
+      },
+    });
+    await renderSignedIn(<ShoppingPanel />);
+    await screen.findByRole("checkbox", { name: "Milk" });
+
+    await user.click(screen.getByRole("button", { name: "List options" }));
+    await user.click(screen.getByRole("menuitem", { name: "Rename list" }));
+    const dialog = screen.getByRole("dialog", { name: "Rename list" });
+    const name = within(dialog).getByRole("textbox", { name: "List name" });
+    await user.clear(name);
+    await user.type(name, "Weekly shop{Enter}");
+
+    expect(await screen.findByRole("heading", { name: "Weekly shop" })).toBeInTheDocument();
+    expect(sent).toEqual([{ name: "Weekly shop" }]);
+  });
+
+  it("shows how much of the list is bought", async () => {
+    mockApi({
+      ...session,
+      [`GET ${SHOP}/lists`]: json({
+        lists: [{ ...groceries, needed_count: 1, purchased_count: 1 }, electronics],
+      }),
+      [`GET ${SHOP}/lists/${groceries.id}/items`]: json({
+        items: [milk, { ...eggs, status: "purchased", purchased_at: "2026-10-29T10:00:00Z" }],
+      }),
+    });
+
+    await renderSignedIn(<ShoppingPanel />);
+
+    expect(await screen.findByText("1 of 2 bought")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "To buy" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Bought" })).toBeInTheDocument();
   });
 
   it("offers a retry when the lists fail to load", async () => {

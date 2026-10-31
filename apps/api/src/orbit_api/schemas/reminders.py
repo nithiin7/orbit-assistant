@@ -16,6 +16,8 @@ from pydantic import (
 from orbit_api.schemas.common import TimeZoneName, multi_line
 from orbit_api.schemas.tasks import Title
 from orbit_api.services.reminders.models import (
+    CommitmentLink,
+    CommitmentLinkKind,
     DeliveryOutcome,
     ReminderChanges,
     ReminderDraft,
@@ -25,7 +27,8 @@ from orbit_api.services.reminders.models import (
     ReminderView,
 )
 from orbit_api.services.reminders.recurrence import WEEKDAYS, Frequency, Recurrence, Weekday
-from orbit_api.services.tasks.models import UNSET, TaskStatus
+from orbit_api.services.tasks.models import TaskStatus
+from orbit_api.utils.changes import UNSET
 
 DESCRIPTION_MAX_LENGTH = 2000
 PAGE_MAX_SIZE = 200
@@ -104,11 +107,28 @@ class ReminderTaskResponse(BaseModel):
         return cls(id=task.id, title=task.title, status=task.status)
 
 
+class ReminderCommitmentResponse(BaseModel):
+    kind: CommitmentLinkKind = Field(
+        description="`loan`, `recurring_payment` for a subscription or bill, or `deposit` for a "
+        "fixed or recurring deposit's maturity."
+    )
+    id: uuid.UUID
+
+    @classmethod
+    def of(cls, link: CommitmentLink | None) -> "ReminderCommitmentResponse | None":
+        return cls(kind=link.kind, id=link.id) if link else None
+
+
 class ReminderResponse(BaseModel):
     id: uuid.UUID
     workspace_id: uuid.UUID
     task: ReminderTaskResponse | None = Field(
         description="The task this reminder is about, or `null` for a standalone reminder."
+    )
+    commitment: ReminderCommitmentResponse | None = Field(
+        default=None,
+        description="The loan, subscription, or bill that manages this reminder. Such "
+        "reminders follow its next payment and can't be edited or deleted here (409).",
     )
     title: str
     description: str = Field(description="Empty when the reminder has no description.")
@@ -142,6 +162,7 @@ class ReminderResponse(BaseModel):
             id=reminder.id,
             workspace_id=reminder.workspace_id,
             task=ReminderTaskResponse.of(view.task) if view.task else None,
+            commitment=ReminderCommitmentResponse.of(reminder.commitment),
             title=reminder.title,
             description=reminder.description,
             enabled=reminder.enabled,

@@ -8,8 +8,8 @@ import { UserAvatar } from "@/components/avatar/user-avatar";
 import { FormAlert } from "@/components/form-field";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { AvatarImageError } from "@/lib/avatar";
-import { cn } from "@/lib/utils";
 import { useAvatar } from "@/providers/avatar";
+import { cn } from "@/utils/common";
 
 type Busy = "uploading" | "removing" | null;
 

@@ -7,9 +7,8 @@ import { useId, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { describeApiError } from "@/api/client";
-import { FormAlert, FormField } from "@/components/form-field";
+import { DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
-import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import {
@@ -20,15 +19,14 @@ import {
   type ReminderFormValues,
   reminderSchema,
   REPEATS,
-  timeZoneLabel,
-  timeZoneNames,
   toFormValues,
   toRecurrence,
   toReminderRequest,
   weekdayOf,
   WEEKDAYS,
 } from "@/lib/reminders";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/common";
+import { timeZoneLabel, timeZoneNames } from "@/utils/time-zones";
 
 type ReminderDialogProps = {
   /** The reminder to edit, or `null` to create one. */
@@ -86,8 +84,12 @@ export function ReminderDialog({
     control,
     name: ["description", "date", "repeat", "weekdays"],
   });
-  const zones = useMemo(
-    () => timeZoneNames(defaultTimeZone, reminder?.timezone),
+  const zoneOptions = useMemo(
+    () =>
+      timeZoneNames(defaultTimeZone, reminder?.timezone).map((zone) => ({
+        value: zone,
+        label: timeZoneLabel(zone),
+      })),
     [defaultTimeZone, reminder?.timezone],
   );
   // A reminder about a completed task keeps it as an option, so editing doesn't detach it.
@@ -170,52 +172,33 @@ export function ReminderDialog({
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <FormField
+          <DateField
+            control={control}
+            name="date"
             label={repeat === "none" ? "Date" : "Starts on"}
-            type="date"
-            {...register("date")}
-            error={errors.date?.message}
           />
           <FormField label="Time" type="time" {...register("time")} error={errors.time?.message} />
         </div>
 
-        <div className="space-y-1.5">
-          <label htmlFor={`${id}-zone`} className="block text-sm font-medium">
-            Time zone
-          </label>
-          <NativeSelect id={`${id}-zone`} {...register("timeZone")}>
-            {zones.map((zone) => (
-              <option key={zone} value={zone}>
-                {timeZoneLabel(zone)}
-              </option>
-            ))}
-          </NativeSelect>
-          <p className="text-xs text-muted-foreground">
-            The reminder keeps this wall-clock time, including across daylight saving changes.
-          </p>
-        </div>
+        <SelectField
+          control={control}
+          name="timeZone"
+          label="Time zone"
+          options={zoneOptions}
+          hint="The reminder keeps this wall-clock time, including across daylight saving changes."
+        />
 
         <div className="space-y-1.5">
-          <label htmlFor={`${id}-repeat`} className="block text-sm font-medium">
-            Repeat
-          </label>
-          <NativeSelect
-            id={`${id}-repeat`}
-            {...register("repeat", {
+          <SelectField
+            control={control}
+            name="repeat"
+            label="Repeat"
+            options={REPEATS}
+            onValueChange={(value) => {
               // Start weekly reminders on the start date's weekday.
-              onChange: (event: { target: { value: string } }) => {
-                if (event.target.value === "weekly") {
-                  setValue("weekdays", [weekdayOf(getValues("date"))]);
-                }
-              },
-            })}
-          >
-            {REPEATS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </NativeSelect>
+              if (value === "weekly") setValue("weekdays", [weekdayOf(getValues("date"))]);
+            }}
+          />
           {repeat !== "none" && repeat !== "weekly" && date ? (
             <p className="text-xs text-muted-foreground">
               {describeRecurrence(toRecurrence(repeat, weekdays), date)}.
@@ -265,23 +248,16 @@ export function ReminderDialog({
           />
         ) : null}
 
-        <div className="space-y-1.5">
-          <label htmlFor={`${id}-task`} className="block text-sm font-medium">
-            Task <span className="font-normal text-muted-foreground">(optional)</span>
-          </label>
-          <NativeSelect id={`${id}-task`} {...register("taskId")}>
-            <option value="">No task</option>
-            {taskOptions.map((task) => (
-              <option key={task.id} value={task.id}>
-                {task.title}
-              </option>
-            ))}
-          </NativeSelect>
-          <p className="text-xs text-muted-foreground">
-            A reminder about a task stays quiet while the task is completed, and is deleted with it.
-            Changing the task’s due date doesn’t move the reminder.
-          </p>
-        </div>
+        <SelectField
+          control={control}
+          name="taskId"
+          label="Task (optional)"
+          options={[
+            { value: "", label: "No task" },
+            ...taskOptions.map((task) => ({ value: task.id, label: task.title })),
+          ]}
+          hint="A reminder about a task stays quiet while the task is completed, and is deleted with it. Changing the task’s due date doesn’t move the reminder."
+        />
 
         <FormAlert message={errors.root?.server?.message ?? null} />
 

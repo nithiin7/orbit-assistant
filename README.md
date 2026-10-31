@@ -32,8 +32,10 @@ control.
 > [!NOTE]
 > **Early development.** This repository contains the project foundation: the monorepo, tooling,
 > an application shell, an API with a database layer, and accounts with workspaces. Tasks,
-> shopping lists, and reminders (with in-app notifications) are built; calendar, finance, notes,
-> and the AI assistant are not.
+> shopping lists, reminders (with in-app notifications), and finance (accounts, transactions,
+> loans, subscriptions, bills, investments, other assets, net worth, budgets, savings goals, and
+> monthly plans), and notes (folders, tags, links and backlinks, a daily journal, search,
+> Markdown, and attachments) are built; the calendar and the AI assistant are not.
 
 ## Scope
 
@@ -52,11 +54,37 @@ control.
 - Tasks, shopping lists, and reminders: one-time or recurring (daily, chosen weekdays, monthly),
   time-zone aware, optionally about a task, and delivered as in-app notifications by a
   database-backed worker.
+- Finance, phase 1: hand-entered accounts (bank, cash, wallet, credit card, investment),
+  income, expenses, refunds, and transfers in exact integer minor units, default categories for
+  India, a monthly overview (cash flow, balances, trend, spending by category), filterable
+  history, and CSV export. No bank connections.
+- Finance, phase 2: loans with EMI schedules (principal paid as a transfer that reduces the
+  loan's balance, interest as an expense), subscriptions and recurring bills, a unified view of
+  upcoming, due, overdue, and recently paid payments, commitment totals on the overview, and
+  reminders before each payment.
+- Finance, phase 3: investment accounts; mutual funds, stocks, and ETFs with buys, sales
+  (FIFO realized gains), dividends, charges, SIP plans, and prices you enter; fixed and recurring
+  deposits with estimated values and maturity reminders; other assets with dated valuations; a
+  portfolio dashboard; and net worth with monthly snapshots that mark stale, missing, and
+  estimated values. No live market data.
+- Finance, phase 4: overall and category budgets (monthly, repeating or not, or custom dates)
+  with optional rollover, spending read from the ledger (transfers, investments, savings, and
+  loan principal never count), in-app alerts at thresholds you choose, history that keeps past
+  amounts, and copying last month; savings goals with contributions, withdrawals, and a suggested
+  monthly amount; and a monthly plan of expected income against commitments, budgets, savings,
+  and investments.
+- Notes: a rich-text editor (headings, lists, checklists, tables, code with highlighting, links)
+  that saves as you type and never silently overwrites a newer edit; nested folders, tags, an
+  Inbox with quick capture from anywhere, pins, favorites, archive, and trash; links between
+  notes with backlinks; links to tasks; a daily journal in your time zone; search across titles,
+  text, tags, and folders; Markdown import, export, and paste; and file attachments.
 - Shared tooling for linting, formatting, type checking, testing, commit conventions, and CI.
 
 ### 🚫 Explicit non-goals for now
 
-- Calendar, finance, or notes functionality.
+- Calendar functionality; semantic search, AI note generation, or a knowledge graph in notes;
+  automatically created transactions, live market prices, AI financial insights, or bank
+  integrations in finance.
 - Shared workspaces, invitations, password recovery for local accounts, and account linking
   between local and cloud.
 - Synchronization or data migration between local and cloud storage.

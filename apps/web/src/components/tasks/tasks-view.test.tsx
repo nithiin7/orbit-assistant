@@ -3,9 +3,10 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { localDateString } from "@/lib/tasks";
 import { ada, json, mockApi, type MockRequest, personal, status } from "@/test/api-mock";
+import { chooseOption } from "@/test/controls";
 import { renderSignedIn } from "@/test/session";
+import { localDateString } from "@/utils/dates";
 
 import { TasksPanel } from "./tasks-view";
 
@@ -14,13 +15,17 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/tasks",
 }));
 
-const session = {
+const signedIn = {
   "GET /api/v1/auth/config": json({ provider: "local", registration_open: false }),
   "GET /api/v1/me": json(ada),
   "GET /api/v1/me/avatar": status(204),
   "GET /api/v1/workspaces": json({ workspaces: [personal] }),
 };
 const TASKS = `/api/v1/workspaces/${personal.id}/tasks`;
+const session = {
+  ...signedIn,
+  [`GET ${TASKS}/summary`]: json({ open: 2, completed: 5, overdue: 1, due_today: 1 }),
+};
 
 function daysFromToday(days: number): string {
   const date = new Date();
@@ -64,7 +69,7 @@ afterEach(() => {
 });
 
 describe("TasksPanel", () => {
-  it("lists open tasks by due date with their priority and due state", async () => {
+  it("groups open tasks by when they're due, with their priority and due state", async () => {
     const api = mockApi({
       ...session,
       [`GET ${TASKS}`]: json({ tasks: [rent, plants], total: 2 }),
@@ -72,15 +77,69 @@ describe("TasksPanel", () => {
 
     await renderSignedIn(<TasksPanel />);
 
-    const list = await screen.findByRole("list", { name: "2 tasks" });
-    const rows = within(list).getAllByRole("listitem");
-    expect(within(rows[0]!).getByRole("checkbox", { name: "Pay rent" })).not.toBeChecked();
-    expect(rows[0]).toHaveTextContent(/High priority/);
-    expect(rows[0]).toHaveTextContent(/Due Overdue/);
-    expect(rows[1]).toHaveTextContent(/Due Today/);
+    const overdue = await screen.findByRole("list", { name: "Overdue, 1 task" });
+    const [rentRow] = within(overdue).getAllByRole("listitem");
+    expect(within(rentRow!).getByRole("checkbox", { name: "Pay rent" })).not.toBeChecked();
+    expect(rentRow).toHaveTextContent(/High priority/);
+    expect(rentRow).toHaveTextContent(/Due Overdue/);
+    const dueToday = screen.getByRole("list", { name: "Today, 1 task" });
+    expect(dueToday).toHaveTextContent(/Water plants/);
+    expect(dueToday).toHaveTextContent(/Due Today/);
+    expect(screen.getByText("2 tasks")).toBeInTheDocument();
     const query = listQueries(api)[0];
     expect(query?.get("status")).toBe("open");
     expect(query?.get("sort")).toBe("due_date");
+  });
+
+  it("shows what needs attention and counts each view", async () => {
+    mockApi({ ...session, [`GET ${TASKS}`]: json({ tasks: [rent, plants], total: 2 }) });
+
+    await renderSignedIn(<TasksPanel />);
+
+    expect(await screen.findByText("1 overdue")).toBeInTheDocument();
+    expect(screen.getByText("1 due today")).toBeInTheDocument();
+    const views = within(screen.getByRole("group", { name: "Show" }));
+    expect(views.getByRole("button", { name: "Open" })).toHaveTextContent("2");
+    expect(views.getByRole("button", { name: "Completed" })).toHaveTextContent("5");
+    expect(views.getByRole("button", { name: "All" })).toHaveTextContent("7");
+  });
+
+  it("shows one list, without due sections, in another sort", async () => {
+    const user = userEvent.setup();
+    mockApi({ ...session, [`GET ${TASKS}`]: json({ tasks: [rent, plants], total: 2 }) });
+    await renderSignedIn(<TasksPanel />);
+    await screen.findByRole("list", { name: "Overdue, 1 task" });
+
+    await chooseOption(user, screen.getByRole("combobox", { name: "Sort by" }), "Sort: Priority");
+
+    const list = await screen.findByRole("list", { name: "2 tasks" });
+    expect(within(list).getAllByRole("listitem")).toHaveLength(2);
+    expect(screen.queryByRole("list", { name: /^Overdue/ })).not.toBeInTheDocument();
+  });
+
+  it("refreshes the counts after completing a task", async () => {
+    const user = userEvent.setup();
+    let summary = { open: 1, completed: 0, overdue: 1, due_today: 0 };
+    mockApi({
+      ...signedIn,
+      [`GET ${TASKS}/summary`]: () => Response.json(summary),
+      [`GET ${TASKS}`]: json({ tasks: [rent], total: 1 }),
+      [`POST ${TASKS}/${rent.id}/complete`]: () => {
+        summary = { open: 0, completed: 1, overdue: 0, due_today: 0 };
+        return Response.json({
+          ...rent,
+          status: "completed",
+          completed_at: "2026-10-29T10:00:00Z",
+        });
+      },
+    });
+    await renderSignedIn(<TasksPanel />);
+    expect(await screen.findByText("1 overdue")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("checkbox", { name: "Pay rent" }));
+
+    expect(await screen.findByText("Nothing overdue or due today.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Completed" })).toHaveTextContent("1");
   });
 
   it("explains an empty workspace", async () => {
@@ -111,7 +170,7 @@ describe("TasksPanel", () => {
     await user.keyboard("n");
     const title = screen.getByRole("textbox", { name: "Task title" });
     expect(title).toHaveFocus();
-    await user.selectOptions(screen.getByRole("combobox", { name: "Priority" }), "Medium");
+    await chooseOption(user, screen.getByRole("combobox", { name: "Priority" }), "Medium");
     await user.type(title, "  Book dentist {Enter}");
 
     expect(await screen.findByRole("checkbox", { name: "Book dentist" })).toBeInTheDocument();
@@ -220,7 +279,7 @@ describe("TasksPanel", () => {
 
     await user.click(await screen.findByRole("button", { name: "Edit “Pay rent”" }));
     const dialog = screen.getByRole("dialog", { name: "Edit task" });
-    await user.selectOptions(within(dialog).getByRole("combobox", { name: "Priority" }), "Low");
+    await chooseOption(user, within(dialog).getByRole("combobox", { name: "Priority" }), "Low");
     await user.click(within(dialog).getByRole("button", { name: "Save changes" }));
 
     expect(await within(dialog).findByRole("alert")).toHaveTextContent("Task not found.");
@@ -244,7 +303,8 @@ describe("TasksPanel", () => {
     await waitFor(() =>
       expect(screen.queryByRole("checkbox", { name: "Pay rent" })).not.toBeInTheDocument(),
     );
-    expect(screen.getByRole("list", { name: "1 task" })).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: /^Overdue/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "Today, 1 task" })).toBeInTheDocument();
     expect(api.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(true);
   });
 
@@ -282,8 +342,10 @@ describe("TasksPanel", () => {
     );
     await waitFor(() => expect(listQueries(api).at(-1)?.get("status")).toBe("completed"));
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "Filter by priority" }), "High");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Sort by" }), "Sort: Priority");
+    const priority = within(screen.getByRole("group", { name: "Priority" }));
+    await user.click(priority.getByRole("button", { name: "High" }));
+    expect(priority.getByRole("button", { name: "High" })).toHaveAttribute("aria-pressed", "true");
+    await chooseOption(user, screen.getByRole("combobox", { name: "Sort by" }), "Sort: Priority");
     await waitFor(() => {
       const last = listQueries(api).at(-1);
       expect(last?.getAll("priority")).toEqual(["high"]);

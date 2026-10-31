@@ -2,7 +2,7 @@ import { LoaderCircle, TriangleAlert } from "lucide-react";
 
 import { OrbitMark } from "@/components/logo";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/common";
 
 type ScreenProps = {
   /** Fit inside the sign-in layout instead of filling the viewport. */

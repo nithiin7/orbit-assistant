@@ -615,3 +615,41 @@ def test_embedded_worker_starts_and_stops_with_the_api(migrated_settings: Settin
     )
     with TestClient(create_app(settings)) as client:
         assert client.get("/api/v1/health").status_code == 200
+
+
+# Financial commitments
+
+
+async def test_a_commitment_reminder_moves_to_the_next_payment_once_delivered(
+    client: TestClient,
+    ada: Headers,
+    home: str,
+    worker: ReminderWorker,
+    clock: Clock,
+    migrated_settings: Settings,
+) -> None:
+    response = client.post(
+        f"{home}/finance/recurring-payments",
+        json={
+            "kind": "bill", "name": "Rent", "amount": 25_000_00, "frequency": "monthly",
+            "next_due_date": "2030-01-16",
+            "reminder": {"days_before": 1, "time_of_day": "09:00", "timezone": "Europe/Paris"},
+        },
+        headers=ada,
+    )  # fmt: skip
+    assert response.status_code == 201, response.text
+    [managed] = client.get(f"{home}/reminders", headers=ada).json()["reminders"]
+    assert managed["next_occurrence_at"] == "2030-01-15T08:00:00Z"
+
+    clock.now = DUE
+    assert (await worker.run_once()).results == {"delivered": 1}
+    [notification] = inbox(client, ada)["notifications"]
+    assert notification["title"] == "Rent due 16 Jan 2030"
+    assert notification["body"] == "INR 25000.00"
+
+    # The same reminder now announces February's rent; nothing was duplicated.
+    moved = reminder(client, home, ada, managed["id"])
+    assert moved["title"] == "Rent due 16 Feb 2030"
+    assert moved["next_occurrence_at"] == "2030-02-15T08:00:00Z"
+    assert [row[1] for row in occurrences(migrated_settings)] == ["delivered", "pending"]
+    assert (await worker.run_once()).claimed == 0

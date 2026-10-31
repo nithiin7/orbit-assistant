@@ -1,4 +1,5 @@
 import { Logo } from "@/components/logo";
+import { QuickCaptureButton } from "@/components/notes/quick-capture";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -35,6 +36,7 @@ export function Sidebar() {
             <Tooltip label="Toggle color theme">
               <ThemeToggle />
             </Tooltip>
+            <QuickCaptureButton />
             <NotificationBell />
           </div>
           <SidebarToggle />

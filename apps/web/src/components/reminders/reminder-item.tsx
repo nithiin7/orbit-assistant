@@ -1,19 +1,22 @@
 "use client";
 
 import type { Reminder } from "@orbit/contracts";
-import { AlarmClock, CheckSquare, Globe, Repeat, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { AlarmClock, Trash2 } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { fireGroupOf, formatOccurrence, statusHint } from "@/lib/reminders";
+import { cn } from "@/utils/common";
+import { sameTimeZone } from "@/utils/time-zones";
+
 import {
-  describeRecurrence,
-  formatOccurrence,
-  STATUS_LABELS,
-  statusHint,
-  timeZoneLabel,
-} from "@/lib/reminders";
-import { cn } from "@/lib/utils";
+  FinanceChip,
+  FireTimeChip,
+  RecurrenceChip,
+  StatusChip,
+  TaskChip,
+  TimeZoneChip,
+} from "./reminder-meta";
 
 type ReminderItemProps = {
   reminder: Reminder;
@@ -26,14 +29,7 @@ type ReminderItemProps = {
   onDelete: (reminder: Reminder) => Promise<void>;
 };
 
-const STATUS_TONES: Record<Reminder["status"], string> = {
-  scheduled: "",
-  overdue: "border-warning/40 text-warning",
-  completed: "",
-  disabled: "",
-};
-
-/** When it fires next, or last fired, on the reminder's own clock. */
+/** When it fires next, or last fired, on the reminder's own clock. Plain text, for the dashboard. */
 export function ReminderTime({ reminder }: { reminder: Reminder }) {
   const at = reminder.next_occurrence_at ?? reminder.last_occurrence_at;
   if (!at) return null;
@@ -61,11 +57,14 @@ export function ReminderItem({
   onEdit,
   onDelete,
 }: ReminderItemProps) {
+  const titleId = useId();
   const [confirming, setConfirming] = useState(false);
   const confirmRef = useRef<HTMLButtonElement>(null);
   const deleteRef = useRef<HTMLButtonElement>(null);
   const hint = statusHint(reminder);
   const muted = reminder.status === "disabled" || reminder.status === "completed";
+  // A loan, subscription, or bill keeps this reminder on its next payment; change it in Finance.
+  const managed = reminder.commitment !== null && reminder.commitment !== undefined;
 
   useEffect(() => {
     if (confirming) confirmRef.current?.focus();
@@ -73,14 +72,25 @@ export function ReminderItem({
 
   const cancelDelete = () => {
     setConfirming(false);
+    // The confirmation unmounts; put focus back on the button that opened it.
     requestAnimationFrame(() => deleteRef.current?.focus());
   };
+
+  const title = (
+    <span
+      id={titleId}
+      className={cn("transition-colors duration-150", muted && "text-muted-foreground")}
+    >
+      {reminder.title}
+    </span>
+  );
 
   return (
     <li
       className={cn(
-        "group flex items-start gap-3 px-3 py-3 transition-colors duration-150 hover:bg-accent/40 sm:px-4",
+        "group flex items-start gap-3 px-3 py-3 transition-[background-color,opacity] duration-150 hover:bg-accent/40 sm:px-4 @2xl/rows:items-center",
         pending && "opacity-70",
+        muted && "bg-muted/20",
       )}
     >
       <button
@@ -88,10 +98,12 @@ export function ReminderItem({
         role="switch"
         aria-checked={reminder.enabled}
         aria-label={`${reminder.enabled ? "Disable" : "Enable"} “${reminder.title}”`}
-        disabled={pending}
+        disabled={pending || managed}
+        title={managed ? "Change this reminder in Finance" : undefined}
         onClick={() => onToggle(reminder)}
         className={cn(
-          "relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-wait motion-reduce:transition-none",
+          "relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none @2xl/rows:mt-0",
+          pending && "disabled:cursor-wait",
           reminder.enabled ? "border-transparent bg-brand" : "bg-muted",
         )}
       >
@@ -104,63 +116,44 @@ export function ReminderItem({
         />
       </button>
 
-      <div className="min-w-0 flex-1 space-y-1">
-        <button
-          type="button"
-          onClick={() => onEdit(reminder)}
-          aria-label={`Edit “${reminder.title}”`}
-          className={cn(
-            "block max-w-full rounded-sm text-left text-sm font-medium break-words outline-none hover:underline hover:decoration-muted-foreground/50 hover:underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring",
-            muted && "text-muted-foreground",
+      {/* Chips sit beside the title only in roomy rows; reminders carry more of them than tasks. */}
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5 @2xl/rows:flex-row @2xl/rows:items-center @2xl/rows:gap-4">
+        <div className="min-w-0 flex-1 space-y-0.5">
+          {managed ? (
+            <p className="text-sm font-medium break-words">{title}</p>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onEdit(reminder)}
+              aria-label={`Edit “${reminder.title}”`}
+              className="block max-w-full rounded-sm text-left text-sm font-medium break-words outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {title}
+            </button>
           )}
-        >
-          {reminder.title}
-        </button>
-        {reminder.description ? (
-          <p className="line-clamp-2 text-sm break-words whitespace-pre-line text-muted-foreground">
-            {reminder.description}
-          </p>
-        ) : null}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          {reminder.status !== "scheduled" ? (
-            <Badge variant="outline" className={STATUS_TONES[reminder.status]}>
-              {STATUS_LABELS[reminder.status]}
-            </Badge>
+          {reminder.description ? (
+            <p className="line-clamp-1 text-sm break-words text-muted-foreground">
+              {reminder.description}
+            </p>
           ) : null}
-          <ReminderTime reminder={reminder} />
-          {reminder.recurrence ? (
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-              <Repeat className="size-3.5" aria-hidden="true" />
-              {describeRecurrence(reminder.recurrence, reminder.start_date)}
-            </span>
-          ) : null}
-          {reminder.timezone !== viewerTimeZone ? (
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-              <Globe className="size-3.5" aria-hidden="true" />
-              <span className="sr-only">Time zone: </span>
-              {timeZoneLabel(reminder.timezone)}
-            </span>
-          ) : null}
-          {reminder.task ? (
-            <span className="inline-flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
-              <CheckSquare className="size-3.5 shrink-0" aria-hidden="true" />
-              <span className="sr-only">Task: </span>
-              <span
-                className={cn(
-                  "truncate",
-                  reminder.task.status === "completed" && "line-through decoration-1",
-                )}
-              >
-                {reminder.task.title}
-              </span>
-            </span>
-          ) : null}
+          {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
         </div>
-        {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+        <div className="flex min-w-0 shrink-0 flex-wrap items-center gap-1.5 @2xl/rows:max-w-[60%] @2xl/rows:justify-end">
+          {reminder.status === "completed" || reminder.status === "disabled" ? (
+            <StatusChip status={reminder.status} />
+          ) : null}
+          <FireTimeChip reminder={reminder} group={fireGroupOf(reminder, viewerTimeZone)} />
+          <RecurrenceChip reminder={reminder} />
+          {reminder.task ? <TaskChip task={reminder.task} /> : null}
+          {sameTimeZone(reminder.timezone, viewerTimeZone) ? null : (
+            <TimeZoneChip timeZone={reminder.timezone} />
+          )}
+          {managed ? <FinanceChip /> : null}
+        </div>
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
-        {confirming ? (
+        {managed ? null : confirming ? (
           <div
             role="group"
             aria-label={`Delete “${reminder.title}”?`}
@@ -178,6 +171,7 @@ export function ReminderItem({
               size="sm"
               disabled={pending}
               onClick={() => {
+                // On success the row unmounts; on failure the page reports the error.
                 void onDelete(reminder).finally(() => setConfirming(false));
               }}
             >
@@ -195,6 +189,7 @@ export function ReminderItem({
             disabled={pending}
             aria-label={`Delete “${reminder.title}”`}
             onClick={() => setConfirming(true)}
+            // Revealed on hover or focus where there is a mouse; always visible on touch screens.
             className="size-8 text-muted-foreground hover:text-destructive pointer-fine:opacity-0 pointer-fine:group-focus-within:opacity-100 pointer-fine:group-hover:opacity-100"
           >
             <Trash2 aria-hidden="true" />

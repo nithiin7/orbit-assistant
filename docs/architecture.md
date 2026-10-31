@@ -19,8 +19,10 @@ Browser ──► apps/web (Next.js, :3000) ──HTTP/JSON──► apps/api (F
 - **apps/api** is a FastAPI service that owns data access and business logic. It exposes health
   endpoints, sign-in configuration and local accounts, the signed-in user's profile, and
   workspaces, on the database foundation described under [Storage](#storage). Identity is
-  described under [Identity and authorization](#identity-and-authorization). The only product
-  data so far is [tasks](#tasks); notes, finance, and the other modules store nothing yet.
+  described under [Identity and authorization](#identity-and-authorization). Product data:
+  [tasks](#tasks), shopping lists, [reminders](#reminders-and-notifications), and
+  [finance](#finance), and [notes](#notes-and-knowledge-management); the calendar and the
+  assistant store nothing yet.
 
 The two apps communicate only over HTTP and share no runtime code. They share one thing: the
 API contract in `packages/contracts`, described below.
@@ -38,19 +40,25 @@ API contract in `packages/contracts`, described below.
 - Web and API communicate only over HTTP. All data and business rules live behind the API.
   The web app never connects to SQLite or PostgreSQL and never holds database credentials. The web app renders, navigates, and calls the API through the typed helpers in `src/api/`.
 - Within the web app, dependencies point one way:
-  `src/app` → `src/components` → `src/hooks` → `src/providers` → `src/api`, `src/lib`.
+  `src/app` → `src/components` → `src/hooks` → `src/providers` → `src/api`, `src/lib` →
+  `src/utils`.
   `src/providers` holds app-wide React context (auth, workspaces, avatar, query client, theme)
   and may use other providers, but never components or hooks. `src/hooks` (query hooks that
   need auth or the active workspace) never imports components. `src/api` and `src/lib` import
   none of the React layers; `src/api` depends only on `@orbit/contracts`,
   `@tanstack/react-query`, `src/lib/env`, and pure `src/lib` helpers (such as
   `src/lib/shopping` for sorting and counting). `src/components/ui` primitives depend only on
-  `src/lib/utils/utils.ts`. ESLint enforces the layer rules (`apps/web/eslint.config.mjs`).
+  `src/utils/common`. `src/utils` holds generic helpers shared across features and imports no
+  other app layer. ESLint enforces the layer rules (`apps/web/eslint.config.mjs`).
 - Server data is cached by TanStack Query, keyed by workspace (`["workspaces", id, …]`). The
   cache is cleared whenever the signed-in user changes, so one user's data is never shown to
   another.
 - Forms use React Hook Form with Yup schemas from `src/lib`. The schemas mirror the API's
   validation for immediate feedback; the API still validates every request.
+- Selects, date pickers, and money inputs are custom accessible controls in
+  `src/components/ui/` (a select-only combobox, a calendar dialog, and an input that groups digits
+  as typed). Their popups use the Popover API so they sit above modal dialogs. Money is grouped
+  per currency: lakhs and crores for INR, thousands for the rest.
 
 ## Shared API contract
 
@@ -126,11 +134,13 @@ apps/web/src/
 │   │   ├── page.tsx     # Dashboard: user-arranged widgets (components/dashboard/)
 │   │   ├── tasks/       # Tasks page
 │   │   ├── reminders/   # Reminders page
+│   │   ├── finance/     # Finance page: 13 views in four groups, chosen by ?view=
+│   │   ├── notes/       # Notes page: view, folder, tag, search, and open note in the URL
 │   │   ├── settings/    # Settings: drill-down on small screens, split view on large; [panel]/ sub-pages
 │   │   └── [section]/   # Placeholder page for every other nav section
 │   ├── (auth)/          # Public routes without the shell: sign-in, sign-up
-│   ├── not-found.tsx    # Standalone 404 (works signed in or out)
-│   └── globals.css      # Tailwind + design tokens (light/dark)
+│   └── not-found.tsx    # Standalone 404 (works signed in or out)
+├── styles/              # globals.css entry: tokens (light/dark), theme, motion, base, components, utilities; fonts.ts (Geist)
 ├── components/
 │   ├── app-shell/       # Sidebar, mobile drawer, navigation links
 │   ├── auth/            # RequireAuth, sign-in and sign-up forms
@@ -139,23 +149,30 @@ apps/web/src/
 │   ├── workspace/       # Workspace switcher, dashboard overview
 │   ├── tasks/           # Tasks page (composer, toolbar, list, edit dialog), dashboard summary
 │   ├── reminders/       # Reminders page (list, create/edit dialog), dashboard widget
+│   ├── finance/         # Finance page: navigation, views, shared blocks (tiles, panels, row actions), dialogs
+│   ├── notes/           # Notes page: rail, list, Tiptap editor and toolbar, details, pickers, quick capture
 │   ├── notifications/   # Notification bell and panel (in the sidebar and mobile top bar)
 │   ├── settings/        # Settings menu and the account, workspace, theme, and storage panels
 │   ├── storage/         # Storage-mode indicator and status card
 │   └── ui/              # Small shadcn/ui-compatible primitives
 ├── hooks/               # Query hooks bound to auth and the active workspace (use-tasks, …)
 ├── providers/           # App-wide context: auth, workspaces, avatar, query client, theme
-└── lib/
-    ├── navigation.ts    # Single source of truth for nav items and section routes
-    ├── settings.ts      # Single source of truth for settings panels and their routes
-    ├── avatar.ts        # Crop and resize profile photos in the browser before upload
-    ├── api.ts           # Typed API client (types from @orbit/contracts)
-    ├── auth/            # Auth clients (local, Supabase), session storage, validation
-    ├── workspaces.ts    # Active-workspace selection and per-user preference
-    ├── dashboard.ts     # Dashboard widget catalog and per-user layout preference
-    ├── tasks.ts         # Task filters, due-date display, validation mirroring the API
-    ├── env.ts           # Validated public configuration
-    └── utils.ts         # `cn()` class-name helper
+├── lib/
+│   ├── navigation.ts    # Single source of truth for nav items and section routes
+│   ├── settings.ts      # Single source of truth for settings panels and their routes
+│   ├── avatar.ts        # Crop and resize profile photos in the browser before upload
+│   ├── api.ts           # Typed API client (types from @orbit/contracts)
+│   ├── auth/            # Auth clients (local, Supabase), session storage, validation
+│   ├── workspaces.ts    # Active-workspace selection and per-user preference
+│   ├── dashboard.ts     # Dashboard widget catalog and per-user layout preference
+│   ├── tasks.ts         # Task filters, due-date display, validation mirroring the API
+│   └── env.ts           # Validated public configuration
+└── utils/               # Generic helpers shared across features; imports no other app layer
+    ├── common/          # `cn()`, `mergeRefs()`, `byId()`, and the `Option` type
+    ├── dates/           # Calendar dates and months (`YYYY-MM-DD`, `YYYY-MM`): today, arithmetic, labels
+    ├── time-zones/      # IANA zones: browser zone, list and labels, wall-clock parts, preference schema
+    ├── validation/      # Yup text-field builders mirroring the API's rules
+    └── keyboard/        # Keyboard shortcut helpers
 ```
 
 Design decisions:
@@ -195,10 +212,14 @@ apps/api/src/orbit_api/
 │       ├── workspaces.py # List, create, get, rename, and delete workspaces
 │       ├── tasks.py     # Workspace-scoped tasks: CRUD, complete/reopen, filters, summary
 │       ├── reminders.py # Workspace-scoped reminders: CRUD, enable/disable, upcoming
+│       ├── finance.py   # Workspace-scoped finance: accounts, categories, transactions, reports, CSV
+│       ├── commitments.py # Loans and EMIs, subscriptions and bills, payments, upcoming, summary
+│       ├── notes.py     # Notes, folders, tags, links, tasks, journal, attachments
 │       └── notifications.py # The signed-in user's notifications: list, unread count, read state
 ├── auth/                # Adapters: Argon2 password hashing, Supabase JWT verification
-├── system/              # Adapter: opening the OS file manager on the API's machine
+├── system/              # Adapters: opening the OS file manager; storing note attachments as files
 ├── scheduler/           # Reminder worker (embedded in the API or `orbit-worker`) and its CLI
+├── utils/               # Plain-Python helpers any layer may use: UNSET, sort order, clock, LIKE patterns
 ├── schemas/             # Pydantic request/response models (the API contract)
 ├── services/            # Domain logic, one package per feature (no FastAPI/SQLAlchemy):
 │                        #   models.py (dataclasses, errors) and service.py (protocols, service)
@@ -211,7 +232,7 @@ apps/api/src/orbit_api/
     ├── database.py      # `open_database()`: connect, verify schema, sessions, dispose
     ├── migrate.py       # Programmatic Alembic: upgrade, downgrade, head revision
     └── migrations/      # Alembic environment and versioned revisions
-        └── versions/    # 0001_baseline … 0004_create_tasks
+        └── versions/    # 0001_baseline … 0012_create_notes
 ```
 
 Design decisions:
@@ -300,10 +321,29 @@ written once. SQLite is embedded in the API process; local mode needs no databas
   `local_sessions`, and `workspaces`, and enables RLS on them in PostgreSQL.
 - `0003_create_user_avatars` creates `user_avatars` (profile photos) with RLS.
 - `0004_create_tasks` creates `tasks` with RLS (see [Tasks](#tasks)).
+- `0005_create_shopping` creates `shopping_lists` and `shopping_items` with RLS.
 - `0006_create_dashboard_layouts` creates `dashboard_layouts` with RLS (see
   [Dashboard layout](#dashboard-layout)).
 - `0007_create_reminders` creates `reminders`, `reminder_occurrences`, and `notifications` with
   RLS, and adds `users.timezone` (see [Reminders and notifications](#reminders-and-notifications)).
+- `0008_create_finance` creates `finance_accounts`, `finance_categories`, and
+  `finance_transactions` with RLS (see [Finance](#finance)).
+- `0009_create_commitments` creates `finance_loans`, `finance_loan_installments`,
+  `finance_recurring_payments`, and `finance_recurring_occurrences` with RLS, adds the `loan`
+  account type, a unique `finance_transactions(id, workspace_id)` key, and the reminders' links to
+  commitments (see [Financial commitments](#financial-commitments-phase-2)).
+- `0010_create_investments` creates `finance_investment_accounts`, `finance_holdings`,
+  `finance_holding_prices`, `finance_sip_plans`, `finance_deposits`,
+  `finance_investment_transactions`, `finance_assets`, `finance_asset_valuations`, and
+  `finance_net_worth_snapshots` with RLS, and adds the reminders' unique link to a deposit (see
+  [Investments and net worth](#investments-and-net-worth-phase-3)).
+- `0011_create_budgets_and_goals` creates `finance_budgets`, `finance_budget_periods`,
+  `finance_budget_alerts`, `finance_savings_goals`, `finance_goal_contributions`, and
+  `finance_monthly_plans` with RLS (see
+  [Budgets, savings goals, and planning](#budgets-savings-goals-and-planning-phase-4)).
+- `0012_create_notes` creates `note_folders`, `notes`, `note_tags`, `note_tag_assignments`,
+  `note_links`, `note_task_links`, and `note_attachments` with RLS (see
+  [Notes and knowledge management](#notes-and-knowledge-management)).
 - Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
   Startup only checks that the database is at the head revision. For a shared cloud database,
   schema changes should be deliberate and reviewable.
@@ -334,6 +374,13 @@ structure.
   `AsyncSession` adapter implements. Uniqueness violations surface as `ConflictError`, so services
   can handle races (two first requests for the same Supabase user) without importing SQLAlchemy.
 - Schemas and ORM models stay separate: API shape and storage shape evolve independently.
+- Helpers shared across features live by dependency: plain Python (the `UNSET` partial-update
+  sentinel, `SortOrder`, `utc_now`, LIKE patterns) in `utils/`, which imports nothing else from
+  Orbit; SQLAlchemy helpers (`flush`, `SqlTransaction`) in `repositories/transaction.py`; and
+  Pydantic field types (`Name`, `SearchText`, …) in `schemas/common.py`.
+  The web app's counterpart is `src/utils`: a helper used by more than one feature gets its own
+  module there (`@/utils/dates`, `@/utils/time-zones`, `@/utils/validation`, `@/utils/keyboard`,
+  `@/utils/common`) rather than living in one feature's module and being borrowed by others.
 - No generic repository base class or unit-of-work framework is planned. Add one only if
   several features demonstrably repeat the same code.
 
@@ -373,7 +420,11 @@ structure.
   1. Every migration that creates a table in PostgreSQL enables RLS on it in the same
      revision. `0002` does this for `users`, `local_credentials`, `local_sessions`, and
      `workspaces`; `0003` for `user_avatars`; `0004` for `tasks`; `0006` for `dashboard_layouts`;
-     `0007` for `reminders`, `reminder_occurrences`, and `notifications`.
+     `0007` for `reminders`, `reminder_occurrences`, and `notifications`; `0008` for
+     `finance_accounts`, `finance_categories`, and `finance_transactions`; `0009` for
+     `finance_loans`, `finance_loan_installments`, `finance_recurring_payments`, and
+     `finance_recurring_occurrences`; `0010` for the nine investment, asset, and snapshot tables;
+     `0011` for the six budget, goal, and plan tables; `0012` for the seven note tables.
   2. **No policies exist**, deliberately: the browser never queries tables directly, so the
      Data API's `anon` and `authenticated` roles get no rows. Add `authenticated` policies
      (for example `owner_id = auth.uid()`) only if a client is ever allowed direct access.
@@ -402,7 +453,9 @@ structure.
 ```text
 users ──< workspaces ──< tasks    (owner_id → users.id, workspace_id → workspaces.id,
   │                 │                both ON DELETE CASCADE)
-  │                 └──< reminders   (see Reminders and notifications)
+  │                 ├──< reminders   (see Reminders and notifications)
+  │                 ├──< finance_accounts, finance_categories, finance_transactions (see Finance)
+  │                 └──< notes, note_folders, note_tags, … (see Notes and knowledge management)
   ├──< notifications              (in-app inbox, per recipient)
   │
   ├── user_avatars                (profile photo bytes and type, 1:1)
@@ -428,7 +481,7 @@ users ──< workspaces ──< tasks    (owner_id → users.id, workspace_id �
   `nosniff` and a locked-down CSP, or 204 when none is set. Because the API needs a bearer token,
   the web app fetches the photo as a blob and shows it through an object URL.
 - **Extensibility:** user data carries a non-null `workspace_id` foreign key, as `tasks` does;
-  future notes and expenses will too. Shared workspaces would add a `workspace_members` table and change
+  `finance_*` and `note*` tables do too. Shared workspaces would add a `workspace_members` table and change
   only the authorization check described below; the API already reports a `role` (`owner`).
 - **`dashboard_layouts`** holds a user's optional dashboard arrangement (see
   [Dashboard layout](#dashboard-layout)). It belongs to the user, not a workspace, because it
@@ -523,7 +576,9 @@ All rules live in `api/auth.py` and `services/workspaces/service.py`:
 ### Dashboard layout
 
 - The dashboard is a grid of widgets listed in `lib/dashboard/dashboard.ts` (workspace, Orbit status,
-  tasks, shopping, planned modules). **Customize** lets the user add, remove, reorder, and resize
+  tasks, reminders, shopping, finance, planned modules). The finance widgets (this month's cash
+  flow, upcoming payments, budget, net worth; `components/finance/finance-widgets.tsx`) report in
+  the currency most of the active workspace's open accounts use, like the Finance page. **Customize** lets the user add, remove, reorder, and resize
   them. Each widget is half or full width; half-width widgets sit side by side from the `xl`
   breakpoint, and every widget is full width below it.
 - The layout is saved per user in the `dashboard_layouts` table: one row per user with an
@@ -701,6 +756,11 @@ cluttering reminders, and lets notifications outlive edits and deletions of thei
   resumes them. Such reminders show as `completed` and are left out of "upcoming".
 - **Deleting** the task deletes its reminders and their pending occurrences (database cascade).
   Delivered notifications stay in the inbox, without the link.
+- **Finance-managed reminders.** A loan, subscription, or bill with reminders turned on owns one
+  reminder (`reminders.finance_loan_id` or `finance_recurring_payment_id`, unique). It appears in
+  the reminders list marked "Managed in Finance"; the reminders API refuses to edit or delete it
+  (409). See [Reminder integration](#reminder-integration). A deposit's maturity reminder
+  (`reminders.finance_deposit_id`) works the same way and fires once.
 
 ### Scheduling and delivery
 
@@ -808,6 +868,1145 @@ Reminders are workspace-scoped (`/api/v1/workspaces/{workspace_id}/reminders`, a
 - No snooze, no end date or count for recurrences, no "every N days/weeks", and no history view
   beyond the inbox.
 
+## Finance
+
+Phase 1 of Orbit Finance: accounts tracked by hand, the transactions that move money in, out,
+and between them, categories, monthly reports, and CSV export. Phase 2 adds commitments (loans,
+subscriptions, and bills) on top of this ledger; see
+[Financial commitments](#financial-commitments-phase-2). Phase 3 adds investments and net worth,
+and phase 4 budgets, savings goals, and monthly plans, on the same ledger. Orbit never asks for bank
+credentials and never connects to banks; there are no imports or synchronization.
+
+### Money and currency
+
+- **Integer minor units everywhere.** Every amount is a whole number of the currency's minor
+  unit (paise for INR: ₹1,234.50 is `123450`), stored as `BIGINT`, summed by the database as
+  integers, and sent as JSON integers. PostgreSQL's `SUM(bigint)` is `NUMERIC`, so repository
+  sums are cast back to `BIGINT`. Request amounts must be JSON integers (`Strict` in Pydantic):
+  `12.5`, `100.0`, and `"100"` are rejected rather than rounded.
+- **Decimal text only at the edges.** `services/finance/money.py` turns minor units into decimal
+  text with `divmod` (`to_decimal_string`); the web app (`lib/finance`) parses typed text such as
+  `1,00,000.50` and formats amounts with string operations and `Intl.NumberFormat` on the exact
+  decimal string. No floating-point arithmetic touches money. Percentages shown in the UI (share
+  of spending, savings rate) are display-only ratios.
+- **Explicit currency.** Each account has an ISO 4217 currency, fixed at creation. Supported:
+  INR (default), USD, EUR, GBP, AED, SGD, AUD, CAD, CHF (2 decimals), and JPY (0). Each
+  transaction stores its account's currency, and a composite foreign key guarantees they agree.
+  Amounts in different currencies are never added together: reports take a `currency` and
+  balance totals are per currency. There is no conversion; a transfer between currencies is
+  rejected.
+- **Range.** Amounts are at most 10^13 minor units (₹10,000 crore), far below the 64-bit limit.
+
+### Data model
+
+```text
+workspaces ──< finance_accounts ──< finance_transactions >── finance_categories
+     │                 ▲ (account_id, workspace_id, currency)        ▲ (category_id, workspace_id)
+     │                 └ (to_account_id, workspace_id, currency)     │
+     └──────────────────────────────────────────────────────────────┘  (all ON DELETE CASCADE
+                                                                           from workspaces)
+```
+
+| Table                  | Holds                                                                                                                                  |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `finance_accounts`     | Name, `type` (bank, savings, cash, wallet, credit_card, investment, other), `currency`, signed `opening_balance`, notes, `archived_at` |
+| `finance_categories`   | Name, `type` (income or expense), and `key` for built-in categories (`NULL` for the user's own)                                        |
+| `finance_transactions` | `type`, positive `amount`, `currency`, `occurred_on` (a date), description, `category_id`, `account_id`, `to_account_id`, notes        |
+
+- **Transaction types.** `income` (money in), `expense` (money out), `refund` (money back for
+  an earlier expense: it reduces spending in its expense category and is never income), and
+  `transfer` (money moved from `account_id` to `to_account_id`, never income or spending).
+- **Constraints** (CHECKs and keys, tested in `tests/test_migrations.py`): `amount` is 1 to 10^13;
+  a transfer has a different destination and no category, and nothing else has a destination;
+  composite foreign keys `(account_id, workspace_id, currency)` and
+  `(to_account_id, workspace_id, currency)` to `finance_accounts(id, workspace_id, currency)`
+  keep both accounts in the transaction's workspace and currency, and
+  `(category_id, workspace_id)` keeps the category in the workspace. The category foreign key has
+  no `ON DELETE` action, so a category in use can't be deleted. Category names are unique per
+  workspace and type (case-insensitively in the service, exactly in the database), and a
+  built-in key appears once per workspace.
+- **Indexes:** `(workspace_id, occurred_on)` for history and reports, and
+  `(workspace_id, account_id)`, `(workspace_id, to_account_id)`, `(workspace_id, category_id)`
+  for filters and the in-use check.
+- **Accounts are archived, not deleted.** An archived account keeps its history and balance,
+  takes no new transactions (422), and still lets its existing transactions be corrected. Its
+  type and currency can't change; its name, opening balance, and notes can.
+- Migration `0008_create_finance` creates the three tables with RLS on PostgreSQL. Nothing is
+  backfilled; default categories are seeded lazily (below).
+
+### Balances
+
+- **Derived, never stored.** `balance = opening_balance + Σ income + Σ refunds − Σ expenses −
+Σ transfers out + Σ transfers in`, computed by one grouped `UNION ALL` query over the
+  workspace's transactions whenever accounts are read. There is no cached balance column, so
+  editing or deleting a past transaction corrects every balance and report at once; there is
+  nothing to keep consistent.
+- **Signed from the owner's view.** Positive is money held, negative is money owed. A credit
+  card with ₹500 outstanding has balance `-50000`; the web app shows "₹500.00 owed" and asks for
+  a card's opening balance as the amount owed.
+- **Assets and liabilities.** Credit cards and loans are `liability` accounts; every other type
+  is an `asset`. `GET …/accounts` returns per-currency `totals`: `assets` (sum of asset balances)
+  and `liabilities` (what cards and loans owe, positive), including archived accounts, whose
+  balances are still real. The UI labels these "in your accounts" and "owed on cards and loans"
+  and states that they are **not net worth**, which is computed separately (see
+  [Net worth](#net-worth)) with investments at market value and other assets.
+- Balances include every recorded transaction, whatever its date.
+
+### Financial rules
+
+- **Credit cards.** A purchase on the card is an `expense` on the card account, counted as
+  spending on its date. Paying the bill is a `transfer` from a bank account to the card: it
+  settles the liability and is not spending, so nothing is counted twice.
+- **Investments.** Moving money into an investment account is a `transfer`, not spending. The
+  investment account's ledger balance is what was moved in, net of income, fees, and
+  withdrawals; holdings and their market value are tracked by phase 3 (see
+  [Investments and net worth](#investments-and-net-worth-phase-3)).
+- **Refunds and corrections.** Refunds are their own transactions, so the original expense stays
+  as it happened. Mistakes are corrected by editing (`PATCH`) or deleting the transaction;
+  derived balances and reports follow. `updated_at` records the correction.
+- **Dates.** `occurred_on` is a calendar date with no time, in the user's own time zone, like a
+  task's due date. A month is all dates from its first to its last day inclusive, so month
+  boundaries never depend on a server time zone. Report endpoints take `month=YYYY-MM`; without
+  it they use the current month in UTC (the web app always sends the user's local month).
+- **Validation** (in `FinanceService`, mirrored by database constraints): accounts and categories
+  must exist in the workspace (otherwise 422 "…doesn't exist in this workspace.", the same for
+  another user's), income takes an income category and expenses and refunds an expense
+  category, transfers need two different active accounts in one currency, and the transaction's
+  currency is always its account's (a client can't send one).
+- **Multi-record operations.** Each request is one database transaction; seeding categories
+  inserts all missing defaults and commits once (a concurrent seed's unique-constraint conflict
+  rolls back and re-reads).
+
+### Categories
+
+`services/finance/categories.py` lists the defaults, chosen for personal finance in India:
+income (Salary, Freelance, Business income, Interest, Dividends, Rental income, Gifts received,
+Other income) and expenses (Rent, Groceries, Food and dining, Utilities, Mobile and internet,
+Transport, Fuel, Shopping, Healthcare, Entertainment, Travel, Education, Insurance, Personal
+care, Household, Taxes, Fees and charges, Loan interest, Gifts and donations, Other expenses).
+There is deliberately no category for investments, card bills, or loan principal: those are
+transfers. Loan interest is spending, and EMI payments record it in "Loan interest"; existing
+workspaces get it the next time their categories are read.
+
+- Categories are rows in each workspace, seeded the first time the workspace's categories are
+  read (or before a custom one is created). Seeding adds only defaults whose `key` and name are
+  missing, so it is idempotent, never duplicates, and a renamed default isn't re-added.
+- Built-in categories can be renamed but not deleted (409). The user's own can be created,
+  renamed, and deleted once no transaction uses them (409 otherwise).
+
+### API
+
+All routes are under `/api/v1/workspaces/{workspace_id}/finance` and authorize the workspace
+through `WorkspaceDep` first. Another user's workspace is `404 Workspace not found.`; an
+account, category, or transaction ID from another workspace is a 404 like a missing one, and
+referencing one in a transaction is a 422.
+
+| Method   | Path                     | Purpose                                                                                                                                                                                      |
+| -------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/accounts`              | Accounts with derived balances (active first), and per-currency `totals`                                                                                                                     |
+| `POST`   | `/accounts`              | Create (`name`, `type`, `currency` = INR, `opening_balance`, `notes`)                                                                                                                        |
+| `GET`    | `/accounts/{id}`         | One account with its balance                                                                                                                                                                 |
+| `PATCH`  | `/accounts/{id}`         | Change `name`, `opening_balance`, `notes`                                                                                                                                                    |
+| `POST`   | `/accounts/{id}/archive` | Archive (idempotent); `/restore` undoes it                                                                                                                                                   |
+| `GET`    | `/categories`            | Income then expense categories, seeding defaults                                                                                                                                             |
+| `POST`   | `/categories`            | Create (`name`, `type`); 409 on a duplicate name                                                                                                                                             |
+| `PATCH`  | `/categories/{id}`       | Rename                                                                                                                                                                                       |
+| `DELETE` | `/categories/{id}`       | Delete one of your own, unused categories                                                                                                                                                    |
+| `GET`    | `/transactions`          | History: `date_from`, `date_to`, `type` (repeatable), `account_id` (either side), `category_id`, `q`, `sort` (`date`, `amount`), `order`, `limit` (≤ 200), `offset`; `transactions`, `total` |
+| `POST`   | `/transactions`          | Record income, an expense, a refund, or a transfer                                                                                                                                           |
+| `GET`    | `/transactions/{id}`     | One transaction                                                                                                                                                                              |
+| `PATCH`  | `/transactions/{id}`     | Correct any fields; the result is validated like a new one                                                                                                                                   |
+| `DELETE` | `/transactions/{id}`     | Delete permanently                                                                                                                                                                           |
+| `GET`    | `/transactions/export`   | CSV of the inclusive date range (or everything)                                                                                                                                              |
+| `GET`    | `/transfers`             | Transfers only (`date_from`, `date_to`, `limit`, `offset`)                                                                                                                                   |
+| `POST`   | `/transfers`             | Transfer with `from_account_id` and `to_account_id`                                                                                                                                          |
+| `GET`    | `/summary`               | One month's `income`, `expenses`, `refunds`, `net_expenses`, `net` (cash flow), and count; `month`, `currency`                                                                               |
+| `GET`    | `/trend`                 | The same per month for `months` (≤ 24, default 6) ending at `month`, zero-filled                                                                                                             |
+| `GET`    | `/spending`              | Net spending per category for `month`, largest first, uncategorized as `null`                                                                                                                |
+
+- Every report is a SQL aggregate (`SUM`/`COUNT` with `CASE`, grouped by category or by
+  `EXTRACT(year/month)`), so the web app never downloads transactions to add them up.
+- Search is a case-insensitive substring match on descriptions and notes, with `%`, `_`, and `\`
+  matched literally (the helper shared with tasks in `utils/text_search.py`).
+- Request models forbid unknown fields: a client can't set `currency`, `balance`, `workspace_id`,
+  or `id`. Validation errors never echo submitted values. Routes log nothing about transactions.
+
+### CSV export
+
+`GET …/transactions/export` returns `text/csv; charset=utf-8` as an attachment
+(`orbit-transactions[-from-to].csv`) with `Cache-Control: no-store`. One row per transaction,
+oldest first: Date, Type, Description, Category, Account, To account, Amount (positive decimal
+text in the major unit, such as `20000.50`), Currency, Notes, ID. Text starting with `=`, `+`,
+`-`, `@`, tab, or carriage return is prefixed with `'` so spreadsheets don't run it as a formula
+(CSV injection). There is no byte-order mark; Excel users may need to import the file as UTF-8.
+
+### Web app
+
+- `/finance` (`components/finance/`) has thirteen views. Overview sits on its own; the rest are
+  grouped as **Money** (Transactions, Accounts), **Planning** (Budgets, Plan, Goals),
+  **Commitments** (Upcoming, Loans, Subscriptions, Bills), and **Wealth** (Investments, Assets,
+  Net worth). The list and groups are data in `lib/finance-views`. Wide pages show them as a
+  sticky side rail (`finance-nav.tsx`); narrower ones show a picker listing every view plus the
+  current group's views as chips. The view is in the URL (`/finance?view=budgets`, kept with the
+  History API), so reloads, Back, and links from dashboard widgets land on it.
+- The page header's **Record** menu records an expense, income, a transfer, or a refund from any
+  view; it's the primary action on Overview and Transactions and a quieter one elsewhere, where
+  each view's own "Add …" is primary. Overview, Budgets, and Plan share one month, and every view
+  shares one currency, held by `finance-view.tsx`. A workspace without accounts is asked to add
+  one first.
+- Views share building blocks: `ViewHeader` (heading, controls, one primary action),
+  `StatGrid`/`StatTile`, `Panel`/`LoadError`/`EndedSection`, chips in `finance-meta.tsx`, and
+  `RowActions`, which shows a row's one inline action and puts the rest in a "More actions" menu,
+  asking in place before anything hard to undo. Layout follows container queries
+  (`@container/finance`, `/list`, `/rows`), not screen breakpoints.
+- When accounts use several currencies the overview offers a currency picker; otherwise it uses
+  the only one.
+- Lists are rows, not tables, so nothing scrolls sideways on phones. Chart colors are the
+  `--chart-1`/`--chart-2` tokens in `styles/tokens.css`, a pair checked for color-vision deficiency and
+  contrast in both themes; every chart has a legend or labels, and each month is focusable with
+  its figures in its accessible name.
+- `hooks/use-finance.ts` binds the queries; keys are `["workspaces", id, "finance", …]`. Every
+  change invalidates the workspace's finance queries, because balances and reports are derived
+  on the server.
+
+## Financial commitments (phase 2)
+
+Loans and their EMI schedules, subscriptions, recurring bills, a unified view of upcoming
+payments, and reminders before each one. Code: `services/commitments/` (`schedule.py` is the
+pure arithmetic, `service.py` the rules), `repositories/commitments.py`,
+`schemas/commitments.py`, and `api/v1/commitments.py`. Commitments sit **on top of** the phase 1
+ledger: every rupee actually paid is an ordinary `finance_transactions` row, and no second
+transaction model exists.
+
+### Commitment data model
+
+```text
+finance_accounts (type 'loan') ──1:1── finance_loans ──< finance_loan_installments ──┐
+                                            │                                        ├─> finance_transactions
+finance_recurring_payments ──< finance_recurring_occurrences ───────────────────────┘   (no ON DELETE)
+        │ (kind: subscription | bill)
+reminders.finance_loan_id / reminders.finance_recurring_payment_id  (unique, ON DELETE CASCADE)
+```
+
+| Table                           | Holds                                                                                                                                                                                       |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `finance_loans`                 | Name, lender, type, currency, original `principal`, `interest_rate_bps`, `interest_method`, tenure, EMI and frequency, dates, status, reminder settings, `account_id`, `payment_account_id` |
+| `finance_loan_installments`     | One EMI: `sequence`, `due_date`, `principal`, `interest`, `balance_after`, `state` (scheduled, paid, skipped), `paid_on`, and the principal and interest transaction IDs                    |
+| `finance_recurring_payments`    | A subscription or bill: amount (an estimate when `amount_varies`), currency, frequency, `anchor_date`, optional end and trial dates, `state`, category, usual account, reminder             |
+| `finance_recurring_occurrences` | One **settled** occurrence: `due_date`, `state` (paid or skipped), amount paid, `paid_on`, and the expense's transaction ID (none when marked paid by hand)                                 |
+
+- **Every relationship stays in one workspace**: composite foreign keys tie installments,
+  occurrences, accounts, categories, transactions, and reminders to the commitment's
+  `workspace_id` (and accounts to its currency), like phase 1.
+- **Loans are backed by a `loan` account**, a liability type created only with a loan (`POST
+…/accounts` rejects `loan`). Its opening balance is minus the outstanding principal when the
+  loan is added. Loan accounts appear in Accounts and in the liabilities totals.
+- **Money and rates are integers**: minor units as everywhere in finance, and interest rates in
+  basis points (8.5% is `850`). Rates are parsed and formatted as text in the web app.
+- **Subscriptions and bills share one table** (`kind`), because they share recurrence, payment
+  recording, and reminders; the API and UI present them separately.
+- **History is never deleted through the API.** Loans are closed or archived; subscriptions and
+  bills are paused or cancelled. Settled history stays. The one exception is a loan entered by
+  mistake: `DELETE /loans/{id}` removes it with its account, schedule, and reminder, and is a
+  409 while any transaction uses its account or any installment is paid.
+
+### EMI calculation assumptions
+
+All arithmetic is in `services/commitments/schedule.py`, pure and unit-tested
+(`tests/test_commitment_schedule.py`). Interest uses `Decimal` (60 significant digits) and is
+rounded **half up to the minor unit once per installment**; no floats.
+
+- **Reducing balance** (default): interest = outstanding principal × annual rate ÷ installments
+  per year. Standard EMI = `P·r·(1+r)^n / ((1+r)^n − 1)`, or `P / n` at 0%.
+- **Flat rate**: total interest = `P × rate × tenure in years`, spread evenly; the rounding
+  remainder goes to the last installment.
+- **The last installment settles exactly**: whatever principal is left, so the principal
+  components always sum to the outstanding principal.
+- The lender's EMI can be entered instead of the standard one; an EMI that doesn't cover a
+  reducing installment's interest is rejected (422).
+- **Loans already being repaid**: give the outstanding principal and the next EMI date; Orbit
+  tracks only the installments still ahead (numbered within the full tenure). Earlier history
+  isn't reconstructed.
+- **Manual adjustments**: a scheduled installment's date, principal, and interest can be edited
+  (`adjusted`), skipped (a payment holiday), or the remaining schedule regenerated from what the
+  ledger says is owed (`/reschedule`): keeping the number of EMIs (new EMI), or a new EMI
+  (new tenure). Prepayments are recorded as a transfer into the loan account, then rescheduled.
+- **Projected balances**: a scheduled installment's `balance_after` is recomputed on read from
+  today's outstanding principal; a paid one keeps what the ledger said when it was paid.
+
+### Recurrence rules
+
+- Frequencies: weekly, monthly, quarterly, every 6 months, yearly. Due dates repeat from
+  `anchor_date` (the "next due date" given when it was added); monthly-based ones keep the
+  anchor's day and use the month's last day when shorter (31 Jan → 28 Feb → 31 Mar).
+- **Unsettled occurrences are computed, never stored.** Only paid and skipped occurrences are
+  rows, with `unique(recurring_payment_id, due_date)`. Generating occurrences is therefore
+  idempotent: computing the same window twice yields the same dates, and nothing can be created
+  twice. A loan's schedule is generated once, at creation or reschedule.
+- **Changing the schedule** (frequency or next due date) moves the anchor; **resuming** after a
+  pause or cancellation anchors on the cadence's first date from today, so a backlog isn't
+  created. Settled history keeps its dates and amounts either way.
+- Status: `active`, `paused`, `cancelled` (stored), and `expired` (derived: active, past its end
+  date). Payment status (derived per day): `paid`, `skipped`, `overdue` (before today), `due`
+  (today), `upcoming`. "Today" is the date the web app sends, else today in the user's time-zone
+  preference, else UTC.
+
+### Payments and accounting
+
+| Payment          | Records                                                                                                                | Counts as spending |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| Loan EMI         | `transfer` of the principal from the paying account into the loan account; `expense` of the interest ("Loan interest") | Interest only      |
+| Subscription     | `expense` in its category                                                                                              | Yes                |
+| Bill             | `expense` in its category, at the actual amount                                                                        | Yes                |
+| Marked paid only | Nothing in the ledger (subscriptions and bills)                                                                        | No                 |
+
+- **No double counting.** The EMI itself is never an expense; principal is a transfer (reduces
+  the liability, never spending), interest is an expense. The outstanding principal is the loan
+  account's derived balance, so it can't drift from the ledger.
+- **Expected is not actual.** Scheduled installments, renewals, and bills are never in reports
+  until a payment is recorded and its transaction exists.
+- **Create or link.** Recording a payment either creates the transactions in the same database
+  transaction, or links transactions already recorded (a principal link must be a transfer into
+  the loan account; interest and subscription/bill links must be expenses in the same currency).
+- **No duplicates.** An installment moves out of `scheduled` with a conditional update (two
+  concurrent payments: one wins, the other is 409); an occurrence is unique per due date; each
+  transaction pays at most one thing (unique foreign keys, checked first for a clear message).
+- **History is protected.** The foreign keys to `finance_transactions` have no `ON DELETE`
+  action, so the ledger refuses to delete a transaction that records a payment (409 "Undo that
+  payment first"). Undoing a payment unlinks its transactions, and deletes them only when asked.
+  Editing a linked transaction later doesn't change the installment's or occurrence's recorded
+  amounts (the loan's outstanding principal, being derived, always follows the ledger).
+- **Atomic.** Phase 1's `FinanceService.create`, `create_account`, and `delete` take
+  `commit=False`, so a payment's transactions, the installment or occurrence, and the reminder
+  change commit together.
+
+### Reminder integration
+
+- Reminder settings per commitment: `days_before` (0 to 30), `time_of_day`, and an IANA time
+  zone (default: the user's preference, else UTC; the web app sends the browser's).
+- **One reminder per commitment**, in the existing `reminders` table, delivered by the existing
+  worker as an in-app notification. It is a one-time reminder for the next unsettled payment
+  whose reminder time is still ahead ("Rent due 16 Feb 2030", "INR 25000.00").
+- **Kept in sync in the same transaction** as every change: creating, editing, paying,
+  skipping, undoing, rescheduling, pausing, cancelling, or closing re-points it (or deletes it
+  when there is nothing to announce or reminders are turned off). The sync is idempotent and
+  the unique link prevents a second reminder.
+- **After it fires**, `ReminderDelivery` calls a follow-up hook
+  (`ReminderFollowUp.after_delivery`, implemented by `CommitmentService`) inside the delivery
+  transaction, which moves it to the next payment. No separate scheduler exists.
+
+### Commitments API
+
+Under `/api/v1/workspaces/{workspace_id}/finance`, authorized through `WorkspaceDep`. Another
+workspace's loan, subscription, or installment is a 404; referencing its account, category, or
+transaction is a 422.
+
+| Method   | Path                                         | Purpose                                                                                         |
+| -------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `GET`    | `/loans`                                     | Loans with derived outstanding principal                                                        |
+| `POST`   | `/loans`                                     | Add a loan: its account and remaining schedule                                                  |
+| `GET`    | `/loans/{id}`                                | The loan and its installments (`today`)                                                         |
+| `PATCH`  | `/loans/{id}`                                | Details, payment account, `status` (active, closed, archived), `reminder`                       |
+| `DELETE` | `/loans/{id}`                                | Delete a loan entered by mistake; 409 with recorded payments                                    |
+| `POST`   | `/loans/{id}/reschedule`                     | Regenerate unpaid installments (`interest_rate_bps`, `emi_amount`, date)                        |
+| `PATCH`  | `/loans/{id}/installments/{iid}`             | Adjust a scheduled installment                                                                  |
+| `POST`   | `/loans/{id}/installments/{iid}/pay`         | Pay (`from_account_id`, or link `principal_/interest_transaction_id`)                           |
+| `POST`   | `/loans/{id}/installments/{iid}/skip`        | Skip                                                                                            |
+| `POST`   | `/loans/{id}/installments/{iid}/undo`        | Undo (`delete_transactions`)                                                                    |
+| `GET`    | `/recurring-payments`                        | Subscriptions and bills (`kind`, `today`) with costs and next due date                          |
+| `POST`   | `/recurring-payments`                        | Add one                                                                                         |
+| `GET`    | `/recurring-payments/{id}`                   | One                                                                                             |
+| `PATCH`  | `/recurring-payments/{id}`                   | Change, pause, cancel, or resume (`state`)                                                      |
+| `GET`    | `/recurring-payments/{id}/occurrences`       | Payment and renewal history                                                                     |
+| `POST`   | `/recurring-payments/{id}/occurrences`       | Record a payment (`mode`: create, link, manual)                                                 |
+| `POST`   | `/recurring-payments/{id}/occurrences/skip`  | Skip a due date                                                                                 |
+| `DELETE` | `/recurring-payments/{id}/occurrences/{oid}` | Undo (`delete_transaction`)                                                                     |
+| `GET`    | `/payments`                                  | Unified list: `today`, `date_from`, `date_to` (≤ 400 days), `kind`, `status`, `include_overdue` |
+| `GET`    | `/commitments/summary`                       | Dashboard totals in one `currency`                                                              |
+
+### Commitments in the web app
+
+- `/finance` gains **Upcoming** (overdue, due today, upcoming, recently paid; filters by dates,
+  type, and status; record a payment from any row), **Loans** (outstanding, progress, EMI, next
+  EMI, the schedule with pay, adjust, skip, and undo; reschedule, close, archive),
+  **Subscriptions** and **Bills** (monthly and yearly cost per currency, next due date and
+  overdue count, record, skip, pause, resume, cancel with confirmation, history with undo).
+- The **Overview** shows a compact Commitments card (loans outstanding and monthly EMIs,
+  subscriptions per month, left to pay this month, overdue) only when commitments exist.
+- One payment dialog (`payment-dialog.tsx`) records, links, or marks paid; forms use React Hook
+  Form with Yup schemas in `lib/commitments`. Queries live under
+  `["workspaces", id, "finance", "commitments", …]`, so any finance change refetches them;
+  commitment changes also refetch reminders.
+
+## Investments and net worth (phase 3)
+
+Investment accounts, mutual funds, stocks and ETFs, SIPs, fixed and recurring deposits, other
+assets, a portfolio summary, net worth, and monthly net worth snapshots. Code:
+`services/investments/` (`quantities.py`, `lots.py`, `deposits.py`, and `portfolio.py` are pure
+arithmetic; `service.py` and `assets.py` the rules; `valuation.py` the price-feed seam),
+`services/networth/` (`calculation.py` pure, `service.py` snapshots),
+`repositories/investments.py`, `schemas/investments.py`, `schemas/networth.py`, and
+`api/v1/investments.py` and `api/v1/networth.py`. Like phase 2, this sits **on top of** the phase 1
+ledger: every rupee that moves is an ordinary `finance_transactions` row, and no second account,
+transaction, loan, or reminder model exists.
+
+### Investment data model
+
+```text
+finance_accounts (type 'investment') ──1:1── finance_investment_accounts
+                                                 ├──< finance_holdings ──< finance_holding_prices
+                                                 │          └──< finance_sip_plans
+                                                 ├──< finance_deposits ──── reminders.finance_deposit_id
+                                                 └──< finance_investment_transactions ──> finance_transactions
+                                                                                          (cash, fees; no ON DELETE)
+finance_assets ──< finance_asset_valuations
+finance_net_worth_snapshots   (unique workspace, currency, month)
+```
+
+| Table                             | Holds                                                                                                                                                                 |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `finance_investment_accounts`     | The profile of an `investment` finance account: `kind` (mutual_fund, brokerage, deposit, other), `provider`, optional `linked_account_id`                             |
+| `finance_holdings`                | A mutual fund, stock, or ETF: name, symbol or scheme code, exchange, ISIN, AMC, category, folio, and a normalized `identity`, unique per account                      |
+| `finance_holding_prices`          | One price per holding and date (scaled), with `source` (`manual` today; `import`, `provider` reserved)                                                                |
+| `finance_sip_plans`               | A scheduled SIP: amount, frequency, anchor date, optional end and funding account, state                                                                              |
+| `finance_deposits`                | A fixed or recurring deposit: rate (bps), compounding, start and maturity, RD installment, the bank's stated maturity amount, status, manual value, maturity reminder |
+| `finance_investment_transactions` | buy, sell, dividend, interest, fee, deposit, withdrawal: date, amount, units, charges, settlement, SIP due date, and the ledger rows it recorded                      |
+| `finance_assets`                  | Gold, property, vehicles, cash, other: purchase date and cost, optional linked account, `include_in_net_worth`, archived                                              |
+| `finance_asset_valuations`        | One value per asset and date, with `source`                                                                                                                           |
+| `finance_net_worth_snapshots`     | One month's assets, liabilities, net worth, group totals, `source`, and counts of estimated, manual, stale, and missing values                                        |
+
+- **No parallel accounts.** An investment account _is_ a finance account; the profile adds only
+  what Phase 1 lacks. Name, currency, notes, and archiving stay on the finance account. An
+  existing `investment` account can be **adopted** (`POST …/investment-accounts` with
+  `account_id`), so its history carries over instead of a duplicate being created.
+- **Quantities, cost, and principal are derived**, never stored: units and FIFO cost from a
+  holding's buys and sells, a deposit's principal from its deposits and withdrawals.
+- **Keys keep everything in one workspace and currency**: composite foreign keys from holdings,
+  deposits, and transactions to `finance_investment_accounts(account_id, workspace_id,
+currency)`, and from transactions to their holding's `(id, workspace_id, currency)`.
+- **CHECK constraints mirror the service rules** (tested in `tests/test_migrations.py`): each
+  type's shape (only trades have units; dividends name a holding; deposit flows name a deposit),
+  `settlement` rules, income and fees always having a ledger row, a SIP due date only on a SIP
+  buy, and NULL-safe ranges.
+- **History is protected.** A holding with transactions can't be deleted; the ledger refuses to
+  delete a transaction an investment transaction records (409, like phase 2 payments); one ledger
+  row backs at most one investment transaction (unique keys).
+
+### Investment accounting rules
+
+| Event                       | Ledger rows Orbit records                                                             | Counts as                                        |
+| --------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Buy from another account    | `transfer` from that account into the investment account                              | Neither income nor spending                      |
+| Buy from the account's cash | None: cash becomes a holding inside the investment account                            | Neither                                          |
+| Buy bought before Orbit     | None (`settlement = none`): units arrive as already owned                             | Neither                                          |
+| Sell into another account   | `transfer` from the investment account to that account                                | Neither; the FIFO gain is investment performance |
+| Dividend, interest          | `income` in "Dividends" or "Interest", into the investment account or another account | Income                                           |
+| Fee, or charges on a trade  | `expense` in "Fees and charges"                                                       | Spending                                         |
+| Deposit, withdrawal (FD/RD) | As buy and sell                                                                       | Neither                                          |
+| Deposit closure             | Withdrawal of the principal held; anything above it as `interest` income              | Interest is income                               |
+
+- **No double counting.** A purchase is never an expense; the transfer that funds it moves money
+  between two asset accounts, and the purchase then turns the investment account's cash into a
+  holding. Realized gains are not income in cash-flow reports; they appear in the portfolio.
+- **Investment cash** = the investment account's ledger balance − purchases and deposits + sale
+  proceeds and withdrawals, counting only those settled through Orbit. Its ledger balance alone
+  (shown in Accounts) still includes what was spent on holdings.
+- **Atomic.** Each request commits once: the investment transaction, its transfer, its fee
+  expense, a deposit's opening deposit, and its reminder change succeed or fail together.
+- **Deleting** an investment transaction keeps its ledger rows as ordinary transactions unless
+  `delete_ledger=true`. A buy that later sales depend on can't be deleted (409).
+- **SIPs**: a SIP plan is an expectation. Its next due date is the first scheduled date without a
+  recorded installment (possibly overdue); recording one creates a buy with `plan = sip` and the
+  `sip_due_date` it settles, unique per plan, so an installment can't be recorded twice. Pausing
+  stops the schedule; resuming restarts from the next date on or after today.
+
+### Cost basis, precision, and rounding
+
+- **FIFO for every holding** (`lots.py`): a sale takes units from the oldest open lot first. The
+  cost of a partial lot is its remaining cost × units sold ÷ units remaining, **rounded half up**
+  to the minor unit; selling a lot's last units takes its remaining cost exactly, so rounding
+  never creates or loses cost. Realized gain = gross proceeds − cost of the units taken. Fees are
+  expenses, never part of cost or proceeds. Trades are ordered by date, then as recorded. A sale
+  of more units than were held on its date is rejected (422).
+- **Units and prices are fixed-point**: integers in millionths (6 decimals) of a unit, and of
+  the currency's major unit per unit. The API sends them as decimal strings (`"218.92"`,
+  `"45.6789"`); more decimals, signs, or exponents are rejected, never rounded. Money stays in
+  integer minor units.
+- **Market value** = units × price, converted to minor units and rounded half up once. Average
+  cost = FIFO cost ÷ units, rounded half up to 6 decimals.
+- **Return** = unrealized + realized + dividends and interest − fees; the percentage is over
+  everything ever invested (buys and deposits), simple and not annualized, for display only.
+- Deterministic: the same history and date always produce the same values; everything is
+  covered by pure unit tests (`tests/test_investment_math.py`).
+
+### Deposits
+
+- Opening a deposit records its first `deposit` (an FD's principal, an RD's first installment) on
+  the start date; later RD installments and top-ups are recorded one by one.
+- **Estimated value** (`deposits.py`, `Decimal` at 60 digits, rounded half up once per
+  contribution): interest compounds every whole period counted in calendar months from each
+  contribution; the broken period after the last whole one earns simple interest
+  (`rate × days ÷ 365`) on the compounded amount; `simple` deposits earn simple interest only;
+  nothing accrues after maturity. An RD's projection assumes every monthly installment is paid.
+- These are **estimates, labelled as such** (`value_source = estimate`, `freshness = estimated`).
+  The bank's stated maturity amount is stored and shown beside the projection, not instead of
+  it. A value entered by hand replaces the estimate from its date (marked stale after a year).
+- **Closing** at or after maturity sets `matured`, earlier `closed`. The amount received above the
+  principal held is interest income; less than the principal (a penalty) withdraws what was
+  received and the rest is lost. `…/reopen` undoes a closure (optionally deleting its ledger rows).
+- **Maturity reminders** use the existing reminder engine: one reminder per deposit
+  (`reminders.finance_deposit_id`, unique), `days_before` the maturity date, kept in sync on
+  every change and deleted when the deposit closes. It fires once. The phase 2 reminder-sync
+  step was extracted to `services/reminders/managed.py` and is shared by both.
+
+### Other assets
+
+- Valued by hand with a dated history; the latest valuation on or before a date applies. Without
+  one, the purchase cost is used and marked `missing`. Valuations older than a year are `stale`.
+- **Duplicates are prevented**: names are unique per workspace (case-insensitively), and an asset
+  linked to an **asset account** (bank, cash, investment) is treated as already counted in that
+  balance and left out of net worth, with the reason shown. An asset linked to a liability (the
+  loan that financed a vehicle) is counted. `include_in_net_worth: false` leaves any asset out;
+  archived (sold) assets are history only.
+
+### Net worth
+
+**Net worth = total assets − total liabilities**, per currency (never converted), on any date
+(`services/networth/calculation.py`, pure):
+
+| Source                                 | Counted as                                                    | Value source                    |
+| -------------------------------------- | ------------------------------------------------------------- | ------------------------------- |
+| Bank, savings, cash, wallet, other     | Asset: ledger balance on the date                             | `ledger`                        |
+| Investment account with a profile      | Asset: its **cash** only, plus each holding and deposit below | `ledger`                        |
+| Holding                                | Asset: units × latest price on or before the date             | `market`, else `cost` (missing) |
+| Deposit                                | Asset: estimated or manual value; 0 once closed               | `estimate` or `manual`          |
+| `investment` account without a profile | Asset: ledger balance, labelled "at cost"                     | `cost` (missing)                |
+| Other asset (counted)                  | Asset: latest valuation                                       | `manual`, else `cost`           |
+| Credit card, loan                      | Liability: what the ledger says is owed                       | `ledger`                        |
+
+- **Each source is counted once**: the investment account contributes cash, not its ledger
+  balance (which includes money already turned into holdings), so a purchase at cost leaves net
+  worth unchanged. Loans use the Phase 2 loan account's balance, the same source of truth as the
+  Loans view.
+- **Every item carries** its valuation date, `source`, and `freshness` (`current`, `stale`,
+  `missing`, `estimated`); the totals report how many counted items are estimated, manual,
+  stale, or missing, and the web app lists them. Prices are stale after 7 days.
+- **As of a past date**, balances count transactions dated on or before it (FinanceService's
+  `accounts(…, as_of)`), holdings replay their trades to that date, and prices and valuations are
+  the latest on or before it. Opening balances have no date and always count.
+
+### Net worth snapshots
+
+- **One per workspace, currency, and month** (unique key), valued as of the month's last day, or
+  today for the current month. Generating one is **idempotent**: a month that already has one
+  returns it (200) instead of adding another; a concurrent insert loses the race and returns the
+  winner. Only the current month can be deliberately refreshed (`refresh: true`); past months are
+  never changed (409).
+- **Source** distinguishes actual from reconstructed values: `scheduled` (taken by the worker at
+  month end), `manual` (the current month, saved by the user), or `backfill` (a past month
+  rebuilt later from recorded history). Each snapshot also stores how many of its values were
+  estimated, manual, stale, or missing. Group totals are stored as JSON.
+- **Automation uses the existing worker**: `ReminderWorker` checks at most hourly (after a poll)
+  and takes the previous month's snapshot for every workspace with finance data that lacks one,
+  each in its own transaction. No other scheduler exists. Month boundaries for the worker are
+  UTC dates.
+- The dashboard compares today's net worth with the snapshots 1, 3, 6, and 12 months back, and
+  charts stored snapshots plus a live point for today.
+
+### Valuation strategy
+
+Prices and valuations are **entered by hand** in this phase. Orbit calls no market data, NAV, or
+bank APIs. Every price and valuation stores its date and `source`, and
+`services/investments/valuation.py` defines the seam for later: a `PriceFeed` returns `Quote`s,
+and `InvestmentService.record_prices` stores them (one per holding and date, ignoring holdings
+outside the workspace) with the feed's `source`. A NAV provider, market data provider, or
+statement import can be added behind that protocol without schema changes.
+
+### Investments API
+
+Under `/api/v1/workspaces/{workspace_id}/finance`, authorized through `WorkspaceDep`. Another
+workspace's account, holding, deposit, or transaction is a 404; referencing one in a request is a 422. Date-dependent reads take `today` (the user's local date; defaults as in phase 2).
+
+| Method                   | Path                                            | Purpose                                                                   |
+| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------- |
+| `GET`                    | `/portfolio`                                    | Values, gains, income, fees, allocation (`currency`, `today`, date range) |
+| `GET`, `POST`            | `/investment-accounts`                          | List; create or adopt (`account_id`)                                      |
+| `GET`, `PATCH`           | `/investment-accounts/{account_id}`             | One; change kind, provider, link, name, notes, `archived`                 |
+| `GET`, `POST`            | `/holdings`                                     | List with units, cost, value, gains; add (409 on a duplicate)             |
+| `GET`, `PATCH`, `DELETE` | `/holdings/{id}`                                | One; edit; delete one without transactions                                |
+| `GET`, `POST`            | `/holdings/{id}/prices`                         | Price history; record a price (replaces that date's)                      |
+| `DELETE`                 | `/holdings/{id}/prices/{price_id}`              | Delete a price                                                            |
+| `GET`, `POST`            | `/investment-transactions`                      | Activity (filters, paging); record with its ledger rows                   |
+| `GET`, `DELETE`          | `/investment-transactions/{id}`                 | One; delete (`delete_ledger`)                                             |
+| `GET`, `POST`            | `/sip-plans`                                    | List with next due date; schedule                                         |
+| `PATCH`                  | `/sip-plans/{id}`                               | Change, pause, cancel, resume                                             |
+| `POST`                   | `/sip-plans/{id}/installments`                  | Record an installment (409 if that date is recorded)                      |
+| `GET`, `POST`            | `/deposits`                                     | List with estimates and projections; open                                 |
+| `GET`, `PATCH`           | `/deposits/{id}`                                | One; edit terms and reminder                                              |
+| `POST`                   | `/deposits/{id}/contributions`                  | Record money put in                                                       |
+| `PUT`                    | `/deposits/{id}/value`                          | Set (or clear) a manual value                                             |
+| `POST`                   | `/deposits/{id}/close`, `/deposits/{id}/reopen` | Close (withdrawal + interest); undo a closure                             |
+| `GET`, `POST`            | `/assets`                                       | List; add (409 on a duplicate name)                                       |
+| `GET`, `PATCH`           | `/assets/{id}`                                  | One; edit, archive, restore                                               |
+| `GET`, `POST`            | `/assets/{id}/valuations`                       | History; record a value (replaces that date's)                            |
+| `DELETE`                 | `/assets/{id}/valuations/{valuation_id}`        | Delete a valuation                                                        |
+| `GET`                    | `/net-worth`                                    | Totals, groups, items, quality, changes (`currency`, `today`, `as_of`)    |
+| `GET`, `POST`            | `/net-worth/snapshots`                          | History; save a month (201 created, 200 already there)                    |
+
+Request models forbid unknown fields; quantities and prices must be decimal strings; amounts
+must be JSON integers. Routes log nothing about holdings or values.
+
+### Investments in the web app
+
+- `/finance` gains **Investments** (tiles for current value, cost, unrealized gain, and total
+  return with realized gains, income, and fees for this year, the last 12 months, or all time; a
+  stale or missing price notice; allocation and category bars; holdings grouped by account with
+  units, average cost, cost basis, latest price and date, realized gains, and dividends; SIPs;
+  deposits with estimate labels and the bank's stated amount; recent activity with delete
+  confirmation; investment accounts with their cash), **Assets** (values, stale and "not in net
+  worth" markers, history, update value, archive with confirmation), and **Net worth** (totals,
+  a quality notice, changes, a monthly trend from snapshots plus today, asset and liability
+  breakdowns, and every item with its source and date, including those not counted).
+- Dialogs use React Hook Form with Yup schemas in `lib/investments`, which parses units and
+  prices as strings (`parseUnits`) and never uses floats for money. Queries live under
+  `["workspaces", id, "finance", "investments", …]`, so any finance change refetches them;
+  changes also refetch reminders.
+- Charts use the single `--chart-1` token: allocation as labelled proportion bars, the trend as
+  one bar per month (reconstructed months outlined, today ringed), each focusable with its
+  figures in its accessible name.
+
+### Investment limitations
+
+- **No live prices** or bank, broker, or registrar connections; values are only as current as
+  the prices entered, and stale ones are marked.
+- **Corporate actions** (splits, bonuses, mergers, dividend reinvestment as units) aren't
+  modelled; record them as a sale and buy, or adjust by hand. FIFO is the only cost method;
+  there is no tax lot selection, capital gains tax, or grandfathering.
+- Investment transactions can't be edited, only deleted and recorded again. Editing a ledger row
+  an investment transaction recorded isn't blocked and can make investment cash drift; delete
+  the investment transaction instead.
+- Deposits don't model periodic interest payouts, TDS, or exact bank day counts; RD installments
+  are recorded one by one, and missed ones aren't tracked.
+- Net worth is per currency with no conversion. Reconstructed (backfilled) snapshots count
+  opening balances whatever the date, and use prices and valuations recorded before that date
+  only.
+- Return percentages are simple, not annualized (no XIRR).
+
+## Budgets, savings goals, and planning (phase 4)
+
+Budgets per month or custom period, threshold alerts, rollover, savings goals, and a monthly plan
+of expected income against everything that leaves it. Code: `services/budgets/`
+(`calculation.py` pure, `service.py` the rules), `services/goals/` (`calculation.py`,
+`service.py`), `services/planning/` (`calculation.py`, `service.py`), `repositories/budgets.py`,
+`repositories/goals.py`, `repositories/planning.py`, `schemas/budgets.py`, `schemas/goals.py`,
+`schemas/planning.py`, and `api/v1/budgets.py`, `api/v1/goals.py`, and `api/v1/planning.py`. Like
+phases 2 and 3 this sits **on top of** the phase 1 ledger: spending, balances, and transfers are
+read from `finance_transactions`, and no second transaction, account, or notification model
+exists.
+
+### Budget data model
+
+```text
+finance_categories ──< finance_budgets ──< finance_budget_periods ──< finance_budget_alerts ──> notifications
+                       (overall or one       (one per month, or the     (unique per period and      (ON DELETE
+                        expense category)     custom range; unique       threshold)                  SET NULL)
+                                              per budget and start)
+finance_accounts ──< finance_savings_goals ──< finance_goal_contributions ──> finance_transactions
+                     (optional account,        (unique transaction;           (no ON DELETE)
+                      same currency)            contribution or withdrawal)
+finance_monthly_plans   (unique workspace, currency, month)
+```
+
+| Table                        | Holds                                                                                                                                                                  |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `finance_budgets`            | Name, `scope` (overall or category) and `category_id`, currency, `amount`, `period` (monthly or custom), start and end dates, `rollover`, alert settings, state, notes |
+| `finance_budget_periods`     | One period of a budget: dates, `base_amount` (the budget's amount then), `rollover_amount` (carried in), and `closed_at` with `spent_at_close`                         |
+| `finance_budget_alerts`      | One threshold crossed in one period: the spending and amount available then, and the notification sent (if any)                                                        |
+| `finance_savings_goals`      | Name, description, category, priority, currency, target amount, start and target dates, state, optional `account_id`, notes, `completed_at`                            |
+| `finance_goal_contributions` | A contribution or withdrawal: amount, date, and the ledger transfer that moved it (if any)                                                                             |
+| `finance_monthly_plans`      | A month's expected income in one currency                                                                                                                              |
+
+- **Budgets.** A monthly budget starts on the first of a month and repeats until its end month's
+  last day, or without end (`end_date` NULL). A one-month budget ends in its own month. A custom
+  budget covers one range of up to a year. `upcoming`, `active`, and `completed` are derived from
+  the dates; `archived` is stored.
+- **One budget per spending, per period.** Two active budgets in one currency for the same scope
+  (overall, or the same category) can't overlap in time (409); a budget for another category,
+  currency, or non-overlapping period is fine. An overall budget and category budgets coexist:
+  the overall one caps all spending. Archiving frees the period; restoring checks again. The check
+  is in the service (date-range overlap can't be a portable unique key), so two simultaneous
+  creations could in principle both pass.
+- **Subcategories** don't exist in the category model, so budgets are per category only.
+- **Constraints** (tested in `tests/test_migrations.py`): amounts 1 to 10^13, a category exactly
+  for category budgets, a custom period with an end and no rollover, `end_date ≥ start_date`,
+  archived matching `archived_at`, a closed period having both `closed_at` and `spent_at_close`,
+  unique `(budget_id, period_start)` and `(period_id, threshold)`, composite foreign keys keeping
+  categories, periods, alerts, goal accounts (and their currency), and contribution transactions
+  in the row's workspace. The category foreign key has no `ON DELETE`: a category a budget uses
+  can't be deleted (409 "A budget limits spending in this category"). A goal account must use the
+  goal's currency.
+
+### Spending eligibility
+
+A budget's spending is the **net spending** (expenses minus refunds) dated in its period, in its
+currency, overall or in its category. It is read through `FinanceService.spending_by_category`, the
+aggregate behind the Overview's "Spending by category", so a budget and the dashboard always agree.
+There is no separate eligibility list to drift; the ledger's types decide:
+
+| Ledger row                                       | Counts toward a budget                   |
+| ------------------------------------------------ | ---------------------------------------- |
+| `expense` (purchases, card purchases, fees)      | Yes, in its category                     |
+| `refund`                                         | Reduces its category                     |
+| `income`                                         | No                                       |
+| `transfer` (card bills, moving money, savings)   | No                                       |
+| Investment purchase (a transfer, or nothing)     | No; its charges are an expense and count |
+| EMI principal (a transfer into the loan account) | No                                       |
+| EMI interest (an expense in "Loan interest")     | Yes                                      |
+| Subscription or bill payment (one expense)       | Yes, once                                |
+| An expected bill or renewal not yet recorded     | No                                       |
+
+- Uncategorized spending counts only toward an overall budget.
+- A period whose refunds exceed its spending (a refund of last month's purchase) has spent
+  nothing, never a negative amount.
+- Dates are calendar dates in the user's time zone, as everywhere in finance; a month is its
+  first to last day inclusive.
+
+### Utilization, statuses, and projections
+
+`services/budgets/calculation.py` is pure and unit-tested (`tests/test_budget_math.py`). Every
+figure is an integer: utilization is basis points (`spent × 10000 ÷ available`, rounded down) sent
+as two-decimal text (`"87.50"`) for display, and every threshold or status is decided by
+cross-multiplying (`spent × 100 ≥ threshold × available`), never by a percentage.
+
+- **Available** = `base_amount + rollover_amount`, never below zero. **Remaining** = available −
+  spent (negative when overspent).
+- **Status**: `on_track` below 75%, `approaching` from 75%, `near` from 90%, `exceeded` once
+  spending is more than what is available. With nothing available, any spending is `exceeded`.
+- **Projected** spending = spent × days in the period ÷ days elapsed, rounded half up, once seven
+  days have passed (earlier, one large purchase projects nonsense); the actual spending once the
+  period is over.
+
+### Periods, edits, and history
+
+- **Periods are stored as they start.** Creating a budget, editing it, and the worker store every
+  period from the start through the current one. Reads never write: a period that hasn't been
+  stored yet is computed from the budget as it is now, which is exactly what storing it would
+  record.
+- **Edits apply from the current period on.** Before an edit is applied, every finished period is
+  closed with the old amount; the current (open) period then takes the new amount. A budget with
+  a finished period can't move its start or end before that period (422), and a finished custom
+  period's dates are fixed. Past periods therefore keep the amount they had, and history
+  (`…/budgets/{id}`, `…/budgets/history`) reads those stored amounts.
+- **History** reports each month's total budget (the overall monthly budget's available amount,
+  else the sum of monthly category budgets'), spending, how many budgets stayed within, and
+  spending per category against its budget. A custom period overlapping a month is listed but not
+  added to the month's total, since it covers other days too.
+- **Copying a month** (`…/budgets/copy`) creates one-month budgets in the target month from the
+  source month's monthly budgets, with the amounts those periods had. Budgets that already cover
+  the target month (a recurring one, or one added there) are skipped, so copying twice adds
+  nothing. A recurring monthly budget is the way to repeat a budget every month.
+
+### Rollover
+
+Per budget, for monthly budgets only (a custom period has no next period):
+
+| Mode      | When a month closes, the next month gets                                          |
+| --------- | --------------------------------------------------------------------------------- |
+| `none`    | Nothing: it starts with its own amount                                            |
+| `surplus` | What was left unspent; overspending carries nothing                               |
+| `full`    | What was left, positive or negative, but never more negative than its base amount |
+
+- The leftover is `available − spent`, so rollover compounds: ₹2,000 left of ₹10,000 makes the
+  next month ₹12,000, and anything left of that carries on.
+- **Negative rollover** (with `full`) is capped at the next month's base amount, so a month starts
+  at zero at worst. Any deficit beyond that is dropped, not carried twice. Positive rollover is
+  capped at 10^15 minor units (a CHECK backs it).
+- **Closing happens once.** When a period has ended (the day after its last, in the owner's time
+  zone), the worker (or the next edit) records its spending as `spent_at_close`, sets `closed_at`
+  with a conditional `UPDATE … WHERE closed_at IS NULL` (of two concurrent closings exactly one
+  writes), and writes the rollover into the next period, in one transaction. Closed periods are
+  never changed again.
+- **Late corrections.** A transaction added or edited in a closed month changes that month's
+  spending in history (`spent` follows the ledger), but not the rollover it already passed on
+  (`spent_at_close` is what decided it, and the UI shows both when they differ).
+- The base amount and the rollover are always reported separately.
+
+### Alerts and deduplication
+
+- Each budget has `alerts_enabled` and up to six thresholds, whole percentages from 1 to 200
+  (above 100 alerts on overspending). Defaults: 50, 75, 90, 100.
+- **The existing worker checks**: `ReminderWorker` runs `check_budgets` at most every five minutes
+  (after a poll, like net worth snapshots). For every workspace with an active budget it closes
+  finished periods, then compares each active budget's current period with its thresholds, on
+  the owner's local date (`users.timezone`, else UTC). No other scheduler exists.
+- **One alert per threshold and period.** A crossed threshold is recorded in
+  `finance_budget_alerts`, unique per period and threshold, in the same transaction as the
+  notification, so concurrent workers send it once (tested with three workers). Of several
+  thresholds crossed at once, only the highest notifies ("75% used" rather than "50%" and "75%").
+- **No misleading repeats.** Spending that falls back under a threshold (a refund, a raised
+  budget) and rises again never re-sends it. A threshold added below one already sent is recorded
+  silently. Changing a budget's amount or rollover doesn't reset what was sent this period.
+- **Notifications are ordinary rows** in `notifications` for the workspace's owner, without a
+  reminder link, and appear in the bell like reminders: "Groceries: 90% of budget used", "INR
+  9000.00 of INR 10000.00 spent (October 2026)." Archived budgets and budgets with alerts off are
+  never checked.
+- Alerts arrive within about five minutes of the spending being recorded, not instantly.
+
+### Savings goal accounting
+
+- **A goal earmarks money; it is never an account.** Its saved amount is contributions minus
+  withdrawals, derived on read. Goals add nothing to balances or net worth, so nothing is counted
+  twice.
+- **Saving is never spending.** A contribution never creates an expense:
+  - `allocate` earmarks money already held (or releases it); no ledger row. This is how a goal is
+    tracked without a separate account.
+  - `transfer` records an ordinary ledger `transfer` from another account into the goal's linked
+    account (or out of it, for a withdrawal), in the same database transaction.
+  - `link` records an existing transfer into (or out of) the linked account; its amount and date
+    are used.
+- **No duplicates.** A transfer backs at most one contribution (unique key, checked first for a
+  clear 409), and the ledger refuses to delete a transfer a contribution records (409). Undoing a
+  contribution keeps its transfer unless `delete_transaction=true`.
+- **Linked accounts** must be bank, savings, cash, wallet, or other accounts in the goal's
+  currency. Investment accounts are excluded (the money would appear as both savings and an
+  investment in a plan); cards and loans owe money. The account can't change once transfers into
+  it are recorded against the goal.
+- **What is shown:** the target; the **saved** (allocated) amount; the linked account's
+  **balance**; what all active and paused goals in that account have **allocated** (more than the
+  balance is flagged); and what is **available to withdraw** (saved, but no more than the
+  account holds). Withdrawals can't exceed what was saved (422), and a contribution that later
+  withdrawals depend on can't be undone first.
+- **Suggested monthly contribution** (`services/goals/calculation.py`, `tests/test_goal_math.py`)
+  = remaining ÷ months from this month through the target date's month, inclusive, **rounded up**
+  to the minor unit so the target is never missed; everything remaining once the target month has
+  passed; none without a target date. Progress is basis points of the target, capped at 100%.
+- **States**: `active` (takes contributions), `paused` (withdrawals only), `completed`
+  (`completed_at` recorded; reopening clears it), `cancelled`. A goal with contributions can't be
+  deleted (cancel it instead), so history is kept. Targets and dates can change at any time.
+
+### Monthly planning
+
+`GET …/plan` brings the month together, planned against actual (`services/planning/calculation.py`,
+`tests/test_planning_math.py`, `tests/test_planning.py`):
+
+| Line              | Planned                                                                                                          | Actual                                                 |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Income            | Expected income: this month's, else the latest earlier month's                                                   | Income recorded                                        |
+| Fixed commitments | Loan EMIs, rent (bills in the built-in Rent category), subscriptions, and bills due in the month, except skipped | Those marked paid                                      |
+| Variable spending | An overall budget less the month's planned rent, subscription, bill, and EMI interest; else category budgets     | Net spending less expenses that paid a commitment      |
+| Savings goals     | Active goals' suggested monthly contributions                                                                    | Contributions minus withdrawals recorded               |
+| Investments       | SIPs due in the month                                                                                            | Transfers into investment accounts from other accounts |
+| **Remaining**     | Expected income − every planned line                                                                             | Income − every actual line                             |
+
+- **Cash flow isn't spending.** The lines don't overlap: commitment payments are taken out of
+  variable spending, goals can't live in investment accounts, and transfers are never spending.
+  The response also reports **spending** (net expenses only: consumption, including interest and
+  paid bills) and **allocations** (loan principal, net investments, and goal savings), which are
+  money moved to the user's own accounts.
+- Only expected income is stored (`PUT …/plan/{month}`), per month and currency; later months use
+  it until another is entered. Everything else planned comes from commitments, budgets, goals, and
+  SIPs. Commitments are grouped by due date.
+
+### Budgets, goals, and planning API
+
+Under `/api/v1/workspaces/{workspace_id}/finance`, authorized through `WorkspaceDep`. Another
+workspace's budget or goal is a 404; referencing its category, account, or transaction is a 422.
+Reads take `today` (the user's local date; default: today in their time-zone preference, else
+UTC).
+
+| Method                   | Path                                             | Purpose                                                                |
+| ------------------------ | ------------------------------------------------ | ---------------------------------------------------------------------- |
+| `GET`, `POST`            | `/budgets`                                       | List with each current period; create (409 on an overlap)              |
+| `GET`                    | `/budgets/overview`                              | One month (`month`, `currency`): total, spent, per budget and category |
+| `GET`                    | `/budgets/history`                               | The overview for `months` (≤ 24) months ending at `month`              |
+| `POST`                   | `/budgets/copy`                                  | Copy `from_month`'s monthly budgets into `to_month`                    |
+| `GET`, `PATCH`, `DELETE` | `/budgets/{id}`                                  | Detail with every period; edit from the current period on; delete      |
+| `POST`                   | `/budgets/{id}/archive`, `/budgets/{id}/restore` | Archive (idempotent); restore                                          |
+| `GET`, `POST`            | `/savings-goals`                                 | List with progress; create                                             |
+| `GET`, `PATCH`, `DELETE` | `/savings-goals/{id}`                            | One; edit (including `state`); delete one without contributions        |
+| `GET`, `POST`            | `/savings-goals/{id}/contributions`              | History; record (`type`, `mode`: allocate, transfer, link)             |
+| `DELETE`                 | `/savings-goals/{id}/contributions/{cid}`        | Undo (`delete_transaction`)                                            |
+| `GET`                    | `/plan`                                          | The month's plan (`month`, `currency`, `today`)                        |
+| `PUT`, `DELETE`          | `/plan/{month}`                                  | Set or clear the month's expected income                               |
+
+Request models forbid unknown fields; amounts must be JSON integers. Routes log nothing about
+budgets, goals, or amounts.
+
+### Budgets, goals, and plans in the web app
+
+- `/finance` gains **Budgets** (a month navigator that can look ahead; budget, spent, and
+  remaining tiles with the overall bar; budgets ordered by attention with a progress bar, status,
+  base and rollover amounts, the projection, and their period history with adherence; spending by
+  category against its budget; six months of budget against spending, each month selectable;
+  copy last month; archive, restore, and delete with confirmation; archived and finished budgets
+  collapsed), **Plan** (planned and actual lines in a table, available to spend and left over,
+  expected income, and spending kept apart from allocations), and **Goals** (totals per currency;
+  each goal's progress, suggested monthly amount, months left, linked account balance, what's
+  available, and over-allocation; add money, withdraw, history with undo, pause, complete, cancel,
+  and delete).
+- The **Overview** shows the month's budget and the goals in progress when they exist.
+- Dialogs use React Hook Form with Yup schemas in `lib/budgets` and `lib/goals`. The web app
+  computes no spending, status, or progress: bars and badges show what the API returned.
+  Queries live under `["workspaces", id, "finance", "budgets" | "goals" | "plan", …]`, so any
+  finance change refetches them.
+
+### Budget and goal limitations
+
+- No subcategory budgets (categories have no hierarchy), no weekly or yearly budget periods, and
+  no per-month overrides of a recurring budget's amount (end it and add another, or use a
+  one-month budget).
+- The overlap check for budgets is in the service, not a database constraint.
+- Alerts are in-app only and arrive within the worker's check interval (about five minutes); a
+  threshold crossed on a period's last day after the final check is not announced once the period
+  has closed.
+- Rollover decided at closing ignores later corrections to that month.
+- Planned commitments are grouped by due date and actual ones by the same due date; a loan
+  prepayment appears in allocations but not in the EMI line; recurring deposit installments are
+  not planned. Planned savings assume each goal's suggested amount; there is no per-month savings
+  plan.
+- Different currencies are never combined; each view shows one currency at a time.
+- No AI insights, bank connections, or automatic categorization.
+
+## Finance limitations and extension points (planned, not implemented)
+
+- **Price providers** (mutual fund NAVs, market prices, statement imports) would implement
+  `PriceFeed` (see [Valuation strategy](#valuation-strategy)); none is integrated.
+- Commitments don't create transactions automatically (no auto-debit); each payment is recorded
+  or linked. Overdue occurrences of a subscription or bill are listed up to the 60 most recent.
+- A loan's earlier history (before it was added) isn't reconstructed, floating rates are
+  modelled by rescheduling, and interest is per installment period (no daily-balance interest,
+  fees, or insurance bundled into EMIs).
+- Editing or retyping a transaction that records a payment isn't blocked; the payment keeps the
+  amounts recorded when it was paid.
+- Not supported now: currency conversion, split transactions, attachments, imports, bank
+  connections, reconciliation, and undo (deletes are confirmed instead).
+
+## Notes and knowledge management
+
+Notes capture, organize, connect, and find a workspace's knowledge: standard notes, quick notes,
+and a daily journal, in folders and tags, linked to each other and to tasks.
+
+### Notes data model
+
+```text
+workspaces ──< note_folders ──< note_folders            (parent_id, ON DELETE CASCADE)
+     │              │
+     ├──< notes >───┘ (folder_id: no ON DELETE; the service moves notes out first)
+     │      ├──< note_tag_assignments >── note_tags     (both sides cascade)
+     │      ├──< note_links >── notes                   (source → target, both cascade)
+     │      ├──< note_task_links >── tasks              (both cascade)
+     │      └──< note_attachments                       (metadata; files live outside the DB)
+```
+
+Every relationship is a composite foreign key on `(id, workspace_id)`, so the database itself
+refuses a folder, tag, link, task link, or attachment that crosses workspaces. Migration
+`0012_create_notes` creates the tables with RLS on PostgreSQL.
+
+| `notes` column                 | Notes                                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------------------- |
+| `note_type`                    | `note`, `quick` (captured fast), or `journal` (CHECK)                                 |
+| `title`                        | 0 to 200 characters; empty titles show as "Untitled" or the journal date              |
+| `content`, `content_format`    | The editor document as ProseMirror JSON (≤ 1,000,000 characters), `prosemirror-v1`    |
+| `plain_text`                   | Derived from `content` on every save, for search and previews; never sent by a client |
+| `folder_id`                    | `NULL` is the Inbox                                                                   |
+| `journal_date`                 | Set exactly for journal entries (CHECK); `unique(workspace_id, journal_date)`         |
+| `is_pinned`, `is_favorite`     | Pinned notes sort first in lists                                                      |
+| `archived_at`, `trashed_at`    | Archive and trash are timestamps; archived and trashed notes are read-only            |
+| `revision`                     | Starts at 1 and counts title or content changes (optimistic concurrency)              |
+| `updated_at`, `last_opened_at` | `updated_at` changes only with the title or content; opening sets `last_opened_at`    |
+
+Indexes: `(workspace_id, updated_at)`, `(workspace_id, folder_id)`, the journal date's unique
+index, and lookups by target for backlinks, by tag, and by task.
+
+### Folders and tags
+
+- **Folders** nest up to 8 levels. The service refuses moving a folder into itself or one of its
+  subfolders (it walks the tree) and moves that would nest too deeply; a CHECK forbids a folder
+  being its own parent. Folder note counts are active notes directly in the folder.
+- **Deleting a folder never deletes notes silently.** The caller chooses (`?notes=`): `parent`
+  moves the folder's notes and subfolders up a level; `inbox` or `trash` deletes the folder and
+  its subfolders after moving every note inside to the Inbox or the trash. `notes.folder_id` has
+  no `ON DELETE` action, so a folder with notes can't be deleted by accident.
+- **Tags** are unique per workspace by `normalized_name` (whitespace collapsed, trimmed,
+  case-folded): "Deep Work", "deep work", and "DEEP WORK" are one tag. Adding a tag by name
+  reuses the existing one or creates it; concurrent creation of the same name resolves to one tag.
+  Renaming to another tag's name is a 409. Deleting a tag removes it from every note; a note has
+  at most 50 tags. Usage counts are active notes.
+
+### Editor content format
+
+- The web editor is [Tiptap](https://tiptap.dev) 3 (ProseMirror) with StarterKit (paragraphs,
+  headings 1 to 3, bold, italic, underline, strikethrough, inline code, lists, quotes, dividers,
+  links), task lists, tables, and code blocks highlighted by lowlight (highlight.js grammars).
+  Extensions are defined once in `lib/note-content` and used by both the editor and Markdown
+  conversion.
+- **The ProseMirror document is the only source of truth.** Markdown is never stored.
+- The API validates every document (`services/notes/content.py`): only the node and mark types
+  those extensions produce, a depth limit, a size limit, and links that are `http(s):`,
+  `mailto:`, or internal note links (no `javascript:` or other schemes). So a stored document
+  always loads in the editor, and content can't smuggle unsafe URLs. The same pass derives
+  `plain_text` and the note's outgoing links.
+
+### Markdown conversion
+
+`lib/note-content` uses `@tiptap/markdown`'s `MarkdownManager` with the editor's extensions:
+
+- **Import:** a `.md` or `.txt` file becomes a note; its first heading (or line) becomes the title.
+- **Export / copy:** the note menu downloads `<title>.md` or copies Markdown to the clipboard.
+- **Paste:** plain-text pastes that look like Markdown (headings, lists, checklists, quotes, code
+  fences, tables, links, bold) are converted; pastes with HTML keep the browser's formatting.
+- Quick capture accepts Markdown too. Round trips are tested for every supported block and mark;
+  underline has no Markdown form and exports as plain text, and Markdown images are dropped
+  (there is no image node).
+
+### Autosave strategy
+
+`hooks/use-note-autosave.ts`, tested with a mocked API:
+
+- Typing is saved **800 ms after the last change**; leaving the note (another note, another
+  page) saves at once, and the page waits for that save before switching notes.
+- **One request at a time.** Edits made while a save is in flight go in the next request.
+- A save that would change nothing (the server already has those fields) sends no request.
+- Each save sends `expected_revision`. If someone changed the note since (another tab or device),
+  the API answers **409** and nothing is overwritten. The editor stops saving and offers "Load
+  their version" or "Keep mine" (which saves over the newer revision deliberately).
+- Network errors, 5xx, and 429 are **retried** after 1, 3, and 8 seconds; then, and for other
+  errors (such as 422), the status shows "Not saved" with a Retry button.
+- The status reads **Saved only after the server confirms**. Closing or reloading the tab with
+  unsaved or in-flight changes triggers the browser's leave warning.
+- Metadata changes (pin, favorite, folder, archive, tags) are separate requests that don't need
+  or change the revision.
+
+### Note linking and backlinks
+
+- A link to a note is an ordinary link mark whose `href` is `/notes?note=<uuid>`, inserted from
+  the toolbar's note picker. Links name notes by **ID**, so renaming a note never breaks them
+  (the link text stays as typed; the panels show current titles).
+- On every content save the API replaces the note's rows in `note_links` with the set of linked
+  note IDs that exist **in the same workspace** (duplicates collapse to one row; self-links and
+  unknown or foreign IDs are ignored). Links to other workspaces stay in the text but relate
+  nothing.
+- `GET …/notes/{id}/links` returns outgoing links and backlinks, leaving out trashed notes; they
+  return when the note is restored. Clicking a note link in the editor opens it in place.
+- No graph visualization.
+
+### Task integration
+
+- `note_task_links` relates notes and existing tasks; task data stays in `tasks`. Linking checks
+  the task exists in the note's workspace (422 otherwise), is idempotent, and deleting either side
+  removes the link.
+- The note's details list linked tasks (`GET …/notes/{id}/tasks`, the tasks API's own response
+  type) with links to `/tasks?task=<id>`, which opens the task's dialog. The task dialog lists the
+  notes linked to it (`GET …/notes?task_id=`), each opening the note.
+
+### Journal behavior
+
+- One entry per day per workspace, a note of type `journal` with `journal_date`; the unique index
+  backs the rule. `PUT …/notes/journal/{date}` returns the day's entry, creating it (201) the first
+  time; concurrent first opens resolve to the same entry. Opening a trashed day restores it.
+  `PUT …/notes/journal/today` uses the user's time zone (Settings → Account), else UTC.
+- The web app computes "today" in the user's time zone (else the browser's) and opens it with
+  the date. The Journal view lists entries by date with previous/next day, a date picker, and
+  Today. Entries are searchable and linkable like any note; their type and date can't change, and
+  a duplicate becomes an ordinary note. Journal entries are not in the Inbox or All notes.
+
+### Search architecture
+
+- `GET …/notes?q=` splits the search into words (at most eight); each must appear,
+  case-insensitively, in the title, the derived plain text, a tag name, or the folder's name.
+  It is an escaped `ILIKE` per word, the same approach as tasks and finance, and runs unchanged on
+  SQLite and PostgreSQL. It scans one workspace's notes, which is fine at personal scale;
+  PostgreSQL full-text search or SQLite FTS5 can replace `repositories/notes.py`'s filter without
+  changing the service or API.
+- Results carry an `excerpt`: the start of the text, or the text around the first match. The web
+  app highlights matching words with `<mark>` (text split in React, never injected HTML).
+- Filters: state (`active`, `archived`, `trashed`), folder or Inbox, tag, type, task, favorite,
+  pinned; sorts: last edited, created, title, recent (last opened or edited), journal date;
+  `pinned_first`; `limit` (≤ 100) and `offset`. The web app pages by 50.
+- Views map onto these filters (`lib/notes`): Inbox, All notes, Recent, Favorites, Pinned,
+  Journal, Archive, Trash, a folder, or a tag. No vector or semantic search.
+
+### Attachments
+
+- There was no file storage to reuse (profile photos are small and stored in a column), so notes
+  add the minimum: metadata in `note_attachments`, bytes in files under
+  `ORBIT_ATTACHMENTS_PATH/<workspace id>/<attachment id>` (`system/attachment_store.py`). Names on
+  disk are server-generated UUIDs; directories are `0700` and files `0600`; writes go to a
+  temporary file and are renamed into place; blocking I/O runs in a worker thread.
+- Uploads are the raw request body with `?filename=` (a name, not a path), capped by
+  `ORBIT_ATTACHMENT_MAX_BYTES` (default 10 MB) while reading. The type comes from the extension
+  and is checked against the file's leading bytes (PNG, JPEG, GIF, WebP, PDF, ZIP-based Office and
+  OpenDocument files) or, for text formats, the absence of NUL bytes; the declared content type is
+  ignored. At most 50 per note.
+- Downloads require the bearer token, so the web app fetches a blob. Responses always use
+  `Content-Disposition: attachment`, the detected type, `nosniff`, and a sandboxing CSP.
+- Deleting an attachment, permanently deleting notes (including emptying the trash), and
+  deleting a workspace delete the files too. If the metadata can't be saved, the file just
+  written is removed.
+- **Limitations:** files live on the API's machine. A cloud deployment with several API
+  instances needs a shared volume; object storage is not implemented. Attachments are listed in a
+  note's details, not shown inline in the document. If a file deletion fails (logged), the file is
+  orphaned but unreachable.
+
+### Notes API
+
+All routes are under `/api/v1/workspaces/{workspace_id}` and authorize the workspace through
+`WorkspaceDep` first. An ID from another workspace behaves exactly like a missing one (404 for
+the note, folder, tag, or attachment in the path; 422 for a referenced folder or task).
+
+| Method                   | Path                                                   | Purpose                                                                        |
+| ------------------------ | ------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| `GET`, `POST`            | `/notes`                                               | List or search (filters above); create (`content` or `text`)                   |
+| `GET`                    | `/notes/counts`                                        | Counts per view                                                                |
+| `POST`                   | `/notes/empty-trash`                                   | Delete every trashed note for good                                             |
+| `GET`, `PUT`             | `/notes/journal/{date}`, `/notes/journal/today`        | Get, or open (create) a day's entry                                            |
+| `GET`, `PATCH`, `DELETE` | `/notes/{id}`                                          | Get; update (409 on a stale `expected_revision`); delete if trashed (else 409) |
+| `POST`                   | `/notes/{id}/open`, `/trash`, `/restore`, `/duplicate` | Record an open; trash; restore; copy (same folder and tags)                    |
+| `GET`                    | `/notes/{id}/links`                                    | Outgoing links and backlinks                                                   |
+| `POST`, `DELETE`         | `/notes/{id}/tags`, `/notes/{id}/tags/{tag}`           | Tag by name (reuse or create); untag                                           |
+| `GET`, `PUT`, `DELETE`   | `/notes/{id}/tasks`, `/notes/{id}/tasks/{task}`        | Linked tasks; link; unlink                                                     |
+| `GET`, `POST`, `DELETE`  | `/notes/{id}/attachments[/{attachment}]`               | List; upload; download (`GET` one); remove                                     |
+| `GET`, `POST`            | `/note-folders`                                        | All folders with counts (flat; the client builds the tree)                     |
+| `PATCH`, `DELETE`        | `/note-folders/{id}`                                   | Rename or move; delete with `?notes=parent                                     | inbox | trash` |
+| `GET`, `POST`            | `/note-tags`                                           | Tags with usage counts; create                                                 |
+| `PATCH`, `DELETE`        | `/note-tags/{id}`                                      | Rename; delete                                                                 |
+
+Request models forbid unknown fields, so `workspace_id`, `revision`, `plain_text`, or
+`journal_date` in a body is a 422. Titles reject control characters.
+
+### Notes in the web app
+
+- `/notes` (`components/notes/`): a rail (views with counts, the folder tree with expand,
+  collapse, and folder actions, and tags), the list (search, sort, list or grid, per-note actions
+  menu, pagination), and the note pane (title, toolbar, editor, save status, and a details panel
+  with folder, tags with autocomplete, backlinks and links, tasks, and attachments). The URL holds
+  the view, folder or tag, search, and open note, so Back, reloads, and links work.
+- Two layouts. Browsing (no note open): the rail beside a list that uses the rest of the page
+  (the rail behind **Browse** on narrower screens). Editing (a note open): the note takes the whole
+  page, the list opens as a drawer from the left (**Show note list** or `/`), and the details panel
+  can be hidden, a choice kept in `localStorage`.
+- Keyboard: `N` creates a note, `/` focuses search (opening the list drawer when a note is open),
+  Escape clears it; the editor supports
+  standard shortcuts (Mod+B/I/U, Mod+Shift+S, Mod+E, Mod+Alt+1–3, Mod+Shift+7/8/9, Mod+Shift+B)
+  and Markdown input rules; the toolbar is one tab stop with arrow-key navigation.
+- **Quick capture** (`QuickCaptureProvider`, in the app shell) opens from the sidebar or the
+  command palette on any page and saves a quick note to the Inbox; closing with text typed asks
+  first.
+- **Command palette:** New note, Quick note, Open today's journal, recent notes, folders, live
+  note search as you type, and "Search notes for …", using the existing palette.
+- Query keys: `["workspaces", id, "notes", …]`. An open note's query never refetches on its own,
+  so the editor owns it while open.
+
+### Notes limitations
+
+- Search is substring matching (no stemming, ranking, or fuzzy matching).
+- Attachments are files on one machine (see [Attachments](#attachments)); no inline images.
+- Conflict resolution is whole-note ("keep mine" or "theirs"), not a merge. Edits are not synced
+  live between open tabs; the second tab finds out on its next save.
+- Navigating to another page while a save fails can lose the last changes; the save is attempted
+  on leave and the browser warns on close or reload, but in-app navigation can't wait.
+- No templates, sharing, version history, graph view, AI features, or semantic search.
+
 ## Configuration
 
 | App | Source                                                    | Validation                                    | Visibility  |
@@ -824,16 +2023,16 @@ Reminders are workspace-scoped (`/api/v1/workspaces/{workspace_id}/reminders`, a
 
 ## Testing strategy
 
-| Layer                    | Tool                                            | Location                                                    | Current coverage                                                                                                                     |
-| ------------------------ | ----------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                  | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications                      |
-| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                           | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, cross-user isolation |
-| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_reminder_worker.py` | Recurrence, DST, month ends; delivery, concurrency, leases, retries, restarts                                                        |
-| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                          | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                         |
-| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                     | Startup checks, sessions, migrations, constraints, 503 errors                                                                        |
-| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                           | Migrations, connectivity, RLS; skipped by default                                                                                    |
-| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                   | Generated contract matches the API                                                                                                   |
-| End-to-end               | Not set up (**planned**)                        | —                                                           | —                                                                                                                                    |
+| Layer                    | Tool                                            | Location                                                                                   | Current coverage                                                                                                                                                                                                    |
+| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                                                 | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth, budgets, goals, plans, notes (views, autosave, Markdown, palette) |
+| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                                                          | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, budgets, goals, plans, notes, cross-user isolation                                         |
+| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_reminder_worker.py`, `tests/test_budget_alerts.py` | Recurrence, DST, month ends; delivery, concurrency, leases, retries, restarts; budget alerts and period closing                                                                                                     |
+| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                                                         | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                                                                                        |
+| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                                                    | Startup checks, sessions, migrations, constraints, 503 errors                                                                                                                                                       |
+| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                                                          | Migrations, connectivity, RLS; skipped by default                                                                                                                                                                   |
+| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                                                  | Generated contract matches the API                                                                                                                                                                                  |
+| End-to-end               | Not set up (**planned**)                        | —                                                                                          | —                                                                                                                                                                                                                   |
 
 Unit tests cover logic, route tests cover HTTP behavior and validation, and E2E tests will cover
 critical user journeys once real features exist. CI runs every layer on each pull request.
@@ -854,7 +2053,8 @@ vendor SDKs.
 
 The database foundation is implemented (see [Storage](#storage)). Still planned:
 
-- More product tables (notes, finance), following the pattern [tasks](#tasks) established.
+- More product tables (calendar, later [finance](#finance) phases), following the pattern
+  [tasks](#tasks) established.
 - Shared workspaces (a membership table, invitations, roles), if the product needs them.
 - Any synchronization or migration between local and cloud storage. This is undecided and
   needs its own design.
@@ -868,8 +2068,11 @@ The database foundation is implemented (see [Storage](#storage)). Still planned:
 
 ### Evolution
 
-Workspace-scoped [tasks](#tasks) and [reminders](#reminders-and-notifications), with a
-database-backed worker, are in place. Next: more
+Workspace-scoped [tasks](#tasks), [reminders](#reminders-and-notifications) (with a
+database-backed worker), and four phases of [finance](#finance) (ledger, commitments,
+[investments and net worth](#investments-and-net-worth-phase-3), and
+[budgets, savings goals, and planning](#budgets-savings-goals-and-planning-phase-4)), and
+[notes](#notes-and-knowledge-management) are in place. Next: more
 modules on the same pattern, AI-assisted features through the provider interface, then optional
 sync and extension points.
 Each step should leave the boundaries above intact.

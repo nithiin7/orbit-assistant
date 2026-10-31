@@ -22,6 +22,8 @@ function layerRule(files, forbidden) {
 const config = [
   ...nextConfig,
   layerRule(["src/api/**", "src/lib/**"], ["components", "hooks", "providers"]),
+  // Shared helpers are the bottom layer: plain functions every other layer may use.
+  layerRule(["src/utils/**"], ["components", "hooks", "providers", "api", "lib"]),
   layerRule(["src/providers/**"], ["components", "hooks"]),
   layerRule(["src/hooks/**"], ["components"]),
 ];

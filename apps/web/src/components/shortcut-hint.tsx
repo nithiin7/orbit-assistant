@@ -3,8 +3,8 @@
 import { useSyncExternalStore } from "react";
 
 import { Kbd } from "@/components/ui/kbd";
-import { isMacPlatform } from "@/lib/keyboard";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/common";
+import { isMacPlatform } from "@/utils/keyboard";
 
 function subscribe() {
   return () => {};

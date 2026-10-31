@@ -16,7 +16,8 @@ StorageMode = Literal["local", "cloud"]
 LOCAL_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
 # Development default: `apps/api/.data/`, which is git-ignored and outside the web app.
-DEFAULT_SQLITE_PATH = Path(__file__).resolve().parents[2] / ".data" / "orbit.sqlite3"
+DEFAULT_DATA_DIR = Path(__file__).resolve().parents[2] / ".data"
+DEFAULT_SQLITE_PATH = DEFAULT_DATA_DIR / "orbit.sqlite3"
 
 POSTGRES_DRIVER = "postgresql+asyncpg"
 _POSTGRES_SCHEMES = {"postgres", "postgresql", POSTGRES_DRIVER}
@@ -65,6 +66,18 @@ class Settings(BaseSettings):
     scheduler_in_api: bool | None = None
     scheduler_poll_seconds: float = Field(default=15, ge=1, le=300)
 
+    # Note attachments are files on the API's machine, outside the database. Unset keeps them in
+    # an `attachments` folder beside the SQLite database (local mode) or in `apps/api/.data/`.
+    attachments_path: Path | None = None
+    attachment_max_bytes: int = Field(default=10 * 1024 * 1024, ge=1024, le=100 * 1024 * 1024)
+
+    @property
+    def attachments_dir(self) -> Path:
+        if self.attachments_path is not None:
+            return self.attachments_path
+        base = self.sqlite_path.parent if self.storage_mode == "local" else DEFAULT_DATA_DIR
+        return base / "attachments"
+
     @property
     def is_development(self) -> bool:
         return self.env == "development"
@@ -105,6 +118,11 @@ class Settings(BaseSettings):
     @classmethod
     def _resolve_sqlite_path(cls, path: Path) -> Path:
         return path.expanduser().resolve()
+
+    @field_validator("attachments_path")
+    @classmethod
+    def _resolve_attachments_path(cls, path: Path | None) -> Path | None:
+        return path.expanduser().resolve() if path is not None else None
 
     @model_validator(mode="after")
     def _validate_production(self) -> Self:

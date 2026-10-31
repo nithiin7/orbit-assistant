@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from orbit_api.schemas.common import Name, TimeZoneName
 from orbit_api.services.accounts.models import User
-from orbit_api.services.tasks.models import UNSET, Change
+from orbit_api.utils.changes import UNSET, Change
 
 
 class UserProfile(BaseModel):

@@ -296,7 +296,7 @@ export interface paths {
         post?: never;
         /**
          * Delete a workspace
-         * @description Permanently delete a workspace and everything in it.
+         * @description Permanently delete a workspace and everything in it, including note attachment files.
          */
         delete: operations["delete_workspace_api_v1_workspaces__workspace_id__delete"];
         options?: never;
@@ -631,6 +631,1718 @@ export interface paths {
         patch: operations["update_reminder_api_v1_workspaces__workspace_id__reminders__reminder_id__patch"];
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/finance/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List accounts with balances
+         * @description Every account, archived ones included, with balances derived from its transactions.
+         */
+        get: operations["list_accounts_api_v1_workspaces__workspace_id__finance_accounts_get"];
+        put?: never;
+        /**
+         * Create an account
+         * @description Track an account by hand. Orbit never asks for bank credentials or connects to banks.
+         */
+        post: operations["create_account_api_v1_workspaces__workspace_id__finance_accounts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/accounts/{account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get an account */
+        get: operations["get_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update an account */
+        patch: operations["update_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/accounts/{account_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive an account
+         * @description Stop recording new transactions on the account. Its history and balance stay.
+         *     Idempotent.
+         */
+        post: operations["archive_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/accounts/{account_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore an archived account */
+        post: operations["restore_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List categories
+         * @description The workspace's income and expense categories. Built-in ones are added the first time
+         *     they're read.
+         */
+        get: operations["list_categories_api_v1_workspaces__workspace_id__finance_categories_get"];
+        put?: never;
+        /** Create a category */
+        post: operations["create_category_api_v1_workspaces__workspace_id__finance_categories_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/categories/{category_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a category
+         * @description Delete one of your own categories that no transaction uses.
+         */
+        delete: operations["delete_category_api_v1_workspaces__workspace_id__finance_categories__category_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename a category */
+        patch: operations["rename_category_api_v1_workspaces__workspace_id__finance_categories__category_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List transactions
+         * @description Filter by date range, type, account, and category, search descriptions and notes, and
+         *     sort by date or amount.
+         */
+        get: operations["list_transactions_api_v1_workspaces__workspace_id__finance_transactions_get"];
+        put?: never;
+        /** Record a transaction */
+        post: operations["create_transaction_api_v1_workspaces__workspace_id__finance_transactions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/transactions/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export transactions as CSV
+         * @description Every transaction in the inclusive date range (or all of them), oldest first. Amounts are
+         *     positive decimal text in the major unit, beside their currency.
+         */
+        get: operations["export_transactions_api_v1_workspaces__workspace_id__finance_transactions_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/transactions/{transaction_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a transaction */
+        get: operations["get_transaction_api_v1_workspaces__workspace_id__finance_transactions__transaction_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a transaction
+         * @description Permanently delete a transaction, removing it from balances and reports. A transaction
+         *     that records a loan, subscription, or bill payment can't be deleted until that payment is
+         *     undone (409).
+         */
+        delete: operations["delete_transaction_api_v1_workspaces__workspace_id__finance_transactions__transaction_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Correct a transaction
+         * @description Balances and reports are derived from transactions, so they follow automatically.
+         */
+        patch: operations["update_transaction_api_v1_workspaces__workspace_id__finance_transactions__transaction_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List transfers
+         * @description Transfers between accounts, newest first. The same as listing transactions with
+         *     `type=transfer`.
+         */
+        get: operations["list_transfers_api_v1_workspaces__workspace_id__finance_transfers_get"];
+        put?: never;
+        /** Transfer between accounts */
+        post: operations["create_transfer_api_v1_workspaces__workspace_id__finance_transfers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Monthly income, spending, and savings
+         * @description Totals for one calendar month in one currency. Transfers are excluded; refunds reduce
+         *     spending.
+         */
+        get: operations["monthly_summary_api_v1_workspaces__workspace_id__finance_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/trend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Income and spending per month */
+        get: operations["monthly_trend_api_v1_workspaces__workspace_id__finance_trend_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/spending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Spending by category
+         * @description Net spending (expenses minus refunds) per category for one calendar month.
+         */
+        get: operations["spending_by_category_api_v1_workspaces__workspace_id__finance_spending_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/loans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List loans
+         * @description Every loan with its outstanding principal, derived from its loan account's ledger.
+         */
+        get: operations["list_loans_api_v1_workspaces__workspace_id__finance_loans_get"];
+        put?: never;
+        /**
+         * Add a loan
+         * @description Creates the loan, its loan account, and the EMI schedule still ahead, in one step.
+         */
+        post: operations["create_loan_api_v1_workspaces__workspace_id__finance_loans_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/loans/{loan_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a loan and its EMI schedule */
+        get: operations["get_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a loan
+         * @description Delete a loan entered by mistake, with its account, EMI schedule, and reminder. A loan
+         *     with recorded payments or other transactions is a 409: undo them first, or close and
+         *     archive it to keep its history.
+         */
+        delete: operations["delete_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update a loan */
+        patch: operations["update_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/loans/{loan_id}/reschedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Regenerate unpaid installments
+         * @description Replaces the scheduled installments with ones that repay what the ledger says is still
+         *     owed. Paid and skipped installments stay as history.
+         */
+        post: operations["reschedule_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__reschedule_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/loans/{loan_id}/installments/{installment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Adjust a scheduled installment
+         * @description Change a scheduled installment's due date or principal and interest split by hand.
+         */
+        patch: operations["adjust_installment_api_v1_workspaces__workspace_id__finance_loans__loan_id__installments__installment_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/loans/{loan_id}/installments/{installment_id}/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record an EMI payment
+         * @description The principal becomes a transfer into the loan account (reducing what's owed, never
+         *     spending) and the interest a "Loan interest" expense, or link transactions already
+         *     recorded. Recorded once: paying again is a 409.
+         */
+        post: operations["pay_installment_api_v1_workspaces__workspace_id__finance_loans__loan_id__installments__installment_id__pay_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/loans/{loan_id}/installments/{installment_id}/skip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Skip an installment */
+        post: operations["skip_installment_api_v1_workspaces__workspace_id__finance_loans__loan_id__installments__installment_id__skip_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/loans/{loan_id}/installments/{installment_id}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Undo an installment's payment or skip */
+        post: operations["undo_installment_api_v1_workspaces__workspace_id__finance_loans__loan_id__installments__installment_id__undo_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/recurring-payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List subscriptions and bills */
+        get: operations["list_recurring_payments_api_v1_workspaces__workspace_id__finance_recurring_payments_get"];
+        put?: never;
+        /** Add a subscription or bill */
+        post: operations["create_recurring_payment_api_v1_workspaces__workspace_id__finance_recurring_payments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/recurring-payments/{payment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a subscription or bill */
+        get: operations["get_recurring_payment_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update, pause, cancel, or resume a subscription or bill
+         * @description Cancelling keeps every recorded payment; nothing is deleted.
+         */
+        patch: operations["update_recurring_payment_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/recurring-payments/{payment_id}/occurrences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Payment and renewal history */
+        get: operations["list_occurrences_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__occurrences_get"];
+        put?: never;
+        /**
+         * Record a payment or renewal
+         * @description Each due date can be settled once; recording it again is a 409.
+         */
+        post: operations["record_recurring_payment_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__occurrences_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/recurring-payments/{payment_id}/occurrences/skip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Skip a payment or renewal */
+        post: operations["skip_recurring_occurrence_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__occurrences_skip_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/recurring-payments/{payment_id}/occurrences/{occurrence_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Undo a recorded payment or skip
+         * @description The payment becomes expected again. Its expense stays in the ledger unless
+         *     `delete_transaction` is set.
+         */
+        delete: operations["undo_recurring_occurrence_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__occurrences__occurrence_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Upcoming, due, overdue, and recent payments
+         * @description Loan EMIs, subscription renewals, and bills in one list, by due date. Expected payments
+         *     are not spending until recorded.
+         */
+        get: operations["list_payments_api_v1_workspaces__workspace_id__finance_payments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/commitments/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Commitment totals for the dashboard
+         * @description Outstanding loans, monthly EMIs and subscriptions, bills due soon, what's left to pay this
+         *     month, and what's overdue, in one currency.
+         */
+        get: operations["commitment_summary_api_v1_workspaces__workspace_id__finance_commitments_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/portfolio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Portfolio summary
+         * @description Invested amount, current value, gains, income, fees, and allocation in one currency.
+         *     Values are as of `today`; realized gains, income, and fees cover the date range.
+         */
+        get: operations["portfolio_api_v1_workspaces__workspace_id__finance_portfolio_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/investment-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List investment accounts */
+        get: operations["list_investment_accounts_api_v1_workspaces__workspace_id__finance_investment_accounts_get"];
+        put?: never;
+        /**
+         * Track investments in an account
+         * @description Uses an existing `investment` finance account, or creates one.
+         */
+        post: operations["create_investment_account_api_v1_workspaces__workspace_id__finance_investment_accounts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/investment-accounts/{account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get an investment account */
+        get: operations["get_investment_account_api_v1_workspaces__workspace_id__finance_investment_accounts__account_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update an investment account */
+        patch: operations["update_investment_account_api_v1_workspaces__workspace_id__finance_investment_accounts__account_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/holdings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List holdings
+         * @description Holdings with units and cost (FIFO) and value at the latest price on or before `today`.
+         */
+        get: operations["list_holdings_api_v1_workspaces__workspace_id__finance_holdings_get"];
+        put?: never;
+        /** Add a holding */
+        post: operations["create_holding_api_v1_workspaces__workspace_id__finance_holdings_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/holdings/{holding_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a holding */
+        get: operations["get_holding_api_v1_workspaces__workspace_id__finance_holdings__holding_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete a holding without transactions */
+        delete: operations["delete_holding_api_v1_workspaces__workspace_id__finance_holdings__holding_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update a holding */
+        patch: operations["update_holding_api_v1_workspaces__workspace_id__finance_holdings__holding_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/holdings/{holding_id}/prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A holding's price history */
+        get: operations["list_prices_api_v1_workspaces__workspace_id__finance_holdings__holding_id__prices_get"];
+        put?: never;
+        /**
+         * Record a price by hand
+         * @description Replaces any price already recorded on that date.
+         */
+        post: operations["record_price_api_v1_workspaces__workspace_id__finance_holdings__holding_id__prices_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/holdings/{holding_id}/prices/{price_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a price */
+        delete: operations["delete_price_api_v1_workspaces__workspace_id__finance_holdings__holding_id__prices__price_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/investment-transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Investment activity */
+        get: operations["list_investment_transactions_api_v1_workspaces__workspace_id__finance_investment_transactions_get"];
+        put?: never;
+        /**
+         * Record an investment transaction
+         * @description Records the transaction and its ledger rows (a transfer, income, or expenses) in one
+         *     step.
+         */
+        post: operations["record_investment_transaction_api_v1_workspaces__workspace_id__finance_investment_transactions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/investment-transactions/{transaction_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get an investment transaction */
+        get: operations["get_investment_transaction_api_v1_workspaces__workspace_id__finance_investment_transactions__transaction_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete an investment transaction
+         * @description A buy that later sales depend on can't be deleted (409).
+         */
+        delete: operations["delete_investment_transaction_api_v1_workspaces__workspace_id__finance_investment_transactions__transaction_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/sip-plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List SIP plans */
+        get: operations["list_sip_plans_api_v1_workspaces__workspace_id__finance_sip_plans_get"];
+        put?: never;
+        /**
+         * Schedule a SIP
+         * @description A schedule of expected buys. Nothing is invested until an installment is recorded.
+         */
+        post: operations["create_sip_plan_api_v1_workspaces__workspace_id__finance_sip_plans_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/sip-plans/{plan_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change, pause, or resume a SIP */
+        patch: operations["update_sip_plan_api_v1_workspaces__workspace_id__finance_sip_plans__plan_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/sip-plans/{plan_id}/installments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record a SIP installment
+         * @description Records a buy for the SIP's next unrecorded date (or `due_date`). Each date is recorded
+         *     once (409 otherwise).
+         */
+        post: operations["record_sip_installment_api_v1_workspaces__workspace_id__finance_sip_plans__plan_id__installments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/deposits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List fixed and recurring deposits */
+        get: operations["list_deposits_api_v1_workspaces__workspace_id__finance_deposits_get"];
+        put?: never;
+        /** Open a deposit */
+        post: operations["create_deposit_api_v1_workspaces__workspace_id__finance_deposits_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/deposits/{deposit_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a deposit */
+        get: operations["get_deposit_api_v1_workspaces__workspace_id__finance_deposits__deposit_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update a deposit */
+        patch: operations["update_deposit_api_v1_workspaces__workspace_id__finance_deposits__deposit_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/deposits/{deposit_id}/contributions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record money put into a deposit */
+        post: operations["contribute_to_deposit_api_v1_workspaces__workspace_id__finance_deposits__deposit_id__contributions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/deposits/{deposit_id}/value": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set a deposit's value by hand */
+        put: operations["value_deposit_api_v1_workspaces__workspace_id__finance_deposits__deposit_id__value_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/deposits/{deposit_id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Close a deposit
+         * @description Records the principal returned and any interest as income, in one step.
+         */
+        post: operations["close_deposit_api_v1_workspaces__workspace_id__finance_deposits__deposit_id__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/deposits/{deposit_id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Undo a deposit's closure */
+        post: operations["reopen_deposit_api_v1_workspaces__workspace_id__finance_deposits__deposit_id__reopen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/assets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List other assets */
+        get: operations["list_assets_api_v1_workspaces__workspace_id__finance_assets_get"];
+        put?: never;
+        /** Track an asset */
+        post: operations["create_asset_api_v1_workspaces__workspace_id__finance_assets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/assets/{asset_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get an asset */
+        get: operations["get_asset_api_v1_workspaces__workspace_id__finance_assets__asset_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update or archive an asset */
+        patch: operations["update_asset_api_v1_workspaces__workspace_id__finance_assets__asset_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/assets/{asset_id}/valuations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** An asset's valuation history */
+        get: operations["list_valuations_api_v1_workspaces__workspace_id__finance_assets__asset_id__valuations_get"];
+        put?: never;
+        /**
+         * Record a valuation
+         * @description Replaces any valuation already on that date; earlier ones stay as history.
+         */
+        post: operations["record_valuation_api_v1_workspaces__workspace_id__finance_assets__asset_id__valuations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/assets/{asset_id}/valuations/{valuation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a valuation */
+        delete: operations["delete_valuation_api_v1_workspaces__workspace_id__finance_assets__asset_id__valuations__valuation_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/net-worth": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Net worth
+         * @description Total assets minus total liabilities in one currency, with every item behind them, its
+         *     valuation date and source, and changes since earlier snapshots.
+         */
+        get: operations["net_worth_api_v1_workspaces__workspace_id__finance_net_worth_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/net-worth/snapshots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Net worth history */
+        get: operations["list_snapshots_api_v1_workspaces__workspace_id__finance_net_worth_snapshots_get"];
+        put?: never;
+        /**
+         * Save a month's net worth snapshot
+         * @description Idempotent: a month with a snapshot returns it with 200 instead of adding another.
+         */
+        post: operations["take_snapshot_api_v1_workspaces__workspace_id__finance_net_worth_snapshots_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/budgets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List budgets
+         * @description Every budget with its current period's spending, remaining amount, and status.
+         */
+        get: operations["list_budgets_api_v1_workspaces__workspace_id__finance_budgets_get"];
+        put?: never;
+        /** Create a budget */
+        post: operations["create_budget_api_v1_workspaces__workspace_id__finance_budgets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/budgets/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One month's budgets and spending
+         * @description The month's total budget, spending, and each budget's period overlapping the month, with
+         *     spending per category. Spending is the dashboard's net spending: transfers never count.
+         */
+        get: operations["budget_overview_api_v1_workspaces__workspace_id__finance_budgets_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/budgets/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Budget against spending per month
+         * @description The overview for each of `months` months ending at `month`. Past months use the amounts
+         *     their budgets had then.
+         */
+        get: operations["budget_history_api_v1_workspaces__workspace_id__finance_budgets_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/budgets/copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Copy a month's budgets
+         * @description Copy `from_month`'s monthly budgets into `to_month` as one-month budgets with the amounts
+         *     they had. Budgets that already cover `to_month` are skipped.
+         */
+        post: operations["copy_budgets_api_v1_workspaces__workspace_id__finance_budgets_copy_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/budgets/{budget_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a budget with its periods */
+        get: operations["get_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a budget
+         * @description Delete it with its period history. Transactions are untouched; notifications stay.
+         */
+        delete: operations["delete_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update a budget
+         * @description Changes apply from the current period on; finished periods keep their amounts.
+         */
+        patch: operations["update_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/budgets/{budget_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive a budget
+         * @description Stop tracking it and sending alerts; its history stays. Idempotent.
+         */
+        post: operations["archive_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/budgets/{budget_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore an archived budget */
+        post: operations["restore_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/savings-goals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List savings goals */
+        get: operations["list_goals_api_v1_workspaces__workspace_id__finance_savings_goals_get"];
+        put?: never;
+        /** Create a savings goal */
+        post: operations["create_goal_api_v1_workspaces__workspace_id__finance_savings_goals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/savings-goals/{goal_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a savings goal */
+        get: operations["get_goal_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a savings goal
+         * @description Only a goal without contributions; cancel one with history instead.
+         */
+        delete: operations["delete_goal_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update a savings goal */
+        patch: operations["update_goal_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/savings-goals/{goal_id}/contributions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List a goal's contributions */
+        get: operations["list_contributions_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__contributions_get"];
+        put?: never;
+        /**
+         * Record a contribution or withdrawal
+         * @description Never an expense: an allocation records no ledger row, and a transfer between your own
+         *     accounts is neither income nor spending.
+         */
+        post: operations["create_contribution_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__contributions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/savings-goals/{goal_id}/contributions/{contribution_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Undo a contribution or withdrawal */
+        delete: operations["delete_contribution_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__contributions__contribution_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A month's plan against actual cash flow
+         * @description Income, fixed commitments, variable spending, savings, and investments, planned and
+         *     actual, and what remains. Loan principal, savings, and investments are allocations, not
+         *     spending.
+         */
+        get: operations["get_plan_api_v1_workspaces__workspace_id__finance_plan_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/plan/{month}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set a month's expected income
+         * @description Later months without their own expected income use this one.
+         */
+        put: operations["set_plan_api_v1_workspaces__workspace_id__finance_plan__month__put"];
+        post?: never;
+        /**
+         * Clear a month's income
+         * @description The month falls back to an earlier month's expected income, if any. Idempotent.
+         */
+        delete: operations["clear_plan_api_v1_workspaces__workspace_id__finance_plan__month__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List or search notes
+         * @description Filter by state, folder, tag, type, task, favorite, and pin; search words in titles, text,
+         *     tags, and folder names; sort; and page through results.
+         */
+        get: operations["list_notes_api_v1_workspaces__workspace_id__notes_get"];
+        put?: never;
+        /** Create a note */
+        post: operations["create_note_api_v1_workspaces__workspace_id__notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Count notes per view */
+        get: operations["count_notes_api_v1_workspaces__workspace_id__notes_counts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/empty-trash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete every note in the trash
+         * @description Permanent: the notes, their links, and their attachments are deleted.
+         */
+        post: operations["empty_trash_api_v1_workspaces__workspace_id__notes_empty_trash_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/journal/{entry_date}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the journal entry for a day */
+        get: operations["get_journal_entry_api_v1_workspaces__workspace_id__notes_journal__entry_date__get"];
+        /**
+         * Open the journal entry for a day
+         * @description There is one entry per day: this returns it, creating an empty one (201) the first time
+         *     and restoring it if it was in the trash.
+         */
+        put: operations["open_journal_entry_api_v1_workspaces__workspace_id__notes_journal__entry_date__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/journal/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Open today's journal entry
+         * @description Today is the date in the user's time zone (Settings → Account), else in UTC.
+         */
+        put: operations["open_todays_journal_api_v1_workspaces__workspace_id__notes_journal_today_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a note */
+        get: operations["get_note_api_v1_workspaces__workspace_id__notes__note_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a note permanently
+         * @description Only notes in the trash can be deleted; move a note to the trash first.
+         */
+        delete: operations["delete_note_api_v1_workspaces__workspace_id__notes__note_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update a note */
+        patch: operations["update_note_api_v1_workspaces__workspace_id__notes__note_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record that a note was opened
+         * @description For the Recent view. Doesn't change `updated_at` or `revision`.
+         */
+        post: operations["open_note_api_v1_workspaces__workspace_id__notes__note_id__open_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/trash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move a note to the trash */
+        post: operations["trash_note_api_v1_workspaces__workspace_id__notes__note_id__trash_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore a note from the trash */
+        post: operations["restore_note_api_v1_workspaces__workspace_id__notes__note_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate a note
+         * @description A copy in the same folder, with the same content and tags.
+         */
+        post: operations["duplicate_note_api_v1_workspaces__workspace_id__notes__note_id__duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a note's links and backlinks */
+        get: operations["get_note_links_api_v1_workspaces__workspace_id__notes__note_id__links_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tag a note
+         * @description Uses the workspace's tag with this name, ignoring case and spacing, or creates one.
+         */
+        post: operations["add_note_tag_api_v1_workspaces__workspace_id__notes__note_id__tags_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/tags/{tag_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a tag from a note
+         * @description The tag itself stays, for other notes.
+         */
+        delete: operations["remove_note_tag_api_v1_workspaces__workspace_id__notes__note_id__tags__tag_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the tasks linked to a note */
+        get: operations["list_note_tasks_api_v1_workspaces__workspace_id__notes__note_id__tasks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Link a task to a note
+         * @description Idempotent. Returns the note's linked tasks.
+         */
+        put: operations["link_note_task_api_v1_workspaces__workspace_id__notes__note_id__tasks__task_id__put"];
+        post?: never;
+        /**
+         * Unlink a task from a note
+         * @description The task itself is unchanged.
+         */
+        delete: operations["unlink_note_task_api_v1_workspaces__workspace_id__notes__note_id__tasks__task_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List a note's attachments */
+        get: operations["list_attachments_api_v1_workspaces__workspace_id__notes__note_id__attachments_get"];
+        put?: never;
+        /**
+         * Attach a file to a note
+         * @description The request body is the file itself. Its type is decided from the file name and checked
+         *     against its contents; the declared content type is ignored.
+         */
+        post: operations["upload_attachment_api_v1_workspaces__workspace_id__notes__note_id__attachments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/attachments/{attachment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download an attachment
+         * @description Always a download (`Content-Disposition: attachment`), never rendered by the browser
+         *     as a page, with the type Orbit detected.
+         */
+        get: operations["download_attachment_api_v1_workspaces__workspace_id__notes__note_id__attachments__attachment_id__get"];
+        put?: never;
+        post?: never;
+        /** Remove an attachment */
+        delete: operations["delete_attachment_api_v1_workspaces__workspace_id__notes__note_id__attachments__attachment_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/note-folders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List note folders */
+        get: operations["list_folders_api_v1_workspaces__workspace_id__note_folders_get"];
+        put?: never;
+        /** Create a folder */
+        post: operations["create_folder_api_v1_workspaces__workspace_id__note_folders_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/note-folders/{folder_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a folder
+         * @description Notes are never deleted with a folder; `notes` says where they go.
+         */
+        delete: operations["delete_folder_api_v1_workspaces__workspace_id__note_folders__folder_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename or move a folder */
+        patch: operations["update_folder_api_v1_workspaces__workspace_id__note_folders__folder_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/note-tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List note tags
+         * @description By name, with how many active notes use each.
+         */
+        get: operations["list_tags_api_v1_workspaces__workspace_id__note_tags_get"];
+        put?: never;
+        /** Create a tag */
+        post: operations["create_tag_api_v1_workspaces__workspace_id__note_tags_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/note-tags/{tag_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a tag
+         * @description Removes the tag from every note; the notes stay.
+         */
+        delete: operations["delete_tag_api_v1_workspaces__workspace_id__note_tags__tag_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename a tag */
+        patch: operations["rename_tag_api_v1_workspaces__workspace_id__note_tags__tag_id__patch"];
+        trace?: never;
+    };
     "/api/v1/storage": {
         parameters: {
             query?: never;
@@ -673,6 +2385,505 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccountListResponse */
+        AccountListResponse: {
+            /**
+             * Accounts
+             * @description Active accounts first, then archived ones, each by name.
+             */
+            accounts: components["schemas"]["AccountResponse"][];
+            /**
+             * Totals
+             * @description Balances per currency, including archived accounts. Currencies are never added together.
+             */
+            totals: components["schemas"]["BalanceTotalsResponse"][];
+        };
+        /** AccountResponse */
+        AccountResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "bank" | "savings" | "cash" | "wallet" | "credit_card" | "investment" | "loan" | "other";
+            /**
+             * Account Class
+             * @description `liability` for credit cards and loans, whose balance is negative while money is owed; `asset` for everything else. Investment accounts hold what was moved into them, not market value.
+             * @enum {string}
+             */
+            account_class: "asset" | "liability";
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Opening Balance
+             * @description Minor units, signed like `balance`.
+             */
+            opening_balance: number;
+            /**
+             * Balance
+             * @description The opening balance plus every recorded transaction, in minor units. Positive is money held, negative is money owed.
+             */
+            balance: number;
+            /** Notes */
+            notes: string;
+            /**
+             * Archived
+             * @description Archived accounts take no new transactions.
+             */
+            archived: boolean;
+            /** Archived At */
+            archived_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AddNoteTagRequest */
+        AddNoteTagRequest: {
+            /**
+             * Name
+             * @description An existing tag's name (any case) or a new tag's.
+             */
+            name: string;
+        };
+        /** AssetListResponse */
+        AssetListResponse: {
+            /**
+             * Assets
+             * @description Current first, then archived, by name.
+             */
+            assets: components["schemas"]["AssetResponse"][];
+        };
+        /** AssetResponse */
+        AssetResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "gold" | "cash" | "property" | "vehicle" | "other";
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /** Purchase Date */
+            purchase_date: string | null;
+            /** Purchase Cost */
+            purchase_cost: number | null;
+            /** Linked Account Id */
+            linked_account_id: string | null;
+            /** Include In Net Worth */
+            include_in_net_worth: boolean;
+            /** Notes */
+            notes: string;
+            /** Archived */
+            archived: boolean;
+            /**
+             * Value
+             * @description The latest valuation, else the purchase cost, else 0.
+             */
+            value: number;
+            /** Valued On */
+            valued_on: string | null;
+            latest_valuation: components["schemas"]["AssetValuationResponse"] | null;
+            /**
+             * Freshness
+             * @description `current`; `stale` when the latest valuation is over a year old; `missing` without one.
+             * @enum {string}
+             */
+            freshness: "current" | "stale" | "missing" | "estimated";
+            /**
+             * Counted
+             * @description Whether net worth counts it.
+             */
+            counted: boolean;
+            /**
+             * Excluded Reason
+             * @description Why net worth leaves it out, such as being already counted in a linked account's balance.
+             */
+            excluded_reason: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AssetValuationListResponse */
+        AssetValuationListResponse: {
+            /**
+             * Valuations
+             * @description Newest first.
+             */
+            valuations: components["schemas"]["AssetValuationResponse"][];
+        };
+        /** AssetValuationResponse */
+        AssetValuationResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Asset Id
+             * Format: uuid
+             */
+            asset_id: string;
+            /**
+             * Valued On
+             * Format: date
+             */
+            valued_on: string;
+            /** Value */
+            value: number;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "manual" | "purchase" | "import" | "provider";
+            /** Notes */
+            notes: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** AttachmentListResponse */
+        AttachmentListResponse: {
+            /** Attachments */
+            attachments: components["schemas"]["AttachmentResponse"][];
+            /**
+             * Max Bytes
+             * @description The largest file this server accepts.
+             */
+            max_bytes: number;
+        };
+        /** AttachmentResponse */
+        AttachmentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Note Id
+             * Format: uuid
+             */
+            note_id: string;
+            /** Filename */
+            filename: string;
+            /**
+             * Content Type
+             * @description Decided by Orbit from the file, not the upload.
+             */
+            content_type: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** BalanceTotalsResponse */
+        BalanceTotalsResponse: {
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Assets
+             * @description The sum of asset accounts' balances, in minor units.
+             */
+            assets: number;
+            /**
+             * Liabilities
+             * @description What credit cards and loans owe, as a positive amount in minor units.
+             */
+            liabilities: number;
+        };
+        /** BudgetDetailResponse */
+        BudgetDetailResponse: {
+            budget: components["schemas"]["BudgetResponse"];
+            /**
+             * Periods
+             * @description Every period from the start through the current one, newest first.
+             */
+            periods: components["schemas"]["BudgetPeriodResponse"][];
+            /** Periods Closed */
+            periods_closed: number;
+            /**
+             * Periods Within
+             * @description Closed periods that stayed within their budget.
+             */
+            periods_within: number;
+        };
+        /** BudgetHistoryResponse */
+        BudgetHistoryResponse: {
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Months
+             * @description Oldest first, one per month.
+             */
+            months: components["schemas"]["BudgetMonthResponse"][];
+        };
+        /** BudgetListResponse */
+        BudgetListResponse: {
+            /**
+             * Budgets
+             * @description Active first, then upcoming, completed, and archived; each by name.
+             */
+            budgets: components["schemas"]["BudgetResponse"][];
+        };
+        /** BudgetMonthResponse */
+        BudgetMonthResponse: {
+            /**
+             * Month
+             * @description `YYYY-MM`.
+             */
+            month: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Total
+             * @description The month's total budget: its overall monthly budget, else the sum of its monthly category budgets; `null` without either.
+             */
+            total: number | null;
+            /** Basis */
+            basis: ("overall" | "categories") | null;
+            /**
+             * Spent
+             * @description The month's net spending, the dashboard's figure.
+             */
+            spent: number;
+            /** Remaining */
+            remaining: number | null;
+            /** Utilization Percent */
+            utilization_percent: string | null;
+            /** Status */
+            status: ("on_track" | "approaching" | "near" | "exceeded") | null;
+            /** Budgets Counted */
+            budgets_counted: number;
+            /**
+             * Budgets Within
+             * @description Monthly budgets not exceeded.
+             */
+            budgets_within: number;
+            /**
+             * Unbudgeted
+             * @description Net spending in categories without a category budget, when any category has one.
+             */
+            unbudgeted: number | null;
+            /**
+             * Categories
+             * @description Categories with spending or a budget, largest spending first.
+             */
+            categories: components["schemas"]["CategoryMonthResponse"][];
+            /**
+             * Budgets
+             * @description Budgets covering the month, each with its period overlapping it.
+             */
+            budgets: components["schemas"]["BudgetResponse"][];
+        };
+        /** BudgetPeriodResponse */
+        BudgetPeriodResponse: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /**
+             * Base Amount
+             * @description The budget's amount for this period.
+             */
+            base_amount: number;
+            /**
+             * Rollover Amount
+             * @description Carried from the previous period: positive for money left unspent, negative for overspending (with `full` rollover).
+             */
+            rollover_amount: number;
+            /**
+             * Available
+             * @description `base_amount` plus `rollover_amount`, never below zero: what can be spent.
+             */
+            available: number;
+            /**
+             * Spent
+             * @description Net spending (expenses minus refunds) in the period, from the ledger; never below zero.
+             */
+            spent: number;
+            /**
+             * Remaining
+             * @description `available` minus `spent`: negative when overspent.
+             */
+            remaining: number;
+            /**
+             * Utilization Percent
+             * @description `spent` as a percentage of `available`, two decimals; `null` when nothing is available.
+             */
+            utilization_percent: string | null;
+            /**
+             * Status
+             * @description `on_track` below 75%, `approaching` from 75%, `near` from 90%, `exceeded` once more than `available` is spent.
+             * @enum {string}
+             */
+            status: "on_track" | "approaching" | "near" | "exceeded";
+            /**
+             * Projected
+             * @description Spending at the period's end at its pace so far, once 7 days have passed; the final spending for a finished period; `null` otherwise.
+             */
+            projected: number | null;
+            /**
+             * Closed
+             * @description Finished, with its rollover passed on.
+             */
+            closed: boolean;
+            /** Closed At */
+            closed_at: string | null;
+            /**
+             * Spent At Close
+             * @description Spending recorded when the period closed, which decided its rollover. `spent` follows later corrections; this doesn't.
+             */
+            spent_at_close: number | null;
+        };
+        /** BudgetResponse */
+        BudgetResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "overall" | "category";
+            /** Category Id */
+            category_id: string | null;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Amount
+             * @description Each period's base amount from now on.
+             */
+            amount: number;
+            /**
+             * Period
+             * @enum {string}
+             */
+            period: "monthly" | "custom";
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /**
+             * End Date
+             * @description `null` for a monthly budget without end.
+             */
+            end_date: string | null;
+            /**
+             * Recurring
+             * @description A monthly budget covering more than one month.
+             */
+            recurring: boolean;
+            /**
+             * Rollover
+             * @enum {string}
+             */
+            rollover: "none" | "surplus" | "full";
+            /** Alerts Enabled */
+            alerts_enabled: boolean;
+            /** Alert Thresholds */
+            alert_thresholds: number[];
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "active" | "archived";
+            /**
+             * Status
+             * @description `upcoming` before its start, `completed` after its end, `archived`, or `active`.
+             * @enum {string}
+             */
+            status: "upcoming" | "active" | "completed" | "archived";
+            /** Notes */
+            notes: string;
+            /** Archived At */
+            archived_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** @description The current period (or, for the month overview, the one overlapping that month); the first or last one for a budget that hasn't started or has ended. */
+            current_period: components["schemas"]["BudgetPeriodResponse"] | null;
+        };
         /** BulkChangeResponse */
         BulkChangeResponse: {
             /**
@@ -680,6 +2891,617 @@ export interface components {
              * @description How many items changed.
              */
             count: number;
+        };
+        /** CategoryListResponse */
+        CategoryListResponse: {
+            /**
+             * Categories
+             * @description Income categories first, then expense categories, each by name.
+             */
+            categories: components["schemas"]["CategoryResponse"][];
+        };
+        /** CategoryMonthResponse */
+        CategoryMonthResponse: {
+            /**
+             * Category Id
+             * @description `null` for uncategorized spending.
+             */
+            category_id: string | null;
+            /**
+             * Spent
+             * @description Net spending; negative when refunds exceed it.
+             */
+            spent: number;
+            /**
+             * Budget
+             * @description The category budget's available amount, if any.
+             */
+            budget: number | null;
+        };
+        /** CategoryResponse */
+        CategoryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "income" | "expense";
+            /**
+             * Is Default
+             * @description A built-in category, which can be renamed but not deleted.
+             */
+            is_default: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** CategorySpendingResponse */
+        CategorySpendingResponse: {
+            /**
+             * Category Id
+             * @description `null` for uncategorized spending.
+             */
+            category_id: string | null;
+            /** Expenses */
+            expenses: number;
+            /** Refunds */
+            refunds: number;
+            /**
+             * Net
+             * @description `expenses` minus `refunds`.
+             */
+            net: number;
+        };
+        /**
+         * CloseDepositRequest
+         * @description Close at maturity or early. `amount` is everything received: above the principal is
+         *     interest income; below it, a loss.
+         */
+        CloseDepositRequest: {
+            /**
+             * Closed On
+             * Format: date
+             */
+            closed_on: string;
+            /**
+             * Amount
+             * @description Minor units.
+             */
+            amount: number;
+            /**
+             * Settlement
+             * @default account
+             * @enum {string}
+             */
+            settlement: "investment_account" | "account";
+            /** Cash Account Id */
+            cash_account_id?: string | null;
+        };
+        /** CommitmentSummaryResponse */
+        CommitmentSummaryResponse: {
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Today
+             * Format: date
+             */
+            today: string;
+            /**
+             * Loans Outstanding
+             * @description Outstanding principal on active loans.
+             */
+            loans_outstanding: number;
+            /** Active Loans */
+            active_loans: number;
+            /**
+             * Monthly Emi
+             * @description Active loans' EMIs as a monthly average.
+             */
+            monthly_emi: number;
+            /** Monthly Subscriptions */
+            monthly_subscriptions: number;
+            /** Annual Subscriptions */
+            annual_subscriptions: number;
+            /** Active Subscriptions */
+            active_subscriptions: number;
+            /** @description Expected bills due in the next 30 days. */
+            upcoming_bills: components["schemas"]["TotalResponse"];
+            /** @description Expected payments of any kind due from today to the end of the month. */
+            due_this_month: components["schemas"]["TotalResponse"];
+            overdue: components["schemas"]["TotalResponse"];
+        };
+        /** ContributionListResponse */
+        ContributionListResponse: {
+            /**
+             * Contributions
+             * @description Newest first.
+             */
+            contributions: components["schemas"]["ContributionResponse"][];
+        };
+        /** ContributionResponse */
+        ContributionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Goal Id
+             * Format: uuid
+             */
+            goal_id: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "contribution" | "withdrawal";
+            /** Amount */
+            amount: number;
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /**
+             * Transaction Id
+             * @description The ledger transfer that moved the money; `null` for an allocation.
+             */
+            transaction_id: string | null;
+            /** Notes */
+            notes: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** CopyBudgetsRequest */
+        CopyBudgetsRequest: {
+            /**
+             * From Month
+             * @description `YYYY-MM`: the month whose budgets are copied.
+             */
+            from_month: string;
+            /**
+             * To Month
+             * @description `YYYY-MM`: the month they're copied into.
+             */
+            to_month: string;
+        };
+        /** CopyBudgetsResponse */
+        CopyBudgetsResponse: {
+            /**
+             * Created
+             * @description New one-month budgets in `to_month`.
+             */
+            created: components["schemas"]["BudgetResponse"][];
+            /**
+             * Skipped
+             * @description Budgets not copied because `to_month` is already covered (a recurring budget, or one added there).
+             */
+            skipped: string[];
+        };
+        /** CreateAccountRequest */
+        CreateAccountRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Type
+             * @description Loan accounts are created with a loan, not on their own.
+             * @enum {string}
+             */
+            type: "bank" | "savings" | "cash" | "wallet" | "credit_card" | "investment" | "other";
+            /**
+             * Currency
+             * @default INR
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Opening Balance
+             * @description Minor units. Positive is money held, negative is money owed: a credit card with ₹500 outstanding is -50000.
+             * @default 0
+             */
+            opening_balance: number;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
+        /**
+         * CreateAssetRequest
+         * @description Track an asset valued by hand. `current_value` records its first valuation (on
+         *     `valued_on`, default today). Names are unique per workspace.
+         */
+        CreateAssetRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "gold" | "cash" | "property" | "vehicle" | "other";
+            /**
+             * Currency
+             * @default INR
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /** Purchase Date */
+            purchase_date?: string | null;
+            /** Purchase Cost */
+            purchase_cost?: number | null;
+            /** Current Value */
+            current_value?: number | null;
+            /** Valued On */
+            valued_on?: string | null;
+            /**
+             * Linked Account Id
+             * @description A related account. An asset account (bank, cash, investment) means the asset is already counted in its balance, so net worth leaves the asset out.
+             */
+            linked_account_id?: string | null;
+            /**
+             * Include In Net Worth
+             * @default true
+             */
+            include_in_net_worth: boolean;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
+        /**
+         * CreateBudgetRequest
+         * @description Limit net spending, overall or in one expense category. A monthly budget runs from the
+         *     first of `start_date`'s month, every month until `end_date` (a month's last day) or without
+         *     end; a custom one covers `start_date` to `end_date` once.
+         */
+        CreateBudgetRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "overall" | "category";
+            /**
+             * Category Id
+             * @description Required for `category` budgets: an expense category.
+             */
+            category_id?: string | null;
+            /**
+             * Currency
+             * @default INR
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Amount
+             * @description Minor units, always positive: ₹12.50 is 1250.
+             */
+            amount: number;
+            /**
+             * Period
+             * @default monthly
+             * @enum {string}
+             */
+            period: "monthly" | "custom";
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** End Date */
+            end_date?: string | null;
+            /**
+             * Rollover
+             * @description Monthly budgets only. `surplus` carries unspent money into the next month; `full` also carries overspending, which reduces the next month (never below zero).
+             * @default none
+             * @enum {string}
+             */
+            rollover: "none" | "surplus" | "full";
+            /**
+             * Alerts Enabled
+             * @default true
+             */
+            alerts_enabled: boolean;
+            /**
+             * Alert Thresholds
+             * @description Whole percentages of the period's budget, 1 to 200; an in-app notification is sent the first time each is reached in a period.
+             */
+            alert_thresholds?: number[];
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
+        /** CreateCategoryRequest */
+        CreateCategoryRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "income" | "expense";
+        };
+        /**
+         * CreateContributionRequest
+         * @description Put money into a goal, or take it out.
+         *
+         *     - `allocate`: earmark money you already hold (or release it); nothing is recorded in the
+         *       ledger. Needs `amount`.
+         *     - `transfer`: Orbit records a transfer from `account_id` into the goal's linked account (or
+         *       out of it, for a withdrawal). Needs `amount` and `account_id`.
+         *     - `link`: record an existing transfer into (or out of) the linked account. Needs
+         *       `transaction_id`; its amount and date are used.
+         */
+        CreateContributionRequest: {
+            /**
+             * Type
+             * @default contribution
+             * @enum {string}
+             */
+            type: "contribution" | "withdrawal";
+            /**
+             * Mode
+             * @default allocate
+             * @enum {string}
+             */
+            mode: "allocate" | "transfer" | "link";
+            /** Amount */
+            amount?: number | null;
+            /**
+             * Occurred On
+             * @description Defaults to today in your time zone.
+             */
+            occurred_on?: string | null;
+            /** Account Id */
+            account_id?: string | null;
+            /** Transaction Id */
+            transaction_id?: string | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
+        /**
+         * CreateDepositRequest
+         * @description Open a fixed deposit (`amount`: the principal) or a recurring deposit (`amount`: the
+         *     monthly installment). The first deposit is recorded on `start_date`, settled as given.
+         */
+        CreateDepositRequest: {
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "fixed" | "recurring";
+            /** Name */
+            name: string;
+            /**
+             * Institution
+             * @default
+             */
+            institution: string;
+            /**
+             * Interest Rate Bps
+             * @description Annual interest rate in basis points: 7.1% is 710.
+             */
+            interest_rate_bps: number;
+            /**
+             * Compounding
+             * @default quarterly
+             * @enum {string}
+             */
+            compounding: "monthly" | "quarterly" | "half_yearly" | "yearly" | "simple";
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /**
+             * Maturity Date
+             * Format: date
+             */
+            maturity_date: string;
+            /**
+             * Amount
+             * @description Minor units, always positive: ₹12.50 is 1250.
+             */
+            amount: number;
+            /**
+             * Settlement
+             * @default account
+             * @enum {string}
+             */
+            settlement: "investment_account" | "account" | "none";
+            /** Cash Account Id */
+            cash_account_id?: string | null;
+            /** Stated Maturity Amount */
+            stated_maturity_amount?: number | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            /** @description Remind before the maturity date. */
+            reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
+        };
+        /** CreateFolderRequest */
+        CreateFolderRequest: {
+            /** Name */
+            name: string;
+            /** Parent Id */
+            parent_id?: string | null;
+        };
+        /** CreateGoalRequest */
+        CreateGoalRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Category
+             * @default other
+             * @enum {string}
+             */
+            category: "emergency_fund" | "vehicle" | "travel" | "home" | "electronics" | "education" | "wedding" | "other";
+            /**
+             * Priority
+             * @default medium
+             * @enum {string}
+             */
+            priority: "low" | "medium" | "high";
+            /**
+             * Currency
+             * @default INR
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Target Amount
+             * @description Minor units, always positive: ₹12.50 is 1250.
+             */
+            target_amount: number;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Target Date */
+            target_date?: string | null;
+            /**
+             * Account Id
+             * @description Where the savings are kept: a bank, savings, cash, wallet, or other account in the goal's currency. Omit to track the goal on its own.
+             */
+            account_id?: string | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
+        /**
+         * CreateHoldingRequest
+         * @description Add a mutual fund, stock, or ETF to an investment account. Units come from its buys; one
+         *     bought before Orbit is recorded as a buy with settlement `none`.
+         */
+        CreateHoldingRequest: {
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "mutual_fund" | "stock" | "etf";
+            /** Name */
+            name: string;
+            /**
+             * Symbol
+             * @default
+             */
+            symbol: string;
+            /**
+             * Exchange
+             * @default
+             */
+            exchange: string;
+            /**
+             * Isin
+             * @default
+             */
+            isin: string;
+            /**
+             * Issuer
+             * @default
+             */
+            issuer: string;
+            /**
+             * Category
+             * @default
+             */
+            category: string;
+            /**
+             * Folio
+             * @default
+             */
+            folio: string;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
+        /**
+         * CreateInvestmentAccountRequest
+         * @description Track investments in an account: give `account_id` to use an existing finance account of
+         *     type `investment` (its history carries over), or `name` and `currency` for a new one.
+         */
+        CreateInvestmentAccountRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "mutual_fund" | "brokerage" | "deposit" | "other";
+            /**
+             * Provider
+             * @description The platform, broker, or bank.
+             * @default
+             */
+            provider: string;
+            /** Linked Account Id */
+            linked_account_id?: string | null;
+            /** Account Id */
+            account_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /**
+             * Currency
+             * @default INR
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
         };
         /** CreateItemRequest */
         CreateItemRequest: {
@@ -694,6 +3516,192 @@ export interface components {
              * @default
              */
             notes: string;
+        };
+        /**
+         * CreateLoanRequest
+         * @description Track a loan. Orbit creates a `loan` account for it whose opening balance is the
+         *     outstanding principal (owed), and generates the installments still ahead.
+         */
+        CreateLoanRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Lender
+             * @default
+             */
+            lender: string;
+            /**
+             * Loan Type
+             * @enum {string}
+             */
+            loan_type: "personal" | "vehicle" | "home" | "education" | "other";
+            /**
+             * Currency
+             * @default INR
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Principal
+             * @description The amount originally borrowed.
+             */
+            principal: number;
+            /**
+             * Outstanding Principal
+             * @description For a loan already being repaid: what is still owed. Defaults to `principal`.
+             */
+            outstanding_principal?: number | null;
+            /**
+             * Interest Rate Bps
+             * @description Annual interest rate in basis points: 8.5% is 850.
+             */
+            interest_rate_bps: number;
+            /**
+             * Interest Method
+             * @description `reducing`: interest on the outstanding balance (most loans). `flat`: interest on the original principal for the whole tenure.
+             * @default reducing
+             * @enum {string}
+             */
+            interest_method: "reducing" | "flat";
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /**
+             * Tenure Months
+             * @description The loan's term in months.
+             */
+            tenure_months: number;
+            /**
+             * Emi Frequency
+             * @default monthly
+             * @enum {string}
+             */
+            emi_frequency: "monthly" | "quarterly" | "half_yearly" | "yearly";
+            /**
+             * First Payment Date
+             * Format: date
+             */
+            first_payment_date: string;
+            /**
+             * Next Payment Date
+             * @description For a loan already being repaid: the next installment's date. Defaults to `first_payment_date`.
+             */
+            next_payment_date?: string | null;
+            /**
+             * Emi Amount
+             * @description The lender's EMI. Defaults to the standard EMI for the terms.
+             */
+            emi_amount?: number | null;
+            /** Payment Account Id */
+            payment_account_id?: string | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
+        };
+        /**
+         * CreateNoteRequest
+         * @description A new note. Give `content` (an editor document) or `text` (plain text, one paragraph per
+         *     line, for quick capture), or neither for an empty note.
+         */
+        CreateNoteRequest: {
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+            /** Content */
+            content?: {
+                [key: string]: components["schemas"]["JsonValue"];
+            } | null;
+            /** Text */
+            text?: string | null;
+            /**
+             * Note Type
+             * @default note
+             * @enum {string}
+             */
+            note_type: "note" | "quick";
+            /** Folder Id */
+            folder_id?: string | null;
+            /** Tags */
+            tags?: string[];
+        };
+        /**
+         * CreateRecurringPaymentRequest
+         * @description Track a subscription or a recurring bill. Its due dates repeat from `next_due_date`.
+         */
+        CreateRecurringPaymentRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "subscription" | "bill";
+            /** Name */
+            name: string;
+            /**
+             * Provider
+             * @default
+             */
+            provider: string;
+            /**
+             * Category Id
+             * @description An expense category.
+             */
+            category_id?: string | null;
+            /** Account Id */
+            account_id?: string | null;
+            /**
+             * Amount
+             * @description Minor units, always positive: ₹12.50 is 1250.
+             */
+            amount: number;
+            /**
+             * Currency
+             * @default INR
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Amount Varies
+             * @description For bills like electricity: `amount` is an estimate.
+             * @default false
+             */
+            amount_varies: boolean;
+            /**
+             * Frequency
+             * @enum {string}
+             */
+            frequency: "weekly" | "monthly" | "quarterly" | "half_yearly" | "yearly";
+            /**
+             * Start Date
+             * @description When it began. Defaults to `next_due_date`.
+             */
+            start_date?: string | null;
+            /**
+             * Next Due Date
+             * Format: date
+             */
+            next_due_date: string;
+            /** End Date */
+            end_date?: string | null;
+            /** Trial Ends On */
+            trial_ends_on?: string | null;
+            /**
+             * Auto Renew
+             * @default true
+             */
+            auto_renew: boolean;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
         };
         /** CreateReminderRequest */
         CreateReminderRequest: {
@@ -731,6 +3739,39 @@ export interface components {
             timezone?: string | null;
             recurrence?: components["schemas"]["RecurrenceModel"] | null;
         };
+        /** CreateSipPlanRequest */
+        CreateSipPlanRequest: {
+            /**
+             * Holding Id
+             * Format: uuid
+             */
+            holding_id: string;
+            /**
+             * Amount
+             * @description Minor units, always positive: ₹12.50 is 1250.
+             */
+            amount: number;
+            /**
+             * Frequency
+             * @default monthly
+             * @enum {string}
+             */
+            frequency: "weekly" | "monthly" | "quarterly" | "half_yearly" | "yearly";
+            /**
+             * Next Due Date
+             * Format: date
+             */
+            next_due_date: string;
+            /** End Date */
+            end_date?: string | null;
+            /** Funding Account Id */
+            funding_account_id?: string | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
         /** CreateTaskRequest */
         CreateTaskRequest: {
             /** Title */
@@ -748,6 +3789,78 @@ export interface components {
             priority: "none" | "low" | "medium" | "high";
             /** Due Date */
             due_date?: string | null;
+        };
+        /**
+         * CreateTransactionRequest
+         * @description Record income, an expense, a refund, or a transfer. A transfer needs `to_account_id` and
+         *     has no category; the others have no `to_account_id`. The currency is the account's.
+         */
+        CreateTransactionRequest: {
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "income" | "expense" | "refund" | "transfer";
+            /**
+             * Amount
+             * @description Minor units, always positive: ₹12.50 is 1250.
+             */
+            amount: number;
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /** Description */
+            description: string;
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** To Account Id */
+            to_account_id?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
+        /**
+         * CreateTransferRequest
+         * @description Move money between two accounts in the same currency, such as paying a credit-card bill
+         *     or putting money into an investment account. Never income or spending.
+         */
+        CreateTransferRequest: {
+            /**
+             * Amount
+             * @description Minor units, always positive: ₹12.50 is 1250.
+             */
+            amount: number;
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /** Description */
+            description: string;
+            /**
+             * From Account Id
+             * Format: uuid
+             */
+            from_account_id: string;
+            /**
+             * To Account Id
+             * Format: uuid
+             */
+            to_account_id: string;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
         };
         /** CreateWorkspaceRequest */
         CreateWorkspaceRequest: {
@@ -778,7 +3891,7 @@ export interface components {
              * Id
              * @enum {string}
              */
-            id: "workspace" | "status" | "tasks" | "reminders" | "shopping" | "modules";
+            id: "workspace" | "status" | "tasks" | "reminders" | "shopping" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "modules";
             /**
              * Size
              * @description `half` widgets sit side by side on wide screens.
@@ -803,6 +3916,377 @@ export interface components {
              * @enum {string}
              */
             storage_mode: "local" | "cloud";
+        };
+        /**
+         * DepositContributionRequest
+         * @description Record money put into the deposit: a recurring deposit's installment or a top-up.
+         */
+        DepositContributionRequest: {
+            /**
+             * Trade Date
+             * Format: date
+             */
+            trade_date: string;
+            /**
+             * Amount
+             * @description Minor units, always positive: ₹12.50 is 1250.
+             */
+            amount: number;
+            /**
+             * Settlement
+             * @default account
+             * @enum {string}
+             */
+            settlement: "investment_account" | "account" | "none";
+            /** Cash Account Id */
+            cash_account_id?: string | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
+        /** DepositListResponse */
+        DepositListResponse: {
+            /**
+             * Deposits
+             * @description Active first, then by maturity date.
+             */
+            deposits: components["schemas"]["DepositResponse"][];
+        };
+        /** DepositResponse */
+        DepositResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "fixed" | "recurring";
+            /** Name */
+            name: string;
+            /** Institution */
+            institution: string;
+            /** Interest Rate Bps */
+            interest_rate_bps: number;
+            /**
+             * Compounding
+             * @enum {string}
+             */
+            compounding: "monthly" | "quarterly" | "half_yearly" | "yearly" | "simple";
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /**
+             * Maturity Date
+             * Format: date
+             */
+            maturity_date: string;
+            /**
+             * Installment Amount
+             * @description A recurring deposit's installment.
+             */
+            installment_amount: number | null;
+            /**
+             * Stated Maturity Amount
+             * @description The maturity amount the bank stated, if entered.
+             */
+            stated_maturity_amount: number | null;
+            /**
+             * Status
+             * @description `active`; `matured` (closed on or after maturity); `closed` (early).
+             * @enum {string}
+             */
+            status: "active" | "matured" | "closed";
+            /** Closed On */
+            closed_on: string | null;
+            /**
+             * Principal
+             * @description Money deposited minus principal withdrawn.
+             */
+            principal: number;
+            /** Interest Received */
+            interest_received: number;
+            /**
+             * Estimated Value
+             * @description Accrued value estimated from the rate and compounding. An estimate, not a guarantee.
+             */
+            estimated_value: number;
+            /** Value */
+            value: number;
+            /**
+             * Valued On
+             * Format: date
+             */
+            valued_on: string;
+            /**
+             * Value Source
+             * @description `estimate`, `manual` (entered by hand), or `ledger` once closed.
+             * @enum {string}
+             */
+            value_source: "ledger" | "market" | "manual" | "estimate" | "cost";
+            /**
+             * Freshness
+             * @enum {string}
+             */
+            freshness: "current" | "stale" | "missing" | "estimated";
+            /** Manual Value */
+            manual_value: number | null;
+            /** Manual Valued On */
+            manual_valued_on: string | null;
+            /**
+             * Projected Maturity Amount
+             * @description Estimated from the terms; a recurring deposit assumes every installment is paid on time.
+             */
+            projected_maturity_amount: number;
+            /** Projected Interest */
+            projected_interest: number;
+            /** Projected Contributions */
+            projected_contributions: number;
+            reminder: components["schemas"]["ReminderSettingsResponse"] | null;
+            /** Notes */
+            notes: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * DepositValueRequest
+         * @description Set the deposit's value by hand (it replaces the estimate), or `value: null` to clear.
+         */
+        DepositValueRequest: {
+            /** Value */
+            value: number | null;
+            /** Valued On */
+            valued_on?: string | null;
+        };
+        /** EmptyTrashResponse */
+        EmptyTrashResponse: {
+            /** Deleted */
+            deleted: number;
+        };
+        /**
+         * FixedCommitmentsResponse
+         * @description Commitments due in the month: everything scheduled (except skipped) is planned; what
+         *     was paid is actual. An EMI's principal is a transfer to the loan, not spending; only its
+         *     interest is.
+         */
+        FixedCommitmentsResponse: {
+            total: components["schemas"]["LineResponse"];
+            emi: components["schemas"]["LineResponse"];
+            /** @description Bills in the built-in Rent category. */
+            rent: components["schemas"]["LineResponse"];
+            subscriptions: components["schemas"]["LineResponse"];
+            bills: components["schemas"]["LineResponse"];
+            /** Planned Interest */
+            planned_interest: number;
+        };
+        /** FlowsResponse */
+        FlowsResponse: {
+            /**
+             * Invested
+             * @description Moved into investment accounts from other accounts.
+             */
+            invested: number;
+            /**
+             * Divested
+             * @description Moved out of investment accounts to other accounts.
+             */
+            divested: number;
+            /**
+             * Loan Principal
+             * @description Moved into loan accounts: principal repaid.
+             */
+            loan_principal: number;
+            /**
+             * Commitment Expenses
+             * @description Expenses paying subscriptions, bills, and EMI interest.
+             */
+            commitment_expenses: number;
+        };
+        /** FolderListResponse */
+        FolderListResponse: {
+            /**
+             * Folders
+             * @description Every folder, by name; build the tree.
+             */
+            folders: components["schemas"]["FolderResponse"][];
+        };
+        /** FolderResponse */
+        FolderResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Parent Id */
+            parent_id: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Note Count
+             * @description Active notes directly in the folder.
+             */
+            note_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** GoalListResponse */
+        GoalListResponse: {
+            /**
+             * Goals
+             * @description Active, paused, completed, then cancelled; by priority and target date.
+             */
+            goals: components["schemas"]["GoalResponse"][];
+        };
+        /** GoalResponse */
+        GoalResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "emergency_fund" | "vehicle" | "travel" | "home" | "electronics" | "education" | "wedding" | "other";
+            /**
+             * Priority
+             * @enum {string}
+             */
+            priority: "low" | "medium" | "high";
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /** Target Amount */
+            target_amount: number;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Target Date */
+            target_date: string | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "active" | "paused" | "completed" | "cancelled";
+            /** Account Id */
+            account_id: string | null;
+            /** Notes */
+            notes: string;
+            /** Completed At */
+            completed_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Saved
+             * @description Contributions minus withdrawals: allocated to the goal.
+             */
+            saved: number;
+            /**
+             * Remaining
+             * @description What is left to reach the target, never below zero.
+             */
+            remaining: number;
+            /**
+             * Progress Percent
+             * @description `saved` over the target, two decimals, ≤ 100.
+             */
+            progress_percent: string;
+            /** Reached */
+            reached: boolean;
+            /**
+             * Suggested Monthly
+             * @description What to save each month, from this month through the target date's, to reach the target (rounded up); everything remaining once the date has passed. `null` without a target date.
+             */
+            suggested_monthly: number | null;
+            /** Months Left */
+            months_left: number | null;
+            /**
+             * This Month
+             * @description Net contributions this month.
+             */
+            this_month: number;
+            /**
+             * Available
+             * @description What can be withdrawn: `saved`, but no more than the linked account holds.
+             */
+            available: number;
+            account: components["schemas"]["LinkedAccountResponse"] | null;
+        };
+        /** GroupTotalResponse */
+        GroupTotalResponse: {
+            /**
+             * Key
+             * @enum {string}
+             */
+            key: "cash" | "investment_cash" | "mutual_funds" | "stocks" | "etfs" | "deposits" | "investments_at_cost" | "other_assets" | "credit_cards" | "loans";
+            /** Label */
+            label: string;
+            /**
+             * Side
+             * @enum {string}
+             */
+            side: "asset" | "liability";
+            /** Value */
+            value: number;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -831,6 +4315,519 @@ export interface components {
              * @description Version of the running API.
              */
             version: string;
+        };
+        /** HoldingListResponse */
+        HoldingListResponse: {
+            /**
+             * Holdings
+             * @description By name.
+             */
+            holdings: components["schemas"]["HoldingResponse"][];
+        };
+        /** HoldingResponse */
+        HoldingResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "mutual_fund" | "stock" | "etf";
+            /** Name */
+            name: string;
+            /**
+             * Symbol
+             * @description A ticker, or a mutual fund's scheme code.
+             */
+            symbol: string;
+            /** Exchange */
+            exchange: string;
+            /** Isin */
+            isin: string;
+            /**
+             * Issuer
+             * @description The AMC or fund house for mutual funds.
+             */
+            issuer: string;
+            /**
+             * Category
+             * @description The scheme category, such as Flexi cap.
+             */
+            category: string;
+            /** Folio */
+            folio: string;
+            /** Notes */
+            notes: string;
+            /**
+             * Quantity
+             * @description Units held, from the transactions (FIFO).
+             */
+            quantity: string;
+            /**
+             * Cost
+             * @description Cost basis of the units held (FIFO), excluding fees.
+             */
+            cost: number;
+            /**
+             * Average Cost
+             * @description `cost / quantity` per unit; `null` if none.
+             */
+            average_cost: string | null;
+            /**
+             * Invested Total
+             * @description Everything ever paid for buys.
+             */
+            invested_total: number;
+            /** @description The latest price on or before today. */
+            price: components["schemas"]["PriceResponse"] | null;
+            /**
+             * Market Value
+             * @description `quantity * price`; `null` without a price.
+             */
+            market_value: number | null;
+            /**
+             * Value
+             * @description `market_value`, or `cost` when there is no price.
+             */
+            value: number;
+            /** Unrealized Gain */
+            unrealized_gain: number | null;
+            /** Realized Gain */
+            realized_gain: number;
+            /** Dividends */
+            dividends: number;
+            /** Fees */
+            fees: number;
+            /**
+             * Freshness
+             * @description `current`; `stale` when the price is over 7 days old; `missing` without a price (valued at cost).
+             * @enum {string}
+             */
+            freshness: "current" | "stale" | "missing" | "estimated";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** InstallmentResponse */
+        InstallmentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Loan Id
+             * Format: uuid
+             */
+            loan_id: string;
+            /**
+             * Sequence
+             * @description The installment's number within the loan's tenure.
+             */
+            sequence: number;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /**
+             * Amount
+             * @description `principal` plus `interest`.
+             */
+            amount: number;
+            /**
+             * Principal
+             * @description Repays the loan: a transfer, never spending.
+             */
+            principal: number;
+            /**
+             * Interest
+             * @description The cost of borrowing: an expense.
+             */
+            interest: number;
+            /**
+             * Balance After
+             * @description Principal still owed after this installment: projected from the ledger while scheduled, as recorded once paid.
+             */
+            balance_after: number;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "scheduled" | "paid" | "skipped";
+            /**
+             * Status
+             * @description `state` as of `today`: upcoming, due, or overdue.
+             * @enum {string}
+             */
+            status: "upcoming" | "due" | "overdue" | "paid" | "skipped";
+            /** Paid On */
+            paid_on: string | null;
+            /** Principal Transaction Id */
+            principal_transaction_id: string | null;
+            /** Interest Transaction Id */
+            interest_transaction_id: string | null;
+            /**
+             * Adjusted
+             * @description Edited by hand rather than generated.
+             */
+            adjusted: boolean;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** InvestmentAccountListResponse */
+        InvestmentAccountListResponse: {
+            /** Accounts */
+            accounts: components["schemas"]["InvestmentAccountResponse"][];
+        };
+        /** InvestmentAccountResponse */
+        InvestmentAccountResponse: {
+            /**
+             * Account Id
+             * Format: uuid
+             * @description The finance account (type `investment`).
+             */
+            account_id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "mutual_fund" | "brokerage" | "deposit" | "other";
+            /** Provider */
+            provider: string;
+            /**
+             * Linked Account Id
+             * @description The account money usually comes from and returns to.
+             */
+            linked_account_id: string | null;
+            /** Notes */
+            notes: string;
+            /** Archived */
+            archived: boolean;
+            /**
+             * Ledger Balance
+             * @description The finance account's balance: money moved in, plus income, minus fees and money moved out. Includes what was spent on holdings and deposits.
+             */
+            ledger_balance: number;
+            /**
+             * Cash
+             * @description Uninvested cash: the ledger balance net of positions.
+             */
+            cash: number;
+            /** Holdings Value */
+            holdings_value: number;
+            /** Deposits Value */
+            deposits_value: number;
+            /**
+             * Value
+             * @description `cash + holdings_value + deposits_value`.
+             */
+            value: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** InvestmentTransactionListResponse */
+        InvestmentTransactionListResponse: {
+            /**
+             * Transactions
+             * @description Newest first.
+             */
+            transactions: components["schemas"]["InvestmentTransactionResponse"][];
+            /** Total */
+            total: number;
+        };
+        /** InvestmentTransactionResponse */
+        InvestmentTransactionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "buy" | "sell" | "dividend" | "interest" | "fee" | "deposit" | "withdrawal";
+            /**
+             * Trade Date
+             * Format: date
+             */
+            trade_date: string;
+            /**
+             * Amount
+             * @description Buy: cost. Sell: gross proceeds. Dividend, interest: income. Fee: the charge. Deposit, withdrawal: the money moved.
+             */
+            amount: number;
+            /**
+             * Fees
+             * @description Charges on a buy or sale, recorded as a ledger expense.
+             */
+            fees: number;
+            /** Holding Id */
+            holding_id: string | null;
+            /** Deposit Id */
+            deposit_id: string | null;
+            /** Sip Plan Id */
+            sip_plan_id: string | null;
+            /** Sip Due Date */
+            sip_due_date: string | null;
+            /** Quantity */
+            quantity: string | null;
+            /**
+             * Unit Price
+             * @description `amount / quantity` for buys and sales.
+             */
+            unit_price: string | null;
+            /** Plan */
+            plan: ("lump_sum" | "sip") | null;
+            /**
+             * Settlement
+             * @enum {string}
+             */
+            settlement: "investment_account" | "account" | "none";
+            /** Cash Account Id */
+            cash_account_id: string | null;
+            /**
+             * Cash Transaction Id
+             * @description The ledger transaction recording its cash: a transfer, income, or expense.
+             */
+            cash_transaction_id: string | null;
+            /** Fee Transaction Id */
+            fee_transaction_id: string | null;
+            /** Notes */
+            notes: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        JsonValue: unknown;
+        /** LineResponse */
+        LineResponse: {
+            /**
+             * Planned
+             * @description `null` when nothing is planned for the line.
+             */
+            planned: number | null;
+            /** Actual */
+            actual: number;
+        };
+        /** LinkedAccountResponse */
+        LinkedAccountResponse: {
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Balance
+             * @description The account's ledger balance.
+             */
+            balance: number;
+            /**
+             * Allocated
+             * @description Saved across every active or paused goal kept in this account. More than `balance` means the goals count on money the account doesn't hold.
+             */
+            allocated: number;
+        };
+        /** LoanDetailResponse */
+        LoanDetailResponse: {
+            loan: components["schemas"]["LoanResponse"];
+            /**
+             * Installments
+             * @description By due date.
+             */
+            installments: components["schemas"]["InstallmentResponse"][];
+        };
+        /** LoanListResponse */
+        LoanListResponse: {
+            /**
+             * Loans
+             * @description Active first, then closed, then archived, each by name.
+             */
+            loans: components["schemas"]["LoanResponse"][];
+        };
+        /** LoanResponse */
+        LoanResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /**
+             * Account Id
+             * Format: uuid
+             * @description The loan's liability account. Its balance is the outstanding principal.
+             */
+            account_id: string;
+            /**
+             * Payment Account Id
+             * @description The account EMIs are usually paid from.
+             */
+            payment_account_id: string | null;
+            /** Name */
+            name: string;
+            /** Lender */
+            lender: string;
+            /**
+             * Loan Type
+             * @enum {string}
+             */
+            loan_type: "personal" | "vehicle" | "home" | "education" | "other";
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Principal
+             * @description The amount originally borrowed.
+             */
+            principal: number;
+            /**
+             * Outstanding Principal
+             * @description What the loan account's balance says is still owed, derived from the ledger. Never stored.
+             */
+            outstanding_principal: number;
+            /**
+             * Repaid Principal
+             * @description `principal` minus `outstanding_principal`.
+             */
+            repaid_principal: number;
+            /** Interest Rate Bps */
+            interest_rate_bps: number;
+            /**
+             * Interest Method
+             * @enum {string}
+             */
+            interest_method: "reducing" | "flat";
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Tenure Months */
+            tenure_months: number;
+            /** Emi Amount */
+            emi_amount: number;
+            /**
+             * Emi Frequency
+             * @enum {string}
+             */
+            emi_frequency: "monthly" | "quarterly" | "half_yearly" | "yearly";
+            /**
+             * First Payment Date
+             * Format: date
+             */
+            first_payment_date: string;
+            /**
+             * Next Payment Date
+             * @description The earliest scheduled installment.
+             */
+            next_payment_date: string | null;
+            /** Next Payment Amount */
+            next_payment_amount: number | null;
+            /** Paid Installments */
+            paid_installments: number;
+            /**
+             * Total Installments
+             * @description Installments Orbit tracks: those still ahead when the loan was added, plus any added by rescheduling.
+             */
+            total_installments: number;
+            /**
+             * Remaining Interest
+             * @description Interest on the scheduled installments.
+             */
+            remaining_interest: number;
+            /** Notes */
+            notes: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "closed" | "archived";
+            reminder: components["schemas"]["ReminderSettingsResponse"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** LocalAuthConfig */
         LocalAuthConfig: {
@@ -887,6 +4884,387 @@ export interface components {
              * @description How many notifications were marked read.
              */
             count: number;
+        };
+        /** MonthCashFlowResponse */
+        MonthCashFlowResponse: {
+            /** Income */
+            income: number;
+            /**
+             * Expenses
+             * @description Spending before refunds.
+             */
+            expenses: number;
+            /** Refunds */
+            refunds: number;
+            /**
+             * Net Expenses
+             * @description `expenses` minus `refunds`.
+             */
+            net_expenses: number;
+            /**
+             * Net
+             * @description Net cash flow: `income` minus `net_expenses`. Negative when more was spent than earned. Transfers never count.
+             */
+            net: number;
+            /**
+             * Transactions
+             * @description Income, expense, and refund transactions counted.
+             */
+            transactions: number;
+            /**
+             * Month
+             * @description `YYYY-MM`.
+             */
+            month: string;
+        };
+        /** MonthlyPlanResponse */
+        MonthlyPlanResponse: {
+            /** Month */
+            month: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /** Expected Income */
+            expected_income: number;
+            /** Notes */
+            notes: string;
+        };
+        /** MonthlySummaryResponse */
+        MonthlySummaryResponse: {
+            /** Income */
+            income: number;
+            /**
+             * Expenses
+             * @description Spending before refunds.
+             */
+            expenses: number;
+            /** Refunds */
+            refunds: number;
+            /**
+             * Net Expenses
+             * @description `expenses` minus `refunds`.
+             */
+            net_expenses: number;
+            /**
+             * Net
+             * @description Net cash flow: `income` minus `net_expenses`. Negative when more was spent than earned. Transfers never count.
+             */
+            net: number;
+            /**
+             * Transactions
+             * @description Income, expense, and refund transactions counted.
+             */
+            transactions: number;
+            /**
+             * Month
+             * @description `YYYY-MM`.
+             */
+            month: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+        };
+        /** NetWorthItemResponse */
+        NetWorthItemResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "account" | "holding" | "deposit" | "asset";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Group
+             * @enum {string}
+             */
+            group: "cash" | "investment_cash" | "mutual_funds" | "stocks" | "etfs" | "deposits" | "investments_at_cost" | "other_assets" | "credit_cards" | "loans";
+            /**
+             * Side
+             * @enum {string}
+             */
+            side: "asset" | "liability";
+            /**
+             * Value
+             * @description What it adds to its side: a value, or what is owed.
+             */
+            value: number;
+            /** Valued On */
+            valued_on: string | null;
+            /**
+             * Source
+             * @description `ledger` (account balance), `market` (latest price), `manual` (entered by hand), `estimate` (computed from assumptions), or `cost` (no valuation).
+             * @enum {string}
+             */
+            source: "ledger" | "market" | "manual" | "estimate" | "cost";
+            /**
+             * Freshness
+             * @enum {string}
+             */
+            freshness: "current" | "stale" | "missing" | "estimated";
+            /** Counted */
+            counted: boolean;
+            /** Note */
+            note: string | null;
+        };
+        /** NetWorthResponse */
+        NetWorthResponse: {
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Currencies
+             * @description Every currency with accounts or assets. Never added together.
+             */
+            currencies: ("INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY")[];
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /** Assets */
+            assets: number;
+            /** Liabilities */
+            liabilities: number;
+            /**
+             * Net Worth
+             * @description `assets - liabilities`.
+             */
+            net_worth: number;
+            /** Groups */
+            groups: components["schemas"]["GroupTotalResponse"][];
+            /**
+             * Items
+             * @description Every account, holding, deposit, and asset behind the totals, including assets left out (`counted: false`).
+             */
+            items: components["schemas"]["NetWorthItemResponse"][];
+            quality: components["schemas"]["QualityResponse"];
+            /**
+             * Changes
+             * @description Against the snapshots 1, 3, 6, and 12 months back.
+             */
+            changes: components["schemas"]["PeriodChangeResponse"][];
+        };
+        /** NoteConnectionsResponse */
+        NoteConnectionsResponse: {
+            /**
+             * Outgoing
+             * @description Notes this note links to.
+             */
+            outgoing: components["schemas"]["NoteRefResponse"][];
+            /**
+             * Backlinks
+             * @description Notes that link to this note.
+             */
+            backlinks: components["schemas"]["NoteRefResponse"][];
+        };
+        /** NoteCountsResponse */
+        NoteCountsResponse: {
+            /**
+             * All
+             * @description Active notes and quick notes (journal entries are counted apart).
+             */
+            all: number;
+            /** Inbox */
+            inbox: number;
+            /** Favorites */
+            favorites: number;
+            /** Pinned */
+            pinned: number;
+            /** Journal */
+            journal: number;
+            /** Archived */
+            archived: number;
+            /** Trashed */
+            trashed: number;
+        };
+        /** NoteListResponse */
+        NoteListResponse: {
+            /** Notes */
+            notes: components["schemas"]["NoteSummaryResponse"][];
+            /**
+             * Total
+             * @description Notes matching the filters, across all pages.
+             */
+            total: number;
+        };
+        /** NoteRefResponse */
+        NoteRefResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Note Type
+             * @enum {string}
+             */
+            note_type: "note" | "quick" | "journal";
+            /** Journal Date */
+            journal_date: string | null;
+            /** Archived */
+            archived: boolean;
+        };
+        /** NoteResponse */
+        NoteResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /**
+             * Folder Id
+             * @description `null` for notes in the Inbox.
+             */
+            folder_id: string | null;
+            /**
+             * Note Type
+             * @enum {string}
+             */
+            note_type: "note" | "quick" | "journal";
+            /**
+             * Title
+             * @description May be empty; journal entries are usually named by date.
+             */
+            title: string;
+            /**
+             * Journal Date
+             * @description The entry's day, for journal entries only.
+             */
+            journal_date: string | null;
+            /** Is Pinned */
+            is_pinned: boolean;
+            /** Is Favorite */
+            is_favorite: boolean;
+            /** Archived At */
+            archived_at: string | null;
+            /** Trashed At */
+            trashed_at: string | null;
+            /**
+             * Revision
+             * @description Counts title and content changes. Send it back as `expected_revision`.
+             */
+            revision: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             * @description When the title or content last changed.
+             */
+            updated_at: string;
+            /** Last Opened At */
+            last_opened_at: string | null;
+            /** Tags */
+            tags: components["schemas"]["TagRef"][];
+            /**
+             * Content
+             * @description The editor document (ProseMirror JSON).
+             */
+            content: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /**
+             * Content Format
+             * @description Currently always `prosemirror-v1`.
+             */
+            content_format: string;
+            /**
+             * Task Ids
+             * @description Tasks linked to the note, oldest link first.
+             */
+            task_ids: string[];
+        };
+        /** NoteSummaryResponse */
+        NoteSummaryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /**
+             * Folder Id
+             * @description `null` for notes in the Inbox.
+             */
+            folder_id: string | null;
+            /**
+             * Note Type
+             * @enum {string}
+             */
+            note_type: "note" | "quick" | "journal";
+            /**
+             * Title
+             * @description May be empty; journal entries are usually named by date.
+             */
+            title: string;
+            /**
+             * Journal Date
+             * @description The entry's day, for journal entries only.
+             */
+            journal_date: string | null;
+            /** Is Pinned */
+            is_pinned: boolean;
+            /** Is Favorite */
+            is_favorite: boolean;
+            /** Archived At */
+            archived_at: string | null;
+            /** Trashed At */
+            trashed_at: string | null;
+            /**
+             * Revision
+             * @description Counts title and content changes. Send it back as `expected_revision`.
+             */
+            revision: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             * @description When the title or content last changed.
+             */
+            updated_at: string;
+            /** Last Opened At */
+            last_opened_at: string | null;
+            /** Tags */
+            tags: components["schemas"]["TagRef"][];
+            /**
+             * Excerpt
+             * @description The start of the text, or the text around the first search match.
+             */
+            excerpt: string;
+        };
+        /** NoteTagsResponse */
+        NoteTagsResponse: {
+            /** Tags */
+            tags: components["schemas"]["TagRef"][];
         };
         /** NotificationListResponse */
         NotificationListResponse: {
@@ -947,6 +5325,494 @@ export interface components {
             read_at: string | null;
         };
         /**
+         * PayInstallmentRequest
+         * @description Record an installment as paid. Either give `from_account_id`, and Orbit records the
+         *     principal as a transfer into the loan account and the interest as a "Loan interest" expense,
+         *     or link the transactions you already recorded.
+         */
+        PayInstallmentRequest: {
+            /**
+             * Paid On
+             * Format: date
+             */
+            paid_on: string;
+            /** From Account Id */
+            from_account_id?: string | null;
+            /**
+             * Principal
+             * @description What was actually paid; defaults to the scheduled principal.
+             */
+            principal?: number | null;
+            /**
+             * Interest
+             * @description What was actually paid; defaults to the scheduled interest.
+             */
+            interest?: number | null;
+            /**
+             * Principal Transaction Id
+             * @description A transfer into the loan account.
+             */
+            principal_transaction_id?: string | null;
+            /**
+             * Interest Transaction Id
+             * @description An expense.
+             */
+            interest_transaction_id?: string | null;
+        };
+        /** PaymentItemResponse */
+        PaymentItemResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "loan" | "subscription" | "bill";
+            /**
+             * Commitment Id
+             * Format: uuid
+             * @description The loan, subscription, or bill.
+             */
+            commitment_id: string;
+            /**
+             * Occurrence Id
+             * @description The installment, or the settled occurrence. `null` for a subscription or bill payment that is still expected.
+             */
+            occurrence_id: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Counterparty
+             * @description The lender or provider; may be empty.
+             */
+            counterparty: string;
+            /** Amount */
+            amount: number;
+            /**
+             * Estimated
+             * @description True for an expected bill whose amount varies.
+             */
+            estimated: boolean;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "upcoming" | "due" | "overdue" | "paid" | "skipped";
+            /** Account Id */
+            account_id: string | null;
+            /** Paid On */
+            paid_on: string | null;
+            /** Transaction Ids */
+            transaction_ids: string[];
+            /**
+             * Principal
+             * @description Loans only.
+             */
+            principal: number | null;
+            /**
+             * Interest
+             * @description Loans only.
+             */
+            interest: number | null;
+        };
+        /** PaymentListResponse */
+        PaymentListResponse: {
+            /**
+             * Today
+             * Format: date
+             */
+            today: string;
+            /**
+             * Date From
+             * Format: date
+             */
+            date_from: string;
+            /**
+             * Date To
+             * Format: date
+             */
+            date_to: string;
+            /**
+             * Payments
+             * @description By due date.
+             */
+            payments: components["schemas"]["PaymentItemResponse"][];
+        };
+        /** PeriodChangeResponse */
+        PeriodChangeResponse: {
+            /** Months */
+            months: number;
+            /** @description That month's snapshot; `null` when none was taken. */
+            snapshot: components["schemas"]["SnapshotResponse"] | null;
+            /**
+             * Change
+             * @description Net worth now minus then.
+             */
+            change: number | null;
+        };
+        /** PlanResponse */
+        PlanResponse: {
+            /**
+             * Month
+             * @description `YYYY-MM`.
+             */
+            month: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /** Expected Income */
+            expected_income: number | null;
+            /**
+             * Income Source
+             * @description `this_month` when entered for this month; `earlier` when carried from `income_month`.
+             */
+            income_source: ("this_month" | "earlier") | null;
+            /** Income Month */
+            income_month: string | null;
+            /** Notes */
+            notes: string;
+            income: components["schemas"]["LineResponse"];
+            fixed: components["schemas"]["FixedCommitmentsResponse"];
+            /** @description Spending that pays no commitment. Planned from an overall budget (less the month's subscription, bill, and interest payments) or category budgets. */
+            variable: components["schemas"]["LineResponse"];
+            /** Variable Basis */
+            variable_basis: ("overall_budget" | "category_budgets") | null;
+            /** @description Planned: active goals' suggested monthly contributions. Actual: contributions minus withdrawals recorded this month. */
+            savings: components["schemas"]["LineResponse"];
+            /** @description Planned: SIPs due this month. Actual: money moved into investment accounts. */
+            investments: components["schemas"]["LineResponse"];
+            /** @description Income minus every line above: available to spend (planned) or left over (actual). */
+            remaining: components["schemas"]["LineResponse"];
+            /**
+             * Spending
+             * @description Consumption only: net expenses, including subscription, bill, and interest payments. Principal, savings, and investments aren't spending.
+             */
+            spending: number;
+            /**
+             * Allocations
+             * @description Money moved to your own accounts: loan principal, net investments, and goal savings.
+             */
+            allocations: number;
+            flows: components["schemas"]["FlowsResponse"];
+        };
+        /** PortfolioResponse */
+        PortfolioResponse: {
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /** Date From */
+            date_from: string | null;
+            /** Date To */
+            date_to: string | null;
+            /**
+             * Invested
+             * @description Cost of what is held now: FIFO cost plus deposits.
+             */
+            invested: number;
+            /** Current Value */
+            current_value: number;
+            /**
+             * Cash
+             * @description Uninvested cash in investment accounts.
+             */
+            cash: number;
+            /**
+             * Unrealized Gain
+             * @description Market value minus cost, for priced holdings.
+             */
+            unrealized_gain: number;
+            /**
+             * Realized Gain
+             * @description FIFO gains on sales in the date range.
+             */
+            realized_gain: number;
+            /**
+             * Income
+             * @description Dividends and interest in the date range.
+             */
+            income: number;
+            /**
+             * Fees
+             * @description Charges in the date range.
+             */
+            fees: number;
+            /**
+             * Total Return
+             * @description `unrealized + realized + income - fees`.
+             */
+            total_return: number;
+            /**
+             * Return Percent
+             * @description `total_return` over everything ever invested, as a percentage with two decimals. Simple, not annualized; for display only.
+             */
+            return_percent: string | null;
+            /**
+             * Allocation
+             * @description By asset class, largest first.
+             */
+            allocation: components["schemas"]["SliceResponse"][];
+            /**
+             * Categories
+             * @description By scheme category, largest first.
+             */
+            categories: components["schemas"]["SliceResponse"][];
+            /** Missing Prices */
+            missing_prices: number;
+            /** Stale Prices */
+            stale_prices: number;
+        };
+        /** PriceListResponse */
+        PriceListResponse: {
+            /**
+             * Prices
+             * @description Newest first.
+             */
+            prices: components["schemas"]["PriceResponse"][];
+        };
+        /** PriceResponse */
+        PriceResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Holding Id
+             * Format: uuid
+             */
+            holding_id: string;
+            /**
+             * Price Date
+             * Format: date
+             */
+            price_date: string;
+            /**
+             * Price
+             * @description Per-unit price in the major unit, as a decimal string.
+             */
+            price: string;
+            /**
+             * Source
+             * @description `manual` today; others are reserved for imports.
+             * @enum {string}
+             */
+            source: "manual" | "import" | "provider";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** QualityResponse */
+        QualityResponse: {
+            /** Estimated */
+            estimated: number;
+            /** Manual */
+            manual: number;
+            /** Stale */
+            stale: number;
+            /** Missing */
+            missing: number;
+        };
+        /**
+         * RecordInvestmentTransactionRequest
+         * @description Record a buy, sale, dividend, interest, fee, or deposit flow.
+         *
+         *     `settlement` says where the money is: `investment_account` (its own cash), `account` (another
+         *     account, `cash_account_id`; Orbit records the transfer, income, or expense there), or `none`
+         *     (buys and deposits only: from outside Orbit, such as a holding bought before it was tracked).
+         *     Dividends and interest are income; fees and `fees` on trades are expenses; buys and sales
+         *     are never income or spending.
+         */
+        RecordInvestmentTransactionRequest: {
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "buy" | "sell" | "dividend" | "interest" | "fee" | "deposit" | "withdrawal";
+            /**
+             * Trade Date
+             * Format: date
+             */
+            trade_date: string;
+            /**
+             * Amount
+             * @description Minor units, always positive: ₹12.50 is 1250.
+             */
+            amount: number;
+            /**
+             * Settlement
+             * @default investment_account
+             * @enum {string}
+             */
+            settlement: "investment_account" | "account" | "none";
+            /** Cash Account Id */
+            cash_account_id?: string | null;
+            /** Holding Id */
+            holding_id?: string | null;
+            /** Deposit Id */
+            deposit_id?: string | null;
+            /**
+             * Account Id
+             * @description The investment account, for interest or fees not tied to a holding or deposit.
+             */
+            account_id?: string | null;
+            /** Quantity */
+            quantity?: string | null;
+            /**
+             * Fees
+             * @description Minor units.
+             * @default 0
+             */
+            fees: number;
+            /**
+             * Plan
+             * @description Buys only; defaults to `lump_sum`.
+             */
+            plan?: ("lump_sum" | "sip") | null;
+            /**
+             * Sip Plan Id
+             * @description Records this buy as an installment of that SIP.
+             */
+            sip_plan_id?: string | null;
+            /**
+             * Sip Due Date
+             * @description The SIP date it settles; defaults to the next unrecorded one.
+             */
+            sip_due_date?: string | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
+        /**
+         * RecordPriceRequest
+         * @description Record a price (NAV or market price) by hand. A price already on that date is replaced.
+         */
+        RecordPriceRequest: {
+            /**
+             * Price Date
+             * Format: date
+             */
+            price_date: string;
+            /**
+             * Price
+             * @description Per-unit price in the currency's major unit, as a decimal string with up to 6 decimals, such as `45.6789`.
+             */
+            price: string;
+        };
+        /**
+         * RecordRecurringPaymentRequest
+         * @description Record one occurrence as paid. `create` records an expense from `account_id` (default:
+         *     the usual account) in the subscription's or bill's category; `link` uses an expense already
+         *     recorded (`transaction_id`); `manual` marks it paid without a transaction, so it isn't
+         *     counted as spending.
+         */
+        RecordRecurringPaymentRequest: {
+            /**
+             * Due Date
+             * Format: date
+             * @description The occurrence being paid.
+             */
+            due_date: string;
+            /**
+             * Paid On
+             * Format: date
+             */
+            paid_on: string;
+            /**
+             * Mode
+             * @default create
+             * @enum {string}
+             */
+            mode: "create" | "link" | "manual";
+            /**
+             * Amount
+             * @description What was paid; defaults to the expected amount.
+             */
+            amount?: number | null;
+            /** Account Id */
+            account_id?: string | null;
+            /** Transaction Id */
+            transaction_id?: string | null;
+        };
+        /**
+         * RecordSipInstallmentRequest
+         * @description Record one SIP installment as a buy. Amount defaults to the SIP's; the funding account,
+         *     when the SIP has one, settles it.
+         */
+        RecordSipInstallmentRequest: {
+            /**
+             * Trade Date
+             * Format: date
+             */
+            trade_date: string;
+            /**
+             * Quantity
+             * @description Units as a decimal string with up to 6 decimals, such as `12.345`.
+             */
+            quantity: string;
+            /** Amount */
+            amount?: number | null;
+            /**
+             * Due Date
+             * @description The SIP date it settles; defaults to the next unrecorded one.
+             */
+            due_date?: string | null;
+            /**
+             * Settlement
+             * @description Defaults to `account` with the SIP's funding account, else `investment_account`.
+             */
+            settlement?: ("investment_account" | "account" | "none") | null;
+            /** Cash Account Id */
+            cash_account_id?: string | null;
+            /**
+             * Fees
+             * @description Minor units.
+             * @default 0
+             */
+            fees: number;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
+        /**
+         * RecordValuationRequest
+         * @description What the asset was worth on a date. A value already on that date is replaced.
+         */
+        RecordValuationRequest: {
+            /**
+             * Valued On
+             * Format: date
+             */
+            valued_on: string;
+            /**
+             * Value
+             * @description Minor units.
+             */
+            value: number;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
+        /**
          * RecurrenceModel
          * @description How a reminder repeats. Monthly reminders on a day a month lacks (29 to 31) fire on that
          *     month's last day.
@@ -962,6 +5828,123 @@ export interface components {
              * @description Weekly only, and required for it: the days it repeats on.
              */
             weekdays?: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[];
+        };
+        /** RecurringPaymentListResponse */
+        RecurringPaymentListResponse: {
+            /**
+             * Recurring Payments
+             * @description Active first, then paused, then cancelled, each by name.
+             */
+            recurring_payments: components["schemas"]["RecurringPaymentResponse"][];
+        };
+        /** RecurringPaymentResponse */
+        RecurringPaymentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "subscription" | "bill";
+            /** Name */
+            name: string;
+            /** Provider */
+            provider: string;
+            /** Category Id */
+            category_id: string | null;
+            /**
+             * Account Id
+             * @description The account it's usually paid from.
+             */
+            account_id: string | null;
+            /**
+             * Amount
+             * @description The expected amount; an estimate when `amount_varies`.
+             */
+            amount: number;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /** Amount Varies */
+            amount_varies: boolean;
+            /**
+             * Frequency
+             * @enum {string}
+             */
+            frequency: "weekly" | "monthly" | "quarterly" | "half_yearly" | "yearly";
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /**
+             * Next Due Date
+             * @description The earliest unsettled due date, possibly overdue; `null` when nothing is expected (paused, cancelled, or past its end date).
+             */
+            next_due_date: string | null;
+            /** End Date */
+            end_date: string | null;
+            /** Trial Ends On */
+            trial_ends_on: string | null;
+            /** Auto Renew */
+            auto_renew: boolean;
+            /**
+             * Status
+             * @description `active`, `paused`, `cancelled`, or `expired` (active, past its end date).
+             * @enum {string}
+             */
+            status: "active" | "paused" | "cancelled" | "expired";
+            /**
+             * Overdue
+             * @description Unsettled occurrences due before today.
+             */
+            overdue: number;
+            /**
+             * Monthly Cost
+             * @description `amount` as a monthly average, rounded half up.
+             */
+            monthly_cost: number;
+            /** Annual Cost */
+            annual_cost: number;
+            /** Last Paid On */
+            last_paid_on: string | null;
+            /** Notes */
+            notes: string;
+            reminder: components["schemas"]["ReminderSettingsResponse"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ReminderCommitmentResponse */
+        ReminderCommitmentResponse: {
+            /**
+             * Kind
+             * @description `loan`, `recurring_payment` for a subscription or bill, or `deposit` for a fixed or recurring deposit's maturity.
+             * @enum {string}
+             */
+            kind: "loan" | "recurring_payment" | "deposit";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
         };
         /** ReminderListResponse */
         ReminderListResponse: {
@@ -987,6 +5970,8 @@ export interface components {
             workspace_id: string;
             /** @description The task this reminder is about, or `null` for a standalone reminder. */
             task: components["schemas"]["ReminderTaskResponse"] | null;
+            /** @description The loan, subscription, or bill that manages this reminder. Such reminders follow its next payment and can't be edited or deleted here (409). */
+            commitment?: components["schemas"]["ReminderCommitmentResponse"] | null;
             /** Title */
             title: string;
             /**
@@ -1044,6 +6029,40 @@ export interface components {
              */
             updated_at: string;
         };
+        /**
+         * ReminderSettingsRequest
+         * @description Remind about each payment `days_before` its due date, at `time_of_day`.
+         */
+        ReminderSettingsRequest: {
+            /**
+             * Days Before
+             * @description 0 reminds on the due date itself.
+             */
+            days_before: number;
+            /**
+             * Time Of Day
+             * Format: time
+             * @default 09:00:00
+             */
+            time_of_day: string;
+            /**
+             * Timezone
+             * @description Defaults to your time zone preference, else UTC.
+             */
+            timezone?: string | null;
+        };
+        /** ReminderSettingsResponse */
+        ReminderSettingsResponse: {
+            /** Days Before */
+            days_before: number;
+            /**
+             * Time Of Day
+             * Format: time
+             */
+            time_of_day: string;
+            /** Timezone */
+            timezone: string;
+        };
         /** ReminderTaskResponse */
         ReminderTaskResponse: {
             /**
@@ -1058,6 +6077,95 @@ export interface components {
              * @enum {string}
              */
             status: "open" | "completed";
+        };
+        /** RenameCategoryRequest */
+        RenameCategoryRequest: {
+            /** Name */
+            name: string;
+        };
+        /**
+         * RescheduleLoanRequest
+         * @description Regenerate the unpaid installments from what is still owed, after a prepayment (a
+         *     transfer into the loan account) or a rate change. Without `emi_amount` the number of
+         *     installments stays the same and the EMI is recomputed; with it, the tenure changes.
+         */
+        RescheduleLoanRequest: {
+            /** Interest Rate Bps */
+            interest_rate_bps?: number | null;
+            /** Emi Amount */
+            emi_amount?: number | null;
+            /** Next Payment Date */
+            next_payment_date?: string | null;
+        };
+        /**
+         * SetIncomeRequest
+         * @description A month's expected income. Later months without their own use it too.
+         */
+        SetIncomeRequest: {
+            /**
+             * Currency
+             * @default INR
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Expected Income
+             * @description Minor units.
+             */
+            expected_income: number;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
+        /** SettledOccurrenceListResponse */
+        SettledOccurrenceListResponse: {
+            /**
+             * Occurrences
+             * @description Newest due date first.
+             */
+            occurrences: components["schemas"]["SettledOccurrenceResponse"][];
+        };
+        /** SettledOccurrenceResponse */
+        SettledOccurrenceResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Recurring Payment Id
+             * Format: uuid
+             */
+            recurring_payment_id: string;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "paid" | "skipped";
+            /**
+             * Amount
+             * @description What was paid; `null` when skipped.
+             */
+            amount: number | null;
+            /** Paid On */
+            paid_on: string | null;
+            /**
+             * Transaction Id
+             * @description The expense that recorded it; `null` when skipped or marked paid without a transaction (not counted as spending).
+             */
+            transaction_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** ShoppingItemResponse */
         ShoppingItemResponse: {
@@ -1202,6 +6310,168 @@ export interface components {
              */
             lists: components["schemas"]["ShoppingListOverviewResponse"][];
         };
+        /** SipPlanListResponse */
+        SipPlanListResponse: {
+            /** Plans */
+            plans: components["schemas"]["SipPlanResponse"][];
+        };
+        /** SipPlanResponse */
+        SipPlanResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Holding Id
+             * Format: uuid
+             */
+            holding_id: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /** Amount */
+            amount: number;
+            /**
+             * Frequency
+             * @enum {string}
+             */
+            frequency: "weekly" | "monthly" | "quarterly" | "half_yearly" | "yearly";
+            /** End Date */
+            end_date: string | null;
+            /** Funding Account Id */
+            funding_account_id: string | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "active" | "paused" | "cancelled";
+            /** Notes */
+            notes: string;
+            /**
+             * Next Due Date
+             * @description The first due date with no buy recorded; before today means overdue. Scheduled SIPs are not investments until a buy is recorded.
+             */
+            next_due_date: string | null;
+            /**
+             * Installments
+             * @description Buys recorded against this SIP.
+             */
+            installments: number;
+            /** Invested */
+            invested: number;
+            /** Last Bought On */
+            last_bought_on: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** SkipOccurrenceRequest */
+        SkipOccurrenceRequest: {
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+        };
+        /** SliceResponse */
+        SliceResponse: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Value */
+            value: number;
+        };
+        /** SnapshotListResponse */
+        SnapshotListResponse: {
+            /**
+             * Snapshots
+             * @description Oldest month first.
+             */
+            snapshots: components["schemas"]["SnapshotResponse"][];
+        };
+        /** SnapshotResponse */
+        SnapshotResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Month
+             * @description `YYYY-MM`.
+             */
+            month: string;
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /** Assets */
+            assets: number;
+            /** Liabilities */
+            liabilities: number;
+            /** Net Worth */
+            net_worth: number;
+            /** Groups */
+            groups: components["schemas"]["GroupTotalResponse"][];
+            /**
+             * Source
+             * @description `scheduled` (taken at month end), `manual` (the current month, saved by you), or `backfill` (a past month reconstructed later from history).
+             * @enum {string}
+             */
+            source: "scheduled" | "manual" | "backfill";
+            /** @description How many counted values were estimates, manual, stale, or missing. */
+            quality: components["schemas"]["QualityResponse"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** SpendingResponse */
+        SpendingResponse: {
+            /**
+             * Month
+             * @description `YYYY-MM`.
+             */
+            month: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Total
+             * @description Net spending across all categories.
+             */
+            total: number;
+            /**
+             * Categories
+             * @description Largest net spending first. Categories whose refunds cancel their spending are left out.
+             */
+            categories: components["schemas"]["CategorySpendingResponse"][];
+        };
         /**
          * StorageLocationResponse
          * @description Where this installation keeps its data, for signed-in users.
@@ -1237,6 +6507,71 @@ export interface components {
             supabase_url: string;
             /** Supabase Publishable Key */
             supabase_publishable_key: string;
+        };
+        /** TagListResponse */
+        TagListResponse: {
+            /** Tags */
+            tags: components["schemas"]["TagResponse"][];
+        };
+        /** TagRef */
+        TagRef: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** TagRequest */
+        TagRequest: {
+            /** Name */
+            name: string;
+        };
+        /** TagResponse */
+        TagResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Note Count
+             * @description Active notes with the tag.
+             */
+            note_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * TakeSnapshotRequest
+         * @description Save a month's snapshot. Idempotent: a month that has one returns it (200) rather than
+         *     adding another. `refresh` recomputes the current month's; past months can't be refreshed.
+         */
+        TakeSnapshotRequest: {
+            /**
+             * Currency
+             * @default INR
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Month
+             * @description `YYYY-MM`; defaults to this month.
+             */
+            month?: string | null;
+            /**
+             * Refresh
+             * @default false
+             */
+            refresh: boolean;
+            /** Today */
+            today?: string | null;
         };
         /** TaskListResponse */
         TaskListResponse: {
@@ -1315,6 +6650,98 @@ export interface components {
              */
             due_today: number;
         };
+        /** TotalResponse */
+        TotalResponse: {
+            /** Count */
+            count: number;
+            /** Amount */
+            amount: number;
+        };
+        /** TransactionListResponse */
+        TransactionListResponse: {
+            /** Transactions */
+            transactions: components["schemas"]["TransactionResponse"][];
+            /**
+             * Total
+             * @description Transactions matching the filters, across all pages.
+             */
+            total: number;
+        };
+        /** TransactionResponse */
+        TransactionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "income" | "expense" | "refund" | "transfer";
+            /**
+             * Amount
+             * @description Minor units, always positive; `type` gives the direction.
+             */
+            amount: number;
+            /**
+             * Currency
+             * @description The account's currency.
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Occurred On
+             * Format: date
+             * @description A calendar date in the user's time zone.
+             */
+            occurred_on: string;
+            /** Description */
+            description: string;
+            /** Category Id */
+            category_id: string | null;
+            /**
+             * Account Id
+             * Format: uuid
+             * @description Where income and refunds went in, expenses came out, or a transfer started.
+             */
+            account_id: string;
+            /**
+             * To Account Id
+             * @description A transfer's destination.
+             */
+            to_account_id: string | null;
+            /** Notes */
+            notes: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** TrendResponse */
+        TrendResponse: {
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Months
+             * @description Oldest first, one per month, including months without transactions.
+             */
+            months: components["schemas"]["MonthCashFlowResponse"][];
+        };
         /** UnreadCountResponse */
         UnreadCountResponse: {
             /** Unread */
@@ -1324,6 +6751,182 @@ export interface components {
         UpcomingRemindersResponse: {
             /** Reminders */
             reminders: components["schemas"]["ReminderResponse"][];
+        };
+        /**
+         * UpdateAccountRequest
+         * @description Change some of an account's fields. Its type and currency are fixed; archiving has its
+         *     own endpoints.
+         */
+        UpdateAccountRequest: {
+            /** Name */
+            name?: string | null;
+            /** Opening Balance */
+            opening_balance?: number | null;
+            /** Notes */
+            notes?: string | null;
+        };
+        /**
+         * UpdateAssetRequest
+         * @description `null` clears the purchase details or the linked account. `archived: true` records it as
+         *     sold or disposed of; it stays as history but isn't counted.
+         */
+        UpdateAssetRequest: {
+            /** Name */
+            name?: string | null;
+            /** Category */
+            category?: ("gold" | "cash" | "property" | "vehicle" | "other") | null;
+            /** Purchase Date */
+            purchase_date?: string | null;
+            /** Purchase Cost */
+            purchase_cost?: number | null;
+            /** Linked Account Id */
+            linked_account_id?: string | null;
+            /** Include In Net Worth */
+            include_in_net_worth?: boolean | null;
+            /** Notes */
+            notes?: string | null;
+            /** Archived */
+            archived?: boolean | null;
+        };
+        /**
+         * UpdateBudgetRequest
+         * @description Change a budget from the current period on; finished periods keep their amounts. Scope,
+         *     category, currency, and period type are fixed.
+         */
+        UpdateBudgetRequest: {
+            /** Name */
+            name?: string | null;
+            /** Amount */
+            amount?: number | null;
+            /** Start Date */
+            start_date?: string | null;
+            /**
+             * End Date
+             * @description `null` removes the end of a monthly budget.
+             */
+            end_date?: string | null;
+            /** Rollover */
+            rollover?: ("none" | "surplus" | "full") | null;
+            /** Alerts Enabled */
+            alerts_enabled?: boolean | null;
+            /** Alert Thresholds */
+            alert_thresholds?: number[] | null;
+            /** Notes */
+            notes?: string | null;
+        };
+        /**
+         * UpdateDepositRequest
+         * @description `null` clears `stated_maturity_amount` or `reminder`.
+         */
+        UpdateDepositRequest: {
+            /** Name */
+            name?: string | null;
+            /** Institution */
+            institution?: string | null;
+            /** Interest Rate Bps */
+            interest_rate_bps?: number | null;
+            /** Compounding */
+            compounding?: ("monthly" | "quarterly" | "half_yearly" | "yearly" | "simple") | null;
+            /** Maturity Date */
+            maturity_date?: string | null;
+            /** Installment Amount */
+            installment_amount?: number | null;
+            /** Stated Maturity Amount */
+            stated_maturity_amount?: number | null;
+            /** Notes */
+            notes?: string | null;
+            reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
+        };
+        /**
+         * UpdateFolderRequest
+         * @description Rename or move a folder. `parent_id: null` moves it to the top level.
+         */
+        UpdateFolderRequest: {
+            /** Name */
+            name?: string | null;
+            /** Parent Id */
+            parent_id?: string | null;
+        };
+        /**
+         * UpdateGoalRequest
+         * @description Change a goal; its contributions stay. `state` pauses, completes, cancels, or reopens it.
+         */
+        UpdateGoalRequest: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Category */
+            category?: ("emergency_fund" | "vehicle" | "travel" | "home" | "electronics" | "education" | "wedding" | "other") | null;
+            /** Priority */
+            priority?: ("low" | "medium" | "high") | null;
+            /** Target Amount */
+            target_amount?: number | null;
+            /** Start Date */
+            start_date?: string | null;
+            /**
+             * Target Date
+             * @description `null` removes it.
+             */
+            target_date?: string | null;
+            /** State */
+            state?: ("active" | "paused" | "completed" | "cancelled") | null;
+            /**
+             * Account Id
+             * @description `null` unlinks the account.
+             */
+            account_id?: string | null;
+            /** Notes */
+            notes?: string | null;
+        };
+        /** UpdateHoldingRequest */
+        UpdateHoldingRequest: {
+            /** Name */
+            name?: string | null;
+            /** Symbol */
+            symbol?: string | null;
+            /** Exchange */
+            exchange?: string | null;
+            /** Isin */
+            isin?: string | null;
+            /** Issuer */
+            issuer?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Folio */
+            folio?: string | null;
+            /** Notes */
+            notes?: string | null;
+        };
+        /**
+         * UpdateInstallmentRequest
+         * @description Adjust a scheduled installment by hand.
+         */
+        UpdateInstallmentRequest: {
+            /** Due Date */
+            due_date?: string | null;
+            /** Principal */
+            principal?: number | null;
+            /** Interest */
+            interest?: number | null;
+        };
+        /**
+         * UpdateInvestmentAccountRequest
+         * @description `null` clears `linked_account_id`. `archived` archives or restores the finance account.
+         */
+        UpdateInvestmentAccountRequest: {
+            /** Name */
+            name?: string | null;
+            /** Kind */
+            kind?: ("mutual_fund" | "brokerage" | "deposit" | "other") | null;
+            /** Provider */
+            provider?: string | null;
+            /** Linked Account Id */
+            linked_account_id?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Archived */
+            archived?: boolean | null;
         };
         /**
          * UpdateItemRequest
@@ -1340,6 +6943,55 @@ export interface components {
             /** Notes */
             notes?: string | null;
         };
+        /**
+         * UpdateLoanRequest
+         * @description Change a loan's details or status. `payment_account_id: null` and `reminder: null`
+         *     clear them. Rate and EMI changes go through `/reschedule`.
+         */
+        UpdateLoanRequest: {
+            /** Name */
+            name?: string | null;
+            /** Lender */
+            lender?: string | null;
+            /** Loan Type */
+            loan_type?: ("personal" | "vehicle" | "home" | "education" | "other") | null;
+            /** Payment Account Id */
+            payment_account_id?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Status
+             * @description `closed` when repaid or foreclosed, `archived` to hide it. Either stops expecting its scheduled installments; `active` resumes them.
+             */
+            status?: ("active" | "closed" | "archived") | null;
+            reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
+        };
+        /**
+         * UpdateNoteRequest
+         * @description Change some of a note's fields. Omitted fields keep their values; `folder_id: null` moves
+         *     the note to the Inbox. Send `expected_revision` with title or content changes: if the note
+         *     has changed since, the update is refused with 409 rather than overwriting it.
+         */
+        UpdateNoteRequest: {
+            /** Title */
+            title?: string | null;
+            /** Content */
+            content?: {
+                [key: string]: components["schemas"]["JsonValue"];
+            } | null;
+            /** Expected Revision */
+            expected_revision?: number | null;
+            /** Folder Id */
+            folder_id?: string | null;
+            /** Note Type */
+            note_type?: ("note" | "quick") | null;
+            /** Is Pinned */
+            is_pinned?: boolean | null;
+            /** Is Favorite */
+            is_favorite?: boolean | null;
+            /** Archived */
+            archived?: boolean | null;
+        };
         /** UpdateNotificationRequest */
         UpdateNotificationRequest: {
             /** Read */
@@ -1355,6 +7007,44 @@ export interface components {
             display_name?: string | null;
             /** Timezone */
             timezone?: string | null;
+        };
+        /**
+         * UpdateRecurringPaymentRequest
+         * @description Change some fields; `null` clears `category_id`, `account_id`, `end_date`,
+         *     `trial_ends_on`, or `reminder`. `state` pauses (`paused`), cancels (`cancelled`), or resumes
+         *     (`active`) it; history is always kept. Changing `frequency` or `next_due_date`, or resuming,
+         *     restarts the schedule.
+         */
+        UpdateRecurringPaymentRequest: {
+            /** Name */
+            name?: string | null;
+            /** Provider */
+            provider?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /** Account Id */
+            account_id?: string | null;
+            /** Amount */
+            amount?: number | null;
+            /** Amount Varies */
+            amount_varies?: boolean | null;
+            /** Frequency */
+            frequency?: ("weekly" | "monthly" | "quarterly" | "half_yearly" | "yearly") | null;
+            /** Start Date */
+            start_date?: string | null;
+            /** Next Due Date */
+            next_due_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Trial Ends On */
+            trial_ends_on?: string | null;
+            /** Auto Renew */
+            auto_renew?: boolean | null;
+            /** State */
+            state?: ("active" | "paused" | "cancelled") | null;
+            /** Notes */
+            notes?: string | null;
+            reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
         };
         /**
          * UpdateReminderRequest
@@ -1380,6 +7070,27 @@ export interface components {
             recurrence?: components["schemas"]["RecurrenceModel"] | null;
         };
         /**
+         * UpdateSipPlanRequest
+         * @description `state` pauses, cancels, or resumes (`active`) the SIP. `null` clears `end_date` or
+         *     `funding_account_id`.
+         */
+        UpdateSipPlanRequest: {
+            /** Amount */
+            amount?: number | null;
+            /** Frequency */
+            frequency?: ("weekly" | "monthly" | "quarterly" | "half_yearly" | "yearly") | null;
+            /** Next Due Date */
+            next_due_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Funding Account Id */
+            funding_account_id?: string | null;
+            /** State */
+            state?: ("active" | "paused" | "cancelled") | null;
+            /** Notes */
+            notes?: string | null;
+        };
+        /**
          * UpdateTaskRequest
          * @description Change some of a task's fields. Omitted fields keep their values; `due_date: null` clears
          *     the due date. Completion has its own endpoints.
@@ -1393,6 +7104,31 @@ export interface components {
             priority?: ("none" | "low" | "medium" | "high") | null;
             /** Due Date */
             due_date?: string | null;
+        };
+        /**
+         * UpdateTransactionRequest
+         * @description Correct some of a transaction's fields. Omitted fields keep their values;
+         *     `category_id: null` and `to_account_id: null` clear them. The result must follow the same
+         *     rules as a new transaction, so turning a transfer into an expense also clears
+         *     `to_account_id`.
+         */
+        UpdateTransactionRequest: {
+            /** Type */
+            type?: ("income" | "expense" | "refund" | "transfer") | null;
+            /** Amount */
+            amount?: number | null;
+            /** Occurred On */
+            occurred_on?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Account Id */
+            account_id?: string | null;
+            /** To Account Id */
+            to_account_id?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /** Notes */
+            notes?: string | null;
         };
         /** UpdateWorkspaceRequest */
         UpdateWorkspaceRequest: {
@@ -3495,6 +9231,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description The reminder is managed by a loan, subscription, or bill. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -3546,12 +9289,6832 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description The reminder is managed by a loan, subscription, or bill. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Invalid input, a task outside this workspace, or a one-time reminder in the past. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_accounts_api_v1_workspaces__workspace_id__finance_accounts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_account_api_v1_workspaces__workspace_id__finance_accounts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account's ID. */
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account's ID. */
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account's ID. */
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account's ID. */
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_categories_api_v1_workspaces__workspace_id__finance_categories_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_category_api_v1_workspaces__workspace_id__finance_categories_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The name is taken, or the category is built in or in use. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_category_api_v1_workspaces__workspace_id__finance_categories__category_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The category's ID. */
+                category_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The name is taken, or the category is built in or in use. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_category_api_v1_workspaces__workspace_id__finance_categories__category_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The category's ID. */
+                category_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenameCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The name is taken, or the category is built in or in use. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_transactions_api_v1_workspaces__workspace_id__finance_transactions_get: {
+        parameters: {
+            query?: {
+                /** @description Inclusive. */
+                date_from?: string | null;
+                /** @description Inclusive. */
+                date_to?: string | null;
+                /** @description Repeat to match any of several types. Omit for all. */
+                type?: ("income" | "expense" | "refund" | "transfer")[];
+                /** @description Transactions on this account, either side of a transfer. */
+                account_id?: string | null;
+                category_id?: string | null;
+                /** @description Case-insensitive text to find in descriptions and notes. */
+                q?: string | null;
+                sort?: "date" | "amount";
+                /** @description Defaults to newest first, or largest first. */
+                order?: ("asc" | "desc") | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_transaction_api_v1_workspaces__workspace_id__finance_transactions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTransactionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account or category outside this workspace, an archived account, a transfer between currencies, or a category of the wrong type. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    export_transactions_api_v1_workspaces__workspace_id__finance_transactions_export_get: {
+        parameters: {
+            query?: {
+                /** @description Inclusive. */
+                date_from?: string | null;
+                /** @description Inclusive. */
+                date_to?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A CSV file. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_transaction_api_v1_workspaces__workspace_id__finance_transactions__transaction_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The transaction's ID. */
+                transaction_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_transaction_api_v1_workspaces__workspace_id__finance_transactions__transaction_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The transaction's ID. */
+                transaction_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The transaction records a commitment payment. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_transaction_api_v1_workspaces__workspace_id__finance_transactions__transaction_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The transaction's ID. */
+                transaction_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTransactionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account or category outside this workspace, an archived account, a transfer between currencies, or a category of the wrong type. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_transfers_api_v1_workspaces__workspace_id__finance_transfers_get: {
+        parameters: {
+            query?: {
+                /** @description Inclusive. */
+                date_from?: string | null;
+                /** @description Inclusive. */
+                date_to?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_transfer_api_v1_workspaces__workspace_id__finance_transfers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTransferRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account or category outside this workspace, an archived account, a transfer between currencies, or a category of the wrong type. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    monthly_summary_api_v1_workspaces__workspace_id__finance_summary_get: {
+        parameters: {
+            query?: {
+                /** @description A calendar month as `YYYY-MM`, in the user's time zone. Defaults to the current month in UTC. */
+                month?: string | null;
+                /** @description Reports cover one currency; amounts in different currencies are never added together. */
+                currency?: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthlySummaryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    monthly_trend_api_v1_workspaces__workspace_id__finance_trend_get: {
+        parameters: {
+            query?: {
+                /** @description A calendar month as `YYYY-MM`, in the user's time zone. Defaults to the current month in UTC. */
+                month?: string | null;
+                /** @description Reports cover one currency; amounts in different currencies are never added together. */
+                currency?: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+                /** @description How many months, ending with `month`. */
+                months?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrendResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    spending_by_category_api_v1_workspaces__workspace_id__finance_spending_get: {
+        parameters: {
+            query?: {
+                /** @description A calendar month as `YYYY-MM`, in the user's time zone. Defaults to the current month in UTC. */
+                month?: string | null;
+                /** @description Reports cover one currency; amounts in different currencies are never added together. */
+                currency?: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpendingResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_loans_api_v1_workspaces__workspace_id__finance_loans_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_loan_api_v1_workspaces__workspace_id__finance_loans_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateLoanRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description The loan's ID. */
+                loan_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The loan's ID. */
+                loan_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The loan has recorded payments or transactions. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The loan's ID. */
+                loan_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateLoanRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reschedule_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__reschedule_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The loan's ID. */
+                loan_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RescheduleLoanRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoanResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adjust_installment_api_v1_workspaces__workspace_id__finance_loans__loan_id__installments__installment_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The loan's ID. */
+                loan_id: string;
+                /** @description The installment's ID. */
+                installment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateInstallmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstallmentResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    pay_installment_api_v1_workspaces__workspace_id__finance_loans__loan_id__installments__installment_id__pay_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The loan's ID. */
+                loan_id: string;
+                /** @description The installment's ID. */
+                installment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayInstallmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstallmentResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    skip_installment_api_v1_workspaces__workspace_id__finance_loans__loan_id__installments__installment_id__skip_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The loan's ID. */
+                loan_id: string;
+                /** @description The installment's ID. */
+                installment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstallmentResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    undo_installment_api_v1_workspaces__workspace_id__finance_loans__loan_id__installments__installment_id__undo_post: {
+        parameters: {
+            query?: {
+                /** @description Also delete the transactions that recorded the payment. Otherwise they stay in the ledger, unlinked. */
+                delete_transactions?: boolean;
+            };
+            header?: never;
+            path: {
+                /** @description The loan's ID. */
+                loan_id: string;
+                /** @description The installment's ID. */
+                installment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstallmentResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_recurring_payments_api_v1_workspaces__workspace_id__finance_recurring_payments_get: {
+        parameters: {
+            query?: {
+                kind?: ("subscription" | "bill") | null;
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringPaymentListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_recurring_payment_api_v1_workspaces__workspace_id__finance_recurring_payments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRecurringPaymentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringPaymentResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_recurring_payment_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description The subscription's or bill's ID. */
+                payment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringPaymentResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_recurring_payment_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The subscription's or bill's ID. */
+                payment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRecurringPaymentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringPaymentResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_occurrences_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__occurrences_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The subscription's or bill's ID. */
+                payment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettledOccurrenceListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_recurring_payment_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__occurrences_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The subscription's or bill's ID. */
+                payment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordRecurringPaymentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettledOccurrenceResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    skip_recurring_occurrence_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__occurrences_skip_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The subscription's or bill's ID. */
+                payment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkipOccurrenceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettledOccurrenceResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or skipped, or the transaction pays something else. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    undo_recurring_occurrence_api_v1_workspaces__workspace_id__finance_recurring_payments__payment_id__occurrences__occurrence_id__delete: {
+        parameters: {
+            query?: {
+                /** @description Also delete the expense that recorded the payment. Otherwise it stays in the ledger, unlinked. */
+                delete_transaction?: boolean;
+            };
+            header?: never;
+            path: {
+                /** @description The subscription's or bill's ID. */
+                payment_id: string;
+                /** @description The settled occurrence's ID. */
+                occurrence_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_payments_api_v1_workspaces__workspace_id__finance_payments_get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+                /** @description Inclusive. Defaults to 30 days before `today`. */
+                date_from?: string | null;
+                /** @description Inclusive. Defaults to 30 days after `today`. */
+                date_to?: string | null;
+                /** @description Repeat for several. Omit for all. */
+                kind?: ("loan" | "subscription" | "bill")[];
+                /** @description Repeat for several. Omit for all. */
+                status?: ("upcoming" | "due" | "overdue" | "paid" | "skipped")[];
+                /** @description Also list unsettled payments due before `date_from`. */
+                include_overdue?: boolean;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    commitment_summary_api_v1_workspaces__workspace_id__finance_commitments_summary_get: {
+        parameters: {
+            query?: {
+                currency?: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommitmentSummaryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    portfolio_api_v1_workspaces__workspace_id__finance_portfolio_get: {
+        parameters: {
+            query?: {
+                currency?: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+                today?: string | null;
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortfolioResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_investment_accounts_api_v1_workspaces__workspace_id__finance_investment_accounts_get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestmentAccountListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_investment_account_api_v1_workspaces__workspace_id__finance_investment_accounts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateInvestmentAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestmentAccountResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A duplicate, or history that depends on it. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_investment_account_api_v1_workspaces__workspace_id__finance_investment_accounts__account_id__get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description The investment account's finance account ID. */
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestmentAccountResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_investment_account_api_v1_workspaces__workspace_id__finance_investment_accounts__account_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The investment account's finance account ID. */
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateInvestmentAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestmentAccountResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A duplicate, or history that depends on it. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_holdings_api_v1_workspaces__workspace_id__finance_holdings_get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+                account_id?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoldingListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_holding_api_v1_workspaces__workspace_id__finance_holdings_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateHoldingRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoldingResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A duplicate, or history that depends on it. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_holding_api_v1_workspaces__workspace_id__finance_holdings__holding_id__get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description The holding's ID. */
+                holding_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoldingResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_holding_api_v1_workspaces__workspace_id__finance_holdings__holding_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The holding's ID. */
+                holding_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A duplicate, or history that depends on it. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_holding_api_v1_workspaces__workspace_id__finance_holdings__holding_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The holding's ID. */
+                holding_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateHoldingRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoldingResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A duplicate, or history that depends on it. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_prices_api_v1_workspaces__workspace_id__finance_holdings__holding_id__prices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The holding's ID. */
+                holding_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_price_api_v1_workspaces__workspace_id__finance_holdings__holding_id__prices_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The holding's ID. */
+                holding_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordPriceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A duplicate, or history that depends on it. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_price_api_v1_workspaces__workspace_id__finance_holdings__holding_id__prices__price_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The holding's ID. */
+                holding_id: string;
+                price_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_investment_transactions_api_v1_workspaces__workspace_id__finance_investment_transactions_get: {
+        parameters: {
+            query?: {
+                account_id?: string | null;
+                holding_id?: string | null;
+                deposit_id?: string | null;
+                /** @description Repeat to match any of several types. Omit for all. */
+                type?: ("buy" | "sell" | "dividend" | "interest" | "fee" | "deposit" | "withdrawal")[];
+                date_from?: string | null;
+                date_to?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestmentTransactionListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_investment_transaction_api_v1_workspaces__workspace_id__finance_investment_transactions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordInvestmentTransactionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestmentTransactionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A duplicate, or history that depends on it. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_investment_transaction_api_v1_workspaces__workspace_id__finance_investment_transactions__transaction_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The investment transaction's ID. */
+                transaction_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestmentTransactionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_investment_transaction_api_v1_workspaces__workspace_id__finance_investment_transactions__transaction_id__delete: {
+        parameters: {
+            query?: {
+                /** @description Also delete the ledger transactions it recorded. Otherwise they stay as ordinary transfers, income, or expenses. */
+                delete_ledger?: boolean;
+            };
+            header?: never;
+            path: {
+                /** @description The investment transaction's ID. */
+                transaction_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A duplicate, or history that depends on it. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_sip_plans_api_v1_workspaces__workspace_id__finance_sip_plans_get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+                holding_id?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SipPlanListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_sip_plan_api_v1_workspaces__workspace_id__finance_sip_plans_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSipPlanRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SipPlanResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A duplicate, or history that depends on it. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_sip_plan_api_v1_workspaces__workspace_id__finance_sip_plans__plan_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The SIP plan's ID. */
+                plan_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSipPlanRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SipPlanResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A duplicate, or history that depends on it. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    record_sip_installment_api_v1_workspaces__workspace_id__finance_sip_plans__plan_id__installments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The SIP plan's ID. */
+                plan_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordSipInstallmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestmentTransactionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A duplicate, or history that depends on it. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_deposits_api_v1_workspaces__workspace_id__finance_deposits_get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_deposit_api_v1_workspaces__workspace_id__finance_deposits_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDepositRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A duplicate, or history that depends on it. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_deposit_api_v1_workspaces__workspace_id__finance_deposits__deposit_id__get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description The deposit's ID. */
+                deposit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_deposit_api_v1_workspaces__workspace_id__finance_deposits__deposit_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The deposit's ID. */
+                deposit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDepositRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A duplicate, or history that depends on it. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    contribute_to_deposit_api_v1_workspaces__workspace_id__finance_deposits__deposit_id__contributions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The deposit's ID. */
+                deposit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepositContributionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestmentTransactionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A duplicate, or history that depends on it. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    value_deposit_api_v1_workspaces__workspace_id__finance_deposits__deposit_id__value_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The deposit's ID. */
+                deposit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepositValueRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A duplicate, or history that depends on it. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    close_deposit_api_v1_workspaces__workspace_id__finance_deposits__deposit_id__close_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The deposit's ID. */
+                deposit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CloseDepositRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A duplicate, or history that depends on it. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reopen_deposit_api_v1_workspaces__workspace_id__finance_deposits__deposit_id__reopen_post: {
+        parameters: {
+            query?: {
+                /** @description Also delete the ledger transactions it recorded. Otherwise they stay as ordinary transfers, income, or expenses. */
+                delete_ledger?: boolean;
+            };
+            header?: never;
+            path: {
+                /** @description The deposit's ID. */
+                deposit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepositResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A duplicate, or history that depends on it. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account, holding, or deposit outside this workspace, a currency mismatch, or selling more units than were held. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_assets_api_v1_workspaces__workspace_id__finance_assets_get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, asset, or valuation does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_asset_api_v1_workspaces__workspace_id__finance_assets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAssetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, asset, or valuation does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description An asset with that name exists, or a past snapshot can't change. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a linked account outside this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_asset_api_v1_workspaces__workspace_id__finance_assets__asset_id__get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description The asset's ID. */
+                asset_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, asset, or valuation does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_asset_api_v1_workspaces__workspace_id__finance_assets__asset_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The asset's ID. */
+                asset_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAssetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, asset, or valuation does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description An asset with that name exists, or a past snapshot can't change. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a linked account outside this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_valuations_api_v1_workspaces__workspace_id__finance_assets__asset_id__valuations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The asset's ID. */
+                asset_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetValuationListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, asset, or valuation does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_valuation_api_v1_workspaces__workspace_id__finance_assets__asset_id__valuations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The asset's ID. */
+                asset_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordValuationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetValuationResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, asset, or valuation does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description An asset with that name exists, or a past snapshot can't change. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a linked account outside this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_valuation_api_v1_workspaces__workspace_id__finance_assets__asset_id__valuations__valuation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The asset's ID. */
+                asset_id: string;
+                valuation_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, asset, or valuation does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    net_worth_api_v1_workspaces__workspace_id__finance_net_worth_get: {
+        parameters: {
+            query?: {
+                /** @description Defaults to the first currency with accounts or assets. */
+                currency?: ("INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY") | null;
+                today?: string | null;
+                /** @description Value as of this date instead of today. */
+                as_of?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NetWorthResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, asset, or valuation does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_snapshots_api_v1_workspaces__workspace_id__finance_net_worth_snapshots_get: {
+        parameters: {
+            query?: {
+                currency?: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SnapshotListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, asset, or valuation does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    take_snapshot_api_v1_workspaces__workspace_id__finance_net_worth_snapshots_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TakeSnapshotRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SnapshotResponse"];
+                };
+            };
+            /** @description Created or refreshed. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, asset, or valuation does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description An asset with that name exists, or a past snapshot can't change. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a linked account outside this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_budgets_api_v1_workspaces__workspace_id__finance_budgets_get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or budget does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_budget_api_v1_workspaces__workspace_id__finance_budgets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBudgetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or budget does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Another active budget covers the same spending in an overlapping period. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: a category outside this workspace or not an expense category, monthly dates that aren't whole months, rollover on a custom period, or a change to a finished period. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    budget_overview_api_v1_workspaces__workspace_id__finance_budgets_overview_get: {
+        parameters: {
+            query?: {
+                /** @description `YYYY-MM` in your time zone. Defaults to the month of `today`. */
+                month?: string | null;
+                currency?: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetMonthResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or budget does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    budget_history_api_v1_workspaces__workspace_id__finance_budgets_history_get: {
+        parameters: {
+            query?: {
+                /** @description `YYYY-MM` in your time zone. Defaults to the month of `today`. */
+                month?: string | null;
+                currency?: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+                /** @description How many months, ending with `month`. */
+                months?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetHistoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or budget does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    copy_budgets_api_v1_workspaces__workspace_id__finance_budgets_copy_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CopyBudgetsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CopyBudgetsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or budget does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Another active budget covers the same spending in an overlapping period. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: a category outside this workspace or not an expense category, monthly dates that aren't whole months, rollover on a custom period, or a change to a finished period. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description The budget's ID. */
+                budget_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or budget does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The budget's ID. */
+                budget_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or budget does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The budget's ID. */
+                budget_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBudgetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or budget does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Another active budget covers the same spending in an overlapping period. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: a category outside this workspace or not an expense category, monthly dates that aren't whole months, rollover on a custom period, or a change to a finished period. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    archive_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The budget's ID. */
+                budget_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or budget does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_budget_api_v1_workspaces__workspace_id__finance_budgets__budget_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The budget's ID. */
+                budget_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or budget does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Another active budget covers the same spending in an overlapping period. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: a category outside this workspace or not an expense category, monthly dates that aren't whole months, rollover on a custom period, or a change to a finished period. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_goals_api_v1_workspaces__workspace_id__finance_savings_goals_get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, goal, or contribution does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_goal_api_v1_workspaces__workspace_id__finance_savings_goals_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGoalRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, goal, or contribution does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The transfer is already recorded, or the goal has history. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account or transaction outside this workspace, a currency mismatch, an account that can't hold savings, or a withdrawal of more than was saved. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_goal_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__get: {
+        parameters: {
+            query?: {
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description The savings goal's ID. */
+                goal_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, goal, or contribution does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_goal_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The savings goal's ID. */
+                goal_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, goal, or contribution does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The transfer is already recorded, or the goal has history. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account or transaction outside this workspace, a currency mismatch, an account that can't hold savings, or a withdrawal of more than was saved. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_goal_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The savings goal's ID. */
+                goal_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateGoalRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, goal, or contribution does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The transfer is already recorded, or the goal has history. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account or transaction outside this workspace, a currency mismatch, an account that can't hold savings, or a withdrawal of more than was saved. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_contributions_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__contributions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The savings goal's ID. */
+                goal_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContributionListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, goal, or contribution does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_contribution_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__contributions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The savings goal's ID. */
+                goal_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateContributionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContributionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, goal, or contribution does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The transfer is already recorded, or the goal has history. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account or transaction outside this workspace, a currency mismatch, an account that can't hold savings, or a withdrawal of more than was saved. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_contribution_api_v1_workspaces__workspace_id__finance_savings_goals__goal_id__contributions__contribution_id__delete: {
+        parameters: {
+            query?: {
+                /** @description Also delete the transfer it recorded from the ledger. */
+                delete_transaction?: boolean;
+            };
+            header?: never;
+            path: {
+                /** @description The savings goal's ID. */
+                goal_id: string;
+                /** @description The contribution's ID. */
+                contribution_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, goal, or contribution does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The transfer is already recorded, or the goal has history. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid input, or a rule broken: an account or transaction outside this workspace, a currency mismatch, an account that can't hold savings, or a withdrawal of more than was saved. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_plan_api_v1_workspaces__workspace_id__finance_plan_get: {
+        parameters: {
+            query?: {
+                /** @description `YYYY-MM` in your time zone. Defaults to the month of `today`. */
+                month?: string | null;
+                currency?: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+                /** @description Your local date. Defaults to today in your time zone preference, else UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_plan_api_v1_workspaces__workspace_id__finance_plan__month__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description `YYYY-MM`. */
+                month: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetIncomeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthlyPlanResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clear_plan_api_v1_workspaces__workspace_id__finance_plan__month__delete: {
+        parameters: {
+            query?: {
+                currency?: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            };
+            header?: never;
+            path: {
+                /** @description `YYYY-MM`. */
+                month: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_notes_api_v1_workspaces__workspace_id__notes_get: {
+        parameters: {
+            query?: {
+                /** @description Active notes, the archive, or the trash. */
+                state?: "active" | "archived" | "trashed";
+                /** @description Notes directly in a folder. */
+                folder_id?: string | null;
+                /** @description Only notes in no folder. */
+                inbox?: boolean;
+                /** @description Repeat for several types. Omit for all. */
+                type?: ("note" | "quick" | "journal")[];
+                tag_id?: string | null;
+                /** @description Notes linked to this task. */
+                task_id?: string | null;
+                favorite?: boolean | null;
+                pinned?: boolean | null;
+                /** @description Words that must each appear in the title, text, a tag, or the folder name (case-insensitive). */
+                q?: string | null;
+                sort?: "updated_at" | "created_at" | "title" | "recent" | "journal_date";
+                /** @description Newest first by default; titles A to Z. */
+                order?: ("asc" | "desc") | null;
+                pinned_first?: boolean;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_note_api_v1_workspaces__workspace_id__notes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateNoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid content, or the folder doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    count_notes_api_v1_workspaces__workspace_id__notes_counts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteCountsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    empty_trash_api_v1_workspaces__workspace_id__notes_empty_trash_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmptyTrashResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_journal_entry_api_v1_workspaces__workspace_id__notes_journal__entry_date__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_date: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_journal_entry_api_v1_workspaces__workspace_id__notes_journal__entry_date__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_date: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description It already existed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_todays_journal_api_v1_workspaces__workspace_id__notes_journal_today_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description It already existed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_note_api_v1_workspaces__workspace_id__notes__note_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_note_api_v1_workspaces__workspace_id__notes__note_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The note isn't in the trash. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_note_api_v1_workspaces__workspace_id__notes__note_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateNoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The note changed since `expected_revision`; reload it first. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid content, or the folder doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    open_note_api_v1_workspaces__workspace_id__notes__note_id__open_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trash_note_api_v1_workspaces__workspace_id__notes__note_id__trash_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_note_api_v1_workspaces__workspace_id__notes__note_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    duplicate_note_api_v1_workspaces__workspace_id__notes__note_id__duplicate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_note_links_api_v1_workspaces__workspace_id__notes__note_id__links_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteConnectionsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_note_tag_api_v1_workspaces__workspace_id__notes__note_id__tags_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddNoteTagRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteTagsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_note_tag_api_v1_workspaces__workspace_id__notes__note_id__tags__tag_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                /** @description The tag's ID. */
+                tag_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_note_tasks_api_v1_workspaces__workspace_id__notes__note_id__tasks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_note_task_api_v1_workspaces__workspace_id__notes__note_id__tasks__task_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                task_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The task doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlink_note_task_api_v1_workspaces__workspace_id__notes__note_id__tasks__task_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                task_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_attachments_api_v1_workspaces__workspace_id__notes__note_id__attachments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_attachment_api_v1_workspaces__workspace_id__notes__note_id__attachments_post: {
+        parameters: {
+            query: {
+                filename: string;
+            };
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The file is larger than the server accepts. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The file type isn't accepted, or doesn't match its contents. */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_attachment_api_v1_workspaces__workspace_id__notes__note_id__attachments__attachment_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                attachment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": unknown;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_attachment_api_v1_workspaces__workspace_id__notes__note_id__attachments__attachment_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                attachment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_folders_api_v1_workspaces__workspace_id__note_folders_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FolderListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_folder_api_v1_workspaces__workspace_id__note_folders_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateFolderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FolderResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The parent doesn't exist, or it would nest too deeply. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_folder_api_v1_workspaces__workspace_id__note_folders__folder_id__delete: {
+        parameters: {
+            query: {
+                /** @description `parent`: notes and subfolders move up a level. `inbox` or `trash`: the folder and its subfolders are deleted and all their notes go to the Inbox or the trash. */
+                notes: "parent" | "inbox" | "trash";
+            };
+            header?: never;
+            path: {
+                /** @description The folder's ID. */
+                folder_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_folder_api_v1_workspaces__workspace_id__note_folders__folder_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The folder's ID. */
+                folder_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateFolderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FolderResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The move would put the folder inside itself. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_tags_api_v1_workspaces__workspace_id__note_tags_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_tag_api_v1_workspaces__workspace_id__note_tags_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A tag with this name exists (ignoring case and spacing). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_tag_api_v1_workspaces__workspace_id__note_tags__tag_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The tag's ID. */
+                tag_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_tag_api_v1_workspaces__workspace_id__note_tags__tag_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The tag's ID. */
+                tag_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Another tag has this name (ignoring case and spacing). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

@@ -18,6 +18,10 @@ export const widgetIds = [
   "tasks",
   "reminders",
   "shopping",
+  "cash_flow",
+  "upcoming_payments",
+  "budget",
+  "net_worth",
   "modules",
 ] as const satisfies readonly WidgetId[];
 
@@ -59,6 +63,30 @@ export const widgetCatalog: readonly WidgetDefinition[] = [
     title: "Shopping",
     description: "How much is left to buy on each list.",
     defaultSize: "full",
+  },
+  {
+    id: "cash_flow",
+    title: "This month",
+    description: "Income, spending, and account balances this month.",
+    defaultSize: "half",
+  },
+  {
+    id: "upcoming_payments",
+    title: "Upcoming payments",
+    description: "Overdue payments and what is due in the next 30 days.",
+    defaultSize: "half",
+  },
+  {
+    id: "budget",
+    title: "Budget",
+    description: "How much of this month’s budget is spent.",
+    defaultSize: "half",
+  },
+  {
+    id: "net_worth",
+    title: "Net worth",
+    description: "What you own, what you owe, and the difference.",
+    defaultSize: "half",
   },
   {
     id: "modules",

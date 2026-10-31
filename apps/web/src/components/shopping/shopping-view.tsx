@@ -6,8 +6,8 @@ import type {
   ShoppingListOverview,
   UpdateShoppingItemRequest,
 } from "@orbit/contracts";
-import { ShoppingBasket } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { PartyPopper, RotateCcw, ShoppingBasket } from "lucide-react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import { EmptyState } from "@/components/empty-state";
@@ -15,9 +15,9 @@ import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShopping, useShoppingMutations } from "@/hooks/use-shopping";
-import { isEditableTarget } from "@/lib/keyboard";
-import { cn } from "@/lib/utils";
 import { useWorkspaces } from "@/providers/workspace";
+import { cn } from "@/utils/common";
+import { isEditableTarget } from "@/utils/keyboard";
 
 import { ItemComposer } from "./item-composer";
 import { ItemEditDialog } from "./item-edit-dialog";
@@ -50,6 +50,7 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
   const [announcement, setAnnouncement] = useState("");
   const nameRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const sectionId = useId();
 
   // N focuses the new-item field, unless the user is typing somewhere.
   useEffect(() => {
@@ -196,10 +197,13 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
   const purchased =
     items.status === "success" ? items.data.filter((i) => i.status === "purchased") : [];
 
-  const renderItems = (group: ShoppingItem[], label: string) => (
+  const renderItems = (group: ShoppingItem[], label: string, className?: string) => (
     <ul
       aria-label={label}
-      className="divide-y overflow-hidden rounded-xl border bg-card shadow-elevation-1"
+      className={cn(
+        "@container/rows divide-y overflow-hidden rounded-xl border bg-card shadow-elevation-1",
+        className,
+      )}
     >
       {group.map((item) => (
         <ShoppingItemRow
@@ -214,103 +218,132 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
     </ul>
   );
 
+  // Layout follows the space the page actually gets (which depends on the app sidebar), not the
+  // screen: container queries place the lists rail, the composer, and the bought column.
   return (
-    <div className="space-y-6">
-      <ListTabs
-        lists={shopping.lists.data}
-        activeId={active?.id ?? null}
-        onSelect={(list) => {
-          setActionError(null);
-          select(list.id);
-        }}
-        onCreate={() => setNameDialog({ mode: "create" })}
-      />
-
-      {active ? (
-        <section aria-labelledby="shopping-list-heading" className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 id="shopping-list-heading" className="text-lg font-semibold break-words">
-              {active.name}
-            </h2>
-            <ListActions
-              key={active.id}
-              list={active}
-              onRename={() => setNameDialog({ mode: "rename", list: active })}
-              onDelete={removeList}
-            />
-          </div>
-
-          <ItemComposer
-            key={active.id}
-            listName={active.name}
-            onAdd={(draft) => add(active.id, draft)}
-            nameRef={nameRef}
+    <div className="@container/shop">
+      <div className="grid gap-6 @4xl/shop:grid-cols-[13rem_minmax(0,1fr)] @4xl/shop:gap-8 @7xl/shop:grid-cols-[15rem_minmax(0,1fr)] @7xl/shop:gap-12">
+        <aside className="min-w-0 @4xl/shop:sticky @4xl/shop:top-6 @4xl/shop:self-start">
+          <ListTabs
+            lists={shopping.lists.data}
+            activeId={active?.id ?? null}
+            onSelect={(list) => {
+              setActionError(null);
+              select(list.id);
+            }}
+            onCreate={() => setNameDialog({ mode: "create" })}
           />
-          <FormAlert message={actionError} />
+        </aside>
 
-          <div
-            ref={listRef}
-            tabIndex={-1}
-            aria-busy={items.status === "loading"}
-            className="space-y-6 rounded-xl outline-none"
+        {active ? (
+          <section
+            aria-labelledby="shopping-list-heading"
+            className="@container/list min-w-0 space-y-5"
           >
-            {items.status === "loading" ? (
-              <ItemsSkeleton />
-            ) : items.status === "error" ? (
-              <LoadError message={items.message} onRetry={shopping.reloadItems} />
-            ) : items.data.length === 0 ? (
-              <EmptyState
-                icon={ShoppingBasket}
-                title="Nothing on this list yet"
-                description="Add what you need above. Check items off as you buy them."
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0 flex-1 space-y-2">
+                <h2
+                  id="shopping-list-heading"
+                  className="text-lg font-semibold tracking-tight break-words"
+                >
+                  {active.name}
+                </h2>
+                <ListProgress needed={active.needed_count} purchased={active.purchased_count} />
+              </div>
+              <ListActions
+                key={active.id}
+                list={active}
+                onRename={() => setNameDialog({ mode: "rename", list: active })}
+                onDelete={removeList}
               />
-            ) : (
-              <>
-                {needed.length > 0 ? (
-                  renderItems(
-                    needed,
-                    `${needed.length} ${needed.length === 1 ? "item" : "items"} to buy`,
-                  )
-                ) : (
-                  <p className="rounded-xl border border-dashed bg-card/40 px-4 py-6 text-center text-sm text-muted-foreground">
-                    You’ve got everything on this list.
-                  </p>
-                )}
+            </div>
 
-                {purchased.length > 0 ? (
-                  <section aria-labelledby="purchased-heading" className="space-y-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h3
-                        id="purchased-heading"
-                        className="text-sm font-medium text-muted-foreground"
-                      >
-                        Bought ({purchased.length})
-                      </h3>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => void bulkChange(active, "restock")}
-                        >
-                          Restock all
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => void bulkChange(active, "clear")}
-                        >
-                          Clear bought
-                        </Button>
+            <ItemComposer
+              key={active.id}
+              listName={active.name}
+              onAdd={(draft) => add(active.id, draft)}
+              nameRef={nameRef}
+            />
+            <FormAlert message={actionError} />
+
+            <div
+              ref={listRef}
+              tabIndex={-1}
+              aria-busy={items.status === "loading"}
+              className="rounded-xl outline-none"
+            >
+              {items.status === "loading" ? (
+                <ItemsSkeleton />
+              ) : items.status === "error" ? (
+                <LoadError message={items.message} onRetry={shopping.reloadItems} />
+              ) : items.data.length === 0 ? (
+                <EmptyState
+                  icon={ShoppingBasket}
+                  title="Nothing on this list yet"
+                  description="Add what you need above. Check items off as you buy them."
+                />
+              ) : (
+                // Bought items sit beside the list when there's room, below it when not.
+                <div
+                  className={cn(
+                    "grid gap-6",
+                    purchased.length > 0 &&
+                      "@5xl/list:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] @min-[100rem]/list:grid-cols-[minmax(0,1fr)_minmax(0,28rem)]",
+                  )}
+                >
+                  <section aria-labelledby={`${sectionId}-needed`} className="min-w-0 space-y-2">
+                    <SectionHeading id={`${sectionId}-needed`} count={needed.length}>
+                      To buy
+                    </SectionHeading>
+                    {needed.length > 0 ? (
+                      renderItems(
+                        needed,
+                        `${needed.length} ${needed.length === 1 ? "item" : "items"} to buy`,
+                        // Two columns of items on very wide screens, with a rule between them.
+                        "grid @min-[88rem]/list:grid-cols-2 @min-[88rem]/list:divide-y-0 @min-[88rem]/list:*:-mb-px @min-[88rem]/list:*:border-b @min-[88rem]/list:*:odd:border-r @min-[88rem]/list:*:odd:last:border-r-0",
+                      )
+                    ) : (
+                      <div className="flex items-center gap-3 rounded-xl border border-dashed bg-card/40 px-4 py-6 text-sm text-muted-foreground">
+                        <PartyPopper className="size-5 shrink-0 text-brand" aria-hidden="true" />
+                        You’ve got everything on this list.
                       </div>
-                    </div>
-                    {renderItems(purchased, `${purchased.length} bought`)}
+                    )}
                   </section>
-                ) : null}
-              </>
-            )}
-          </div>
-        </section>
-      ) : null}
+
+                  {purchased.length > 0 ? (
+                    <section aria-labelledby={`${sectionId}-bought`} className="min-w-0 space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <SectionHeading id={`${sectionId}-bought`} count={purchased.length}>
+                          Bought
+                        </SectionHeading>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="soft"
+                            size="sm"
+                            onClick={() => void bulkChange(active, "restock")}
+                          >
+                            <RotateCcw aria-hidden="true" />
+                            Restock all
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-muted-foreground"
+                            onClick={() => void bulkChange(active, "clear")}
+                          >
+                            Clear bought
+                          </Button>
+                        </div>
+                      </div>
+                      {renderItems(purchased, `${purchased.length} bought`)}
+                    </section>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          </section>
+        ) : null}
+      </div>
 
       <p role="status" className="sr-only">
         {announcement}
@@ -328,6 +361,43 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
           onClose={() => setNameDialog(null)}
         />
       ) : null}
+    </div>
+  );
+}
+
+function SectionHeading({ id, count, children }: { id: string; count: number; children: string }) {
+  return (
+    <h3
+      id={id}
+      className="flex items-center gap-2 px-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+    >
+      {children}
+      <span
+        aria-hidden="true"
+        className="rounded-full bg-muted px-1.5 font-medium text-muted-foreground tabular-nums"
+      >
+        {count}
+      </span>
+    </h3>
+  );
+}
+
+/** How much of the list is bought, in words and as a bar. */
+function ListProgress({ needed, purchased }: { needed: number; purchased: number }) {
+  const total = needed + purchased;
+  if (total === 0) return <p className="text-sm text-muted-foreground">No items yet.</p>;
+  const percent = Math.round((purchased / total) * 100);
+  return (
+    <div className="flex max-w-md items-center gap-3">
+      <div aria-hidden="true" className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-linear-to-r from-brand to-brand-2 transition-[width] duration-300 ease-out-soft"
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+      <p className="shrink-0 text-sm text-muted-foreground tabular-nums">
+        {purchased} of {total} bought
+      </p>
     </div>
   );
 }
@@ -358,11 +428,11 @@ function ShoppingSkeleton() {
 
 function ItemsSkeleton() {
   return (
-    <div className="divide-y rounded-xl border bg-card">
+    <div className="divide-y overflow-hidden rounded-xl border bg-card">
       <span className="sr-only">Loading items…</span>
       {[0, 1, 2].map((row) => (
         <div key={row} className="flex items-center gap-3 px-4 py-3.5">
-          <Skeleton className="size-4 rounded" />
+          <Skeleton className="size-5 rounded-full" />
           <Skeleton className={cn("h-4", row === 1 ? "w-1/3" : "w-1/2")} />
         </div>
       ))}

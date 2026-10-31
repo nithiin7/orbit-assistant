@@ -9,13 +9,14 @@ import type {
   UpdateTaskRequest,
 } from "@orbit/contracts";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 
 import { describeApiError } from "@/api/client";
 import {
   completeTask,
   createTask,
   deleteTask,
+  getTask,
   removeCachedTask,
   reopenTask,
   replaceCachedTask,
@@ -26,9 +27,9 @@ import {
 } from "@/api/tasks";
 import { queryResource, type Resource } from "@/hooks/query-resource";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
-import { localDateString } from "@/lib/tasks";
 import { useAuth } from "@/providers/auth";
 import { useWorkspaces } from "@/providers/workspace";
+import { localDateString } from "@/utils/dates";
 
 /**
  * The workspace's tasks for `query`. Within a workspace, the previous results stay visible
@@ -50,6 +51,14 @@ export function useTaskList(
   const { refetch } = result;
   const reload = useCallback(() => void refetch(), [refetch]);
   return { state, refreshing: state.status === "success" && result.isFetching, reload };
+}
+
+/** Task counts for the workspace, with overdue and due-today judged by the user's local date. */
+export function useTaskSummary(workspaceId: string): TaskSummary | undefined {
+  const { withToken } = useAuth();
+  const today = localDateString();
+  const { data } = useQuery(taskSummaryOptions(withToken, workspaceId, { today }));
+  return data;
 }
 
 const UP_NEXT_QUERY: TaskListQuery = { status: "open", sort: "due_date", limit: 5 };
@@ -112,6 +121,9 @@ export function useTaskMutations(workspaceId: string) {
       queryKey: taskKeys.all(workspaceId),
       refetchType: "none",
     });
+  /** Counts are shown beside the lists, so they refresh right away. */
+  const refetchSummaries = () =>
+    void queryClient.invalidateQueries({ queryKey: taskKeys.summaries(workspaceId) });
 
   const create = useMutation({
     mutationFn: (draft: CreateTaskRequest) =>
@@ -147,6 +159,7 @@ export function useTaskMutations(workspaceId: string) {
     onSuccess: (updated) => {
       replaceCachedTask(queryClient, workspaceId, updated);
       markTasksStale();
+      refetchSummaries();
     },
     onError: (_error, task) => replaceCachedTask(queryClient, workspaceId, task),
   });
@@ -156,8 +169,33 @@ export function useTaskMutations(workspaceId: string) {
     onSuccess: (_result, task) => {
       removeCachedTask(queryClient, workspaceId, task.id);
       markTasksStale();
+      refetchSummaries();
     },
   });
 
   return { create, update, toggle, remove };
+}
+
+/**
+ * The task named by the page's `?task=` (a link from a note), fetched once, so the page can open
+ * it. The parameter is removed from the address afterwards, so a reload doesn't reopen it.
+ */
+export function useLinkedTask(workspaceId: string, onFound: (task: Task) => void) {
+  const { withToken } = useAuth();
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const taskId = url.searchParams.get("task");
+    if (!taskId) return;
+    url.searchParams.delete("task");
+    window.history.replaceState(window.history.state, "", url);
+    const controller = new AbortController();
+    withToken((token) => getTask(token, workspaceId, taskId, { signal: controller.signal })).then(
+      onFound,
+      // A task that no longer exists (or a stale link) simply opens nothing.
+      () => undefined,
+    );
+    return () => controller.abort();
+    // Once per page visit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
+  }, [workspaceId]);
 }

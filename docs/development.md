@@ -67,6 +67,13 @@ Storage (see [Database](#database)):
 | `ORBIT_DATABASE_POOL_SIZE`    | `5`                            | Cloud mode: persistent pooled connections                 |
 | `ORBIT_DATABASE_MAX_OVERFLOW` | `5`                            | Cloud mode: extra connections allowed under load          |
 
+Note attachments (see [architecture: Attachments](architecture.md#attachments)):
+
+| Variable                     | Default                               | Purpose                                                      |
+| ---------------------------- | ------------------------------------- | ------------------------------------------------------------ |
+| `ORBIT_ATTACHMENTS_PATH`     | `attachments/` beside the SQLite file | Folder for attachment files (cloud mode: `apps/api/.data/…`) |
+| `ORBIT_ATTACHMENT_MAX_BYTES` | `10485760` (10 MB)                    | Largest attachment accepted (1 KB to 100 MB)                 |
+
 Reminders (see [Reminder worker](#reminder-worker)):
 
 | Variable                       | Default | Purpose                                                                  |
@@ -119,6 +126,10 @@ either approach:
 
 - Stop the API, then copy `orbit.sqlite3` (and any `-wal`/`-shm` files) together.
 - Or, while it runs: `sqlite3 path/to/orbit.sqlite3 ".backup 'orbit-backup.sqlite3'"`.
+
+Note attachments are files, not database rows: back up the attachments folder
+(`ORBIT_ATTACHMENTS_PATH`, by default `attachments/` beside the database) together with the
+database.
 
 Backups contain all of your data unencrypted. Store them with the same care as the original.
 
@@ -206,7 +217,7 @@ pnpm db:migrate                       # upgrade to the latest revision (from the
 cd apps/api
 uv run alembic current                # revision the database is at
 uv run alembic history                # all revisions
-uv run alembic revision --autogenerate --rev-id 0005 -m "create notes table"
+uv run alembic revision --autogenerate --rev-id 0013 -m "create calendar tables"
 uv run alembic downgrade -1           # revert the latest revision
 ```
 
@@ -275,6 +286,27 @@ design and its guarantees are in
   text), and `orbit-worker status` counts them.
 - Tests never start the embedded worker; they drive it directly with a controllable clock
   (`tests/test_reminder_worker.py`).
+
+## Finance data
+
+Finance (see [architecture.md](architecture.md#finance)) needs migration `0008_create_finance`:
+run `pnpm db:migrate` after pulling it, or the API refuses to start. There is nothing to seed by
+hand; each workspace gets its default categories the first time they're read.
+
+- **Money is integers.** Amounts in the API, database, and tests are minor units (paise):
+  `125050` is ₹1,250.50. Use `services/finance/money.py` (API) and `@/lib/finance` (web) to
+  convert, never floats. API requests reject non-integer amounts.
+- **Balances are derived**, so there is no recalculation job. Fixing a transaction with
+  `PATCH` or deleting it updates every balance and report.
+- **Export:** Finance → Transactions → Export CSV downloads the filtered date range, or call
+  `GET /api/v1/workspaces/{id}/finance/transactions/export?date_from=…&date_to=…` with a bearer
+  token. It is a readable copy of your transactions, not a full backup; for that, copy the
+  SQLite file (see [Backups](#backups)).
+- **Tests:** `tests/test_finance.py` (routes, balances, reports, export, isolation),
+  `tests/test_finance_money.py` (pure helpers), finance cases in `tests/test_migrations.py`
+  (constraints), and `src/components/finance/finance-view.test.tsx` and
+  `src/lib/finance/finance.test.ts` in the web app. Test data uses fixed dates and passes
+  `month` explicitly, so nothing depends on today.
 
 ## Quality checks
 

@@ -7,17 +7,14 @@ from typing import Annotated, Self
 from pydantic import (
     AfterValidator,
     BaseModel,
-    BeforeValidator,
     ConfigDict,
     Field,
     StringConstraints,
     model_validator,
 )
 
-from orbit_api.schemas.common import blank_to_none, multi_line, single_line
+from orbit_api.schemas.common import SearchText, multi_line, single_line
 from orbit_api.services.tasks.models import (
-    UNSET,
-    SortOrder,
     Task,
     TaskChanges,
     TaskDraft,
@@ -27,10 +24,11 @@ from orbit_api.services.tasks.models import (
     TaskStatus,
     TaskSummary,
 )
+from orbit_api.utils.changes import UNSET
+from orbit_api.utils.sorting import SortOrder
 
 TITLE_MAX_LENGTH = 200
 DESCRIPTION_MAX_LENGTH = 5000
-SEARCH_MAX_LENGTH = 200
 PAGE_MAX_SIZE = 500
 
 Title = Annotated[
@@ -42,16 +40,6 @@ Description = Annotated[
     str,
     StringConstraints(strip_whitespace=True, max_length=DESCRIPTION_MAX_LENGTH),
     AfterValidator(multi_line),
-]
-# Blank searches are treated as no search.
-SearchText = Annotated[
-    Annotated[
-        str,
-        StringConstraints(strip_whitespace=True, max_length=SEARCH_MAX_LENGTH),
-        AfterValidator(single_line),
-    ]
-    | None,
-    BeforeValidator(blank_to_none),
 ]
 
 

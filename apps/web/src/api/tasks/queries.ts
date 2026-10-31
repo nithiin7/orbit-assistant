@@ -14,8 +14,9 @@ export const taskKeys = {
   lists: (workspaceId: string | null) => [...taskKeys.all(workspaceId), "list"] as const,
   list: (workspaceId: string | null, query: TaskListQuery) =>
     [...taskKeys.lists(workspaceId), query] as const,
+  summaries: (workspaceId: string | null) => [...taskKeys.all(workspaceId), "summary"] as const,
   summary: (workspaceId: string | null, query: TaskSummaryQuery) =>
-    [...taskKeys.all(workspaceId), "summary", query] as const,
+    [...taskKeys.summaries(workspaceId), query] as const,
 };
 
 export function taskListOptions(

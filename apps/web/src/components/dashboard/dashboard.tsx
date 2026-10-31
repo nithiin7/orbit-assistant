@@ -4,6 +4,12 @@ import { ArrowDown, ArrowUp, LayoutDashboard, Plus, RotateCcw, X } from "lucide-
 import { type ComponentType, useEffect, useId, useRef, useState } from "react";
 
 import { EmptyState } from "@/components/empty-state";
+import {
+  BudgetWidget,
+  CashFlowWidget,
+  NetWorthWidget,
+  UpcomingPaymentsWidget,
+} from "@/components/finance/finance-widgets";
 import { PageHeader } from "@/components/page-header";
 import { ReminderOverview } from "@/components/reminders/reminder-overview";
 import { ShoppingOverview } from "@/components/shopping/shopping-overview";
@@ -23,8 +29,8 @@ import {
   type WidgetId,
   type WidgetSize,
 } from "@/lib/dashboard";
-import { cn } from "@/lib/utils";
 import { useCurrentUser } from "@/providers/auth";
+import { cn } from "@/utils/common";
 
 import { ModulesWidget } from "./modules-widget";
 import { StatusWidget } from "./status-widget";
@@ -35,6 +41,10 @@ const widgetComponents: Record<WidgetId, ComponentType> = {
   tasks: TaskOverview,
   reminders: ReminderOverview,
   shopping: ShoppingOverview,
+  cash_flow: CashFlowWidget,
+  upcoming_payments: UpcomingPaymentsWidget,
+  budget: BudgetWidget,
+  net_worth: NetWorthWidget,
   modules: ModulesWidget,
 };
 

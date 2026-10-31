@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { AvatarImageError, centerSquare, prepareAvatar } from "./avatar";
+import { AvatarImageError, centerSquare, prepareAvatar, readAsDataUrl } from "./avatar";
 
 describe("centerSquare", () => {
   it.each([
@@ -18,5 +18,13 @@ describe("prepareAvatar", () => {
     const file = new File(["%PDF"], "cv.pdf", { type: "application/pdf" });
 
     await expect(prepareAvatar(file)).rejects.toThrow(AvatarImageError);
+  });
+});
+
+describe("readAsDataUrl", () => {
+  it("encodes the photo with its type", async () => {
+    const blob = new Blob(["webp"], { type: "image/webp" });
+
+    await expect(readAsDataUrl(blob)).resolves.toBe(`data:image/webp;base64,${btoa("webp")}`);
   });
 });

@@ -13,7 +13,7 @@ Follows the shared rules in `AGENTS.md`. Frontend specifics:
 - Server Components by default. Add `"use client"` only for state, effects, event handlers, or
   browser APIs, and keep client components small.
 - Layout: routes in `src/app/`, components in `src/components/` (`ui/` = small
-  shadcn/ui-compatible primitives), logic in `src/lib/`. App-wide context lives in `src/providers/`, data
+  shadcn/ui-compatible primitives), feature logic in `src/lib/`, shared helpers in `src/utils/`. App-wide context lives in `src/providers/`, data
   hooks in `src/hooks/`; dependencies point components → hooks → providers → api/lib. Navigation items come from
   `src/lib/navigation/navigation.ts`.
 - Data access goes through typed helpers in `src/api/`, using `import type` from
@@ -21,8 +21,8 @@ Follows the shared rules in `AGENTS.md`. Frontend specifics:
 - Every data-driven view handles loading, error, empty, and success states.
 - Accessibility: semantic elements, labelled controls, keyboard support, visible focus
   (`focus-visible:ring-2 focus-visible:ring-ring`), `aria-hidden="true"` on decorative icons.
-- Styling: Tailwind utilities with the tokens in `src/app/globals.css`, combined with `cn()`
-  from `src/lib/utils/utils.ts`. Prettier sorts classes. Keep the restrained, minimal style.
+- Styling: Tailwind utilities with the tokens in `src/styles/` (colors in `tokens.css`), combined with `cn()`
+  from `src/utils/common/common.ts`. Prettier sorts classes. Keep the warm, calm style.
 - Imports use the `@/` alias for `src/`. ESLint enforces sorted imports and type-only imports.
 - Public config is read and validated in `src/lib/env/env.ts`. Only `NEXT_PUBLIC_*` values, never
   secrets.

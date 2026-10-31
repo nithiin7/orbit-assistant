@@ -18,6 +18,7 @@ from orbit_api.schemas.reminders import (
 )
 from orbit_api.services.reminders.models import (
     ReminderInPastError,
+    ReminderManagedError,
     ReminderNotFoundError,
     ReminderTaskNotFoundError,
 )
@@ -50,6 +51,18 @@ def task_not_found() -> HTTPException:
     return HTTPException(
         status.HTTP_422_UNPROCESSABLE_CONTENT, "That task doesn't exist in this workspace."
     )
+
+
+def managed() -> HTTPException:
+    return HTTPException(
+        status.HTTP_409_CONFLICT,
+        "This reminder follows a loan, subscription, or bill. Change its reminder in Finance.",
+    )
+
+
+_MANAGED: dict[int | str, dict[str, Any]] = {
+    409: {"description": "The reminder is managed by a loan, subscription, or bill."}
+}
 
 
 def in_the_past() -> HTTPException:
@@ -112,7 +125,9 @@ async def get_reminder(
         raise reminder_not_found() from None
 
 
-@router.patch("/{reminder_id}", summary="Update a reminder", responses=_INVALID_CHANGE)
+@router.patch(
+    "/{reminder_id}", summary="Update a reminder", responses={**_INVALID_CHANGE, **_MANAGED}
+)
 async def update_reminder(
     reminder_id: ReminderId,
     body: UpdateReminderRequest,
@@ -125,6 +140,8 @@ async def update_reminder(
         view = await reminders.update(workspace.id, reminder_id, body.to_changes())
     except ReminderNotFoundError:
         raise reminder_not_found() from None
+    except ReminderManagedError:
+        raise managed() from None
     except ReminderTaskNotFoundError:
         raise task_not_found() from None
     except ReminderInPastError:
@@ -133,7 +150,10 @@ async def update_reminder(
 
 
 @router.delete(
-    "/{reminder_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a reminder"
+    "/{reminder_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a reminder",
+    responses=_MANAGED,
 )
 async def delete_reminder(
     reminder_id: ReminderId, workspace: WorkspaceDep, reminders: ReminderServiceDep
@@ -144,4 +164,6 @@ async def delete_reminder(
         await reminders.delete(workspace.id, reminder_id)
     except ReminderNotFoundError:
         raise reminder_not_found() from None
+    except ReminderManagedError:
+        raise managed() from None
     return Response(status_code=status.HTTP_204_NO_CONTENT)

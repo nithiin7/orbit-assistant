@@ -29,6 +29,7 @@ from orbit_api.db.models import ReminderModel, ReminderOccurrenceModel, TaskMode
 from orbit_api.repositories.transaction import flush
 from orbit_api.services.reminders.models import (
     ClaimedOccurrence,
+    CommitmentLink,
     DeliveryOutcome,
     DeliveryTarget,
     Occurrence,
@@ -72,7 +73,18 @@ def _to_reminder(model: ReminderModel) -> Reminder:
         last_outcome=cast(DeliveryOutcome | None, model.last_outcome),
         created_at=model.created_at,
         updated_at=model.updated_at,
+        commitment=_commitment_of(model),
     )
+
+
+def _commitment_of(model: ReminderModel) -> CommitmentLink | None:
+    if model.finance_loan_id is not None:
+        return CommitmentLink(kind="loan", id=model.finance_loan_id)
+    if model.finance_recurring_payment_id is not None:
+        return CommitmentLink(kind="recurring_payment", id=model.finance_recurring_payment_id)
+    if model.finance_deposit_id is not None:
+        return CommitmentLink(kind="deposit", id=model.finance_deposit_id)
+    return None
 
 
 def _next_occurrence_at() -> ColumnElement[datetime]:
@@ -135,10 +147,17 @@ class SqlReminderRepository:
         self._session = session
 
     async def add(self, reminder: Reminder) -> None:
+        link = reminder.commitment
         self._session.add(
             ReminderModel(
                 id=reminder.id,
                 workspace_id=reminder.workspace_id,
+                # The link is fixed once the reminder exists.
+                finance_loan_id=link.id if link and link.kind == "loan" else None,
+                finance_recurring_payment_id=(
+                    link.id if link and link.kind == "recurring_payment" else None
+                ),
+                finance_deposit_id=link.id if link and link.kind == "deposit" else None,
                 last_occurrence_at=reminder.last_occurrence_at,
                 last_outcome=reminder.last_outcome,
                 created_at=reminder.created_at,
@@ -149,6 +168,22 @@ class SqlReminderRepository:
 
     async def get(self, workspace_id: uuid.UUID, reminder_id: uuid.UUID) -> Reminder | None:
         model = await self._get_model(workspace_id, reminder_id)
+        return _to_reminder(model) if model else None
+
+    async def for_commitment(
+        self, workspace_id: uuid.UUID, link: CommitmentLink
+    ) -> Reminder | None:
+        """The reminder a commitment manages, if it has one, locked for this transaction."""
+        column = {
+            "loan": ReminderModel.finance_loan_id,
+            "recurring_payment": ReminderModel.finance_recurring_payment_id,
+            "deposit": ReminderModel.finance_deposit_id,
+        }[link.kind]
+        model = await self._session.scalar(
+            select(ReminderModel)
+            .where(ReminderModel.workspace_id == workspace_id, column == link.id)
+            .with_for_update()
+        )
         return _to_reminder(model) if model else None
 
     async def view(

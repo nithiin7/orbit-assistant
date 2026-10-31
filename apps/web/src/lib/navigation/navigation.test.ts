@@ -17,7 +17,8 @@ describe("navigation", () => {
   });
 
   it("finds sections by slug", () => {
-    expect(findSection("notes")?.title).toBe("Notes");
+    expect(findSection("calendar")?.title).toBe("Calendar");
+    expect(findSection("notes")).toBeUndefined();
     expect(findSection("unknown")).toBeUndefined();
     expect(findSection("tasks")).toBeUndefined();
     expect(findSection("shopping")).toBeUndefined();

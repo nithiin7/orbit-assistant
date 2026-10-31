@@ -3,7 +3,7 @@
 import type { ShoppingItem } from "@orbit/contracts";
 import { object, string } from "yup";
 
-import { multiLineText, singleLineText, tooLongMessage } from "@/lib/validation";
+import { multiLineText, singleLineText, tooLongMessage } from "@/utils/validation";
 
 export const LIST_NAME_MAX_LENGTH = 100;
 export const ITEM_NAME_MAX_LENGTH = 200;

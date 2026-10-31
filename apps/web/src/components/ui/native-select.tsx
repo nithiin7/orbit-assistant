@@ -1,7 +1,7 @@
 import { ChevronDown } from "lucide-react";
 import type { ComponentProps } from "react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/common";
 
 /**
  * A styled native `<select>`: keyboard, screen reader, and mobile pickers work as the platform

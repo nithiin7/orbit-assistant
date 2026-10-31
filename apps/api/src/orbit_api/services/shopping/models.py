@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
 
-from orbit_api.services.tasks.models import UNSET, Change
+from orbit_api.utils.changes import UNSET, Change
 
 ItemStatus = Literal["needed", "purchased"]
 

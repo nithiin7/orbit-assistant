@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 import { useCommandPalette } from "@/components/command-palette/command-palette";
 import { ShortcutHint, useIsMac } from "@/components/shortcut-hint";
 import { Tooltip } from "@/components/ui/tooltip";
-import { modKeyShortcut } from "@/lib/keyboard";
+import { modKeyShortcut } from "@/utils/keyboard";
 
 import { useSidebarCollapsed } from "./sidebar-state";
 

@@ -1,0 +1,41 @@
+/* Motion: short and calm. Ordinary interactions sit between 120ms and 220ms. */
+@theme {
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-page-in: page-in 180ms var(--ease-out-soft);
+  --animate-tooltip-in: fade-in 120ms ease-out;
+  --animate-popover-in: popover-in 140ms var(--ease-out-soft);
+
+  @keyframes page-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes popover-in {
+    from {
+      opacity: 0;
+      scale: 0.98;
+      translate: 0 -2px;
+    }
+  }
+}
+
+/* Honor reduced-motion preferences everywhere, including third-party and native elements. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after,
+  *::backdrop {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ada, json, mockApi, type MockRequest, personal, status } from "@/test/api-mock";
+import { chooseOption, pickDate } from "@/test/controls";
 import { renderSignedIn } from "@/test/session";
 
 import { RemindersPanel } from "./reminders-view";
@@ -90,7 +91,10 @@ describe("RemindersPanel", () => {
 
     await renderSignedIn(<RemindersPanel />);
 
-    const list = await screen.findByRole("list", { name: "1 reminder" });
+    expect(
+      await screen.findByRole("heading", { name: "Upcoming reminders", level: 2 }),
+    ).toBeInTheDocument();
+    const list = await screen.findByRole("list", { name: "Later, 1 reminder" });
     const [row] = within(list).getAllByRole("listitem");
     expect(row).toHaveTextContent("Call the dentist");
     expect(row).toHaveTextContent("Weekly on Mon, Thu");
@@ -133,19 +137,24 @@ describe("RemindersPanel", () => {
     const dialog = screen.getByRole("dialog", { name: "New reminder" });
     await user.type(within(dialog).getByRole("textbox", { name: "Title" }), "Pay rent");
     // 2030-01-14 is a Monday.
-    fireEvent.change(within(dialog).getByLabelText("Date"), { target: { value: "2030-01-14" } });
+    await pickDate(user, within(dialog).getByRole("combobox", { name: "Date" }), "2030-01-14");
     fireEvent.change(within(dialog).getByLabelText("Time"), { target: { value: "09:30" } });
-    await user.selectOptions(
+    await chooseOption(
+      user,
       within(dialog).getByRole("combobox", { name: "Time zone" }),
-      "Asia/Tokyo",
+      /Asia\/Tokyo|Tokyo/,
     );
-    await user.selectOptions(within(dialog).getByRole("combobox", { name: "Repeat" }), "weekly");
+    await chooseOption(
+      user,
+      within(dialog).getByRole("combobox", { name: "Repeat" }),
+      "Weekly on chosen days",
+    );
     expect(within(dialog).getByRole("button", { name: "Mon" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
     await user.click(within(dialog).getByRole("button", { name: "Wed" }));
-    await user.selectOptions(within(dialog).getByRole("combobox", { name: /Task/ }), "File taxes");
+    await chooseOption(user, within(dialog).getByRole("combobox", { name: /Task/ }), "File taxes");
     await user.click(within(dialog).getByRole("button", { name: "Create reminder" }));
 
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
@@ -171,7 +180,11 @@ describe("RemindersPanel", () => {
     await user.click((await screen.findAllByRole("button", { name: "New reminder" }))[0]!);
     const dialog = screen.getByRole("dialog", { name: "New reminder" });
 
-    await user.selectOptions(within(dialog).getByRole("combobox", { name: "Repeat" }), "weekly");
+    await chooseOption(
+      user,
+      within(dialog).getByRole("combobox", { name: "Repeat" }),
+      "Weekly on chosen days",
+    );
     for (const day of within(dialog).getAllByRole("button", { pressed: true })) {
       await user.click(day);
     }
@@ -283,6 +296,68 @@ describe("RemindersPanel", () => {
     fail = false;
     await user.click(screen.getByRole("button", { name: "Try again" }));
 
-    expect(await screen.findByRole("list", { name: "1 reminder" })).toBeInTheDocument();
+    expect(await screen.findByRole("list", { name: "Later, 1 reminder" })).toBeInTheDocument();
+  });
+
+  it("groups reminders by when they fire and says when the next one is", async () => {
+    const soon = new Date(Date.now() + 5 * 60_000);
+    const now = reminder({
+      id: "r-late",
+      title: "Stretch",
+      status: "overdue",
+      next_occurrence_at: new Date(Date.now() - 60_000).toISOString(),
+    });
+    // Due in a few minutes, so Today, or Tomorrow if the test runs just before midnight.
+    const coffee = reminder({
+      id: "r-coffee",
+      title: "Coffee",
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      next_occurrence_at: soon.toISOString(),
+    });
+    mockApi({
+      ...session,
+      [`GET ${REMINDERS}`]: json({ reminders: [now, coffee, dentist], total: 3 }),
+    });
+
+    await renderSignedIn(<RemindersPanel />);
+
+    const overdue = await screen.findByRole("list", { name: "Overdue, 1 reminder" });
+    expect(overdue).toHaveTextContent("Stretch");
+    expect(overdue).toHaveTextContent(/Overdue ·/);
+    expect(screen.getByRole("list", { name: /^(Today|Tomorrow), 1 reminder$/ })).toHaveTextContent(
+      "Coffee",
+    );
+    expect(screen.getByRole("list", { name: "Later, 1 reminder" })).toHaveTextContent(
+      "Call the dentist",
+    );
+    const sections = screen
+      .getAllByRole("heading", { level: 3 })
+      .map((heading) => heading.textContent);
+    expect(sections).toEqual(["Overdue1", expect.stringMatching(/^(Today|Tomorrow)1$/), "Later1"]);
+    const summary = screen.getByText("3 reminders", { selector: "span" }).parentElement;
+    expect(summary).toHaveTextContent(/Next (Today|Tomorrow), /);
+  });
+
+  it("shows other views as one list", async () => {
+    const off = reminder({
+      id: "r-off",
+      title: "Water plants",
+      enabled: false,
+      status: "disabled",
+      next_occurrence_at: null,
+    });
+    mockApi({ ...session, [`GET ${REMINDERS}`]: json({ reminders: [off], total: 1 }) });
+    const user = userEvent.setup();
+    await renderSignedIn(<RemindersPanel />);
+    await screen.findByRole("list", { name: /Not scheduled|Later/ });
+
+    await user.click(screen.getByRole("button", { name: "Disabled" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Disabled reminders", level: 2 }),
+    ).toBeInTheDocument();
+    const list = await screen.findByRole("list", { name: "1 reminder" });
+    expect(within(list).getByText("Disabled")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 3 })).not.toBeInTheDocument();
   });
 });

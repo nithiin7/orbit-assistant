@@ -6,7 +6,8 @@ from datetime import date, datetime, time
 from typing import Literal
 
 from orbit_api.services.reminders.recurrence import Recurrence, Schedule
-from orbit_api.services.tasks.models import UNSET, Change, TaskStatus
+from orbit_api.services.tasks.models import TaskStatus
+from orbit_api.utils.changes import UNSET, Change
 
 # Derived, never stored:
 # - `disabled`: switched off; nothing fires.
@@ -20,6 +21,17 @@ ReminderStatus = Literal["scheduled", "overdue", "completed", "disabled"]
 # exists exactly when the occurrence is `delivered`, and both are written in one transaction.
 OccurrenceStatus = Literal["pending", "processing", "delivered", "cancelled", "failed"]
 DeliveryOutcome = Literal["delivered", "cancelled", "failed"]
+
+
+# The finance record a reminder is managed by: a loan, a subscription or bill, or a deposit
+# (its maturity).
+CommitmentLinkKind = Literal["loan", "recurring_payment", "deposit"]
+
+
+@dataclass(frozen=True, slots=True)
+class CommitmentLink:
+    kind: CommitmentLinkKind
+    id: uuid.UUID
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,6 +49,9 @@ class Reminder:
     last_outcome: DeliveryOutcome | None
     created_at: datetime
     updated_at: datetime
+    # Set for reminders a financial commitment manages (`services.commitments.reminders`): the
+    # commitment keeps them pointed at its next payment, and they can't be edited directly.
+    commitment: CommitmentLink | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -140,6 +155,10 @@ class ReminderNotFoundError(Exception):
 
 class ReminderTaskNotFoundError(Exception):
     """The task a reminder should be about does not exist in the reminder's workspace."""
+
+
+class ReminderManagedError(Exception):
+    """The reminder belongs to a loan, subscription, or bill, which manages its schedule."""
 
 
 class ReminderInPastError(Exception):

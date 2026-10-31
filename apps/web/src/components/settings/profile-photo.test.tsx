@@ -1,6 +1,6 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type * as AvatarModule from "@/lib/avatar";
 import { ada, json, mockApi, personal, status } from "@/test/api-mock";
@@ -26,11 +26,6 @@ const session = {
   "GET /api/v1/workspaces": json({ workspaces: [personal] }),
 };
 
-beforeEach(() => {
-  vi.stubGlobal("URL", Object.assign(URL, { createObjectURL: vi.fn(() => "blob:avatar") }));
-  URL.revokeObjectURL = vi.fn();
-});
-
 afterEach(() => {
   vi.unstubAllGlobals();
   localStorage.clear();
@@ -55,7 +50,12 @@ describe("ProfilePhoto", () => {
     const put = api.mock.calls.find(([, init]) => init?.method === "PUT");
     expect(put?.[1]?.body).toBe(prepared.blob);
     expect(put?.[1]?.headers).toMatchObject({ "Content-Type": "image/webp" });
-    expect(document.querySelector("img")).toHaveAttribute("src", "blob:avatar");
+    await waitFor(() =>
+      expect(document.querySelector("img")).toHaveAttribute(
+        "src",
+        `data:image/webp;base64,${btoa("webp")}`,
+      ),
+    );
     expect(screen.getByLabelText("Change photo")).toBeInTheDocument();
   });
 

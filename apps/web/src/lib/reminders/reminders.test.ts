@@ -4,12 +4,10 @@ import { describe, expect, it } from "vitest";
 import {
   describeRecurrence,
   formatOccurrence,
-  localParts,
+  groupRemindersByFire,
   nextHour,
   reminderSchema,
   statusHint,
-  timeZoneLabel,
-  timeZoneNames,
   toFormValues,
   toRecurrence,
   toReminderRequest,
@@ -92,19 +90,8 @@ describe("recurrence presets", () => {
   });
 });
 
-describe("time zones", () => {
-  it("read an instant on another zone's wall clock, across midnight and DST", () => {
-    const instant = new Date("2030-01-14T23:30:00Z");
-    expect(localParts(instant, "Asia/Tokyo")).toEqual({ date: "2030-01-15", time: "08:30" });
-    expect(localParts(instant, "America/Los_Angeles")).toEqual({
-      date: "2030-01-14",
-      time: "15:30",
-    });
-    // New York switches to daylight time at 02:00 on 2026-03-08.
-    expect(localParts(new Date("2026-03-08T07:30:00Z"), "America/New_York").time).toBe("03:30");
-  });
-
-  it("suggest the next whole hour in the reminder's zone", () => {
+describe("nextHour", () => {
+  it("suggests the next whole hour in the reminder's zone", () => {
     expect(nextHour("Asia/Kolkata", new Date("2030-01-15T08:10:00Z"))).toEqual({
       date: "2030-01-15",
       time: "14:30",
@@ -113,17 +100,6 @@ describe("time zones", () => {
       date: "2030-01-16",
       time: "00:00",
     });
-  });
-
-  it("list zones with UTC and the extras the form needs", () => {
-    const names = timeZoneNames("Europe/Paris", null, "Etc/GMT+5");
-    expect(names).toContain("UTC");
-    expect(names).toContain("Europe/Paris");
-    expect(names).toContain("Etc/GMT+5");
-    expect(new Set(names).size).toBe(names.length);
-    expect(timeZoneLabel("America/Argentina/Buenos_Aires")).toBe(
-      "America / Argentina / Buenos Aires",
-    );
   });
 });
 
@@ -203,5 +179,51 @@ describe("statusHint", () => {
         reminder({ status: "completed", task: { id: "t", title: "T", status: "completed" } }),
       ),
     ).toMatch(/task is completed/);
+  });
+});
+
+describe("groupRemindersByFire", () => {
+  // 10:00 on Wed 2030-01-16 in Asia/Tokyo (01:00 UTC).
+  const now = new Date("2030-01-16T01:00:00Z");
+  const at = (id: string, next: string | null, status: Reminder["status"] = "scheduled") =>
+    reminder({ id, status, next_occurrence_at: next });
+
+  it("sorts reminders into sections by the viewer's calendar day", () => {
+    const groups = groupRemindersByFire(
+      [
+        at("late", "2030-01-15T23:00:00Z", "overdue"),
+        at("tonight", "2030-01-16T14:00:00Z"),
+        // 00:30 on Jan 17 in Tokyo, though still Jan 16 in UTC.
+        at("tomorrow", "2030-01-16T15:30:00Z"),
+        at("sunday", "2030-01-20T00:00:00Z"),
+        at("next-week", "2030-01-23T03:00:00Z"),
+        at("done", null, "completed"),
+      ],
+      "Asia/Tokyo",
+      now,
+    );
+    expect(groups.map((group) => [group.key, group.reminders.map((r) => r.id)])).toEqual([
+      ["overdue", ["late"]],
+      ["today", ["tonight"]],
+      ["tomorrow", ["tomorrow"]],
+      ["week", ["sunday"]],
+      ["later", ["next-week"]],
+      ["none", ["done"]],
+    ]);
+  });
+
+  it("leaves out empty sections and keeps order within one", () => {
+    const groups = groupRemindersByFire(
+      [at("a", "2030-01-16T05:00:00Z"), at("b", "2030-01-16T09:00:00Z")],
+      "Asia/Tokyo",
+      now,
+    );
+    expect(groups).toEqual([
+      {
+        key: "today",
+        label: "Today",
+        reminders: [expect.objectContaining({ id: "a" }), expect.objectContaining({ id: "b" })],
+      },
+    ]);
   });
 });

@@ -7,7 +7,7 @@ belonging to someone else is indistinguishable from one that doesn't exist.
 
 import uuid
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Protocol
 
 from orbit_api.services.notifications.models import (
@@ -17,6 +17,7 @@ from orbit_api.services.notifications.models import (
     NotificationQuery,
 )
 from orbit_api.services.transactions import Transaction
+from orbit_api.utils.clock import utc_now
 
 
 class NotificationRepository(Protocol):
@@ -38,16 +39,12 @@ class NotificationRepository(Protocol):
         ...
 
 
-def _utc_now() -> datetime:
-    return datetime.now(UTC)
-
-
 class NotificationService:
     def __init__(
         self,
         notifications: NotificationRepository,
         transaction: Transaction,
-        clock: Callable[[], datetime] = _utc_now,
+        clock: Callable[[], datetime] = utc_now,
     ) -> None:
         self._notifications = notifications
         self._transaction = transaction

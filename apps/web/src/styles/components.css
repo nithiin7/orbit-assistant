@@ -1,0 +1,64 @@
+@layer components {
+  /*
+   * Native <dialog> entry/exit. `@starting-style` animates the opening state; `allow-discrete`
+   * keeps the dialog in the top layer while it fades out.
+   */
+  .dialog-motion,
+  .dialog-motion::backdrop {
+    transition-property: opacity, translate, scale, display, overlay;
+    transition-duration: 160ms;
+    transition-timing-function: var(--ease-out-soft);
+    transition-behavior: allow-discrete;
+  }
+
+  .dialog-motion::backdrop {
+    background-color: oklch(0.18 0.012 55 / 0.45);
+    opacity: 0;
+  }
+
+  .dialog-motion[open],
+  .dialog-motion[open]::backdrop {
+    opacity: 1;
+  }
+
+  .dialog-motion:not([open]) {
+    opacity: 0;
+  }
+
+  @starting-style {
+    .dialog-motion[open],
+    .dialog-motion[open]::backdrop {
+      opacity: 0;
+    }
+  }
+
+  /* Command palette panel: a slight lift and scale. */
+  .dialog-pop:not([open]) {
+    scale: 0.98;
+    translate: 0 -4px;
+  }
+
+  @starting-style {
+    .dialog-pop[open] {
+      scale: 0.98;
+      translate: 0 -4px;
+    }
+  }
+
+  /* Mobile navigation drawer: slides in from the left edge. */
+  .dialog-drawer {
+    transition-duration: 220ms;
+  }
+
+  .dialog-drawer:not([open]) {
+    opacity: 1;
+    translate: -100% 0;
+  }
+
+  @starting-style {
+    .dialog-drawer[open] {
+      opacity: 1;
+      translate: -100% 0;
+    }
+  }
+}

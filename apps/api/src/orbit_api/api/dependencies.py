@@ -11,8 +11,23 @@ from orbit_api.config import Settings
 from orbit_api.db.database import Database
 from orbit_api.repositories.accounts import SqlAccountRepository, SqlLocalAuthRepository
 from orbit_api.repositories.avatars import SqlAvatarRepository
+from orbit_api.repositories.budgets import build_budget_service
+from orbit_api.repositories.commitments import build_commitment_service
 from orbit_api.repositories.dashboard import SqlDashboardRepository
+from orbit_api.repositories.finance import (
+    SqlFinanceAccountRepository,
+    SqlFinanceCategoryRepository,
+    SqlFinanceTransactionRepository,
+)
+from orbit_api.repositories.goals import build_goal_service
+from orbit_api.repositories.investments import (
+    build_asset_service,
+    build_investment_service,
+    build_net_worth_service,
+)
+from orbit_api.repositories.notes import build_attachment_service, build_note_service
 from orbit_api.repositories.notifications import SqlNotificationRepository
+from orbit_api.repositories.planning import build_planning_service
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.shopping import SqlShoppingItemRepository, SqlShoppingListRepository
 from orbit_api.repositories.tasks import SqlTaskRepository
@@ -20,13 +35,24 @@ from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.repositories.workspaces import SqlWorkspaceRepository
 from orbit_api.services.accounts.service import AccountService
 from orbit_api.services.avatars.service import AvatarService
+from orbit_api.services.budgets.service import BudgetService
+from orbit_api.services.commitments.service import CommitmentService
 from orbit_api.services.dashboard.service import DashboardService
+from orbit_api.services.finance.service import FinanceService
+from orbit_api.services.goals.service import GoalService
+from orbit_api.services.investments.assets import AssetService
+from orbit_api.services.investments.service import InvestmentService
 from orbit_api.services.local_auth.service import LocalAuthService, PasswordHasher
+from orbit_api.services.networth.service import NetWorthService
+from orbit_api.services.notes.attachments import AttachmentService
+from orbit_api.services.notes.service import NoteService
 from orbit_api.services.notifications.service import NotificationService
+from orbit_api.services.planning.service import PlanningService
 from orbit_api.services.reminders.service import ReminderService
 from orbit_api.services.shopping.service import ShoppingService
 from orbit_api.services.tasks.service import TaskService
 from orbit_api.services.workspaces.service import WorkspaceService
+from orbit_api.system.attachment_store import FileAttachmentStore
 
 
 async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
@@ -137,3 +163,85 @@ def get_notification_service(session: SessionDep) -> NotificationService:
 
 
 NotificationServiceDep = Annotated[NotificationService, Depends(get_notification_service)]
+
+
+def get_finance_service(session: SessionDep) -> FinanceService:
+    return FinanceService(
+        SqlFinanceAccountRepository(session),
+        SqlFinanceCategoryRepository(session),
+        SqlFinanceTransactionRepository(session),
+        SqlTransaction(session),
+    )
+
+
+FinanceServiceDep = Annotated[FinanceService, Depends(get_finance_service)]
+
+
+def get_commitment_service(session: SessionDep) -> CommitmentService:
+    return build_commitment_service(session)
+
+
+CommitmentServiceDep = Annotated[CommitmentService, Depends(get_commitment_service)]
+
+
+def get_investment_service(session: SessionDep) -> InvestmentService:
+    return build_investment_service(session)
+
+
+InvestmentServiceDep = Annotated[InvestmentService, Depends(get_investment_service)]
+
+
+def get_asset_service(session: SessionDep) -> AssetService:
+    return build_asset_service(session)
+
+
+AssetServiceDep = Annotated[AssetService, Depends(get_asset_service)]
+
+
+def get_net_worth_service(session: SessionDep) -> NetWorthService:
+    return build_net_worth_service(session)
+
+
+NetWorthServiceDep = Annotated[NetWorthService, Depends(get_net_worth_service)]
+
+
+def get_budget_service(session: SessionDep) -> BudgetService:
+    return build_budget_service(session)
+
+
+BudgetServiceDep = Annotated[BudgetService, Depends(get_budget_service)]
+
+
+def get_goal_service(session: SessionDep) -> GoalService:
+    return build_goal_service(session)
+
+
+GoalServiceDep = Annotated[GoalService, Depends(get_goal_service)]
+
+
+def get_planning_service(session: SessionDep) -> PlanningService:
+    return build_planning_service(session)
+
+
+PlanningServiceDep = Annotated[PlanningService, Depends(get_planning_service)]
+
+
+def get_note_service(session: SessionDep) -> NoteService:
+    return build_note_service(session)
+
+
+NoteServiceDep = Annotated[NoteService, Depends(get_note_service)]
+
+
+def get_attachment_store(settings: SettingsDep) -> FileAttachmentStore:
+    return FileAttachmentStore(settings.attachments_dir)
+
+
+AttachmentStoreDep = Annotated[FileAttachmentStore, Depends(get_attachment_store)]
+
+
+def get_attachment_service(session: SessionDep, store: AttachmentStoreDep) -> AttachmentService:
+    return build_attachment_service(session, store)
+
+
+AttachmentServiceDep = Annotated[AttachmentService, Depends(get_attachment_service)]

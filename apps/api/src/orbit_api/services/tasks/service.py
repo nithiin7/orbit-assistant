@@ -8,11 +8,10 @@ reaches a task: one in another workspace is indistinguishable from one that does
 import uuid
 from collections.abc import Callable
 from dataclasses import replace
-from datetime import UTC, date, datetime
+from datetime import date, datetime
 from typing import Protocol
 
 from orbit_api.services.tasks.models import (
-    UNSET,
     Task,
     TaskChanges,
     TaskDraft,
@@ -22,6 +21,8 @@ from orbit_api.services.tasks.models import (
     TaskSummary,
 )
 from orbit_api.services.transactions import Transaction
+from orbit_api.utils.changes import UNSET
+from orbit_api.utils.clock import utc_now
 
 
 class TaskRepository(Protocol):
@@ -44,16 +45,12 @@ class TaskRepository(Protocol):
     async def summarize(self, workspace_id: uuid.UUID, today: date) -> TaskSummary: ...
 
 
-def _utc_now() -> datetime:
-    return datetime.now(UTC)
-
-
 class TaskService:
     def __init__(
         self,
         tasks: TaskRepository,
         transaction: Transaction,
-        clock: Callable[[], datetime] = _utc_now,
+        clock: Callable[[], datetime] = utc_now,
     ) -> None:
         self._tasks = tasks
         self._transaction = transaction

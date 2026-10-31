@@ -8,10 +8,10 @@ import pytest
 
 from orbit_api.services.accounts.models import AuthProvider, ExternalIdentity, User
 from orbit_api.services.accounts.service import AccountService
-from orbit_api.services.tasks.models import UNSET, Change
 from orbit_api.services.transactions import ConflictError
 from orbit_api.services.workspaces.models import Workspace, WorkspaceNotFoundError
 from orbit_api.services.workspaces.service import WorkspaceService
+from orbit_api.utils.changes import UNSET, Change
 
 pytestmark = pytest.mark.anyio
 

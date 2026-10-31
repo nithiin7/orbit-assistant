@@ -17,10 +17,24 @@ monorepo foundation, an application shell, an API with health endpoints, a share
 a database foundation (SQLAlchemy and Alembic over SQLite in local mode, or PostgreSQL on
 Supabase in cloud mode), and an identity foundation: user profiles, local accounts or Supabase
 Auth, workspaces, and centralized authorization. The product features are workspace-scoped
-**tasks**, **shopping lists**, and **reminders** (one-time or recurring, optionally about a task),
-delivered as in-app **notifications** by a database-backed worker. There are no other product
-features (calendar, notes, finance), no recurring tasks, no push, email, or mobile notifications,
-and no AI integration yet. Do not describe or build on capabilities that do not exist.
+**tasks**, **shopping lists**, **reminders** (one-time or recurring, optionally about a task),
+delivered as in-app **notifications** by a database-backed worker, and **finance**: phase 1
+(hand-entered accounts, income, expenses, refunds, transfers, categories, monthly reports, and
+CSV export), phase 2 commitments (loans with EMI schedules, subscriptions, recurring bills,
+upcoming payments, and payment reminders), and phase 3 investments (investment accounts, mutual
+fund, stock, and ETF holdings with FIFO cost basis and hand-entered prices, SIP plans, fixed and
+recurring deposits, other assets with valuations, a portfolio summary, net worth, and monthly
+net worth snapshots), and phase 4 planning (overall and category budgets per month or custom
+period with rollover and threshold alerts, savings goals with contributions and withdrawals, and
+a monthly plan of expected income against commitments, budgets, savings, and investments), all
+recorded through the phase 1 ledger, and **notes** (a rich-text editor storing ProseMirror JSON,
+autosave with revision checks, nested folders, tags, an Inbox and quick capture, links and
+backlinks between notes, links to tasks, a one-entry-per-day journal, substring search, archive
+and trash, Markdown import and export, and file attachments stored outside the database). There
+are no other product features (calendar), no semantic search or knowledge graph, no
+recurring tasks, no automatically created transactions, no live market prices or bank
+integrations, no AI financial insights, no push, email, or mobile notifications, and no AI
+integration yet. Do not describe or build on capabilities that do not exist.
 
 ## Principles
 
@@ -45,7 +59,7 @@ and no AI integration yet. Do not describe or build on capabilities that do not 
 | `.github/workflows/ci.yml`     | CI: web, API, and commit-message jobs                                            |
 | `.husky/`, `.lintstagedrc.mjs` | Git hooks: staged-file lint/format and commitlint                                |
 
-Not present yet (planned; see `docs/architecture.md`): product tables for notes and finance,
+Not present yet (planned; see `docs/architecture.md`): price providers,
 shared workspaces, AI provider abstractions, end-to-end tests, and a `scripts/` directory.
 
 ### Boundaries
@@ -104,7 +118,9 @@ and `packages/*/package.json`. Check them rather than guessing.
 - Layering: routes in `src/app/`, UI in `src/components/` (`ui/` holds small
   shadcn/ui-compatible primitives), app-wide React context (auth, workspaces, avatar, query
   client, theme) in `src/providers/`, data hooks in `src/hooks/`, API calls in `src/api/`, and
-  other logic in `src/lib/`. Dependencies point one way: components → hooks → providers →
+  feature logic in `src/lib/`, and generic helpers shared across features (dates, time zones,
+  validation, keyboard, `cn()`) in `src/utils/`. Dependencies point one way: components → hooks →
+  providers →
   api/lib. ESLint (`no-restricted-imports` in `apps/web/eslint.config.mjs`) enforces it.
 - Call the API only through the typed helpers in `src/api/`, using types from
   `@orbit/contracts`. Each API area (`tasks`, `shopping`, `auth`, …) is a folder under
@@ -121,10 +137,20 @@ and `packages/*/package.json`. Check them rather than guessing.
   `fetch` is the HTTP client; don't add axios.
 - Forms use React Hook Form with a Yup schema (`yupResolver`). Schemas live in `src/lib`
   beside their domain (`@/lib/auth/validation`, `@/lib/tasks`, `@/lib/shopping`), mirror the
-  API's rules, and build on the text helpers in `@/lib/validation`. Show server failures with
+  API's rules, and build on the text helpers in `@/utils/validation`. Show server failures with
   `setError("root.server", …)` and `FormAlert`. Don't hand-roll field state or validators.
-- Each `src/lib` module has its own folder: `src/lib/<name>/<name>.ts`, its
-  `<name>.test.ts`, and an `index.ts` that re-exports it, so imports stay `@/lib/<name>`.
+- Choices, dates, and money use the custom controls in `src/components/ui/` (`Select`,
+  `DatePicker`, `AmountInput`), never native `<select>` or `type="date"`. In forms, bind them
+  with `SelectField`, `DateField`, and `AmountField` from `@/components/form-field`. Amounts are
+  grouped as typed by the currency's rules (`1,00,000` for INR) via `formatAmountInput`, and
+  shown with `formatMoney`, both in `@/lib/finance`.
+- Give a view one primary action. Several related "add" actions go in a `Menu`
+  (`src/components/ui/menu.tsx`) rather than a row of equal buttons; secondary actions use the
+  `soft` or `ghost` button variants.
+- Each `src/lib` and `src/utils` module has its own folder: `<layer>/<name>/<name>.ts`, its
+  `<name>.test.ts`, and an `index.ts` that re-exports it, so imports stay `@/lib/<name>` or
+  `@/utils/<name>`. A helper used by more than one feature belongs in `src/utils`, which imports
+  nothing else from the app.
   Related modules can share a domain folder without an index, like `src/lib/auth/`.
 - Accessibility: semantic HTML, labelled controls, full keyboard support, and visible focus
   states (`focus-visible:ring-2 focus-visible:ring-ring`). Decorative icons get
@@ -132,8 +158,10 @@ and `packages/*/package.json`. Check them rather than guessing.
 - Design every data-driven view with loading, error, empty, and success states. Show
   user-facing errors that are helpful without leaking internals.
 - Handle async work correctly: await or deliberately void promises, and handle rejections.
-- Style with Tailwind utilities and the design tokens in `src/app/globals.css`. Use `cn()` from
-  `src/lib/utils/utils.ts` for conditional classes. Keep the restrained visual style.
+- Style with Tailwind utilities and the design tokens in `src/styles/` (entry `globals.css`; colors
+  in `tokens.css`, Tailwind theme and fonts in `theme.css`). Use `cn()` from
+  `src/utils/common/common.ts` for conditional classes. Keep the warm, calm visual style:
+  color for actions and meaning, quiet surfaces elsewhere.
 - Only `NEXT_PUBLIC_*` variables reach the browser, and they are public. **No secrets in client
   code.** Validate public config in `src/lib/env/env.ts`.
 - Create a reusable component only when it removes real duplication or clarifies the code.

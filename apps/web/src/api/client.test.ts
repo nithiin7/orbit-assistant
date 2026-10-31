@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, describeApiError, request } from "./client";
+import { ApiError, describeApiError, request, toQueryString } from "./client";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -77,5 +77,14 @@ describe("describeApiError", () => {
     expect(describeApiError(new TypeError("Failed to fetch"), "Fallback")).toMatch(
       /Can’t reach the Orbit API/,
     );
+  });
+});
+
+describe("toQueryString", () => {
+  it("repeats arrays, writes booleans, and skips missing values", () => {
+    expect(
+      toQueryString({ kind: ["loan", "bill"], include_overdue: false, limit: 5, q: undefined }),
+    ).toBe("?kind=loan&kind=bill&include_overdue=false&limit=5");
+    expect(toQueryString({ q: null })).toBe("");
   });
 });

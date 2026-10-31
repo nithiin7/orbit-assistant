@@ -1,0 +1,110 @@
+/*
+ * Design tokens (shadcn/ui-compatible). Colors are OKLCH. The palette is warm: neutrals are cream
+ * and stone (warm charcoal in dark mode), `--brand` is a clay terracotta used for primary actions
+ * and selection, and `--brand-2` (amber) appears only in gradients and glows. Status colors carry
+ * meaning (gains, losses, warnings). Keep color purposeful; let warm surfaces do the rest.
+ */
+:root {
+  --radius: 0.75rem;
+
+  /* Surfaces */
+  --background: oklch(0.985 0.006 75);
+  --foreground: oklch(0.22 0.012 55);
+  --card: oklch(0.998 0.002 75);
+  --card-foreground: oklch(0.22 0.012 55);
+  --popover: oklch(0.998 0.002 75);
+  --popover-foreground: oklch(0.22 0.012 55);
+
+  /* Interactive */
+  --primary: oklch(0.54 0.15 40);
+  --primary-foreground: oklch(0.99 0.005 75);
+  --secondary: oklch(0.955 0.008 75);
+  --secondary-foreground: oklch(0.24 0.012 55);
+  --muted: oklch(0.955 0.008 75);
+  --muted-foreground: oklch(0.5 0.015 60);
+  --accent: oklch(0.945 0.012 70);
+  --accent-foreground: oklch(0.24 0.012 55);
+  --brand: oklch(0.54 0.15 40);
+  --brand-foreground: oklch(0.99 0.005 75);
+  --brand-subtle: oklch(0.955 0.028 52);
+  /* A second hue for gradients and glows only, never for meaning. */
+  --brand-2: oklch(0.8 0.13 78);
+
+  /* Status */
+  --destructive: oklch(0.55 0.2 20);
+  --success: oklch(0.5 0.12 150);
+  --warning: oklch(0.62 0.14 70);
+
+  /*
+   * Chart series: a categorical pair (blue, orange) validated for color-vision deficiencies and
+   * contrast against the card surface in each mode. Used for income and spending; never status.
+   */
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+
+  /* Lines */
+  --border: oklch(0.91 0.008 70);
+  --input: oklch(0.88 0.01 70);
+  --ring: oklch(0.6 0.14 42);
+
+  /* Sidebar */
+  --sidebar: oklch(0.97 0.008 75);
+  --sidebar-foreground: oklch(0.22 0.012 55);
+  --sidebar-accent: oklch(0.935 0.014 68);
+  --sidebar-accent-foreground: oklch(0.22 0.012 55);
+  --sidebar-border: oklch(0.905 0.01 70);
+
+  /* Elevation: soft, warm, low-contrast shadows */
+  --shadow-color: 30 25% 25%;
+  --elevation-1: 0 1px 2px hsl(var(--shadow-color) / 0.06);
+  --elevation-2:
+    0 1px 2px hsl(var(--shadow-color) / 0.04), 0 4px 12px hsl(var(--shadow-color) / 0.06);
+  --elevation-3:
+    0 2px 4px hsl(var(--shadow-color) / 0.04), 0 12px 32px -4px hsl(var(--shadow-color) / 0.14);
+}
+
+.dark {
+  --background: oklch(0.17 0.008 60);
+  --foreground: oklch(0.95 0.008 75);
+  --card: oklch(0.205 0.009 60);
+  --card-foreground: oklch(0.95 0.008 75);
+  --popover: oklch(0.225 0.01 60);
+  --popover-foreground: oklch(0.95 0.008 75);
+
+  --primary: oklch(0.72 0.13 48);
+  --primary-foreground: oklch(0.2 0.02 45);
+  --secondary: oklch(0.26 0.01 60);
+  --secondary-foreground: oklch(0.95 0.008 75);
+  --muted: oklch(0.255 0.01 60);
+  --muted-foreground: oklch(0.72 0.015 70);
+  --accent: oklch(0.27 0.012 60);
+  --accent-foreground: oklch(0.95 0.008 75);
+  --brand: oklch(0.75 0.13 50);
+  --brand-foreground: oklch(0.2 0.02 45);
+  --brand-subtle: oklch(0.3 0.05 45);
+  --brand-2: oklch(0.78 0.12 78);
+
+  --destructive: oklch(0.72 0.17 20);
+  --success: oklch(0.74 0.13 150);
+  --warning: oklch(0.8 0.13 75);
+
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.72 0.12 48);
+
+  --sidebar: oklch(0.185 0.008 60);
+  --sidebar-foreground: oklch(0.95 0.008 75);
+  --sidebar-accent: oklch(0.27 0.025 50);
+  --sidebar-accent-foreground: oklch(0.95 0.008 75);
+  --sidebar-border: oklch(1 0 0 / 8%);
+
+  --shadow-color: 30 30% 3%;
+  --elevation-1: 0 1px 2px hsl(var(--shadow-color) / 0.4);
+  --elevation-2:
+    0 1px 2px hsl(var(--shadow-color) / 0.3), 0 4px 12px hsl(var(--shadow-color) / 0.35);
+  --elevation-3:
+    0 2px 4px hsl(var(--shadow-color) / 0.3), 0 16px 40px -4px hsl(var(--shadow-color) / 0.6);
+}

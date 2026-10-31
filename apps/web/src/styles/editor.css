@@ -1,0 +1,242 @@
+/*
+ * The note editor's document (`.note-prose`, the Tiptap/ProseMirror content element). Typography
+ * follows the app's tokens, so notes read like the rest of Orbit in light and dark themes.
+ */
+@layer components {
+  .note-prose {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+    color: var(--foreground);
+  }
+
+  .note-prose > * + * {
+    margin-top: 0.75em;
+  }
+
+  .note-prose h1,
+  .note-prose h2,
+  .note-prose h3 {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+
+  .note-prose h1 {
+    margin-top: 1.4em;
+    font-size: 1.6em;
+  }
+
+  .note-prose h2 {
+    margin-top: 1.3em;
+    font-size: 1.3em;
+  }
+
+  .note-prose h3 {
+    margin-top: 1.2em;
+    font-size: 1.1em;
+  }
+
+  .note-prose > :first-child {
+    margin-top: 0;
+  }
+
+  .note-prose a {
+    color: var(--brand);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in oklch, var(--brand) 40%, transparent);
+    text-underline-offset: 0.15em;
+    cursor: pointer;
+  }
+
+  .note-prose a[href^="/notes?note="] {
+    text-decoration-style: dotted;
+  }
+
+  .note-prose ul,
+  .note-prose ol {
+    padding-left: 1.4em;
+  }
+
+  .note-prose ul {
+    list-style: disc;
+  }
+
+  .note-prose ol {
+    list-style: decimal;
+  }
+
+  .note-prose li > p {
+    margin: 0;
+  }
+
+  .note-prose li + li {
+    margin-top: 0.2em;
+  }
+
+  /* Checklists: a checkbox beside each item, struck through when done. */
+  .note-prose ul[data-type="taskList"] {
+    list-style: none;
+    padding-left: 0.2em;
+  }
+
+  .note-prose ul[data-type="taskList"] li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6em;
+  }
+
+  .note-prose ul[data-type="taskList"] li > label {
+    flex-shrink: 0;
+    margin-top: 0.3em;
+    user-select: none;
+  }
+
+  .note-prose ul[data-type="taskList"] li > label input {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--brand);
+    cursor: pointer;
+  }
+
+  .note-prose ul[data-type="taskList"] li > div {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .note-prose ul[data-type="taskList"] li[data-checked="true"] > div {
+    color: var(--muted-foreground);
+    text-decoration: line-through;
+  }
+
+  .note-prose blockquote {
+    border-left: 3px solid var(--border);
+    padding-left: 1em;
+    color: var(--muted-foreground);
+  }
+
+  .note-prose hr {
+    margin: 1.5em 0;
+    border: none;
+    border-top: 1px solid var(--border);
+  }
+
+  .note-prose hr.ProseMirror-selectednode {
+    border-top-color: var(--ring);
+  }
+
+  .note-prose code {
+    border-radius: 0.3em;
+    background: var(--muted);
+    padding: 0.1em 0.35em;
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+  }
+
+  .note-prose pre {
+    overflow-x: auto;
+    border-radius: 0.6rem;
+    background: var(--muted);
+    padding: 0.85em 1em;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    line-height: 1.6;
+  }
+
+  .note-prose pre code {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+  }
+
+  /* Syntax highlighting from lowlight (highlight.js classes), in theme colors. */
+  .note-prose .hljs-comment,
+  .note-prose .hljs-quote {
+    color: var(--muted-foreground);
+    font-style: italic;
+  }
+
+  .note-prose .hljs-keyword,
+  .note-prose .hljs-selector-tag,
+  .note-prose .hljs-built_in,
+  .note-prose .hljs-type {
+    color: var(--brand);
+  }
+
+  .note-prose .hljs-string,
+  .note-prose .hljs-regexp,
+  .note-prose .hljs-addition {
+    color: var(--success);
+  }
+
+  .note-prose .hljs-number,
+  .note-prose .hljs-literal,
+  .note-prose .hljs-variable,
+  .note-prose .hljs-attr {
+    color: var(--warning);
+  }
+
+  .note-prose .hljs-title,
+  .note-prose .hljs-section,
+  .note-prose .hljs-function {
+    color: var(--brand-2);
+  }
+
+  .note-prose .hljs-deletion {
+    color: var(--destructive);
+  }
+
+  .note-prose table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    overflow: hidden;
+    font-size: 0.925em;
+  }
+
+  .note-prose th,
+  .note-prose td {
+    position: relative;
+    border: 1px solid var(--border);
+    padding: 0.4em 0.6em;
+    vertical-align: top;
+    text-align: left;
+  }
+
+  .note-prose th {
+    background: var(--muted);
+    font-weight: 600;
+  }
+
+  .note-prose th > p,
+  .note-prose td > p {
+    margin: 0;
+  }
+
+  .note-prose .selectedCell::after {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in oklch, var(--ring) 15%, transparent);
+    content: "";
+    pointer-events: none;
+  }
+
+  .note-prose .tableWrapper {
+    overflow-x: auto;
+  }
+
+  /* Placeholder text for empty blocks, from Tiptap's Placeholder extension. */
+  .note-prose .is-empty::before,
+  .note-prose p.is-editor-empty:first-child::before {
+    float: left;
+    height: 0;
+    color: var(--muted-foreground);
+    opacity: 0.7;
+    content: attr(data-placeholder);
+    pointer-events: none;
+  }
+
+  .note-prose ::selection {
+    background: color-mix(in oklch, var(--brand) 22%, transparent);
+  }
+}

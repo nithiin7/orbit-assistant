@@ -1,6 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import type { NoteSummary } from "@orbit/contracts";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { QuickCaptureProvider } from "@/components/notes/quick-capture";
+import { ada, json, mockApi, type MockRequest, personal, status } from "@/test/api-mock";
+import { renderSignedIn } from "@/test/session";
 
 import { CommandPaletteProvider } from "./command-palette";
 import { CommandPaletteTrigger } from "./command-palette-trigger";
@@ -17,29 +22,98 @@ vi.mock("next-themes", () => ({
   useTheme: () => ({ theme: "system", setTheme }),
 }));
 
+const NOTES = `/api/v1/workspaces/${personal.id}/notes`;
+
+function note(overrides: Partial<NoteSummary> & Pick<NoteSummary, "id" | "title">): NoteSummary {
+  return {
+    workspace_id: personal.id,
+    folder_id: null,
+    note_type: "note",
+    journal_date: null,
+    is_pinned: false,
+    is_favorite: false,
+    archived_at: null,
+    trashed_at: null,
+    revision: 1,
+    created_at: "2026-10-01T09:00:00Z",
+    updated_at: "2026-10-01T09:00:00Z",
+    last_opened_at: null,
+    tags: [],
+    excerpt: "",
+    ...overrides,
+  };
+}
+
+const recentNote = note({ id: "aaaaaaaa-0000-4000-8000-000000000001", title: "Trip plan" });
+const matchingNote = note({
+  id: "aaaaaaaa-0000-4000-8000-000000000002",
+  title: "Garden ideas",
+  excerpt: "Tomatoes by the fence",
+});
+
+function routes(
+  extra: Record<string, (request: MockRequest) => Response | Promise<Response>> = {},
+) {
+  return {
+    "GET /api/v1/auth/config": json({ provider: "local", registration_open: false }),
+    "GET /api/v1/me": json(ada),
+    "GET /api/v1/me/avatar": status(204),
+    "GET /api/v1/workspaces": json({ workspaces: [personal] }),
+    [`GET ${NOTES}`]: ({ path }: MockRequest) => {
+      void path;
+      return Response.json({ notes: [recentNote], total: 1 });
+    },
+    [`GET /api/v1/workspaces/${personal.id}/note-folders`]: json({
+      folders: [
+        {
+          id: "bbbbbbbb-0000-4000-8000-000000000001",
+          parent_id: null,
+          name: "Recipes",
+          note_count: 2,
+          created_at: "2026-10-01T09:00:00Z",
+          updated_at: "2026-10-01T09:00:00Z",
+        },
+      ],
+    }),
+    ...extra,
+  };
+}
+
 beforeEach(() => {
   push.mockClear();
   setTheme.mockClear();
 });
 
-function renderPalette() {
-  render(
-    <CommandPaletteProvider>
-      <CommandPaletteTrigger />
-    </CommandPaletteProvider>,
+afterEach(() => {
+  vi.unstubAllGlobals();
+  localStorage.clear();
+});
+
+async function renderPalette(
+  extra?: Record<string, (request: MockRequest) => Response | Promise<Response>>,
+) {
+  const api = mockApi(routes(extra));
+  await renderSignedIn(
+    <QuickCaptureProvider>
+      <CommandPaletteProvider>
+        <CommandPaletteTrigger />
+      </CommandPaletteProvider>
+    </QuickCaptureProvider>,
   );
-  return screen.getByLabelText("Command palette", { selector: "dialog" });
+  return { dialog: screen.getByLabelText("Command palette", { selector: "dialog" }), api };
 }
 
 describe("CommandPalette", () => {
   it("opens with Ctrl+K, focuses the search field, and toggles closed", async () => {
     const user = userEvent.setup();
-    const dialog = renderPalette();
+    const { dialog } = await renderPalette();
     expect(dialog).not.toHaveAttribute("open");
 
     await user.keyboard("{Control>}k{/Control}");
     expect(dialog).toHaveAttribute("open");
-    expect(screen.getByRole("combobox", { name: "Search pages and actions" })).toHaveFocus();
+    expect(
+      screen.getByRole("combobox", { name: "Search pages, notes, and actions" }),
+    ).toHaveFocus();
 
     await user.keyboard("{Control>}k{/Control}");
     expect(dialog).not.toHaveAttribute("open");
@@ -47,7 +121,7 @@ describe("CommandPalette", () => {
 
   it("opens from the trigger and restores focus to it on close", async () => {
     const user = userEvent.setup();
-    const dialog = renderPalette();
+    const { dialog } = await renderPalette();
     const trigger = screen.getByRole("button", { name: "Search" });
 
     await user.click(trigger);
@@ -59,13 +133,15 @@ describe("CommandPalette", () => {
 
   it("filters destinations and navigates to the chosen one with Enter", async () => {
     const user = userEvent.setup();
-    renderPalette();
+    await renderPalette();
     await user.click(screen.getByRole("button", { name: "Search" }));
 
     await user.keyboard("calendar");
     const options = screen.getAllByRole("option");
-    expect(options).toHaveLength(1);
-    expect(options[0]).toHaveAccessibleName(/Calendar/);
+    expect(options.map((option) => option.textContent)).toEqual([
+      expect.stringContaining("Calendar"),
+      expect.stringContaining("Search notes for “calendar”"),
+    ]);
 
     await user.keyboard("{Enter}");
     expect(push).toHaveBeenCalledWith("/calendar");
@@ -76,7 +152,7 @@ describe("CommandPalette", () => {
 
   it("moves the active option with the arrow keys", async () => {
     const user = userEvent.setup();
-    renderPalette();
+    await renderPalette();
     await user.click(screen.getByRole("button", { name: "Search" }));
     const input = screen.getByRole("combobox");
 
@@ -95,7 +171,7 @@ describe("CommandPalette", () => {
 
   it("switches theme from a theme command", async () => {
     const user = userEvent.setup();
-    renderPalette();
+    await renderPalette();
     await user.click(screen.getByRole("button", { name: "Search" }));
 
     await user.keyboard("dark");
@@ -105,12 +181,73 @@ describe("CommandPalette", () => {
 
   it("shows an empty state when nothing matches", async () => {
     const user = userEvent.setup();
-    renderPalette();
+    await renderPalette();
     await user.click(screen.getByRole("button", { name: "Search" }));
 
     await user.keyboard("zzz");
-    expect(screen.queryAllByRole("option")).toHaveLength(0);
-    expect(screen.getByText("No results for “zzz”")).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("0 results");
+    // Only the offer to search notes for it.
+    expect(screen.getAllByRole("option")).toHaveLength(1);
+    expect(screen.getByRole("option", { name: /Search notes for “zzz”/ })).toBeInTheDocument();
+  });
+
+  it("lists recent notes and folders, and opens them", async () => {
+    const user = userEvent.setup();
+    await renderPalette();
+    await user.click(screen.getByRole("button", { name: "Search" }));
+
+    await user.click(await screen.findByRole("option", { name: /Trip plan/ }));
+    expect(push).toHaveBeenCalledWith(`/notes?note=${recentNote.id}`);
+
+    await user.click(screen.getByRole("button", { name: "Search" }));
+    await user.keyboard("recipes");
+    await user.click(await screen.findByRole("option", { name: /Recipes/ }));
+    expect(push).toHaveBeenCalledWith("/notes?folder=bbbbbbbb-0000-4000-8000-000000000001");
+  });
+
+  it("searches notes as you type", async () => {
+    const user = userEvent.setup();
+    await renderPalette({
+      [`GET ${NOTES}`]: ({ path }) => {
+        void path;
+        return Response.json({ notes: [matchingNote], total: 1 });
+      },
+    });
+    await user.click(screen.getByRole("button", { name: "Search" }));
+    await user.keyboard("garden");
+
+    const match = await screen.findByRole("option", { name: /Garden ideas/ });
+    expect(match).toHaveTextContent("Tomatoes by the fence");
+    await user.click(match);
+    expect(push).toHaveBeenCalledWith(`/notes?note=${matchingNote.id}`);
+  });
+
+  it("creates a note and opens it", async () => {
+    const user = userEvent.setup();
+    const created = {
+      ...matchingNote,
+      id: "aaaaaaaa-0000-4000-8000-000000000009",
+      content: {},
+      content_format: "prosemirror-v1",
+      task_ids: [],
+    };
+    const { api } = await renderPalette({
+      [`GET ${NOTES}`]: json({ notes: [], total: 0 }),
+      [`POST ${NOTES}`]: json(created, 201),
+    });
+    await user.click(screen.getByRole("button", { name: "Search" }));
+    await user.keyboard("new note{Enter}");
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith(`/notes?view=inbox&note=${created.id}`));
+    const post = api.mock.calls.find(([, init]) => init?.method === "POST");
+    expect(JSON.parse(String(post?.[1]?.body))).toEqual({ title: "", note_type: "note" });
+  });
+
+  it("opens quick capture without leaving the page", async () => {
+    const user = userEvent.setup();
+    await renderPalette({ [`GET ${NOTES}`]: json({ notes: [], total: 0 }) });
+    await user.click(screen.getByRole("button", { name: "Search" }));
+    await user.keyboard("quick{Enter}");
+    expect(await screen.findByRole("dialog", { name: "Quick note" })).toBeInTheDocument();
+    expect(push).not.toHaveBeenCalled();
   });
 });

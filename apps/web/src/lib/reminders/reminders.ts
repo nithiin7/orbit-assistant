@@ -1,4 +1,4 @@
-/** Reminder display rules, recurrence presets, time zones, and the form schema mirroring the API. */
+/** Reminder display rules, recurrence presets, and the form schema mirroring the API. */
 
 import type {
   CreateReminderRequest,
@@ -10,8 +10,10 @@ import type {
 } from "@orbit/contracts";
 import { array, mixed, object, string } from "yup";
 
-import { type Option } from "@/lib/utils";
-import { multiLineText, singleLineText } from "@/lib/validation";
+import { type Option } from "@/utils/common";
+import { daysBetween } from "@/utils/dates";
+import { localParts } from "@/utils/time-zones";
+import { multiLineText, singleLineText } from "@/utils/validation";
 
 export const REMINDER_TITLE_MAX_LENGTH = 200;
 export const REMINDER_DESCRIPTION_MAX_LENGTH = 2000;
@@ -120,53 +122,6 @@ export function toReminderListQuery(filter: ReminderFilter): ReminderListQuery {
   return { status: filter === "all" ? undefined : filter, limit: REMINDER_PAGE_SIZE };
 }
 
-/** The browser's IANA time zone, falling back to UTC where the browser won't say. */
-export function browserTimeZone(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-  } catch {
-    return "UTC";
-  }
-}
-
-/** Every IANA time zone the browser knows, always including `UTC` and the given extras. */
-export function timeZoneNames(...include: (string | null | undefined)[]): string[] {
-  let names: string[] = [];
-  try {
-    names = Intl.supportedValuesOf("timeZone");
-  } catch {
-    // Older browsers: offer the zones that matter here.
-  }
-  const extras = ["UTC", ...include].filter((name): name is string => Boolean(name));
-  return [...new Set([...names, ...extras])].sort((a, b) => a.localeCompare(b));
-}
-
-/** "Europe/Paris" as "Europe / Paris", easier to scan in a long list. */
-export function timeZoneLabel(name: string): string {
-  return name.replaceAll("_", " ").replaceAll("/", " / ");
-}
-
-/** The date (`YYYY-MM-DD`) and time (`HH:MM`) of an instant, on the wall clock of `timeZone`. */
-export function localParts(instant: Date, timeZone: string): { date: string; time: string } {
-  const parts = Object.fromEntries(
-    new Intl.DateTimeFormat("en-CA", {
-      timeZone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-    })
-      .formatToParts(instant)
-      .map((part) => [part.type, part.value]),
-  );
-  return {
-    date: `${parts.year}-${parts.month}-${parts.day}`,
-    time: `${parts.hour}:${parts.minute}`,
-  };
-}
-
 /**
  * When a reminder fires, on its own time zone's clock: "Today, 9:00 AM", "Tomorrow, 9:00 AM",
  * or "Tue, Jan 15, 9:00 AM" (with the year when it isn't this year).
@@ -208,6 +163,61 @@ export function formatReceived(at: string, now: Date = new Date()): string {
 export function nextHour(timeZone: string, now: Date = new Date()): { date: string; time: string } {
   const hour = new Date(Math.ceil((now.getTime() + 1) / 3_600_000) * 3_600_000);
   return localParts(hour, timeZone);
+}
+
+export type FireGroupKey = "overdue" | "today" | "tomorrow" | "week" | "later" | "none";
+
+export type FireGroup<T> = { key: FireGroupKey; label: string; reminders: T[] };
+
+const FIRE_GROUPS: readonly Option<FireGroupKey>[] = [
+  { value: "overdue", label: "Overdue" },
+  { value: "today", label: "Today" },
+  { value: "tomorrow", label: "Tomorrow" },
+  { value: "week", label: "Next 7 days" },
+  { value: "later", label: "Later" },
+  { value: "none", label: "Not scheduled" },
+];
+
+type Groupable = Pick<Reminder, "status" | "next_occurrence_at">;
+
+/** Which section a reminder falls in by when it next fires, on the calendar of `timeZone`. */
+export function fireGroupOf(
+  reminder: Groupable,
+  timeZone: string,
+  now: Date = new Date(),
+): FireGroupKey {
+  if (reminder.status === "overdue") return "overdue";
+  if (!reminder.next_occurrence_at) return "none";
+  const days = daysBetween(
+    localParts(now, timeZone).date,
+    localParts(new Date(reminder.next_occurrence_at), timeZone).date,
+  );
+  if (days <= 0) return "today";
+  if (days === 1) return "tomorrow";
+  return days < 7 ? "week" : "later";
+}
+
+/**
+ * Reminders split into sections by when they next fire, judged by the calendar in `timeZone`
+ * (the viewer's), soonest first. Overdue reminders lead; those with nothing left to fire come
+ * last. Reminders keep their order within a section, and empty sections are left out.
+ */
+export function groupRemindersByFire<T extends Groupable>(
+  reminders: readonly T[],
+  timeZone: string,
+  now: Date = new Date(),
+): FireGroup<T>[] {
+  const buckets = new Map<FireGroupKey, T[]>();
+  for (const reminder of reminders) {
+    const key = fireGroupOf(reminder, timeZone, now);
+    const bucket = buckets.get(key);
+    if (bucket) bucket.push(reminder);
+    else buckets.set(key, [reminder]);
+  }
+  return FIRE_GROUPS.flatMap(({ value, label }) => {
+    const group = buckets.get(value);
+    return group ? [{ key: value, label, reminders: group }] : [];
+  });
 }
 
 export const STATUS_LABELS: Record<ReminderStatus, string> = {
@@ -301,6 +311,3 @@ export function toReminderRequest(values: ReminderFormValues): ReminderFields {
     recurrence: toRecurrence(values.repeat, values.weekdays),
   };
 }
-
-/** Settings: the account's time zone; `""` clears the preference. */
-export const timeZonePreferenceSchema = object({ timeZone: string().defined() });
