@@ -112,3 +112,46 @@ export function describeDueDate(dueDate: string, today: string): DueDescription 
   if (days < 0) return { state: "overdue", label };
   return { state: days < 7 ? "soon" : "later", label };
 }
+
+export type DueGroupKey = "overdue" | "today" | "tomorrow" | "week" | "later" | "none";
+
+export type DueGroup<T> = { key: DueGroupKey; label: string; tasks: T[] };
+
+const DUE_GROUPS: readonly Option<DueGroupKey>[] = [
+  { value: "overdue", label: "Overdue" },
+  { value: "today", label: "Today" },
+  { value: "tomorrow", label: "Tomorrow" },
+  { value: "week", label: "Next 7 days" },
+  { value: "later", label: "Later" },
+  { value: "none", label: "No due date" },
+];
+
+function dueGroupOf(dueDate: string | null, today: string): DueGroupKey {
+  if (dueDate === null) return "none";
+  const days = daysBetween(today, dueDate);
+  if (days < 0) return "overdue";
+  if (days === 0) return "today";
+  if (days === 1) return "tomorrow";
+  return days < 7 ? "week" : "later";
+}
+
+/**
+ * Tasks split into sections by when they're due relative to `today`, soonest first. Tasks keep
+ * their order within a section, and empty sections are left out.
+ */
+export function groupTasksByDue<T extends { due_date: string | null }>(
+  tasks: readonly T[],
+  today: string,
+): DueGroup<T>[] {
+  const buckets = new Map<DueGroupKey, T[]>();
+  for (const task of tasks) {
+    const key = dueGroupOf(task.due_date, today);
+    const bucket = buckets.get(key);
+    if (bucket) bucket.push(task);
+    else buckets.set(key, [task]);
+  }
+  return DUE_GROUPS.flatMap(({ value, label }) => {
+    const group = buckets.get(value);
+    return group ? [{ key: value, label, tasks: group }] : [];
+  });
+}

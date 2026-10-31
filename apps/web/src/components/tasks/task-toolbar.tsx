@@ -6,13 +6,9 @@ import { type Ref, useId } from "react";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { Select } from "@/components/ui/select";
-import { PRIORITIES, SORTS, STATUS_FILTERS, type TaskFilters } from "@/lib/tasks";
-import { cn, type Option } from "@/utils/common";
+import { SORTS, type TaskFilters } from "@/lib/tasks";
+import { type Option } from "@/utils/common";
 
-const PRIORITY_FILTERS: readonly Option<TaskFilters["priority"]>[] = [
-  { value: "all", label: "Any priority" },
-  ...PRIORITIES,
-];
 const SORT_OPTIONS: readonly Option<TaskFilters["sort"]>[] = SORTS.map((option) => ({
   ...option,
   label: `Sort: ${option.label}`,
@@ -27,6 +23,7 @@ type TaskToolbarProps = {
   searchRef?: Ref<HTMLInputElement>;
 };
 
+/** Search and sort for the task list. Views and priority live in `TaskViews`. */
 export function TaskToolbar({
   search,
   onSearchChange,
@@ -37,8 +34,8 @@ export function TaskToolbar({
   const id = useId();
 
   return (
-    <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-      <div className="relative min-w-0 flex-1">
+    <div className="flex w-full flex-col gap-2 @md/list:flex-row @md/list:items-center @3xl/list:w-auto">
+      <div className="relative min-w-0 flex-1 @3xl/list:w-64 @3xl/list:flex-none @5xl/list:w-80">
         <Search
           className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
           aria-hidden="true"
@@ -71,55 +68,16 @@ export function TaskToolbar({
         </Kbd>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <div
-          role="group"
-          aria-label="Show"
-          className="inline-flex h-9 items-center rounded-md border bg-muted/60 p-0.5"
-        >
-          {STATUS_FILTERS.map((option) => {
-            const selected = filters.status === option.value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => onFiltersChange({ ...filters, status: option.value })}
-                className={cn(
-                  "h-full rounded-[calc(var(--radius-md)-2px)] px-3 text-sm font-medium transition-[color,background-color,box-shadow] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  selected
-                    ? "bg-card text-foreground shadow-elevation-1"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
-
-        <label htmlFor={`${id}-priority`} className="sr-only">
-          Filter by priority
-        </label>
-        <Select
-          id={`${id}-priority`}
-          className="min-w-36 flex-1 sm:flex-none"
-          value={filters.priority}
-          onValueChange={(priority) => onFiltersChange({ ...filters, priority })}
-          options={PRIORITY_FILTERS}
-        />
-
-        <label htmlFor={`${id}-sort`} className="sr-only">
-          Sort by
-        </label>
-        <Select
-          id={`${id}-sort`}
-          className="min-w-36 flex-1 sm:flex-none"
-          value={filters.sort}
-          onValueChange={(sort) => onFiltersChange({ ...filters, sort })}
-          options={SORT_OPTIONS}
-        />
-      </div>
+      <label htmlFor={`${id}-sort`} className="sr-only">
+        Sort by
+      </label>
+      <Select
+        id={`${id}-sort`}
+        className="@md/list:w-44 @md/list:shrink-0"
+        value={filters.sort}
+        onValueChange={(sort) => onFiltersChange({ ...filters, sort })}
+        options={SORT_OPTIONS}
+      />
     </div>
   );
 }

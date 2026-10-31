@@ -1,34 +1,44 @@
 import type { TaskPriority } from "@orbit/contracts";
-import { CalendarDays, Flag } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { describeDueDate, type DueState, priorityLabel } from "@/lib/tasks";
 import { cn } from "@/utils/common";
 
-const PRIORITY_TONES: Record<TaskPriority, string> = {
-  high: "border-destructive/30 text-destructive",
-  medium: "border-warning/40 text-warning",
+/** The dot that marks a priority, here and in the priority filter. */
+export const PRIORITY_DOTS: Record<TaskPriority, string> = {
+  high: "bg-destructive",
+  medium: "bg-warning",
+  low: "bg-muted-foreground/60",
+  none: "border border-muted-foreground/50",
+};
+
+const PRIORITY_TEXT: Record<TaskPriority, string> = {
+  high: "text-destructive",
+  medium: "text-warning",
   low: "text-muted-foreground",
   none: "",
 };
+
+const chipClassName =
+  "inline-flex h-6 items-center gap-1.5 rounded-full px-2 text-xs font-medium whitespace-nowrap";
 
 /** Nothing for tasks without a priority, so only meaningful priorities draw the eye. */
 export function PriorityBadge({ priority }: { priority: TaskPriority }) {
   if (priority === "none") return null;
   return (
-    <Badge variant="outline" className={PRIORITY_TONES[priority]}>
-      <Flag className="size-3" aria-hidden="true" />
+    <span className={cn(chipClassName, "bg-muted/70", PRIORITY_TEXT[priority])}>
+      <span aria-hidden="true" className={cn("size-1.5 rounded-full", PRIORITY_DOTS[priority])} />
       {priorityLabel(priority)}
       <span className="sr-only"> priority</span>
-    </Badge>
+    </span>
   );
 }
 
 const DUE_TONES: Record<DueState, string> = {
-  overdue: "text-destructive",
-  today: "text-brand",
-  soon: "text-foreground",
-  later: "text-muted-foreground",
+  overdue: "bg-destructive/10 text-destructive",
+  today: "bg-brand-subtle text-brand",
+  soon: "bg-muted/70 text-foreground",
+  later: "bg-muted/70 text-muted-foreground",
 };
 
 /** A due date relative to `today`. Overdue dates say so in words, not only in color. */
@@ -46,12 +56,9 @@ export function DueDateLabel({
   const text = state === "overdue" && !muted ? `Overdue · ${label}` : label;
   return (
     <span
-      className={cn(
-        "inline-flex items-center gap-1 text-xs font-medium whitespace-nowrap",
-        muted ? "text-muted-foreground" : DUE_TONES[state],
-      )}
+      className={cn(chipClassName, muted ? "bg-muted/50 text-muted-foreground" : DUE_TONES[state])}
     >
-      <CalendarDays className="size-3.5" aria-hidden="true" />
+      <CalendarDays className="size-3" aria-hidden="true" />
       <span className="sr-only">Due </span>
       <time dateTime={dueDate}>{text}</time>
     </span>

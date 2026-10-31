@@ -5,6 +5,7 @@ import { fieldErrors } from "@/test/validation";
 import {
   DEFAULT_TASK_FILTERS,
   describeDueDate,
+  groupTasksByDue,
   isNarrowed,
   TASK_PAGE_SIZE,
   taskSchema,
@@ -105,5 +106,47 @@ describe("describeDueDate", () => {
     expect(describeDueDate("2026-11-20", "2026-10-29").state).toBe("later");
     expect(describeDueDate("2027-02-01", "2026-10-29").label).toMatch(/2027/);
     expect(describeDueDate("2026-11-20", "2026-10-29").label).not.toMatch(/2026/);
+  });
+});
+
+describe("groupTasksByDue", () => {
+  const today = "2026-10-30";
+  const due = (id: string, dueDate: string | null) => ({ id, due_date: dueDate });
+
+  it("puts each task in the section for its due date, soonest section first", () => {
+    const groups = groupTasksByDue(
+      [
+        due("none", null),
+        due("later", "2026-11-06"),
+        due("week", "2026-11-05"),
+        due("tomorrow", "2026-10-31"),
+        due("today", "2026-10-30"),
+        due("overdue", "2026-10-29"),
+      ],
+      today,
+    );
+
+    expect(groups.map((group) => [group.label, group.tasks.map((task) => task.id)])).toEqual([
+      ["Overdue", ["overdue"]],
+      ["Today", ["today"]],
+      ["Tomorrow", ["tomorrow"]],
+      ["Next 7 days", ["week"]],
+      ["Later", ["later"]],
+      ["No due date", ["none"]],
+    ]);
+  });
+
+  it("keeps the given order within a section and leaves out empty sections", () => {
+    const groups = groupTasksByDue(
+      [due("b", "2026-10-30"), due("a", "2026-10-30"), due("c", null)],
+      today,
+    );
+
+    expect(groups.map((group) => group.key)).toEqual(["today", "none"]);
+    expect(groups[0]?.tasks.map((task) => task.id)).toEqual(["b", "a"]);
+  });
+
+  it("returns no sections for no tasks", () => {
+    expect(groupTasksByDue([], today)).toEqual([]);
   });
 });

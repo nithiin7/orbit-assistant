@@ -52,6 +52,14 @@ export function useTaskList(
   return { state, refreshing: state.status === "success" && result.isFetching, reload };
 }
 
+/** Task counts for the workspace, with overdue and due-today judged by the user's local date. */
+export function useTaskSummary(workspaceId: string): TaskSummary | undefined {
+  const { withToken } = useAuth();
+  const today = localDateString();
+  const { data } = useQuery(taskSummaryOptions(withToken, workspaceId, { today }));
+  return data;
+}
+
 const UP_NEXT_QUERY: TaskListQuery = { status: "open", sort: "due_date", limit: 5 };
 
 export type TaskOverviewData = { summary: TaskSummary; upNext: Task[]; today: string };
@@ -112,6 +120,9 @@ export function useTaskMutations(workspaceId: string) {
       queryKey: taskKeys.all(workspaceId),
       refetchType: "none",
     });
+  /** Counts are shown beside the lists, so they refresh right away. */
+  const refetchSummaries = () =>
+    void queryClient.invalidateQueries({ queryKey: taskKeys.summaries(workspaceId) });
 
   const create = useMutation({
     mutationFn: (draft: CreateTaskRequest) =>
@@ -147,6 +158,7 @@ export function useTaskMutations(workspaceId: string) {
     onSuccess: (updated) => {
       replaceCachedTask(queryClient, workspaceId, updated);
       markTasksStale();
+      refetchSummaries();
     },
     onError: (_error, task) => replaceCachedTask(queryClient, workspaceId, task),
   });
@@ -156,6 +168,7 @@ export function useTaskMutations(workspaceId: string) {
     onSuccess: (_result, task) => {
       removeCachedTask(queryClient, workspaceId, task.id);
       markTasksStale();
+      refetchSummaries();
     },
   });
 
