@@ -32,6 +32,15 @@ from orbit_api.db.models.investments import (
     FinanceNetWorthSnapshotModel,
     FinanceSipPlanModel,
 )
+from orbit_api.db.models.notes import (
+    NoteAttachmentModel,
+    NoteFolderModel,
+    NoteLinkModel,
+    NoteModel,
+    NoteTagAssignmentModel,
+    NoteTagModel,
+    NoteTaskLinkModel,
+)
 from orbit_api.db.models.reminders import (
     NotificationModel,
     ReminderModel,
@@ -68,6 +77,13 @@ __all__ = [
     "FinanceTransactionModel",
     "LocalCredentialModel",
     "LocalSessionModel",
+    "NoteAttachmentModel",
+    "NoteFolderModel",
+    "NoteLinkModel",
+    "NoteModel",
+    "NoteTagAssignmentModel",
+    "NoteTagModel",
+    "NoteTaskLinkModel",
     "NotificationModel",
     "ReminderModel",
     "ReminderOccurrenceModel",

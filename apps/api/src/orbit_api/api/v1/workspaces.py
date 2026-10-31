@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Response, status
 
 from orbit_api.api.auth import CurrentUserDep, WorkspaceDep
-from orbit_api.api.dependencies import WorkspaceServiceDep
+from orbit_api.api.dependencies import AttachmentStoreDep, WorkspaceServiceDep
 from orbit_api.schemas.workspaces import (
     CreateWorkspaceRequest,
     UpdateWorkspaceRequest,
@@ -65,13 +65,17 @@ async def update_workspace(
     },
 )
 async def delete_workspace(
-    user: CurrentUserDep, workspace: WorkspaceDep, workspaces: WorkspaceServiceDep
+    user: CurrentUserDep,
+    workspace: WorkspaceDep,
+    workspaces: WorkspaceServiceDep,
+    attachments: AttachmentStoreDep,
 ) -> Response:
-    """Permanently delete a workspace and everything in it."""
+    """Permanently delete a workspace and everything in it, including note attachment files."""
     try:
         await workspaces.delete(user.id, workspace.id)
     except PersonalWorkspaceError:
         raise HTTPException(
             status.HTTP_409_CONFLICT, "Your personal workspace cannot be deleted."
         ) from None
+    await attachments.delete_workspace(workspace.id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

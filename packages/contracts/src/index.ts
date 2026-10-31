@@ -253,3 +253,31 @@ export type PlanQuery = NonNullable<
 >;
 export type SetIncomeRequest = Schemas["SetIncomeRequest"];
 export type MonthlyIncomePlan = Schemas["MonthlyPlanResponse"];
+export type Note = Schemas["NoteResponse"];
+export type NoteSummary = Schemas["NoteSummaryResponse"];
+export type NoteList = Schemas["NoteListResponse"];
+export type NoteType = Note["note_type"];
+export type NoteContent = Note["content"];
+export type NoteTag = Schemas["TagRef"];
+export type NoteCounts = Schemas["NoteCountsResponse"];
+export type CreateNoteRequest = Schemas["CreateNoteRequest"];
+export type UpdateNoteRequest = Schemas["UpdateNoteRequest"];
+export type NoteRef = Schemas["NoteRefResponse"];
+export type NoteConnections = Schemas["NoteConnectionsResponse"];
+export type NoteTagList = Schemas["NoteTagsResponse"];
+/** Filters, search, sorting, and paging accepted when listing notes. */
+export type NoteListQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/notes"]["get"]["parameters"]["query"]
+>;
+export type NoteSort = NonNullable<NoteListQuery["sort"]>;
+export type NoteFolder = Schemas["FolderResponse"];
+export type NoteFolderList = Schemas["FolderListResponse"];
+export type CreateNoteFolderRequest = Schemas["CreateFolderRequest"];
+export type UpdateNoteFolderRequest = Schemas["UpdateFolderRequest"];
+export type FolderDeleteMode = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/note-folders/{folder_id}"]["delete"]["parameters"]["query"]
+>["notes"];
+export type Tag = Schemas["TagResponse"];
+export type TagList = Schemas["TagListResponse"];
+export type NoteAttachment = Schemas["AttachmentResponse"];
+export type NoteAttachmentList = Schemas["AttachmentListResponse"];

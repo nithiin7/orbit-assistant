@@ -28,7 +28,7 @@ _PRIORITIES_BY_RANK: dict[int, TaskPriority] = {
 }
 
 
-def _to_task(model: TaskModel) -> Task:
+def to_task(model: TaskModel) -> Task:
     return Task(
         id=model.id,
         workspace_id=model.workspace_id,
@@ -105,7 +105,7 @@ class SqlTaskRepository:
 
     async def get(self, workspace_id: uuid.UUID, task_id: uuid.UUID) -> Task | None:
         model = await self._get_model(workspace_id, task_id)
-        return _to_task(model) if model else None
+        return to_task(model) if model else None
 
     async def find(self, workspace_id: uuid.UUID, query: TaskQuery) -> TaskPage:
         conditions = _filters(workspace_id, query)
@@ -117,7 +117,7 @@ class SqlTaskRepository:
             .limit(query.limit)
             .offset(query.offset)
         )
-        return TaskPage(tasks=[_to_task(model) for model in models], total=total or 0)
+        return TaskPage(tasks=[to_task(model) for model in models], total=total or 0)
 
     async def save(self, task: Task) -> None:
         model = await self._get_model(task.workspace_id, task.id)

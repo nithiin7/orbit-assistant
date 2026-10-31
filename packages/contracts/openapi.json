@@ -895,7 +895,7 @@
           "workspaces"
         ],
         "summary": "Delete a workspace",
-        "description": "Permanently delete a workspace and everything in it.",
+        "description": "Permanently delete a workspace and everything in it, including note attachment files.",
         "operationId": "delete_workspace_api_v1_workspaces__workspace_id__delete",
         "security": [
           {
@@ -10629,6 +10629,2321 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/notes": {
+      "get": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "List or search notes",
+        "description": "Filter by state, folder, tag, type, task, favorite, and pin; search words in titles, text,\ntags, and folder names; sort; and page through results.",
+        "operationId": "list_notes_api_v1_workspaces__workspace_id__notes_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "active",
+                "archived",
+                "trashed"
+              ],
+              "type": "string",
+              "description": "Active notes, the archive, or the trash.",
+              "default": "active",
+              "title": "State"
+            },
+            "description": "Active notes, the archive, or the trash."
+          },
+          {
+            "name": "folder_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Notes directly in a folder.",
+              "title": "Folder Id"
+            },
+            "description": "Notes directly in a folder."
+          },
+          {
+            "name": "inbox",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Only notes in no folder.",
+              "default": false,
+              "title": "Inbox"
+            },
+            "description": "Only notes in no folder."
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "note",
+                  "quick",
+                  "journal"
+                ],
+                "type": "string"
+              },
+              "description": "Repeat for several types. Omit for all.",
+              "title": "Type"
+            },
+            "description": "Repeat for several types. Omit for all."
+          },
+          {
+            "name": "tag_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tag Id"
+            }
+          },
+          {
+            "name": "task_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Notes linked to this task.",
+              "title": "Task Id"
+            },
+            "description": "Notes linked to this task."
+          },
+          {
+            "name": "favorite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Favorite"
+            }
+          },
+          {
+            "name": "pinned",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Pinned"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Words that must each appear in the title, text, a tag, or the folder name (case-insensitive).",
+              "title": "Q"
+            },
+            "description": "Words that must each appear in the title, text, a tag, or the folder name (case-insensitive)."
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "updated_at",
+                "created_at",
+                "title",
+                "recent",
+                "journal_date"
+              ],
+              "type": "string",
+              "default": "updated_at",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "asc",
+                    "desc"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Newest first by default; titles A to Z.",
+              "title": "Order"
+            },
+            "description": "Newest first by default; titles A to Z."
+          },
+          {
+            "name": "pinned_first",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Pinned First"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Create a note",
+        "operationId": "create_note_api_v1_workspaces__workspace_id__notes_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNoteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid content, or the folder doesn't exist."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/notes/counts": {
+      "get": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Count notes per view",
+        "operationId": "count_notes_api_v1_workspaces__workspace_id__notes_counts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteCountsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/notes/empty-trash": {
+      "post": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Delete every note in the trash",
+        "description": "Permanent: the notes, their links, and their attachments are deleted.",
+        "operationId": "empty_trash_api_v1_workspaces__workspace_id__notes_empty_trash_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyTrashResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/notes/journal/{entry_date}": {
+      "get": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Get the journal entry for a day",
+        "operationId": "get_journal_entry_api_v1_workspaces__workspace_id__notes_journal__entry_date__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entry_date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Entry Date"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Open the journal entry for a day",
+        "description": "There is one entry per day: this returns it, creating an empty one (201) the first time\nand restoring it if it was in the trash.",
+        "operationId": "open_journal_entry_api_v1_workspaces__workspace_id__notes_journal__entry_date__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entry_date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Entry Date"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "It already existed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "201": {
+            "description": "Created."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/notes/journal/today": {
+      "put": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Open today's journal entry",
+        "description": "Today is the date in the user's time zone (Settings → Account), else in UTC.",
+        "operationId": "open_todays_journal_api_v1_workspaces__workspace_id__notes_journal_today_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "It already existed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "201": {
+            "description": "Created."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}": {
+      "get": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Get a note",
+        "operationId": "get_note_api_v1_workspaces__workspace_id__notes__note_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The note's ID.",
+              "title": "Note Id"
+            },
+            "description": "The note's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Update a note",
+        "operationId": "update_note_api_v1_workspaces__workspace_id__notes__note_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The note's ID.",
+              "title": "Note Id"
+            },
+            "description": "The note's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNoteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The note changed since `expected_revision`; reload it first."
+          },
+          "422": {
+            "description": "Invalid content, or the folder doesn't exist."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Delete a note permanently",
+        "description": "Only notes in the trash can be deleted; move a note to the trash first.",
+        "operationId": "delete_note_api_v1_workspaces__workspace_id__notes__note_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The note's ID.",
+              "title": "Note Id"
+            },
+            "description": "The note's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The note isn't in the trash."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/open": {
+      "post": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Record that a note was opened",
+        "description": "For the Recent view. Doesn't change `updated_at` or `revision`.",
+        "operationId": "open_note_api_v1_workspaces__workspace_id__notes__note_id__open_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The note's ID.",
+              "title": "Note Id"
+            },
+            "description": "The note's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/trash": {
+      "post": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Move a note to the trash",
+        "operationId": "trash_note_api_v1_workspaces__workspace_id__notes__note_id__trash_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The note's ID.",
+              "title": "Note Id"
+            },
+            "description": "The note's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/restore": {
+      "post": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Restore a note from the trash",
+        "operationId": "restore_note_api_v1_workspaces__workspace_id__notes__note_id__restore_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The note's ID.",
+              "title": "Note Id"
+            },
+            "description": "The note's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/duplicate": {
+      "post": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Duplicate a note",
+        "description": "A copy in the same folder, with the same content and tags.",
+        "operationId": "duplicate_note_api_v1_workspaces__workspace_id__notes__note_id__duplicate_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The note's ID.",
+              "title": "Note Id"
+            },
+            "description": "The note's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/links": {
+      "get": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Get a note's links and backlinks",
+        "operationId": "get_note_links_api_v1_workspaces__workspace_id__notes__note_id__links_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The note's ID.",
+              "title": "Note Id"
+            },
+            "description": "The note's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteConnectionsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/tags": {
+      "post": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Tag a note",
+        "description": "Uses the workspace's tag with this name, ignoring case and spacing, or creates one.",
+        "operationId": "add_note_tag_api_v1_workspaces__workspace_id__notes__note_id__tags_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The note's ID.",
+              "title": "Note Id"
+            },
+            "description": "The note's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddNoteTagRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteTagsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/tags/{tag_id}": {
+      "delete": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Remove a tag from a note",
+        "description": "The tag itself stays, for other notes.",
+        "operationId": "remove_note_tag_api_v1_workspaces__workspace_id__notes__note_id__tags__tag_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The note's ID.",
+              "title": "Note Id"
+            },
+            "description": "The note's ID."
+          },
+          {
+            "name": "tag_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The tag's ID.",
+              "title": "Tag Id"
+            },
+            "description": "The tag's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/tasks": {
+      "get": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "List the tasks linked to a note",
+        "operationId": "list_note_tasks_api_v1_workspaces__workspace_id__notes__note_id__tasks_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The note's ID.",
+              "title": "Note Id"
+            },
+            "description": "The note's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/tasks/{task_id}": {
+      "put": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Link a task to a note",
+        "description": "Idempotent. Returns the note's linked tasks.",
+        "operationId": "link_note_task_api_v1_workspaces__workspace_id__notes__note_id__tasks__task_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The note's ID.",
+              "title": "Note Id"
+            },
+            "description": "The note's ID."
+          },
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "The task doesn't exist in this workspace."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Unlink a task from a note",
+        "description": "The task itself is unchanged.",
+        "operationId": "unlink_note_task_api_v1_workspaces__workspace_id__notes__note_id__tasks__task_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The note's ID.",
+              "title": "Note Id"
+            },
+            "description": "The note's ID."
+          },
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/attachments": {
+      "get": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "List a note's attachments",
+        "operationId": "list_attachments_api_v1_workspaces__workspace_id__notes__note_id__attachments_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The note's ID.",
+              "title": "Note Id"
+            },
+            "description": "The note's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Attach a file to a note",
+        "description": "The request body is the file itself. Its type is decided from the file name and checked\nagainst its contents; the declared content type is ignored.",
+        "operationId": "upload_attachment_api_v1_workspaces__workspace_id__notes__note_id__attachments_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The note's ID.",
+              "title": "Note Id"
+            },
+            "description": "The note's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "filename",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "title": "Filename"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "413": {
+            "description": "The file is larger than the server accepts."
+          },
+          "415": {
+            "description": "The file type isn't accepted, or doesn't match its contents."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/attachments/{attachment_id}": {
+      "get": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Download an attachment",
+        "description": "Always a download (`Content-Disposition: attachment`), never rendered by the browser\nas a page, with the type Orbit detected.",
+        "operationId": "download_attachment_api_v1_workspaces__workspace_id__notes__note_id__attachments__attachment_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The note's ID.",
+              "title": "Note Id"
+            },
+            "description": "The note's ID."
+          },
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Attachment Id"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The file.",
+            "content": {
+              "application/octet-stream": {}
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Remove an attachment",
+        "operationId": "delete_attachment_api_v1_workspaces__workspace_id__notes__note_id__attachments__attachment_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The note's ID.",
+              "title": "Note Id"
+            },
+            "description": "The note's ID."
+          },
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Attachment Id"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/note-folders": {
+      "get": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "List note folders",
+        "operationId": "list_folders_api_v1_workspaces__workspace_id__note_folders_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolderListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Create a folder",
+        "operationId": "create_folder_api_v1_workspaces__workspace_id__note_folders_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFolderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolderResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "The parent doesn't exist, or it would nest too deeply."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/note-folders/{folder_id}": {
+      "patch": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Rename or move a folder",
+        "operationId": "update_folder_api_v1_workspaces__workspace_id__note_folders__folder_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "folder_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The folder's ID.",
+              "title": "Folder Id"
+            },
+            "description": "The folder's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFolderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolderResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "The move would put the folder inside itself."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Delete a folder",
+        "description": "Notes are never deleted with a folder; `notes` says where they go.",
+        "operationId": "delete_folder_api_v1_workspaces__workspace_id__note_folders__folder_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "folder_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The folder's ID.",
+              "title": "Folder Id"
+            },
+            "description": "The folder's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "notes",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "enum": [
+                "parent",
+                "inbox",
+                "trash"
+              ],
+              "type": "string",
+              "description": "`parent`: notes and subfolders move up a level. `inbox` or `trash`: the folder and its subfolders are deleted and all their notes go to the Inbox or the trash.",
+              "title": "Notes"
+            },
+            "description": "`parent`: notes and subfolders move up a level. `inbox` or `trash`: the folder and its subfolders are deleted and all their notes go to the Inbox or the trash."
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/note-tags": {
+      "get": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "List note tags",
+        "description": "By name, with how many active notes use each.",
+        "operationId": "list_tags_api_v1_workspaces__workspace_id__note_tags_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Create a tag",
+        "operationId": "create_tag_api_v1_workspaces__workspace_id__note_tags_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A tag with this name exists (ignoring case and spacing)."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/note-tags/{tag_id}": {
+      "patch": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Rename a tag",
+        "operationId": "rename_tag_api_v1_workspaces__workspace_id__note_tags__tag_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tag_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The tag's ID.",
+              "title": "Tag Id"
+            },
+            "description": "The tag's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Another tag has this name (ignoring case and spacing)."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "notes"
+        ],
+        "summary": "Delete a tag",
+        "description": "Removes the tag from every note; the notes stay.",
+        "operationId": "delete_tag_api_v1_workspaces__workspace_id__note_tags__tag_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tag_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The tag's ID.",
+              "title": "Tag Id"
+            },
+            "description": "The tag's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or note does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/storage": {
       "get": {
         "tags": [
@@ -10830,6 +13145,22 @@
           "updated_at"
         ],
         "title": "AccountResponse"
+      },
+      "AddNoteTagRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Name",
+            "description": "An existing tag's name (any case) or a new tag's."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "AddNoteTagRequest"
       },
       "AssetListResponse": {
         "properties": {
@@ -11097,6 +13428,70 @@
           "created_at"
         ],
         "title": "AssetValuationResponse"
+      },
+      "AttachmentListResponse": {
+        "properties": {
+          "attachments": {
+            "items": {
+              "$ref": "#/components/schemas/AttachmentResponse"
+            },
+            "type": "array",
+            "title": "Attachments"
+          },
+          "max_bytes": {
+            "type": "integer",
+            "title": "Max Bytes",
+            "description": "The largest file this server accepts."
+          }
+        },
+        "type": "object",
+        "required": [
+          "attachments",
+          "max_bytes"
+        ],
+        "title": "AttachmentListResponse"
+      },
+      "AttachmentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "note_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Note Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type",
+            "description": "Decided by Orbit from the file, not the upload."
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "note_id",
+          "filename",
+          "content_type",
+          "size_bytes",
+          "created_at"
+        ],
+        "title": "AttachmentResponse"
       },
       "BalanceTotalsResponse": {
         "properties": {
@@ -12643,6 +15038,34 @@
         "title": "CreateDepositRequest",
         "description": "Open a fixed deposit (`amount`: the principal) or a recurring deposit (`amount`: the\nmonthly installment). The first deposit is recorded on `start_date`, settled as given."
       },
+      "CreateFolderRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "CreateFolderRequest"
+      },
       "CreateGoalRequest": {
         "properties": {
           "name": {
@@ -13140,6 +15563,76 @@
         ],
         "title": "CreateLoanRequest",
         "description": "Track a loan. Orbit creates a `loan` account for it whose opening balance is the\noutstanding principal (owed), and generates the installments still ahead."
+      },
+      "CreateNoteRequest": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Title",
+            "default": ""
+          },
+          "content": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JsonValue"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "note_type": {
+            "type": "string",
+            "enum": [
+              "note",
+              "quick"
+            ],
+            "title": "Note Type",
+            "default": "note"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          },
+          "tags": {
+            "items": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Tags"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CreateNoteRequest",
+        "description": "A new note. Give `content` (an editor document) or `text` (plain text, one paragraph per\nline, for quick capture), or neither for an empty note."
       },
       "CreateRecurringPaymentRequest": {
         "properties": {
@@ -14111,6 +16604,19 @@
         "title": "DepositValueRequest",
         "description": "Set the deposit's value by hand (it replaces the estimate), or `value: null` to clear."
       },
+      "EmptyTrashResponse": {
+        "properties": {
+          "deleted": {
+            "type": "integer",
+            "title": "Deleted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "deleted"
+        ],
+        "title": "EmptyTrashResponse"
+      },
       "FixedCommitmentsResponse": {
         "properties": {
           "total": {
@@ -14177,6 +16683,73 @@
           "commitment_expenses"
         ],
         "title": "FlowsResponse"
+      },
+      "FolderListResponse": {
+        "properties": {
+          "folders": {
+            "items": {
+              "$ref": "#/components/schemas/FolderResponse"
+            },
+            "type": "array",
+            "title": "Folders",
+            "description": "Every folder, by name; build the tree."
+          }
+        },
+        "type": "object",
+        "required": [
+          "folders"
+        ],
+        "title": "FolderListResponse"
+      },
+      "FolderResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "note_count": {
+            "type": "integer",
+            "title": "Note Count",
+            "description": "Active notes directly in the folder."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "parent_id",
+          "name",
+          "note_count",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "FolderResponse"
       },
       "GoalListResponse": {
         "properties": {
@@ -15248,6 +17821,7 @@
         ],
         "title": "InvestmentTransactionResponse"
       },
+      "JsonValue": {},
       "LineResponse": {
         "properties": {
           "planned": {
@@ -16052,6 +18626,472 @@
           "changes"
         ],
         "title": "NetWorthResponse"
+      },
+      "NoteConnectionsResponse": {
+        "properties": {
+          "outgoing": {
+            "items": {
+              "$ref": "#/components/schemas/NoteRefResponse"
+            },
+            "type": "array",
+            "title": "Outgoing",
+            "description": "Notes this note links to."
+          },
+          "backlinks": {
+            "items": {
+              "$ref": "#/components/schemas/NoteRefResponse"
+            },
+            "type": "array",
+            "title": "Backlinks",
+            "description": "Notes that link to this note."
+          }
+        },
+        "type": "object",
+        "required": [
+          "outgoing",
+          "backlinks"
+        ],
+        "title": "NoteConnectionsResponse"
+      },
+      "NoteCountsResponse": {
+        "properties": {
+          "all": {
+            "type": "integer",
+            "title": "All",
+            "description": "Active notes and quick notes (journal entries are counted apart)."
+          },
+          "inbox": {
+            "type": "integer",
+            "title": "Inbox"
+          },
+          "favorites": {
+            "type": "integer",
+            "title": "Favorites"
+          },
+          "pinned": {
+            "type": "integer",
+            "title": "Pinned"
+          },
+          "journal": {
+            "type": "integer",
+            "title": "Journal"
+          },
+          "archived": {
+            "type": "integer",
+            "title": "Archived"
+          },
+          "trashed": {
+            "type": "integer",
+            "title": "Trashed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "all",
+          "inbox",
+          "favorites",
+          "pinned",
+          "journal",
+          "archived",
+          "trashed"
+        ],
+        "title": "NoteCountsResponse"
+      },
+      "NoteListResponse": {
+        "properties": {
+          "notes": {
+            "items": {
+              "$ref": "#/components/schemas/NoteSummaryResponse"
+            },
+            "type": "array",
+            "title": "Notes"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Notes matching the filters, across all pages."
+          }
+        },
+        "type": "object",
+        "required": [
+          "notes",
+          "total"
+        ],
+        "title": "NoteListResponse"
+      },
+      "NoteRefResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "note_type": {
+            "type": "string",
+            "enum": [
+              "note",
+              "quick",
+              "journal"
+            ],
+            "title": "Note Type"
+          },
+          "journal_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Journal Date"
+          },
+          "archived": {
+            "type": "boolean",
+            "title": "Archived"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "note_type",
+          "journal_date",
+          "archived"
+        ],
+        "title": "NoteRefResponse"
+      },
+      "NoteResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id",
+            "description": "`null` for notes in the Inbox."
+          },
+          "note_type": {
+            "type": "string",
+            "enum": [
+              "note",
+              "quick",
+              "journal"
+            ],
+            "title": "Note Type"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "May be empty; journal entries are usually named by date."
+          },
+          "journal_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Journal Date",
+            "description": "The entry's day, for journal entries only."
+          },
+          "is_pinned": {
+            "type": "boolean",
+            "title": "Is Pinned"
+          },
+          "is_favorite": {
+            "type": "boolean",
+            "title": "Is Favorite"
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "trashed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trashed At"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision",
+            "description": "Counts title and content changes. Send it back as `expected_revision`."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At",
+            "description": "When the title or content last changed."
+          },
+          "last_opened_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Opened At"
+          },
+          "tags": {
+            "items": {
+              "$ref": "#/components/schemas/TagRef"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "content": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Content",
+            "description": "The editor document (ProseMirror JSON)."
+          },
+          "content_format": {
+            "type": "string",
+            "title": "Content Format",
+            "description": "Currently always `prosemirror-v1`."
+          },
+          "task_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Task Ids",
+            "description": "Tasks linked to the note, oldest link first."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "folder_id",
+          "note_type",
+          "title",
+          "journal_date",
+          "is_pinned",
+          "is_favorite",
+          "archived_at",
+          "trashed_at",
+          "revision",
+          "created_at",
+          "updated_at",
+          "last_opened_at",
+          "tags",
+          "content",
+          "content_format",
+          "task_ids"
+        ],
+        "title": "NoteResponse"
+      },
+      "NoteSummaryResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id",
+            "description": "`null` for notes in the Inbox."
+          },
+          "note_type": {
+            "type": "string",
+            "enum": [
+              "note",
+              "quick",
+              "journal"
+            ],
+            "title": "Note Type"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "May be empty; journal entries are usually named by date."
+          },
+          "journal_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Journal Date",
+            "description": "The entry's day, for journal entries only."
+          },
+          "is_pinned": {
+            "type": "boolean",
+            "title": "Is Pinned"
+          },
+          "is_favorite": {
+            "type": "boolean",
+            "title": "Is Favorite"
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "trashed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trashed At"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision",
+            "description": "Counts title and content changes. Send it back as `expected_revision`."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At",
+            "description": "When the title or content last changed."
+          },
+          "last_opened_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Opened At"
+          },
+          "tags": {
+            "items": {
+              "$ref": "#/components/schemas/TagRef"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "excerpt": {
+            "type": "string",
+            "title": "Excerpt",
+            "description": "The start of the text, or the text around the first search match."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "folder_id",
+          "note_type",
+          "title",
+          "journal_date",
+          "is_pinned",
+          "is_favorite",
+          "archived_at",
+          "trashed_at",
+          "revision",
+          "created_at",
+          "updated_at",
+          "last_opened_at",
+          "tags",
+          "excerpt"
+        ],
+        "title": "NoteSummaryResponse"
+      },
+      "NoteTagsResponse": {
+        "properties": {
+          "tags": {
+            "items": {
+              "$ref": "#/components/schemas/TagRef"
+            },
+            "type": "array",
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tags"
+        ],
+        "title": "NoteTagsResponse"
       },
       "NotificationListResponse": {
         "properties": {
@@ -18666,6 +21706,87 @@
         "title": "SupabaseAuthConfig",
         "description": "Public Supabase settings the web app needs to sign users in. Contains no secrets."
       },
+      "TagListResponse": {
+        "properties": {
+          "tags": {
+            "items": {
+              "$ref": "#/components/schemas/TagResponse"
+            },
+            "type": "array",
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tags"
+        ],
+        "title": "TagListResponse"
+      },
+      "TagRef": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "TagRef"
+      },
+      "TagRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "TagRequest"
+      },
+      "TagResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "note_count": {
+            "type": "integer",
+            "title": "Note Count",
+            "description": "Active notes with the tag."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "note_count",
+          "created_at"
+        ],
+        "title": "TagResponse"
+      },
       "TakeSnapshotRequest": {
         "properties": {
           "currency": {
@@ -19487,6 +22608,39 @@
         "title": "UpdateDepositRequest",
         "description": "`null` clears `stated_maturity_amount` or `reminder`."
       },
+      "UpdateFolderRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateFolderRequest",
+        "description": "Rename or move a folder. `parent_id: null` moves it to the top level."
+      },
       "UpdateGoalRequest": {
         "properties": {
           "name": {
@@ -20031,6 +23185,112 @@
         "type": "object",
         "title": "UpdateLoanRequest",
         "description": "Change a loan's details or status. `payment_account_id: null` and `reminder: null`\nclear them. Rate and EMI changes go through `/reschedule`."
+      },
+      "UpdateNoteRequest": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JsonValue"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Revision"
+          },
+          "folder_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder Id"
+          },
+          "note_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "note",
+                  "quick"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note Type"
+          },
+          "is_pinned": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Pinned"
+          },
+          "is_favorite": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Favorite"
+          },
+          "archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateNoteRequest",
+        "description": "Change some of a note's fields. Omitted fields keep their values; `folder_id: null` moves\nthe note to the Inbox. Send `expected_revision` with title or content changes: if the note\nhas changed since, the update is refused with 409 rather than overwriting it."
       },
       "UpdateNotificationRequest": {
         "properties": {

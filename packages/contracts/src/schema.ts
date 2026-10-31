@@ -296,7 +296,7 @@ export interface paths {
         post?: never;
         /**
          * Delete a workspace
-         * @description Permanently delete a workspace and everything in it.
+         * @description Permanently delete a workspace and everything in it, including note attachment files.
          */
         delete: operations["delete_workspace_api_v1_workspaces__workspace_id__delete"];
         options?: never;
@@ -1917,6 +1917,426 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List or search notes
+         * @description Filter by state, folder, tag, type, task, favorite, and pin; search words in titles, text,
+         *     tags, and folder names; sort; and page through results.
+         */
+        get: operations["list_notes_api_v1_workspaces__workspace_id__notes_get"];
+        put?: never;
+        /** Create a note */
+        post: operations["create_note_api_v1_workspaces__workspace_id__notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Count notes per view */
+        get: operations["count_notes_api_v1_workspaces__workspace_id__notes_counts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/empty-trash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete every note in the trash
+         * @description Permanent: the notes, their links, and their attachments are deleted.
+         */
+        post: operations["empty_trash_api_v1_workspaces__workspace_id__notes_empty_trash_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/journal/{entry_date}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the journal entry for a day */
+        get: operations["get_journal_entry_api_v1_workspaces__workspace_id__notes_journal__entry_date__get"];
+        /**
+         * Open the journal entry for a day
+         * @description There is one entry per day: this returns it, creating an empty one (201) the first time
+         *     and restoring it if it was in the trash.
+         */
+        put: operations["open_journal_entry_api_v1_workspaces__workspace_id__notes_journal__entry_date__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/journal/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Open today's journal entry
+         * @description Today is the date in the user's time zone (Settings → Account), else in UTC.
+         */
+        put: operations["open_todays_journal_api_v1_workspaces__workspace_id__notes_journal_today_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a note */
+        get: operations["get_note_api_v1_workspaces__workspace_id__notes__note_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a note permanently
+         * @description Only notes in the trash can be deleted; move a note to the trash first.
+         */
+        delete: operations["delete_note_api_v1_workspaces__workspace_id__notes__note_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update a note */
+        patch: operations["update_note_api_v1_workspaces__workspace_id__notes__note_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record that a note was opened
+         * @description For the Recent view. Doesn't change `updated_at` or `revision`.
+         */
+        post: operations["open_note_api_v1_workspaces__workspace_id__notes__note_id__open_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/trash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move a note to the trash */
+        post: operations["trash_note_api_v1_workspaces__workspace_id__notes__note_id__trash_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore a note from the trash */
+        post: operations["restore_note_api_v1_workspaces__workspace_id__notes__note_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate a note
+         * @description A copy in the same folder, with the same content and tags.
+         */
+        post: operations["duplicate_note_api_v1_workspaces__workspace_id__notes__note_id__duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a note's links and backlinks */
+        get: operations["get_note_links_api_v1_workspaces__workspace_id__notes__note_id__links_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tag a note
+         * @description Uses the workspace's tag with this name, ignoring case and spacing, or creates one.
+         */
+        post: operations["add_note_tag_api_v1_workspaces__workspace_id__notes__note_id__tags_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/tags/{tag_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a tag from a note
+         * @description The tag itself stays, for other notes.
+         */
+        delete: operations["remove_note_tag_api_v1_workspaces__workspace_id__notes__note_id__tags__tag_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the tasks linked to a note */
+        get: operations["list_note_tasks_api_v1_workspaces__workspace_id__notes__note_id__tasks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Link a task to a note
+         * @description Idempotent. Returns the note's linked tasks.
+         */
+        put: operations["link_note_task_api_v1_workspaces__workspace_id__notes__note_id__tasks__task_id__put"];
+        post?: never;
+        /**
+         * Unlink a task from a note
+         * @description The task itself is unchanged.
+         */
+        delete: operations["unlink_note_task_api_v1_workspaces__workspace_id__notes__note_id__tasks__task_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List a note's attachments */
+        get: operations["list_attachments_api_v1_workspaces__workspace_id__notes__note_id__attachments_get"];
+        put?: never;
+        /**
+         * Attach a file to a note
+         * @description The request body is the file itself. Its type is decided from the file name and checked
+         *     against its contents; the declared content type is ignored.
+         */
+        post: operations["upload_attachment_api_v1_workspaces__workspace_id__notes__note_id__attachments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/notes/{note_id}/attachments/{attachment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download an attachment
+         * @description Always a download (`Content-Disposition: attachment`), never rendered by the browser
+         *     as a page, with the type Orbit detected.
+         */
+        get: operations["download_attachment_api_v1_workspaces__workspace_id__notes__note_id__attachments__attachment_id__get"];
+        put?: never;
+        post?: never;
+        /** Remove an attachment */
+        delete: operations["delete_attachment_api_v1_workspaces__workspace_id__notes__note_id__attachments__attachment_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/note-folders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List note folders */
+        get: operations["list_folders_api_v1_workspaces__workspace_id__note_folders_get"];
+        put?: never;
+        /** Create a folder */
+        post: operations["create_folder_api_v1_workspaces__workspace_id__note_folders_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/note-folders/{folder_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a folder
+         * @description Notes are never deleted with a folder; `notes` says where they go.
+         */
+        delete: operations["delete_folder_api_v1_workspaces__workspace_id__note_folders__folder_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename or move a folder */
+        patch: operations["update_folder_api_v1_workspaces__workspace_id__note_folders__folder_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/note-tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List note tags
+         * @description By name, with how many active notes use each.
+         */
+        get: operations["list_tags_api_v1_workspaces__workspace_id__note_tags_get"];
+        put?: never;
+        /** Create a tag */
+        post: operations["create_tag_api_v1_workspaces__workspace_id__note_tags_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/note-tags/{tag_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a tag
+         * @description Removes the tag from every note; the notes stay.
+         */
+        delete: operations["delete_tag_api_v1_workspaces__workspace_id__note_tags__tag_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename a tag */
+        patch: operations["rename_tag_api_v1_workspaces__workspace_id__note_tags__tag_id__patch"];
+        trace?: never;
+    };
     "/api/v1/storage": {
         parameters: {
             query?: never;
@@ -2032,6 +2452,14 @@ export interface components {
              */
             updated_at: string;
         };
+        /** AddNoteTagRequest */
+        AddNoteTagRequest: {
+            /**
+             * Name
+             * @description An existing tag's name (any case) or a new tag's.
+             */
+            name: string;
+        };
         /** AssetListResponse */
         AssetListResponse: {
             /**
@@ -2145,6 +2573,43 @@ export interface components {
             source: "manual" | "purchase" | "import" | "provider";
             /** Notes */
             notes: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** AttachmentListResponse */
+        AttachmentListResponse: {
+            /** Attachments */
+            attachments: components["schemas"]["AttachmentResponse"][];
+            /**
+             * Max Bytes
+             * @description The largest file this server accepts.
+             */
+            max_bytes: number;
+        };
+        /** AttachmentResponse */
+        AttachmentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Note Id
+             * Format: uuid
+             */
+            note_id: string;
+            /** Filename */
+            filename: string;
+            /**
+             * Content Type
+             * @description Decided by Orbit from the file, not the upload.
+             */
+            content_type: string;
+            /** Size Bytes */
+            size_bytes: number;
             /**
              * Created At
              * Format: date-time
@@ -2886,6 +3351,13 @@ export interface components {
             /** @description Remind before the maturity date. */
             reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
         };
+        /** CreateFolderRequest */
+        CreateFolderRequest: {
+            /** Name */
+            name: string;
+            /** Parent Id */
+            parent_id?: string | null;
+        };
         /** CreateGoalRequest */
         CreateGoalRequest: {
             /** Name */
@@ -3124,6 +3596,34 @@ export interface components {
              */
             notes: string;
             reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
+        };
+        /**
+         * CreateNoteRequest
+         * @description A new note. Give `content` (an editor document) or `text` (plain text, one paragraph per
+         *     line, for quick capture), or neither for an empty note.
+         */
+        CreateNoteRequest: {
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+            /** Content */
+            content?: {
+                [key: string]: components["schemas"]["JsonValue"];
+            } | null;
+            /** Text */
+            text?: string | null;
+            /**
+             * Note Type
+             * @default note
+             * @enum {string}
+             */
+            note_type: "note" | "quick";
+            /** Folder Id */
+            folder_id?: string | null;
+            /** Tags */
+            tags?: string[];
         };
         /**
          * CreateRecurringPaymentRequest
@@ -3581,6 +4081,11 @@ export interface components {
             /** Valued On */
             valued_on?: string | null;
         };
+        /** EmptyTrashResponse */
+        EmptyTrashResponse: {
+            /** Deleted */
+            deleted: number;
+        };
         /**
          * FixedCommitmentsResponse
          * @description Commitments due in the month: everything scheduled (except skipped) is planned; what
@@ -3619,6 +4124,41 @@ export interface components {
              * @description Expenses paying subscriptions, bills, and EMI interest.
              */
             commitment_expenses: number;
+        };
+        /** FolderListResponse */
+        FolderListResponse: {
+            /**
+             * Folders
+             * @description Every folder, by name; build the tree.
+             */
+            folders: components["schemas"]["FolderResponse"][];
+        };
+        /** FolderResponse */
+        FolderResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Parent Id */
+            parent_id: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Note Count
+             * @description Active notes directly in the folder.
+             */
+            note_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** GoalListResponse */
         GoalListResponse: {
@@ -4119,6 +4659,7 @@ export interface components {
              */
             created_at: string;
         };
+        JsonValue: unknown;
         /** LineResponse */
         LineResponse: {
             /**
@@ -4507,6 +5048,217 @@ export interface components {
              * @description Against the snapshots 1, 3, 6, and 12 months back.
              */
             changes: components["schemas"]["PeriodChangeResponse"][];
+        };
+        /** NoteConnectionsResponse */
+        NoteConnectionsResponse: {
+            /**
+             * Outgoing
+             * @description Notes this note links to.
+             */
+            outgoing: components["schemas"]["NoteRefResponse"][];
+            /**
+             * Backlinks
+             * @description Notes that link to this note.
+             */
+            backlinks: components["schemas"]["NoteRefResponse"][];
+        };
+        /** NoteCountsResponse */
+        NoteCountsResponse: {
+            /**
+             * All
+             * @description Active notes and quick notes (journal entries are counted apart).
+             */
+            all: number;
+            /** Inbox */
+            inbox: number;
+            /** Favorites */
+            favorites: number;
+            /** Pinned */
+            pinned: number;
+            /** Journal */
+            journal: number;
+            /** Archived */
+            archived: number;
+            /** Trashed */
+            trashed: number;
+        };
+        /** NoteListResponse */
+        NoteListResponse: {
+            /** Notes */
+            notes: components["schemas"]["NoteSummaryResponse"][];
+            /**
+             * Total
+             * @description Notes matching the filters, across all pages.
+             */
+            total: number;
+        };
+        /** NoteRefResponse */
+        NoteRefResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Note Type
+             * @enum {string}
+             */
+            note_type: "note" | "quick" | "journal";
+            /** Journal Date */
+            journal_date: string | null;
+            /** Archived */
+            archived: boolean;
+        };
+        /** NoteResponse */
+        NoteResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /**
+             * Folder Id
+             * @description `null` for notes in the Inbox.
+             */
+            folder_id: string | null;
+            /**
+             * Note Type
+             * @enum {string}
+             */
+            note_type: "note" | "quick" | "journal";
+            /**
+             * Title
+             * @description May be empty; journal entries are usually named by date.
+             */
+            title: string;
+            /**
+             * Journal Date
+             * @description The entry's day, for journal entries only.
+             */
+            journal_date: string | null;
+            /** Is Pinned */
+            is_pinned: boolean;
+            /** Is Favorite */
+            is_favorite: boolean;
+            /** Archived At */
+            archived_at: string | null;
+            /** Trashed At */
+            trashed_at: string | null;
+            /**
+             * Revision
+             * @description Counts title and content changes. Send it back as `expected_revision`.
+             */
+            revision: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             * @description When the title or content last changed.
+             */
+            updated_at: string;
+            /** Last Opened At */
+            last_opened_at: string | null;
+            /** Tags */
+            tags: components["schemas"]["TagRef"][];
+            /**
+             * Content
+             * @description The editor document (ProseMirror JSON).
+             */
+            content: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /**
+             * Content Format
+             * @description Currently always `prosemirror-v1`.
+             */
+            content_format: string;
+            /**
+             * Task Ids
+             * @description Tasks linked to the note, oldest link first.
+             */
+            task_ids: string[];
+        };
+        /** NoteSummaryResponse */
+        NoteSummaryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /**
+             * Folder Id
+             * @description `null` for notes in the Inbox.
+             */
+            folder_id: string | null;
+            /**
+             * Note Type
+             * @enum {string}
+             */
+            note_type: "note" | "quick" | "journal";
+            /**
+             * Title
+             * @description May be empty; journal entries are usually named by date.
+             */
+            title: string;
+            /**
+             * Journal Date
+             * @description The entry's day, for journal entries only.
+             */
+            journal_date: string | null;
+            /** Is Pinned */
+            is_pinned: boolean;
+            /** Is Favorite */
+            is_favorite: boolean;
+            /** Archived At */
+            archived_at: string | null;
+            /** Trashed At */
+            trashed_at: string | null;
+            /**
+             * Revision
+             * @description Counts title and content changes. Send it back as `expected_revision`.
+             */
+            revision: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             * @description When the title or content last changed.
+             */
+            updated_at: string;
+            /** Last Opened At */
+            last_opened_at: string | null;
+            /** Tags */
+            tags: components["schemas"]["TagRef"][];
+            /**
+             * Excerpt
+             * @description The start of the text, or the text around the first search match.
+             */
+            excerpt: string;
+        };
+        /** NoteTagsResponse */
+        NoteTagsResponse: {
+            /** Tags */
+            tags: components["schemas"]["TagRef"][];
         };
         /** NotificationListResponse */
         NotificationListResponse: {
@@ -5750,6 +6502,46 @@ export interface components {
             /** Supabase Publishable Key */
             supabase_publishable_key: string;
         };
+        /** TagListResponse */
+        TagListResponse: {
+            /** Tags */
+            tags: components["schemas"]["TagResponse"][];
+        };
+        /** TagRef */
+        TagRef: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** TagRequest */
+        TagRequest: {
+            /** Name */
+            name: string;
+        };
+        /** TagResponse */
+        TagResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Note Count
+             * @description Active notes with the tag.
+             */
+            note_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /**
          * TakeSnapshotRequest
          * @description Save a month's snapshot. Idempotent: a month that has one returns it (200) rather than
@@ -6040,6 +6832,16 @@ export interface components {
             reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
         };
         /**
+         * UpdateFolderRequest
+         * @description Rename or move a folder. `parent_id: null` moves it to the top level.
+         */
+        UpdateFolderRequest: {
+            /** Name */
+            name?: string | null;
+            /** Parent Id */
+            parent_id?: string | null;
+        };
+        /**
          * UpdateGoalRequest
          * @description Change a goal; its contributions stay. `state` pauses, completes, cancels, or reopens it.
          */
@@ -6157,6 +6959,32 @@ export interface components {
              */
             status?: ("active" | "closed" | "archived") | null;
             reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
+        };
+        /**
+         * UpdateNoteRequest
+         * @description Change some of a note's fields. Omitted fields keep their values; `folder_id: null` moves
+         *     the note to the Inbox. Send `expected_revision` with title or content changes: if the note
+         *     has changed since, the update is refused with 409 rather than overwriting it.
+         */
+        UpdateNoteRequest: {
+            /** Title */
+            title?: string | null;
+            /** Content */
+            content?: {
+                [key: string]: components["schemas"]["JsonValue"];
+            } | null;
+            /** Expected Revision */
+            expected_revision?: number | null;
+            /** Folder Id */
+            folder_id?: string | null;
+            /** Note Type */
+            note_type?: ("note" | "quick") | null;
+            /** Is Pinned */
+            is_pinned?: boolean | null;
+            /** Is Favorite */
+            is_favorite?: boolean | null;
+            /** Archived */
+            archived?: boolean | null;
         };
         /** UpdateNotificationRequest */
         UpdateNotificationRequest: {
@@ -13635,6 +14463,1587 @@ export interface operations {
             };
             /** @description The workspace does not exist or is not accessible. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_notes_api_v1_workspaces__workspace_id__notes_get: {
+        parameters: {
+            query?: {
+                /** @description Active notes, the archive, or the trash. */
+                state?: "active" | "archived" | "trashed";
+                /** @description Notes directly in a folder. */
+                folder_id?: string | null;
+                /** @description Only notes in no folder. */
+                inbox?: boolean;
+                /** @description Repeat for several types. Omit for all. */
+                type?: ("note" | "quick" | "journal")[];
+                tag_id?: string | null;
+                /** @description Notes linked to this task. */
+                task_id?: string | null;
+                favorite?: boolean | null;
+                pinned?: boolean | null;
+                /** @description Words that must each appear in the title, text, a tag, or the folder name (case-insensitive). */
+                q?: string | null;
+                sort?: "updated_at" | "created_at" | "title" | "recent" | "journal_date";
+                /** @description Newest first by default; titles A to Z. */
+                order?: ("asc" | "desc") | null;
+                pinned_first?: boolean;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_note_api_v1_workspaces__workspace_id__notes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateNoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid content, or the folder doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    count_notes_api_v1_workspaces__workspace_id__notes_counts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteCountsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    empty_trash_api_v1_workspaces__workspace_id__notes_empty_trash_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmptyTrashResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_journal_entry_api_v1_workspaces__workspace_id__notes_journal__entry_date__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_date: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_journal_entry_api_v1_workspaces__workspace_id__notes_journal__entry_date__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_date: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description It already existed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_todays_journal_api_v1_workspaces__workspace_id__notes_journal_today_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description It already existed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_note_api_v1_workspaces__workspace_id__notes__note_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_note_api_v1_workspaces__workspace_id__notes__note_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The note isn't in the trash. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_note_api_v1_workspaces__workspace_id__notes__note_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateNoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The note changed since `expected_revision`; reload it first. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid content, or the folder doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    open_note_api_v1_workspaces__workspace_id__notes__note_id__open_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trash_note_api_v1_workspaces__workspace_id__notes__note_id__trash_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_note_api_v1_workspaces__workspace_id__notes__note_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    duplicate_note_api_v1_workspaces__workspace_id__notes__note_id__duplicate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_note_links_api_v1_workspaces__workspace_id__notes__note_id__links_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteConnectionsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_note_tag_api_v1_workspaces__workspace_id__notes__note_id__tags_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddNoteTagRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteTagsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_note_tag_api_v1_workspaces__workspace_id__notes__note_id__tags__tag_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                /** @description The tag's ID. */
+                tag_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_note_tasks_api_v1_workspaces__workspace_id__notes__note_id__tasks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_note_task_api_v1_workspaces__workspace_id__notes__note_id__tasks__task_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                task_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The task doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlink_note_task_api_v1_workspaces__workspace_id__notes__note_id__tasks__task_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                task_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_attachments_api_v1_workspaces__workspace_id__notes__note_id__attachments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_attachment_api_v1_workspaces__workspace_id__notes__note_id__attachments_post: {
+        parameters: {
+            query: {
+                filename: string;
+            };
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The file is larger than the server accepts. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The file type isn't accepted, or doesn't match its contents. */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_attachment_api_v1_workspaces__workspace_id__notes__note_id__attachments__attachment_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                attachment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": unknown;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_attachment_api_v1_workspaces__workspace_id__notes__note_id__attachments__attachment_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The note's ID. */
+                note_id: string;
+                attachment_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_folders_api_v1_workspaces__workspace_id__note_folders_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FolderListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_folder_api_v1_workspaces__workspace_id__note_folders_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateFolderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FolderResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The parent doesn't exist, or it would nest too deeply. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_folder_api_v1_workspaces__workspace_id__note_folders__folder_id__delete: {
+        parameters: {
+            query: {
+                /** @description `parent`: notes and subfolders move up a level. `inbox` or `trash`: the folder and its subfolders are deleted and all their notes go to the Inbox or the trash. */
+                notes: "parent" | "inbox" | "trash";
+            };
+            header?: never;
+            path: {
+                /** @description The folder's ID. */
+                folder_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_folder_api_v1_workspaces__workspace_id__note_folders__folder_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The folder's ID. */
+                folder_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateFolderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FolderResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The move would put the folder inside itself. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_tags_api_v1_workspaces__workspace_id__note_tags_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_tag_api_v1_workspaces__workspace_id__note_tags_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A tag with this name exists (ignoring case and spacing). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_tag_api_v1_workspaces__workspace_id__note_tags__tag_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The tag's ID. */
+                tag_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_tag_api_v1_workspaces__workspace_id__note_tags__tag_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The tag's ID. */
+                tag_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or note does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Another tag has this name (ignoring case and spacing). */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

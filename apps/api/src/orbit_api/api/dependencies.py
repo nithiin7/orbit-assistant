@@ -25,6 +25,7 @@ from orbit_api.repositories.investments import (
     build_investment_service,
     build_net_worth_service,
 )
+from orbit_api.repositories.notes import build_attachment_service, build_note_service
 from orbit_api.repositories.notifications import SqlNotificationRepository
 from orbit_api.repositories.planning import build_planning_service
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
@@ -43,12 +44,15 @@ from orbit_api.services.investments.assets import AssetService
 from orbit_api.services.investments.service import InvestmentService
 from orbit_api.services.local_auth.service import LocalAuthService, PasswordHasher
 from orbit_api.services.networth.service import NetWorthService
+from orbit_api.services.notes.attachments import AttachmentService
+from orbit_api.services.notes.service import NoteService
 from orbit_api.services.notifications.service import NotificationService
 from orbit_api.services.planning.service import PlanningService
 from orbit_api.services.reminders.service import ReminderService
 from orbit_api.services.shopping.service import ShoppingService
 from orbit_api.services.tasks.service import TaskService
 from orbit_api.services.workspaces.service import WorkspaceService
+from orbit_api.system.attachment_store import FileAttachmentStore
 
 
 async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
@@ -220,3 +224,24 @@ def get_planning_service(session: SessionDep) -> PlanningService:
 
 
 PlanningServiceDep = Annotated[PlanningService, Depends(get_planning_service)]
+
+
+def get_note_service(session: SessionDep) -> NoteService:
+    return build_note_service(session)
+
+
+NoteServiceDep = Annotated[NoteService, Depends(get_note_service)]
+
+
+def get_attachment_store(settings: SettingsDep) -> FileAttachmentStore:
+    return FileAttachmentStore(settings.attachments_dir)
+
+
+AttachmentStoreDep = Annotated[FileAttachmentStore, Depends(get_attachment_store)]
+
+
+def get_attachment_service(session: SessionDep, store: AttachmentStoreDep) -> AttachmentService:
+    return build_attachment_service(session, store)
+
+
+AttachmentServiceDep = Annotated[AttachmentService, Depends(get_attachment_service)]
