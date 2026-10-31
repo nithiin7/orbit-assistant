@@ -35,7 +35,8 @@ control.
 > shopping lists, reminders (with in-app notifications), and finance (accounts, transactions,
 > loans, subscriptions, bills, investments, other assets, net worth, budgets, savings goals, and
 > monthly plans), and notes (folders, tags, links and backlinks, a daily journal, search,
-> Markdown, and attachments) are built; the calendar and the AI assistant are not.
+> Markdown, and attachments), and a calendar (events, recurring series, task scheduling, and
+> event reminders) are built; the AI assistant is not.
 
 ## Scope
 
@@ -78,11 +79,18 @@ control.
   Inbox with quick capture from anywhere, pins, favorites, archive, and trash; links between
   notes with backlinks; links to tasks; a daily journal in your time zone; search across titles,
   text, tags, and folders; Markdown import, export, and paste; and file attachments.
+- Calendar: events with categories, locations, and reminders; recurring series (daily, weekly on
+  chosen days, monthly, yearly; every N; ending after a count, on a date, or never) with
+  single-occurrence and "this and following" edits; month, week, day, and agenda views in your
+  time zone; drag to move, resize, or create, with keyboard-friendly alternatives; tasks
+  scheduled into time blocks; meeting notes linked to events; a dashboard agenda; and calendar
+  commands in the command palette.
 - Shared tooling for linting, formatting, type checking, testing, commit conventions, and CI.
 
 ### 🚫 Explicit non-goals for now
 
-- Calendar functionality; semantic search, AI note generation, or a knowledge graph in notes;
+- Syncing with external calendars (Google, Outlook, CalDAV) or AI scheduling; semantic search,
+  AI note generation, or a knowledge graph in notes;
   automatically created transactions, live market prices, AI financial insights, or bank
   integrations in finance.
 - Shared workspaces, invitations, password recovery for local accounts, and account linking

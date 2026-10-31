@@ -6,6 +6,7 @@ from typing import Annotated, Self
 
 from pydantic import (
     AfterValidator,
+    AwareDatetime,
     BaseModel,
     ConfigDict,
     Field,
@@ -20,6 +21,7 @@ from orbit_api.services.tasks.models import (
     TaskDraft,
     TaskPriority,
     TaskQuery,
+    TaskSchedule,
     TaskSort,
     TaskStatus,
     TaskSummary,
@@ -52,6 +54,11 @@ class TaskResponse(BaseModel):
     priority: TaskPriority
     due_date: date | None = Field(description="A calendar date, without a time or time zone.")
     completed_at: datetime | None = Field(description="When the task was completed, if it is.")
+    scheduled_start: datetime | None = Field(
+        description="When the task is planned to be worked on (a calendar time block), separate "
+        "from the due date. Set together with `scheduled_end`."
+    )
+    scheduled_end: datetime | None
     created_at: datetime
     updated_at: datetime
 
@@ -66,6 +73,8 @@ class TaskResponse(BaseModel):
             priority=task.priority,
             due_date=task.due_date,
             completed_at=task.completed_at,
+            scheduled_start=task.scheduled_start,
+            scheduled_end=task.scheduled_end,
             created_at=task.created_at,
             updated_at=task.updated_at,
         )
@@ -89,6 +98,10 @@ class TaskListParams(BaseModel):
     q: SearchText = Field(
         default=None, description="Case-insensitive text to find in titles and descriptions."
     )
+    scheduled: bool | None = Field(
+        default=None,
+        description="`true` for tasks with a scheduled time, `false` for tasks without one.",
+    )
     sort: TaskSort = "created_at"
     order: SortOrder | None = Field(
         default=None,
@@ -103,6 +116,7 @@ class TaskListParams(BaseModel):
             status=self.status,
             priorities=frozenset(self.priority),
             search=self.q,
+            scheduled=self.scheduled,
             sort=self.sort,
             order=self.order,
             limit=self.limit,
@@ -143,6 +157,14 @@ class CreateTaskRequest(BaseModel):
     description: Description = ""
     priority: TaskPriority = "none"
     due_date: date | None = None
+    scheduled_start: AwareDatetime | None = None
+    scheduled_end: AwareDatetime | None = None
+
+    @model_validator(mode="after")
+    def _check_schedule(self) -> Self:
+        if (self.scheduled_start is None) != (self.scheduled_end is None):
+            raise ValueError("set scheduled_start and scheduled_end together")
+        return self
 
     def to_draft(self) -> TaskDraft:
         return TaskDraft(
@@ -150,6 +172,7 @@ class CreateTaskRequest(BaseModel):
             description=self.description,
             priority=self.priority,
             due_date=self.due_date,
+            schedule=_schedule(self.scheduled_start, self.scheduled_end),
         )
 
 
@@ -163,11 +186,18 @@ class UpdateTaskRequest(BaseModel):
     description: Description | None = None
     priority: TaskPriority | None = None
     due_date: date | None = None
+    scheduled_start: AwareDatetime | None = Field(
+        default=None, description="Change with `scheduled_end`; both `null` unschedules the task."
+    )
+    scheduled_end: AwareDatetime | None = None
 
     @model_validator(mode="after")
     def _check_fields(self) -> Self:
         if not self.model_fields_set:
             raise ValueError("include at least one field to change")
+        schedule = {"scheduled_start", "scheduled_end"} & self.model_fields_set
+        if len(schedule) == 1 or (self.scheduled_start is None) != (self.scheduled_end is None):
+            raise ValueError("change scheduled_start and scheduled_end together")
         for name in ("title", "description", "priority"):
             if name in self.model_fields_set and getattr(self, name) is None:
                 raise ValueError(f"{name} cannot be null")
@@ -180,4 +210,13 @@ class UpdateTaskRequest(BaseModel):
             description=self.description if self.description is not None else UNSET,
             priority=self.priority if self.priority is not None else UNSET,
             due_date=self.due_date if "due_date" in provided else UNSET,
+            schedule=(
+                _schedule(self.scheduled_start, self.scheduled_end)
+                if "scheduled_start" in provided
+                else UNSET
+            ),
         )
+
+
+def _schedule(start: datetime | None, end: datetime | None) -> TaskSchedule | None:
+    return TaskSchedule(start=start, end=end) if start is not None and end is not None else None

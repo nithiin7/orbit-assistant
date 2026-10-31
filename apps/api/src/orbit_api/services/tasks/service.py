@@ -8,21 +8,35 @@ reaches a task: one in another workspace is indistinguishable from one that does
 import uuid
 from collections.abc import Callable
 from dataclasses import replace
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Protocol
 
 from orbit_api.services.tasks.models import (
+    InvalidTaskScheduleError,
     Task,
     TaskChanges,
     TaskDraft,
     TaskNotFoundError,
     TaskPage,
     TaskQuery,
+    TaskSchedule,
     TaskSummary,
 )
 from orbit_api.services.transactions import Transaction
 from orbit_api.utils.changes import UNSET
 from orbit_api.utils.clock import utc_now
+
+# A scheduled block is a working session, not a deadline: at most a week.
+MAX_SCHEDULE_LENGTH = timedelta(days=7)
+
+
+def _check_schedule(schedule: TaskSchedule | None) -> None:
+    if schedule is None:
+        return
+    if schedule.end <= schedule.start:
+        raise InvalidTaskScheduleError("The scheduled end must be after its start.")
+    if schedule.end - schedule.start > MAX_SCHEDULE_LENGTH:
+        raise InvalidTaskScheduleError("A scheduled block can last at most a week.")
 
 
 class TaskRepository(Protocol):
@@ -57,6 +71,7 @@ class TaskService:
         self._clock = clock
 
     async def create(self, workspace_id: uuid.UUID, draft: TaskDraft) -> Task:
+        _check_schedule(draft.schedule)
         now = self._clock()
         task = Task(
             id=uuid.uuid4(),
@@ -69,6 +84,8 @@ class TaskService:
             completed_at=None,
             created_at=now,
             updated_at=now,
+            scheduled_start=draft.schedule.start if draft.schedule else None,
+            scheduled_end=draft.schedule.end if draft.schedule else None,
         )
         await self._tasks.add(task)
         await self._transaction.commit()
@@ -87,8 +104,13 @@ class TaskService:
         self, workspace_id: uuid.UUID, task_id: uuid.UUID, changes: TaskChanges
     ) -> Task:
         task = await self.get(workspace_id, task_id)
+        schedule = _schedule_of(task) if changes.schedule is UNSET else changes.schedule
+        if changes.schedule is not UNSET:
+            _check_schedule(changes.schedule)
         updated = replace(
             task,
+            scheduled_start=schedule.start if schedule else None,
+            scheduled_end=schedule.end if schedule else None,
             title=task.title if changes.title is UNSET else changes.title,
             description=task.description if changes.description is UNSET else changes.description,
             priority=task.priority if changes.priority is UNSET else changes.priority,
@@ -125,3 +147,9 @@ class TaskService:
         await self._tasks.save(updated)
         await self._transaction.commit()
         return updated
+
+
+def _schedule_of(task: Task) -> TaskSchedule | None:
+    if task.scheduled_start is None or task.scheduled_end is None:
+        return None
+    return TaskSchedule(start=task.scheduled_start, end=task.scheduled_end)

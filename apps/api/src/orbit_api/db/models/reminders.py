@@ -82,6 +82,19 @@ class ReminderModel(Base):
             ONE_COMMITMENT,
             name="one_commitment",
         ),
+        # A calendar event's alert, managed the same way; never also a commitment's.
+        ForeignKeyConstraint(
+            ["calendar_event_alert_id", "workspace_id"],
+            ["calendar_event_alerts.id", "calendar_event_alerts.workspace_id"],
+            ondelete="CASCADE",
+            name="fk_reminders_calendar_event_alert",
+        ),
+        UniqueConstraint("calendar_event_alert_id", name="uq_reminders_calendar_event_alert_id"),
+        CheckConstraint(
+            "calendar_event_alert_id IS NULL OR (finance_loan_id IS NULL"
+            " AND finance_recurring_payment_id IS NULL AND finance_deposit_id IS NULL)",
+            name="one_manager",
+        ),
         Index("ix_reminders_workspace_created_at", "workspace_id", "created_at"),
         Index("ix_reminders_task_id", "task_id"),
     )
@@ -92,6 +105,7 @@ class ReminderModel(Base):
     finance_loan_id: Mapped[uuid.UUID | None]
     finance_recurring_payment_id: Mapped[uuid.UUID | None]
     finance_deposit_id: Mapped[uuid.UUID | None]
+    calendar_event_alert_id: Mapped[uuid.UUID | None]
     title: Mapped[str] = mapped_column(String(200))
     description: Mapped[str] = mapped_column(Text)
     enabled: Mapped[bool]

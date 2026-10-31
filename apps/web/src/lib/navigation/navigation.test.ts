@@ -13,11 +13,13 @@ describe("navigation", () => {
     expect(hrefs).not.toContain("/");
     expect(hrefs).not.toContain("/tasks");
     expect(hrefs).not.toContain("/shopping");
+    expect(hrefs).not.toContain("/calendar");
     expect(hrefs).not.toContain("/settings");
   });
 
   it("finds sections by slug", () => {
-    expect(findSection("calendar")?.title).toBe("Calendar");
+    expect(findSection("assistant")?.title).toBe("Assistant");
+    expect(findSection("calendar")).toBeUndefined();
     expect(findSection("notes")).toBeUndefined();
     expect(findSection("unknown")).toBeUndefined();
     expect(findSection("tasks")).toBeUndefined();

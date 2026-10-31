@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { localParts, sameTimeZone, timeZoneLabel, timeZoneNames } from "./time-zones";
+import {
+  localParts,
+  sameTimeZone,
+  timeZoneLabel,
+  timeZoneNames,
+  zonedTimeToInstant,
+} from "./time-zones";
 
 describe("time zones", () => {
   it("treat aliases of one zone as the same zone", () => {
@@ -30,5 +36,18 @@ describe("time zones", () => {
     expect(timeZoneLabel("America/Argentina/Buenos_Aires")).toBe(
       "America / Argentina / Buenos Aires",
     );
+  });
+
+  it("find the instant of a wall-clock time, across DST", () => {
+    const at = (date: string, time: string, zone: string) =>
+      zonedTimeToInstant(date, time, zone).toISOString();
+    expect(at("2030-01-15", "09:00", "Asia/Tokyo")).toBe("2030-01-15T00:00:00.000Z");
+    expect(at("2030-07-01", "09:00", "Europe/Paris")).toBe("2030-07-01T07:00:00.000Z");
+    expect(at("2030-03-31", "10:00", "Europe/Paris")).toBe("2030-03-31T08:00:00.000Z");
+    // 02:30 doesn't exist on 31 Mar 2030 in Paris: it lands after the jump, at 03:30.
+    expect(at("2030-03-31", "02:30", "Europe/Paris")).toBe("2030-03-31T01:30:00.000Z");
+    // 02:30 happens twice on 27 Oct 2030: the first.
+    expect(at("2030-10-27", "02:30", "Europe/Paris")).toBe("2030-10-27T00:30:00.000Z");
+    expect(at("2030-01-15", "09:00", "UTC")).toBe("2030-01-15T09:00:00.000Z");
   });
 });

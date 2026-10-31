@@ -9,6 +9,7 @@ WidgetId = Literal[
     "status",
     "tasks",
     "reminders",
+    "calendar",
     "shopping",
     "cash_flow",
     "upcoming_payments",

@@ -75,9 +75,33 @@ function routes(
         },
       ],
     }),
+    [`GET /api/v1/workspaces/${personal.id}/calendar/agenda`]: json({
+      items: [{ kind: "event", start_at: "2030-01-14T09:00:00Z", occurrence: standup, task: null }],
+      next_cursor: null,
+    }),
+    [`GET /api/v1/workspaces/${personal.id}/calendar/events`]: json({ events: [], total: 0 }),
     ...extra,
   };
 }
+
+const standup = {
+  id: "e1:2030-01-14T09:00",
+  event_id: "eeeeeeee-0000-4000-8000-000000000001",
+  original_start: "2030-01-14T09:00:00",
+  title: "Standup",
+  description: "",
+  location: "",
+  category_id: null,
+  status: "confirmed",
+  all_day: false,
+  timezone: "UTC",
+  start: "2030-01-14T09:00:00",
+  end: "2030-01-14T09:30:00",
+  start_at: "2030-01-14T09:00:00Z",
+  end_at: "2030-01-14T09:30:00Z",
+  recurring: false,
+  modified: false,
+};
 
 beforeEach(() => {
   push.mockClear();
@@ -137,11 +161,11 @@ describe("CommandPalette", () => {
     await user.click(screen.getByRole("button", { name: "Search" }));
 
     await user.keyboard("calendar");
-    const options = screen.getAllByRole("option");
-    expect(options.map((option) => option.textContent)).toEqual([
-      expect.stringContaining("Calendar"),
-      expect.stringContaining("Search notes for “calendar”"),
-    ]);
+    const options = screen.getAllByRole("option").map((option) => option.textContent);
+    // The page comes first, then calendar actions, then searching notes.
+    expect(options[0]).toContain("Plan events, meetings");
+    expect(options.at(-1)).toContain("Search notes for “calendar”");
+    expect(options).toContain("Open week view");
 
     await user.keyboard("{Enter}");
     expect(push).toHaveBeenCalledWith("/calendar");
@@ -249,5 +273,43 @@ describe("CommandPalette", () => {
     await user.keyboard("quick{Enter}");
     expect(await screen.findByRole("dialog", { name: "Quick note" })).toBeInTheDocument();
     expect(push).not.toHaveBeenCalled();
+  });
+
+  it("offers calendar actions, event search, and meeting notes for the next event", async () => {
+    const user = userEvent.setup();
+    const eventsPath = `/api/v1/workspaces/${personal.id}/calendar/events`;
+    const notePath = `${eventsPath}/${standup.event_id}/notes`;
+    const { api } = await renderPalette({
+      [`GET ${eventsPath}`]: json({
+        events: [{ ...standup, id: standup.event_id, start: "2030-02-01T10:00:00" }],
+        total: 1,
+      }),
+      [`POST ${notePath}`]: json(
+        {
+          id: "note-1",
+          title: "Standup · 14 Jan 2030",
+          note_type: "note",
+          trashed: false,
+          updated_at: "2030-01-14T00:00:00Z",
+        },
+        201,
+      ),
+    });
+    await user.click(screen.getByRole("button", { name: "Search" }));
+
+    await user.keyboard("standup");
+    const match = await screen.findByRole("option", { name: /^Standup/ });
+    expect(match).toHaveTextContent("Feb 1, 2030");
+
+    await user.clear(screen.getByRole("combobox"));
+    await user.keyboard("meeting notes");
+    await user.click(
+      await screen.findByRole("option", { name: /Create meeting notes for “Standup”/ }),
+    );
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/notes?note=note-1"));
+    const created = api.mock.calls.find(([, init]) => init?.method === "POST");
+    expect(JSON.parse(String(created?.[1]?.body))).toEqual({
+      occurrence_start: "2030-01-14T09:00",
+    });
   });
 });

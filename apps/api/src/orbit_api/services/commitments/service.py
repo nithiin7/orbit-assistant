@@ -1025,7 +1025,10 @@ class CommitmentService:
         """Point a commitment's reminder at its next payment once it has fired. Called by the
         reminder worker inside its delivery transaction, which commits."""
         # A deposit's maturity reminder fires once; nothing follows it.
-        if reminder.commitment is not None and reminder.commitment.kind != "deposit":
+        if reminder.commitment is not None and reminder.commitment.kind in (
+            "loan",
+            "recurring_payment",
+        ):
             await self._sync_reminder(reminder.workspace_id, reminder.commitment, now)
 
     async def _sync_reminder(

@@ -54,7 +54,7 @@ export const navItems: readonly NavItem[] = [
     title: "Calendar",
     href: "/calendar",
     icon: CalendarDays,
-    description: "See your schedule at a glance.",
+    description: "Plan events, meetings, and time for your tasks.",
     group: "workspace",
   },
   {
@@ -93,6 +93,7 @@ const dedicatedRoutes: ReadonlySet<string> = new Set([
   "/tasks",
   "/reminders",
   "/shopping",
+  "/calendar",
   "/finance",
   "/notes",
   "/settings",

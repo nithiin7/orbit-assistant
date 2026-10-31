@@ -109,8 +109,9 @@ class ReminderTaskResponse(BaseModel):
 
 class ReminderCommitmentResponse(BaseModel):
     kind: CommitmentLinkKind = Field(
-        description="`loan`, `recurring_payment` for a subscription or bill, or `deposit` for a "
-        "fixed or recurring deposit's maturity."
+        description="`loan`, `recurring_payment` for a subscription or bill, `deposit` for a "
+        "fixed or recurring deposit's maturity, or `calendar_alert` for one of a calendar event's "
+        "alerts (`id` is the alert's)."
     )
     id: uuid.UUID
 

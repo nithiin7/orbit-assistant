@@ -12,6 +12,10 @@ from orbit_api.db.database import Database
 from orbit_api.repositories.accounts import SqlAccountRepository, SqlLocalAuthRepository
 from orbit_api.repositories.avatars import SqlAvatarRepository
 from orbit_api.repositories.budgets import build_budget_service
+from orbit_api.repositories.calendar import (
+    build_calendar_preference_service,
+    build_calendar_service,
+)
 from orbit_api.repositories.commitments import build_commitment_service
 from orbit_api.repositories.dashboard import SqlDashboardRepository
 from orbit_api.repositories.finance import (
@@ -36,6 +40,7 @@ from orbit_api.repositories.workspaces import SqlWorkspaceRepository
 from orbit_api.services.accounts.service import AccountService
 from orbit_api.services.avatars.service import AvatarService
 from orbit_api.services.budgets.service import BudgetService
+from orbit_api.services.calendar.service import CalendarPreferenceService, CalendarService
 from orbit_api.services.commitments.service import CommitmentService
 from orbit_api.services.dashboard.service import DashboardService
 from orbit_api.services.finance.service import FinanceService
@@ -245,3 +250,19 @@ def get_attachment_service(session: SessionDep, store: AttachmentStoreDep) -> At
 
 
 AttachmentServiceDep = Annotated[AttachmentService, Depends(get_attachment_service)]
+
+
+def get_calendar_service(session: SessionDep) -> CalendarService:
+    return build_calendar_service(session)
+
+
+CalendarServiceDep = Annotated[CalendarService, Depends(get_calendar_service)]
+
+
+def get_calendar_preference_service(session: SessionDep) -> CalendarPreferenceService:
+    return build_calendar_preference_service(session)
+
+
+CalendarPreferenceServiceDep = Annotated[
+    CalendarPreferenceService, Depends(get_calendar_preference_service)
+]

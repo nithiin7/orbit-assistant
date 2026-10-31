@@ -1,5 +1,5 @@
 import type { Reminder } from "@orbit/contracts";
-import { AlarmClock, CheckSquare, Globe, Landmark, Repeat } from "lucide-react";
+import { AlarmClock, CalendarDays, CheckSquare, Globe, Landmark, Repeat } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { describeRecurrence, type FireGroupKey, formatOccurrence } from "@/lib/reminders";
@@ -74,11 +74,13 @@ export function TimeZoneChip({ timeZone }: { timeZone: string }) {
   );
 }
 
-export function FinanceChip() {
+/** Marks a reminder another module keeps up to date: Finance, or a calendar event's alert. */
+export function ManagedChip({ by }: { by: "finance" | "calendar" }) {
+  const Icon = by === "calendar" ? CalendarDays : Landmark;
   return (
     <Chip>
-      <Landmark className="size-3 shrink-0" aria-hidden="true" />
-      Managed in Finance
+      <Icon className="size-3 shrink-0" aria-hidden="true" />
+      {by === "calendar" ? "Managed in Calendar" : "Managed in Finance"}
     </Chip>
   );
 }

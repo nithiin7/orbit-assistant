@@ -9,6 +9,15 @@ from orbit_api.db.models.budgets import (
     FinanceMonthlyPlanModel,
     FinanceSavingsGoalModel,
 )
+from orbit_api.db.models.calendar import (
+    CalendarCategoryModel,
+    CalendarEventAlertModel,
+    CalendarEventExceptionModel,
+    CalendarEventModel,
+    CalendarEventNoteModel,
+    CalendarEventTaskModel,
+    CalendarPreferencesModel,
+)
 from orbit_api.db.models.commitments import (
     FinanceLoanInstallmentModel,
     FinanceLoanModel,
@@ -52,6 +61,13 @@ from orbit_api.db.models.users import LocalCredentialModel, LocalSessionModel, U
 from orbit_api.db.models.workspaces import WorkspaceModel
 
 __all__ = [
+    "CalendarCategoryModel",
+    "CalendarEventAlertModel",
+    "CalendarEventExceptionModel",
+    "CalendarEventModel",
+    "CalendarEventNoteModel",
+    "CalendarEventTaskModel",
+    "CalendarPreferencesModel",
     "DashboardLayoutModel",
     "FinanceAccountModel",
     "FinanceAssetModel",

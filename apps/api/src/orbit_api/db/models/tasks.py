@@ -40,6 +40,14 @@ class TaskModel(Base):
         # The target of `reminders`' composite foreign key, which keeps a reminder in the same
         # workspace as its task.
         UniqueConstraint("id", "workspace_id"),
+        # A scheduled time block (the calendar), separate from the due date.
+        CheckConstraint(
+            "(scheduled_start IS NULL AND scheduled_end IS NULL)"
+            " OR (scheduled_start IS NOT NULL AND scheduled_end IS NOT NULL"
+            " AND scheduled_end > scheduled_start)",
+            name="schedule",
+        ),
+        Index("ix_tasks_workspace_scheduled_start", "workspace_id", "scheduled_start"),
         # Lists are always scoped to a workspace, usually filtered by status, and sorted by due
         # date or priority.
         Index("ix_tasks_workspace_status_due_date", "workspace_id", "status", "due_date"),
@@ -54,5 +62,7 @@ class TaskModel(Base):
     priority: Mapped[int] = mapped_column(SmallInteger)
     due_date: Mapped[date | None] = mapped_column(Date)
     completed_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    scheduled_start: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    scheduled_end: Mapped[datetime | None] = mapped_column(UTCDateTime)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now, onupdate=utc_now)

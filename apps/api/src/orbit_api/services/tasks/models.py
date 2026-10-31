@@ -27,6 +27,16 @@ class Task:
     completed_at: datetime | None
     created_at: datetime
     updated_at: datetime
+    # When the task is planned to be worked on: a time block on the calendar, separate from the
+    # due date. Both set or both unset; the end is after the start.
+    scheduled_start: datetime | None = None
+    scheduled_end: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class TaskSchedule:
+    start: datetime
+    end: datetime
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,16 +47,19 @@ class TaskDraft:
     description: str = ""
     priority: TaskPriority = "none"
     due_date: date | None = None
+    schedule: TaskSchedule | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class TaskChanges:
-    """A partial update. `UNSET` leaves a field as it is; `due_date=None` clears the date."""
+    """A partial update. `UNSET` leaves a field as it is; `due_date=None` clears the date and
+    `schedule=None` unschedules the task."""
 
     title: Change[str] = UNSET
     description: Change[str] = UNSET
     priority: Change[TaskPriority] = UNSET
     due_date: Change[date | None] = UNSET
+    schedule: Change[TaskSchedule | None] = UNSET
 
 
 @dataclass(frozen=True, slots=True)
@@ -56,6 +69,8 @@ class TaskQuery:
     priorities: frozenset[TaskPriority] = frozenset()
     # Case-insensitive substring of the title or description.
     search: str | None = None
+    # `True`: only tasks with a scheduled time; `False`: only tasks without one.
+    scheduled: bool | None = None
     sort: TaskSort = "created_at"
     # `None` uses the sort's natural order: earliest due date, highest priority, newest first.
     order: SortOrder | None = None
@@ -81,3 +96,7 @@ class TaskSummary:
 
 class TaskNotFoundError(Exception):
     """The task does not exist in this workspace."""
+
+
+class InvalidTaskScheduleError(ValueError):
+    """A scheduled time block that ends before it starts or is too long."""

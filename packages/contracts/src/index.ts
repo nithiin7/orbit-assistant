@@ -281,3 +281,37 @@ export type Tag = Schemas["TagResponse"];
 export type TagList = Schemas["TagListResponse"];
 export type NoteAttachment = Schemas["AttachmentResponse"];
 export type NoteAttachmentList = Schemas["AttachmentListResponse"];
+export type CalendarCategory = Schemas["CalendarCategoryResponse"];
+export type CalendarCategoryList = Schemas["CalendarCategoryListResponse"];
+export type CalendarCategoryColor = CalendarCategory["color"];
+export type CreateCalendarCategoryRequest = Schemas["CreateCalendarCategoryRequest"];
+export type UpdateCalendarCategoryRequest = Schemas["UpdateCalendarCategoryRequest"];
+export type CalendarEvent = Schemas["EventDetailResponse"];
+export type CalendarEventSummary = Schemas["EventResponse"];
+export type CalendarEventList = Schemas["EventListResponse"];
+export type CalendarEventStatus = CalendarEvent["status"];
+export type CalendarOccurrence = Schemas["OccurrenceResponse"];
+export type CalendarLinkedNote = Schemas["LinkedNoteResponse"];
+export type EventRecurrenceRule = Schemas["RecurrenceRuleModel"];
+export type EventRecurrenceFrequency = EventRecurrenceRule["frequency"];
+export type CreateCalendarEventRequest = Schemas["CreateEventRequest"];
+export type UpdateCalendarEventRequest = Schemas["UpdateEventRequest"];
+export type UpdateOccurrenceRequest = Schemas["UpdateOccurrenceRequest"];
+export type CalendarEditScope = NonNullable<UpdateOccurrenceRequest["scope"]>;
+export type CreateEventNoteRequest = Schemas["CreateEventNoteRequest"];
+export type CalendarRange = Schemas["CalendarRangeResponse"];
+export type CalendarAgenda = Schemas["AgendaResponse"];
+export type CalendarAgendaItem = Schemas["AgendaItemResponse"];
+export type CalendarPreferences = Schemas["CalendarPreferencesResponse"];
+export type CalendarPreferencesRequest = Schemas["CalendarPreferencesModel"];
+export type CalendarView = CalendarPreferences["default_view"];
+/** The date range, viewer time zone, and task options accepted for a calendar range. */
+export type CalendarRangeQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/calendar/range"]["get"]["parameters"]["query"]
+>;
+export type CalendarAgendaQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/calendar/agenda"]["get"]["parameters"]["query"]
+>;
+export type CalendarEventListQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/calendar/events"]["get"]["parameters"]["query"]
+>;
