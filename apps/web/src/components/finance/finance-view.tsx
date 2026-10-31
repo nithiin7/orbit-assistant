@@ -36,6 +36,7 @@ import { AccountDialog } from "./account-dialog";
 import { AccountsView } from "./accounts-view";
 import { AssetsView } from "./assets-view";
 import { BudgetsView } from "./budgets-view";
+import { CategoriesDialog } from "./categories-dialog";
 import { FinanceNav, type ViewBadges } from "./finance-nav";
 import { FinanceOverview } from "./finance-overview";
 import { GoalsView } from "./goals-view";
@@ -67,6 +68,7 @@ const RECORDING_VIEWS: ReadonlySet<FinanceTab> = new Set(["overview", "transacti
 type Dialog =
   | { kind: "transaction"; type: FinanceTransactionType; transaction?: FinanceTransaction }
   | { kind: "account"; account?: FinanceAccount }
+  | { kind: "categories" }
   | { kind: "loan"; loan?: Loan }
   | { kind: "reschedule"; loan: Loan }
   | { kind: "installment"; loan: Loan; installment: Installment }
@@ -288,7 +290,10 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
             ) : tab === "upcoming" ? (
               <UpcomingPayments {...data} onPay={pay} />
             ) : tab === "transactions" ? (
-              <TransactionHistory {...data} />
+              <TransactionHistory
+                {...data}
+                onManageCategories={() => setDialog({ kind: "categories" })}
+              />
             ) : tab === "investments" ? (
               <InvestmentsView {...data} />
             ) : tab === "assets" ? (
@@ -352,6 +357,13 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
           workspaceId={workspaceId}
           account={dialog.account}
           onSaved={setAnnouncement}
+          onClose={() => setDialog(null)}
+        />
+      ) : dialog?.kind === "categories" ? (
+        <CategoriesDialog
+          workspaceId={workspaceId}
+          categories={categories.data}
+          onAnnounce={setAnnouncement}
           onClose={() => setDialog(null)}
         />
       ) : dialog?.kind === "loan" ? (

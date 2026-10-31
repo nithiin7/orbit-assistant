@@ -1,12 +1,6 @@
 "use client";
 
-import { yupResolver } from "@hookform/resolvers/yup";
-import type {
-  BalanceTotals,
-  FinanceAccount,
-  FinanceAccountType,
-  FinanceCategory,
-} from "@orbit/contracts";
+import type { BalanceTotals, FinanceAccount, FinanceAccountType } from "@orbit/contracts";
 import {
   Archive,
   ArchiveRestore,
@@ -21,27 +15,21 @@ import {
   Plus,
   Smartphone,
   Wallet,
-  X,
 } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
 import { FormAlert } from "@/components/form-field";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { useFinanceMutations } from "@/hooks/use-finance";
-import { accountTypeLabel, categorySchema, formatMoney } from "@/lib/finance";
-import { cn, type Option } from "@/utils/common";
+import { accountTypeLabel, formatMoney } from "@/lib/finance";
+import { cn } from "@/utils/common";
 
 import { Chip, SectionHeading } from "./finance-meta";
 import { AccountBalance } from "./finance-overview";
 import type { FinanceData } from "./finance-view";
-import { EndedSection, Panel } from "./panel";
+import { EndedSection } from "./panel";
 import { RowActions } from "./row-actions";
 import { StatGrid, StatTile } from "./stat-tile";
 import { ViewHeader } from "./view-header";
@@ -77,7 +65,6 @@ const TYPE_ICONS: Record<FinanceAccountType, LucideIcon> = {
 export function AccountsView({
   workspaceId,
   accounts,
-  categories,
   totals,
   onAddAccount,
   onEditAccount,
@@ -312,12 +299,6 @@ export function AccountsView({
           </ul>
         </EndedSection>
       ) : null}
-
-      <CategoriesSection
-        workspaceId={workspaceId}
-        categories={categories}
-        onAnnounce={onAnnounce}
-      />
     </div>
   );
 }
@@ -422,146 +403,5 @@ function AccountCard({
         ) : null}
       </div>
     </li>
-  );
-}
-
-type CategoryValues = InferType<typeof categorySchema>;
-
-const CATEGORY_TYPES: readonly Option<CategoryValues["type"]>[] = [
-  { value: "expense", label: "Expense" },
-  { value: "income", label: "Income" },
-];
-
-function CategoriesSection({
-  workspaceId,
-  categories,
-  onAnnounce,
-}: {
-  workspaceId: string;
-  categories: FinanceCategory[];
-  onAnnounce: (message: string) => void;
-}) {
-  const id = useId();
-  const { createCategory, deleteCategory } = useFinanceMutations(workspaceId);
-  const [error, setError] = useState<string | null>(null);
-  const {
-    register,
-    control,
-    handleSubmit,
-    reset,
-    setError: setFormError,
-    formState: { errors, isSubmitting },
-  } = useForm<CategoryValues>({
-    resolver: yupResolver(categorySchema),
-    defaultValues: { name: "", type: "expense" },
-  });
-
-  async function add(values: CategoryValues) {
-    try {
-      const created = await createCategory.mutateAsync(values);
-      reset({ name: "", type: values.type });
-      onAnnounce(`Added the category “${created.name}”.`);
-    } catch (reason) {
-      setFormError("root.server", {
-        message: describeApiError(reason, "Couldn’t add the category. Try again."),
-      });
-    }
-  }
-
-  async function remove(category: FinanceCategory) {
-    setError(null);
-    try {
-      await deleteCategory.mutateAsync(category);
-      onAnnounce(`Deleted the category “${category.name}”.`);
-    } catch (reason) {
-      setError(describeApiError(reason, "Couldn’t delete the category. Try again."));
-    }
-  }
-
-  return (
-    <Panel
-      title="Categories"
-      description="Built-in categories can’t be deleted. Your own can, once no transaction uses them."
-    >
-      <div className="space-y-4">
-        <form
-          noValidate
-          onSubmit={(event) => void handleSubmit(add)(event)}
-          className="flex flex-col gap-2 @2xl/list:max-w-2xl @2xl/list:flex-row @2xl/list:items-start"
-        >
-          <div className="min-w-0 flex-1 space-y-1">
-            <label htmlFor={`${id}-name`} className="sr-only">
-              New category name
-            </label>
-            <Input
-              id={`${id}-name`}
-              placeholder="New category, such as Pets"
-              autoComplete="off"
-              aria-invalid={errors.name ? true : undefined}
-              aria-describedby={errors.name ? `${id}-name-error` : undefined}
-              {...register("name")}
-            />
-            {errors.name ? (
-              <p id={`${id}-name-error`} className="text-xs font-medium text-destructive">
-                {errors.name.message}
-              </p>
-            ) : null}
-          </div>
-          <label htmlFor={`${id}-type`} className="sr-only">
-            Category type
-          </label>
-          <Controller
-            control={control}
-            name="type"
-            render={({ field }) => (
-              <Select
-                id={`${id}-type`}
-                ref={field.ref}
-                className="@2xl/list:w-36"
-                value={field.value}
-                onValueChange={field.onChange}
-                onBlur={field.onBlur}
-                options={CATEGORY_TYPES}
-              />
-            )}
-          />
-          <Button type="submit" variant="outline" disabled={isSubmitting}>
-            Add category
-          </Button>
-        </form>
-        {(errors.root?.server?.message ?? error) ? (
-          <FormAlert message={errors.root?.server?.message ?? error} />
-        ) : null}
-
-        {(["expense", "income"] as const).map((type) => (
-          <div key={type} className="space-y-2">
-            <h3 className="text-xs font-medium text-muted-foreground">
-              {type === "income" ? "Income" : "Expenses"}
-            </h3>
-            <ul className="flex flex-wrap gap-1.5">
-              {categories
-                .filter((category) => category.type === type)
-                .map((category) => (
-                  <li key={category.id}>
-                    <Badge variant="outline" className="gap-1 py-1 text-foreground">
-                      {category.name}
-                      {category.is_default ? null : (
-                        <button
-                          type="button"
-                          aria-label={`Delete the category “${category.name}”`}
-                          onClick={() => void remove(category)}
-                          className="-mr-1 rounded-full p-0.5 text-muted-foreground outline-none hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                          <X className="size-3" aria-hidden="true" />
-                        </button>
-                      )}
-                    </Badge>
-                  </li>
-                ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </Panel>
   );
 }

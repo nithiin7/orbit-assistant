@@ -1,7 +1,7 @@
 "use client";
 
 import type { FinanceTransaction } from "@orbit/contracts";
-import { Download, Receipt, Search, SearchX, SlidersHorizontal } from "lucide-react";
+import { Download, Receipt, Search, SearchX, SlidersHorizontal, Tags } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { describeApiError } from "@/api/client";
@@ -46,7 +46,8 @@ export function TransactionHistory({
   categories,
   onEditTransaction,
   onAnnounce,
-}: FinanceData) {
+  onManageCategories,
+}: FinanceData & { onManageCategories: () => void }) {
   const id = useId();
   const [filters, setFilters] = useState<TransactionFilters>(DEFAULT_TRANSACTION_FILTERS);
   const [search, setSearch] = useState("");
@@ -119,10 +120,16 @@ export function TransactionHistory({
         title="Transactions"
         description="Everything recorded, newest first. Choose one to change it."
         controls={
-          <Button variant="outline" disabled={exporting} onClick={() => void download()}>
-            <Download aria-hidden="true" />
-            {exporting ? "Exporting…" : "Export CSV"}
-          </Button>
+          <>
+            <Button variant="outline" onClick={onManageCategories}>
+              <Tags aria-hidden="true" />
+              Categories
+            </Button>
+            <Button variant="outline" disabled={exporting} onClick={() => void download()}>
+              <Download aria-hidden="true" />
+              {exporting ? "Exporting…" : "Export CSV"}
+            </Button>
+          </>
         }
       />
 

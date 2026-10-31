@@ -420,6 +420,45 @@ describe("FinancePanel", () => {
     expect(last.get("offset")).toBe("0");
   });
 
+  it("manages categories in a dialog from the transaction history", async () => {
+    const user = userEvent.setup();
+    const posted: unknown[] = [];
+    const pets = { ...category("cat-pets", "Pets", "expense"), is_default: false };
+    let categories = [salary, groceries, rent];
+    mockApi({
+      ...session,
+      ...finance(),
+      [`GET ${FINANCE}/categories`]: () => Response.json({ categories }),
+      [`POST ${FINANCE}/categories`]: ({ body }: MockRequest) => {
+        posted.push(body);
+        categories = [...categories, pets];
+        return Response.json(pets, { status: 201 });
+      },
+    });
+    await renderSignedIn(<FinancePanel />);
+
+    await user.click(await screen.findByRole("button", { name: "Transactions" }));
+    await user.click(await screen.findByRole("button", { name: "Categories" }));
+    const dialog = screen.getByRole("dialog", { name: "Categories" });
+    // Built-in categories can't be deleted.
+    expect(within(dialog).getByRole("list", { name: "Expense categories" })).toHaveTextContent(
+      /Groceries.*Rent/,
+    );
+    expect(within(dialog).queryByRole("button", { name: /Delete the category/ })).toBeNull();
+
+    await user.type(within(dialog).getByRole("textbox", { name: "New category name" }), "Pets");
+    await user.click(within(dialog).getByRole("button", { name: "Add" }));
+
+    await waitFor(() => expect(posted).toEqual([{ name: "Pets", type: "expense" }]));
+    expect(
+      await within(dialog).findByRole("button", { name: "Delete the category “Pets”" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Added the category “Pets”.");
+
+    await user.click(within(dialog).getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("dialog", { name: "Categories" })).not.toBeInTheDocument();
+  });
+
   it("deletes a transaction only after confirmation", async () => {
     const user = userEvent.setup();
     const deleted: string[] = [];
