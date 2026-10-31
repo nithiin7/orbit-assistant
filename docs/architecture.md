@@ -21,7 +21,8 @@ Browser ──► apps/web (Next.js, :3000) ──HTTP/JSON──► apps/api (F
   workspaces, on the database foundation described under [Storage](#storage). Identity is
   described under [Identity and authorization](#identity-and-authorization). Product data:
   [tasks](#tasks), shopping lists, [reminders](#reminders-and-notifications), and
-  [finance](#finance); notes and the other modules store nothing yet.
+  [finance](#finance), and [notes](#notes-and-knowledge-management); the calendar and the
+  assistant store nothing yet.
 
 The two apps communicate only over HTTP and share no runtime code. They share one thing: the
 API contract in `packages/contracts`, described below.
@@ -134,6 +135,7 @@ apps/web/src/
 │   │   ├── tasks/       # Tasks page
 │   │   ├── reminders/   # Reminders page
 │   │   ├── finance/     # Finance page: 13 views in four groups, chosen by ?view=
+│   │   ├── notes/       # Notes page: view, folder, tag, search, and open note in the URL
 │   │   ├── settings/    # Settings: drill-down on small screens, split view on large; [panel]/ sub-pages
 │   │   └── [section]/   # Placeholder page for every other nav section
 │   ├── (auth)/          # Public routes without the shell: sign-in, sign-up
@@ -148,6 +150,7 @@ apps/web/src/
 │   ├── tasks/           # Tasks page (composer, toolbar, list, edit dialog), dashboard summary
 │   ├── reminders/       # Reminders page (list, create/edit dialog), dashboard widget
 │   ├── finance/         # Finance page: navigation, views, shared blocks (tiles, panels, row actions), dialogs
+│   ├── notes/           # Notes page: rail, list, Tiptap editor and toolbar, details, pickers, quick capture
 │   ├── notifications/   # Notification bell and panel (in the sidebar and mobile top bar)
 │   ├── settings/        # Settings menu and the account, workspace, theme, and storage panels
 │   ├── storage/         # Storage-mode indicator and status card
@@ -211,9 +214,10 @@ apps/api/src/orbit_api/
 │       ├── reminders.py # Workspace-scoped reminders: CRUD, enable/disable, upcoming
 │       ├── finance.py   # Workspace-scoped finance: accounts, categories, transactions, reports, CSV
 │       ├── commitments.py # Loans and EMIs, subscriptions and bills, payments, upcoming, summary
+│       ├── notes.py     # Notes, folders, tags, links, tasks, journal, attachments
 │       └── notifications.py # The signed-in user's notifications: list, unread count, read state
 ├── auth/                # Adapters: Argon2 password hashing, Supabase JWT verification
-├── system/              # Adapter: opening the OS file manager on the API's machine
+├── system/              # Adapters: opening the OS file manager; storing note attachments as files
 ├── scheduler/           # Reminder worker (embedded in the API or `orbit-worker`) and its CLI
 ├── utils/               # Plain-Python helpers any layer may use: UNSET, sort order, clock, LIKE patterns
 ├── schemas/             # Pydantic request/response models (the API contract)
@@ -228,7 +232,7 @@ apps/api/src/orbit_api/
     ├── database.py      # `open_database()`: connect, verify schema, sessions, dispose
     ├── migrate.py       # Programmatic Alembic: upgrade, downgrade, head revision
     └── migrations/      # Alembic environment and versioned revisions
-        └── versions/    # 0001_baseline … 0009_create_commitments
+        └── versions/    # 0001_baseline … 0012_create_notes
 ```
 
 Design decisions:
@@ -337,6 +341,9 @@ written once. SQLite is embedded in the API process; local mode needs no databas
   `finance_budget_alerts`, `finance_savings_goals`, `finance_goal_contributions`, and
   `finance_monthly_plans` with RLS (see
   [Budgets, savings goals, and planning](#budgets-savings-goals-and-planning-phase-4)).
+- `0012_create_notes` creates `note_folders`, `notes`, `note_tags`, `note_tag_assignments`,
+  `note_links`, `note_task_links`, and `note_attachments` with RLS (see
+  [Notes and knowledge management](#notes-and-knowledge-management)).
 - Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
   Startup only checks that the database is at the head revision. For a shared cloud database,
   schema changes should be deliberate and reviewable.
@@ -417,7 +424,7 @@ structure.
      `finance_accounts`, `finance_categories`, and `finance_transactions`; `0009` for
      `finance_loans`, `finance_loan_installments`, `finance_recurring_payments`, and
      `finance_recurring_occurrences`; `0010` for the nine investment, asset, and snapshot tables;
-     `0011` for the six budget, goal, and plan tables.
+     `0011` for the six budget, goal, and plan tables; `0012` for the seven note tables.
   2. **No policies exist**, deliberately: the browser never queries tables directly, so the
      Data API's `anon` and `authenticated` roles get no rows. Add `authenticated` policies
      (for example `owner_id = auth.uid()`) only if a client is ever allowed direct access.
@@ -447,7 +454,8 @@ structure.
 users ──< workspaces ──< tasks    (owner_id → users.id, workspace_id → workspaces.id,
   │                 │                both ON DELETE CASCADE)
   │                 ├──< reminders   (see Reminders and notifications)
-  │                 └──< finance_accounts, finance_categories, finance_transactions (see Finance)
+  │                 ├──< finance_accounts, finance_categories, finance_transactions (see Finance)
+  │                 └──< notes, note_folders, note_tags, … (see Notes and knowledge management)
   ├──< notifications              (in-app inbox, per recipient)
   │
   ├── user_avatars                (profile photo bytes and type, 1:1)
@@ -473,7 +481,7 @@ users ──< workspaces ──< tasks    (owner_id → users.id, workspace_id �
   `nosniff` and a locked-down CSP, or 204 when none is set. Because the API needs a bearer token,
   the web app fetches the photo as a blob and shows it through an object URL.
 - **Extensibility:** user data carries a non-null `workspace_id` foreign key, as `tasks` does;
-  `finance_*` tables do, and future notes will too. Shared workspaces would add a `workspace_members` table and change
+  `finance_*` and `note*` tables do too. Shared workspaces would add a `workspace_members` table and change
   only the authorization check described below; the API already reports a `role` (`owner`).
 - **`dashboard_layouts`** holds a user's optional dashboard arrangement (see
   [Dashboard layout](#dashboard-layout)). It belongs to the user, not a workspace, because it
@@ -1770,6 +1778,229 @@ budgets, goals, or amounts.
 - Not supported now: currency conversion, split transactions, attachments, imports, bank
   connections, reconciliation, and undo (deletes are confirmed instead).
 
+## Notes and knowledge management
+
+Notes capture, organize, connect, and find a workspace's knowledge: standard notes, quick notes,
+and a daily journal, in folders and tags, linked to each other and to tasks.
+
+### Notes data model
+
+```text
+workspaces ──< note_folders ──< note_folders            (parent_id, ON DELETE CASCADE)
+     │              │
+     ├──< notes >───┘ (folder_id: no ON DELETE; the service moves notes out first)
+     │      ├──< note_tag_assignments >── note_tags     (both sides cascade)
+     │      ├──< note_links >── notes                   (source → target, both cascade)
+     │      ├──< note_task_links >── tasks              (both cascade)
+     │      └──< note_attachments                       (metadata; files live outside the DB)
+```
+
+Every relationship is a composite foreign key on `(id, workspace_id)`, so the database itself
+refuses a folder, tag, link, task link, or attachment that crosses workspaces. Migration
+`0012_create_notes` creates the tables with RLS on PostgreSQL.
+
+| `notes` column                 | Notes                                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------------------- |
+| `note_type`                    | `note`, `quick` (captured fast), or `journal` (CHECK)                                 |
+| `title`                        | 0 to 200 characters; empty titles show as "Untitled" or the journal date              |
+| `content`, `content_format`    | The editor document as ProseMirror JSON (≤ 1,000,000 characters), `prosemirror-v1`    |
+| `plain_text`                   | Derived from `content` on every save, for search and previews; never sent by a client |
+| `folder_id`                    | `NULL` is the Inbox                                                                   |
+| `journal_date`                 | Set exactly for journal entries (CHECK); `unique(workspace_id, journal_date)`         |
+| `is_pinned`, `is_favorite`     | Pinned notes sort first in lists                                                      |
+| `archived_at`, `trashed_at`    | Archive and trash are timestamps; archived and trashed notes are read-only            |
+| `revision`                     | Starts at 1 and counts title or content changes (optimistic concurrency)              |
+| `updated_at`, `last_opened_at` | `updated_at` changes only with the title or content; opening sets `last_opened_at`    |
+
+Indexes: `(workspace_id, updated_at)`, `(workspace_id, folder_id)`, the journal date's unique
+index, and lookups by target for backlinks, by tag, and by task.
+
+### Folders and tags
+
+- **Folders** nest up to 8 levels. The service refuses moving a folder into itself or one of its
+  subfolders (it walks the tree) and moves that would nest too deeply; a CHECK forbids a folder
+  being its own parent. Folder note counts are active notes directly in the folder.
+- **Deleting a folder never deletes notes silently.** The caller chooses (`?notes=`): `parent`
+  moves the folder's notes and subfolders up a level; `inbox` or `trash` deletes the folder and
+  its subfolders after moving every note inside to the Inbox or the trash. `notes.folder_id` has
+  no `ON DELETE` action, so a folder with notes can't be deleted by accident.
+- **Tags** are unique per workspace by `normalized_name` (whitespace collapsed, trimmed,
+  case-folded): "Deep Work", "deep work", and "DEEP WORK" are one tag. Adding a tag by name
+  reuses the existing one or creates it; concurrent creation of the same name resolves to one tag.
+  Renaming to another tag's name is a 409. Deleting a tag removes it from every note; a note has
+  at most 50 tags. Usage counts are active notes.
+
+### Editor content format
+
+- The web editor is [Tiptap](https://tiptap.dev) 3 (ProseMirror) with StarterKit (paragraphs,
+  headings 1 to 3, bold, italic, underline, strikethrough, inline code, lists, quotes, dividers,
+  links), task lists, tables, and code blocks highlighted by lowlight (highlight.js grammars).
+  Extensions are defined once in `lib/note-content` and used by both the editor and Markdown
+  conversion.
+- **The ProseMirror document is the only source of truth.** Markdown is never stored.
+- The API validates every document (`services/notes/content.py`): only the node and mark types
+  those extensions produce, a depth limit, a size limit, and links that are `http(s):`,
+  `mailto:`, or internal note links (no `javascript:` or other schemes). So a stored document
+  always loads in the editor, and content can't smuggle unsafe URLs. The same pass derives
+  `plain_text` and the note's outgoing links.
+
+### Markdown conversion
+
+`lib/note-content` uses `@tiptap/markdown`'s `MarkdownManager` with the editor's extensions:
+
+- **Import:** a `.md` or `.txt` file becomes a note; its first heading (or line) becomes the title.
+- **Export / copy:** the note menu downloads `<title>.md` or copies Markdown to the clipboard.
+- **Paste:** plain-text pastes that look like Markdown (headings, lists, checklists, quotes, code
+  fences, tables, links, bold) are converted; pastes with HTML keep the browser's formatting.
+- Quick capture accepts Markdown too. Round trips are tested for every supported block and mark;
+  underline has no Markdown form and exports as plain text, and Markdown images are dropped
+  (there is no image node).
+
+### Autosave strategy
+
+`hooks/use-note-autosave.ts`, tested with a mocked API:
+
+- Typing is saved **800 ms after the last change**; leaving the note (another note, another
+  page) saves at once, and the page waits for that save before switching notes.
+- **One request at a time.** Edits made while a save is in flight go in the next request.
+- A save that would change nothing (the server already has those fields) sends no request.
+- Each save sends `expected_revision`. If someone changed the note since (another tab or device),
+  the API answers **409** and nothing is overwritten. The editor stops saving and offers "Load
+  their version" or "Keep mine" (which saves over the newer revision deliberately).
+- Network errors, 5xx, and 429 are **retried** after 1, 3, and 8 seconds; then, and for other
+  errors (such as 422), the status shows "Not saved" with a Retry button.
+- The status reads **Saved only after the server confirms**. Closing or reloading the tab with
+  unsaved or in-flight changes triggers the browser's leave warning.
+- Metadata changes (pin, favorite, folder, archive, tags) are separate requests that don't need
+  or change the revision.
+
+### Note linking and backlinks
+
+- A link to a note is an ordinary link mark whose `href` is `/notes?note=<uuid>`, inserted from
+  the toolbar's note picker. Links name notes by **ID**, so renaming a note never breaks them
+  (the link text stays as typed; the panels show current titles).
+- On every content save the API replaces the note's rows in `note_links` with the set of linked
+  note IDs that exist **in the same workspace** (duplicates collapse to one row; self-links and
+  unknown or foreign IDs are ignored). Links to other workspaces stay in the text but relate
+  nothing.
+- `GET …/notes/{id}/links` returns outgoing links and backlinks, leaving out trashed notes; they
+  return when the note is restored. Clicking a note link in the editor opens it in place.
+- No graph visualization.
+
+### Task integration
+
+- `note_task_links` relates notes and existing tasks; task data stays in `tasks`. Linking checks
+  the task exists in the note's workspace (422 otherwise), is idempotent, and deleting either side
+  removes the link.
+- The note's details list linked tasks (`GET …/notes/{id}/tasks`, the tasks API's own response
+  type) with links to `/tasks?task=<id>`, which opens the task's dialog. The task dialog lists the
+  notes linked to it (`GET …/notes?task_id=`), each opening the note.
+
+### Journal behavior
+
+- One entry per day per workspace, a note of type `journal` with `journal_date`; the unique index
+  backs the rule. `PUT …/notes/journal/{date}` returns the day's entry, creating it (201) the first
+  time; concurrent first opens resolve to the same entry. Opening a trashed day restores it.
+  `PUT …/notes/journal/today` uses the user's time zone (Settings → Account), else UTC.
+- The web app computes "today" in the user's time zone (else the browser's) and opens it with
+  the date. The Journal view lists entries by date with previous/next day, a date picker, and
+  Today. Entries are searchable and linkable like any note; their type and date can't change, and
+  a duplicate becomes an ordinary note. Journal entries are not in the Inbox or All notes.
+
+### Search architecture
+
+- `GET …/notes?q=` splits the search into words (at most eight); each must appear,
+  case-insensitively, in the title, the derived plain text, a tag name, or the folder's name.
+  It is an escaped `ILIKE` per word, the same approach as tasks and finance, and runs unchanged on
+  SQLite and PostgreSQL. It scans one workspace's notes, which is fine at personal scale;
+  PostgreSQL full-text search or SQLite FTS5 can replace `repositories/notes.py`'s filter without
+  changing the service or API.
+- Results carry an `excerpt`: the start of the text, or the text around the first match. The web
+  app highlights matching words with `<mark>` (text split in React, never injected HTML).
+- Filters: state (`active`, `archived`, `trashed`), folder or Inbox, tag, type, task, favorite,
+  pinned; sorts: last edited, created, title, recent (last opened or edited), journal date;
+  `pinned_first`; `limit` (≤ 100) and `offset`. The web app pages by 50.
+- Views map onto these filters (`lib/notes`): Inbox, All notes, Recent, Favorites, Pinned,
+  Journal, Archive, Trash, a folder, or a tag. No vector or semantic search.
+
+### Attachments
+
+- There was no file storage to reuse (profile photos are small and stored in a column), so notes
+  add the minimum: metadata in `note_attachments`, bytes in files under
+  `ORBIT_ATTACHMENTS_PATH/<workspace id>/<attachment id>` (`system/attachment_store.py`). Names on
+  disk are server-generated UUIDs; directories are `0700` and files `0600`; writes go to a
+  temporary file and are renamed into place; blocking I/O runs in a worker thread.
+- Uploads are the raw request body with `?filename=` (a name, not a path), capped by
+  `ORBIT_ATTACHMENT_MAX_BYTES` (default 10 MB) while reading. The type comes from the extension
+  and is checked against the file's leading bytes (PNG, JPEG, GIF, WebP, PDF, ZIP-based Office and
+  OpenDocument files) or, for text formats, the absence of NUL bytes; the declared content type is
+  ignored. At most 50 per note.
+- Downloads require the bearer token, so the web app fetches a blob. Responses always use
+  `Content-Disposition: attachment`, the detected type, `nosniff`, and a sandboxing CSP.
+- Deleting an attachment, permanently deleting notes (including emptying the trash), and
+  deleting a workspace delete the files too. If the metadata can't be saved, the file just
+  written is removed.
+- **Limitations:** files live on the API's machine. A cloud deployment with several API
+  instances needs a shared volume; object storage is not implemented. Attachments are listed in a
+  note's details, not shown inline in the document. If a file deletion fails (logged), the file is
+  orphaned but unreachable.
+
+### Notes API
+
+All routes are under `/api/v1/workspaces/{workspace_id}` and authorize the workspace through
+`WorkspaceDep` first. An ID from another workspace behaves exactly like a missing one (404 for
+the note, folder, tag, or attachment in the path; 422 for a referenced folder or task).
+
+| Method                   | Path                                                   | Purpose                                                                        |
+| ------------------------ | ------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| `GET`, `POST`            | `/notes`                                               | List or search (filters above); create (`content` or `text`)                   |
+| `GET`                    | `/notes/counts`                                        | Counts per view                                                                |
+| `POST`                   | `/notes/empty-trash`                                   | Delete every trashed note for good                                             |
+| `GET`, `PUT`             | `/notes/journal/{date}`, `/notes/journal/today`        | Get, or open (create) a day's entry                                            |
+| `GET`, `PATCH`, `DELETE` | `/notes/{id}`                                          | Get; update (409 on a stale `expected_revision`); delete if trashed (else 409) |
+| `POST`                   | `/notes/{id}/open`, `/trash`, `/restore`, `/duplicate` | Record an open; trash; restore; copy (same folder and tags)                    |
+| `GET`                    | `/notes/{id}/links`                                    | Outgoing links and backlinks                                                   |
+| `POST`, `DELETE`         | `/notes/{id}/tags`, `/notes/{id}/tags/{tag}`           | Tag by name (reuse or create); untag                                           |
+| `GET`, `PUT`, `DELETE`   | `/notes/{id}/tasks`, `/notes/{id}/tasks/{task}`        | Linked tasks; link; unlink                                                     |
+| `GET`, `POST`, `DELETE`  | `/notes/{id}/attachments[/{attachment}]`               | List; upload; download (`GET` one); remove                                     |
+| `GET`, `POST`            | `/note-folders`                                        | All folders with counts (flat; the client builds the tree)                     |
+| `PATCH`, `DELETE`        | `/note-folders/{id}`                                   | Rename or move; delete with `?notes=parent                                     | inbox | trash` |
+| `GET`, `POST`            | `/note-tags`                                           | Tags with usage counts; create                                                 |
+| `PATCH`, `DELETE`        | `/note-tags/{id}`                                      | Rename; delete                                                                 |
+
+Request models forbid unknown fields, so `workspace_id`, `revision`, `plain_text`, or
+`journal_date` in a body is a 422. Titles reject control characters.
+
+### Notes in the web app
+
+- `/notes` (`components/notes/`): a rail (views with counts, the folder tree with expand,
+  collapse, and folder actions, and tags), the list (search, sort, list or grid, per-note actions
+  menu, pagination), and the note pane (title, toolbar, editor, save status, and a details panel
+  with folder, tags with autocomplete, backlinks and links, tasks, and attachments). The URL holds
+  the view, folder or tag, search, and open note, so Back, reloads, and links work.
+- Layout follows container width: three columns on wide screens, list and note on laptops (the
+  rail behind **Browse**), and one column on phones, where an open note replaces the list.
+- Keyboard: `N` creates a note, `/` focuses search, Escape clears it; the editor supports
+  standard shortcuts (Mod+B/I/U, Mod+Shift+S, Mod+E, Mod+Alt+1–3, Mod+Shift+7/8/9, Mod+Shift+B)
+  and Markdown input rules; the toolbar is one tab stop with arrow-key navigation.
+- **Quick capture** (`QuickCaptureProvider`, in the app shell) opens from the sidebar or the
+  command palette on any page and saves a quick note to the Inbox; closing with text typed asks
+  first.
+- **Command palette:** New note, Quick note, Open today's journal, recent notes, folders, live
+  note search as you type, and "Search notes for …", using the existing palette.
+- Query keys: `["workspaces", id, "notes", …]`. An open note's query never refetches on its own,
+  so the editor owns it while open.
+
+### Notes limitations
+
+- Search is substring matching (no stemming, ranking, or fuzzy matching).
+- Attachments are files on one machine (see [Attachments](#attachments)); no inline images.
+- Conflict resolution is whole-note ("keep mine" or "theirs"), not a merge. Edits are not synced
+  live between open tabs; the second tab finds out on its next save.
+- Navigating to another page while a save fails can lose the last changes; the save is attempted
+  on leave and the browser warns on close or reload, but in-app navigation can't wait.
+- No templates, sharing, version history, graph view, AI features, or semantic search.
+
 ## Configuration
 
 | App | Source                                                    | Validation                                    | Visibility  |
@@ -1786,16 +2017,16 @@ budgets, goals, or amounts.
 
 ## Testing strategy
 
-| Layer                    | Tool                                            | Location                                                                                   | Current coverage                                                                                                                                                        |
-| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                                                 | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth, budgets, goals, plans |
-| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                                                          | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, budgets, goals, plans, cross-user isolation    |
-| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_reminder_worker.py`, `tests/test_budget_alerts.py` | Recurrence, DST, month ends; delivery, concurrency, leases, retries, restarts; budget alerts and period closing                                                         |
-| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                                                         | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                                            |
-| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                                                    | Startup checks, sessions, migrations, constraints, 503 errors                                                                                                           |
-| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                                                          | Migrations, connectivity, RLS; skipped by default                                                                                                                       |
-| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                                                  | Generated contract matches the API                                                                                                                                      |
-| End-to-end               | Not set up (**planned**)                        | —                                                                                          | —                                                                                                                                                                       |
+| Layer                    | Tool                                            | Location                                                                                   | Current coverage                                                                                                                                                                                                    |
+| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                                                 | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth, budgets, goals, plans, notes (views, autosave, Markdown, palette) |
+| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                                                          | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, budgets, goals, plans, notes, cross-user isolation                                         |
+| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_reminder_worker.py`, `tests/test_budget_alerts.py` | Recurrence, DST, month ends; delivery, concurrency, leases, retries, restarts; budget alerts and period closing                                                                                                     |
+| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                                                         | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                                                                                        |
+| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                                                    | Startup checks, sessions, migrations, constraints, 503 errors                                                                                                                                                       |
+| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                                                          | Migrations, connectivity, RLS; skipped by default                                                                                                                                                                   |
+| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                                                  | Generated contract matches the API                                                                                                                                                                                  |
+| End-to-end               | Not set up (**planned**)                        | —                                                                                          | —                                                                                                                                                                                                                   |
 
 Unit tests cover logic, route tests cover HTTP behavior and validation, and E2E tests will cover
 critical user journeys once real features exist. CI runs every layer on each pull request.
@@ -1816,7 +2047,7 @@ vendor SDKs.
 
 The database foundation is implemented (see [Storage](#storage)). Still planned:
 
-- More product tables (notes, later [finance](#finance) phases), following the pattern
+- More product tables (calendar, later [finance](#finance) phases), following the pattern
   [tasks](#tasks) established.
 - Shared workspaces (a membership table, invitations, roles), if the product needs them.
 - Any synchronization or migration between local and cloud storage. This is undecided and
@@ -1834,7 +2065,8 @@ The database foundation is implemented (see [Storage](#storage)). Still planned:
 Workspace-scoped [tasks](#tasks), [reminders](#reminders-and-notifications) (with a
 database-backed worker), and four phases of [finance](#finance) (ledger, commitments,
 [investments and net worth](#investments-and-net-worth-phase-3), and
-[budgets, savings goals, and planning](#budgets-savings-goals-and-planning-phase-4)) are in place. Next: more
+[budgets, savings goals, and planning](#budgets-savings-goals-and-planning-phase-4)), and
+[notes](#notes-and-knowledge-management) are in place. Next: more
 modules on the same pattern, AI-assisted features through the provider interface, then optional
 sync and extension points.
 Each step should leave the boundaries above intact.

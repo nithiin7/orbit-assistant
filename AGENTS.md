@@ -27,7 +27,11 @@ recurring deposits, other assets with valuations, a portfolio summary, net worth
 net worth snapshots), and phase 4 planning (overall and category budgets per month or custom
 period with rollover and threshold alerts, savings goals with contributions and withdrawals, and
 a monthly plan of expected income against commitments, budgets, savings, and investments), all
-recorded through the phase 1 ledger. There are no other product features (calendar, notes), no
+recorded through the phase 1 ledger, and **notes** (a rich-text editor storing ProseMirror JSON,
+autosave with revision checks, nested folders, tags, an Inbox and quick capture, links and
+backlinks between notes, links to tasks, a one-entry-per-day journal, substring search, archive
+and trash, Markdown import and export, and file attachments stored outside the database). There
+are no other product features (calendar), no semantic search or knowledge graph, no
 recurring tasks, no automatically created transactions, no live market prices or bank
 integrations, no AI financial insights, no push, email, or mobile notifications, and no AI
 integration yet. Do not describe or build on capabilities that do not exist.
@@ -55,7 +59,7 @@ integration yet. Do not describe or build on capabilities that do not exist.
 | `.github/workflows/ci.yml`     | CI: web, API, and commit-message jobs                                            |
 | `.husky/`, `.lintstagedrc.mjs` | Git hooks: staged-file lint/format and commitlint                                |
 
-Not present yet (planned; see `docs/architecture.md`): product tables for notes, price providers,
+Not present yet (planned; see `docs/architecture.md`): price providers,
 shared workspaces, AI provider abstractions, end-to-end tests, and a `scripts/` directory.
 
 ### Boundaries

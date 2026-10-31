@@ -34,7 +34,8 @@ control.
 > an application shell, an API with a database layer, and accounts with workspaces. Tasks,
 > shopping lists, reminders (with in-app notifications), and finance (accounts, transactions,
 > loans, subscriptions, bills, investments, other assets, net worth, budgets, savings goals, and
-> monthly plans) are built; calendar, notes, and the AI assistant are not.
+> monthly plans), and notes (folders, tags, links and backlinks, a daily journal, search,
+> Markdown, and attachments) are built; the calendar and the AI assistant are not.
 
 ## Scope
 
@@ -72,12 +73,18 @@ control.
   amounts, and copying last month; savings goals with contributions, withdrawals, and a suggested
   monthly amount; and a monthly plan of expected income against commitments, budgets, savings,
   and investments.
+- Notes: a rich-text editor (headings, lists, checklists, tables, code with highlighting, links)
+  that saves as you type and never silently overwrites a newer edit; nested folders, tags, an
+  Inbox with quick capture from anywhere, pins, favorites, archive, and trash; links between
+  notes with backlinks; links to tasks; a daily journal in your time zone; search across titles,
+  text, tags, and folders; Markdown import, export, and paste; and file attachments.
 - Shared tooling for linting, formatting, type checking, testing, commit conventions, and CI.
 
 ### 🚫 Explicit non-goals for now
 
-- Calendar or notes functionality; automatically created transactions, live market prices,
-  AI financial insights, or bank integrations in finance.
+- Calendar functionality; semantic search, AI note generation, or a knowledge graph in notes;
+  automatically created transactions, live market prices, AI financial insights, or bank
+  integrations in finance.
 - Shared workspaces, invitations, password recovery for local accounts, and account linking
   between local and cloud.
 - Synchronization or data migration between local and cloud storage.

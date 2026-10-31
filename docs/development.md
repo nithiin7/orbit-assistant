@@ -67,6 +67,13 @@ Storage (see [Database](#database)):
 | `ORBIT_DATABASE_POOL_SIZE`    | `5`                            | Cloud mode: persistent pooled connections                 |
 | `ORBIT_DATABASE_MAX_OVERFLOW` | `5`                            | Cloud mode: extra connections allowed under load          |
 
+Note attachments (see [architecture: Attachments](architecture.md#attachments)):
+
+| Variable                     | Default                               | Purpose                                                      |
+| ---------------------------- | ------------------------------------- | ------------------------------------------------------------ |
+| `ORBIT_ATTACHMENTS_PATH`     | `attachments/` beside the SQLite file | Folder for attachment files (cloud mode: `apps/api/.data/…`) |
+| `ORBIT_ATTACHMENT_MAX_BYTES` | `10485760` (10 MB)                    | Largest attachment accepted (1 KB to 100 MB)                 |
+
 Reminders (see [Reminder worker](#reminder-worker)):
 
 | Variable                       | Default | Purpose                                                                  |
@@ -119,6 +126,10 @@ either approach:
 
 - Stop the API, then copy `orbit.sqlite3` (and any `-wal`/`-shm` files) together.
 - Or, while it runs: `sqlite3 path/to/orbit.sqlite3 ".backup 'orbit-backup.sqlite3'"`.
+
+Note attachments are files, not database rows: back up the attachments folder
+(`ORBIT_ATTACHMENTS_PATH`, by default `attachments/` beside the database) together with the
+database.
 
 Backups contain all of your data unencrypted. Store them with the same care as the original.
 
@@ -206,7 +217,7 @@ pnpm db:migrate                       # upgrade to the latest revision (from the
 cd apps/api
 uv run alembic current                # revision the database is at
 uv run alembic history                # all revisions
-uv run alembic revision --autogenerate --rev-id 0011 -m "create notes table"
+uv run alembic revision --autogenerate --rev-id 0013 -m "create calendar tables"
 uv run alembic downgrade -1           # revert the latest revision
 ```
 
