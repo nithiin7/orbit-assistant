@@ -465,10 +465,24 @@ describe("Net worth", () => {
     );
     expect(screen.getByRole("note")).toHaveTextContent("1 estimated");
 
-    const counted = screen.getByRole("region", { name: "What’s counted" });
-    expect(within(counted).getByText("Estimated from the rate; not guaranteed.")).toBeVisible();
-    expect(within(counted).getByText("Not counted")).toBeVisible();
-    expect(within(counted).getByText(/Already counted in the balance/)).toBeVisible();
+    // Each group of assets opens to show what's in it, with where each value came from.
+    const assets = screen.getByRole("list", { name: "Assets" });
+    const deposits = within(assets).getByText("Fixed and recurring deposits");
+    expect(deposits.closest("summary")).toHaveTextContent(/1 item · 16%.*₹1,04,000\.00/);
+    const note = within(assets).getByText("Estimated from the rate; not guaranteed.");
+    expect(note).not.toBeVisible();
+    await userEvent.click(deposits);
+    expect(note).toBeVisible();
+    expect(
+      within(assets).getByRole("list", { name: "Fixed and recurring deposits" }),
+    ).toHaveTextContent("SBI FD");
+
+    // What's left out, so it isn't counted twice, waits in a closed section with its reason.
+    const excluded = screen.getByText(/1 not counted/);
+    const reason = screen.getByText(/Already counted in the balance/);
+    expect(reason).not.toBeVisible();
+    await userEvent.click(excluded);
+    expect(reason).toBeVisible();
 
     const change = screen.getByRole("region", { name: "Change" });
     expect(within(change).getAllByText("No snapshot")).toHaveLength(3);

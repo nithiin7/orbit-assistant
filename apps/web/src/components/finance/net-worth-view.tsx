@@ -7,7 +7,7 @@ import type {
   NetWorthItem,
   NetWorthSnapshot,
 } from "@orbit/contracts";
-import { Camera, CircleHelp, CreditCard, Landmark, Scale, Wallet } from "lucide-react";
+import { Camera, ChevronDown, CircleHelp, CreditCard, Landmark, Scale, Wallet } from "lucide-react";
 import { useState } from "react";
 
 import { describeApiError } from "@/api/client";
@@ -20,10 +20,10 @@ import { SNAPSHOT_SOURCE_LABELS, SOURCE_LABELS } from "@/lib/investments";
 import { cn } from "@/utils/common";
 import { formatCalendarDate, localDateString, monthLabel } from "@/utils/dates";
 
-import { twoColumnRows } from "./finance-meta";
+import { Chip } from "./finance-meta";
 import type { FinanceData } from "./finance-view";
 import { FreshnessBadge, Gain } from "./investment-parts";
-import { LoadError, Panel } from "./panel";
+import { EndedSection, LoadError, Panel } from "./panel";
 import { StatGrid, StatTile } from "./stat-tile";
 import { CurrencySwitcher, ViewHeader } from "./view-header";
 
@@ -176,7 +176,7 @@ function NetWorthDetail({
             ]
               .filter(Boolean)
               .join(", ")}
-            . Each is marked below.
+            . Open a group below to see which.
           </span>
         </p>
       ) : null}
@@ -218,81 +218,133 @@ function NetWorthDetail({
         <div className="grid gap-6 @3xl/list:grid-cols-2 @5xl/list:grid-cols-1">
           <Breakdown
             title="Assets"
+            total={data.assets}
             groups={data.groups.filter((g) => g.side === "asset")}
+            items={counted}
             currency={currency}
           />
           <Breakdown
             title="Liabilities"
+            total={data.liabilities}
             groups={data.groups.filter((g) => g.side === "liability")}
+            items={counted}
             currency={currency}
           />
         </div>
       </div>
 
-      <Panel
-        title="What’s counted"
-        description="Every balance and valuation behind the totals, with where it came from and when."
-        flush
-      >
-        <ItemList items={counted} currency={currency} />
-        {excluded.length > 0 ? (
-          <>
-            <h4 className="border-t bg-muted/30 px-5 py-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-              Not counted
-            </h4>
-            <ItemList items={excluded} currency={currency} />
-          </>
-        ) : null}
-      </Panel>
+      {excluded.length > 0 ? (
+        <EndedSection summary={`${excluded.length} not counted, so nothing is added twice`}>
+          <ItemList label="Not counted" items={excluded} currency={currency} />
+        </EndedSection>
+      ) : null}
     </div>
   );
 }
 
+/**
+ * One side of net worth, a row per group with its total and share. A group opens to show what's
+ * in it, with each value's source and date; a group with stale or missing values says so.
+ */
 function Breakdown({
   title,
+  total,
   groups,
+  items,
   currency,
 }: {
   title: string;
+  total: number;
   groups: readonly NetWorthGroupTotal[];
+  items: readonly NetWorthItem[];
   currency: Currency;
 }) {
   return (
-    <Panel title={title}>
+    <Panel
+      title={title}
+      action={
+        <p className="pt-1.5 pr-2 text-sm font-semibold whitespace-nowrap tabular-nums">
+          {formatMoney(total, currency)}
+        </p>
+      }
+      flush
+    >
       {groups.length === 0 ? (
-        <p className="text-sm text-muted-foreground">None.</p>
+        <p className="px-5 pb-5 text-sm text-muted-foreground">None.</p>
       ) : (
-        <dl className="space-y-2">
-          {groups.map((group) => (
-            <div key={group.key} className="flex items-baseline justify-between gap-3 text-sm">
-              <dt>{group.label}</dt>
-              <dd className="tabular-nums">{formatMoney(group.value, currency)}</dd>
-            </div>
-          ))}
-        </dl>
+        <ul aria-label={title} className="divide-y border-t">
+          {groups.map((group) => {
+            const members = items.filter((item) => item.group === group.key);
+            const outdated = members.filter(
+              (item) => item.freshness === "stale" || item.freshness === "missing",
+            ).length;
+            const share = total > 0 ? Math.round((group.value / total) * 100) : 0;
+            return (
+              <li key={group.key}>
+                <details className="group/row">
+                  <summary className="flex cursor-pointer list-none items-center gap-2.5 px-4 py-3 outline-none hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset @md/list:px-5 [&::-webkit-details-marker]:hidden">
+                    <ChevronDown
+                      aria-hidden="true"
+                      className="size-4 shrink-0 -rotate-90 text-muted-foreground transition-transform duration-150 group-open/row:rotate-0"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium">{group.label}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {members.length} {members.length === 1 ? "item" : "items"} · {share}%
+                      </span>
+                    </span>
+                    {outdated > 0 ? <Chip tone="warning">{outdated} to update</Chip> : null}
+                    <span className="shrink-0 text-sm font-medium whitespace-nowrap tabular-nums">
+                      {formatMoney(group.value, currency)}
+                    </span>
+                  </summary>
+                  <ItemList label={group.label} items={members} currency={currency} nested />
+                </details>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </Panel>
   );
 }
 
-function ItemList({ items, currency }: { items: readonly NetWorthItem[]; currency: Currency }) {
+/** What's behind a total: each item's value, where it came from, and when. */
+function ItemList({
+  label,
+  items,
+  currency,
+  nested = false,
+}: {
+  label: string;
+  items: readonly NetWorthItem[];
+  currency: Currency;
+  /** Inside an opened group: set in from its edge, on a quieter surface. */
+  nested?: boolean;
+}) {
   return (
-    <ul
-      className={cn("@container/rows grid divide-y border-t", twoColumnRows(items.length, "5xl"))}
-    >
+    <ul aria-label={label} className={cn("divide-y", nested && "border-t bg-muted/20")}>
       {items.map((item) => (
         <li
           key={`${item.kind}:${item.id}`}
-          className="flex min-w-0 items-center justify-between gap-3 px-4 py-2.5 @md/rows:px-5"
+          className={cn(
+            "flex min-w-0 items-start justify-between gap-3 py-2.5 pr-4",
+            nested ? "pl-10 @md/list:pr-5 @md/list:pl-11" : "pl-4",
+          )}
         >
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium">{item.name}</p>
-            <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <div className="min-w-0 space-y-0.5">
+            <p className="truncate text-sm">{item.name}</p>
+            <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
               <span>{SOURCE_LABELS[item.source]}</span>
-              {item.valued_on ? <span>{formatCalendarDate(item.valued_on)}</span> : null}
+              {item.valued_on ? (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span>{formatCalendarDate(item.valued_on)}</span>
+                </>
+              ) : null}
               <FreshnessBadge freshness={item.freshness} />
-              {item.note ? <span>{item.note}</span> : null}
             </p>
+            {item.note ? <p className="text-xs text-muted-foreground">{item.note}</p> : null}
           </div>
           <span
             className={cn(
