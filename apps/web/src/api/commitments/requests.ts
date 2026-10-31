@@ -89,6 +89,11 @@ export function updateLoan(
   return request<Loan>(loanPath(workspaceId, loanId), { method: "PATCH", body, token });
 }
 
+/** Deletes a loan entered by mistake; a 409 when it has recorded payments. */
+export function deleteLoan(token: string, workspaceId: string, loanId: string): Promise<void> {
+  return request<void>(loanPath(workspaceId, loanId), { method: "DELETE", token });
+}
+
 export function rescheduleLoan(
   token: string,
   workspaceId: string,

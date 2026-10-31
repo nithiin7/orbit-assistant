@@ -83,6 +83,7 @@ from orbit_api.services.finance.models import (
     Transaction,
     TransactionDraft,
     TransactionNotFoundError,
+    TransactionQuery,
 )
 from orbit_api.services.finance.money import Currency, month_bounds, to_decimal_string
 from orbit_api.services.finance.service import FinanceService
@@ -116,6 +117,11 @@ class LoanRepository(Protocol):
         ...
 
     async def save(self, loan: Loan) -> None: ...
+
+    async def delete(self, loan: Loan) -> None:
+        """Delete the loan with its account, EMI schedule, and reminder. The caller makes sure
+        no transaction uses the account."""
+        ...
 
 
 class InstallmentRepository(Protocol):
@@ -417,6 +423,30 @@ class CommitmentService:
             await self._sync_reminder(workspace_id, CommitmentLink("loan", loan.id), now)
             await self._unit_of_work.commit()
         return await self.loan(workspace_id, loan_id)
+
+    async def delete_loan(self, workspace_id: uuid.UUID, loan_id: uuid.UUID) -> None:
+        """Delete a loan entered by mistake, with its account, schedule, and reminder. Refused
+        while it has recorded payments or other transactions, so no history disappears with it:
+        undo them first, or close and archive the loan to keep them."""
+        loan = await self._get_loan(workspace_id, loan_id)
+        installments = await self._installments.for_loan(workspace_id, loan_id)
+        used = await self._finance.find(
+            workspace_id, TransactionQuery(account_id=loan.account_id, limit=1)
+        )
+        if any(entry.state == "paid" for entry in installments) or used.total > 0:
+            raise PaymentConflictError(
+                "This loan has recorded payments. Undo them first, or close and archive the loan "
+                "to keep its history."
+            )
+        try:
+            await self._loans.delete(loan)
+        except ConflictError:
+            # A transaction used the account between the check and the delete.
+            await self._unit_of_work.rollback()
+            raise PaymentConflictError(
+                "Something changed in the meantime. Refresh and try again."
+            ) from None
+        await self._commit_or_conflict()
 
     async def reschedule(
         self, workspace_id: uuid.UUID, loan_id: uuid.UUID, request: Reschedule

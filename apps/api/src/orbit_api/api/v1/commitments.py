@@ -175,6 +175,27 @@ async def update_loan(
     return LoanResponse.of(view)
 
 
+@router.delete(
+    "/loans/{loan_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a loan",
+    responses={409: {"description": "The loan has recorded payments or transactions."}},
+)
+async def delete_loan(
+    loan_id: LoanId, workspace: WorkspaceDep, commitments: CommitmentServiceDep
+) -> Response:
+    """Delete a loan entered by mistake, with its account, EMI schedule, and reminder. A loan
+    with recorded payments or other transactions is a 409: undo them first, or close and
+    archive it to keep its history."""
+    try:
+        await commitments.delete_loan(workspace.id, loan_id)
+    except LoanNotFoundError:
+        raise loan_not_found() from None
+    except PaymentConflictError as error:
+        raise conflict(error) from None
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.post(
     "/loans/{loan_id}/reschedule", summary="Regenerate unpaid installments", responses=_RULES
 )

@@ -4780,6 +4780,67 @@
             "description": "Invalid input, or a rule broken: an account, category, or transaction outside this workspace, a currency mismatch, or terms that can't be repaid."
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "finance commitments"
+        ],
+        "summary": "Delete a loan",
+        "description": "Delete a loan entered by mistake, with its account, EMI schedule, and reminder. A loan\nwith recorded payments or other transactions is a 409: undo them first, or close and\narchive it to keep its history.",
+        "operationId": "delete_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "loan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The loan's ID.",
+              "title": "Loan Id"
+            },
+            "description": "The loan's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, loan, installment, subscription, or bill does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The loan has recorded payments or transactions."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/workspaces/{workspace_id}/finance/loans/{loan_id}/reschedule": {

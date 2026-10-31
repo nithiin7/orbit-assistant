@@ -447,6 +447,50 @@ describe("Finance commitments", () => {
     });
   });
 
+  it("asks before deleting a loan and removes it from the list", async () => {
+    let loans = [loan];
+    mockApi({
+      ...routes(),
+      [`GET ${FINANCE}/loans`]: () => Response.json({ loans }),
+      [`DELETE ${FINANCE}/loans/loan-1`]: () => {
+        loans = [];
+        return new Response(null, { status: 204 });
+      },
+    });
+    await renderSignedIn(<FinancePanel />);
+    await openTab("Loans");
+
+    const list = await screen.findByRole("list", { name: "Active loans" });
+    await userEvent.click(
+      within(list).getByRole("button", { name: "More actions for “Car loan”" }),
+    );
+    await userEvent.click(screen.getByRole("menuitem", { name: /Delete loan…/ }));
+    const confirm = within(list).getByRole("group", {
+      name: "Delete “Car loan” and its EMI schedule?",
+    });
+    await userEvent.click(within(confirm).getByRole("button", { name: "Delete loan" }));
+
+    expect(await screen.findByText("No loans yet")).toBeInTheDocument();
+  });
+
+  it("explains why a loan with recorded payments can't be deleted", async () => {
+    const reason =
+      "This loan has recorded payments. Undo them first, or close and archive the loan to keep its history.";
+    mockApi({ ...routes(), [`DELETE ${FINANCE}/loans/loan-1`]: status(409, reason) });
+    await renderSignedIn(<FinancePanel />);
+    await openTab("Loans");
+
+    const list = await screen.findByRole("list", { name: "Active loans" });
+    await userEvent.click(
+      within(list).getByRole("button", { name: "More actions for “Car loan”" }),
+    );
+    await userEvent.click(screen.getByRole("menuitem", { name: /Delete loan…/ }));
+    await userEvent.click(within(list).getByRole("button", { name: "Delete loan" }));
+
+    expect(await within(list).findByText(reason)).toBeInTheDocument();
+    expect(within(list).getByRole("heading", { name: /Car loan/ })).toBeInTheDocument();
+  });
+
   it("shows the API's reason when a payment can't be recorded", async () => {
     mockApi({
       ...routes(),

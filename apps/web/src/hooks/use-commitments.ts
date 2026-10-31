@@ -24,9 +24,11 @@ import { useCallback } from "react";
 
 import {
   adjustInstallment,
+  commitmentKeys,
   commitmentSummaryOptions,
   createLoan,
   createRecurringPayment,
+  deleteLoan,
   loanOptions,
   loansOptions,
   occurrencesOptions,
@@ -154,6 +156,14 @@ export function useCommitmentMutations(workspaceId: string) {
       mutationFn: ({ id, changes }: { id: string; changes: UpdateLoanRequest }) =>
         run((t) => updateLoan(t, workspaceId, id, changes)),
       onSuccess,
+    }),
+    deleteLoan: useMutation({
+      mutationFn: (id: string) => run((t) => deleteLoan(t, workspaceId, id)),
+      onSuccess: (_, id) => {
+        // Drop the loan's schedule rather than refetching it into a 404.
+        queryClient.removeQueries({ queryKey: [...commitmentKeys.loans(workspaceId), id] });
+        onSuccess();
+      },
     }),
     rescheduleLoan: useMutation({
       mutationFn: ({ id, body }: { id: string; body: RescheduleLoanRequest }) =>

@@ -939,7 +939,13 @@ export interface paths {
         get: operations["get_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete a loan
+         * @description Delete a loan entered by mistake, with its account, EMI schedule, and reminder. A loan
+         *     with recorded payments or other transactions is a 409: undo them first, or close and
+         *     archive it to keep its history.
+         */
+        delete: operations["delete_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__delete"];
         options?: never;
         head?: never;
         /** Update a loan */
@@ -10487,6 +10493,58 @@ export interface operations {
             };
             /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_loan_api_v1_workspaces__workspace_id__finance_loans__loan_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The loan's ID. */
+                loan_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, loan, installment, subscription, or bill does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The loan has recorded payments or transactions. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

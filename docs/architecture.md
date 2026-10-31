@@ -1105,8 +1105,10 @@ reminders.finance_loan_id / reminders.finance_recurring_payment_id  (unique, ON 
   basis points (8.5% is `850`). Rates are parsed and formatted as text in the web app.
 - **Subscriptions and bills share one table** (`kind`), because they share recurrence, payment
   recording, and reminders; the API and UI present them separately.
-- **Nothing is deleted through the API.** Loans are closed or archived; subscriptions and bills
-  are paused or cancelled. Settled history stays.
+- **History is never deleted through the API.** Loans are closed or archived; subscriptions and
+  bills are paused or cancelled. Settled history stays. The one exception is a loan entered by
+  mistake: `DELETE /loans/{id}` removes it with its account, schedule, and reminder, and is a
+  409 while any transaction uses its account or any installment is paid.
 
 ### EMI calculation assumptions
 
@@ -1205,6 +1207,7 @@ transaction is a 422.
 | `POST`   | `/loans`                                     | Add a loan: its account and remaining schedule                                                  |
 | `GET`    | `/loans/{id}`                                | The loan and its installments (`today`)                                                         |
 | `PATCH`  | `/loans/{id}`                                | Details, payment account, `status` (active, closed, archived), `reminder`                       |
+| `DELETE` | `/loans/{id}`                                | Delete a loan entered by mistake; 409 with recorded payments                                    |
 | `POST`   | `/loans/{id}/reschedule`                     | Regenerate unpaid installments (`interest_rate_bps`, `emi_amount`, date)                        |
 | `PATCH`  | `/loans/{id}/installments/{iid}`             | Adjust a scheduled installment                                                                  |
 | `POST`   | `/loans/{id}/installments/{iid}/pay`         | Pay (`from_account_id`, or link `principal_/interest_transaction_id`)                           |

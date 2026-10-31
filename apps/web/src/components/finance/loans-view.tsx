@@ -11,6 +11,7 @@ import {
   Pencil,
   Plus,
   RotateCcw,
+  Trash2,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -194,7 +195,7 @@ function LoanCard({
   onAdjust,
   onPay,
 }: LoansViewProps & { loan: Loan }) {
-  const { updateLoan } = useCommitmentMutations(workspaceId);
+  const { updateLoan, deleteLoan } = useCommitmentMutations(workspaceId);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const repaidShare =
@@ -210,6 +211,15 @@ function LoanCard({
       onAnnounce(message);
     } catch (reason) {
       setError(describeApiError(reason, "Couldn’t change the loan. Try again."));
+    }
+  };
+  const remove = async () => {
+    setError(null);
+    try {
+      await deleteLoan.mutateAsync(loan.id);
+      onAnnounce(`Deleted “${loan.name}”.`);
+    } catch (reason) {
+      setError(describeApiError(reason, "Couldn’t delete the loan. Try again."));
     }
   };
 
@@ -279,6 +289,20 @@ function LoanCard({
                 icon: Archive,
                 hidden: loan.status !== "closed",
                 onSelect: () => void setStatus("archived", `Archived “${loan.name}”.`),
+              },
+              {
+                id: "delete",
+                label: "Delete loan…",
+                description:
+                  loan.paid_installments > 0
+                    ? "Undo its recorded payments first"
+                    : "Remove a loan entered by mistake",
+                icon: Trash2,
+                destructive: true,
+                confirm: {
+                  prompt: `Delete “${loan.name}” and its EMI schedule?`,
+                  choices: [{ label: "Delete loan", destructive: true, onConfirm: remove }],
+                },
               },
             ]}
           />

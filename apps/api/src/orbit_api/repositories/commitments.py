@@ -11,6 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from orbit_api.db.models import (
+    FinanceAccountModel,
     FinanceLoanInstallmentModel,
     FinanceLoanModel,
     FinanceRecurringOccurrenceModel,
@@ -262,6 +263,21 @@ class SqlLoanRepository:
         for name, value in _loan_fields(loan).items():
             setattr(model, name, value)
         await flush(self._session)
+
+    async def delete(self, loan: Loan) -> None:
+        # The schedule and reminder go with the loan (`ON DELETE CASCADE`), then its account.
+        try:
+            await self._session.execute(
+                delete(_Loan).where(_Loan.id == loan.id, _Loan.workspace_id == loan.workspace_id)
+            )
+            await self._session.execute(
+                delete(FinanceAccountModel).where(
+                    FinanceAccountModel.id == loan.account_id,
+                    FinanceAccountModel.workspace_id == loan.workspace_id,
+                )
+            )
+        except IntegrityError as exc:
+            raise ConflictError from exc
 
     async def _get_model(
         self, workspace_id: uuid.UUID, loan_id: uuid.UUID

@@ -457,6 +457,65 @@ def test_closing_a_loan_stops_expecting_its_installments(
     assert len(payments(client, fin, ada, **window)) == 3
 
 
+def test_deleting_a_loan_removes_its_account_schedule_and_reminder(
+    client: TestClient, ada: Headers, home: str, fin: str, bank: Json, migrated_settings: Settings
+) -> None:
+    keep = add_loan(client, fin, ada, name="Home loan", loan_type="home")
+    loan = add_loan(
+        client, fin, ada, name="Polo", first_payment_date="2030-01-05",
+        start_date="2029-12-01", reminder={"days_before": 0, "timezone": "UTC"},
+    )  # fmt: skip
+    first = loan_detail(client, fin, ada, loan["id"])["installments"][0]
+    # A skipped installment isn't a payment, so it doesn't block the delete.
+    ok(client.post(f"{fin}/loans/{loan['id']}/installments/{first['id']}/skip", headers=ada))
+    assert len(reminders(client, home, ada)) == 1
+
+    deleted = client.delete(f"{fin}/loans/{loan['id']}", headers=ada)
+    assert deleted.status_code == 204
+
+    assert client.get(f"{fin}/loans/{loan['id']}", headers=ada).status_code == 404
+    assert [entry["id"] for entry in ok(client.get(f"{fin}/loans", headers=ada))["loans"]] == [
+        keep["id"]
+    ]
+    assert set(balances(client, fin, ada)) == {"HDFC Savings", "Home loan"}
+    assert reminders(client, home, ada) == []
+    # Only the other loan's schedule is left.
+    kept = len(loan_detail(client, fin, ada, keep["id"])["installments"])
+    db = migrated_settings.sqlite_path
+    assert query(db, "SELECT count(*) FROM finance_loan_installments") == [(kept,)]
+    assert client.delete(f"{fin}/loans/{loan['id']}", headers=ada).status_code == 404
+
+
+def test_a_loan_with_recorded_payments_cannot_be_deleted(
+    client: TestClient, ada: Headers, fin: str, bank: Json
+) -> None:
+    loan = add_loan(client, fin, ada)
+    first = loan_detail(client, fin, ada, loan["id"])["installments"][0]
+    installment = f"{fin}/loans/{loan['id']}/installments/{first['id']}"
+    ok(
+        client.post(
+            f"{installment}/pay",
+            json={"paid_on": "2026-02-05", "from_account_id": bank["id"]},
+            headers=ada,
+        )
+    )
+
+    blocked = client.delete(f"{fin}/loans/{loan['id']}", headers=ada)
+    assert blocked.status_code == 409
+    assert "recorded payments" in blocked.json()["detail"]
+    assert ok(client.get(f"{fin}/loans/{loan['id']}", headers=ada))["loan"]["id"] == loan["id"]
+
+    # Undoing the payment while keeping its transactions still leaves history on the account.
+    ok(client.post(f"{installment}/undo", params={"delete_transactions": False}, headers=ada))
+    assert client.delete(f"{fin}/loans/{loan['id']}", headers=ada).status_code == 409
+
+    transactions = ok(client.get(f"{fin}/transactions", headers=ada))["transactions"]
+    for entry in transactions:
+        assert client.delete(f"{fin}/transactions/{entry['id']}", headers=ada).status_code == 204
+    assert client.delete(f"{fin}/loans/{loan['id']}", headers=ada).status_code == 204
+    assert balances(client, fin, ada) == {"HDFC Savings": 10 * LAKH}
+
+
 # Subscriptions and bills
 
 
@@ -937,6 +996,9 @@ def test_other_users_commitments_are_unreachable(
         ).status_code
         == 404
     )
+    assert client.delete(f"{fin}/loans/{loan['id']}", headers=grace).status_code == 404
+    assert client.delete(f"{theirs}/loans/{loan['id']}", headers=grace).status_code == 404
+    assert ok(client.get(f"{fin}/loans/{loan['id']}", headers=ada))["loan"]["id"] == loan["id"]
     assert ok(client.get(f"{theirs}/loans", headers=grace))["loans"] == []
     assert ok(client.get(f"{theirs}/payments", headers=grace))["payments"] == []
 
