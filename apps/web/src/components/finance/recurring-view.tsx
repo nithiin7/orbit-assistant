@@ -234,7 +234,12 @@ function RecurringRow({
   return (
     <li className="space-y-3 px-3 py-3 @md/rows:px-4">
       <div className="flex items-start gap-3">
-        <KindIcon kind={payment.kind} className="mt-0.5" />
+        <KindIcon
+          kind={payment.kind}
+          name={payment.name}
+          provider={payment.provider}
+          className="mt-0.5"
+        />
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 space-y-0.5">

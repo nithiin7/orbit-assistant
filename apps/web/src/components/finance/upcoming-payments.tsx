@@ -194,7 +194,7 @@ export function UpcomingPayments({
         key={paymentKey(item)}
         className="flex items-center gap-3 px-3 py-2.5 transition-colors duration-150 hover:bg-accent/40 @md/rows:px-4"
       >
-        <KindIcon kind={item.kind} />
+        <KindIcon kind={item.kind} name={item.name} provider={item.counterparty} />
         <div className="min-w-0 flex-1 space-y-0.5">
           <p className="truncate text-sm font-medium">{item.name}</p>
           <p className="flex min-w-0 gap-x-1.5 text-xs text-muted-foreground">

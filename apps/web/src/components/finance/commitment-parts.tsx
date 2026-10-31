@@ -6,6 +6,7 @@ import { type ComponentProps, useEffect, useRef, useState } from "react";
 
 import { FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
+import { brandLogo } from "@/lib/brand-logos";
 import { MAX_REMINDER_DAYS, paymentStatusLabel } from "@/lib/commitments";
 import { cn } from "@/utils/common";
 
@@ -30,7 +31,38 @@ const KIND_ICONS: Record<CommitmentKind, LucideIcon> = {
   bill: Receipt,
 };
 
-export function KindIcon({ kind, className }: { kind: CommitmentKind; className?: string }) {
+/**
+ * A commitment's icon. Subscriptions show the brand's logo when their name or provider names a
+ * known service, and the generic icon otherwise.
+ */
+export function KindIcon({
+  kind,
+  name,
+  provider,
+  className,
+}: {
+  kind: CommitmentKind;
+  name?: string;
+  provider?: string | null;
+  className?: string;
+}) {
+  const logo = kind === "subscription" ? brandLogo(name, provider) : null;
+  if (logo) {
+    return (
+      <span
+        aria-hidden="true"
+        className={cn(
+          "flex size-8 shrink-0 items-center justify-center rounded-full ring-1 ring-border",
+          className,
+        )}
+        style={{ backgroundColor: logo.background, color: logo.foreground }}
+      >
+        <svg viewBox="0 0 24 24" fill="currentColor" className="size-4">
+          <path d={logo.path} />
+        </svg>
+      </span>
+    );
+  }
   const Icon = KIND_ICONS[kind];
   return (
     <span
