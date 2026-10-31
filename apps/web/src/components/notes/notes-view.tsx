@@ -13,6 +13,7 @@ import {
   type LucideIcon,
   MoreHorizontal,
   NotebookPen,
+  PanelLeft,
   PanelRight,
   Pin,
   Plus,
@@ -24,9 +25,18 @@ import {
   Zap,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ReactNode,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { describeApiError } from "@/api/client";
+import { useConfirm } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
@@ -34,6 +44,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Menu, type MenuItem } from "@/components/ui/menu";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useModalDialog } from "@/hooks/use-modal-dialog";
 import {
   useNote,
   useNoteCounts,
@@ -77,6 +88,7 @@ import { useQuickCapture } from "./quick-capture";
 
 const SEARCH_DELAY_MS = 250;
 const LAYOUT_KEY = "orbit:notes-layout";
+const DETAILS_KEY = "orbit:notes-details";
 
 /** The Notes page for the active workspace. Remounts (and resets) when the workspace changes. */
 export function NotesPanel() {
@@ -130,6 +142,8 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
   );
   const [page, setPage] = useState(0);
   const [railOpen, setRailOpen] = useState(false);
+  // While a note is open, the list slides in over it on request.
+  const [listOpen, setListOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
@@ -142,6 +156,7 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
   const { folders } = useNoteFolders(workspaceId);
   const tags = useTags(workspaceId);
   const mutations = useNoteMutations(workspaceId);
+  const { confirm, confirmDialog } = useConfirm();
 
   const query = useMemo(
     () => ({ ...toNoteListQuery(location, sort, appliedSearch), offset: page * NOTES_PAGE_SIZE }),
@@ -187,6 +202,7 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
         setPage(0);
         setRailOpen(false);
       }
+      if (target.noteId !== location.noteId) setListOpen(false);
       router.push(notesHref(target), { scroll: false });
     },
     [location, router, search],
@@ -279,7 +295,12 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
       }
       if (
         action === "delete" &&
-        !window.confirm(`Delete “${title}” forever? This can’t be undone.`)
+        !(await confirm({
+          title: `Delete “${title}” forever?`,
+          description: "This can’t be undone.",
+          confirmLabel: "Delete forever",
+          destructive: true,
+        }))
       ) {
         return;
       }
@@ -342,7 +363,7 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
       }
       setNotePending(note.id, false);
     },
-    [location.noteId, mutations, navigate],
+    [confirm, location.noteId, mutations, navigate],
   );
 
   // Keyboard: / searches, N starts a note (unless typing or a dialog is open), Escape clears.
@@ -352,7 +373,9 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
       if (isEditableTarget(event.target) || document.querySelector("dialog[open]")) return;
       if (event.key === "/") {
         event.preventDefault();
-        searchRef.current?.focus();
+        // With a note open, the search lives in the list panel, which focuses it as it opens.
+        if (searchRef.current) searchRef.current.focus();
+        else setListOpen(true);
       } else if (event.key.toLowerCase() === "n") {
         event.preventDefault();
         void createNote();
@@ -410,14 +433,206 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
     />
   );
 
+  const newMenu = (
+    <Menu items={newItems} align="end">
+      <Plus aria-hidden="true" />
+      New
+    </Menu>
+  );
+
+  /** The search, filters, and note list: inline while browsing, in a panel over an open note. */
+  const listContent = (inPanel: boolean) => (
+    <>
+      <div className="flex items-center justify-between gap-2">
+        <h2
+          id="note-list-heading"
+          className="flex min-w-0 items-center gap-2 text-lg font-semibold tracking-tight"
+        >
+          {ViewIcon ? (
+            <ViewIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          ) : null}
+          <span className="truncate">{title}</span>
+        </h2>
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(!inPanel && "@5xl/notes:hidden")}
+            aria-expanded={railOpen}
+            aria-controls="notes-rail-panel"
+            onClick={() => setRailOpen((open) => !open)}
+          >
+            Browse
+          </Button>
+          {inPanel ? (
+            <>
+              {newMenu}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8"
+                aria-label="Close note list"
+                onClick={() => setListOpen(false)}
+              >
+                <X aria-hidden="true" />
+              </Button>
+            </>
+          ) : null}
+        </div>
+      </div>
+      {railOpen ? (
+        <div
+          id="notes-rail-panel"
+          className={cn("rounded-xl border bg-card p-2", !inPanel && "@5xl/notes:hidden")}
+        >
+          {rail}
+        </div>
+      ) : null}
+
+      <div className="flex items-center gap-2">
+        <div className="relative min-w-0 flex-1">
+          <Search
+            className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <input
+            ref={searchRef}
+            type="search"
+            value={search}
+            aria-label="Search notes"
+            aria-keyshortcuts="/"
+            placeholder="Search notes…"
+            // The panel opens to find another note, so it starts in the search.
+            autoFocus={inPanel}
+            onChange={(event) => setSearch(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape" && search) {
+                event.preventDefault();
+                setSearch("");
+              }
+            }}
+            className="h-9 w-full rounded-md border border-input bg-card pr-3 pl-8 text-sm shadow-elevation-1 outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 dark:bg-transparent"
+          />
+        </div>
+        {location.view === "recent" || location.view === "journal" ? null : (
+          <Select
+            aria-label="Sort notes"
+            value={sort}
+            onValueChange={(value) => {
+              setSort(value);
+              setPage(0);
+            }}
+            options={NOTE_SORTS}
+            className="w-36 shrink-0"
+          />
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="shrink-0"
+          aria-label={layout === "list" ? "Show as grid" : "Show as list"}
+          onClick={() => {
+            const next = layout === "list" ? "grid" : "list";
+            setLayout(next);
+            window.localStorage.setItem(LAYOUT_KEY, next);
+          }}
+        >
+          {layout === "list" ? <LayoutGrid aria-hidden="true" /> : <List aria-hidden="true" />}
+        </Button>
+      </div>
+
+      {location.view === "journal" && !location.folderId && !location.tagId ? (
+        <JournalBar today={today} onOpen={(date) => void openJournal(date)} />
+      ) : null}
+      {location.view === "trash" && total > 0 ? (
+        <TrashBar
+          onEmpty={async () => {
+            const confirmed = await confirm({
+              title: "Empty the Trash?",
+              description: `${total} ${total === 1 ? "note" : "notes"} will be deleted forever. This can’t be undone.`,
+              confirmLabel: "Empty Trash",
+              destructive: true,
+            });
+            if (!confirmed) return;
+            try {
+              const { deleted } = await mutations.empty.mutateAsync();
+              setAnnouncement(`Deleted ${deleted} ${deleted === 1 ? "note" : "notes"} forever.`);
+              if (location.noteId) await navigate({ noteId: null });
+            } catch (reason) {
+              setError(describeApiError(reason, "Couldn’t empty the Trash."));
+            }
+          }}
+        />
+      ) : null}
+
+      <div
+        aria-busy={list.status === "loading" || refreshing}
+        className={cn("transition-opacity duration-150", refreshing && "opacity-70")}
+      >
+        {list.status === "loading" ? (
+          <ListSkeleton />
+        ) : list.status === "error" ? (
+          <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
+            <p>{list.message}</p>
+            <Button variant="outline" size="sm" onClick={reload}>
+              Try again
+            </Button>
+          </div>
+        ) : list.data.notes.length === 0 ? (
+          <ListEmptyState
+            location={location}
+            search={appliedSearch}
+            onClear={() => setSearch("")}
+            onCreate={() => void createNote()}
+            onJournal={() => void openJournal(today)}
+          />
+        ) : (
+          <div className="space-y-3">
+            <NoteList
+              notes={list.data.notes}
+              folders={folders}
+              selectedId={location.noteId}
+              search={appliedSearch}
+              layout={layout}
+              showFolder={!location.folderId}
+              pending={pending}
+              onOpen={(note) => openNote(note.id)}
+              onAction={(note, action) => void act(note, action)}
+            />
+            <p className="px-1 text-xs text-muted-foreground" role="status">
+              {total === 1 ? "1 note" : `${total} notes`}
+              {pages > 1 ? ` · page ${page + 1} of ${pages}` : ""}
+            </p>
+            {pages > 1 ? (
+              <div className="flex justify-between gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page === 0}
+                  onClick={() => setPage(page - 1)}
+                >
+                  <ChevronLeft aria-hidden="true" /> Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page + 1 >= pages}
+                  onClick={() => setPage(page + 1)}
+                >
+                  Next <ChevronRight aria-hidden="true" />
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        )}
+      </div>
+    </>
+  );
+
   return (
     <div className="@container/notes space-y-5">
-      <header
-        className={cn(
-          "flex items-center justify-between gap-3",
-          noteOpen && "@max-3xl/notes:hidden",
-        )}
-      >
+      {/* Hidden, not removed, while a note is open: the import input lives here. */}
+      <header hidden={noteOpen} className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">Notes</h1>
         <div className="flex items-center gap-2">
           <input
@@ -429,10 +644,7 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
             aria-hidden="true"
             onChange={(event) => void importMarkdown(event.target.files)}
           />
-          <Menu items={newItems} align="end">
-            <Plus aria-hidden="true" />
-            New
-          </Menu>
+          {newMenu}
         </div>
       </header>
 
@@ -441,205 +653,42 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
         {announcement}
       </p>
 
-      <div className="grid gap-6 @3xl/notes:grid-cols-[minmax(16rem,20rem)_minmax(0,1fr)] @5xl/notes:grid-cols-[13rem_minmax(18rem,22rem)_minmax(0,1fr)] @7xl/notes:grid-cols-[14rem_24rem_minmax(0,1fr)]">
-        <aside className="hidden min-w-0 @5xl/notes:sticky @5xl/notes:top-6 @5xl/notes:block @5xl/notes:max-h-[calc(100dvh-3rem)] @5xl/notes:self-start @5xl/notes:overflow-y-auto">
-          {rail}
-        </aside>
-
-        <section
-          aria-labelledby="note-list-heading"
-          className={cn("@container/list min-w-0 space-y-3", noteOpen && "@max-3xl/notes:hidden")}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <h2
-              id="note-list-heading"
-              className="flex min-w-0 items-center gap-2 text-lg font-semibold tracking-tight"
-            >
-              {ViewIcon ? (
-                <ViewIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-              ) : null}
-              <span className="truncate">{title}</span>
-            </h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="@5xl/notes:hidden"
-              aria-expanded={railOpen}
-              aria-controls="notes-rail-panel"
-              onClick={() => setRailOpen((open) => !open)}
-            >
-              Browse
-            </Button>
-          </div>
-          {railOpen ? (
-            <div id="notes-rail-panel" className="rounded-xl border bg-card p-2 @5xl/notes:hidden">
-              {rail}
-            </div>
+      {location.noteId ? (
+        // Editing: the note takes the whole page; the list slides in over it when asked for.
+        <section aria-label="Note" className="min-w-0">
+          <NotePane
+            key={location.noteId}
+            workspaceId={workspaceId}
+            noteId={location.noteId}
+            folders={folders}
+            tags={tags}
+            handleRef={editorRef}
+            listOpen={listOpen}
+            onShowList={() => setListOpen(true)}
+            onBack={() => void navigate({ noteId: null })}
+            onOpenNote={openNote}
+            onAction={(note, action) => void act(note, action)}
+            onAnnounce={setAnnouncement}
+          />
+          {listOpen ? (
+            <NoteListPanel onClose={() => setListOpen(false)}>{listContent(true)}</NoteListPanel>
           ) : null}
+        </section>
+      ) : (
+        // Browsing: the rail beside a list that uses the rest of the page.
+        <div className="grid gap-6 @5xl/notes:grid-cols-[13rem_minmax(0,1fr)] @7xl/notes:grid-cols-[14rem_minmax(0,1fr)]">
+          <aside className="hidden min-w-0 @5xl/notes:sticky @5xl/notes:top-6 @5xl/notes:block @5xl/notes:max-h-[calc(100dvh-3rem)] @5xl/notes:self-start @5xl/notes:overflow-y-auto">
+            {rail}
+          </aside>
 
-          <div className="flex items-center gap-2">
-            <div className="relative min-w-0 flex-1">
-              <Search
-                className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-                aria-hidden="true"
-              />
-              <input
-                ref={searchRef}
-                type="search"
-                value={search}
-                aria-label="Search notes"
-                aria-keyshortcuts="/"
-                placeholder="Search notes…"
-                onChange={(event) => setSearch(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Escape" && search) {
-                    event.preventDefault();
-                    setSearch("");
-                  }
-                }}
-                className="h-9 w-full rounded-md border border-input bg-card pr-3 pl-8 text-sm shadow-elevation-1 outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 dark:bg-transparent"
-              />
-            </div>
-            {location.view === "recent" || location.view === "journal" ? null : (
-              <Select
-                aria-label="Sort notes"
-                value={sort}
-                onValueChange={(value) => {
-                  setSort(value);
-                  setPage(0);
-                }}
-                options={NOTE_SORTS}
-                className="w-36 shrink-0"
-              />
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="shrink-0"
-              aria-label={layout === "list" ? "Show as grid" : "Show as list"}
-              onClick={() => {
-                const next = layout === "list" ? "grid" : "list";
-                setLayout(next);
-                window.localStorage.setItem(LAYOUT_KEY, next);
-              }}
-            >
-              {layout === "list" ? <LayoutGrid aria-hidden="true" /> : <List aria-hidden="true" />}
-            </Button>
-          </div>
-
-          {location.view === "journal" && !location.folderId && !location.tagId ? (
-            <JournalBar today={today} onOpen={(date) => void openJournal(date)} />
-          ) : null}
-          {location.view === "trash" && total > 0 ? (
-            <TrashBar
-              onEmpty={async () => {
-                if (
-                  !window.confirm("Delete every note in the Trash forever? This can’t be undone.")
-                )
-                  return;
-                try {
-                  const { deleted } = await mutations.empty.mutateAsync();
-                  setAnnouncement(
-                    `Deleted ${deleted} ${deleted === 1 ? "note" : "notes"} forever.`,
-                  );
-                  if (location.noteId) await navigate({ noteId: null });
-                } catch (reason) {
-                  setError(describeApiError(reason, "Couldn’t empty the Trash."));
-                }
-              }}
-            />
-          ) : null}
-
-          <div
-            aria-busy={list.status === "loading" || refreshing}
-            className={cn("transition-opacity duration-150", refreshing && "opacity-70")}
+          <section
+            aria-labelledby="note-list-heading"
+            className="@container/list min-w-0 space-y-3"
           >
-            {list.status === "loading" ? (
-              <ListSkeleton />
-            ) : list.status === "error" ? (
-              <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
-                <p>{list.message}</p>
-                <Button variant="outline" size="sm" onClick={reload}>
-                  Try again
-                </Button>
-              </div>
-            ) : list.data.notes.length === 0 ? (
-              <ListEmptyState
-                location={location}
-                search={appliedSearch}
-                onClear={() => setSearch("")}
-                onCreate={() => void createNote()}
-                onJournal={() => void openJournal(today)}
-              />
-            ) : (
-              <div className="space-y-3">
-                <NoteList
-                  notes={list.data.notes}
-                  folders={folders}
-                  selectedId={location.noteId}
-                  search={appliedSearch}
-                  layout={layout}
-                  showFolder={!location.folderId}
-                  pending={pending}
-                  onOpen={(note) => openNote(note.id)}
-                  onAction={(note, action) => void act(note, action)}
-                />
-                <p className="px-1 text-xs text-muted-foreground" role="status">
-                  {total === 1 ? "1 note" : `${total} notes`}
-                  {pages > 1 ? ` · page ${page + 1} of ${pages}` : ""}
-                </p>
-                {pages > 1 ? (
-                  <div className="flex justify-between gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={page === 0}
-                      onClick={() => setPage(page - 1)}
-                    >
-                      <ChevronLeft aria-hidden="true" /> Previous
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={page + 1 >= pages}
-                      onClick={() => setPage(page + 1)}
-                    >
-                      Next <ChevronRight aria-hidden="true" />
-                    </Button>
-                  </div>
-                ) : null}
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section
-          aria-label="Note"
-          className={cn("min-w-0", !noteOpen && "hidden @3xl/notes:block")}
-        >
-          {location.noteId ? (
-            <NotePane
-              key={location.noteId}
-              workspaceId={workspaceId}
-              noteId={location.noteId}
-              folders={folders}
-              tags={tags}
-              handleRef={editorRef}
-              onBack={() => void navigate({ noteId: null })}
-              onOpenNote={openNote}
-              onAction={(note, action) => void act(note, action)}
-              onAnnounce={setAnnouncement}
-            />
-          ) : (
-            <div className="hidden h-full min-h-80 items-center justify-center rounded-xl border border-dashed text-sm text-muted-foreground @3xl/notes:flex">
-              <p className="max-w-xs text-center text-pretty">
-                Select a note to read or edit it, or press{" "}
-                <kbd className="font-sans font-medium">N</kbd> to start one.
-              </p>
-            </div>
-          )}
-        </section>
-      </div>
+            {listContent(false)}
+          </section>
+        </div>
+      )}
 
       {moving ? (
         <FolderPickerDialog
@@ -658,7 +707,22 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
           }}
         />
       ) : null}
+      {confirmDialog}
     </div>
+  );
+}
+
+/** The note list as a drawer from the left edge, over the open note. */
+function NoteListPanel({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+  const { dialogProps } = useModalDialog({ onClose });
+  return (
+    <dialog
+      {...dialogProps}
+      aria-labelledby="note-list-heading"
+      className="dialog-motion dialog-drawer m-0 h-dvh max-h-none w-[28rem] max-w-[calc(100%-3rem)] border-r bg-background p-0 text-foreground shadow-elevation-3"
+    >
+      <div className="@container/list h-full space-y-3 overflow-y-auto p-4">{children}</div>
+    </dialog>
   );
 }
 
@@ -841,6 +905,8 @@ function NotePane({
   folders,
   tags,
   handleRef,
+  listOpen,
+  onShowList,
   onBack,
   onOpenNote,
   onAction,
@@ -851,13 +917,17 @@ function NotePane({
   folders: readonly NoteFolder[];
   tags: readonly Tag[];
   handleRef: RefObject<NoteEditorHandle | null>;
+  listOpen: boolean;
+  onShowList: () => void;
   onBack: () => void;
   onOpenNote: (noteId: string) => void;
   onAction: (note: Note, action: NoteListAction) => void;
   onAnnounce: (message: string) => void;
 }) {
   const { state, reload } = useNote(workspaceId, noteId);
-  const [showDetails, setShowDetails] = useState(true);
+  const [showDetails, setShowDetails] = useState(
+    () => typeof window === "undefined" || window.localStorage.getItem(DETAILS_KEY) !== "hidden",
+  );
 
   if (state.status === "loading") {
     return (
@@ -943,8 +1013,20 @@ function NotePane({
   return (
     <article aria-label={title} className="@container/pane">
       <div className="mb-4 flex items-center gap-1">
-        <Button variant="ghost" size="sm" className="-ml-2 @3xl/notes:hidden" onClick={onBack}>
+        <Button variant="ghost" size="sm" className="-ml-2" onClick={onBack}>
           <ArrowLeft aria-hidden="true" /> Notes
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-8"
+          aria-label="Show note list"
+          aria-keyshortcuts="/"
+          aria-haspopup="dialog"
+          aria-expanded={listOpen}
+          onClick={onShowList}
+        >
+          <PanelLeft aria-hidden="true" />
         </Button>
         <span className="flex-1 truncate text-xs text-muted-foreground">
           {note.journal_date ? formatJournalDate(note.journal_date) : null}
@@ -982,7 +1064,11 @@ function NotePane({
           className="size-8"
           aria-label={showDetails ? "Hide details" : "Show details"}
           aria-pressed={showDetails}
-          onClick={() => setShowDetails((open) => !open)}
+          onClick={() => {
+            const next = !showDetails;
+            setShowDetails(next);
+            window.localStorage.setItem(DETAILS_KEY, next ? "shown" : "hidden");
+          }}
         >
           <PanelRight aria-hidden="true" />
         </Button>
@@ -1018,10 +1104,11 @@ function NotePane({
       <div
         className={cn(
           "@container/editor grid gap-8",
-          showDetails && "@3xl/pane:grid-cols-[minmax(0,1fr)_15rem]",
+          showDetails &&
+            "@3xl/pane:grid-cols-[minmax(0,1fr)_16rem] @6xl/pane:grid-cols-[minmax(0,1fr)_18rem]",
         )}
       >
-        <div className="mx-auto w-full max-w-3xl min-w-0">
+        <div className="mx-auto w-full max-w-4xl min-w-0">
           <NoteEditor
             // A fresh editor when the note's state changes between editable and read-only.
             key={`${note.id}-${readOnly ? "read" : "edit"}`}

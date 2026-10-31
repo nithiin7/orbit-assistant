@@ -1981,9 +1981,12 @@ Request models forbid unknown fields, so `workspace_id`, `revision`, `plain_text
   menu, pagination), and the note pane (title, toolbar, editor, save status, and a details panel
   with folder, tags with autocomplete, backlinks and links, tasks, and attachments). The URL holds
   the view, folder or tag, search, and open note, so Back, reloads, and links work.
-- Layout follows container width: three columns on wide screens, list and note on laptops (the
-  rail behind **Browse**), and one column on phones, where an open note replaces the list.
-- Keyboard: `N` creates a note, `/` focuses search, Escape clears it; the editor supports
+- Two layouts. Browsing (no note open): the rail beside a list that uses the rest of the page
+  (the rail behind **Browse** on narrower screens). Editing (a note open): the note takes the whole
+  page, the list opens as a drawer from the left (**Show note list** or `/`), and the details panel
+  can be hidden, a choice kept in `localStorage`.
+- Keyboard: `N` creates a note, `/` focuses search (opening the list drawer when a note is open),
+  Escape clears it; the editor supports
   standard shortcuts (Mod+B/I/U, Mod+Shift+S, Mod+E, Mod+Alt+1–3, Mod+Shift+7/8/9, Mod+Shift+B)
   and Markdown input rules; the toolbar is one tab stop with arrow-key navigation.
 - **Quick capture** (`QuickCaptureProvider`, in the app shell) opens from the sidebar or the

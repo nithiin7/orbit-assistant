@@ -1,5 +1,5 @@
 import type { Note, NoteFolder, NoteSummary } from "@orbit/contracts";
-import { screen, waitFor, within } from "@testing-library/react";
+import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useSyncExternalStore } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -236,6 +236,60 @@ describe("NotesPanel", () => {
     expect(await screen.findByText("Buy basil")).toBeInTheDocument();
   });
 
+  it("gives an open note the whole page, with the list in a panel", async () => {
+    const user = userEvent.setup();
+    const noteRoutes = (note: NoteSummary) => ({
+      [`GET ${NOTES}/${note.id}`]: json(detail(note)),
+      [`GET ${NOTES}/${note.id}/links`]: json({ outgoing: [], backlinks: [] }),
+      [`GET ${NOTES}/${note.id}/tasks`]: json({ tasks: [], total: 0 }),
+      [`GET ${NOTES}/${note.id}/attachments`]: json({ attachments: [], max_bytes: 1024 }),
+    });
+    mockApi(routes({ ...noteRoutes(groceries), ...noteRoutes(spec) }));
+    await renderNotes(`?note=${groceries.id}`);
+
+    expect(await screen.findByRole("textbox", { name: "Title" })).toHaveValue("Groceries");
+    expect(screen.queryByRole("list", { name: "Notes" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Notes", level: 1 })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Show note list" }));
+    const panel = await screen.findByRole("dialog", { name: "All notes" });
+    expect(within(panel).getByRole("searchbox", { name: "Search notes" })).toHaveFocus();
+
+    // Opening another note from the panel closes it.
+    await user.click(within(panel).getByRole("button", { name: /^Spec/ }));
+    await waitFor(() =>
+      expect(push).toHaveBeenLastCalledWith(`/notes?note=${spec.id}`, { scroll: false }),
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(await screen.findByRole("textbox", { name: "Title" })).toHaveValue("Spec");
+
+    // Back to browsing: the list returns to the page.
+    await user.click(screen.getByRole("button", { name: "Notes" }));
+    expect(await screen.findByRole("list", { name: "Notes" })).toBeInTheDocument();
+  });
+
+  it("remembers whether note details are shown", async () => {
+    const user = userEvent.setup();
+    mockApi(
+      routes({
+        [`GET ${NOTES}/${groceries.id}`]: json(detail(groceries)),
+        [`GET ${NOTES}/${groceries.id}/links`]: json({ outgoing: [], backlinks: [] }),
+        [`GET ${NOTES}/${groceries.id}/tasks`]: json({ tasks: [], total: 0 }),
+        [`GET ${NOTES}/${groceries.id}/attachments`]: json({ attachments: [], max_bytes: 1024 }),
+      }),
+    );
+    await renderNotes(`?note=${groceries.id}`);
+    expect(await screen.findByRole("complementary", { name: "Details" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Hide details" }));
+    expect(screen.queryByRole("complementary", { name: "Details" })).not.toBeInTheDocument();
+
+    cleanup();
+    await renderNotes(`?note=${groceries.id}`);
+    expect(await screen.findByRole("button", { name: "Show details" })).toBeInTheDocument();
+    expect(screen.queryByRole("complementary", { name: "Details" })).not.toBeInTheDocument();
+  });
+
   it("creates a note with N and opens it", async () => {
     const user = userEvent.setup();
     const created = summary({ id: "aaaaaaaa-0000-4000-8000-000000000009", title: "" });
@@ -289,6 +343,62 @@ describe("NotesPanel", () => {
       ).toBe(true),
     );
     expect(await screen.findByText("Moved “Spec” to the Trash.")).toBeInTheDocument();
+  });
+
+  it("asks before deleting a note in the Trash forever", async () => {
+    const user = userEvent.setup();
+    const trashed = { ...spec, trashed_at: "2026-10-31T00:00:00Z" };
+    const deletions: string[] = [];
+    mockApi(
+      routes({
+        [`GET ${NOTES}`]: json({ notes: [trashed], total: 1 }),
+        [`DELETE ${NOTES}/${spec.id}`]: () => {
+          deletions.push(spec.id);
+          return new Response(null, { status: 204 });
+        },
+      }),
+    );
+    await renderNotes("?view=trash");
+    await screen.findByRole("list", { name: "Notes" });
+
+    const deleteForever = async () => {
+      await user.click(screen.getByRole("button", { name: "More actions for “Spec”" }));
+      await user.click(screen.getByRole("menuitem", { name: /Delete forever/ }));
+      return screen.findByRole("alertdialog", { name: "Delete “Spec” forever?" });
+    };
+
+    // Cancelling keeps the note.
+    let dialog = await deleteForever();
+    expect(dialog).toHaveAccessibleDescription("This can’t be undone.");
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    expect(deletions).toEqual([]);
+
+    dialog = await deleteForever();
+    await user.click(within(dialog).getByRole("button", { name: "Delete forever" }));
+    expect(await screen.findByText("Deleted “Spec” forever.")).toBeInTheDocument();
+    expect(deletions).toEqual([spec.id]);
+  });
+
+  it("asks before emptying the Trash", async () => {
+    const user = userEvent.setup();
+    const trashed = { ...spec, trashed_at: "2026-10-31T00:00:00Z" };
+    mockApi(
+      routes({
+        [`GET ${NOTES}`]: json({ notes: [trashed], total: 1 }),
+        [`POST ${NOTES}/empty-trash`]: json({ deleted: 1 }),
+      }),
+    );
+    await renderNotes("?view=trash");
+    await screen.findByRole("list", { name: "Notes" });
+
+    await user.click(screen.getByRole("button", { name: "Empty Trash" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Empty the Trash?" });
+    expect(dialog).toHaveAccessibleDescription(
+      "1 note will be deleted forever. This can’t be undone.",
+    );
+    await user.click(within(dialog).getByRole("button", { name: "Empty Trash" }));
+    expect(await screen.findByText("Deleted 1 note forever.")).toBeInTheDocument();
   });
 
   it("asks where a deleted folder's notes go", async () => {
