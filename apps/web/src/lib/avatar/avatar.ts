@@ -60,3 +60,19 @@ export async function prepareAvatar(file: File): Promise<Blob> {
 function encode(canvas: HTMLCanvasElement, type: string): Promise<Blob | null> {
   return new Promise((resolve) => canvas.toBlob(resolve, type, 0.9));
 }
+
+/**
+ * The photo as a `data:` URL. Unlike an object URL, it never needs revoking, so it can't be
+ * released while something still shows it.
+ */
+export function readAsDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") resolve(reader.result);
+      else reject(new Error("The photo couldn’t be read."));
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("The photo couldn’t be read."));
+    reader.readAsDataURL(blob);
+  });
+}
