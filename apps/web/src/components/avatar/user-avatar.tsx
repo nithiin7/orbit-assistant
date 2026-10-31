@@ -6,6 +6,7 @@ import { useAvatar } from "@/providers/avatar";
 import { cn } from "@/utils/common";
 
 const sizes = {
+  sm: "size-7 text-xs shadow-elevation-1",
   md: "size-12 text-lg",
   lg: "size-20 text-2xl",
 } as const;

@@ -40,6 +40,33 @@ describe("WorkspaceSwitcher", () => {
     expect(await screen.findByRole("button", { name: /Workspace: Personal/ })).toBeInTheDocument();
   });
 
+  it("shows the user's profile photo on the trigger", async () => {
+    mockApi({
+      ...session,
+      "GET /api/v1/me/avatar": () => new Response(new Blob(["png"], { type: "image/png" })),
+      "GET /api/v1/workspaces": json({ workspaces: [personal, lab] }),
+    });
+
+    await renderSignedIn(<WorkspaceSwitcher />);
+
+    const trigger = await screen.findByRole("button", { name: /Workspace: Personal/ });
+    await waitFor(() =>
+      expect(trigger.querySelector("img")).toHaveAttribute("src", expect.stringMatching(/^data:/)),
+    );
+  });
+
+  it("shows the user's initial on the trigger without a photo", async () => {
+    mockApi({ ...session, "GET /api/v1/workspaces": json({ workspaces: [personal] }) });
+
+    await renderSignedIn(<WorkspaceSwitcher />);
+
+    const trigger = await screen.findByRole("button", { name: /Workspace: Personal/ });
+    // The avatar is the trigger's first, decorative child.
+    const avatar = trigger.querySelector('[aria-hidden="true"]');
+    expect(avatar?.querySelector("img")).toBeNull();
+    expect(avatar).toHaveTextContent(new RegExp(`^${ada.display_name.charAt(0)}$`, "i"));
+  });
+
   it("switches workspaces from the keyboard and remembers the choice", async () => {
     const user = userEvent.setup();
     mockApi({ ...session, "GET /api/v1/workspaces": json({ workspaces: [personal, lab] }) });

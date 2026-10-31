@@ -11,6 +11,7 @@ import {
   useState,
 } from "react";
 
+import { UserAvatar } from "@/components/avatar/user-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip } from "@/components/ui/tooltip";
 import { workspaceInitial } from "@/lib/workspaces";
@@ -29,7 +30,7 @@ type WorkspaceSwitcherProps = {
 };
 
 /**
- * Shows the active workspace and opens a menu to switch workspaces or sign out. It sits at the
+ * Shows the user's photo and the active workspace, and opens a menu to switch workspaces or sign out. It sits at the
  * foot of the sidebar, so the menu opens upward. Follows the ARIA menu pattern: arrow keys,
  * Home/End, and Escape. The menu uses fixed positioning so the collapsed sidebar's overflow
  * can't clip it.
@@ -171,7 +172,7 @@ export function WorkspaceSwitcher({ collapsible = false, onNavigate }: Workspace
           }}
           className="flex h-12 w-full items-center gap-3 overflow-hidden rounded-lg px-1.5 text-left outline-none hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-ring aria-expanded:bg-sidebar-accent"
         >
-          <WorkspaceAvatar name={active.name} />
+          <UserAvatar size="sm" />
           <span
             className={cn(
               "flex min-w-0 flex-1 flex-col gap-0.5 transition-opacity duration-200",
