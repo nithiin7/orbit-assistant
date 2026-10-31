@@ -7,6 +7,7 @@ import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
 import { AmountField, DateField, FormAlert, SelectField } from "@/components/form-field";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useCommitmentMutations } from "@/hooks/use-commitments";
 import { useTransactionHistory } from "@/hooks/use-finance";
 import { parseComponent, paymentSchema } from "@/lib/commitments";
@@ -294,7 +295,20 @@ function LinkFields({
     limit: 200,
   });
   if (state.status === "loading") {
-    return <p className="text-sm text-muted-foreground">Loading transactions…</p>;
+    const fields = target.kind === "loan" ? 2 : 1;
+    return (
+      <div className="space-y-4">
+        <p role="status" className="sr-only">
+          Loading transactions…
+        </p>
+        {Array.from({ length: fields }, (_, index) => (
+          <div key={index} className="space-y-2">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-9" />
+          </div>
+        ))}
+      </div>
+    );
   }
   if (state.status === "error") return <FormAlert message={state.message} />;
 

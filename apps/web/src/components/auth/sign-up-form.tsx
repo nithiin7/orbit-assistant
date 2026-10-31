@@ -13,7 +13,7 @@ import { PASSWORD_MIN_LENGTH, signUpSchema } from "@/lib/auth/validation";
 import { useAuth } from "@/providers/auth";
 
 import { AuthCard, authLinkClassName } from "./auth-card";
-import { AuthErrorScreen, AuthLoadingScreen } from "./auth-status-screen";
+import { AuthErrorScreen, AuthFormSkeleton, AuthLoadingScreen } from "./auth-status-screen";
 import { useAuthRedirect } from "./use-auth-redirect";
 
 const signInFooter = (
@@ -39,7 +39,7 @@ export function SignUpForm() {
   const [confirmationSentTo, setConfirmationSentTo] = useState<string | null>(null);
   useAuthRedirect(state, "/");
 
-  if (state.status === "loading") return <AuthLoadingScreen compact label="Loading sign-up…" />;
+  if (state.status === "loading") return <AuthFormSkeleton label="Loading sign-up…" fields={3} />;
   if (state.status === "error")
     return <AuthErrorScreen compact message={state.message} onRetry={retry} />;
   if (state.status === "signed-in") return <AuthLoadingScreen compact label="Opening Orbit…" />;

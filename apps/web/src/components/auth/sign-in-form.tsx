@@ -11,7 +11,7 @@ import { signInSchema } from "@/lib/auth/validation";
 import { useAuth } from "@/providers/auth";
 
 import { AuthCard, authLinkClassName } from "./auth-card";
-import { AuthErrorScreen, AuthLoadingScreen } from "./auth-status-screen";
+import { AuthErrorScreen, AuthFormSkeleton, AuthLoadingScreen } from "./auth-status-screen";
 import { useAuthRedirect } from "./use-auth-redirect";
 
 export function SignInForm({ next }: { next: string }) {
@@ -27,7 +27,7 @@ export function SignInForm({ next }: { next: string }) {
   });
   useAuthRedirect(state, next);
 
-  if (state.status === "loading") return <AuthLoadingScreen compact label="Loading sign-in…" />;
+  if (state.status === "loading") return <AuthFormSkeleton label="Loading sign-in…" />;
   if (state.status === "error")
     return <AuthErrorScreen compact message={state.message} onRetry={retry} />;
   if (state.status === "signed-in") return <AuthLoadingScreen compact label="Signing you in…" />;

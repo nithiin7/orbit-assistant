@@ -13,7 +13,7 @@ import { PASSWORD_MIN_LENGTH, passwordResetSchema } from "@/lib/auth/validation"
 import { useAuth } from "@/providers/auth";
 
 import { AuthCard } from "./auth-card";
-import { AuthErrorScreen, AuthLoadingScreen } from "./auth-status-screen";
+import { AuthErrorScreen, AuthFormSkeleton } from "./auth-status-screen";
 import { backToSignIn, LocalRecoveryUnavailable } from "./forgot-password-form";
 
 /**
@@ -33,7 +33,7 @@ export function ResetPasswordForm() {
   });
   const [done, setDone] = useState(false);
 
-  if (state.status === "loading") return <AuthLoadingScreen compact label="Checking your link…" />;
+  if (state.status === "loading") return <AuthFormSkeleton label="Checking your link…" />;
   if (state.status === "error")
     return <AuthErrorScreen compact message={state.message} onRetry={retry} />;
   if (state.config.provider === "local") return <LocalRecoveryUnavailable />;
