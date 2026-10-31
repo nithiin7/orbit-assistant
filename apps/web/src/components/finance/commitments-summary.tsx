@@ -5,12 +5,13 @@ import { ArrowRight } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCommitmentSummary } from "@/hooks/use-commitments";
 import { formatMoney } from "@/lib/finance";
 import { cn } from "@/utils/common";
 import { localDateString } from "@/utils/dates";
+
+import { LoadError, Panel } from "./panel";
 
 /**
  * Loans, EMIs, subscriptions, and what's due, in one currency, for the Overview. Hidden until the
@@ -29,19 +30,7 @@ export function CommitmentsSummary({
   const { state, reload } = useCommitmentSummary(workspaceId, currency, localDateString());
 
   if (state.status === "loading") return <Skeleton className="h-36 rounded-xl" />;
-  if (state.status === "error") {
-    return (
-      <div
-        role="alert"
-        className="flex items-center justify-between gap-3 rounded-xl border bg-card p-4 text-sm"
-      >
-        <p>{state.message}</p>
-        <Button variant="outline" size="sm" onClick={reload}>
-          Try again
-        </Button>
-      </div>
-    );
-  }
+  if (state.status === "error") return <LoadError message={state.message} onRetry={reload} />;
   const summary = state.data;
   const hasAny =
     summary.active_loans > 0 ||
@@ -52,58 +41,48 @@ export function CommitmentsSummary({
   if (!hasAny) return null;
 
   return (
-    <section aria-labelledby="commitments-heading">
-      <Card className="space-y-4 p-5 shadow-elevation-1">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-1">
-            <h3 id="commitments-heading" className="text-sm font-semibold">
-              Commitments
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              Expected payments, not spending until you record them.
-            </p>
-          </div>
-          <Button variant="ghost" size="sm" onClick={onOpenUpcoming}>
-            Upcoming payments
-            <ArrowRight aria-hidden="true" />
-          </Button>
-        </div>
-        <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Figure
-            label="Loans outstanding"
-            value={formatMoney(summary.loans_outstanding, currency)}
-          >
-            {summary.active_loans > 0
-              ? `${formatMoney(summary.monthly_emi, currency)} a month in EMIs`
-              : "No active loans"}
-          </Figure>
-          <Figure
-            label="Subscriptions"
-            value={`${formatMoney(summary.monthly_subscriptions, currency)} / mo`}
-          >
-            {summary.active_subscriptions > 0
-              ? `${formatMoney(summary.annual_subscriptions, currency)} a year`
-              : "None active"}
-          </Figure>
-          <Figure
-            label="Left to pay this month"
-            value={formatMoney(summary.due_this_month.amount, currency)}
-          >
-            {countLabel(summary.due_this_month.count)}
-            {summary.upcoming_bills.count > 0
-              ? ` · ${summary.upcoming_bills.count} ${summary.upcoming_bills.count === 1 ? "bill" : "bills"} in 30 days`
-              : ""}
-          </Figure>
-          <Figure
-            label="Overdue"
-            value={formatMoney(summary.overdue.amount, currency)}
-            tone={summary.overdue.count > 0 ? "negative" : "default"}
-          >
-            {summary.overdue.count > 0 ? countLabel(summary.overdue.count) : "Nothing overdue"}
-          </Figure>
-        </dl>
-      </Card>
-    </section>
+    <Panel
+      title="Commitments"
+      description="Expected payments, not spending until you record them."
+      action={
+        <Button variant="ghost" size="sm" onClick={onOpenUpcoming}>
+          Upcoming payments
+          <ArrowRight aria-hidden="true" />
+        </Button>
+      }
+    >
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
+        <Figure label="Loans outstanding" value={formatMoney(summary.loans_outstanding, currency)}>
+          {summary.active_loans > 0
+            ? `${formatMoney(summary.monthly_emi, currency)} a month in EMIs`
+            : "No active loans"}
+        </Figure>
+        <Figure
+          label="Subscriptions"
+          value={`${formatMoney(summary.monthly_subscriptions, currency)} / mo`}
+        >
+          {summary.active_subscriptions > 0
+            ? `${formatMoney(summary.annual_subscriptions, currency)} a year`
+            : "None active"}
+        </Figure>
+        <Figure
+          label="Left to pay this month"
+          value={formatMoney(summary.due_this_month.amount, currency)}
+        >
+          {countLabel(summary.due_this_month.count)}
+          {summary.upcoming_bills.count > 0
+            ? ` · ${summary.upcoming_bills.count} ${summary.upcoming_bills.count === 1 ? "bill" : "bills"} in 30 days`
+            : ""}
+        </Figure>
+        <Figure
+          label="Overdue"
+          value={formatMoney(summary.overdue.amount, currency)}
+          tone={summary.overdue.count > 0 ? "negative" : "default"}
+        >
+          {summary.overdue.count > 0 ? countLabel(summary.overdue.count) : "Nothing overdue"}
+        </Figure>
+      </dl>
+    </Panel>
   );
 }
 
@@ -123,11 +102,11 @@ function Figure({
   children: ReactNode;
 }) {
   return (
-    <div>
+    <div className="min-w-0">
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd
         className={cn(
-          "text-lg font-semibold tracking-tight tabular-nums",
+          "text-lg font-semibold tracking-tight whitespace-nowrap tabular-nums",
           tone === "negative" && "text-destructive",
         )}
       >

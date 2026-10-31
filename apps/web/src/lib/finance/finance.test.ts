@@ -5,9 +5,12 @@ import {
   accountCurrencies,
   amountCharactersBefore,
   caretAfterAmountCharacters,
+  dayLabel,
   DEFAULT_TRANSACTION_FILTERS,
   formatAmountInput,
   formatMoney,
+  groupTransactionsByDay,
+  moreFiltersCount,
   parseAmount,
   parseSignedAmount,
   signedAmount,
@@ -203,5 +206,83 @@ describe("amount caret helpers", () => {
     // A caret after "10,0" stays after the third digit, past the new separator.
     expect(caretAfterAmountCharacters("1,00,000", 3)).toBe(4);
     expect(caretAfterAmountCharacters("1,000", 0)).toBe(0);
+  });
+});
+
+describe("groupTransactionsByDay", () => {
+  const base = {
+    workspace_id: "w",
+    currency: "INR" as const,
+    category_id: null,
+    account_id: "a",
+    to_account_id: null,
+    notes: "",
+    created_at: "",
+    updated_at: "",
+  };
+  const tx = (
+    id: string,
+    occurred_on: string,
+    type: FinanceTransaction["type"],
+    amount: number,
+    extra: Partial<FinanceTransaction> = {},
+  ): FinanceTransaction => ({ ...base, id, description: id, occurred_on, type, amount, ...extra });
+
+  it("runs transactions together by day with each day's net", () => {
+    const days = groupTransactionsByDay([
+      tx("salary", "2026-10-31", "income", 10_000),
+      tx("lunch", "2026-10-31", "expense", 500),
+      tx("card bill", "2026-10-30", "transfer", 2_000, { to_account_id: "b" }),
+      tx("refund", "2026-10-30", "refund", 300),
+    ]);
+    expect(days.map((day) => [day.date, day.transactions.length, day.net])).toEqual([
+      ["2026-10-31", 2, 9_500],
+      // Transfers move money between your own accounts; the day's net leaves them out.
+      ["2026-10-30", 2, 300],
+    ]);
+  });
+
+  it("counts a transfer from the account's side when filtered to it", () => {
+    const [day] = groupTransactionsByDay(
+      [tx("card bill", "2026-10-30", "transfer", 2_000, { to_account_id: "b" })],
+      "a",
+    );
+    expect(day?.net).toBe(-2_000);
+  });
+
+  it("gives no net for a day in several currencies", () => {
+    const [day] = groupTransactionsByDay([
+      tx("a", "2026-10-31", "expense", 100),
+      tx("b", "2026-10-31", "expense", 100, { currency: "USD" }),
+    ]);
+    expect(day).toMatchObject({ net: null, currency: null });
+  });
+});
+
+describe("dayLabel", () => {
+  it("names today and yesterday", () => {
+    expect(dayLabel("2026-10-31", "2026-10-31")).toBe("Today");
+    expect(dayLabel("2026-10-30", "2026-10-31")).toBe("Yesterday");
+  });
+
+  it("shows the weekday, and the year only for other years", () => {
+    expect(dayLabel("2026-10-26", "2026-10-31")).toMatch(/Mon/);
+    expect(dayLabel("2026-10-26", "2026-10-31")).not.toMatch(/2026/);
+    expect(dayLabel("2025-10-26", "2026-10-31")).toMatch(/2025/);
+  });
+});
+
+describe("moreFiltersCount", () => {
+  it("counts the filters kept behind the Filters button", () => {
+    expect(moreFiltersCount(DEFAULT_TRANSACTION_FILTERS)).toBe(0);
+    expect(
+      moreFiltersCount({
+        ...DEFAULT_TRANSACTION_FILTERS,
+        type: "expense",
+        search: "rent",
+        accountId: "a",
+        sort: "amount",
+      }),
+    ).toBe(2);
   });
 });

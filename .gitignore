@@ -67,3 +67,6 @@ Thumbs.db
 apps/web/AGENTS.md
 .vercel/
 .turbo/
+
+# Finance redesign "before" screenshots: regenerate with docs/finance-redesign/tools
+docs/finance-redesign/before/

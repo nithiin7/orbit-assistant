@@ -1,7 +1,7 @@
 "use client";
 
 import type { CommitmentKind, Loan, PaymentItem, PaymentStatus } from "@orbit/contracts";
-import { CalendarCheck } from "lucide-react";
+import { CalendarCheck, ChevronDown } from "lucide-react";
 import { type ReactNode, useId, useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/empty-state";
@@ -15,6 +15,8 @@ import {
   PAYMENT_STATUSES,
   PAYMENT_WINDOW_DAYS,
   paymentKey,
+  SOON_DAYS,
+  splitUpcoming,
   totalsByCurrency,
 } from "@/lib/commitments";
 import { formatMoney } from "@/lib/finance";
@@ -22,8 +24,11 @@ import { byId, cn, type Option } from "@/utils/common";
 import { addDays, formatCalendarDate, localDateString, monthRange } from "@/utils/dates";
 
 import { KindIcon, PaymentStatusBadge } from "./commitment-parts";
+import { rowListClassName, SectionHeading } from "./finance-meta";
 import type { FinanceData } from "./finance-view";
+import { LoadError } from "./panel";
 import type { PaymentTarget } from "./payment-dialog";
+import { ViewHeader } from "./view-header";
 
 type Range = "window" | "month" | "quarter";
 
@@ -119,7 +124,7 @@ export function UpcomingPayments({
   const accountsById = useMemo(() => byId(accounts), [accounts]);
 
   const filters = (
-    <div className="flex flex-wrap gap-2">
+    <>
       <label htmlFor={`${id}-range`} className="sr-only">
         Dates
       </label>
@@ -150,26 +155,28 @@ export function UpcomingPayments({
         onValueChange={setStatus}
         options={STATUS_FILTERS}
       />
-    </div>
+    </>
+  );
+  const header = (
+    <ViewHeader
+      title="Upcoming payments"
+      description={`Loan EMIs, subscriptions, and bills from ${formatCalendarDate(bounds.from)} to ${formatCalendarDate(bounds.to)}. They aren’t spending until you record them.`}
+      controls={filters}
+    />
   );
 
   if (state.status === "error") {
     return (
-      <div className="space-y-4">
-        {filters}
-        <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
-          <p>{state.message}</p>
-          <Button variant="outline" size="sm" onClick={reload}>
-            Try again
-          </Button>
-        </div>
+      <div className="space-y-6">
+        {header}
+        <LoadError message={state.message} onRetry={reload} />
       </div>
     );
   }
   if (state.status === "loading") {
     return (
-      <div className="space-y-4">
-        {filters}
+      <div className="space-y-6">
+        {header}
         <span className="sr-only">Loading payments…</span>
         <Skeleton className="h-48 rounded-xl" />
       </div>
@@ -177,23 +184,27 @@ export function UpcomingPayments({
   }
 
   const groups = groupPayments(state.data.payments);
+  const { soon, later } = splitUpcoming(groups.upcoming, today);
   const row = (item: PaymentItem) => {
     const target =
       item.status === "paid" || item.status === "skipped" ? null : targetOf(item, loansById);
     const account = item.account_id ? accountsById.get(item.account_id)?.name : undefined;
     return (
-      <li key={paymentKey(item)} className="flex flex-wrap items-center gap-3 px-3 py-3 sm:px-4">
+      <li
+        key={paymentKey(item)}
+        className="flex items-center gap-3 px-3 py-2.5 transition-colors duration-150 hover:bg-accent/40 @md/rows:px-4"
+      >
         <KindIcon kind={item.kind} />
         <div className="min-w-0 flex-1 space-y-0.5">
           <p className="truncate text-sm font-medium">{item.name}</p>
-          <p className="flex flex-wrap gap-x-2 text-xs text-muted-foreground">
-            <span>{KIND_LABELS[item.kind]}</span>
-            <span aria-hidden="true">·</span>
-            <span>
+          <p className="flex min-w-0 gap-x-1.5 text-xs text-muted-foreground">
+            <span className="shrink-0">
               {item.paid_on
                 ? `Paid ${formatCalendarDate(item.paid_on)}`
                 : `Due ${formatCalendarDate(item.due_date)}`}
             </span>
+            <span aria-hidden="true">·</span>
+            <span className="shrink-0">{KIND_LABELS[item.kind]}</span>
             {account ? (
               <>
                 <span aria-hidden="true">·</span>
@@ -202,12 +213,15 @@ export function UpcomingPayments({
             ) : null}
           </p>
         </div>
-        <span className="text-right text-sm font-medium tabular-nums">
-          {item.estimated ? <span className="sr-only">About </span> : null}
-          {item.estimated ? "≈ " : ""}
-          {formatMoney(item.amount, item.currency)}
-        </span>
-        <PaymentStatusBadge status={item.status} />
+        <div className="flex shrink-0 flex-col items-end gap-1 @lg/rows:flex-row @lg/rows:items-center @lg/rows:gap-3">
+          <span className="text-sm font-medium whitespace-nowrap tabular-nums">
+            {item.estimated ? <span className="sr-only">About </span> : null}
+            {item.estimated ? "≈ " : ""}
+            {formatMoney(item.amount, item.currency)}
+          </span>
+          {/* Inside its section, "upcoming" goes without saying. */}
+          {item.status === "upcoming" ? null : <PaymentStatusBadge status={item.status} />}
+        </div>
         {target ? (
           <Button size="sm" variant="outline" onClick={() => onPay(target)}>
             Record
@@ -219,26 +233,26 @@ export function UpcomingPayments({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {filters}
-        <p className="text-xs text-muted-foreground">
-          {formatCalendarDate(bounds.from)} to {formatCalendarDate(bounds.to)}
-        </p>
-      </div>
+      {header}
       {state.data.payments.length === 0 ? (
         <EmptyState
           icon={CalendarCheck}
           title="Nothing due"
-          description="No loan EMIs, subscriptions, or bills fall in these dates. Add them from their tabs to see what’s coming up."
+          description="No loan EMIs, subscriptions, or bills fall in these dates. Add them from their views to see what’s coming up."
         />
       ) : (
         <div
           aria-busy={refreshing}
-          className={cn("space-y-6 transition-opacity duration-150", refreshing && "opacity-70")}
+          // Sections flow into two columns on very wide lists, read down then across.
+          className={cn(
+            "gap-6 transition-opacity duration-150 @6xl/list:columns-2",
+            refreshing && "opacity-70",
+          )}
         >
-          <Group title="Overdue" items={groups.overdue} tone="negative" render={row} />
-          <Group title="Due today" items={groups.dueToday} render={row} />
-          <Group title="Upcoming" items={groups.upcoming} render={row} />
+          <Group title="Overdue" items={groups.overdue} tone="danger" render={row} cap={5} />
+          <Group title="Due today" items={groups.dueToday} tone="brand" render={row} />
+          <Group title={`Next ${SOON_DAYS} days`} items={soon} render={row} />
+          <Group title="Later" items={later} render={row} />
           <Group title="Recently paid" items={groups.settled} render={row} quiet />
         </div>
       )}
@@ -252,36 +266,45 @@ function Group({
   render,
   tone = "default",
   quiet = false,
+  cap,
 }: {
   title: string;
   items: PaymentItem[];
   render: (item: PaymentItem) => ReactNode;
-  tone?: "default" | "negative";
+  tone?: "default" | "danger" | "brand";
   /** Settled payments: shown without a total. */
   quiet?: boolean;
+  /** Show this many until asked for the rest, so a long backlog doesn't bury the page. */
+  cap?: number;
 }) {
   const id = useId();
+  const [showAll, setShowAll] = useState(false);
   if (items.length === 0) return null;
+  const shown = cap && !showAll ? items.slice(0, cap) : items;
+  const hidden = items.length - shown.length;
   return (
-    <section aria-labelledby={id} className="space-y-2">
-      <div className="flex items-baseline justify-between gap-3">
-        <h3
-          id={id}
-          className={cn("text-sm font-semibold", tone === "negative" && "text-destructive")}
-        >
-          {title} <span className="font-normal text-muted-foreground">({items.length})</span>
-        </h3>
-        {quiet ? null : (
-          <p className="text-xs text-muted-foreground tabular-nums">
-            {totalsByCurrency(items)
-              .map(([currency, amount]) => formatMoney(amount, currency))
-              .join(" + ")}
-          </p>
-        )}
-      </div>
-      <ul className="divide-y overflow-hidden rounded-xl border bg-card shadow-elevation-1">
-        {items.map(render)}
-      </ul>
+    <section aria-labelledby={id} className="mb-6 break-inside-avoid space-y-2 last:mb-0">
+      <SectionHeading
+        id={id}
+        tone={tone}
+        count={items.length}
+        trailing={
+          quiet
+            ? null
+            : totalsByCurrency(items)
+                .map(([currency, amount]) => formatMoney(amount, currency))
+                .join(" + ")
+        }
+      >
+        {title}
+      </SectionHeading>
+      <ul className={rowListClassName}>{shown.map(render)}</ul>
+      {hidden > 0 ? (
+        <Button variant="ghost" size="sm" onClick={() => setShowAll(true)}>
+          <ChevronDown aria-hidden="true" />
+          Show {hidden} more
+        </Button>
+      ) : null}
     </section>
   );
 }

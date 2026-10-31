@@ -161,6 +161,12 @@ function historyQueries(api: ReturnType<typeof mockApi>): URLSearchParams[] {
     .map(({ url }) => url.searchParams);
 }
 
+/** Opens the page's Record menu and picks a kind of transaction. */
+async function record(user: ReturnType<typeof userEvent.setup>, kind: string) {
+  await user.click(await screen.findByRole("button", { name: "Record" }));
+  await user.click(screen.getByRole("menuitem", { name: kind }));
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
   localStorage.clear();
@@ -236,7 +242,7 @@ describe("FinancePanel", () => {
     await renderSignedIn(<FinancePanel />);
     await user.click(await screen.findByRole("button", { name: "Accounts" }));
 
-    const list = await screen.findByRole("list", { name: "Active accounts" });
+    const list = await screen.findByRole("region", { name: "Active accounts" });
     expect(within(list).getByText("HDFC Savings")).toBeInTheDocument();
     expect(within(list).getByText("Amex")).toBeInTheDocument();
     expect(within(list).queryByText("Home loan")).not.toBeInTheDocument();
@@ -265,7 +271,7 @@ describe("FinancePanel", () => {
     });
     await renderSignedIn(<FinancePanel />);
 
-    await user.click(await screen.findByRole("button", { name: "Expense" }));
+    await record(user, "Expense");
     const dialog = screen.getByRole("dialog", { name: "Record a transaction" });
     await user.type(within(dialog).getByRole("textbox", { name: "Amount (INR)" }), "1,250.10");
     await user.type(within(dialog).getByRole("textbox", { name: "Description" }), "Weekly shop");
@@ -299,7 +305,7 @@ describe("FinancePanel", () => {
     const api = mockApi({ ...session, ...finance() });
     await renderSignedIn(<FinancePanel />);
 
-    await user.click(await screen.findByRole("button", { name: "Income" }));
+    await record(user, "Income");
     const dialog = screen.getByRole("dialog", { name: "Record a transaction" });
     const amount = within(dialog).getByRole("textbox", { name: "Amount (INR)" });
     await user.type(amount, "12.345");
@@ -326,7 +332,7 @@ describe("FinancePanel", () => {
     });
     await renderSignedIn(<FinancePanel />);
 
-    await user.click(await screen.findByRole("button", { name: "Transfer" }));
+    await record(user, "Transfer");
     const dialog = screen.getByRole("dialog", { name: "Record a transaction" });
     expect(within(dialog).queryByRole("combobox", { name: "Category" })).not.toBeInTheDocument();
     await user.type(within(dialog).getByRole("textbox", { name: "Amount (INR)" }), "3000");
@@ -368,12 +374,15 @@ describe("FinancePanel", () => {
     await renderSignedIn(<FinancePanel />);
 
     await user.click(await screen.findByRole("button", { name: "Transactions" }));
-    const list = await screen.findByRole("list", { name: "1 transaction" });
+    // Grouped by day: one list per day, named by the day and its count.
+    const list = await screen.findByRole("list", { name: /1 transaction$/ });
     expect(within(list).getByRole("listitem")).toHaveTextContent(
       /February rent.*Rent.*HDFC Savings.*-₹20,000\.00/,
     );
 
-    await chooseOption(user, screen.getByRole("combobox", { name: "Type" }), "Expense");
+    await user.click(
+      within(screen.getByRole("group", { name: "Type" })).getByRole("button", { name: "Expense" }),
+    );
     await chooseOption(user, screen.getByRole("combobox", { name: "Account" }), "HDFC Savings");
     await user.type(screen.getByRole("searchbox", { name: "Search transactions" }), "rent");
 
@@ -405,7 +414,8 @@ describe("FinancePanel", () => {
     await renderSignedIn(<FinancePanel />);
     await user.click(await screen.findByRole("button", { name: "Transactions" }));
 
-    await user.click(await screen.findByRole("button", { name: "Delete “Tea”" }));
+    await user.click(await screen.findByRole("button", { name: "More actions for “Tea”" }));
+    await user.click(screen.getByRole("menuitem", { name: "Delete" }));
     expect(deleted).toEqual([]);
     const confirm = screen.getByRole("group", { name: "Delete “Tea”?" });
     await user.click(within(confirm).getByRole("button", { name: "Delete" }));
@@ -413,5 +423,34 @@ describe("FinancePanel", () => {
     expect(await screen.findByRole("heading", { name: "No transactions yet" })).toBeInTheDocument();
     expect(deleted).toHaveLength(1);
     expect(screen.getByRole("status")).toHaveTextContent("Deleted “Tea”.");
+  });
+
+  it("keeps the view in the URL and lists every view in groups", async () => {
+    mockApi({ ...session, ...finance() });
+    const user = userEvent.setup();
+    window.history.replaceState(null, "", "/finance?view=accounts");
+
+    await renderSignedIn(<FinancePanel />);
+
+    expect(await screen.findByRole("heading", { name: "Accounts", level: 2 })).toBeInTheDocument();
+    const nav = screen.getByRole("navigation", { name: "Finance views" });
+    expect(within(nav).getByRole("button", { name: "Accounts" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(within(nav).getByRole("group", { name: "Commitments" })).toHaveTextContent(
+      /Upcoming.*Loans.*Subscriptions.*Bills/,
+    );
+
+    await user.click(within(nav).getByRole("button", { name: "Budgets" }));
+    expect(window.location.search).toBe("?view=budgets");
+    await user.click(within(nav).getByRole("button", { name: "Overview" }));
+    expect(window.location.search).toBe("");
+
+    // The narrow-screen picker lists the same views, marking the current one.
+    await user.click(within(nav).getByRole("button", { name: /Switch finance view/ }));
+    expect(screen.getByRole("menuitemradio", { name: "Overview" })).toBeChecked();
+    await user.click(screen.getByRole("menuitemradio", { name: "Net worth" }));
+    expect(window.location.search).toBe("?view=net-worth");
   });
 });

@@ -101,4 +101,47 @@ describe("Menu", () => {
     await user.click(trigger);
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
   });
+
+  it("groups items under labels and marks the checked one", async () => {
+    const user = userEvent.setup();
+    const picked = vi.fn();
+    render(
+      <Menu
+        chevron={false}
+        items={[
+          { id: "a", label: "Overview", checked: false, onSelect: () => picked("a") },
+          {
+            id: "b",
+            label: "Budgets",
+            group: "Planning",
+            checked: true,
+            onSelect: () => picked("b"),
+          },
+          {
+            id: "c",
+            label: "Goals",
+            group: "Planning",
+            checked: false,
+            onSelect: () => picked("c"),
+          },
+          { id: "d", label: "Delete", destructive: true, onSelect: () => picked("d") },
+        ]}
+      >
+        Views
+      </Menu>,
+    );
+    await user.click(screen.getByRole("button", { name: "Views" }));
+
+    const planning = screen.getByRole("group", { name: "Planning" });
+    expect(planning).toContainElement(screen.getByRole("menuitemradio", { name: "Budgets" }));
+    expect(screen.getByRole("menuitemradio", { name: "Budgets" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.getByRole("menuitemradio", { name: "Overview" })).not.toBeChecked();
+    expect(screen.getByRole("menuitem", { name: "Delete" })).toBeInTheDocument();
+
+    await user.keyboard("{ArrowDown}{ArrowDown}{ArrowDown}{Enter}");
+    expect(picked).toHaveBeenCalledWith("c");
+  });
 });

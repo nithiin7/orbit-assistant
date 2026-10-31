@@ -1,6 +1,7 @@
 "use client";
 
 import type {
+  Currency,
   FinanceAccount,
   FinanceCategory,
   FinanceTransaction,
@@ -10,21 +11,32 @@ import type {
   RecurringKind,
   RecurringPayment,
 } from "@orbit/contracts";
-import { ArrowLeftRight, Landmark, Minus, Plus } from "lucide-react";
-import { useCallback, useState } from "react";
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Landmark, Plus, Undo2 } from "lucide-react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { ScrollStrip } from "@/components/ui/scroll-strip";
+import { Menu } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useBudgetMonth } from "@/hooks/use-budgets";
+import { useCommitmentSummary } from "@/hooks/use-commitments";
 import { useFinanceSetup } from "@/hooks/use-finance";
+import { accountCurrencies, DEFAULT_CURRENCY } from "@/lib/finance";
+import {
+  DEFAULT_FINANCE_VIEW,
+  FINANCE_VIEW_PARAM,
+  type FinanceView as FinanceViewId,
+  parseFinanceView,
+} from "@/lib/finance-views";
 import { useWorkspaces } from "@/providers/workspace";
-import { cn, type Option } from "@/utils/common";
+import { localDateString, localMonthString } from "@/utils/dates";
 
 import { AccountDialog } from "./account-dialog";
 import { AccountsView } from "./accounts-view";
 import { AssetsView } from "./assets-view";
 import { BudgetsView } from "./budgets-view";
+import { FinanceNav, type ViewBadges } from "./finance-nav";
 import { FinanceOverview } from "./finance-overview";
 import { GoalsView } from "./goals-view";
 import { InvestmentsView } from "./investments-view";
@@ -32,6 +44,7 @@ import { LoanDialog } from "./loan-dialog";
 import { InstallmentDialog, RescheduleDialog } from "./loan-schedule-dialogs";
 import { LoansView } from "./loans-view";
 import { NetWorthView } from "./net-worth-view";
+import { LoadError } from "./panel";
 import { PaymentDialog, type PaymentTarget } from "./payment-dialog";
 import { PlanView } from "./plan-view";
 import { RecurringDialog } from "./recurring-dialog";
@@ -40,39 +53,16 @@ import { TransactionDialog } from "./transaction-dialog";
 import { TransactionHistory } from "./transaction-history";
 import { UpcomingPayments } from "./upcoming-payments";
 
-export type FinanceTab =
-  | "overview"
-  | "budgets"
-  | "plan"
-  | "goals"
-  | "upcoming"
-  | "transactions"
-  | "accounts"
-  | "loans"
-  | "subscriptions"
-  | "bills"
-  | "investments"
-  | "assets"
-  | "net-worth";
+export type FinanceTab = FinanceViewId;
 
-const TABS: readonly Option<FinanceTab>[] = [
-  { value: "overview", label: "Overview" },
-  { value: "budgets", label: "Budgets" },
-  { value: "plan", label: "Plan" },
-  { value: "goals", label: "Goals" },
-  { value: "upcoming", label: "Upcoming" },
-  { value: "transactions", label: "Transactions" },
-  { value: "accounts", label: "Accounts" },
-  { value: "loans", label: "Loans" },
-  { value: "subscriptions", label: "Subscriptions" },
-  { value: "bills", label: "Bills" },
-  { value: "investments", label: "Investments" },
-  { value: "assets", label: "Assets" },
-  { value: "net-worth", label: "Net worth" },
-];
+const DESCRIPTION =
+  "Accounts, spending, plans, commitments, and wealth, entered by hand. Private to you; Orbit never connects to your bank.";
 
 /** Views that need an account to show anything useful. */
 const NEEDS_ACCOUNT: ReadonlySet<FinanceTab> = new Set(["overview", "transactions"]);
+
+/** Views where recording a transaction is the main thing to do. */
+const RECORDING_VIEWS: ReadonlySet<FinanceTab> = new Set(["overview", "transactions"]);
 
 type Dialog =
   | { kind: "transaction"; type: FinanceTransactionType; transaction?: FinanceTransaction }
@@ -83,7 +73,7 @@ type Dialog =
   | { kind: "recurring"; recurringKind: RecurringKind; payment?: RecurringPayment }
   | { kind: "pay"; target: PaymentTarget };
 
-/** What every finance view gets from the page: the workspace's accounts and categories. */
+/** What every finance view gets from the page: the workspace's data and the shared controls. */
 export type FinanceData = {
   workspaceId: string;
   accounts: FinanceAccount[];
@@ -91,6 +81,14 @@ export type FinanceData = {
   onEditTransaction: (transaction: FinanceTransaction) => void;
   onAnnounce: (message: string) => void;
   onShowTab: (tab: FinanceTab) => void;
+  /** The month the monthly views show, shared so moving between them keeps it. */
+  month: string;
+  thisMonth: string;
+  onMonthChange: (month: string) => void;
+  /** The currency the views report in, from those the accounts use. */
+  currency: Currency;
+  currencies: Currency[];
+  onCurrencyChange: (currency: Currency) => void;
 };
 
 /** The Finance page for the active workspace. Remounts (and resets) when the workspace changes. */
@@ -99,23 +97,79 @@ export function FinancePanel() {
 
   if (state.status === "error") {
     return (
-      <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
-        <p>{state.message}</p>
-        <Button variant="outline" size="sm" onClick={refresh}>
-          Try again
-        </Button>
-      </div>
+      <FinanceFrame>
+        <LoadError message={state.message} onRetry={refresh} />
+      </FinanceFrame>
     );
   }
-  if (state.status === "loading") return <FinanceSkeleton />;
+  if (state.status === "loading") {
+    return (
+      <FinanceFrame>
+        <FinanceSkeleton />
+      </FinanceFrame>
+    );
+  }
   return <FinanceView key={state.active.id} workspaceId={state.active.id} />;
+}
+
+function FinanceFrame({ actions, children }: { actions?: ReactNode; children: ReactNode }) {
+  return (
+    <div className="space-y-8">
+      <PageHeader title="Finance" description={DESCRIPTION} actions={actions} />
+      {children}
+    </div>
+  );
+}
+
+function viewFromLocation(): FinanceTab {
+  if (typeof window === "undefined") return DEFAULT_FINANCE_VIEW;
+  return parseFinanceView(new URLSearchParams(window.location.search).get(FINANCE_VIEW_PARAM));
+}
+
+/**
+ * The view lives in the URL (`?view=budgets`), so reloads, links, and Back land on it. Changing
+ * it pushes a history entry; Back and Forward change it back.
+ */
+function useFinanceViewParam(): [FinanceTab, (view: FinanceTab) => void] {
+  const [view, setView] = useState<FinanceTab>(viewFromLocation);
+
+  useEffect(() => {
+    const onPopState = () => setView(viewFromLocation());
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  const show = useCallback((next: FinanceTab) => {
+    setView(next);
+    const url = new URL(window.location.href);
+    if (next === DEFAULT_FINANCE_VIEW) url.searchParams.delete(FINANCE_VIEW_PARAM);
+    else url.searchParams.set(FINANCE_VIEW_PARAM, next);
+    if (url.href !== window.location.href) window.history.pushState(null, "", url);
+  }, []);
+
+  return [view, show];
 }
 
 function FinanceView({ workspaceId }: { workspaceId: string }) {
   const { accounts, categories, reload } = useFinanceSetup(workspaceId);
-  const [tab, setTab] = useState<FinanceTab>("overview");
+  const [tab, setTab] = useFinanceViewParam();
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [announcement, setAnnouncement] = useState("");
+  // Recomputed each render, so "this month" moves on if the page is left open past its end.
+  const thisMonth = localMonthString();
+  const [month, setMonth] = useState(thisMonth);
+  const [chosenCurrency, setCurrency] = useState<Currency | null>(null);
+
+  const allAccounts = useMemo(
+    () => (accounts.status === "success" ? accounts.data.accounts : []),
+    [accounts],
+  );
+  const currencies = useMemo(() => accountCurrencies(allAccounts), [allAccounts]);
+  const currency =
+    chosenCurrency && currencies.includes(chosenCurrency)
+      ? chosenCurrency
+      : (currencies[0] ?? DEFAULT_CURRENCY);
+  const badges = useViewBadges(workspaceId, thisMonth, currency);
 
   const editTransaction = useCallback(
     (transaction: FinanceTransaction) =>
@@ -124,21 +178,23 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
   );
 
   if (accounts.status === "error" || categories.status === "error") {
-    const message = accounts.status === "error" ? accounts.message : "";
+    const message =
+      (accounts.status === "error" ? accounts.message : "") ||
+      (categories.status === "error" ? categories.message : "");
     return (
-      <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
-        <p>{message || (categories.status === "error" ? categories.message : "")}</p>
-        <Button variant="outline" size="sm" onClick={reload}>
-          Try again
-        </Button>
-      </div>
+      <FinanceFrame>
+        <LoadError message={message} onRetry={reload} />
+      </FinanceFrame>
     );
   }
   if (accounts.status === "loading" || categories.status === "loading") {
-    return <FinanceSkeleton />;
+    return (
+      <FinanceFrame>
+        <FinanceSkeleton />
+      </FinanceFrame>
+    );
   }
 
-  const allAccounts = accounts.data.accounts;
   const hasActiveAccount = allAccounts.some((account) => !account.archived);
   const data: FinanceData = {
     workspaceId,
@@ -147,127 +203,135 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
     onEditTransaction: editTransaction,
     onAnnounce: setAnnouncement,
     onShowTab: setTab,
+    month,
+    thisMonth,
+    onMonthChange: setMonth,
+    currency,
+    currencies,
+    onCurrencyChange: setCurrency,
   };
   const pay = (target: PaymentTarget) => setDialog({ kind: "pay", target });
   const record = (type: FinanceTransactionType) => setDialog({ kind: "transaction", type });
 
+  const recordMenu = hasActiveAccount ? (
+    <Menu
+      align="end"
+      // The main action where recording is what the view is for; quieter elsewhere, where the
+      // view has its own primary action.
+      variant={RECORDING_VIEWS.has(tab) ? "default" : "soft"}
+      items={[
+        {
+          id: "expense",
+          label: "Expense",
+          description: "Money spent from an account or card",
+          icon: ArrowUpRight,
+          onSelect: () => record("expense"),
+        },
+        {
+          id: "income",
+          label: "Income",
+          description: "Salary, interest, or anything received",
+          icon: ArrowDownLeft,
+          onSelect: () => record("income"),
+        },
+        {
+          id: "transfer",
+          label: "Transfer",
+          description: "Between your accounts, such as a card bill",
+          icon: ArrowLeftRight,
+          onSelect: () => record("transfer"),
+        },
+        {
+          id: "refund",
+          label: "Refund",
+          description: "Money back on an earlier purchase",
+          icon: Undo2,
+          onSelect: () => record("refund"),
+        },
+      ]}
+    >
+      <Plus aria-hidden="true" />
+      Record
+    </Menu>
+  ) : null;
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <ScrollStrip
-          role="group"
-          aria-label="Finance view"
-          selected={tab}
-          className="h-9 w-full max-w-full rounded-md border bg-muted/60 p-0.5 sm:w-auto"
-          contentClassName="h-full"
-        >
-          {TABS.map((option) => {
-            const selected = tab === option.value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => setTab(option.value)}
-                className={cn(
-                  "h-full flex-none rounded-[calc(var(--radius-md)-2px)] px-3 text-sm font-medium whitespace-nowrap transition-[color,background-color,box-shadow] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  selected
-                    ? "bg-card text-brand shadow-elevation-1"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
+    <FinanceFrame actions={recordMenu}>
+      {/* Layout follows the space the page gets (which depends on the app sidebar), not the
+          screen: container queries size the rail and each view's columns. */}
+      <div className="@container/finance">
+        <div className="grid gap-6 @5xl/finance:grid-cols-[13rem_minmax(0,1fr)] @5xl/finance:gap-8 @7xl/finance:grid-cols-[15rem_minmax(0,1fr)] @7xl/finance:gap-12">
+          <aside className="min-w-0 @5xl/finance:sticky @5xl/finance:top-6 @5xl/finance:self-start">
+            <FinanceNav view={tab} onChange={setTab} badges={badges} />
+          </aside>
+
+          <div key={tab} className="@container/list min-w-0 animate-page-in space-y-6">
+            {!hasActiveAccount && NEEDS_ACCOUNT.has(tab) ? (
+              <EmptyState
+                icon={Landmark}
+                title="Add an account to get started"
+                description="Track a bank account, cash, a card, or a wallet by hand. Orbit never asks for bank logins or connects to your bank."
               >
-                {option.label}
-              </button>
-            );
-          })}
-        </ScrollStrip>
-
-        {hasActiveAccount ? (
-          <div className="grid grid-cols-3 gap-2 sm:flex">
-            <Button variant="soft" onClick={() => record("income")}>
-              <Plus aria-hidden="true" />
-              Income
-            </Button>
-            <Button variant="soft" onClick={() => record("expense")}>
-              <Minus aria-hidden="true" />
-              Expense
-            </Button>
-            <Button variant="soft" onClick={() => record("transfer")}>
-              <ArrowLeftRight aria-hidden="true" />
-              Transfer
-            </Button>
+                <Button onClick={() => setDialog({ kind: "account" })}>
+                  <Plus aria-hidden="true" />
+                  Add account
+                </Button>
+              </EmptyState>
+            ) : tab === "overview" ? (
+              <FinanceOverview {...data} />
+            ) : tab === "budgets" ? (
+              <BudgetsView {...data} />
+            ) : tab === "plan" ? (
+              <PlanView {...data} />
+            ) : tab === "goals" ? (
+              <GoalsView {...data} />
+            ) : tab === "upcoming" ? (
+              <UpcomingPayments {...data} onPay={pay} />
+            ) : tab === "transactions" ? (
+              <TransactionHistory {...data} />
+            ) : tab === "investments" ? (
+              <InvestmentsView {...data} />
+            ) : tab === "assets" ? (
+              <AssetsView {...data} />
+            ) : tab === "net-worth" ? (
+              <NetWorthView {...data} />
+            ) : tab === "loans" ? (
+              <LoansView
+                {...data}
+                onAddLoan={() => setDialog({ kind: "loan" })}
+                onEditLoan={(loan) => setDialog({ kind: "loan", loan })}
+                onReschedule={(loan) => setDialog({ kind: "reschedule", loan })}
+                onAdjust={(loan, installment) =>
+                  setDialog({ kind: "installment", loan, installment })
+                }
+                onPay={pay}
+              />
+            ) : tab === "subscriptions" || tab === "bills" ? (
+              <RecurringView
+                {...data}
+                kind={tab === "subscriptions" ? "subscription" : "bill"}
+                onAdd={() =>
+                  setDialog({
+                    kind: "recurring",
+                    recurringKind: tab === "subscriptions" ? "subscription" : "bill",
+                  })
+                }
+                onEdit={(payment) =>
+                  setDialog({ kind: "recurring", recurringKind: payment.kind, payment })
+                }
+                onPay={pay}
+              />
+            ) : (
+              <AccountsView
+                {...data}
+                totals={accounts.data.totals}
+                onAddAccount={() => setDialog({ kind: "account" })}
+                onEditAccount={(account) => setDialog({ kind: "account", account })}
+              />
+            )}
           </div>
-        ) : null}
-      </div>
-
-      {!hasActiveAccount && NEEDS_ACCOUNT.has(tab) ? (
-        <EmptyState
-          icon={Landmark}
-          title="Add an account to get started"
-          description="Track a bank account, cash, a card, or a wallet by hand. Orbit never asks for bank logins or connects to your bank."
-        >
-          <Button onClick={() => setDialog({ kind: "account" })}>
-            <Plus aria-hidden="true" />
-            Add account
-          </Button>
-        </EmptyState>
-      ) : (
-        <div key={tab} className="animate-page-in">
-          {tab === "overview" ? (
-            <FinanceOverview {...data} />
-          ) : tab === "budgets" ? (
-            <BudgetsView {...data} />
-          ) : tab === "plan" ? (
-            <PlanView {...data} />
-          ) : tab === "goals" ? (
-            <GoalsView {...data} />
-          ) : tab === "upcoming" ? (
-            <UpcomingPayments {...data} onPay={pay} />
-          ) : tab === "transactions" ? (
-            <TransactionHistory {...data} />
-          ) : tab === "investments" ? (
-            <InvestmentsView {...data} />
-          ) : tab === "assets" ? (
-            <AssetsView {...data} />
-          ) : tab === "net-worth" ? (
-            <NetWorthView {...data} />
-          ) : tab === "loans" ? (
-            <LoansView
-              {...data}
-              onAddLoan={() => setDialog({ kind: "loan" })}
-              onEditLoan={(loan) => setDialog({ kind: "loan", loan })}
-              onReschedule={(loan) => setDialog({ kind: "reschedule", loan })}
-              onAdjust={(loan, installment) =>
-                setDialog({ kind: "installment", loan, installment })
-              }
-              onPay={pay}
-            />
-          ) : tab === "subscriptions" || tab === "bills" ? (
-            <RecurringView
-              key={tab}
-              {...data}
-              kind={tab === "subscriptions" ? "subscription" : "bill"}
-              onAdd={() =>
-                setDialog({
-                  kind: "recurring",
-                  recurringKind: tab === "subscriptions" ? "subscription" : "bill",
-                })
-              }
-              onEdit={(payment) =>
-                setDialog({ kind: "recurring", recurringKind: payment.kind, payment })
-              }
-              onPay={pay}
-            />
-          ) : (
-            <AccountsView
-              {...data}
-              totals={accounts.data.totals}
-              onAddAccount={() => setDialog({ kind: "account" })}
-              onEditAccount={(account) => setDialog({ kind: "account", account })}
-            />
-          )}
         </div>
-      )}
+      </div>
 
       <p role="status" className="sr-only">
         {announcement}
@@ -332,8 +396,30 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
           onClose={() => setDialog(null)}
         />
       ) : null}
-    </div>
+    </FinanceFrame>
   );
+}
+
+/**
+ * Counts beside the views that need attention: overdue payments and exceeded budgets, this month.
+ * They reuse the Overview's queries and never hold up the page.
+ */
+function useViewBadges(workspaceId: string, thisMonth: string, currency: Currency): ViewBadges {
+  const today = localDateString();
+  const commitments = useCommitmentSummary(workspaceId, currency, today);
+  const budgets = useBudgetMonth(workspaceId, thisMonth, currency, today);
+  const badges: ViewBadges = {};
+  if (commitments.state.status === "success") {
+    const overdue = commitments.state.data.overdue.count;
+    badges.upcoming = { count: overdue, label: `${overdue} overdue` };
+  }
+  if (budgets.state.status === "success") {
+    const exceeded = budgets.state.data.budgets.filter(
+      (budget) => budget.current_period?.status === "exceeded",
+    ).length;
+    badges.budgets = { count: exceeded, label: `${exceeded} over budget` };
+  }
+  return badges;
 }
 
 function FinanceSkeleton() {

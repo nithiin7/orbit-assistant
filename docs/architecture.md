@@ -133,7 +133,7 @@ apps/web/src/
 │   │   ├── page.tsx     # Dashboard: user-arranged widgets (components/dashboard/)
 │   │   ├── tasks/       # Tasks page
 │   │   ├── reminders/   # Reminders page
-│   │   ├── finance/     # Finance page: overview, transactions, accounts
+│   │   ├── finance/     # Finance page: 13 views in four groups, chosen by ?view=
 │   │   ├── settings/    # Settings: drill-down on small screens, split view on large; [panel]/ sub-pages
 │   │   └── [section]/   # Placeholder page for every other nav section
 │   ├── (auth)/          # Public routes without the shell: sign-in, sign-up
@@ -147,7 +147,7 @@ apps/web/src/
 │   ├── workspace/       # Workspace switcher, dashboard overview
 │   ├── tasks/           # Tasks page (composer, toolbar, list, edit dialog), dashboard summary
 │   ├── reminders/       # Reminders page (list, create/edit dialog), dashboard widget
-│   ├── finance/         # Finance page: overview and charts, history, dialogs, accounts
+│   ├── finance/         # Finance page: navigation, views, shared blocks (tiles, panels, row actions), dialogs
 │   ├── notifications/   # Notification bell and panel (in the sidebar and mobile top bar)
 │   ├── settings/        # Settings menu and the account, workspace, theme, and storage panels
 │   ├── storage/         # Storage-mode indicator and status card
@@ -1034,13 +1034,23 @@ text in the major unit, such as `20000.50`), Currency, Notes, ID. Text starting 
 
 ### Web app
 
-- `/finance` (`components/finance/`) has three views: **Overview** (month navigator; income,
-  spending, and net cash flow tiles; a six-month income-versus-spending bar chart; spending by
-  category; account balances; the month's latest transactions), **Transactions** (search, type,
-  account, category, date range, sort, 50 per page, CSV export, edit, delete with confirmation),
-  and **Accounts** (per-currency totals, add, edit, archive and restore, categories). Quick
-  actions record income, an expense, or a transfer from any view. A workspace without accounts
-  is asked to add one first.
+- `/finance` (`components/finance/`) has thirteen views. Overview sits on its own; the rest are
+  grouped as **Money** (Transactions, Accounts), **Planning** (Budgets, Plan, Goals),
+  **Commitments** (Upcoming, Loans, Subscriptions, Bills), and **Wealth** (Investments, Assets,
+  Net worth). The list and groups are data in `lib/finance-views`. Wide pages show them as a
+  sticky side rail (`finance-nav.tsx`); narrower ones show a picker listing every view plus the
+  current group's views as chips. The view is in the URL (`/finance?view=budgets`, kept with the
+  History API), so reloads, Back, and links from dashboard widgets land on it.
+- The page header's **Record** menu records an expense, income, a transfer, or a refund from any
+  view; it's the primary action on Overview and Transactions and a quieter one elsewhere, where
+  each view's own "Add …" is primary. Overview, Budgets, and Plan share one month, and every view
+  shares one currency, held by `finance-view.tsx`. A workspace without accounts is asked to add
+  one first.
+- Views share building blocks: `ViewHeader` (heading, controls, one primary action),
+  `StatGrid`/`StatTile`, `Panel`/`LoadError`/`EndedSection`, chips in `finance-meta.tsx`, and
+  `RowActions`, which shows a row's one inline action and puts the rest in a "More actions" menu,
+  asking in place before anything hard to undo. Layout follows container queries
+  (`@container/finance`, `/list`, `/rows`), not screen breakpoints.
 - When accounts use several currencies the overview offers a currency picker; otherwise it uses
   the only one.
 - Lists are rows, not tables, so nothing scrolls sideways on phones. Chart colors are the

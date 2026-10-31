@@ -1,8 +1,26 @@
 "use client";
 
 import { yupResolver } from "@hookform/resolvers/yup";
-import type { BalanceTotals, FinanceAccount, FinanceCategory } from "@orbit/contracts";
-import { Archive, ArchiveRestore, Pencil, Plus, X } from "lucide-react";
+import type {
+  BalanceTotals,
+  FinanceAccount,
+  FinanceAccountType,
+  FinanceCategory,
+} from "@orbit/contracts";
+import {
+  Archive,
+  ArchiveRestore,
+  Banknote,
+  CreditCard,
+  Landmark,
+  LineChart,
+  type LucideIcon,
+  Pencil,
+  Plus,
+  Smartphone,
+  Wallet,
+  X,
+} from "lucide-react";
 import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import type { InferType } from "yup";
@@ -11,21 +29,37 @@ import { describeApiError } from "@/api/client";
 import { FormAlert } from "@/components/form-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useFinanceMutations } from "@/hooks/use-finance";
 import { accountTypeLabel, categorySchema, formatMoney } from "@/lib/finance";
 import { type Option } from "@/utils/common";
 
+import { Chip, rowListClassName, SectionHeading } from "./finance-meta";
 import { AccountBalance } from "./finance-overview";
 import type { FinanceData } from "./finance-view";
+import { EndedSection, Panel } from "./panel";
+import { RowActions } from "./row-actions";
+import { StatGrid, StatTile } from "./stat-tile";
+import { ViewHeader } from "./view-header";
 
 type AccountsViewProps = FinanceData & {
   totals: BalanceTotals[];
   onAddAccount: () => void;
   onEditAccount: (account: FinanceAccount) => void;
 };
+
+/** Accounts grouped as people think of them, rather than one long list. */
+const ACCOUNT_GROUPS: readonly { label: string; icon: LucideIcon; types: FinanceAccountType[] }[] =
+  [
+    { label: "Bank and cash", icon: Banknote, types: ["bank", "savings", "cash"] },
+    { label: "Cards", icon: CreditCard, types: ["credit_card"] },
+    { label: "Wallets", icon: Smartphone, types: ["wallet"] },
+    { label: "Investment accounts", icon: LineChart, types: ["investment"] },
+    { label: "Loans", icon: Landmark, types: ["loan"] },
+    { label: "Other", icon: Wallet, types: ["other"] },
+  ];
 
 export function AccountsView({
   workspaceId,
@@ -40,11 +74,14 @@ export function AccountsView({
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showLoans, setShowLoans] = useState(false);
+  const loansId = useId();
+  const groupId = useId();
   const loanCount = accounts.filter((account) => account.type === "loan").length;
   // Loan accounts are opened by their loan, not added here, so they stay out of the way unless asked for.
   const listed = showLoans ? accounts : accounts.filter((account) => account.type !== "loan");
   const active = listed.filter((account) => !account.archived);
   const archived = listed.filter((account) => account.archived);
+  const multiCurrency = totals.length > 1;
 
   const setArchived = async (account: FinanceAccount, value: boolean) => {
     setError(null);
@@ -58,118 +95,180 @@ export function AccountsView({
     setPending(null);
   };
 
-  const row = (account: FinanceAccount) => (
-    <li key={account.id} className="flex items-center gap-3 px-4 py-3">
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{account.name}</p>
-        <p className="text-xs text-muted-foreground">
-          {accountTypeLabel(account.type)} · {account.currency}
-        </p>
-      </div>
-      <AccountBalance account={account} />
-      <div className="flex shrink-0 items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-8"
-          aria-label={`Edit “${account.name}”`}
-          onClick={() => onEditAccount(account)}
-        >
-          <Pencil aria-hidden="true" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-8"
+  const row = (account: FinanceAccount) => {
+    const overdrawn = account.account_class === "asset" && account.balance < 0;
+    return (
+      <li
+        key={account.id}
+        className="group flex items-center gap-3 px-3 py-2.5 transition-colors duration-150 hover:bg-accent/40 @md/rows:px-4"
+      >
+        <div className="min-w-0 flex-1 space-y-0.5">
+          <button
+            type="button"
+            onClick={() => onEditAccount(account)}
+            aria-label={`Edit “${account.name}”`}
+            className="block max-w-full truncate rounded-sm text-left text-sm font-medium outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {account.name}
+          </button>
+          <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
+            <span>{accountTypeLabel(account.type)}</span>
+            {multiCurrency ? (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>{account.currency}</span>
+              </>
+            ) : null}
+            {overdrawn ? (
+              <Chip tone="danger">
+                <span title="More has been recorded going out than the opening balance plus what came in. Check the opening balance.">
+                  Below zero
+                </span>
+              </Chip>
+            ) : null}
+          </p>
+        </div>
+        <AccountBalance account={account} />
+        <RowActions
+          name={account.name}
           disabled={pending === account.id}
-          aria-label={account.archived ? `Restore “${account.name}”` : `Archive “${account.name}”`}
-          onClick={() => void setArchived(account, !account.archived)}
-        >
-          {account.archived ? (
-            <ArchiveRestore aria-hidden="true" />
-          ) : (
-            <Archive aria-hidden="true" />
-          )}
-        </Button>
-      </div>
-    </li>
-  );
+          actions={[
+            {
+              id: "edit",
+              label: "Edit",
+              icon: Pencil,
+              onSelect: () => onEditAccount(account),
+            },
+            account.archived
+              ? {
+                  id: "restore",
+                  label: "Restore",
+                  icon: ArchiveRestore,
+                  onSelect: () => void setArchived(account, false),
+                }
+              : {
+                  id: "archive",
+                  label: "Archive",
+                  description: "Hide it; its history stays",
+                  icon: Archive,
+                  onSelect: () => void setArchived(account, true),
+                },
+          ]}
+        />
+      </li>
+    );
+  };
+
+  const groups = ACCOUNT_GROUPS.map((group) => ({
+    ...group,
+    accounts: active.filter((account) => group.types.includes(account.type)),
+  })).filter((group) => group.accounts.length > 0);
 
   return (
     <div className="space-y-6">
+      <ViewHeader
+        title="Accounts"
+        description="Where your money sits. Each balance is its opening balance plus everything recorded."
+        controls={
+          loanCount > 0 ? (
+            <label
+              htmlFor={loansId}
+              className="flex h-9 items-center gap-2 px-1 text-sm text-muted-foreground"
+            >
+              <Checkbox
+                id={loansId}
+                checked={showLoans}
+                onChange={(event) => setShowLoans(event.target.checked)}
+              />
+              Show loan accounts ({loanCount})
+            </label>
+          ) : null
+        }
+        action={
+          <Button onClick={onAddAccount}>
+            <Plus aria-hidden="true" />
+            Add account
+          </Button>
+        }
+      />
+
       {totals.length > 0 ? (
-        <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {totals.map((total) => (
-            <div key={total.currency} className="rounded-xl border bg-card p-5 shadow-elevation-1">
-              <dt className="text-sm text-muted-foreground">Balances in {total.currency}</dt>
-              <dd className="mt-2 grid grid-cols-2 gap-3">
-                <span>
-                  <span className="block text-xs text-muted-foreground">Held</span>
-                  <span className="text-lg font-semibold tabular-nums">
-                    {formatMoney(total.assets, total.currency)}
-                  </span>
-                </span>
-                <span>
-                  <span className="block text-xs text-muted-foreground">
-                    Owed on cards and loans
-                  </span>
-                  <span className="text-lg font-semibold tabular-nums">
-                    {formatMoney(total.liabilities, total.currency)}
-                  </span>
-                </span>
-              </dd>
-            </div>
-          ))}
-        </dl>
+        <StatGrid>
+          {totals.flatMap((total) => {
+            const suffix = multiCurrency ? ` (${total.currency})` : "";
+            return [
+              <StatTile
+                key={`${total.currency}-held`}
+                label={`In your accounts${suffix}`}
+                icon={Banknote}
+                accent="positive"
+                value={formatMoney(total.assets, total.currency)}
+              >
+                Bank, cash, wallets, and investment accounts
+              </StatTile>,
+              <StatTile
+                key={`${total.currency}-owed`}
+                label={`Owed on cards and loans${suffix}`}
+                icon={CreditCard}
+                accent="negative"
+                value={formatMoney(total.liabilities, total.currency)}
+              >
+                What you’d pay to clear them today
+              </StatTile>,
+            ];
+          })}
+        </StatGrid>
       ) : null}
 
-      <section aria-labelledby="finance-accounts-heading" className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <h2 id="finance-accounts-heading" className="text-base font-semibold">
-            Accounts
-          </h2>
-          <div className="flex items-center gap-4">
-            {loanCount > 0 ? (
-              <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                <input
-                  type="checkbox"
-                  className="accent-brand"
-                  checked={showLoans}
-                  onChange={(event) => setShowLoans(event.target.checked)}
-                />
-                Show loan accounts ({loanCount})
-              </label>
-            ) : null}
-            <Button size="sm" onClick={onAddAccount}>
-              <Plus aria-hidden="true" />
-              Add account
-            </Button>
-          </div>
-        </div>
-        <FormAlert message={error} />
-        {active.length === 0 ? (
-          <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">
-            No active accounts. Add a bank account, cash, a card, or a wallet to start recording.
-          </p>
-        ) : (
-          <ul
-            aria-label="Active accounts"
-            className="divide-y overflow-hidden rounded-xl border bg-card shadow-elevation-1"
-          >
-            {active.map(row)}
+      <FormAlert message={error} />
+
+      {active.length === 0 ? (
+        <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">
+          No active accounts. Add a bank account, cash, a card, or a wallet to start recording.
+        </p>
+      ) : (
+        <section aria-label="Active accounts" className="gap-6 @5xl/list:columns-2">
+          {groups.map((group) => {
+            const headingId = `${groupId}-${group.label}`;
+            const currency = group.accounts[0]?.currency;
+            const sameCurrency = group.accounts.every((account) => account.currency === currency);
+            const subtotal = group.accounts.reduce((sum, account) => sum + account.balance, 0);
+            const owes = group.accounts.every((account) => account.account_class === "liability");
+            return (
+              <section
+                key={group.label}
+                aria-labelledby={headingId}
+                className="mb-6 break-inside-avoid space-y-2 last:mb-0"
+              >
+                <SectionHeading
+                  id={headingId}
+                  count={group.accounts.length}
+                  trailing={
+                    sameCurrency && currency
+                      ? `${formatMoney(owes ? -subtotal : subtotal, currency)}${owes ? " owed" : ""}`
+                      : null
+                  }
+                >
+                  {group.label}
+                </SectionHeading>
+                <ul aria-label={group.label} className={rowListClassName}>
+                  {group.accounts.map(row)}
+                </ul>
+              </section>
+            );
+          })}
+        </section>
+      )}
+
+      {archived.length > 0 ? (
+        <EndedSection
+          summary={`${archived.length} archived ${archived.length === 1 ? "account" : "accounts"}`}
+        >
+          <ul aria-label="Archived accounts" className="@container/rows divide-y">
+            {archived.map(row)}
           </ul>
-        )}
-        {archived.length > 0 ? (
-          <details className="group rounded-xl border bg-card/60">
-            <summary className="cursor-pointer rounded-xl px-4 py-3 text-sm text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              {archived.length} archived {archived.length === 1 ? "account" : "accounts"}
-            </summary>
-            <ul aria-label="Archived accounts" className="divide-y border-t">
-              {archived.map(row)}
-            </ul>
-          </details>
-        ) : null}
-      </section>
+        </EndedSection>
+      ) : null}
 
       <CategoriesSection
         workspaceId={workspaceId}
@@ -234,21 +333,15 @@ function CategoriesSection({
   }
 
   return (
-    <section aria-labelledby={`${id}-heading`}>
-      <Card className="space-y-4 p-5 shadow-elevation-1">
-        <div className="space-y-1">
-          <h2 id={`${id}-heading`} className="text-base font-semibold">
-            Categories
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            Built-in categories can’t be deleted. Your own can, once no transaction uses them.
-          </p>
-        </div>
-
+    <Panel
+      title="Categories"
+      description="Built-in categories can’t be deleted. Your own can, once no transaction uses them."
+    >
+      <div className="space-y-4">
         <form
           noValidate
           onSubmit={(event) => void handleSubmit(add)(event)}
-          className="flex flex-col gap-2 sm:flex-row sm:items-start"
+          className="flex flex-col gap-2 @2xl/list:max-w-2xl @2xl/list:flex-row @2xl/list:items-start"
         >
           <div className="min-w-0 flex-1 space-y-1">
             <label htmlFor={`${id}-name`} className="sr-only">
@@ -278,7 +371,7 @@ function CategoriesSection({
               <Select
                 id={`${id}-type`}
                 ref={field.ref}
-                className="sm:w-36"
+                className="@2xl/list:w-36"
                 value={field.value}
                 onValueChange={field.onChange}
                 onBlur={field.onBlur}
@@ -320,7 +413,7 @@ function CategoriesSection({
             </ul>
           </div>
         ))}
-      </Card>
-    </section>
+      </div>
+    </Panel>
   );
 }

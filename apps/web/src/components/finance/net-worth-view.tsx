@@ -15,15 +15,17 @@ import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInvestmentMutations, useNetWorth, useSnapshots } from "@/hooks/use-investments";
-import { currencyOptions, formatMoney } from "@/lib/finance";
+import { formatMoney } from "@/lib/finance";
 import { SNAPSHOT_SOURCE_LABELS, SOURCE_LABELS } from "@/lib/investments";
 import { cn } from "@/utils/common";
 import { formatCalendarDate, localDateString, monthLabel } from "@/utils/dates";
 
-import { Panel, Tile } from "./finance-overview";
+import { twoColumnRows } from "./finance-meta";
 import type { FinanceData } from "./finance-view";
-import { FreshnessBadge, Gain, InlineSelect } from "./investment-parts";
-import { ErrorPanel } from "./investments-view";
+import { FreshnessBadge, Gain } from "./investment-parts";
+import { LoadError, Panel } from "./panel";
+import { StatGrid, StatTile } from "./stat-tile";
+import { CurrencySwitcher, ViewHeader } from "./view-header";
 
 /**
  * Everything owned minus everything owed, in one currency, with each value's source and date,
@@ -35,13 +37,19 @@ export function NetWorthView({ workspaceId, onAnnounce }: FinanceData) {
   const worth = useNetWorth(workspaceId, { today, currency: chosen });
   const state = worth.state;
 
-  if (state.status === "error")
-    return <ErrorPanel message={state.message} onRetry={worth.reload} />;
+  if (state.status === "error") {
+    return (
+      <div className="space-y-6">
+        <ViewHeader title="Net worth" />
+        <LoadError message={state.message} onRetry={worth.reload} />
+      </div>
+    );
+  }
   if (state.status === "loading") {
     return (
       <div className="space-y-4">
         <span className="sr-only">Loading net worth…</span>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,13rem),1fr))] gap-4">
           {[0, 1, 2].map((tile) => (
             <Skeleton key={tile} className="h-28 rounded-xl" />
           ))}
@@ -106,51 +114,52 @@ function NetWorthDetail({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {data.currencies.length > 1 ? (
-          <InlineSelect
-            label="Currency"
-            value={currency}
-            className="w-24"
-            onChange={onCurrency}
-            options={currencyOptions(data.currencies)}
-          />
-        ) : (
-          <p className="text-sm text-muted-foreground">As of {formatCalendarDate(data.as_of)}</p>
-        )}
-        <Button variant="outline" disabled={saving} onClick={() => void save()}>
-          <Camera aria-hidden="true" />
-          {saving ? "Saving…" : "Save this month’s snapshot"}
-        </Button>
-      </div>
+      <ViewHeader
+        title="Net worth"
+        description={`Everything you own minus everything you owe, as of ${formatCalendarDate(data.as_of)}. Save a snapshot each month to see how it changes.`}
+        controls={
+          <>
+            <CurrencySwitcher
+              currencies={data.currencies}
+              currency={currency}
+              onChange={onCurrency}
+            />
+            <Button variant="outline" disabled={saving} onClick={() => void save()}>
+              <Camera aria-hidden="true" />
+              {saving ? "Saving…" : "Save this month’s snapshot"}
+            </Button>
+          </>
+        }
+      />
 
-      <dl className="grid gap-4 sm:grid-cols-3">
-        <Tile
+      <StatGrid>
+        <StatTile
+          label="Net worth"
+          icon={Wallet}
+          value={formatMoney(data.net_worth, currency)}
+          tone={data.net_worth < 0 ? "negative" : "default"}
+          accent="brand"
+          emphasis
+        >
+          Assets minus liabilities
+        </StatTile>
+        <StatTile
           label="Total assets"
           icon={Landmark}
           accent="positive"
           value={formatMoney(data.assets, currency)}
         >
           Accounts, investments, and other assets
-        </Tile>
-        <Tile
+        </StatTile>
+        <StatTile
           label="Total liabilities"
           icon={CreditCard}
           accent="negative"
           value={formatMoney(data.liabilities, currency)}
         >
           Owed on cards and loans
-        </Tile>
-        <Tile
-          label="Net worth"
-          icon={Wallet}
-          value={formatMoney(data.net_worth, currency)}
-          tone={data.net_worth < 0 ? "negative" : "default"}
-          accent="brand"
-        >
-          Assets minus liabilities, {formatCalendarDate(data.as_of)}
-        </Tile>
-      </dl>
+        </StatTile>
+      </StatGrid>
 
       {flagged > 0 ? (
         <p
@@ -172,49 +181,52 @@ function NetWorthDetail({
         </p>
       ) : null}
 
-      <Panel title="Change" description="Against the snapshots saved for earlier months.">
-        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {data.changes.map((change) => (
-            <div key={change.months}>
-              <dt className="text-xs text-muted-foreground">
-                {change.months === 1 ? "1 month" : `${change.months} months`}
-              </dt>
-              <dd className="text-sm font-medium">
-                {change.change === null ? (
-                  <span className="text-muted-foreground">No snapshot</span>
-                ) : (
-                  <Gain amount={change.change} currency={currency} />
-                )}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </Panel>
-
-      <Panel
-        title="Net worth over time"
-        description="Monthly snapshots, then today. Reconstructed months were rebuilt later from recorded history."
-      >
-        {snapshots.state.status === "loading" ? (
-          <Skeleton className="h-48" />
-        ) : snapshots.state.status === "error" ? (
-          <ErrorPanel message={snapshots.state.message} onRetry={snapshots.reload} />
-        ) : (
-          <TrendBars snapshots={snapshots.state.data.snapshots} live={data} />
-        )}
-      </Panel>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Breakdown
-          title="Assets"
-          groups={data.groups.filter((g) => g.side === "asset")}
-          currency={currency}
-        />
-        <Breakdown
-          title="Liabilities"
-          groups={data.groups.filter((g) => g.side === "liability")}
-          currency={currency}
-        />
+      {/* How it changed, beside what it's made of when there's room. */}
+      <div className="grid items-start gap-6 @5xl/list:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-6">
+          <Panel
+            title="Net worth over time"
+            description="Monthly snapshots, then today. Reconstructed months were rebuilt later from recorded history."
+          >
+            {snapshots.state.status === "loading" ? (
+              <Skeleton className="h-48" />
+            ) : snapshots.state.status === "error" ? (
+              <LoadError message={snapshots.state.message} onRetry={snapshots.reload} />
+            ) : (
+              <TrendBars snapshots={snapshots.state.data.snapshots} live={data} />
+            )}
+          </Panel>
+          <Panel title="Change" description="Against the snapshots saved for earlier months.">
+            <dl className="grid grid-cols-2 gap-4 @2xl/list:grid-cols-4">
+              {data.changes.map((change) => (
+                <div key={change.months}>
+                  <dt className="text-xs text-muted-foreground">
+                    {change.months === 1 ? "1 month" : `${change.months} months`}
+                  </dt>
+                  <dd className="text-sm font-medium whitespace-nowrap">
+                    {change.change === null ? (
+                      <span className="text-muted-foreground">No snapshot</span>
+                    ) : (
+                      <Gain amount={change.change} currency={currency} />
+                    )}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </Panel>
+        </div>
+        <div className="grid gap-6 @3xl/list:grid-cols-2 @5xl/list:grid-cols-1">
+          <Breakdown
+            title="Assets"
+            groups={data.groups.filter((g) => g.side === "asset")}
+            currency={currency}
+          />
+          <Breakdown
+            title="Liabilities"
+            groups={data.groups.filter((g) => g.side === "liability")}
+            currency={currency}
+          />
+        </div>
       </div>
 
       <Panel
@@ -225,7 +237,7 @@ function NetWorthDetail({
         <ItemList items={counted} currency={currency} />
         {excluded.length > 0 ? (
           <>
-            <h4 className="border-t px-5 pt-3 text-xs font-medium text-muted-foreground">
+            <h4 className="border-t bg-muted/30 px-5 py-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
               Not counted
             </h4>
             <ItemList items={excluded} currency={currency} />
@@ -265,11 +277,13 @@ function Breakdown({
 
 function ItemList({ items, currency }: { items: readonly NetWorthItem[]; currency: Currency }) {
   return (
-    <ul className="divide-y border-t">
+    <ul
+      className={cn("@container/rows grid divide-y border-t", twoColumnRows(items.length, "5xl"))}
+    >
       {items.map((item) => (
         <li
           key={`${item.kind}:${item.id}`}
-          className="flex flex-col gap-1 px-5 py-3 sm:flex-row sm:items-center sm:justify-between"
+          className="flex min-w-0 items-center justify-between gap-3 px-4 py-2.5 @md/rows:px-5"
         >
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{item.name}</p>
@@ -282,7 +296,7 @@ function ItemList({ items, currency }: { items: readonly NetWorthItem[]; currenc
           </div>
           <span
             className={cn(
-              "text-sm tabular-nums",
+              "shrink-0 text-sm whitespace-nowrap tabular-nums",
               !item.counted && "text-muted-foreground line-through",
             )}
           >
@@ -358,7 +372,7 @@ function TrendBars({
         </span>
         {points.length === 1 ? <span>Save a snapshot each month to build a history.</span> : null}
       </figcaption>
-      <ul aria-label="Net worth by month" className="relative flex h-48 items-stretch gap-1">
+      <ul aria-label="Net worth by month" className="relative flex h-44 items-stretch gap-1">
         <span
           aria-hidden="true"
           className="absolute inset-x-0 border-t border-border"
@@ -379,7 +393,7 @@ function TrendBars({
               <div aria-hidden="true" className="relative flex-1 group-hover:bg-accent/50">
                 <span
                   className={cn(
-                    "absolute inset-x-[15%] rounded-sm",
+                    "absolute inset-x-0 mx-auto w-[70%] max-w-12 rounded-sm",
                     point.kind === "backfill"
                       ? "border border-chart-1 bg-chart-1/30"
                       : "bg-chart-1",

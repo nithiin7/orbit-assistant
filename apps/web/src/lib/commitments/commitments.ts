@@ -22,6 +22,7 @@ import { boolean, mixed, object, string } from "yup";
 
 import { DEFAULT_CURRENCY, NOTES_MAX_LENGTH, parseAmount } from "@/lib/finance";
 import { labelOf, type Option } from "@/utils/common";
+import { addDays } from "@/utils/dates";
 import { multiLineText, singleLineText } from "@/utils/validation";
 
 export const NAME_MAX_LENGTH = 100;
@@ -149,6 +150,21 @@ export function groupPayments(items: readonly PaymentItem[]): PaymentGroups {
   }
   groups.settled.reverse();
   return groups;
+}
+
+/** How many days ahead count as "this week" in the upcoming payments. */
+export const SOON_DAYS = 7;
+
+/** Upcoming payments due within `SOON_DAYS` of `today`, and those after. */
+export function splitUpcoming(
+  items: readonly PaymentItem[],
+  today: string,
+): { soon: PaymentItem[]; later: PaymentItem[] } {
+  const limit = addDays(today, SOON_DAYS);
+  return {
+    soon: items.filter((item) => item.due_date <= limit),
+    later: items.filter((item) => item.due_date > limit),
+  };
 }
 
 /** A stable key for a payment, expected or settled. */

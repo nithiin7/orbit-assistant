@@ -11,6 +11,7 @@ import {
   paymentSchema,
   perPeriod,
   recurringSchema,
+  splitUpcoming,
   toReminderRequest,
   totalsByCurrency,
 } from "./commitments";
@@ -200,5 +201,20 @@ describe("payment form", () => {
     expect(parseComponent("0.00", "INR")).toBe(0);
     expect(parseComponent("6,000.50", "INR")).toBe(600_050);
     expect(parseComponent("1.234", "INR")).toBeNull();
+  });
+});
+
+describe("splitUpcoming", () => {
+  it("separates the next seven days from later payments", () => {
+    const { soon, later } = splitUpcoming(
+      [
+        item({ due_date: "2026-02-02" }),
+        item({ due_date: "2026-02-08" }),
+        item({ due_date: "2026-02-09" }),
+      ],
+      "2026-02-01",
+    );
+    expect(soon.map((entry) => entry.due_date)).toEqual(["2026-02-02", "2026-02-08"]);
+    expect(later.map((entry) => entry.due_date)).toEqual(["2026-02-09"]);
   });
 });

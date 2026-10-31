@@ -2,7 +2,8 @@
 
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { Currency, MonthPlan, PlanLine } from "@orbit/contracts";
-import { useMemo, useState } from "react";
+import { Wallet } from "lucide-react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { InferType } from "yup";
 
@@ -13,50 +14,57 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBudgetMutations, usePlan } from "@/hooks/use-budgets";
 import { incomeSchema } from "@/lib/budgets";
-import {
-  accountCurrencies,
-  DEFAULT_CURRENCY,
-  formatMoney,
-  parseAmount,
-  toDecimalString,
-} from "@/lib/finance";
+import { formatMoney, parseAmount, toDecimalString } from "@/lib/finance";
 import { cn } from "@/utils/common";
-import { localDateString, localMonthString, monthLabel } from "@/utils/dates";
+import { localDateString, monthLabel } from "@/utils/dates";
 
-import { CurrencyPicker, MonthNavigator } from "./budget-parts";
-import { Panel } from "./finance-overview";
 import type { FinanceData } from "./finance-view";
+import { LoadError, Panel } from "./panel";
+import { StatGrid, StatTile } from "./stat-tile";
+import { CurrencySwitcher, MonthSwitcher, ViewHeader } from "./view-header";
 
 /**
  * A month's plan: expected income, fixed commitments, variable spending, savings, and
  * investments, planned against what the ledger recorded, and what remains to spend.
  */
-export function PlanView({ workspaceId, accounts, onAnnounce, onShowTab }: FinanceData) {
+export function PlanView({
+  workspaceId,
+  onAnnounce,
+  onShowTab,
+  month,
+  thisMonth,
+  onMonthChange,
+  currency,
+  currencies,
+  onCurrencyChange,
+}: FinanceData) {
   const today = localDateString();
-  const thisMonth = localMonthString();
-  const [month, setMonth] = useState(thisMonth);
-  const currencies = useMemo(() => accountCurrencies(accounts), [accounts]);
-  const [chosenCurrency, setCurrency] = useState<Currency | null>(null);
-  const currency =
-    chosenCurrency && currencies.includes(chosenCurrency)
-      ? chosenCurrency
-      : (currencies[0] ?? DEFAULT_CURRENCY);
   const { state, refreshing, reload } = usePlan(workspaceId, month, currency, today);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <MonthNavigator month={month} thisMonth={thisMonth} onChange={setMonth} allowFuture />
-        <CurrencyPicker currencies={currencies} currency={currency} onChange={setCurrency} />
-      </div>
+      <ViewHeader
+        title="Plan"
+        description="Expected income against commitments, budgets, savings, and investments, and what’s left to spend."
+        controls={
+          <>
+            <MonthSwitcher
+              month={month}
+              thisMonth={thisMonth}
+              onChange={onMonthChange}
+              allowFuture
+            />
+            <CurrencySwitcher
+              currencies={currencies}
+              currency={currency}
+              onChange={onCurrencyChange}
+            />
+          </>
+        }
+      />
 
       {state.status === "error" ? (
-        <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
-          <p>{state.message}</p>
-          <Button variant="outline" size="sm" onClick={reload}>
-            Try again
-          </Button>
-        </div>
+        <LoadError message={state.message} onRetry={reload} />
       ) : state.status === "loading" ? (
         <div className="space-y-4">
           <span className="sr-only">Loading the plan…</span>
@@ -68,18 +76,16 @@ export function PlanView({ workspaceId, accounts, onAnnounce, onShowTab }: Finan
           aria-busy={refreshing}
           className={cn("space-y-6 transition-opacity duration-150", refreshing && "opacity-70")}
         >
+          <IncomeForm
+            key={`${month}-${currency}-${state.data.expected_income ?? ""}-${state.data.income_source ?? ""}`}
+            workspaceId={workspaceId}
+            plan={state.data}
+            onAnnounce={onAnnounce}
+          />
           <RemainingTiles plan={state.data} />
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+          <div className="grid items-start gap-6 @5xl/list:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
             <Breakdown plan={state.data} />
-            <div className="space-y-6">
-              <IncomeForm
-                key={`${month}-${currency}-${state.data.expected_income ?? ""}-${state.data.income_source ?? ""}`}
-                workspaceId={workspaceId}
-                plan={state.data}
-                onAnnounce={onAnnounce}
-              />
-              <CashFlowNote plan={state.data} onShowBudgets={() => onShowTab("budgets")} />
-            </div>
+            <CashFlowNote plan={state.data} onShowBudgets={() => onShowTab("budgets")} />
           </div>
         </div>
       )}
@@ -91,40 +97,31 @@ function RemainingTiles({ plan }: { plan: MonthPlan }) {
   const { remaining, currency } = plan;
   const planned = remaining.planned;
   return (
-    <dl className="grid gap-4 sm:grid-cols-2">
-      <div className="rounded-xl border bg-card p-5 shadow-elevation-1">
-        <dt className="text-sm text-muted-foreground">Available to spend (planned)</dt>
-        <dd
-          className={cn(
-            "mt-1 text-2xl font-semibold tracking-tight tabular-nums",
-            planned !== null && planned < 0 && "text-destructive",
-          )}
-        >
-          {planned === null ? "—" : formatMoney(planned, currency)}
-        </dd>
-        <dd className="mt-1 text-xs text-muted-foreground">
-          {planned === null
-            ? "Enter your expected income to plan the month."
-            : "Expected income after commitments, budgets, savings, and investments."}
-        </dd>
-      </div>
-      <div className="rounded-xl border bg-card p-5 shadow-elevation-1">
-        <dt className="text-sm text-muted-foreground">Left over so far (actual)</dt>
-        <dd
-          className={cn(
-            "mt-1 text-2xl font-semibold tracking-tight tabular-nums",
-            remaining.actual < 0 && "text-destructive",
-          )}
-        >
-          {formatMoney(remaining.actual, currency, {
-            signDisplay: remaining.actual < 0 ? "always" : "auto",
-          })}
-        </dd>
-        <dd className="mt-1 text-xs text-muted-foreground">
-          Income recorded this month, less everything paid, spent, saved, and invested.
-        </dd>
-      </div>
-    </dl>
+    <StatGrid>
+      <StatTile
+        label="Available to spend (planned)"
+        icon={Wallet}
+        accent={planned !== null && planned < 0 ? "negative" : "brand"}
+        value={planned === null ? "—" : formatMoney(planned, currency)}
+        tone={planned !== null && planned < 0 ? "negative" : "default"}
+        emphasis={planned !== null && planned >= 0}
+      >
+        {planned === null
+          ? "Enter your expected income to plan the month."
+          : "Expected income after commitments, budgets, savings, and investments."}
+      </StatTile>
+      <StatTile
+        label="Left over so far (actual)"
+        value={formatMoney(remaining.actual, currency, {
+          signDisplay: remaining.actual < 0 ? "always" : "auto",
+        })}
+        tone={remaining.actual < 0 ? "negative" : "default"}
+      >
+        {remaining.actual < 0 && plan.allocations > 0
+          ? `Income recorded, less everything paid and spent, and ${formatMoney(plan.allocations, currency)} moved to savings and investments.`
+          : "Income recorded this month, less everything paid, spent, saved, and invested."}
+      </StatTile>
+    </StatGrid>
   );
 }
 
@@ -172,13 +169,13 @@ function Breakdown({ plan }: { plan: MonthPlan }) {
         </caption>
         <thead>
           <tr className="border-y text-xs text-muted-foreground">
-            <th scope="col" className="px-5 py-2 text-left font-medium">
+            <th scope="col" className="py-2 pr-2 pl-4 text-left font-medium @lg/list:pl-5">
               Line
             </th>
-            <th scope="col" className="px-3 py-2 text-right font-medium">
+            <th scope="col" className="px-2 py-2 text-right font-medium @lg/list:px-3">
               Planned
             </th>
-            <th scope="col" className="px-5 py-2 text-right font-medium">
+            <th scope="col" className="py-2 pr-4 pl-2 text-right font-medium @lg/list:pr-5">
               Actual
             </th>
           </tr>
@@ -189,8 +186,8 @@ function Breakdown({ plan }: { plan: MonthPlan }) {
               <th
                 scope="row"
                 className={cn(
-                  "px-5 py-2 text-left font-normal",
-                  row.sub ? "pl-9 text-xs" : "font-medium",
+                  "py-2 pr-2 pl-4 text-left font-normal @lg/list:pl-5",
+                  row.sub ? "pl-8 text-xs @lg/list:pl-9" : "font-medium",
                 )}
               >
                 <span aria-hidden="true" className="mr-1.5 inline-block w-2 text-muted-foreground">
@@ -198,15 +195,16 @@ function Breakdown({ plan }: { plan: MonthPlan }) {
                 </span>
                 {row.label}
                 {row.hint ? (
-                  <span className="block pl-3.5 text-xs font-normal text-muted-foreground">
+                  // Hints need room; on narrow columns the panel's description covers them.
+                  <span className="hidden pl-3.5 text-xs font-normal text-muted-foreground @lg/list:block">
                     {row.hint}
                   </span>
                 ) : null}
               </th>
-              <td className="px-3 py-2 text-right tabular-nums">
+              <td className="px-2 py-2 text-right whitespace-nowrap tabular-nums @lg/list:px-3">
                 {amount(row.line.planned, currency)}
               </td>
-              <td className="px-5 py-2 text-right tabular-nums">
+              <td className="py-2 pr-4 pl-2 text-right whitespace-nowrap tabular-nums @lg/list:pr-5">
                 {formatMoney(row.line.actual, currency)}
               </td>
             </tr>
@@ -214,7 +212,7 @@ function Breakdown({ plan }: { plan: MonthPlan }) {
         </tbody>
         <tfoot>
           <tr className="border-t-2 font-semibold">
-            <th scope="row" className="px-5 py-3 text-left">
+            <th scope="row" className="py-3 pr-2 pl-4 text-left @lg/list:pl-5">
               <span aria-hidden="true" className="mr-1.5 inline-block w-2">
                 =
               </span>
@@ -222,7 +220,7 @@ function Breakdown({ plan }: { plan: MonthPlan }) {
             </th>
             <td
               className={cn(
-                "px-3 py-3 text-right tabular-nums",
+                "px-2 py-3 text-right whitespace-nowrap tabular-nums @lg/list:px-3",
                 plan.remaining.planned !== null && plan.remaining.planned < 0 && "text-destructive",
               )}
             >
@@ -230,7 +228,7 @@ function Breakdown({ plan }: { plan: MonthPlan }) {
             </td>
             <td
               className={cn(
-                "px-5 py-3 text-right tabular-nums",
+                "py-3 pr-4 pl-2 text-right whitespace-nowrap tabular-nums @lg/list:pr-5",
                 plan.remaining.actual < 0 && "text-destructive",
               )}
             >
@@ -301,31 +299,35 @@ function IncomeForm({
   };
 
   return (
-    <Card className="space-y-3 p-5 shadow-elevation-1">
-      <div className="space-y-1">
-        <h3 className="text-sm font-semibold">Expected income</h3>
-        <p className="text-xs text-muted-foreground">
-          {plan.income_source === "earlier" && plan.income_month
-            ? `Carried from ${monthLabel(plan.income_month)}. Save to set ${monthLabel(plan.month)}’s own.`
-            : "Later months use it until you change it."}
-        </p>
-      </div>
-      <form noValidate className="space-y-3" onSubmit={(event) => void handleSubmit(save)(event)}>
-        <AmountField
-          control={control}
-          name="amount"
-          currency={currency}
-          label={`Expected in ${monthLabel(plan.month)} (${currency})`}
-        />
-        <FormAlert message={errors.root?.server?.message ?? clearError} />
-        <div className="flex flex-wrap gap-2">
-          <Button type="submit" size="sm" disabled={saving}>
+    <Card className="p-4 shadow-elevation-1 @3xl/list:p-5">
+      <form
+        noValidate
+        className="flex flex-col gap-3 @3xl/list:flex-row @3xl/list:items-end"
+        onSubmit={(event) => void handleSubmit(save)(event)}
+      >
+        <div className="min-w-0 space-y-1 @3xl/list:flex-1">
+          <h3 className="text-sm font-semibold">Expected income</h3>
+          <p className="text-xs text-muted-foreground">
+            {plan.income_source === "earlier" && plan.income_month
+              ? `Carried from ${monthLabel(plan.income_month)}. Save to set ${monthLabel(plan.month)}’s own.`
+              : "What you expect to earn this month. Later months use it until you change it."}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="w-full @md/list:w-56">
+            <AmountField
+              control={control}
+              name="amount"
+              currency={currency}
+              label={`Expected in ${monthLabel(plan.month)} (${currency})`}
+            />
+          </div>
+          <Button type="submit" disabled={saving}>
             {saving ? "Saving…" : "Save income"}
           </Button>
           {ownIncome ? (
             <Button
               type="button"
-              size="sm"
               variant="ghost"
               disabled={clearIncome.isPending}
               onClick={() => void clear()}
@@ -335,6 +337,7 @@ function IncomeForm({
           ) : null}
         </div>
       </form>
+      <FormAlert message={errors.root?.server?.message ?? clearError} />
     </Card>
   );
 }

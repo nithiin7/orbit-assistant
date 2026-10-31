@@ -18,6 +18,7 @@ import {
   useUpcomingPaymentsWidget,
 } from "@/hooks/use-finance-widgets";
 import { formatMoney } from "@/lib/finance";
+import { type FinanceView, financeViewHref, financeViewLabel } from "@/lib/finance-views";
 import { cn } from "@/utils/common";
 import { formatCalendarDate, localDateString, monthLabel } from "@/utils/dates";
 
@@ -30,10 +31,10 @@ const PAYMENTS_SHOWN = 5;
 /** This month's income, spending, and net, with account balances, for the dashboard. */
 export function CashFlowWidget() {
   return (
-    <WidgetCard title="This month" icon={Wallet} {...useCashFlowWidget()}>
+    <WidgetCard title="This month" icon={Wallet} view="overview" {...useCashFlowWidget()}>
       {({ currency, summary, totals }) =>
         summary === null ? (
-          <EmptyMessage action="Add an account">
+          <EmptyMessage action="Add an account" view="accounts">
             Track income and spending by adding your first account.
           </EmptyMessage>
         ) : (
@@ -65,7 +66,12 @@ export function CashFlowWidget() {
 /** Overdue payments and what's due soon, for the dashboard. */
 export function UpcomingPaymentsWidget() {
   return (
-    <WidgetCard title="Upcoming payments" icon={CalendarClock} {...useUpcomingPaymentsWidget()}>
+    <WidgetCard
+      title="Upcoming payments"
+      icon={CalendarClock}
+      view="upcoming"
+      {...useUpcomingPaymentsWidget()}
+    >
       {(payments) =>
         payments.length === 0 ? (
           <EmptyMessage>Nothing due in the next {UPCOMING_DAYS} days.</EmptyMessage>
@@ -113,10 +119,10 @@ function PaymentList({ payments }: { payments: PaymentItem[] }) {
 /** How much of this month's budget is spent, for the dashboard. */
 export function BudgetWidget() {
   return (
-    <WidgetCard title="Budget" icon={PiggyBank} {...useBudgetWidget()}>
+    <WidgetCard title="Budget" icon={PiggyBank} view="budgets" {...useBudgetWidget()}>
       {({ currency, month }) =>
         month.budgets.length === 0 ? (
-          <EmptyMessage action="Set a budget">
+          <EmptyMessage action="Set a budget" view="budgets">
             No budget covers {monthLabel(month.month)}.
           </EmptyMessage>
         ) : month.total !== null && month.status ? (
@@ -157,10 +163,10 @@ export function BudgetWidget() {
 /** Assets, liabilities, and net worth today, for the dashboard. */
 export function NetWorthWidget() {
   return (
-    <WidgetCard title="Net worth" icon={Scale} {...useNetWorthWidget()}>
+    <WidgetCard title="Net worth" icon={Scale} view="net-worth" {...useNetWorthWidget()}>
       {(netWorth) =>
         netWorth.items.length === 0 ? (
-          <EmptyMessage action="Add an account">
+          <EmptyMessage action="Add an account" view="accounts">
             Add accounts, investments, or assets to see your net worth.
           </EmptyMessage>
         ) : (
@@ -192,12 +198,15 @@ export function NetWorthWidget() {
 function WidgetCard<T>({
   title,
   icon: Icon,
+  view,
   resource,
   reload,
   children,
 }: FinanceWidget<T> & {
   title: string;
   icon: LucideIcon;
+  /** The finance view the widget summarizes, which its link opens. */
+  view: FinanceView;
   children: (data: T) => ReactNode;
 }) {
   const headingId = useId();
@@ -209,8 +218,11 @@ function WidgetCard<T>({
             <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
             {title}
           </h2>
-          <Link href="/finance" className={buttonVariants({ variant: "ghost", size: "sm" })}>
-            Open finance
+          <Link
+            href={financeViewHref(view)}
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
+          >
+            Open {view === "overview" ? "finance" : financeViewLabel(view).toLowerCase()}
             <ArrowRight aria-hidden="true" />
           </Link>
         </div>
@@ -255,7 +267,16 @@ function WidgetBody<T>({
   return <div className="p-5">{children(resource.data)}</div>;
 }
 
-function EmptyMessage({ action, children }: { action?: string; children: ReactNode }) {
+function EmptyMessage({
+  action,
+  view = "overview",
+  children,
+}: {
+  action?: string;
+  /** Where the action leads. */
+  view?: FinanceView;
+  children: ReactNode;
+}) {
   return (
     <p className="text-sm text-muted-foreground">
       {children}
@@ -263,7 +284,7 @@ function EmptyMessage({ action, children }: { action?: string; children: ReactNo
         <>
           {" "}
           <Link
-            href="/finance"
+            href={financeViewHref(view)}
             className="rounded-sm font-medium text-foreground underline underline-offset-4 outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {action}

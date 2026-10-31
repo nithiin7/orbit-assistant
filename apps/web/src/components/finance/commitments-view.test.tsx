@@ -342,13 +342,16 @@ describe("Finance commitments", () => {
       formatMoney(64_900, "INR"),
     );
 
-    await userEvent.click(within(list).getByRole("button", { name: "Cancel" }));
+    const more = within(list).getByRole("button", { name: "More actions for “Netflix”" });
+    await userEvent.click(more);
+    await userEvent.click(screen.getByRole("menuitem", { name: "Cancel subscription…" }));
     const confirm = within(list).getByRole("group", { name: "Cancel “Netflix”?" });
     await userEvent.keyboard("{Escape}");
     expect(changes).toEqual([]);
     expect(confirm).not.toBeInTheDocument();
 
-    await userEvent.click(within(list).getByRole("button", { name: "Cancel" }));
+    await userEvent.click(within(list).getByRole("button", { name: "More actions for “Netflix”" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Cancel subscription…" }));
     await userEvent.click(within(list).getByRole("button", { name: "Cancel subscription" }));
     await waitFor(() => expect(changes).toEqual([{ state: "cancelled" }]));
   });

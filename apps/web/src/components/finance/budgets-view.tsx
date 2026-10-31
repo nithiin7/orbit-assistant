@@ -2,7 +2,8 @@
 
 import type { Budget, BudgetMonth, Currency, FinanceCategory } from "@orbit/contracts";
 import {
-  ChevronDown,
+  Archive,
+  ArchiveRestore,
   Copy,
   History,
   Pencil,
@@ -10,6 +11,7 @@ import {
   Plus,
   Receipt,
   Target,
+  Trash2,
   TriangleAlert,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -28,66 +30,70 @@ import {
   useBudgets,
 } from "@/hooks/use-budgets";
 import { rolloverLabel, UTILIZATION_LABELS } from "@/lib/budgets";
-import { accountCurrencies, DEFAULT_CURRENCY, formatMoney } from "@/lib/finance";
+import { formatMoney } from "@/lib/finance";
 import { byId, cn } from "@/utils/common";
-import {
-  formatCalendarDate,
-  localDateString,
-  localMonthString,
-  monthLabel,
-  shiftMonth,
-} from "@/utils/dates";
+import { formatCalendarDate, localDateString, monthLabel, shiftMonth } from "@/utils/dates";
 
 import { BudgetDialog } from "./budget-dialog";
-import {
-  CurrencyPicker,
-  MonthNavigator,
-  PeriodFigures,
-  UtilizationBadge,
-  UtilizationBar,
-} from "./budget-parts";
-import { ConfirmAction } from "./commitment-parts";
-import { Panel, Tile } from "./finance-overview";
+import { PeriodFigures, UtilizationBadge, UtilizationBar } from "./budget-parts";
+import { rowListClassName } from "./finance-meta";
 import type { FinanceData } from "./finance-view";
+import { EndedSection, LoadError, Panel } from "./panel";
+import { type RowAction, RowActions } from "./row-actions";
+import { StatGrid, StatTile } from "./stat-tile";
+import { CurrencySwitcher, MonthSwitcher, ViewHeader } from "./view-header";
 
 type Dialog = { budget?: Budget } | null;
 
 /** One month's budgets: totals, each budget's progress, spending by category, and history. */
-export function BudgetsView({ workspaceId, accounts, categories, onAnnounce }: FinanceData) {
+export function BudgetsView({
+  workspaceId,
+  categories,
+  onAnnounce,
+  month,
+  thisMonth,
+  onMonthChange,
+  currency,
+  currencies,
+  onCurrencyChange,
+}: FinanceData) {
   const today = localDateString();
-  const thisMonth = localMonthString();
-  const [month, setMonth] = useState(thisMonth);
-  const currencies = useMemo(() => accountCurrencies(accounts), [accounts]);
-  const [chosenCurrency, setCurrency] = useState<Currency | null>(null);
-  const currency =
-    chosenCurrency && currencies.includes(chosenCurrency)
-      ? chosenCurrency
-      : (currencies[0] ?? DEFAULT_CURRENCY);
   const [dialog, setDialog] = useState<Dialog>(null);
   const { state, refreshing, reload } = useBudgetMonth(workspaceId, month, currency, today);
   const categoriesById = useMemo(() => byId(categories), [categories]);
+  const addButton = (
+    <Button onClick={() => setDialog({})}>
+      <Plus aria-hidden="true" />
+      Add budget
+    </Button>
+  );
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <MonthNavigator month={month} thisMonth={thisMonth} onChange={setMonth} allowFuture />
-        <div className="flex flex-wrap items-center gap-2">
-          <CurrencyPicker currencies={currencies} currency={currency} onChange={setCurrency} />
-          <CopyMonth workspaceId={workspaceId} month={month} onAnnounce={onAnnounce} />
-          <Button size="sm" onClick={() => setDialog({})}>
-            <Plus aria-hidden="true" />
-            Add budget
-          </Button>
-        </div>
-      </div>
+      <ViewHeader
+        title="Budgets"
+        description="Limits for all spending or a category, tracked against what you record."
+        controls={
+          <>
+            <MonthSwitcher
+              month={month}
+              thisMonth={thisMonth}
+              onChange={onMonthChange}
+              allowFuture
+            />
+            <CurrencySwitcher
+              currencies={currencies}
+              currency={currency}
+              onChange={onCurrencyChange}
+            />
+            <CopyMonth workspaceId={workspaceId} month={month} onAnnounce={onAnnounce} />
+          </>
+        }
+        action={addButton}
+      />
 
       {state.status === "error" ? (
-        <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
-          <p>{state.message}</p>
-          <Button variant="outline" size="sm" onClick={reload}>
-            Try again
-          </Button>
-        </div>
+        <LoadError message={state.message} onRetry={reload} />
       ) : state.status === "loading" ? (
         <BudgetsSkeleton />
       ) : state.data.budgets.length === 0 ? (
@@ -96,10 +102,7 @@ export function BudgetsView({ workspaceId, accounts, categories, onAnnounce }: F
           title={`No budgets for ${monthLabel(month)}`}
           description="Set a limit for all spending or for categories such as groceries and dining. Orbit tracks it against what you record and alerts you as you approach it."
         >
-          <Button onClick={() => setDialog({})}>
-            <Plus aria-hidden="true" />
-            Add budget
-          </Button>
+          {addButton}
         </EmptyState>
       ) : (
         <div
@@ -107,23 +110,27 @@ export function BudgetsView({ workspaceId, accounts, categories, onAnnounce }: F
           className={cn("space-y-6 transition-opacity duration-150", refreshing && "opacity-70")}
         >
           <MonthTiles month={state.data} currency={currency} />
-          <BudgetList
-            month={state.data}
-            categories={categoriesById}
-            workspaceId={workspaceId}
-            today={today}
-            onEdit={(budget) => setDialog({ budget })}
-            onAnnounce={onAnnounce}
-          />
-          <div className="grid gap-6 xl:grid-cols-2">
-            <CategorySpending month={state.data} categories={categoriesById} />
-            <MonthHistory
+          {/* The budgets lead; category spending and the months before sit beside them when
+              there's room, below them when there isn't. */}
+          <div className="grid items-start gap-6 @6xl/list:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+            <BudgetList
+              month={state.data}
+              categories={categoriesById}
               workspaceId={workspaceId}
-              month={month}
-              currency={currency}
               today={today}
-              onSelect={setMonth}
+              onEdit={(budget) => setDialog({ budget })}
+              onAnnounce={onAnnounce}
             />
+            <div className="grid gap-6 @3xl/list:grid-cols-2 @6xl/list:grid-cols-1">
+              <CategorySpending month={state.data} categories={categoriesById} />
+              <MonthHistory
+                workspaceId={workspaceId}
+                month={month}
+                currency={currency}
+                today={today}
+                onSelect={onMonthChange}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -177,12 +184,7 @@ function CopyMonth({
   };
   return (
     <>
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={copyBudgets.isPending}
-        onClick={() => void copy()}
-      >
+      <Button variant="ghost" disabled={copyBudgets.isPending} onClick={() => void copy()}>
         <Copy aria-hidden="true" />
         Copy {monthLabel(previous, { short: true })}
       </Button>
@@ -198,9 +200,9 @@ function CopyMonth({
 function MonthTiles({ month, currency }: { month: BudgetMonth; currency: Currency }) {
   const over = month.remaining !== null && month.remaining < 0;
   return (
-    <div className="space-y-3">
-      <dl className="grid gap-4 sm:grid-cols-3">
-        <Tile
+    <div className="space-y-4">
+      <StatGrid>
+        <StatTile
           label="Budget"
           icon={Target}
           accent="brand"
@@ -211,8 +213,8 @@ function MonthTiles({ month, currency }: { month: BudgetMonth; currency: Currenc
             : month.basis === "categories"
               ? `${month.budgets_counted} category ${month.budgets_counted === 1 ? "budget" : "budgets"}`
               : "Only custom periods this month"}
-        </Tile>
-        <Tile
+        </StatTile>
+        <StatTile
           label="Spent"
           icon={Receipt}
           accent="spending"
@@ -221,25 +223,34 @@ function MonthTiles({ month, currency }: { month: BudgetMonth; currency: Currenc
           {month.unbudgeted !== null && month.unbudgeted > 0
             ? `${formatMoney(month.unbudgeted, currency)} outside your category budgets`
             : "Expenses minus refunds"}
-        </Tile>
-        <Tile
+        </StatTile>
+        <StatTile
           label={over ? "Over budget" : "Remaining"}
           icon={over ? TriangleAlert : PiggyBank}
           value={month.remaining === null ? "—" : formatMoney(Math.abs(month.remaining), currency)}
           tone={over ? "negative" : "default"}
           accent={over ? "negative" : "positive"}
+          emphasis={!over}
         >
           {month.budgets_counted > 0
             ? `${month.budgets_within} of ${month.budgets_counted} within budget`
             : "No monthly budgets"}
-        </Tile>
-      </dl>
+        </StatTile>
+      </StatGrid>
       {month.total !== null && month.status ? (
-        <UtilizationBar
-          label="Overall budget used"
-          percent={month.utilization_percent}
-          status={month.status}
-        />
+        <div className="space-y-1.5">
+          <p className="flex justify-between gap-3 text-xs text-muted-foreground">
+            <span>Overall budget used</span>
+            {month.utilization_percent !== null ? (
+              <span className="tabular-nums">{month.utilization_percent}%</span>
+            ) : null}
+          </p>
+          <UtilizationBar
+            label="Overall budget used"
+            percent={month.utilization_percent}
+            status={month.status}
+          />
+        </div>
       ) : null}
     </div>
   );
@@ -281,14 +292,8 @@ function BudgetList({
         order[b.current_period?.status ?? "on_track"] || a.name.localeCompare(b.name),
   );
   return (
-    <section aria-labelledby="budgets-heading" className="space-y-3">
-      <h2 id="budgets-heading" className="text-base font-semibold">
-        Budgets
-      </h2>
-      <ul
-        aria-label={`Budgets for ${monthLabel(month.month)}`}
-        className="divide-y overflow-hidden rounded-xl border bg-card shadow-elevation-1"
-      >
+    <section aria-label="This month’s budgets" className="min-w-0">
+      <ul aria-label={`Budgets for ${monthLabel(month.month)}`} className={rowListClassName}>
         {budgets.map((budget) => (
           <BudgetRow
             key={budget.id}
@@ -321,28 +326,54 @@ function BudgetRow({
   onAnnounce: (message: string) => void;
 }) {
   const [showHistory, setShowHistory] = useState(false);
+  const lifecycle = useBudgetLifecycle(budget, workspaceId, onAnnounce);
   const period = budget.current_period;
   const historyId = `budget-history-${budget.id}`;
   return (
-    <li className="space-y-2.5 px-4 py-3">
-      <div className="flex flex-wrap items-start gap-3">
+    <li className="space-y-2.5 px-3 py-3 @md/rows:px-4">
+      <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1 space-y-0.5">
           <button
             type="button"
             onClick={() => onEdit(budget)}
             aria-label={`Edit “${budget.name}”`}
-            className="block max-w-full truncate rounded-sm text-left text-sm font-medium outline-none hover:underline hover:decoration-muted-foreground/50 hover:underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring"
+            className="block max-w-full truncate rounded-sm text-left text-sm font-medium outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-ring"
           >
             {budget.name}
           </button>
-          <p className="flex flex-wrap gap-x-2 text-xs text-muted-foreground">
+          <p className="flex flex-wrap gap-x-1.5 text-xs text-muted-foreground">
             <span>{scopeLabel(budget, categories)}</span>
+            <span aria-hidden="true">·</span>
             <span>{periodLabel(budget)}</span>
-            {budget.rollover !== "none" ? <span>{rolloverLabel(budget.rollover)}</span> : null}
-            {!budget.alerts_enabled ? <span>Alerts off</span> : null}
+            {budget.rollover !== "none" ? (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>{rolloverLabel(budget.rollover)}</span>
+              </>
+            ) : null}
+            {!budget.alerts_enabled ? (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>Alerts off</span>
+              </>
+            ) : null}
           </p>
         </div>
         {period ? <UtilizationBadge status={period.status} /> : null}
+        <RowActions
+          name={budget.name}
+          actions={[
+            {
+              id: "history",
+              label: showHistory ? "Hide history" : "History",
+              description: "Each period so far",
+              icon: History,
+              onSelect: () => setShowHistory((value) => !value),
+            },
+            { id: "edit", label: "Edit", icon: Pencil, onSelect: () => onEdit(budget) },
+            ...lifecycle.actions,
+          ]}
+        />
       </div>
 
       {period ? (
@@ -371,32 +402,7 @@ function BudgetRow({
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-1">
-        <Button
-          size="sm"
-          variant="ghost"
-          aria-expanded={showHistory}
-          aria-controls={historyId}
-          onClick={() => setShowHistory((value) => !value)}
-        >
-          <History aria-hidden="true" />
-          History
-          <ChevronDown
-            aria-hidden="true"
-            className={cn("transition-transform duration-150", showHistory && "rotate-180")}
-          />
-        </Button>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="size-8"
-          aria-label={`Edit “${budget.name}”`}
-          onClick={() => onEdit(budget)}
-        >
-          <Pencil aria-hidden="true" />
-        </Button>
-        <BudgetLifecycle budget={budget} workspaceId={workspaceId} onAnnounce={onAnnounce} />
-      </div>
+      <FormAlert message={lifecycle.error} />
 
       {showHistory ? (
         <div id={historyId} className="animate-page-in">
@@ -407,16 +413,12 @@ function BudgetRow({
   );
 }
 
-/** Archive, restore, and delete, each confirmed. */
-function BudgetLifecycle({
-  budget,
-  workspaceId,
-  onAnnounce,
-}: {
-  budget: Budget;
-  workspaceId: string;
-  onAnnounce: (message: string) => void;
-}) {
+/** Archive, restore, and delete as row actions, each confirmed, with any failure to show. */
+function useBudgetLifecycle(
+  budget: Budget,
+  workspaceId: string,
+  onAnnounce: (message: string) => void,
+): { actions: RowAction[]; error: string | null } {
   const { archiveBudget, restoreBudget, deleteBudget } = useBudgetMutations(workspaceId);
   const [error, setError] = useState<string | null>(null);
   const act = async (work: () => Promise<unknown>, message: string) => {
@@ -428,56 +430,59 @@ function BudgetLifecycle({
       setError(describeApiError(reason, "Couldn’t make that change. Try again."));
     }
   };
-  return (
-    <>
-      {budget.state === "archived" ? (
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() =>
-            void act(() => restoreBudget.mutateAsync(budget.id), `Restored “${budget.name}”.`)
+  const archivedNow = budget.state === "archived";
+  return {
+    error,
+    actions: [
+      archivedNow
+        ? {
+            id: "restore",
+            label: "Restore",
+            icon: ArchiveRestore,
+            onSelect: () =>
+              void act(() => restoreBudget.mutateAsync(budget.id), `Restored “${budget.name}”.`),
           }
-        >
-          Restore
-        </Button>
-      ) : (
-        <ConfirmAction
-          label="Archive"
-          prompt={`Archive “${budget.name}”?`}
-          options={[
+        : {
+            id: "archive",
+            label: "Archive",
+            description: "Stop tracking; its history is kept",
+            icon: Archive,
+            confirm: {
+              prompt: `Archive “${budget.name}”?`,
+              choices: [
+                {
+                  label: "Archive budget",
+                  onConfirm: () =>
+                    act(
+                      () => archiveBudget.mutateAsync(budget.id),
+                      `Archived “${budget.name}”. Its history is kept.`,
+                    ),
+                },
+              ],
+            },
+          },
+      {
+        id: "delete",
+        label: "Delete…",
+        icon: Trash2,
+        destructive: true,
+        confirm: {
+          prompt: `Delete “${budget.name}” and its history?`,
+          choices: [
             {
-              label: "Archive budget",
+              label: "Delete budget",
+              destructive: true,
               onConfirm: () =>
                 act(
-                  () => archiveBudget.mutateAsync(budget.id),
-                  `Archived “${budget.name}”. Its history is kept.`,
+                  () => deleteBudget.mutateAsync(budget.id),
+                  `Deleted “${budget.name}”. Your transactions are untouched.`,
                 ),
             },
-          ]}
-        />
-      )}
-      <ConfirmAction
-        label="Delete"
-        prompt={`Delete “${budget.name}” and its history?`}
-        options={[
-          {
-            label: "Delete budget",
-            destructive: true,
-            onConfirm: () =>
-              act(
-                () => deleteBudget.mutateAsync(budget.id),
-                `Deleted “${budget.name}”. Your transactions are untouched.`,
-              ),
-          },
-        ]}
-      />
-      {error ? (
-        <div className="w-full">
-          <FormAlert message={error} />
-        </div>
-      ) : null}
-    </>
-  );
+          ],
+        },
+      },
+    ],
+  };
 }
 
 function PeriodHistory({
@@ -490,16 +495,7 @@ function PeriodHistory({
   today: string;
 }) {
   const { state, reload } = useBudgetDetail(workspaceId, budget.id, today, true);
-  if (state.status === "error") {
-    return (
-      <div role="alert" className="space-y-2 text-sm">
-        <p>{state.message}</p>
-        <Button variant="outline" size="sm" onClick={reload}>
-          Try again
-        </Button>
-      </div>
-    );
-  }
+  if (state.status === "error") return <LoadError message={state.message} onRetry={reload} />;
   if (state.status === "loading") return <Skeleton className="h-16" />;
   const { periods, periods_closed, periods_within } = state.data;
   return (
@@ -630,12 +626,7 @@ function MonthHistory({
       description="The six months to this one, with the budgets each month had. Choose a month to inspect it."
     >
       {state.status === "error" ? (
-        <div role="alert" className="space-y-2 text-sm">
-          <p>{state.message}</p>
-          <Button variant="outline" size="sm" onClick={reload}>
-            Try again
-          </Button>
-        </div>
+        <LoadError message={state.message} onRetry={reload} />
       ) : state.status === "loading" ? (
         <Skeleton className="h-40" />
       ) : (
@@ -700,25 +691,48 @@ function EndedBudgets({
   );
   if (ended.length === 0) return null;
   return (
-    <details className="rounded-xl border bg-card/60">
-      <summary className="cursor-pointer rounded-xl px-4 py-3 text-sm text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
-        {ended.length} archived or finished
-      </summary>
-      <ul className="divide-y border-t" aria-label="Archived and finished budgets">
+    <EndedSection summary={`${ended.length} archived or finished`}>
+      <ul className="@container/rows divide-y" aria-label="Archived and finished budgets">
         {ended.map((budget) => (
-          <li key={budget.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{budget.name}</p>
-              <p className="text-xs text-muted-foreground">
-                {scopeLabel(budget, categories)} · {periodLabel(budget)} ·{" "}
-                {budget.status === "archived" ? "Archived" : "Finished"}
-              </p>
-            </div>
-            <BudgetLifecycle budget={budget} workspaceId={workspaceId} onAnnounce={onAnnounce} />
-          </li>
+          <EndedBudgetRow
+            key={budget.id}
+            budget={budget}
+            categories={categories}
+            workspaceId={workspaceId}
+            onAnnounce={onAnnounce}
+          />
         ))}
       </ul>
-    </details>
+    </EndedSection>
+  );
+}
+
+function EndedBudgetRow({
+  budget,
+  categories,
+  workspaceId,
+  onAnnounce,
+}: {
+  budget: Budget;
+  categories: ReadonlyMap<string, FinanceCategory>;
+  workspaceId: string;
+  onAnnounce: (message: string) => void;
+}) {
+  const lifecycle = useBudgetLifecycle(budget, workspaceId, onAnnounce);
+  return (
+    <li className="space-y-2 px-3 py-3 @md/rows:px-4">
+      <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium">{budget.name}</p>
+          <p className="text-xs text-muted-foreground">
+            {scopeLabel(budget, categories)} · {periodLabel(budget)} ·{" "}
+            {budget.status === "archived" ? "Archived" : "Finished"}
+          </p>
+        </div>
+        <RowActions name={budget.name} actions={lifecycle.actions} />
+      </div>
+      <FormAlert message={lifecycle.error} />
+    </li>
   );
 }
 
@@ -726,7 +740,7 @@ function BudgetsSkeleton() {
   return (
     <div className="space-y-4">
       <span className="sr-only">Loading budgets…</span>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,13rem),1fr))] gap-4">
         {[0, 1, 2].map((tile) => (
           <Skeleton key={tile} className="h-28 rounded-xl" />
         ))}

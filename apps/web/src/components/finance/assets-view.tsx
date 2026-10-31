@@ -2,7 +2,7 @@
 
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { Asset, FinanceAccount } from "@orbit/contracts";
-import { Gem, Plus } from "lucide-react";
+import { Archive, ArchiveRestore, Gem, History, Pencil, Plus } from "lucide-react";
 import { useId, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
@@ -10,8 +10,8 @@ import type { InferType } from "yup";
 import { describeApiError } from "@/api/client";
 import { EmptyState } from "@/components/empty-state";
 import { AmountField, DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useAssets, useInvestmentMutations, useValuations } from "@/hooks/use-investments";
@@ -29,14 +29,17 @@ import {
   parseValue,
   valuationSchema,
 } from "@/lib/investments";
+import { cn } from "@/utils/common";
 import { formatCalendarDate, localDateString } from "@/utils/dates";
 
-import { ConfirmAction } from "./commitment-parts";
 import { DialogShell } from "./dialog-shell";
-import { Panel } from "./finance-overview";
+import { Chip, rowListClassName, twoColumnRows } from "./finance-meta";
 import type { FinanceData } from "./finance-view";
 import { FreshnessBadge } from "./investment-parts";
-import { ErrorPanel } from "./investments-view";
+import { EndedSection, LoadError } from "./panel";
+import { RowActions } from "./row-actions";
+import { StatGrid, StatTile } from "./stat-tile";
+import { ViewHeader } from "./view-header";
 
 type Dialog = { kind: "asset"; asset?: Asset } | { kind: "value"; asset: Asset };
 
@@ -44,7 +47,7 @@ type Dialog = { kind: "asset"; asset?: Asset } | { kind: "value"; asset: Asset }
  * Gold, property, vehicles, cash outside any account: valued by hand, with a dated history.
  * Assets already counted in an account's balance are listed but left out of net worth.
  */
-export function AssetsView({ workspaceId, accounts, onAnnounce }: FinanceData) {
+export function AssetsView({ workspaceId, accounts, onAnnounce, currency }: FinanceData) {
   const today = localDateString();
   const assets = useAssets(workspaceId, today);
   const { updateAsset } = useInvestmentMutations(workspaceId);
@@ -57,13 +60,33 @@ export function AssetsView({ workspaceId, accounts, onAnnounce }: FinanceData) {
     ) : dialog?.kind === "value" ? (
       <ValuationDialog {...common} asset={dialog.asset} />
     ) : null;
+  const addButton = (
+    <Button onClick={() => setDialog({ kind: "asset" })}>
+      <Plus aria-hidden="true" />
+      Add asset
+    </Button>
+  );
+  const header = (
+    <ViewHeader
+      title="Other assets"
+      description="Gold, property, vehicles, and cash outside your accounts, valued by hand. A valuation over a year old is marked stale; one without any counts at its purchase cost."
+      action={addButton}
+    />
+  );
 
   const state = assets.state;
-  if (state.status === "error")
-    return <ErrorPanel message={state.message} onRetry={assets.reload} />;
+  if (state.status === "error") {
+    return (
+      <div className="space-y-6">
+        {header}
+        <LoadError message={state.message} onRetry={assets.reload} />
+      </div>
+    );
+  }
   if (state.status === "loading") {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
+        {header}
         <span className="sr-only">Loading assets…</span>
         <Skeleton className="h-40 rounded-xl" />
       </div>
@@ -78,49 +101,71 @@ export function AssetsView({ workspaceId, accounts, onAnnounce }: FinanceData) {
           title="Track other assets"
           description="Gold, property, a vehicle, or cash kept outside your accounts. Enter what each is worth now and then; Orbit keeps the history."
         >
-          <Button onClick={() => setDialog({ kind: "asset" })}>
-            <Plus aria-hidden="true" />
-            Add asset
-          </Button>
+          {addButton}
         </EmptyState>
         {dialogs}
       </>
     );
   }
+  const current = list.filter((asset) => !asset.archived);
+  const archived = list.filter((asset) => asset.archived);
+  // Only what net worth counts, in the page's currency; currencies are never added together.
+  const counted = current.filter((asset) => asset.counted && asset.currency === currency);
+  const total = counted.reduce((sum, asset) => sum + asset.value, 0);
+  const attention = current.filter((asset) => asset.freshness !== "current").length;
+  const row = (asset: Asset) => (
+    <AssetRow
+      key={asset.id}
+      asset={asset}
+      workspaceId={workspaceId}
+      onEdit={() => setDialog({ kind: "asset", asset })}
+      onValue={() => setDialog({ kind: "value", asset })}
+      onArchive={async (value) => {
+        try {
+          await updateAsset.mutateAsync({ id: asset.id, body: { archived: value } });
+          onAnnounce(value ? `Archived “${asset.name}”.` : `Restored “${asset.name}”.`);
+        } catch (reason) {
+          onAnnounce(describeApiError(reason, "Couldn’t change the asset."));
+        }
+      }}
+    />
+  );
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
-        <Button variant="outline" onClick={() => setDialog({ kind: "asset" })}>
-          <Plus aria-hidden="true" />
-          Add asset
-        </Button>
-      </div>
-      <Panel
-        title="Other assets"
-        description="Valued by hand. A valuation over a year old is marked stale; one without any valuation counts at its purchase cost."
-        flush
-      >
-        <ul className="divide-y border-t">
-          {list.map((asset) => (
-            <AssetRow
-              key={asset.id}
-              asset={asset}
-              workspaceId={workspaceId}
-              onEdit={() => setDialog({ kind: "asset", asset })}
-              onValue={() => setDialog({ kind: "value", asset })}
-              onArchive={async (archived) => {
-                try {
-                  await updateAsset.mutateAsync({ id: asset.id, body: { archived } });
-                  onAnnounce(archived ? `Archived “${asset.name}”.` : `Restored “${asset.name}”.`);
-                } catch (reason) {
-                  onAnnounce(describeApiError(reason, "Couldn’t change the asset."));
-                }
-              }}
-            />
-          ))}
+      {header}
+      {counted.length > 0 ? (
+        <StatGrid>
+          <StatTile
+            label="Counted in net worth"
+            icon={Gem}
+            accent="brand"
+            value={formatMoney(total, currency)}
+          >
+            {counted.length} {counted.length === 1 ? "asset" : "assets"} at their latest value
+          </StatTile>
+          {attention > 0 ? (
+            <StatTile label="Need a new valuation" value={String(attention)} tone="warning">
+              Stale, or never valued
+            </StatTile>
+          ) : null}
+        </StatGrid>
+      ) : null}
+      {current.length > 0 ? (
+        <ul
+          aria-label="Assets"
+          className={cn(rowListClassName, "grid", twoColumnRows(current.length, "5xl"))}
+        >
+          {current.map(row)}
         </ul>
-      </Panel>
+      ) : null}
+      {archived.length > 0 ? (
+        <EndedSection summary={`${archived.length} sold or disposed of`}>
+          <ul aria-label="Sold or disposed of" className="@container/rows divide-y">
+            {archived.map(row)}
+          </ul>
+        </EndedSection>
+      ) : null}
       {dialogs}
     </div>
   );
@@ -143,93 +188,103 @@ function AssetRow({
   const history = useValuations(workspaceId, asset.id, open);
   const historyId = useId();
   return (
-    <li className="space-y-3 px-5 py-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <p className="font-medium">
+    <li className="min-w-0 space-y-3 px-4 py-3.5 @md/rows:px-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <button
+            type="button"
+            onClick={onEdit}
+            aria-label={`Edit “${asset.name}”`}
+            className="block max-w-full truncate text-left text-sm font-medium outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-ring"
+          >
             {asset.name}
-            {asset.archived ? (
-              <span className="text-muted-foreground"> (sold or disposed of)</span>
-            ) : null}
-          </p>
-          <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          </button>
+          <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
             <span>{assetCategoryLabel(asset.category)}</span>
             {asset.purchase_cost !== null ? (
-              <span>Bought for {formatMoney(asset.purchase_cost, asset.currency)}</span>
+              <>
+                <span aria-hidden="true">·</span>
+                <span>Bought for {formatMoney(asset.purchase_cost, asset.currency)}</span>
+              </>
             ) : null}
             <FreshnessBadge freshness={asset.freshness} />
-            {!asset.counted && !asset.archived ? (
-              <Badge variant="outline">Not in net worth</Badge>
-            ) : null}
+            {!asset.counted && !asset.archived ? <Chip>Not in net worth</Chip> : null}
           </p>
           {asset.excluded_reason && !asset.archived ? (
             <p className="text-xs text-muted-foreground">{asset.excluded_reason}</p>
           ) : null}
         </div>
-        <div className="text-left sm:text-right">
-          <p className="text-lg font-semibold tabular-nums">
+        <div className="shrink-0 text-right">
+          <p className="text-base font-semibold whitespace-nowrap tabular-nums">
             {formatMoney(asset.value, asset.currency)}
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs whitespace-nowrap text-muted-foreground">
             {asset.latest_valuation
               ? `Valued ${formatCalendarDate(asset.latest_valuation.valued_on)}`
               : "No valuation yet"}
           </p>
         </div>
       </div>
-      <div className="flex flex-wrap gap-1">
-        {asset.archived ? null : (
-          <Button size="sm" variant="outline" onClick={onValue}>
-            Update value
-          </Button>
-        )}
-        <Button
-          size="sm"
-          variant="ghost"
-          aria-expanded={open}
-          aria-controls={historyId}
-          onClick={() => setOpen(!open)}
-        >
-          {open ? "Hide history" : "History"}
-        </Button>
-        <Button size="sm" variant="ghost" onClick={onEdit}>
-          Edit
-        </Button>
-        {asset.archived ? (
-          <Button size="sm" variant="ghost" onClick={() => void onArchive(false)}>
-            Restore
-          </Button>
-        ) : (
-          <ConfirmAction
-            label="Archive"
-            prompt={`Mark “${asset.name}” as sold or disposed of?`}
-            options={[
-              { label: "Archive asset", destructive: true, onConfirm: () => onArchive(true) },
-            ]}
-          />
-        )}
-      </div>
+      <RowActions
+        name={asset.name}
+        primary={
+          asset.archived ? null : (
+            <Button size="sm" variant="outline" onClick={onValue}>
+              Update value
+            </Button>
+          )
+        }
+        actions={[
+          {
+            id: "history",
+            label: open ? "Hide history" : "Valuation history",
+            icon: History,
+            onSelect: () => setOpen(!open),
+          },
+          { id: "edit", label: "Edit", icon: Pencil, onSelect: onEdit },
+          {
+            id: "restore",
+            label: "Restore",
+            icon: ArchiveRestore,
+            hidden: !asset.archived,
+            onSelect: () => void onArchive(false),
+          },
+          {
+            id: "archive",
+            label: "Sold or disposed of…",
+            icon: Archive,
+            hidden: asset.archived,
+            confirm: {
+              prompt: `Mark “${asset.name}” as sold or disposed of?`,
+              choices: [
+                { label: "Archive asset", destructive: true, onConfirm: () => onArchive(true) },
+              ],
+            },
+          },
+        ]}
+      />
       {open ? (
-        <div id={historyId}>
+        <div id={historyId} className="animate-page-in">
           {history.state.status === "loading" ? (
             <Skeleton className="h-12" />
           ) : history.state.status === "error" ? (
-            <p role="alert" className="text-sm">
-              {history.state.message}
-            </p>
+            <LoadError message={history.state.message} onRetry={history.reload} />
           ) : history.state.data.valuations.length === 0 ? (
             <p className="text-sm text-muted-foreground">No valuations recorded.</p>
           ) : (
-            <ul aria-label={`${asset.name} valuations`} className="space-y-1 text-sm">
+            <ol
+              aria-label={`${asset.name} valuations`}
+              className="divide-y rounded-lg border text-sm"
+            >
               {history.state.data.valuations.map((entry) => (
-                <li key={entry.id} className="flex justify-between gap-3">
+                <li key={entry.id} className="flex justify-between gap-3 px-3 py-2">
                   <span className="text-muted-foreground">
                     {formatCalendarDate(entry.valued_on)}
                   </span>
                   <span className="tabular-nums">{formatMoney(entry.value, asset.currency)}</span>
                 </li>
               ))}
-            </ul>
+            </ol>
           )}
         </div>
       ) : null}
@@ -378,7 +433,7 @@ function AssetDialog({
         balance, so net worth leaves it out. Linking a loan (for a financed vehicle) keeps it in.
       </p>
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" className="accent-brand" {...register("includeInNetWorth")} />
+        <Checkbox {...register("includeInNetWorth")} />
         Include in net worth
       </label>
       <div className="space-y-1.5">

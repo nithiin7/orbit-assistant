@@ -4,7 +4,6 @@ import type { Currency } from "@orbit/contracts";
 import { ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBudgetMonth, useGoals } from "@/hooks/use-budgets";
 import { formatMoney } from "@/lib/finance";
@@ -12,6 +11,7 @@ import { cn } from "@/utils/common";
 import { localDateString, monthLabel } from "@/utils/dates";
 
 import { UtilizationBadge, UtilizationBar } from "./budget-parts";
+import { LoadError, Panel } from "./panel";
 
 /**
  * The month's budget and the savings goals in progress, for the Overview. Each card is hidden
@@ -45,22 +45,13 @@ export function BudgetSummary({
           ? goals.state.message
           : "";
     return (
-      <div
-        role="alert"
-        className="flex items-center justify-between gap-3 rounded-xl border bg-card p-4 text-sm"
-      >
-        <p>{message}</p>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            budgets.reload();
-            goals.reload();
-          }}
-        >
-          Try again
-        </Button>
-      </div>
+      <LoadError
+        message={message}
+        onRetry={() => {
+          budgets.reload();
+          goals.reload();
+        }}
+      />
     );
   }
 
@@ -74,22 +65,20 @@ export function BudgetSummary({
   if (summary.budgets.length === 0 && inProgress.length === 0) return null;
 
   return (
-    <div className="grid gap-6 xl:grid-cols-2">
+    // The cards join the Overview's grid as items of their own.
+    <div className="contents">
       {summary.budgets.length > 0 ? (
-        <section aria-labelledby="budget-summary-heading">
-          <Card className="h-full space-y-4 p-5 shadow-elevation-1">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="space-y-1">
-                <h3 id="budget-summary-heading" className="text-sm font-semibold">
-                  Budget
-                </h3>
-                <p className="text-xs text-muted-foreground">{monthLabel(month)}</p>
-              </div>
-              <Button variant="ghost" size="sm" onClick={onOpenBudgets}>
-                Budgets
-                <ArrowRight aria-hidden="true" />
-              </Button>
-            </div>
+        <Panel
+          title="Budget"
+          description={monthLabel(month)}
+          action={
+            <Button variant="ghost" size="sm" onClick={onOpenBudgets}>
+              Budgets
+              <ArrowRight aria-hidden="true" />
+            </Button>
+          }
+        >
+          <div className="space-y-4">
             {summary.total !== null && summary.status ? (
               <div className="space-y-1.5">
                 <p className="text-sm tabular-nums">
@@ -131,41 +120,36 @@ export function BudgetSummary({
             ) : (
               <p className="text-xs text-muted-foreground">Every budget is on track.</p>
             )}
-          </Card>
-        </section>
+          </div>
+        </Panel>
       ) : null}
 
       {inProgress.length > 0 ? (
-        <section aria-labelledby="goal-summary-heading">
-          <Card className="h-full space-y-4 p-5 shadow-elevation-1">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="space-y-1">
-                <h3 id="goal-summary-heading" className="text-sm font-semibold">
-                  Savings goals
-                </h3>
-                <p className="text-xs text-muted-foreground">Saving isn’t spending.</p>
-              </div>
-              <Button variant="ghost" size="sm" onClick={onOpenGoals}>
-                Goals
-                <ArrowRight aria-hidden="true" />
-              </Button>
-            </div>
-            <ul className="space-y-3" aria-label="Savings goals in progress">
-              {inProgress.slice(0, 3).map((goal) => (
-                <li key={goal.id} className="space-y-1">
-                  <div className="flex items-baseline justify-between gap-3 text-sm">
-                    <span className="truncate">{goal.name}</span>
-                    <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                      {formatMoney(goal.saved, currency)} of{" "}
-                      {formatMoney(goal.target_amount, currency)}
-                    </span>
-                  </div>
-                  <UtilizationBar label={`${goal.name} progress`} percent={goal.progress_percent} />
-                </li>
-              ))}
-            </ul>
-          </Card>
-        </section>
+        <Panel
+          title="Savings goals"
+          description="Saving isn’t spending."
+          action={
+            <Button variant="ghost" size="sm" onClick={onOpenGoals}>
+              Goals
+              <ArrowRight aria-hidden="true" />
+            </Button>
+          }
+        >
+          <ul className="space-y-3" aria-label="Savings goals in progress">
+            {inProgress.slice(0, 3).map((goal) => (
+              <li key={goal.id} className="space-y-1">
+                <div className="flex items-baseline justify-between gap-3 text-sm">
+                  <span className="truncate">{goal.name}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                    {formatMoney(goal.saved, currency)} of{" "}
+                    {formatMoney(goal.target_amount, currency)}
+                  </span>
+                </div>
+                <UtilizationBar label={`${goal.name} progress`} percent={goal.progress_percent} />
+              </li>
+            ))}
+          </ul>
+        </Panel>
       ) : null}
     </div>
   );

@@ -37,4 +37,6 @@ Element.prototype.scrollIntoView ??= () => {};
 
 afterEach(() => {
   cleanup();
+  // Pages that keep state in the URL (such as the finance view) start each test from a clean one.
+  window.history.replaceState(null, "", "/");
 });

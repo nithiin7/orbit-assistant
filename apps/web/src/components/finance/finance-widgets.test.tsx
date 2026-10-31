@@ -202,7 +202,7 @@ describe("CashFlowWidget", () => {
     const card = await widget("This month");
     expect(await within(card).findByRole("link", { name: "Add an account" })).toHaveAttribute(
       "href",
-      "/finance",
+      "/finance?view=accounts",
     );
   });
 

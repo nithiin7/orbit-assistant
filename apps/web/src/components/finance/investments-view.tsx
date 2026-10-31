@@ -10,13 +10,22 @@ import type {
   SipPlan,
 } from "@orbit/contracts";
 import {
+  ArrowUpFromLine,
   BriefcaseBusiness,
+  CalendarClock,
+  CircleCheck,
   CircleHelp,
   Coins,
   Landmark,
   LineChart,
+  Pause,
+  Pencil,
   PiggyBank,
+  Play,
   Plus,
+  RotateCcw,
+  Tag,
+  Trash2,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
@@ -24,7 +33,6 @@ import { useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import { EmptyState } from "@/components/empty-state";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,7 +47,7 @@ import {
   useSipPlans,
 } from "@/hooks/use-investments";
 import { formatRate, frequencyLabel } from "@/lib/commitments";
-import { currencyOptions, formatMoney } from "@/lib/finance";
+import { formatMoney } from "@/lib/finance";
 import {
   accountKindLabel,
   compoundingLabel,
@@ -55,8 +63,7 @@ import {
 import { cn } from "@/utils/common";
 import { formatCalendarDate, localDateString } from "@/utils/dates";
 
-import { ConfirmAction } from "./commitment-parts";
-import { Panel, Tile } from "./finance-overview";
+import { Chip, twoColumnRows } from "./finance-meta";
 import type { FinanceData } from "./finance-view";
 import {
   type DepositAction,
@@ -70,6 +77,10 @@ import {
   type TradeType,
 } from "./investment-dialogs";
 import { Figure, FreshnessBadge, Gain, InlineSelect, ProportionBars } from "./investment-parts";
+import { LoadError, Panel } from "./panel";
+import { RowActions } from "./row-actions";
+import { StatGrid, StatTile } from "./stat-tile";
+import { CurrencySwitcher, ViewHeader } from "./view-header";
 
 type Range = "ytd" | "12" | "all";
 
@@ -105,7 +116,7 @@ export function InvestmentsView({ workspaceId, accounts, onAnnounce }: FinanceDa
 
   const accountsState = investmentAccounts.state;
   if (accountsState.status === "error") {
-    return <ErrorPanel message={accountsState.message} onRetry={investmentAccounts.reload} />;
+    return <LoadError message={accountsState.message} onRetry={investmentAccounts.reload} />;
   }
   if (accountsState.status === "loading") return <InvestmentsSkeleton />;
 
@@ -184,58 +195,55 @@ export function InvestmentsView({ workspaceId, accounts, onAnnounce }: FinanceDa
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap items-center gap-3">
-          {currencies.length > 1 ? (
+      <ViewHeader
+        title="Investments"
+        description="What your funds, shares, and deposits are worth against what they cost. Prices are entered by hand."
+        controls={
+          <>
+            <CurrencySwitcher currencies={currencies} currency={currency} onChange={setCurrency} />
             <InlineSelect
-              label="Currency"
-              value={currency}
-              className="w-24"
-              onChange={setCurrency}
-              options={currencyOptions(currencies)}
+              label="Gains and income for"
+              value={range}
+              className="w-40"
+              onChange={setRange}
+              options={RANGES}
             />
-          ) : null}
-          <InlineSelect
-            label="Gains and income for"
-            value={range}
-            className="w-40"
-            onChange={setRange}
-            options={RANGES}
-          />
-        </div>
-        <Menu
-          align="end"
-          className="self-start lg:self-auto"
-          items={[
-            {
-              id: "holding",
-              label: "Holding",
-              description: "A mutual fund, stock, or ETF",
-              icon: LineChart,
-              disabled: active.length === 0,
-              onSelect: () => setDialog({ kind: "holding" }),
-            },
-            {
-              id: "deposit",
-              label: "Deposit",
-              description: "A fixed or recurring deposit",
-              icon: PiggyBank,
-              disabled: active.length === 0,
-              onSelect: () => setDialog({ kind: "deposit" }),
-            },
-            {
-              id: "account",
-              label: "Investment account",
-              description: "A broker, fund platform, or bank",
-              icon: Landmark,
-              onSelect: () => setDialog({ kind: "account" }),
-            },
-          ]}
-        >
-          <Plus aria-hidden="true" />
-          Add
-        </Menu>
-      </div>
+          </>
+        }
+        action={
+          <Menu
+            align="end"
+            items={[
+              {
+                id: "holding",
+                label: "Holding",
+                description: "A mutual fund, stock, or ETF",
+                icon: LineChart,
+                disabled: active.length === 0,
+                onSelect: () => setDialog({ kind: "holding" }),
+              },
+              {
+                id: "deposit",
+                label: "Deposit",
+                description: "A fixed or recurring deposit",
+                icon: PiggyBank,
+                disabled: active.length === 0,
+                onSelect: () => setDialog({ kind: "deposit" }),
+              },
+              {
+                id: "account",
+                label: "Investment account",
+                description: "A broker, fund platform, or bank",
+                icon: Landmark,
+                onSelect: () => setDialog({ kind: "account" }),
+              },
+            ]}
+          >
+            <Plus aria-hidden="true" />
+            Add
+          </Menu>
+        }
+      />
 
       <PortfolioSummary workspaceId={workspaceId} currency={currency} today={today} range={range} />
 
@@ -259,7 +267,7 @@ export function InvestmentsView({ workspaceId, accounts, onAnnounce }: FinanceDa
         onAnnounce={onAnnounce}
       />
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid items-start gap-6 @4xl/list:grid-cols-2">
         <ActivityPanel
           workspaceId={workspaceId}
           holdings={holdings.state.status === "success" ? holdings.state.data.holdings : []}
@@ -303,11 +311,11 @@ function PortfolioSummary({
   });
   const state = portfolio.state;
   if (state.status === "error") {
-    return <ErrorPanel message={state.message} onRetry={portfolio.reload} />;
+    return <LoadError message={state.message} onRetry={portfolio.reload} />;
   }
   if (state.status === "loading") {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,13rem),1fr))] gap-4">
         {[0, 1, 2, 3].map((tile) => (
           <Skeleton key={tile} className="h-28 rounded-xl" />
         ))}
@@ -318,8 +326,8 @@ function PortfolioSummary({
   const rangeLabel = RANGES.find((option) => option.value === range)?.label.toLowerCase();
   return (
     <div className="space-y-6">
-      <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Tile
+      <StatGrid>
+        <StatTile
           label="Current value"
           icon={BriefcaseBusiness}
           accent="brand"
@@ -328,15 +336,15 @@ function PortfolioSummary({
           {data.cash
             ? `Plus ${formatMoney(data.cash, currency)} uninvested cash`
             : "Holdings and deposits"}
-        </Tile>
-        <Tile
+        </StatTile>
+        <StatTile
           label="Cost of what you hold"
           icon={Coins}
           value={formatMoney(data.invested, currency)}
         >
           FIFO cost of units held, plus deposits
-        </Tile>
-        <Tile
+        </StatTile>
+        <StatTile
           label="Unrealized gain"
           icon={data.unrealized_gain < 0 ? TrendingDown : TrendingUp}
           value={formatMoney(data.unrealized_gain, currency, {
@@ -346,8 +354,8 @@ function PortfolioSummary({
           accent={data.unrealized_gain < 0 ? "negative" : "positive"}
         >
           Market value minus cost, priced holdings only
-        </Tile>
-        <Tile
+        </StatTile>
+        <StatTile
           label="Total return"
           icon={LineChart}
           value={formatMoney(data.total_return, currency, {
@@ -359,8 +367,8 @@ function PortfolioSummary({
           {formatPercent(data.return_percent)} on everything invested. Realized{" "}
           {formatMoney(data.realized_gain, currency)}, income {formatMoney(data.income, currency)},
           fees {formatMoney(data.fees, currency)} ({rangeLabel}).
-        </Tile>
-      </dl>
+        </StatTile>
+      </StatGrid>
 
       {data.missing_prices + data.stale_prices > 0 ? (
         <p
@@ -380,7 +388,7 @@ function PortfolioSummary({
         </p>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 @3xl/list:grid-cols-2">
         <Panel title="Allocation" description="Current value by asset class.">
           <ProportionBars slices={data.allocation} currency={currency} label="Allocation" />
         </Panel>
@@ -412,7 +420,7 @@ function HoldingsPanel({
   onAnnounce: (message: string) => void;
 }) {
   const { deleteHolding, updateSip } = useInvestmentMutations(workspaceId);
-  if (state.status === "error") return <ErrorPanel message={state.message} onRetry={onRetry} />;
+  if (state.status === "error") return <LoadError message={state.message} onRetry={onRetry} />;
   if (state.status === "loading") return <Skeleton className="h-48 rounded-xl" />;
   const holdings = state.data.holdings.filter((holding) => holding.currency === currency);
   const byAccount = profiles
@@ -436,8 +444,10 @@ function HoldingsPanel({
       ) : (
         byAccount.map(({ account, holdings: rows }) => (
           <section key={account.account_id} aria-label={account.name} className="border-t">
-            <h4 className="px-5 pt-3 text-xs font-medium text-muted-foreground">{account.name}</h4>
-            <ul className="divide-y">
+            <h4 className="bg-muted/30 px-5 py-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              {account.name}
+            </h4>
+            <ul className={cn("@container/rows grid divide-y", twoColumnRows(rows.length, "6xl"))}>
               {rows.map((holding) => (
                 <HoldingRow
                   key={holding.id}
@@ -489,31 +499,47 @@ function HoldingRow({
   const today = localDateString();
   const held = holding.quantity !== "0";
   return (
-    <li className="space-y-3 px-5 py-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+    <li className="min-w-0 space-y-3 px-4 py-3.5 @md/rows:px-5">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
-          <p className="font-medium">{holding.name}</p>
-          <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <button
+            type="button"
+            onClick={() => onDialog({ kind: "holding", holding })}
+            aria-label={`Edit “${holding.name}”`}
+            className="block max-w-full text-left text-sm font-medium break-words outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {holding.name}
+          </button>
+          <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
             <span>{holdingKindLabel(holding.kind)}</span>
             {holding.symbol ? (
-              <span>{[holding.symbol, holding.exchange].filter(Boolean).join(" · ")}</span>
+              <>
+                <span aria-hidden="true">·</span>
+                <span>{[holding.symbol, holding.exchange].filter(Boolean).join(" · ")}</span>
+              </>
             ) : null}
-            {holding.category ? <span>{holding.category}</span> : null}
-            {holding.folio ? <span>Folio {holding.folio}</span> : null}
-            {held ? (
-              <FreshnessBadge freshness={holding.freshness} />
-            ) : (
-              <Badge variant="outline">Sold</Badge>
-            )}
+            {holding.category ? (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>{holding.category}</span>
+              </>
+            ) : null}
+            {holding.folio ? (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>Folio {holding.folio}</span>
+              </>
+            ) : null}
+            {held ? <FreshnessBadge freshness={holding.freshness} /> : <Chip>Sold</Chip>}
           </p>
         </div>
-        <div className="text-left sm:text-right">
-          <p className="text-lg font-semibold tabular-nums">
+        <div className="shrink-0 text-right">
+          <p className="text-base font-semibold whitespace-nowrap tabular-nums">
             {formatMoney(holding.value, currency)}
           </p>
-          <p className={cn("text-xs", gainTone(holding.unrealized_gain))}>
+          <p className={cn("text-xs whitespace-nowrap", gainTone(holding.unrealized_gain))}>
             {holding.unrealized_gain === null ? (
-              "Counted at cost: no price yet"
+              "At cost: no price yet"
             ) : (
               <>
                 <Gain amount={holding.unrealized_gain} currency={currency} /> unrealized
@@ -523,7 +549,7 @@ function HoldingRow({
         </div>
       </div>
 
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-5">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 @lg/rows:grid-cols-5">
         <Figure label="Units">{formatUnits(holding.quantity)}</Figure>
         <Figure label="Average cost">
           {holding.average_cost ? formatUnitPrice(holding.average_cost, currency) : "—"}
@@ -541,17 +567,19 @@ function HoldingRow({
       </dl>
 
       {plans.length > 0 ? (
-        <ul aria-label="SIPs" className="space-y-2">
+        <ul aria-label="SIPs" className="space-y-1.5">
           {plans.map((plan) => {
             const overdue = plan.next_due_date !== null && plan.next_due_date < today;
             return (
               <li
                 key={plan.id}
-                className="flex flex-col gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between"
+                className="flex items-center gap-2 rounded-lg bg-muted/40 py-1.5 pr-1.5 pl-3 text-xs"
               >
-                <span>
-                  SIP {formatMoney(plan.amount, plan.currency)}{" "}
-                  {frequencyLabel(plan.frequency).toLowerCase()}
+                <span className="min-w-0 flex-1">
+                  <span className="font-medium">
+                    SIP {formatMoney(plan.amount, plan.currency)}{" "}
+                    {frequencyLabel(plan.frequency).toLowerCase()}
+                  </span>
                   {" · "}
                   {plan.state !== "active" ? (
                     SIP_STATES[plan.state]
@@ -567,89 +595,106 @@ function HoldingRow({
                     {plan.installments} recorded, {formatMoney(plan.invested, plan.currency)}
                   </span>
                 </span>
-                <span className="flex flex-wrap gap-1">
-                  {plan.state === "active" && plan.next_due_date ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onDialog({ kind: "trade", holding, type: "buy", sip: plan })}
-                    >
-                      Record installment
-                    </Button>
-                  ) : null}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => onDialog({ kind: "sip", holding, plan })}
-                  >
-                    Edit
-                  </Button>
-                  {plan.state === "active" ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => void onSipState(plan, "paused")}
-                    >
-                      Pause
-                    </Button>
-                  ) : plan.state === "paused" ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => void onSipState(plan, "active")}
-                    >
-                      Resume
-                    </Button>
-                  ) : null}
-                </span>
+                <RowActions
+                  name={`SIP in ${holding.name}`}
+                  primary={
+                    plan.state === "active" && plan.next_due_date ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7"
+                        onClick={() => onDialog({ kind: "trade", holding, type: "buy", sip: plan })}
+                      >
+                        Record installment
+                      </Button>
+                    ) : null
+                  }
+                  actions={[
+                    {
+                      id: "edit",
+                      label: "Edit SIP",
+                      icon: Pencil,
+                      onSelect: () => onDialog({ kind: "sip", holding, plan }),
+                    },
+                    {
+                      id: "pause",
+                      label: "Pause SIP",
+                      icon: Pause,
+                      hidden: plan.state !== "active",
+                      onSelect: () => void onSipState(plan, "paused"),
+                    },
+                    {
+                      id: "resume",
+                      label: "Resume SIP",
+                      icon: Play,
+                      hidden: plan.state !== "paused",
+                      onSelect: () => void onSipState(plan, "active"),
+                    },
+                  ]}
+                />
               </li>
             );
           })}
         </ul>
       ) : null}
 
-      <div className="flex flex-wrap gap-1">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => onDialog({ kind: "trade", holding, type: "buy" })}
-        >
-          Buy
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={!held}
-          onClick={() => onDialog({ kind: "trade", holding, type: "sell" })}
-        >
-          Sell
-        </Button>
-        <Button size="sm" variant="ghost" onClick={() => onDialog({ kind: "price", holding })}>
-          {holding.kind === "mutual_fund" ? "Update NAV" : "Update price"}
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => onDialog({ kind: "trade", holding, type: "dividend" })}
-        >
-          Dividend
-        </Button>
-        {holding.kind === "mutual_fund" ? (
-          <Button size="sm" variant="ghost" onClick={() => onDialog({ kind: "sip", holding })}>
-            Schedule SIP
+      <RowActions
+        name={holding.name}
+        primary={
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onDialog({ kind: "trade", holding, type: "buy" })}
+          >
+            Buy
           </Button>
-        ) : null}
-        <Button size="sm" variant="ghost" onClick={() => onDialog({ kind: "holding", holding })}>
-          Edit
-        </Button>
-        {holding.invested_total === 0 ? (
-          <ConfirmAction
-            label="Delete"
-            prompt={`Delete “${holding.name}”?`}
-            options={[{ label: "Delete holding", destructive: true, onConfirm: onDelete }]}
-          />
-        ) : null}
-      </div>
+        }
+        actions={[
+          {
+            id: "sell",
+            label: "Sell",
+            icon: ArrowUpFromLine,
+            disabled: !held,
+            onSelect: () => onDialog({ kind: "trade", holding, type: "sell" }),
+          },
+          {
+            id: "price",
+            label: holding.kind === "mutual_fund" ? "Update NAV" : "Update price",
+            icon: Tag,
+            onSelect: () => onDialog({ kind: "price", holding }),
+          },
+          {
+            id: "dividend",
+            label: "Record a dividend",
+            icon: Coins,
+            onSelect: () => onDialog({ kind: "trade", holding, type: "dividend" }),
+          },
+          {
+            id: "sip",
+            label: "Schedule a SIP",
+            icon: CalendarClock,
+            hidden: holding.kind !== "mutual_fund",
+            onSelect: () => onDialog({ kind: "sip", holding }),
+          },
+          {
+            id: "edit",
+            label: "Edit",
+            icon: Pencil,
+            onSelect: () => onDialog({ kind: "holding", holding }),
+          },
+          {
+            id: "delete",
+            label: "Delete…",
+            icon: Trash2,
+            destructive: true,
+            hidden: holding.invested_total !== 0,
+            confirm: {
+              prompt: `Delete “${holding.name}”?`,
+              choices: [{ label: "Delete holding", destructive: true, onConfirm: onDelete }],
+            },
+          },
+        ]}
+      />
     </li>
   );
 }
@@ -670,7 +715,15 @@ function DepositsPanel({
   onAnnounce: (message: string) => void;
 }) {
   const { reopenDeposit } = useInvestmentMutations(workspaceId);
-  if (state.status === "error") return <ErrorPanel message={state.message} onRetry={onRetry} />;
+  const reopen = async (deposit: Deposit, deleteLedger: boolean) => {
+    try {
+      await reopenDeposit.mutateAsync({ id: deposit.id, deleteLedger });
+      onAnnounce(`Reopened “${deposit.name}”.`);
+    } catch (reason) {
+      onAnnounce(describeApiError(reason, "Couldn’t reopen the deposit."));
+    }
+  };
+  if (state.status === "error") return <LoadError message={state.message} onRetry={onRetry} />;
   if (state.status === "loading") return <Skeleton className="h-32 rounded-xl" />;
   const deposits = state.data.deposits.filter((deposit) => deposit.currency === currency);
   if (deposits.length === 0) return null;
@@ -682,15 +735,20 @@ function DepositsPanel({
       description="Values are estimates from the rate and compounding unless you set them; maturity amounts are projections, not guarantees."
       flush
     >
-      <ul className="divide-y border-t">
+      <ul
+        className={cn(
+          "@container/rows grid divide-y border-t",
+          twoColumnRows(deposits.length, "6xl"),
+        )}
+      >
         {deposits.map((deposit) => {
           const open = deposit.status === "active";
           const awaiting = open && deposit.maturity_date <= today;
           return (
-            <li key={deposit.id} className="space-y-3 px-5 py-4">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div className="space-y-1">
-                  <p className="font-medium">{deposit.name}</p>
+            <li key={deposit.id} className="min-w-0 space-y-3 px-4 py-3.5 @md/rows:px-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 space-y-1">
+                  <p className="text-sm font-medium">{deposit.name}</p>
                   <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <span>{deposit.kind === "fixed" ? "Fixed deposit" : "Recurring deposit"}</span>
                     {deposit.institution ? <span>{deposit.institution}</span> : null}
@@ -700,9 +758,7 @@ function DepositsPanel({
                     </span>
                     {open ? (
                       awaiting ? (
-                        <Badge variant="outline" className="border-warning/40 text-warning">
-                          Matured, awaiting payout
-                        </Badge>
+                        <Chip tone="warning">Matured, awaiting payout</Chip>
                       ) : (
                         <FreshnessBadge
                           freshness={deposit.freshness}
@@ -710,15 +766,15 @@ function DepositsPanel({
                         />
                       )
                     ) : (
-                      <Badge variant="outline">
+                      <Chip>
                         {deposit.status === "matured" ? "Matured" : "Closed early"}
                         {deposit.closed_on ? ` ${formatCalendarDate(deposit.closed_on)}` : ""}
-                      </Badge>
+                      </Chip>
                     )}
                   </p>
                 </div>
-                <div className="text-left sm:text-right">
-                  <p className="text-lg font-semibold tabular-nums">
+                <div className="shrink-0 text-right">
+                  <p className="text-base font-semibold whitespace-nowrap tabular-nums">
                     {formatMoney(deposit.value, deposit.currency)}
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -730,7 +786,7 @@ function DepositsPanel({
                   </p>
                 </div>
               </div>
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-2 @lg/rows:grid-cols-4">
                 <Figure label="Principal">
                   {formatMoney(deposit.principal, deposit.currency)}
                 </Figure>
@@ -744,75 +800,86 @@ function DepositsPanel({
                     : "Not entered"}
                 </Figure>
               </dl>
-              <div className="flex flex-wrap gap-1">
-                {open ? (
-                  <>
+              <RowActions
+                name={deposit.name}
+                primary={
+                  open ? (
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => onDialog({ kind: "deposit-action", deposit, action: "close" })}
-                    >
-                      {awaiting ? "Record payout" : "Close"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
                       onClick={() =>
-                        onDialog({ kind: "deposit-action", deposit, action: "contribute" })
+                        onDialog({
+                          kind: "deposit-action",
+                          deposit,
+                          action: awaiting
+                            ? "close"
+                            : deposit.kind === "recurring"
+                              ? "contribute"
+                              : "value",
+                        })
                       }
                     >
-                      {deposit.kind === "recurring" ? "Record installment" : "Add money"}
+                      {awaiting
+                        ? "Record payout"
+                        : deposit.kind === "recurring"
+                          ? "Record installment"
+                          : "Set value"}
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => onDialog({ kind: "deposit-action", deposit, action: "value" })}
-                    >
-                      Set value
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => onDialog({ kind: "deposit", deposit })}
-                    >
-                      Edit
-                    </Button>
-                  </>
-                ) : (
-                  <ConfirmAction
-                    label="Reopen"
-                    prompt={`Undo closing “${deposit.name}”?`}
-                    options={[
-                      {
-                        label: "Reopen, keep the payout transactions",
-                        onConfirm: async () => {
-                          try {
-                            await reopenDeposit.mutateAsync({
-                              id: deposit.id,
-                              deleteLedger: false,
-                            });
-                            onAnnounce(`Reopened “${deposit.name}”.`);
-                          } catch (reason) {
-                            onAnnounce(describeApiError(reason, "Couldn’t reopen the deposit."));
-                          }
+                  ) : null
+                }
+                actions={[
+                  {
+                    id: "contribute",
+                    label: "Add money",
+                    icon: Plus,
+                    hidden: !open || deposit.kind === "recurring",
+                    onSelect: () =>
+                      onDialog({ kind: "deposit-action", deposit, action: "contribute" }),
+                  },
+                  {
+                    id: "value",
+                    label: "Set value",
+                    icon: Tag,
+                    hidden: !open || deposit.kind === "fixed",
+                    onSelect: () => onDialog({ kind: "deposit-action", deposit, action: "value" }),
+                  },
+                  {
+                    id: "close",
+                    label: "Close early",
+                    description: "Record the payout before maturity",
+                    icon: CircleCheck,
+                    hidden: !open || awaiting,
+                    onSelect: () => onDialog({ kind: "deposit-action", deposit, action: "close" }),
+                  },
+                  {
+                    id: "edit",
+                    label: "Edit",
+                    icon: Pencil,
+                    hidden: !open,
+                    onSelect: () => onDialog({ kind: "deposit", deposit }),
+                  },
+                  {
+                    id: "reopen",
+                    label: "Reopen…",
+                    icon: RotateCcw,
+                    hidden: open,
+                    confirm: {
+                      prompt: `Undo closing “${deposit.name}”?`,
+                      choices: [
+                        {
+                          label: "Reopen, keep the payout transactions",
+                          onConfirm: () => reopen(deposit, false),
                         },
-                      },
-                      {
-                        label: "Reopen and delete them",
-                        destructive: true,
-                        onConfirm: async () => {
-                          try {
-                            await reopenDeposit.mutateAsync({ id: deposit.id, deleteLedger: true });
-                            onAnnounce(`Reopened “${deposit.name}”.`);
-                          } catch (reason) {
-                            onAnnounce(describeApiError(reason, "Couldn’t reopen the deposit."));
-                          }
+                        {
+                          label: "Reopen and delete them",
+                          destructive: true,
+                          onConfirm: () => reopen(deposit, true),
                         },
-                      },
-                    ]}
-                  />
-                )}
-              </div>
+                      ],
+                    },
+                  },
+                ]}
+              />
             </li>
           );
         })}
@@ -853,7 +920,7 @@ function ActivityPanel({
     <Panel title="Recent activity" description="Buys, sales, income, fees, and deposits." flush>
       {state.status === "error" ? (
         <div className="px-5 pb-5">
-          <ErrorPanel message={state.message} onRetry={activity.reload} />
+          <LoadError message={state.message} onRetry={activity.reload} />
         </div>
       ) : state.status === "loading" ? (
         <div className="px-5 pb-5">
@@ -862,18 +929,15 @@ function ActivityPanel({
       ) : state.data.transactions.length === 0 ? (
         <p className="px-5 pb-5 text-sm text-muted-foreground">Nothing recorded yet.</p>
       ) : (
-        <ul className="divide-y border-t">
+        <ul className="@container/rows divide-y border-t">
           {state.data.transactions.map((entry) => {
             const subject =
               names.get(entry.holding_id ?? entry.deposit_id ?? "") ?? "Investment account";
             const outflow =
               entry.type === "buy" || entry.type === "deposit" || entry.type === "fee";
             return (
-              <li
-                key={entry.id}
-                className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0">
+              <li key={entry.id} className="flex items-center gap-3 px-4 py-2.5 @md/rows:px-5">
+                <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">
                     {transactionTypeLabel(entry.type)}
                     {entry.plan === "sip" ? " (SIP)" : ""} · {subject}
@@ -886,25 +950,33 @@ function ActivityPanel({
                     {entry.fees ? ` · charges ${formatMoney(entry.fees, entry.currency)}` : ""}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm tabular-nums">
-                    {formatMoney(outflow ? -entry.amount : entry.amount, entry.currency, {
-                      signDisplay: "always",
-                    })}
-                  </span>
-                  <ConfirmAction
-                    label="Delete"
-                    prompt="Delete this investment transaction?"
-                    options={[
-                      { label: "Delete, keep ledger entries", onConfirm: remove(entry, false) },
-                      {
-                        label: "Delete with ledger entries",
-                        destructive: true,
-                        onConfirm: remove(entry, true),
+                <span className="shrink-0 text-sm whitespace-nowrap tabular-nums">
+                  {formatMoney(outflow ? -entry.amount : entry.amount, entry.currency, {
+                    signDisplay: "always",
+                  })}
+                </span>
+                <RowActions
+                  name={`${transactionTypeLabel(entry.type)} of ${subject}`}
+                  actions={[
+                    {
+                      id: "delete",
+                      label: "Delete…",
+                      icon: Trash2,
+                      destructive: true,
+                      confirm: {
+                        prompt: "Delete this investment transaction?",
+                        choices: [
+                          { label: "Delete, keep ledger entries", onConfirm: remove(entry, false) },
+                          {
+                            label: "Delete with ledger entries",
+                            destructive: true,
+                            onConfirm: remove(entry, true),
+                          },
+                        ],
                       },
-                    ]}
-                  />
-                </div>
+                    },
+                  ]}
+                />
               </li>
             );
           })}
@@ -934,7 +1006,7 @@ function AccountsPanel({
         {profiles.map((account) => (
           <li
             key={account.account_id}
-            className="flex items-center justify-between gap-3 px-5 py-3"
+            className="flex items-center justify-between gap-3 px-4 py-2.5 @md/rows:px-5"
           >
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">
@@ -957,7 +1029,7 @@ function AccountsPanel({
             </div>
             <div className="flex items-center gap-2">
               <div className="text-right">
-                <p className="text-sm font-medium tabular-nums">
+                <p className="text-sm font-medium whitespace-nowrap tabular-nums">
                   {formatMoney(account.value, account.currency)}
                 </p>
                 <p className="text-xs text-muted-foreground tabular-nums">
@@ -980,22 +1052,11 @@ function AccountsPanel({
   );
 }
 
-export function ErrorPanel({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
-      <p>{message}</p>
-      <Button variant="outline" size="sm" onClick={onRetry}>
-        Try again
-      </Button>
-    </div>
-  );
-}
-
 function InvestmentsSkeleton() {
   return (
     <div className="space-y-4">
       <span className="sr-only">Loading investments…</span>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,13rem),1fr))] gap-4">
         {[0, 1, 2, 3].map((tile) => (
           <Skeleton key={tile} className="h-28 rounded-xl" />
         ))}

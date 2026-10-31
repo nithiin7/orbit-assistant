@@ -5,26 +5,23 @@ import { Landmark, type LucideIcon, Receipt, Repeat } from "lucide-react";
 import { type ComponentProps, useEffect, useRef, useState } from "react";
 
 import { FormField } from "@/components/form-field";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MAX_REMINDER_DAYS, paymentStatusLabel } from "@/lib/commitments";
 import { cn } from "@/utils/common";
 
-const STATUS_TONES: Record<PaymentStatus, string> = {
-  overdue: "border-destructive/40 text-destructive",
-  due: "border-warning/40 text-warning",
-  upcoming: "",
-  paid: "border-success/40 text-success",
-  skipped: "",
+import { Chip, type ChipTone } from "./finance-meta";
+
+const STATUS_TONES: Record<PaymentStatus, ChipTone> = {
+  overdue: "danger",
+  due: "warning",
+  upcoming: "quiet",
+  paid: "success",
+  skipped: "quiet",
 };
 
-/** A payment's status as a badge; overdue and due stand out, the rest stay quiet. */
+/** A payment's status as a chip; overdue and due stand out, the rest stay quiet. */
 export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
-  return (
-    <Badge variant="outline" className={STATUS_TONES[status]}>
-      {paymentStatusLabel(status)}
-    </Badge>
-  );
+  return <Chip tone={STATUS_TONES[status]}>{paymentStatusLabel(status)}</Chip>;
 }
 
 const KIND_ICONS: Record<CommitmentKind, LucideIcon> = {
@@ -39,7 +36,7 @@ export function KindIcon({ kind, className }: { kind: CommitmentKind; className?
     <span
       aria-hidden="true"
       className={cn(
-        "flex size-8 shrink-0 items-center justify-center rounded-full border bg-muted/60 text-muted-foreground",
+        "flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-subtle text-brand",
         className,
       )}
     >

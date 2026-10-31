@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, type LucideIcon } from "lucide-react";
+import { Check, ChevronDown, type LucideIcon } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
 
 import { POPOVER_MODE, useAnchoredPopover } from "@/hooks/use-anchored-popover";
@@ -16,6 +16,12 @@ export type MenuItem = {
   description?: string;
   icon?: LucideIcon;
   disabled?: boolean;
+  /** Shown in red, for actions that delete or end something. */
+  destructive?: boolean;
+  /** Marks the current choice when the menu picks one of several (`menuitemradio`). */
+  checked?: boolean;
+  /** Consecutive items with the same group sit under its label. */
+  group?: string;
   onSelect: () => void;
 };
 
@@ -26,6 +32,9 @@ type MenuProps = {
   /** The trigger's accessible name, when its content alone doesn't say enough. */
   "aria-label"?: string;
   variant?: ButtonProps["variant"];
+  size?: ButtonProps["size"];
+  /** The chevron after the trigger's content; leave it out for an icon-only trigger. */
+  chevron?: boolean;
   /** Which trigger edge the menu lines up with. */
   align?: "start" | "end";
   className?: string;
@@ -40,6 +49,8 @@ export function Menu({
   children,
   items,
   variant = "default",
+  size,
+  chevron = true,
   align = "start",
   className,
   ...aria
@@ -122,12 +133,67 @@ export function Menu({
     }
   }
 
+  function renderItem({ item, index }: { item: MenuItem; index: number }) {
+    const Icon = item.icon;
+    return (
+      <div
+        key={item.id}
+        id={itemId(index)}
+        role={item.checked === undefined ? "menuitem" : "menuitemradio"}
+        aria-checked={item.checked}
+        aria-disabled={item.disabled || undefined}
+        aria-labelledby={`${itemId(index)}-label`}
+        aria-describedby={item.description ? `${itemId(index)}-description` : undefined}
+        data-active={index === active ? "" : undefined}
+        onClick={() => run(index)}
+        onMouseMove={() => {
+          if (!item.disabled && index !== active) setActive(index);
+        }}
+        // Keep focus in the menu while the pointer picks an item.
+        onMouseDown={(event) => event.preventDefault()}
+        className={cn(
+          "flex cursor-pointer items-start gap-3 rounded-md px-2.5 py-2 text-sm select-none aria-disabled:cursor-not-allowed aria-disabled:opacity-50 data-active:bg-accent data-active:text-accent-foreground",
+          item.destructive && "text-destructive data-active:text-destructive",
+          item.checked && "font-medium text-brand data-active:text-brand",
+        )}
+      >
+        {Icon ? (
+          <span
+            className={cn(
+              "mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md",
+              item.destructive
+                ? "bg-destructive/10 text-destructive"
+                : "bg-brand-subtle text-brand",
+            )}
+          >
+            <Icon aria-hidden="true" className="size-4" />
+          </span>
+        ) : null}
+        <span className="min-w-0 flex-1">
+          <span id={`${itemId(index)}-label`} className="block font-medium">
+            {item.label}
+          </span>
+          {item.description ? (
+            <span
+              id={`${itemId(index)}-description`}
+              className="block text-xs font-normal text-muted-foreground"
+            >
+              {item.description}
+            </span>
+          ) : null}
+        </span>
+        {item.checked ? <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0" /> : null}
+      </div>
+    );
+  }
+
   return (
     <>
       <Button
         ref={triggerRef}
         id={triggerId}
         variant={variant}
+        size={size}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
@@ -142,13 +208,22 @@ export function Menu({
         {...aria}
       >
         {children}
-        <ChevronDown
-          aria-hidden="true"
-          className="-mr-1 opacity-70 transition-transform duration-150 group-aria-expanded:rotate-180"
-        />
+        {chevron ? (
+          <ChevronDown
+            aria-hidden="true"
+            className="-mr-1 opacity-70 transition-transform duration-150 group-aria-expanded:rotate-180"
+          />
+        ) : null}
       </Button>
       {open ? (
-        <div ref={popupRef} popover={POPOVER_MODE} className={cn(popupClassName, "w-64")}>
+        <div
+          ref={popupRef}
+          popover={POPOVER_MODE}
+          className={cn(
+            popupClassName,
+            "max-h-[min(32rem,var(--available-height,32rem))] w-64 overflow-y-auto overscroll-contain",
+          )}
+        >
           <div
             ref={menuRef}
             id={menuId}
@@ -164,49 +239,35 @@ export function Menu({
             }}
             className="outline-none"
           >
-            {items.map((item, index) => {
-              const Icon = item.icon;
-              return (
-                <div
-                  key={item.id}
-                  id={itemId(index)}
-                  role="menuitem"
-                  aria-disabled={item.disabled || undefined}
-                  aria-labelledby={`${itemId(index)}-label`}
-                  aria-describedby={item.description ? `${itemId(index)}-description` : undefined}
-                  data-active={index === active ? "" : undefined}
-                  onClick={() => run(index)}
-                  onMouseMove={() => {
-                    if (!item.disabled && index !== active) setActive(index);
-                  }}
-                  // Keep focus in the menu while the pointer picks an item.
-                  onMouseDown={(event) => event.preventDefault()}
-                  className="flex cursor-pointer items-start gap-3 rounded-md px-2.5 py-2 text-sm select-none aria-disabled:cursor-not-allowed aria-disabled:opacity-50 data-active:bg-accent data-active:text-accent-foreground"
-                >
-                  {Icon ? (
-                    <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-brand-subtle text-brand">
-                      <Icon aria-hidden="true" className="size-4" />
-                    </span>
-                  ) : null}
-                  <span className="min-w-0">
-                    <span id={`${itemId(index)}-label`} className="block font-medium">
-                      {item.label}
-                    </span>
-                    {item.description ? (
-                      <span
-                        id={`${itemId(index)}-description`}
-                        className="block text-xs text-muted-foreground"
-                      >
-                        {item.description}
-                      </span>
-                    ) : null}
-                  </span>
+            {groupItems(items).map(({ group, entries }) =>
+              group === undefined ? (
+                entries.map(renderItem)
+              ) : (
+                <div key={group} role="group" aria-labelledby={`${baseId}-group-${group}`}>
+                  <p
+                    id={`${baseId}-group-${group}`}
+                    className="px-2.5 pt-2.5 pb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                  >
+                    {group}
+                  </p>
+                  {entries.map(renderItem)}
                 </div>
-              );
-            })}
+              ),
+            )}
           </div>
         </div>
       ) : null}
     </>
   );
+}
+
+/** Runs of consecutive items that share a group (or have none), keeping each item's index. */
+function groupItems(items: readonly MenuItem[]) {
+  const runs: { group: string | undefined; entries: { item: MenuItem; index: number }[] }[] = [];
+  items.forEach((item, index) => {
+    const last = runs.at(-1);
+    if (last && last.group === item.group) last.entries.push({ item, index });
+    else runs.push({ group: item.group, entries: [{ item, index }] });
+  });
+  return runs;
 }

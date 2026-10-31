@@ -21,6 +21,7 @@ import type {
 import { mixed, object, string } from "yup";
 
 import { type Option } from "@/utils/common";
+import { addDays, parseCalendarDate } from "@/utils/dates";
 import { multiLineText, singleLineText } from "@/utils/validation";
 
 /** Mirrors the API's `CURRENCY_EXPONENTS`: digits after the decimal point. */
@@ -327,6 +328,71 @@ export function isFiltered(filters: TransactionFilters): boolean {
     filters.to !== "" ||
     filters.search !== ""
   );
+}
+
+/** Filters other than type and search, which sit behind the "Filters" button on narrow screens. */
+export function moreFiltersCount(filters: TransactionFilters): number {
+  return [
+    filters.accountId !== "",
+    filters.categoryId !== "",
+    filters.from !== "",
+    filters.to !== "",
+    filters.sort !== "date",
+  ].filter(Boolean).length;
+}
+
+export type TransactionDay = {
+  /** `YYYY-MM-DD`. */
+  date: string;
+  transactions: FinanceTransaction[];
+  /** Money in minus money out that day, or `null` when the day mixes currencies. */
+  net: number | null;
+  currency: Currency | null;
+};
+
+/**
+ * Transactions in runs by the day they happened, keeping the order given (newest first from the
+ * API). Transfers count toward the net only when seen from one account, as `signedAmount` does.
+ */
+export function groupTransactionsByDay(
+  transactions: readonly FinanceTransaction[],
+  accountId?: string,
+): TransactionDay[] {
+  const days: TransactionDay[] = [];
+  for (const transaction of transactions) {
+    let day = days.at(-1);
+    if (day?.date !== transaction.occurred_on) {
+      day = {
+        date: transaction.occurred_on,
+        transactions: [],
+        net: 0,
+        currency: transaction.currency,
+      };
+      days.push(day);
+    }
+    day.transactions.push(transaction);
+    if (day.currency !== transaction.currency) {
+      day.currency = null;
+      day.net = null;
+    }
+    const neutral = transaction.type === "transfer" && accountId === undefined;
+    if (day.net !== null && !neutral) day.net += signedAmount(transaction, accountId);
+  }
+  return days;
+}
+
+/** "Today", "Yesterday", or a date with its weekday, such as "Mon, 26 Oct". */
+export function dayLabel(date: string, today: string): string {
+  if (date === today) return "Today";
+  if (date === addDays(today, -1)) return "Yesterday";
+  const { year, month, day } = parseCalendarDate(date);
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: year === parseCalendarDate(today).year ? undefined : "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, day)));
 }
 
 // Forms

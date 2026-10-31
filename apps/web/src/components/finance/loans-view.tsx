@@ -2,14 +2,22 @@
 
 import type { Installment, Loan } from "@orbit/contracts";
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, ChevronDown, Landmark, Pencil, Plus } from "lucide-react";
+import {
+  Archive,
+  CalendarClock,
+  ChevronDown,
+  CircleCheck,
+  Landmark,
+  Pencil,
+  Plus,
+  RotateCcw,
+} from "lucide-react";
 import { useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import { loanOptions } from "@/api/commitments";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,8 +35,13 @@ import { cn } from "@/utils/common";
 import { formatCalendarDate, localDateString } from "@/utils/dates";
 
 import { ConfirmAction, PaymentStatusBadge } from "./commitment-parts";
+import { Chip } from "./finance-meta";
 import type { FinanceData } from "./finance-view";
+import { EndedSection, LoadError } from "./panel";
 import type { PaymentTarget } from "./payment-dialog";
+import { RowActions } from "./row-actions";
+import { StatGrid, StatTile } from "./stat-tile";
+import { ViewHeader } from "./view-header";
 
 type LoansViewProps = FinanceData & {
   onAddLoan: () => void;
@@ -55,24 +68,35 @@ export function installmentTarget(loan: Loan, installment: Installment): Payment
 
 /** Every loan with what is still owed, and its EMI schedule on demand. */
 export function LoansView(props: LoansViewProps) {
-  const { workspaceId, onAddLoan } = props;
+  const { workspaceId, onAddLoan, currency } = props;
   const { state, reload } = useLoans(workspaceId);
+  const addButton = (
+    <Button onClick={onAddLoan}>
+      <Plus aria-hidden="true" />
+      Add loan
+    </Button>
+  );
+  const header = (
+    <ViewHeader
+      title="Loans"
+      description="What you still owe, each EMI’s split between principal and interest, and the schedule ahead."
+      action={addButton}
+    />
+  );
 
   if (state.status === "error") {
     return (
-      <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
-        <p>{state.message}</p>
-        <Button variant="outline" size="sm" onClick={reload}>
-          Try again
-        </Button>
+      <div className="space-y-6">
+        {header}
+        <LoadError message={state.message} onRetry={reload} />
       </div>
     );
   }
   if (state.status === "loading") {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
+        {header}
         <span className="sr-only">Loading loans…</span>
-        <Skeleton className="h-40 rounded-xl" />
         <Skeleton className="h-40 rounded-xl" />
       </div>
     );
@@ -88,45 +112,74 @@ export function LoansView(props: LoansViewProps) {
         title="No loans yet"
         description="Add a home, car, personal, or education loan to see its EMI schedule, what you still owe, and how much goes to interest."
       >
-        <Button onClick={onAddLoan}>
-          <Plus aria-hidden="true" />
-          Add loan
-        </Button>
+        {addButton}
       </EmptyState>
     );
   }
 
+  // Totals never add currencies together: they cover the loans in the page's currency.
+  const counted = active.filter((loan) => loan.currency === currency);
+  const owed = counted.reduce((sum, loan) => sum + Math.max(loan.outstanding_principal, 0), 0);
+  const interest = counted.reduce((sum, loan) => sum + loan.remaining_interest, 0);
+  const next = counted
+    .filter((loan) => loan.next_payment_date)
+    .sort((a, b) => (a.next_payment_date ?? "").localeCompare(b.next_payment_date ?? ""))[0];
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-base font-semibold">Loans</h2>
-        <Button size="sm" onClick={onAddLoan}>
-          <Plus aria-hidden="true" />
-          Add loan
-        </Button>
-      </div>
+    <div className="space-y-6">
+      {header}
+      {counted.length > 0 ? (
+        <StatGrid>
+          <StatTile
+            label="Still owed"
+            icon={Landmark}
+            accent="negative"
+            value={formatMoney(owed, currency)}
+          >
+            Principal across {counted.length} active {counted.length === 1 ? "loan" : "loans"}
+          </StatTile>
+          <StatTile label="Interest to go" value={formatMoney(interest, currency)}>
+            If every EMI is paid on schedule
+          </StatTile>
+          {next?.next_payment_date ? (
+            <StatTile
+              label="Next EMI"
+              icon={CalendarClock}
+              accent="brand"
+              value={formatCalendarDate(next.next_payment_date)}
+            >
+              {next.name} · {formatMoney(next.emi_amount, next.currency)}
+            </StatTile>
+          ) : null}
+        </StatGrid>
+      ) : null}
       {active.length === 0 ? (
         <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">
           No active loans.
         </p>
       ) : (
-        <ul className="space-y-4" aria-label="Active loans">
+        <ul
+          className="grid items-start gap-4 @4xl/list:grid-cols-2 @4xl/list:gap-6"
+          aria-label="Active loans"
+        >
           {active.map((loan) => (
             <LoanCard key={loan.id} loan={loan} {...props} />
           ))}
         </ul>
       )}
       {inactive.length > 0 ? (
-        <details className="rounded-xl border bg-card/60">
-          <summary className="cursor-pointer rounded-xl px-4 py-3 text-sm text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            {inactive.length} closed or archived {inactive.length === 1 ? "loan" : "loans"}
-          </summary>
-          <ul className="space-y-4 border-t p-4" aria-label="Closed and archived loans">
+        <EndedSection
+          summary={`${inactive.length} closed or archived ${inactive.length === 1 ? "loan" : "loans"}`}
+        >
+          <ul
+            className="grid items-start gap-4 p-4 @4xl/list:grid-cols-2"
+            aria-label="Closed and archived loans"
+          >
             {inactive.map((loan) => (
               <LoanCard key={loan.id} loan={loan} {...props} />
             ))}
           </ul>
-        </details>
+        </EndedSection>
       ) : null}
     </div>
   );
@@ -161,14 +214,14 @@ function LoanCard({
   };
 
   return (
-    <li>
+    <li className="@container/card min-w-0">
       <Card className="space-y-4 p-5 shadow-elevation-1">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 space-y-0.5">
             <h3 className="flex items-center gap-2 text-sm font-semibold">
               {loan.name}
               {loan.status !== "active" ? (
-                <Badge variant="outline">{loan.status === "closed" ? "Closed" : "Archived"}</Badge>
+                <Chip>{loan.status === "closed" ? "Closed" : "Archived"}</Chip>
               ) : null}
             </h3>
             <p className="text-xs text-muted-foreground">
@@ -181,25 +234,27 @@ function LoanCard({
                 .join(" · ")}
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-8"
-              aria-label={`Edit “${loan.name}”`}
-              onClick={() => onEditLoan(loan)}
-            >
-              <Pencil aria-hidden="true" />
-            </Button>
-            {loan.status === "active" ? (
-              <>
-                <Button variant="ghost" size="sm" onClick={() => onReschedule(loan)}>
-                  Reschedule
-                </Button>
-                <ConfirmAction
-                  label="Close"
-                  prompt={`Close “${loan.name}”?`}
-                  options={[
+          <RowActions
+            name={loan.name}
+            actions={[
+              { id: "edit", label: "Edit", icon: Pencil, onSelect: () => onEditLoan(loan) },
+              {
+                id: "reschedule",
+                label: "Reschedule",
+                description: "Change the rate, EMI, or tenure from here on",
+                icon: CalendarClock,
+                hidden: loan.status !== "active",
+                onSelect: () => onReschedule(loan),
+              },
+              {
+                id: "close",
+                label: "Close loan…",
+                description: "Paid off, sold, or settled",
+                icon: CircleCheck,
+                hidden: loan.status !== "active",
+                confirm: {
+                  prompt: `Close “${loan.name}”?`,
+                  choices: [
                     {
                       label:
                         loan.outstanding_principal > 0
@@ -208,34 +263,31 @@ function LoanCard({
                       destructive: true,
                       onConfirm: () => setStatus("closed", `Closed “${loan.name}”.`),
                     },
-                  ]}
-                />
-              </>
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => void setStatus("active", `Reopened “${loan.name}”.`)}
-              >
-                Reopen
-              </Button>
-            )}
-            {loan.status === "closed" ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => void setStatus("archived", `Archived “${loan.name}”.`)}
-              >
-                Archive
-              </Button>
-            ) : null}
-          </div>
+                  ],
+                },
+              },
+              {
+                id: "reopen",
+                label: "Reopen",
+                icon: RotateCcw,
+                hidden: loan.status === "active",
+                onSelect: () => void setStatus("active", `Reopened “${loan.name}”.`),
+              },
+              {
+                id: "archive",
+                label: "Archive",
+                icon: Archive,
+                hidden: loan.status !== "closed",
+                onSelect: () => void setStatus("archived", `Archived “${loan.name}”.`),
+              },
+            ]}
+          />
         </div>
 
-        <dl className="grid gap-4 sm:grid-cols-4">
-          <div className="sm:col-span-2">
+        <dl className="grid grid-cols-2 gap-4 @lg/card:grid-cols-4">
+          <div className="col-span-2">
             <dt className="text-xs text-muted-foreground">Still owed</dt>
-            <dd className="text-xl font-semibold tracking-tight tabular-nums">
+            <dd className="text-xl font-semibold tracking-tight whitespace-nowrap tabular-nums">
               {formatMoney(Math.max(loan.outstanding_principal, 0), loan.currency)}
             </dd>
             <dd className="mt-2">
@@ -393,16 +445,7 @@ function LoanSchedule({
     }
   };
 
-  if (state.status === "error") {
-    return (
-      <div role="alert" className="space-y-2 text-sm">
-        <p>{state.message}</p>
-        <Button variant="outline" size="sm" onClick={reload}>
-          Try again
-        </Button>
-      </div>
-    );
-  }
+  if (state.status === "error") return <LoadError message={state.message} onRetry={reload} />;
   if (state.status === "loading") {
     return (
       <div className="space-y-2">

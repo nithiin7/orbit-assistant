@@ -1,112 +1,67 @@
 "use client";
 
 import type { Currency, FinanceAccount } from "@orbit/contracts";
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  ChevronLeft,
-  ChevronRight,
-  type LucideIcon,
-  Receipt,
-  Scale,
-} from "lucide-react";
-import { type ReactNode, useId, useMemo, useState } from "react";
+import { ArrowDownLeft, ArrowRight, ArrowUpRight, Receipt, Scale } from "lucide-react";
+import { useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFinanceReport } from "@/hooks/use-finance";
-import {
-  accountCurrencies,
-  accountTypeLabel,
-  currencyOptions,
-  DEFAULT_CURRENCY,
-  formatMoney,
-} from "@/lib/finance";
+import { accountTypeLabel, formatMoney } from "@/lib/finance";
 import { byId, cn } from "@/utils/common";
-import { localMonthString, monthLabel, shiftMonth } from "@/utils/dates";
+import { monthLabel } from "@/utils/dates";
 
 import { BudgetSummary } from "./budget-summary";
 import { CommitmentsSummary } from "./commitments-summary";
 import { CategoryBreakdown, TrendChart } from "./finance-charts";
 import type { FinanceData } from "./finance-view";
+import { LoadError, Panel } from "./panel";
+import { StatGrid, StatTile } from "./stat-tile";
 import { TransactionItem } from "./transaction-item";
+import { CurrencySwitcher, MonthSwitcher, ViewHeader } from "./view-header";
 
-/** One month's cash flow, account balances, trend, spending, and latest transactions. */
+/** How many accounts the overview lists before pointing to the Accounts view. */
+const ACCOUNTS_SHOWN = 6;
+
+/** One month's cash flow, commitments, plans, trend, spending, balances, and latest entries. */
 export function FinanceOverview({
   workspaceId,
   accounts,
   categories,
   onEditTransaction,
   onShowTab,
+  month: sharedMonth,
+  thisMonth,
+  onMonthChange,
+  currency,
+  currencies,
+  onCurrencyChange,
 }: FinanceData) {
-  const id = useId();
-  const thisMonth = localMonthString();
-  const [month, setMonth] = useState(thisMonth);
-  const currencies = useMemo(() => accountCurrencies(accounts), [accounts]);
-  const [chosenCurrency, setCurrency] = useState<Currency | null>(null);
-  const currency =
-    chosenCurrency && currencies.includes(chosenCurrency)
-      ? chosenCurrency
-      : (currencies[0] ?? DEFAULT_CURRENCY);
+  // Budgets and plans can look ahead; a report of what happened can't, so stop at this month.
+  const month = sharedMonth > thisMonth ? thisMonth : sharedMonth;
   const { resource, refreshing, reload } = useFinanceReport(workspaceId, month, currency);
   const accountsById = useMemo(() => byId(accounts), [accounts]);
   const categoriesById = useMemo(() => byId(categories), [categories]);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Previous month"
-            onClick={() => setMonth((current) => shiftMonth(current, -1))}
-          >
-            <ChevronLeft aria-hidden="true" />
-          </Button>
-          <h2 className="min-w-36 text-center text-base font-semibold" aria-live="polite">
-            {monthLabel(month)}
-          </h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Next month"
-            disabled={month >= thisMonth}
-            onClick={() => setMonth((current) => shiftMonth(current, 1))}
-          >
-            <ChevronRight aria-hidden="true" />
-          </Button>
-          {month !== thisMonth ? (
-            <Button variant="ghost" size="sm" onClick={() => setMonth(thisMonth)}>
-              This month
-            </Button>
-          ) : null}
-        </div>
-        {currencies.length > 1 ? (
-          <div className="flex items-center gap-2">
-            <label htmlFor={`${id}-currency`} className="text-sm text-muted-foreground">
-              Currency
-            </label>
-            <Select
-              id={`${id}-currency`}
-              className="w-28"
-              value={currency}
-              onValueChange={setCurrency}
-              options={currencyOptions(currencies)}
+      <ViewHeader
+        title="Overview"
+        description={`${monthLabel(month)} at a glance: cash flow, what’s due, and your plans.`}
+        controls={
+          <>
+            <MonthSwitcher month={month} thisMonth={thisMonth} onChange={onMonthChange} />
+            <CurrencySwitcher
+              currencies={currencies}
+              currency={currency}
+              onChange={onCurrencyChange}
             />
-          </div>
-        ) : null}
-      </div>
+          </>
+        }
+      />
 
       {resource.status === "error" ? (
-        <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
-          <p>{resource.message}</p>
-          <Button variant="outline" size="sm" onClick={reload}>
-            Try again
-          </Button>
-        </div>
+        <LoadError message={resource.message} onRetry={reload} />
       ) : resource.status === "loading" ? (
         <OverviewSkeleton />
       ) : (
@@ -116,22 +71,14 @@ export function FinanceOverview({
         >
           <CashFlowTiles {...resource.data.summary} currency={currency} />
 
-          <CommitmentsSummary
-            workspaceId={workspaceId}
-            currency={currency}
-            onOpenUpcoming={() => onShowTab("upcoming")}
-          />
-
-          <BudgetSummary
-            workspaceId={workspaceId}
-            month={month}
-            currency={currency}
-            onOpenBudgets={() => onShowTab("budgets")}
-            onOpenGoals={() => onShowTab("goals")}
-          />
-
-          <div className="grid gap-6 xl:grid-cols-2">
-            <Panel title="Income and spending" description="The last six months.">
+          {/* A dashboard of cards: one column on phones, two from a medium column, three on very
+              wide ones. Budget, goal, and commitment cards appear once the workspace has them. */}
+          <div className="grid gap-4 @3xl/list:grid-cols-2 @3xl/list:gap-6 @7xl/list:grid-cols-3">
+            <Panel
+              title="Income and spending"
+              description="The last six months."
+              className="@3xl/list:col-span-2"
+            >
               <TrendChart
                 months={resource.data.trend.months}
                 currency={currency}
@@ -153,18 +100,42 @@ export function FinanceOverview({
                 />
               )}
             </Panel>
-          </div>
 
-          <div className="grid gap-6 xl:grid-cols-2">
-            <Balances accounts={accounts} currency={currency} />
-            <Panel title="Latest this month" flush>
+            <CommitmentsSummary
+              workspaceId={workspaceId}
+              currency={currency}
+              onOpenUpcoming={() => onShowTab("upcoming")}
+            />
+            <BudgetSummary
+              workspaceId={workspaceId}
+              month={month}
+              currency={currency}
+              onOpenBudgets={() => onShowTab("budgets")}
+              onOpenGoals={() => onShowTab("goals")}
+            />
+
+            <Balances
+              accounts={accounts}
+              currency={currency}
+              onOpenAccounts={() => onShowTab("accounts")}
+            />
+            <Panel
+              title="Latest this month"
+              flush
+              action={
+                <Button variant="ghost" size="sm" onClick={() => onShowTab("transactions")}>
+                  All transactions
+                  <ArrowRight aria-hidden="true" />
+                </Button>
+              }
+            >
               {resource.data.recent.length === 0 ? (
                 <div className="flex items-center gap-3 px-5 pb-5 text-sm text-muted-foreground">
                   <Receipt className="size-4" aria-hidden="true" />
                   Nothing recorded in {monthLabel(month)}.
                 </div>
               ) : (
-                <ul className="divide-y border-t">
+                <ul className="@container/rows divide-y border-t">
                   {resource.data.recent.map((transaction) => (
                     <TransactionItem
                       key={transaction.id}
@@ -181,34 +152,6 @@ export function FinanceOverview({
         </div>
       )}
     </div>
-  );
-}
-
-export function Panel({
-  title,
-  description,
-  flush = false,
-  children,
-}: {
-  title: string;
-  description?: string;
-  /** Let the content run to the card's edges, as lists do. */
-  flush?: boolean;
-  children: ReactNode;
-}) {
-  const id = useId();
-  return (
-    <section aria-labelledby={id}>
-      <Card className="h-full shadow-elevation-1">
-        <div className="space-y-1 p-5 pb-4">
-          <h3 id={id} className="text-sm font-semibold">
-            {title}
-          </h3>
-          {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
-        </div>
-        <div className={flush ? undefined : "px-5 pb-5"}>{children}</div>
-      </Card>
-    </section>
   );
 }
 
@@ -231,16 +174,16 @@ function CashFlowTiles({
 }) {
   const savedShare = income > 0 && net > 0 ? Math.round((net / income) * 100) : null;
   return (
-    <dl className="grid gap-4 sm:grid-cols-3">
-      <Tile
+    <StatGrid>
+      <StatTile
         label="Income"
         icon={ArrowDownLeft}
         accent="income"
         value={formatMoney(income, currency)}
       >
         {transactions === 0 ? "Nothing recorded yet" : "Money earned this month"}
-      </Tile>
-      <Tile
+      </StatTile>
+      <StatTile
         label="Spending"
         icon={ArrowUpRight}
         accent="spending"
@@ -249,79 +192,35 @@ function CashFlowTiles({
         {refunds > 0
           ? `${formatMoney(expenses, currency)} spent, ${formatMoney(refunds, currency)} refunded`
           : "Expenses this month"}
-      </Tile>
-      <Tile
+      </StatTile>
+      <StatTile
         label="Net cash flow"
         icon={Scale}
         value={formatMoney(net, currency, { signDisplay: net === 0 ? "auto" : "always" })}
         tone={net < 0 ? "negative" : net > 0 ? "positive" : "default"}
         accent={net < 0 ? "negative" : "positive"}
+        emphasis
       >
         {net < 0
           ? "Spent more than earned"
           : savedShare !== null
             ? `Saved ${savedShare}% of income`
             : "Income minus spending"}
-      </Tile>
-    </dl>
+      </StatTile>
+    </StatGrid>
   );
 }
 
-/** A tile's accent: what the figure is about, shown as the color of its icon chip. */
-export type TileAccent = "brand" | "income" | "spending" | "positive" | "negative" | "neutral";
-
-const ACCENTS: Record<TileAccent, string> = {
-  brand: "bg-brand-subtle text-brand",
-  income: "bg-chart-1/12 text-chart-1",
-  spending: "bg-chart-2/12 text-chart-2",
-  positive: "bg-success/12 text-success",
-  negative: "bg-destructive/10 text-destructive",
-  neutral: "bg-muted text-muted-foreground",
-};
-
-export function Tile({
-  label,
-  value,
-  icon: Icon,
-  tone = "default",
-  accent = "neutral",
-  children,
+/** Balances in one currency: what the accounts hold, and what cards and loans owe. Not net worth. */
+function Balances({
+  accounts,
+  currency,
+  onOpenAccounts,
 }: {
-  label: string;
-  value: string;
-  icon: LucideIcon;
-  tone?: "default" | "positive" | "negative";
-  accent?: TileAccent;
-  children: ReactNode;
+  accounts: FinanceAccount[];
+  currency: Currency;
+  onOpenAccounts: () => void;
 }) {
-  return (
-    <div className="relative rounded-xl border bg-card p-5 shadow-elevation-1">
-      <span
-        aria-hidden="true"
-        className={cn(
-          "absolute top-4 right-4 flex size-9 items-center justify-center rounded-lg",
-          ACCENTS[accent],
-        )}
-      >
-        <Icon className="size-[1.125rem]" />
-      </span>
-      <dt className="pr-12 text-sm text-muted-foreground">{label}</dt>
-      <dd
-        className={cn(
-          "mt-1 pr-12 text-2xl font-semibold tracking-tight tabular-nums",
-          tone === "positive" && "text-success",
-          tone === "negative" && "text-destructive",
-        )}
-      >
-        {value}
-      </dd>
-      <dd className="mt-1 text-xs text-muted-foreground">{children}</dd>
-    </div>
-  );
-}
-
-/** Balances in one currency: what the accounts hold, and what credit cards owe. Not net worth. */
-function Balances({ accounts, currency }: { accounts: FinanceAccount[]; currency: Currency }) {
   // Archived accounts count while they still hold (or owe) money, matching the API's totals.
   const shown = accounts.filter(
     (account) => account.currency === currency && (!account.archived || account.balance !== 0),
@@ -330,25 +229,40 @@ function Balances({ accounts, currency }: { accounts: FinanceAccount[]; currency
   const liabilities = shown.filter((account) => account.account_class === "liability");
   const held = assets.reduce((sum, account) => sum + account.balance, 0);
   const owed = -liabilities.reduce((sum, account) => sum + account.balance, 0);
+  // The largest balances first, so the short list shows what matters most.
+  const listed = [...shown]
+    .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance))
+    .slice(0, ACCOUNTS_SHOWN);
+  const rest = shown.length - listed.length;
 
   return (
     <Panel
       title="Account balances"
-      description="Opening balances plus everything recorded. Not net worth: the Net worth view adds investments at market value and other assets."
+      description="Opening balances plus everything recorded. Not net worth, which adds investments and other assets."
       flush
+      action={
+        <Button variant="ghost" size="sm" onClick={onOpenAccounts}>
+          Accounts
+          <ArrowRight aria-hidden="true" />
+        </Button>
+      }
     >
       <dl className="grid grid-cols-2 gap-4 px-5 pb-4">
-        <div>
+        <div className="min-w-0">
           <dt className="text-xs text-muted-foreground">In your accounts</dt>
-          <dd className="text-lg font-semibold tabular-nums">{formatMoney(held, currency)}</dd>
+          <dd className="text-lg font-semibold whitespace-nowrap tabular-nums">
+            {formatMoney(held, currency)}
+          </dd>
         </div>
-        <div>
+        <div className="min-w-0">
           <dt className="text-xs text-muted-foreground">Owed on cards and loans</dt>
-          <dd className="text-lg font-semibold tabular-nums">{formatMoney(owed, currency)}</dd>
+          <dd className="text-lg font-semibold whitespace-nowrap tabular-nums">
+            {formatMoney(owed, currency)}
+          </dd>
         </div>
       </dl>
       <ul className="divide-y border-t">
-        {[...assets, ...liabilities].map((account) => (
+        {listed.map((account) => (
           <li key={account.id} className="flex items-center justify-between gap-3 px-5 py-2.5">
             <div className="min-w-0">
               <p className="truncate text-sm">{account.name}</p>
@@ -358,6 +272,11 @@ function Balances({ accounts, currency }: { accounts: FinanceAccount[]; currency
           </li>
         ))}
       </ul>
+      {rest > 0 ? (
+        <p className="border-t px-5 py-2.5 text-xs text-muted-foreground">
+          And {rest} more {rest === 1 ? "account" : "accounts"} in Accounts.
+        </p>
+      ) : null}
     </Panel>
   );
 }
@@ -367,7 +286,7 @@ export function AccountBalance({ account }: { account: FinanceAccount }) {
   if (account.account_class === "liability") {
     const owed = -account.balance;
     return (
-      <span className="shrink-0 text-right text-sm tabular-nums">
+      <span className="shrink-0 text-right text-sm whitespace-nowrap tabular-nums">
         {owed > 0 ? (
           <>
             {formatMoney(owed, account.currency)}{" "}
@@ -387,7 +306,7 @@ export function AccountBalance({ account }: { account: FinanceAccount }) {
   return (
     <span
       className={cn(
-        "shrink-0 text-right text-sm tabular-nums",
+        "shrink-0 text-right text-sm whitespace-nowrap tabular-nums",
         account.balance < 0 && "text-destructive",
       )}
     >
@@ -400,12 +319,12 @@ function OverviewSkeleton() {
   return (
     <div className="space-y-6">
       <span className="sr-only">Loading this month…</span>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,13rem),1fr))] gap-4">
         {[0, 1, 2].map((tile) => (
           <Skeleton key={tile} className="h-28 rounded-xl" />
         ))}
       </div>
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-6 @3xl/list:grid-cols-2">
         <Skeleton className="h-64 rounded-xl" />
         <Skeleton className="h-64 rounded-xl" />
       </div>

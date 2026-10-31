@@ -1,13 +1,24 @@
 "use client";
 
 import type { ContributionType, Currency, SavingsGoal } from "@orbit/contracts";
-import { ChevronDown, History, Pencil, Plus, Target } from "lucide-react";
+import {
+  ArrowUpFromLine,
+  Ban,
+  CircleCheck,
+  CircleHelp,
+  History,
+  Pause,
+  Pencil,
+  Play,
+  Plus,
+  Target,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBudgetMutations, useContributions, useGoals } from "@/hooks/use-budgets";
@@ -18,8 +29,13 @@ import { formatCalendarDate, localDateString } from "@/utils/dates";
 
 import { UtilizationBar } from "./budget-parts";
 import { ConfirmAction } from "./commitment-parts";
+import { Chip } from "./finance-meta";
 import type { FinanceData } from "./finance-view";
 import { ContributionDialog, GoalDialog } from "./goal-dialogs";
+import { EndedSection, LoadError } from "./panel";
+import { RowActions } from "./row-actions";
+import { StatGrid, StatTile } from "./stat-tile";
+import { ViewHeader } from "./view-header";
 
 type Dialog =
   | { kind: "goal"; goal?: SavingsGoal }
@@ -51,21 +67,33 @@ export function GoalsView({ workspaceId, accounts, onAnnounce }: FinanceData) {
       />
     ) : null;
 
+  const addButton = (
+    <Button onClick={() => setDialog({ kind: "goal" })}>
+      <Plus aria-hidden="true" />
+      Add goal
+    </Button>
+  );
+  const header = (
+    <ViewHeader
+      title="Savings goals"
+      description="What you’re saving for, how far along you are, and what to put aside each month. Saving isn’t spending."
+      action={addButton}
+    />
+  );
+
   if (state.status === "error") {
     return (
-      <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
-        <p>{state.message}</p>
-        <Button variant="outline" size="sm" onClick={reload}>
-          Try again
-        </Button>
+      <div className="space-y-6">
+        {header}
+        <LoadError message={state.message} onRetry={reload} />
       </div>
     );
   }
   if (state.status === "loading") {
     return (
-      <div className="space-y-3">
+      <div className="space-y-6">
+        {header}
         <span className="sr-only">Loading savings goals…</span>
-        <Skeleton className="h-24 rounded-xl" />
         <Skeleton className="h-48 rounded-xl" />
       </div>
     );
@@ -79,10 +107,7 @@ export function GoalsView({ workspaceId, accounts, onAnnounce }: FinanceData) {
           title="No savings goals yet"
           description="Save for an emergency fund, a car, a holiday, or a home. Orbit shows your progress and how much to put aside each month."
         >
-          <Button onClick={() => setDialog({ kind: "goal" })}>
-            <Plus aria-hidden="true" />
-            Add goal
-          </Button>
+          {addButton}
         </EmptyState>
         {dialogs}
       </>
@@ -90,57 +115,88 @@ export function GoalsView({ workspaceId, accounts, onAnnounce }: FinanceData) {
   }
   const open = goals.filter((goal) => goal.state === "active" || goal.state === "paused");
   const closed = goals.filter((goal) => goal.state === "completed" || goal.state === "cancelled");
+  const shared = sharedOverAllocations(open);
   const handlers = {
     workspaceId,
     onAnnounce,
+    sharedWarnings: new Set(shared.map((entry) => entry.accountName)),
     onEdit: (goal: SavingsGoal) => setDialog({ kind: "goal", goal }),
     onMove: (goal: SavingsGoal, type: ContributionType) =>
       setDialog({ kind: "contribution", goal, type }),
   };
+  const gridClassName = "grid grid-cols-[repeat(auto-fill,minmax(min(100%,20rem),1fr))] gap-4";
 
   return (
     <div className="space-y-6">
+      {header}
       <GoalTotals goals={open} />
-      <section aria-labelledby="goals-heading" className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <h2 id="goals-heading" className="text-base font-semibold">
-            Savings goals
-          </h2>
-          <Button size="sm" onClick={() => setDialog({ kind: "goal" })}>
-            <Plus aria-hidden="true" />
-            Add goal
-          </Button>
-        </div>
-        {open.length === 0 ? (
-          <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">
-            Nothing in progress. Completed and cancelled goals are below.
-          </p>
-        ) : (
-          <ul aria-label="Savings goals in progress" className="grid gap-4 lg:grid-cols-2">
-            {open.map((goal) => (
+      {shared.map((entry) => (
+        <p
+          key={entry.accountName}
+          role="note"
+          className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/5 p-3 text-sm"
+        >
+          <CircleHelp aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
+          <span>
+            {entry.goals.join(", ")} are kept in {entry.accountName} and count on{" "}
+            {formatMoney(entry.allocated, entry.currency)}, but it holds{" "}
+            {formatMoney(entry.balance, entry.currency)}. Move money in, or lower a goal.
+          </span>
+        </p>
+      ))}
+      {open.length === 0 ? (
+        <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">
+          Nothing in progress. Completed and cancelled goals are below.
+        </p>
+      ) : (
+        <ul aria-label="Savings goals in progress" className={gridClassName}>
+          {open.map((goal) => (
+            <GoalCard key={goal.id} goal={goal} {...handlers} />
+          ))}
+        </ul>
+      )}
+      {closed.length > 0 ? (
+        <EndedSection summary={`${closed.length} completed or cancelled`}>
+          <ul aria-label="Completed and cancelled goals" className={cn(gridClassName, "p-4")}>
+            {closed.map((goal) => (
               <GoalCard key={goal.id} goal={goal} {...handlers} />
             ))}
           </ul>
-        )}
-        {closed.length > 0 ? (
-          <details className="rounded-xl border bg-card/60">
-            <summary className="cursor-pointer rounded-xl px-4 py-3 text-sm text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              {closed.length} completed or cancelled
-            </summary>
-            <ul
-              aria-label="Completed and cancelled goals"
-              className="grid gap-4 p-4 lg:grid-cols-2"
-            >
-              {closed.map((goal) => (
-                <GoalCard key={goal.id} goal={goal} {...handlers} />
-              ))}
-            </ul>
-          </details>
-        ) : null}
-      </section>
+        </EndedSection>
+      ) : null}
       {dialogs}
     </div>
   );
+}
+
+/**
+ * Accounts that hold several goals and count on more than they hold. Said once, above the goals,
+ * rather than on every card that shares the account.
+ */
+function sharedOverAllocations(goals: SavingsGoal[]) {
+  const byAccount = new Map<string, SavingsGoal[]>();
+  for (const goal of goals) {
+    if (!goal.account) continue;
+    byAccount.set(goal.account.account_id, [
+      ...(byAccount.get(goal.account.account_id) ?? []),
+      goal,
+    ]);
+  }
+  return [...byAccount.values()].flatMap((entries) => {
+    const account = entries[0]?.account;
+    if (!account || entries.length < 2 || account.allocated <= Math.max(account.balance, 0)) {
+      return [];
+    }
+    return [
+      {
+        accountName: account.name,
+        goals: entries.map((goal) => goal.name),
+        allocated: account.allocated,
+        balance: account.balance,
+        currency: entries[0]?.currency ?? "INR",
+      },
+    ];
+  });
 }
 
 /** Saved against targets per currency; currencies are never added together. */
@@ -155,34 +211,49 @@ function GoalTotals({ goals }: { goals: SavingsGoal[] }) {
   }
   if (totals.size === 0) return null;
   return (
-    <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {[...totals.entries()].map(([currency, total]) => (
-        <div key={currency} className="rounded-xl border bg-card p-5 shadow-elevation-1">
-          <dt className="text-sm text-muted-foreground">Saved toward goals ({currency})</dt>
-          <dd className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">
-            {formatMoney(total.saved, currency)}
-          </dd>
-          <dd className="mt-1 text-xs text-muted-foreground">
-            of {formatMoney(total.target, currency)}
-            {total.monthly > 0
-              ? ` · ${formatMoney(total.monthly, currency)} a month to stay on track`
-              : ""}
-          </dd>
-        </div>
-      ))}
-    </dl>
+    <StatGrid>
+      {[...totals.entries()].flatMap(([currency, total]) => [
+        <StatTile
+          key={`${currency}-saved`}
+          label={`Saved toward goals (${currency})`}
+          icon={Target}
+          accent="positive"
+          value={formatMoney(total.saved, currency)}
+        >
+          of {formatMoney(total.target, currency)}
+        </StatTile>,
+        total.monthly > 0 ? (
+          <StatTile
+            key={`${currency}-monthly`}
+            label="To put aside each month"
+            value={formatMoney(total.monthly, currency)}
+          >
+            To reach every goal by its date
+          </StatTile>
+        ) : null,
+      ])}
+    </StatGrid>
   );
 }
 
 type GoalCardProps = {
   goal: SavingsGoal;
+  /** Accounts whose over-allocation is already explained above the goals. */
+  sharedWarnings: ReadonlySet<string>;
   workspaceId: string;
   onAnnounce: (message: string) => void;
   onEdit: (goal: SavingsGoal) => void;
   onMove: (goal: SavingsGoal, type: ContributionType) => void;
 };
 
-function GoalCard({ goal, workspaceId, onAnnounce, onEdit, onMove }: GoalCardProps) {
+function GoalCard({
+  goal,
+  sharedWarnings,
+  workspaceId,
+  onAnnounce,
+  onEdit,
+  onMove,
+}: GoalCardProps) {
   const { updateGoal, deleteGoal } = useBudgetMutations(workspaceId);
   const [error, setError] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
@@ -190,7 +261,10 @@ function GoalCard({ goal, workspaceId, onAnnounce, onEdit, onMove }: GoalCardPro
   const headingId = `goal-${goal.id}`;
   const currency = goal.currency;
   const account = goal.account;
-  const overAllocated = account !== null && account.allocated > Math.max(account.balance, 0);
+  const overAllocated =
+    account !== null &&
+    account.allocated > Math.max(account.balance, 0) &&
+    !sharedWarnings.has(account.name);
 
   const act = async (work: () => Promise<unknown>, message: string) => {
     setError(null);
@@ -207,9 +281,9 @@ function GoalCard({ goal, workspaceId, onAnnounce, onEdit, onMove }: GoalCardPro
   return (
     <li
       aria-labelledby={headingId}
-      className="space-y-4 rounded-xl border bg-card p-5 shadow-elevation-1"
+      className="flex min-w-0 flex-col gap-4 rounded-xl border bg-card p-5 shadow-elevation-1"
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-0.5">
           <h3 id={headingId} className="truncate text-sm font-semibold">
             {goal.name}
@@ -220,15 +294,11 @@ function GoalCard({ goal, workspaceId, onAnnounce, onEdit, onMove }: GoalCardPro
             {goal.target_date ? <span>By {formatCalendarDate(goal.target_date)}</span> : null}
           </p>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
           {goal.reached && goal.state !== "completed" ? (
-            <Badge variant="outline" className="border-success/40 text-success">
-              Target reached
-            </Badge>
+            <Chip tone="success">Target reached</Chip>
           ) : null}
-          {goal.state !== "active" ? (
-            <Badge variant="outline">{GOAL_STATE_LABELS[goal.state]}</Badge>
-          ) : null}
+          {goal.state !== "active" ? <Chip>{GOAL_STATE_LABELS[goal.state]}</Chip> : null}
         </div>
       </div>
       {goal.description ? (
@@ -272,7 +342,7 @@ function GoalCard({ goal, workspaceId, onAnnounce, onEdit, onMove }: GoalCardPro
             {formatMoney(goal.this_month, currency)}
           </dd>
         </div>
-        <div className="col-span-2 rounded-lg border bg-muted/30 p-3">
+        <div className="col-span-2 rounded-lg bg-muted/40 p-3">
           <dt className="text-muted-foreground">
             {account ? `Kept in ${account.name}` : "Not linked to an account"}
           </dt>
@@ -297,99 +367,100 @@ function GoalCard({ goal, workspaceId, onAnnounce, onEdit, onMove }: GoalCardPro
 
       <FormAlert message={error} />
 
-      <div className="flex flex-wrap items-center gap-1">
-        {goal.state === "active" ? (
-          <Button size="sm" variant="outline" onClick={() => onMove(goal, "contribution")}>
-            Add money
-          </Button>
-        ) : null}
-        {goal.saved > 0 && goal.state !== "cancelled" ? (
-          <Button size="sm" variant="ghost" onClick={() => onMove(goal, "withdrawal")}>
-            Withdraw
-          </Button>
-        ) : null}
-        <Button
-          size="sm"
-          variant="ghost"
-          aria-expanded={showHistory}
-          aria-controls={historyId}
-          onClick={() => setShowHistory((value) => !value)}
-        >
-          <History aria-hidden="true" />
-          History
-          <ChevronDown
-            aria-hidden="true"
-            className={cn("transition-transform duration-150", showHistory && "rotate-180")}
-          />
-        </Button>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="size-8"
-          aria-label={`Edit “${goal.name}”`}
-          onClick={() => onEdit(goal)}
-        >
-          <Pencil aria-hidden="true" />
-        </Button>
-        {goal.state === "active" ? (
-          <>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => void setState("paused", `Paused “${goal.name}”.`)}
-            >
-              Pause
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => void setState("completed", `Completed “${goal.name}”. Well done.`)}
-            >
-              Mark complete
-            </Button>
-          </>
-        ) : (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() =>
-              void setState(
-                "active",
-                goal.state === "paused" ? `Resumed “${goal.name}”.` : `Reopened “${goal.name}”.`,
-              )
-            }
-          >
-            {goal.state === "paused" ? "Resume" : "Reopen"}
-          </Button>
-        )}
-        {goal.state === "active" || goal.state === "paused" ? (
-          <ConfirmAction
-            label="Cancel"
-            prompt={`Cancel “${goal.name}”?`}
-            options={[
-              {
-                label: "Cancel goal",
-                destructive: true,
-                onConfirm: () =>
-                  setState("cancelled", `Cancelled “${goal.name}”. Its history is kept.`),
+      <div className="mt-auto flex items-center justify-between gap-2 border-t pt-3">
+        <RowActions
+          name={goal.name}
+          className="w-full justify-between"
+          primary={
+            goal.state === "active" ? (
+              <Button size="sm" variant="outline" onClick={() => onMove(goal, "contribution")}>
+                <Plus aria-hidden="true" />
+                Add money
+              </Button>
+            ) : (
+              <span />
+            )
+          }
+          actions={[
+            {
+              id: "withdraw",
+              label: "Withdraw",
+              description: "Take money out of the goal",
+              icon: ArrowUpFromLine,
+              hidden: !(goal.saved > 0 && goal.state !== "cancelled"),
+              onSelect: () => onMove(goal, "withdrawal"),
+            },
+            {
+              id: "history",
+              label: showHistory ? "Hide history" : "History",
+              description: "Money added and taken out",
+              icon: History,
+              onSelect: () => setShowHistory((value) => !value),
+            },
+            { id: "edit", label: "Edit", icon: Pencil, onSelect: () => onEdit(goal) },
+            {
+              id: "pause",
+              label: "Pause",
+              icon: Pause,
+              hidden: goal.state !== "active",
+              onSelect: () => void setState("paused", `Paused “${goal.name}”.`),
+            },
+            {
+              id: "complete",
+              label: "Mark complete",
+              icon: CircleCheck,
+              hidden: goal.state !== "active",
+              onSelect: () => void setState("completed", `Completed “${goal.name}”. Well done.`),
+            },
+            {
+              id: "resume",
+              label: goal.state === "paused" ? "Resume" : "Reopen",
+              icon: Play,
+              hidden: goal.state === "active",
+              onSelect: () =>
+                void setState(
+                  "active",
+                  goal.state === "paused" ? `Resumed “${goal.name}”.` : `Reopened “${goal.name}”.`,
+                ),
+            },
+            {
+              id: "cancel",
+              label: "Cancel goal…",
+              icon: Ban,
+              destructive: true,
+              hidden: !(goal.state === "active" || goal.state === "paused"),
+              confirm: {
+                prompt: `Cancel “${goal.name}”?`,
+                choices: [
+                  {
+                    label: "Cancel goal",
+                    destructive: true,
+                    onConfirm: () =>
+                      setState("cancelled", `Cancelled “${goal.name}”. Its history is kept.`),
+                  },
+                ],
               },
-            ]}
-          />
-        ) : null}
-        {goal.saved === 0 ? (
-          <ConfirmAction
-            label="Delete"
-            prompt={`Delete “${goal.name}”?`}
-            options={[
-              {
-                label: "Delete goal",
-                destructive: true,
-                onConfirm: () =>
-                  act(() => deleteGoal.mutateAsync(goal.id), `Deleted “${goal.name}”.`),
+            },
+            {
+              id: "delete",
+              label: "Delete…",
+              icon: Trash2,
+              destructive: true,
+              hidden: goal.saved !== 0,
+              confirm: {
+                prompt: `Delete “${goal.name}”?`,
+                choices: [
+                  {
+                    label: "Delete goal",
+                    destructive: true,
+                    onConfirm: () =>
+                      act(() => deleteGoal.mutateAsync(goal.id), `Deleted “${goal.name}”.`),
+                  },
+                ],
               },
-            ]}
-          />
-        ) : null}
+            },
+          ]}
+        />
       </div>
 
       {showHistory ? (
@@ -414,16 +485,7 @@ function ContributionHistory({
   const { undoContribution } = useBudgetMutations(workspaceId);
   const [error, setError] = useState<string | null>(null);
 
-  if (state.status === "error") {
-    return (
-      <div role="alert" className="space-y-2 text-sm">
-        <p>{state.message}</p>
-        <Button variant="outline" size="sm" onClick={reload}>
-          Try again
-        </Button>
-      </div>
-    );
-  }
+  if (state.status === "error") return <LoadError message={state.message} onRetry={reload} />;
   if (state.status === "loading") return <Skeleton className="h-16" />;
   const entries = state.data.contributions;
   if (entries.length === 0) {

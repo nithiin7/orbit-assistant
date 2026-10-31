@@ -4,17 +4,18 @@ import type { Currency, Freshness, PortfolioSlice, ValueSource } from "@orbit/co
 import { AlertTriangle, Calculator, CircleHelp, type LucideIcon } from "lucide-react";
 import { type ReactNode, useId } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Select, type SelectItems } from "@/components/ui/select";
 import { formatMoney } from "@/lib/finance";
 import { FRESHNESS_LABELS, gainTone, SOURCE_LABELS } from "@/lib/investments";
 import { cn } from "@/utils/common";
 
-const FRESHNESS: Record<Freshness, { icon: LucideIcon | null; tone: string }> = {
-  current: { icon: null, tone: "" },
-  stale: { icon: AlertTriangle, tone: "border-warning/40 text-warning" },
-  missing: { icon: CircleHelp, tone: "border-warning/40 text-warning" },
-  estimated: { icon: Calculator, tone: "" },
+import { Chip, type ChipTone } from "./finance-meta";
+
+const FRESHNESS: Record<Freshness, { icon: LucideIcon | null; tone: ChipTone }> = {
+  current: { icon: null, tone: "quiet" },
+  stale: { icon: AlertTriangle, tone: "warning" },
+  missing: { icon: CircleHelp, tone: "warning" },
+  estimated: { icon: Calculator, tone: "quiet" },
 };
 
 /**
@@ -35,10 +36,9 @@ export function FreshnessBadge({
   const label =
     freshness === "current" && source ? SOURCE_LABELS[source] : FRESHNESS_LABELS[freshness];
   return (
-    <Badge variant="outline" className={cn("gap-1", tone)}>
-      {Icon ? <Icon aria-hidden="true" className="size-3" /> : null}
+    <Chip tone={tone} icon={Icon}>
       {label}
-    </Badge>
+    </Chip>
   );
 }
 

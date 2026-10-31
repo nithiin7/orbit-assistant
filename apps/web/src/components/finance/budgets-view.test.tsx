@@ -407,7 +407,10 @@ describe("Budgets", () => {
     const rows = within(
       screen.getByRole("list", { name: `Budgets for ${monthLabel(MONTH)}` }),
     ).getAllByRole("listitem");
-    await user.click(within(rows[1]!).getByRole("button", { name: "Archive" }));
+    await user.click(
+      within(rows[1]!).getByRole("button", { name: "More actions for “Dining out”" }),
+    );
+    await user.click(screen.getByRole("menuitem", { name: "Archive" }));
     const confirm = within(rows[1]!).getByRole("group", { name: "Archive “Dining out”?" });
     await user.click(within(confirm).getByRole("button", { name: "Archive budget" }));
     await waitFor(() => expect(archived).toBe(true));
