@@ -12,16 +12,18 @@ import {
   ArchiveRestore,
   Banknote,
   CreditCard,
+  HandCoins,
   Landmark,
   LineChart,
   type LucideIcon,
   Pencil,
+  PiggyBank,
   Plus,
   Smartphone,
   Wallet,
   X,
 } from "lucide-react";
-import { useId, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import type { InferType } from "yup";
 
@@ -34,9 +36,9 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useFinanceMutations } from "@/hooks/use-finance";
 import { accountTypeLabel, categorySchema, formatMoney } from "@/lib/finance";
-import { type Option } from "@/utils/common";
+import { cn, type Option } from "@/utils/common";
 
-import { Chip, rowListClassName, SectionHeading } from "./finance-meta";
+import { Chip, SectionHeading } from "./finance-meta";
 import { AccountBalance } from "./finance-overview";
 import type { FinanceData } from "./finance-view";
 import { EndedSection, Panel } from "./panel";
@@ -60,6 +62,17 @@ const ACCOUNT_GROUPS: readonly { label: string; icon: LucideIcon; types: Finance
     { label: "Loans", icon: Landmark, types: ["loan"] },
     { label: "Other", icon: Wallet, types: ["other"] },
   ];
+
+const TYPE_ICONS: Record<FinanceAccountType, LucideIcon> = {
+  bank: Landmark,
+  savings: PiggyBank,
+  cash: Banknote,
+  credit_card: CreditCard,
+  wallet: Smartphone,
+  investment: LineChart,
+  loan: HandCoins,
+  other: Wallet,
+};
 
 export function AccountsView({
   workspaceId,
@@ -159,6 +172,28 @@ export function AccountsView({
     );
   };
 
+  const accountActions = (account: FinanceAccount) => (
+    <RowActions
+      name={account.name}
+      disabled={pending === account.id}
+      actions={[
+        {
+          id: "edit",
+          label: "Edit",
+          icon: Pencil,
+          onSelect: () => onEditAccount(account),
+        },
+        {
+          id: "archive",
+          label: "Archive",
+          description: "Hide it; its history stays",
+          icon: Archive,
+          onSelect: () => void setArchived(account, true),
+        },
+      ]}
+    />
+  );
+
   const groups = ACCOUNT_GROUPS.map((group) => ({
     ...group,
     accounts: active.filter((account) => group.types.includes(account.type)),
@@ -227,7 +262,7 @@ export function AccountsView({
           No active accounts. Add a bank account, cash, a card, or a wallet to start recording.
         </p>
       ) : (
-        <section aria-label="Active accounts" className="gap-6 @5xl/list:columns-2">
+        <section aria-label="Active accounts" className="space-y-6">
           {groups.map((group) => {
             const headingId = `${groupId}-${group.label}`;
             const currency = group.accounts[0]?.currency;
@@ -235,11 +270,7 @@ export function AccountsView({
             const subtotal = group.accounts.reduce((sum, account) => sum + account.balance, 0);
             const owes = group.accounts.every((account) => account.account_class === "liability");
             return (
-              <section
-                key={group.label}
-                aria-labelledby={headingId}
-                className="mb-6 break-inside-avoid space-y-2 last:mb-0"
-              >
+              <section key={group.label} aria-labelledby={headingId} className="space-y-2.5">
                 <SectionHeading
                   id={headingId}
                   count={group.accounts.length}
@@ -251,8 +282,20 @@ export function AccountsView({
                 >
                   {group.label}
                 </SectionHeading>
-                <ul aria-label={group.label} className={rowListClassName}>
-                  {group.accounts.map(row)}
+                <ul
+                  aria-label={group.label}
+                  className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,19rem),1fr))] gap-3 @3xl/list:gap-4"
+                >
+                  {group.accounts.map((account) => (
+                    <AccountCard
+                      key={account.id}
+                      account={account}
+                      total={totals.find((total) => total.currency === account.currency)}
+                      showCurrency={multiCurrency}
+                      onEdit={() => onEditAccount(account)}
+                      actions={accountActions(account)}
+                    />
+                  ))}
                 </ul>
               </section>
             );
@@ -276,6 +319,109 @@ export function AccountsView({
         onAnnounce={onAnnounce}
       />
     </div>
+  );
+}
+
+/** The account's balance as people read it: what's held, what's owed, or what's in credit. */
+function balanceLabel(account: FinanceAccount): { label: string; amount: number } {
+  if (account.account_class === "asset") return { label: "Balance", amount: account.balance };
+  const owed = -account.balance;
+  return owed < 0 ? { label: "In credit", amount: -owed } : { label: "Owed", amount: owed };
+}
+
+/** One account as a card, its balance the largest thing on it. */
+function AccountCard({
+  account,
+  total,
+  showCurrency,
+  onEdit,
+  actions,
+}: {
+  account: FinanceAccount;
+  /** The workspace's totals in the account's currency, for its share. */
+  total: BalanceTotals | undefined;
+  showCurrency: boolean;
+  onEdit: () => void;
+  actions: ReactNode;
+}) {
+  const Icon = TYPE_ICONS[account.type];
+  const liability = account.account_class === "liability";
+  const overdrawn = !liability && account.balance < 0;
+  const { label, amount } = balanceLabel(account);
+  const owedNothing = liability && amount === 0;
+  // Its part of all the money held, or of everything owed, in the same currency.
+  const pool = liability ? total?.liabilities : total?.assets;
+  const share =
+    pool && pool > 0 && amount > 0 && label !== "In credit"
+      ? Math.min(100, (amount / pool) * 100)
+      : null;
+
+  return (
+    <li className="flex min-w-0 flex-col rounded-xl border bg-card p-4 shadow-elevation-1 transition-shadow duration-150 hover:shadow-elevation-2 @3xl/list:p-5">
+      <div className="flex items-start gap-3">
+        <span
+          aria-hidden="true"
+          className={cn(
+            "flex size-10 shrink-0 items-center justify-center rounded-lg",
+            liability ? "bg-destructive/10 text-destructive" : "bg-brand-subtle text-brand",
+          )}
+        >
+          <Icon className="size-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <button
+            type="button"
+            onClick={onEdit}
+            aria-label={`Edit “${account.name}”`}
+            className="block max-w-full truncate rounded-sm text-left font-medium outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {account.name}
+          </button>
+          <p className="truncate text-xs text-muted-foreground">
+            {accountTypeLabel(account.type)}
+            {showCurrency ? ` · ${account.currency}` : null}
+          </p>
+        </div>
+        <div className="-mt-1 -mr-1 shrink-0">{actions}</div>
+      </div>
+
+      <dl className="mt-5">
+        <dt className="text-xs text-muted-foreground">{label}</dt>
+        <dd
+          className={cn(
+            "mt-0.5 text-2xl font-semibold tracking-tight whitespace-nowrap tabular-nums",
+            (overdrawn || (liability && label === "Owed" && amount > 0)) && "text-destructive",
+            label === "In credit" && "text-success",
+            owedNothing && "text-muted-foreground",
+          )}
+        >
+          {owedNothing ? "Nothing owed" : formatMoney(amount, account.currency)}
+        </dd>
+      </dl>
+
+      <div className="mt-auto pt-4">
+        {overdrawn ? (
+          <Chip tone="danger">
+            <span title="More has been recorded going out than the opening balance plus what came in. Check the opening balance.">
+              Below zero
+            </span>
+          </Chip>
+        ) : share !== null ? (
+          <div className="space-y-1.5">
+            <div aria-hidden="true" className="h-1.5 overflow-hidden rounded-full bg-muted">
+              <div
+                className={cn("h-full rounded-full", liability ? "bg-destructive" : "bg-brand")}
+                style={{ width: `${Math.max(share, 2)}%` }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {share < 1 ? "Under 1" : Math.round(share)}% of{" "}
+              {liability ? "everything you owe" : "your money"}
+            </p>
+          </div>
+        ) : null}
+      </div>
+    </li>
   );
 }
 

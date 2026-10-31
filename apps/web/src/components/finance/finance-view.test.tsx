@@ -256,6 +256,30 @@ describe("FinancePanel", () => {
     expect(within(list).queryByText("Home loan")).not.toBeInTheDocument();
   });
 
+  it("shows each account's balance and its share of the total on the accounts tab", async () => {
+    const cash = account({ id: "acc-cash", name: "Pocket cash", type: "cash", balance: 500_000 });
+    mockApi({
+      ...session,
+      ...finance([bank, cash, card]),
+      [`GET ${FINANCE}/accounts`]: json({
+        accounts: [bank, cash, card],
+        totals: [{ currency: "INR", assets: 5_000_000, liabilities: 300_000 }],
+      }),
+    });
+    const user = userEvent.setup();
+
+    await renderSignedIn(<FinancePanel />);
+    await user.click(await screen.findByRole("button", { name: "Accounts" }));
+
+    const banks = await screen.findByRole("list", { name: "Bank and cash" });
+    const [savings, pocket] = within(banks).getAllByRole("listitem");
+    expect(savings).toHaveTextContent(/HDFC Savings.*Balance₹45,000.00.*90% of your money/);
+    expect(pocket).toHaveTextContent(/Pocket cash.*Balance₹5,000.00.*10% of your money/);
+    expect(screen.getByRole("list", { name: "Cards" })).toHaveTextContent(
+      /Amex.*Owed₹3,000.00.*100% of everything you owe/,
+    );
+  });
+
   it("records an expense in exact paise", async () => {
     const user = userEvent.setup();
     const posted: unknown[] = [];
