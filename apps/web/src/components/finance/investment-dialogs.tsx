@@ -6,6 +6,7 @@ import type {
   Deposit,
   FinanceAccount,
   Holding,
+  HoldingKind,
   InvestmentAccount,
   InvestmentTransactionType,
   Settlement,
@@ -336,9 +337,15 @@ export function HoldingDialog({
   workspaceId,
   holding,
   investmentAccounts,
+  defaultKind = "mutual_fund",
   onSaved,
   onClose,
-}: Common & { holding?: Holding; investmentAccounts: readonly InvestmentAccount[] }) {
+}: Common & {
+  holding?: Holding;
+  investmentAccounts: readonly InvestmentAccount[];
+  /** The kind a new holding starts as, such as the tab it was added from. */
+  defaultKind?: HoldingKind;
+}) {
   const { createHolding, updateHolding } = useInvestmentMutations(workspaceId);
   const usable = investmentAccounts.filter((account) => !account.archived);
   const {
@@ -351,7 +358,7 @@ export function HoldingDialog({
     resolver: yupResolver(holdingSchema),
     defaultValues: {
       accountId: holding?.account_id ?? usable[0]?.account_id ?? "",
-      kind: holding?.kind ?? "mutual_fund",
+      kind: holding?.kind ?? defaultKind,
       name: holding?.name ?? "",
       symbol: holding?.symbol ?? "",
       exchange: holding?.exchange ?? "",

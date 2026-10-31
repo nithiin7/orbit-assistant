@@ -213,6 +213,10 @@ async function openTab(name: string) {
   await userEvent.click(await screen.findByRole("button", { name }));
 }
 
+async function openSection(name: string) {
+  await userEvent.click(await screen.findByRole("tab", { name: new RegExp(`^${name}`) }));
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
   localStorage.clear();
@@ -244,15 +248,50 @@ describe("Investments", () => {
     expect(screen.getByText(/\+2\.31% on everything invested/)).toBeVisible();
     expect(screen.getByRole("note")).toHaveTextContent("1 price is more than a week old");
 
-    const holdings = screen.getByRole("region", { name: "Holdings" });
-    expect(within(holdings).getByText("Infosys")).toBeVisible();
-    expect(within(holdings).getByText("Stale")).toBeVisible();
-    expect(within(holdings).getByText(money(150_000))).toBeVisible();
+    expect(screen.getByRole("list", { name: "Allocation" })).toHaveTextContent("Deposits");
 
+    // The overview sums each kind of investment, and each opens its own tab.
+    const held = screen.getByRole("region", { name: "What you hold" });
+    expect(
+      within(held).getByRole("button", { name: `Stocks: 1 held, ${money(3_300_000)}` }),
+    ).toHaveAccessibleDescription("+₹3,000.00 (+10.0%) unrealized");
+    expect(
+      within(held).getByRole("button", { name: `Mutual funds: 0 held, ${money(0)}` }),
+    ).toHaveAccessibleDescription("None yet");
+    expect(screen.queryByText("Infosys")).not.toBeInTheDocument();
+
+    await userEvent.click(within(held).getByRole("button", { name: /^Stocks/ }));
+    expect(screen.getByRole("tab", { name: /^Stocks/ })).toHaveAttribute("aria-selected", "true");
+    const stocks = screen.getByRole("region", { name: "Stocks" });
+    expect(within(stocks).getByText("Infosys")).toBeVisible();
+    expect(within(stocks).getByText("Stale")).toBeVisible();
+    expect(within(stocks).getByText(money(150_000))).toBeVisible();
+
+    await openSection("Mutual funds");
+    expect(screen.getByText(/No mutual funds yet/)).toBeVisible();
+    expect(screen.getByRole("button", { name: "Add a mutual fund" })).toBeEnabled();
+
+    await openSection("Deposits");
     const deposits = screen.getByRole("region", { name: "Fixed and recurring deposits" });
     expect(within(deposits).getByText("Estimate")).toBeVisible();
     expect(within(deposits).getByText("Expected at maturity (estimate)")).toBeVisible();
-    expect(screen.getByRole("list", { name: "Allocation" })).toHaveTextContent("Deposits");
+    expect(screen.queryByText("Infosys")).not.toBeInTheDocument();
+  });
+
+  it("moves between sections with the arrow keys", async () => {
+    mockApi(routes());
+    await renderSignedIn(<FinancePanel />);
+    await openTab("Investments");
+
+    const overview = await screen.findByRole("tab", { name: "Overview" });
+    overview.focus();
+    await userEvent.keyboard("{ArrowRight}");
+    const funds = screen.getByRole("tab", { name: /^Mutual funds/ });
+    expect(funds).toHaveFocus();
+    expect(funds).toHaveAttribute("aria-selected", "true");
+    await userEvent.keyboard("{ArrowLeft}{ArrowLeft}");
+    expect(screen.getByRole("tab", { name: "Activity" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tabpanel")).toHaveTextContent("Recent activity");
   });
 
   it("adds holdings, deposits, and accounts from one menu", async () => {
@@ -267,12 +306,20 @@ describe("Investments", () => {
         .getAllByRole("menuitem")
         .map((item) => item.textContent),
     ).toEqual([
-      "HoldingA mutual fund, stock, or ETF",
+      "Mutual fundA fund you buy units of, with or without a SIP",
+      "StockShares in one company",
+      "ETFA fund traded on an exchange",
       "DepositA fixed or recurring deposit",
       "Investment accountA broker, fund platform, or bank",
     ]);
-    await userEvent.click(within(menu).getByRole("menuitem", { name: "Holding" }));
-    expect(await screen.findByRole("dialog", { name: "Add a holding" })).toBeVisible();
+    await userEvent.click(within(menu).getByRole("menuitem", { name: "Stock" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add a holding" });
+    // The holding starts as the kind chosen, and its tab opens behind the dialog.
+    expect(within(dialog).getByRole("combobox", { name: "Type" })).toHaveTextContent("Stock");
+    expect(screen.getByRole("tab", { name: /^Stocks/, hidden: true })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
   });
 
   it("records a purchase funded from the linked bank account", async () => {
@@ -286,8 +333,9 @@ describe("Investments", () => {
     });
     await renderSignedIn(<FinancePanel />);
     await openTab("Investments");
+    await openSection("Stocks");
 
-    const holdings = await screen.findByRole("region", { name: "Holdings" });
+    const holdings = await screen.findByRole("region", { name: "Stocks" });
     await userEvent.click(within(holdings).getByRole("button", { name: "Buy" }));
     const dialog = await screen.findByRole("dialog", { name: "Record a purchase" });
     await userEvent.type(within(dialog).getByLabelText(/Amount invested/), "15,000");
@@ -314,7 +362,8 @@ describe("Investments", () => {
     const fetchMock = mockApi(routes());
     await renderSignedIn(<FinancePanel />);
     await openTab("Investments");
-    const holdings = await screen.findByRole("region", { name: "Holdings" });
+    await openSection("Stocks");
+    const holdings = await screen.findByRole("region", { name: "Stocks" });
     await userEvent.click(within(holdings).getByRole("button", { name: "Buy" }));
     const dialog = await screen.findByRole("dialog", { name: "Record a purchase" });
     await userEvent.type(within(dialog).getByLabelText(/Amount invested/), "100");
