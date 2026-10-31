@@ -365,7 +365,7 @@ function GoalCard({
         </div>
       </dl>
 
-      <FormAlert message={error} />
+      {error ? <FormAlert message={error} /> : null}
 
       <div className="mt-auto flex items-center justify-between gap-2 border-t pt-3">
         <RowActions
@@ -503,7 +503,7 @@ function ContributionHistory({
 
   return (
     <div className="space-y-2">
-      <FormAlert message={error} />
+      {error ? <FormAlert message={error} /> : null}
       <ol aria-label={`${goal.name} contributions`} className="divide-y rounded-lg border">
         {entries.map((entry) => (
           <li

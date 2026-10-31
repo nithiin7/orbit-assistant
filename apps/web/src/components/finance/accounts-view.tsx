@@ -220,7 +220,7 @@ export function AccountsView({
         </StatGrid>
       ) : null}
 
-      <FormAlert message={error} />
+      {error ? <FormAlert message={error} /> : null}
 
       {active.length === 0 ? (
         <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">
@@ -383,7 +383,9 @@ function CategoriesSection({
             Add category
           </Button>
         </form>
-        <FormAlert message={errors.root?.server?.message ?? error} />
+        {(errors.root?.server?.message ?? error) ? (
+          <FormAlert message={errors.root?.server?.message ?? error} />
+        ) : null}
 
         {(["expense", "income"] as const).map((type) => (
           <div key={type} className="space-y-2">

@@ -402,7 +402,7 @@ function BudgetRow({
         </div>
       ) : null}
 
-      <FormAlert message={lifecycle.error} />
+      {lifecycle.error ? <FormAlert message={lifecycle.error} /> : null}
 
       {showHistory ? (
         <div id={historyId} className="animate-page-in">
@@ -731,7 +731,7 @@ function EndedBudgetRow({
         </div>
         <RowActions name={budget.name} actions={lifecycle.actions} />
       </div>
-      <FormAlert message={lifecycle.error} />
+      {lifecycle.error ? <FormAlert message={lifecycle.error} /> : null}
     </li>
   );
 }

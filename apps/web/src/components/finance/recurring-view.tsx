@@ -278,7 +278,7 @@ function RecurringRow({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-col items-start gap-2 @lg/rows:flex-row @lg/rows:items-center @lg/rows:justify-between">
             <div className="flex flex-wrap items-center gap-1.5">
               {payment.status !== "active" ? (
                 <Chip>{RECURRING_STATUS_LABELS[payment.status]}</Chip>
@@ -377,7 +377,8 @@ function RecurringRow({
         </div>
       </div>
 
-      <FormAlert message={error} />
+      {/* Only with an error: an empty alert would still take the row's gap and pad its foot. */}
+      {error ? <FormAlert message={error} /> : null}
 
       {showHistory ? (
         <div id={historyId} className="animate-page-in">
@@ -420,7 +421,7 @@ function OccurrenceHistory({
 
   return (
     <div className="space-y-2">
-      <FormAlert message={error} />
+      {error ? <FormAlert message={error} /> : null}
       <ol aria-label={`${payment.name} payment history`} className="divide-y rounded-lg border">
         {occurrences.map((occurrence) => (
           <li

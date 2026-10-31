@@ -259,7 +259,7 @@ export function TransactionHistory({
         ) : null}
       </div>
 
-      <FormAlert message={actionError} />
+      {actionError ? <FormAlert message={actionError} /> : null}
 
       <div
         ref={listRef}

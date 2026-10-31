@@ -335,7 +335,7 @@ function LoanCard({
           </div>
         </dl>
 
-        <FormAlert message={error} />
+        {error ? <FormAlert message={error} /> : null}
 
         <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
           <Button
@@ -464,7 +464,7 @@ function LoanSchedule({
         Principal repays the loan (a transfer, not spending); interest is an expense. Balances ahead
         are projected from what you owe today.
       </p>
-      <FormAlert message={error} />
+      {error ? <FormAlert message={error} /> : null}
       <ol aria-label={`${loan.name} EMI schedule`} className="divide-y rounded-lg border">
         {state.data.installments.map((installment) => (
           <li
