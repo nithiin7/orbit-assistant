@@ -32,10 +32,16 @@ import {
 import { rolloverLabel, UTILIZATION_LABELS } from "@/lib/budgets";
 import { formatMoney } from "@/lib/finance";
 import { byId, cn } from "@/utils/common";
-import { formatCalendarDate, localDateString, monthLabel, shiftMonth } from "@/utils/dates";
+import {
+  daysBetween,
+  formatCalendarDate,
+  localDateString,
+  monthLabel,
+  shiftMonth,
+} from "@/utils/dates";
 
 import { BudgetDialog } from "./budget-dialog";
-import { PeriodFigures, UtilizationBadge, UtilizationBar } from "./budget-parts";
+import { PeriodFigures, periodPace, UtilizationBadge, UtilizationBar } from "./budget-parts";
 import { rowListClassName } from "./finance-meta";
 import type { FinanceData } from "./finance-view";
 import { EndedSection, LoadError, Panel } from "./panel";
@@ -328,6 +334,8 @@ function BudgetRow({
   const [showHistory, setShowHistory] = useState(false);
   const lifecycle = useBudgetLifecycle(budget, workspaceId, onAnnounce);
   const period = budget.current_period;
+  const pace = period ? periodPace(period, today) : null;
+  const daysLeft = period ? daysBetween(today, period.end) : 0;
   const historyId = `budget-history-${budget.id}`;
   return (
     <li className="space-y-2.5 px-3 py-3 @md/rows:px-4">
@@ -377,14 +385,43 @@ function BudgetRow({
       </div>
 
       {period ? (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 tabular-nums">
+            <p
+              className={cn(
+                "text-lg font-semibold tracking-tight",
+                period.remaining < 0 && "text-destructive",
+              )}
+            >
+              {formatMoney(Math.abs(period.remaining), budget.currency)}{" "}
+              <span className="text-sm font-normal text-muted-foreground">
+                {period.remaining < 0 ? "over" : "left"}
+              </span>
+            </p>
+            <p className="text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">
+                {formatMoney(period.spent, budget.currency)}
+              </span>{" "}
+              of {formatMoney(period.available, budget.currency)}
+              {period.utilization_percent !== null ? ` · ${period.utilization_percent}%` : null}
+            </p>
+          </div>
           <UtilizationBar
             label={`${budget.name} budget used`}
             percent={period.utilization_percent}
             status={period.status}
+            size="lg"
+            pace={pace}
           />
-          <PeriodFigures period={period} currency={budget.currency} />
           <p className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
+            {pace !== null ? (
+              <span className="flex items-center gap-1.5">
+                <span aria-hidden="true" className="h-2.5 w-0.5 rounded-full bg-foreground/45" />
+                {daysLeft === 0
+                  ? "Last day"
+                  : `${daysLeft} ${daysLeft === 1 ? "day" : "days"} left`}
+              </span>
+            ) : null}
             {period.rollover_amount !== 0 ? (
               <span>
                 {formatMoney(period.base_amount, budget.currency)} budget{" "}
@@ -554,49 +591,48 @@ function CategorySpending({
   month: BudgetMonth;
   categories: ReadonlyMap<string, FinanceCategory>;
 }) {
-  const rows = month.categories.filter((entry) => entry.spent > 0 || entry.budget !== null);
-  // Each category budget's own period, as the API computed it.
-  const periods = new Map(
-    month.budgets
-      .filter((budget) => budget.scope === "category" && budget.period === "monthly")
-      .map((budget) => [budget.category_id, budget.current_period]),
-  );
+  // Budget progress lives on the budgets themselves; this panel shows where the money went.
+  const rows = month.categories
+    .filter((entry) => entry.spent > 0)
+    .sort((a, b) => b.spent - a.spent);
+  const total = rows.reduce((sum, entry) => sum + entry.spent, 0);
   return (
     <Panel
-      title="Spending by category"
-      description="Against category budgets, where you have them. Transfers aren’t spending."
+      title="Where it went"
+      description="Each category’s share of this month’s spending. Transfers aren’t spending."
     >
       {rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">No spending this month.</p>
       ) : (
-        <ul className="space-y-3" aria-label="Category spending">
+        <ul className="space-y-2.5" aria-label="Category spending">
           {rows.slice(0, 8).map((entry) => {
             const name =
               entry.category_id === null
                 ? "Uncategorized"
                 : (categories.get(entry.category_id)?.name ?? "A category");
-            const spent = Math.max(entry.spent, 0);
-            const period = periods.get(entry.category_id);
+            const share = total > 0 ? (entry.spent / total) * 100 : 0;
             return (
               <li key={entry.category_id ?? "none"} className="space-y-1">
                 <div className="flex items-baseline justify-between gap-3 text-sm">
-                  <span className="truncate">{name}</span>
+                  <span className="flex min-w-0 items-baseline gap-1.5">
+                    <span className="truncate">{name}</span>
+                    {entry.budget === null ? (
+                      <span className="shrink-0 text-xs text-muted-foreground">no budget</span>
+                    ) : null}
+                  </span>
                   <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
                     <span className="font-medium text-foreground">
-                      {formatMoney(spent, month.currency)}
-                    </span>
-                    {entry.budget !== null
-                      ? ` of ${formatMoney(entry.budget, month.currency)}`
-                      : " · no budget"}
+                      {formatMoney(entry.spent, month.currency)}
+                    </span>{" "}
+                    · {Math.round(share)}%
                   </span>
                 </div>
-                {period ? (
-                  <UtilizationBar
-                    label={`${name} budget used`}
-                    percent={period.utilization_percent}
-                    status={period.status}
+                <div aria-hidden="true" className="h-1 overflow-hidden rounded-full bg-muted/60">
+                  <div
+                    className="h-full rounded-full bg-chart-2/70"
+                    style={{ width: `${share}%` }}
                   />
-                ) : null}
+                </div>
               </li>
             );
           })}

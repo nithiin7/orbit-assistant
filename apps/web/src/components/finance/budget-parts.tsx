@@ -5,6 +5,7 @@ import type { BudgetPeriod, Currency, UtilizationStatus } from "@orbit/contracts
 import { barWidth, UTILIZATION_LABELS, wholePercent } from "@/lib/budgets";
 import { formatMoney } from "@/lib/finance";
 import { cn } from "@/utils/common";
+import { daysBetween } from "@/utils/dates";
 
 import { Chip, type ChipTone } from "./finance-meta";
 
@@ -35,12 +36,17 @@ export function UtilizationBar({
   label,
   percent,
   status = "on_track",
+  size = "sm",
+  pace,
   className,
 }: {
   label: string;
   /** Decimal text from the API, such as `"87.50"`; `null` when nothing is available. */
   percent: string | null;
   status?: UtilizationStatus;
+  size?: "sm" | "lg";
+  /** How far through its period the budget is, 0–100, drawn as a tick on the track. */
+  pace?: number | null;
   className?: string;
 }) {
   return (
@@ -51,7 +57,11 @@ export function UtilizationBar({
       aria-valuemax={100}
       aria-valuenow={wholePercent(percent)}
       aria-valuetext={percent === null ? "No budget available" : `${percent}%`}
-      className={cn("h-1.5 overflow-hidden rounded-full bg-muted", className)}
+      className={cn(
+        "relative overflow-hidden rounded-full bg-muted",
+        size === "lg" ? "h-2.5" : "h-1.5",
+        className,
+      )}
     >
       <div
         className={cn(
@@ -60,8 +70,25 @@ export function UtilizationBar({
         )}
         style={{ width: `${percent === null && status === "exceeded" ? 100 : barWidth(percent)}%` }}
       />
+      {pace != null ? (
+        <div
+          aria-hidden="true"
+          className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-foreground/45"
+          style={{ left: `${Math.min(Math.max(pace, 0), 100)}%` }}
+        />
+      ) : null}
     </div>
   );
+}
+
+/**
+ * How far through a period `today` is, 0–100, counting today as passed; `null` outside the
+ * period. Lets a budget's bar show where spending would be if it were even across the period.
+ */
+export function periodPace(period: BudgetPeriod, today: string): number | null {
+  if (period.closed || today < period.start || today > period.end) return null;
+  const days = daysBetween(period.start, period.end) + 1;
+  return ((daysBetween(period.start, today) + 1) / days) * 100;
 }
 
 /** "₹7,600 of ₹10,000 · ₹2,400 left", or "… · ₹500 over". */

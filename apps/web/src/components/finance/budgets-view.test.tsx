@@ -305,11 +305,18 @@ describe("Budgets", () => {
     expect(
       within(rows[0]!).getByText(`On pace for ${formatMoney(1_250_000, "INR")}`),
     ).toBeInTheDocument();
+    // What's left leads, with the period's days left beside the pace marker.
+    expect(rows[0]).toHaveTextContent(`${formatMoney(80_000, "INR")} left`);
+    expect(within(rows[0]!).getByText(/days? left|Last day/)).toBeInTheDocument();
     expect(within(rows[1]!).getByText("On track")).toBeInTheDocument();
 
+    // The category panel shows each category's share of spending, not a second budget bar.
     const categories = screen.getByRole("list", { name: "Category spending" });
+    const categoryRows = within(categories).getAllByRole("listitem");
+    expect(categoryRows[0]).toHaveTextContent(`Groceries${formatMoney(920_000, "INR")} · 82%`);
     expect(within(categories).getByText("Uncategorized")).toBeInTheDocument();
-    expect(within(categories).getByText(/no budget/)).toBeInTheDocument();
+    expect(within(categories).getByText("no budget")).toBeInTheDocument();
+    expect(within(categories).queryByRole("progressbar")).not.toBeInTheDocument();
   });
 
   it("adds a category budget with whole months and alert thresholds", async () => {
