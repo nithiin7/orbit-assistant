@@ -24,6 +24,7 @@ from orbit_api.repositories.finance import (
     SqlFinanceTransactionRepository,
 )
 from orbit_api.repositories.goals import build_goal_service
+from orbit_api.repositories.habits import build_habit_service, build_routine_service
 from orbit_api.repositories.investments import (
     build_asset_service,
     build_investment_service,
@@ -45,6 +46,8 @@ from orbit_api.services.commitments.service import CommitmentService
 from orbit_api.services.dashboard.service import DashboardService
 from orbit_api.services.finance.service import FinanceService
 from orbit_api.services.goals.service import GoalService
+from orbit_api.services.habits.routines import RoutineService
+from orbit_api.services.habits.service import HabitService
 from orbit_api.services.investments.assets import AssetService
 from orbit_api.services.investments.service import InvestmentService
 from orbit_api.services.local_auth.service import LocalAuthService, PasswordHasher
@@ -266,3 +269,17 @@ def get_calendar_preference_service(session: SessionDep) -> CalendarPreferenceSe
 CalendarPreferenceServiceDep = Annotated[
     CalendarPreferenceService, Depends(get_calendar_preference_service)
 ]
+
+
+def get_habit_service(session: SessionDep) -> HabitService:
+    return build_habit_service(session)
+
+
+HabitServiceDep = Annotated[HabitService, Depends(get_habit_service)]
+
+
+def get_routine_service(session: SessionDep) -> RoutineService:
+    return build_routine_service(session)
+
+
+RoutineServiceDep = Annotated[RoutineService, Depends(get_routine_service)]

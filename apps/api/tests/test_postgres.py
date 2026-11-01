@@ -19,8 +19,19 @@ from orbit_api.db.engine import create_engine
 from orbit_api.db.migrate import downgrade, upgrade
 from orbit_api.main import create_app
 from orbit_api.repositories.calendar import build_calendar_service
+from orbit_api.repositories.habits import build_habit_service, build_routine_service
 from orbit_api.services.calendar.models import DateWindow, EventDraft, OccurrenceChanges
 from orbit_api.services.calendar.recurrence import EventRecurrence
+from orbit_api.services.habits.models import (
+    ActiveSessionExistsError,
+    HabitChanges,
+    HabitDraft,
+    LogDraft,
+    ReminderTime,
+    RoutineDraft,
+    StepDraft,
+)
+from orbit_api.services.habits.schedule import HabitSchedule
 
 TEST_DATABASE_URL = os.environ.get("ORBIT_TEST_DATABASE_URL")
 
@@ -214,6 +225,89 @@ async def test_calendar_series_on_postgres(cloud_settings: Settings) -> None:
             )
             assert left == 1
             assert (await calendar.get_event(workspace_id, event_id)).event.category_id is None
+    finally:
+        async with database.session() as session:
+            await session.execute(text("DELETE FROM users WHERE id = :id"), {"id": user_id})
+            await session.commit()
+        await database.dispose()
+
+
+@pytest.mark.anyio
+async def test_habits_and_routines_on_postgres(cloud_settings: Settings) -> None:
+    """Habits on PostgreSQL: JSON schedules, float targets, the one-entry-per-day upsert,
+    managed reminders, the partial unique index on active sessions, and cascades."""
+    database = await open_database(cloud_settings)
+    user_id, workspace_id = uuid.uuid4(), uuid.uuid4()
+    try:
+        async with database.session() as session:
+            await session.execute(
+                text(
+                    "INSERT INTO users (id, auth_provider, auth_subject, email, display_name,"
+                    " created_at, updated_at) VALUES (:id, 'local', :subject, 'h@example.com', 'H',"
+                    " now(), now())"
+                ),
+                {"id": user_id, "subject": str(user_id)},
+            )
+            await session.execute(
+                text(
+                    "INSERT INTO workspaces (id, owner_id, name, is_personal, created_at,"
+                    " updated_at) VALUES (:id, :owner, 'Personal', true, now(), now())"
+                ),
+                {"id": workspace_id, "owner": user_id},
+            )
+            await session.commit()
+
+            habits = build_habit_service(session)
+            category = (await habits.categories(workspace_id))[0]
+            created = await habits.create(
+                workspace_id,
+                HabitDraft(
+                    name="Water",
+                    kind="numeric",
+                    unit="litres",
+                    target=2.5,
+                    schedule=HabitSchedule("weekdays", weekdays=frozenset({"mon", "thu"})),
+                    start_date=date(2026, 1, 1),
+                    timezone="Europe/Paris",
+                    category_id=category.id,
+                    reminders=(ReminderTime(datetime(2030, 1, 1, 7, 0).time()),),
+                ),
+                default_timezone=None,
+            )
+            habit_id = created.progress.habit.id
+            day = date(2026, 1, 5)
+            await habits.log(workspace_id, habit_id, day, LogDraft("progress", 1.25))
+            logged = await habits.log(workspace_id, habit_id, day, LogDraft("progress", 2.5))
+            assert logged.state == "completed" and logged.log is not None
+            assert logged.log.target == 2.5
+            await habits.update(
+                workspace_id,
+                habit_id,
+                HabitChanges(schedule=HabitSchedule("daily", every=2), status="paused"),
+            )
+            detail = await habits.get(workspace_id, habit_id)
+            assert len(detail.progress.habit.versions) == 2
+            assert (
+                detail.reminders
+                and await session.scalar(
+                    text("SELECT count(*) FROM reminders WHERE habit_reminder_id IS NOT NULL")
+                )
+                == 0
+            )  # Paused: its reminder is cancelled.
+
+            routines = build_routine_service(session)
+            routine = await routines.create(
+                workspace_id,
+                RoutineDraft(name="Morning", timezone="UTC", steps=(StepDraft("Drink"),)),
+                default_timezone=None,
+            )
+            await routines.start(workspace_id, routine.routine.id, None)
+            with pytest.raises(ActiveSessionExistsError):
+                await routines.start(workspace_id, routine.routine.id, None)
+
+            await habits.delete_category(workspace_id, category.id)
+            await habits.delete(workspace_id, habit_id)
+            assert await session.scalar(text("SELECT count(*) FROM habit_logs")) == 0
     finally:
         async with database.session() as session:
             await session.execute(text("DELETE FROM users WHERE id = :id"), {"id": user_id})

@@ -315,3 +315,62 @@ export type CalendarAgendaQuery = NonNullable<
 export type CalendarEventListQuery = NonNullable<
   paths["/api/v1/workspaces/{workspace_id}/calendar/events"]["get"]["parameters"]["query"]
 >;
+export type HabitCategory = Schemas["HabitCategoryResponse"];
+export type HabitCategoryList = Schemas["HabitCategoryListResponse"];
+export type CreateHabitCategoryRequest = Schemas["CreateHabitCategoryRequest"];
+export type UpdateHabitCategoryRequest = Schemas["UpdateHabitCategoryRequest"];
+export type Habit = Schemas["HabitResponse"];
+export type HabitKind = Habit["kind"];
+export type HabitStatus = Habit["status"];
+export type HabitColor = Habit["color"];
+export type HabitIcon = Habit["icon"];
+export type HabitSchedule = Schemas["HabitScheduleModel"];
+export type HabitScheduleType = HabitSchedule["type"];
+export type HabitLog = Schemas["HabitLogResponse"];
+export type HabitPeriod = Schemas["HabitPeriodResponse"];
+export type HabitProgress = Schemas["HabitProgressResponse"];
+export type HabitDayState = HabitProgress["state"];
+export type HabitDetail = Schemas["HabitDetailResponse"];
+export type HabitList = Schemas["HabitListResponse"];
+export type HabitReminderTime = Schemas["HabitReminderTimeModel"];
+export type HabitToday = Schemas["HabitTodayResponse"];
+export type HabitHeatmapDay = Schemas["HabitHeatmapDayResponse"];
+export type HabitHistory = Schemas["HabitHistoryResponse"];
+export type HabitAnalytics = Schemas["HabitAnalyticsResponse"];
+export type HabitPerformance = Schemas["HabitPerformanceResponse"];
+export type HabitTrendPoint = Schemas["HabitTrendPointResponse"];
+export type HabitCalendarEntry = Schemas["HabitCalendarEntryResponse"];
+export type HabitCalendar = Schemas["HabitCalendarResponse"];
+export type CreateHabitRequest = Schemas["CreateHabitRequest"];
+export type UpdateHabitRequest = Schemas["UpdateHabitRequest"];
+export type LogHabitRequest = Schemas["LogHabitRequest"];
+export type CreateHabitNoteRequest = Schemas["CreateHabitNoteRequest"];
+export type Routine = Schemas["RoutineDetailResponse"];
+export type RoutineList = Schemas["RoutineListResponse"];
+export type RoutineStep = Schemas["RoutineStepResponse"];
+export type RoutineStepRequest = Schemas["RoutineStepRequest"];
+export type RoutineSession = Schemas["RoutineSessionResponse"];
+export type RoutineSessionList = Schemas["RoutineSessionListResponse"];
+export type RoutineSessionStep = Schemas["RoutineSessionStepResponse"];
+export type RoutineStepStatus = RoutineSessionStep["status"];
+export type CreateRoutineRequest = Schemas["CreateRoutineRequest"];
+export type UpdateRoutineRequest = Schemas["UpdateRoutineRequest"];
+export type UpdateRoutineSessionRequest = Schemas["UpdateRoutineSessionRequest"];
+export type HabitListQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/habits"]["get"]["parameters"]["query"]
+>;
+export type HabitTodayQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/habits/today"]["get"]["parameters"]["query"]
+>;
+export type HabitAnalyticsQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/habits/analytics"]["get"]["parameters"]["query"]
+>;
+export type HabitCalendarQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/habits/calendar"]["get"]["parameters"]["query"]
+>;
+export type HabitHistoryQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/habits/{habit_id}/history"]["get"]["parameters"]["query"]
+>;
+export type RoutineSessionListQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/routines/{routine_id}/sessions"]["get"]["parameters"]["query"]
+>;

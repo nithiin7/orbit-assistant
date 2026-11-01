@@ -23,6 +23,7 @@ type Values = {
   showCompleted: boolean;
   showUnscheduled: boolean;
   showDue: boolean;
+  showHabits: boolean;
 };
 
 const schema = object({
@@ -43,6 +44,7 @@ const schema = object({
   showCompleted: boolean().defined(),
   showUnscheduled: boolean().defined(),
   showDue: boolean().defined(),
+  showHabits: boolean().defined(),
 });
 
 const WEEK_STARTS = [
@@ -81,6 +83,7 @@ export function CalendarSettingsDialog({ preferences, timeZone, onSave, onClose 
       showCompleted: preferences.show_completed_tasks ?? true,
       showUnscheduled: preferences.show_unscheduled_tasks ?? true,
       showDue: preferences.show_due_tasks ?? true,
+      showHabits: preferences.show_habits ?? true,
     },
   });
   const { close, dialogProps } = useModalDialog({ onClose, dismissible: !saving });
@@ -95,6 +98,7 @@ export function CalendarSettingsDialog({ preferences, timeZone, onSave, onClose 
         show_completed_tasks: values.showCompleted,
         show_unscheduled_tasks: values.showUnscheduled,
         show_due_tasks: values.showDue,
+        show_habits: values.showHabits,
       });
       close();
     } catch (reason) {
@@ -168,6 +172,14 @@ export function CalendarSettingsDialog({ preferences, timeZone, onSave, onClose 
           <label className="flex items-center gap-2 text-sm">
             <Checkbox {...register("showUnscheduled")} />
             Show the unscheduled tasks list
+          </label>
+        </fieldset>
+
+        <fieldset className="space-y-2">
+          <legend className="text-sm font-medium">Habits and routines</legend>
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox {...register("showHabits")} />
+            Show habits and routines that have a time of day
           </label>
         </fieldset>
         <p className="text-sm text-muted-foreground">

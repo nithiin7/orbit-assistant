@@ -26,6 +26,7 @@ import {
   type EventFormValues,
   eventItem,
   groupByDate,
+  habitEntryHref,
   itemsOnDay,
   minutesNow,
   newEventValues,
@@ -82,6 +83,10 @@ export function CalendarWidget() {
   const open = (item: CalendarItem) => {
     if (item.kind === "task") {
       router.push(`/tasks?task=${item.task.id}`);
+      return;
+    }
+    if (item.kind === "habit") {
+      router.push(habitEntryHref(item.entry));
       return;
     }
     router.push(calendarHref({ view: "day", date: item.occurrence.start.slice(0, 10) }));

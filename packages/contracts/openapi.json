@@ -14522,6 +14522,2481 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/habits/categories": {
+      "get": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "List habit categories",
+        "description": "The first call creates the defaults (Health, Fitness, Learning, Productivity, Personal,\nFinance, Lifestyle, Other).",
+        "operationId": "list_categories_api_v1_workspaces__workspace_id__habits_categories_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HabitCategoryListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Create a habit category",
+        "operationId": "create_category_api_v1_workspaces__workspace_id__habits_categories_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateHabitCategoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HabitCategoryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The name is taken, or there are too many categories."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/habits/categories/{category_id}": {
+      "patch": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Rename, recolor, or change a category's icon",
+        "operationId": "update_category_api_v1_workspaces__workspace_id__habits_categories__category_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Category Id"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateHabitCategoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HabitCategoryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Delete a category",
+        "description": "Its habits and routines keep no category.",
+        "operationId": "delete_category_api_v1_workspaces__workspace_id__habits_categories__category_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Category Id"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/habits/today": {
+      "get": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Today's habits, this week, and the days ahead",
+        "description": "Every habit that isn't archived, as of `date`, with its state, progress, and streaks.",
+        "operationId": "today_api_v1_workspaces__workspace_id__habits_today_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Defaults to today.",
+              "title": "Date"
+            },
+            "description": "Defaults to today."
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Where today is. Defaults to the user's preference, else UTC.",
+              "title": "Timezone"
+            },
+            "description": "Where today is. Defaults to the user's preference, else UTC."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HabitTodayResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/habits/analytics": {
+      "get": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Habit analytics for a date range",
+        "description": "A heatmap, weekly and monthly trends, each habit's performance, and rates by category,\nfrom `start` to `end` (inclusive). Rates only count days a habit was due.",
+        "operationId": "analytics_api_v1_workspaces__workspace_id__habits_analytics_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "The last date, inclusive; at most 366 days later.",
+              "title": "End"
+            },
+            "description": "The last date, inclusive; at most 366 days later."
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Timezone"
+            }
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HabitAnalyticsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid fields, or a linked item doesn't exist in this workspace."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/habits/calendar": {
+      "get": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Habits and routines on the calendar",
+        "description": "Habits and routines with a time of day, on the days they're due, for local dates\n`[start, end)`. These are schedules, not calendar events; nothing is stored for them.",
+        "operationId": "calendar_api_v1_workspaces__workspace_id__habits_calendar_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "The first local date.",
+              "title": "Start"
+            },
+            "description": "The first local date."
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "The day after the last local date (exclusive).",
+              "title": "End"
+            },
+            "description": "The day after the last local date (exclusive)."
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Timezone"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HabitCalendarResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid fields, or a linked item doesn't exist in this workspace."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/habits": {
+      "get": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "List habits with their progress",
+        "operationId": "list_habits_api_v1_workspaces__workspace_id__habits_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "active",
+                "paused",
+                "archived",
+                "all"
+              ],
+              "type": "string",
+              "default": "active",
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HabitListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Create a habit",
+        "operationId": "create_habit_api_v1_workspaces__workspace_id__habits_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateHabitRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HabitDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid fields, or a linked item doesn't exist in this workspace."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}": {
+      "get": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Get a habit with its progress and links",
+        "operationId": "get_habit_api_v1_workspaces__workspace_id__habits__habit_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "habit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The habit's ID.",
+              "title": "Habit Id"
+            },
+            "description": "The habit's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HabitDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Update, pause, archive, or reschedule a habit",
+        "description": "A new schedule applies from `schedule_from` (today by default); earlier days keep theirs.\nPausing or archiving cancels the habit's reminders until it's active again.",
+        "operationId": "update_habit_api_v1_workspaces__workspace_id__habits__habit_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "habit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The habit's ID.",
+              "title": "Habit Id"
+            },
+            "description": "The habit's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateHabitRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HabitDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid fields, or a linked item doesn't exist in this workspace."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Delete a habit",
+        "description": "Deletes its history and reminders. Archive it instead to keep the history.",
+        "operationId": "delete_habit_api_v1_workspaces__workspace_id__habits__habit_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "habit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The habit's ID.",
+              "title": "Habit Id"
+            },
+            "description": "The habit's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/history": {
+      "get": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "A habit's days and periods",
+        "operationId": "habit_history_api_v1_workspaces__workspace_id__habits__habit_id__history_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "habit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The habit's ID.",
+              "title": "Habit Id"
+            },
+            "description": "The habit's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Start"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "The last date, inclusive; at most 366 days later.",
+              "title": "End"
+            },
+            "description": "The last date, inclusive; at most 366 days later."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HabitHistoryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid fields, or a linked item doesn't exist in this workspace."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/log/{day}": {
+      "put": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Record a day",
+        "description": "Complete, record progress on, or skip one local date. Replaces that day's entry; there is\nnever more than one. Days in the future or outside the habit's dates are refused.",
+        "operationId": "log_day_api_v1_workspaces__workspace_id__habits__habit_id__log__day__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "habit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The habit's ID.",
+              "title": "Habit Id"
+            },
+            "description": "The habit's ID."
+          },
+          {
+            "name": "day",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "A local date, such as `2026-11-02`.",
+              "title": "Day"
+            },
+            "description": "A local date, such as `2026-11-02`."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogHabitRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HabitProgressResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid fields, or a linked item doesn't exist in this workspace."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Undo a day",
+        "description": "Idempotent.",
+        "operationId": "unlog_day_api_v1_workspaces__workspace_id__habits__habit_id__log__day__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "habit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The habit's ID.",
+              "title": "Habit Id"
+            },
+            "description": "The habit's ID."
+          },
+          {
+            "name": "day",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "A local date, such as `2026-11-02`.",
+              "title": "Day"
+            },
+            "description": "A local date, such as `2026-11-02`."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HabitProgressResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/reminders": {
+      "put": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Set a habit's reminder times",
+        "description": "Each time notifies on the habit's due days that aren't done yet, through the reminder\nworker. Times left out are removed.",
+        "operationId": "set_habit_reminders_api_v1_workspaces__workspace_id__habits__habit_id__reminders_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "habit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The habit's ID.",
+              "title": "Habit Id"
+            },
+            "description": "The habit's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetHabitRemindersRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HabitDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid fields, or a linked item doesn't exist in this workspace."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/tasks": {
+      "post": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Create a task related to a habit",
+        "description": "An ordinary task, linked to the habit.",
+        "operationId": "create_habit_task_api_v1_workspaces__workspace_id__habits__habit_id__tasks_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "habit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The habit's ID.",
+              "title": "Habit Id"
+            },
+            "description": "The habit's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTaskRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid fields, or a linked item doesn't exist in this workspace."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/tasks/{task_id}": {
+      "put": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Link a task to a habit",
+        "operationId": "link_habit_task_api_v1_workspaces__workspace_id__habits__habit_id__tasks__task_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "habit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The habit's ID.",
+              "title": "Habit Id"
+            },
+            "description": "The habit's ID."
+          },
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid fields, or a linked item doesn't exist in this workspace."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Unlink a task from a habit",
+        "operationId": "unlink_habit_task_api_v1_workspaces__workspace_id__habits__habit_id__tasks__task_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "habit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The habit's ID.",
+              "title": "Habit Id"
+            },
+            "description": "The habit's ID."
+          },
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/notes": {
+      "post": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Write a reflection on a habit",
+        "description": "Creates an ordinary note in the Inbox and links it to the habit.",
+        "operationId": "create_habit_note_api_v1_workspaces__workspace_id__habits__habit_id__notes_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "habit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The habit's ID.",
+              "title": "Habit Id"
+            },
+            "description": "The habit's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateHabitNoteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkedNoteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/notes/{note_id}": {
+      "put": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Link a note to a habit",
+        "operationId": "link_habit_note_api_v1_workspaces__workspace_id__habits__habit_id__notes__note_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "habit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The habit's ID.",
+              "title": "Habit Id"
+            },
+            "description": "The habit's ID."
+          },
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Note Id"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid fields, or a linked item doesn't exist in this workspace."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Unlink a note from a habit",
+        "operationId": "unlink_habit_note_api_v1_workspaces__workspace_id__habits__habit_id__notes__note_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "habit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The habit's ID.",
+              "title": "Habit Id"
+            },
+            "description": "The habit's ID."
+          },
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Note Id"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/routines": {
+      "get": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "List routines",
+        "operationId": "list_routines_api_v1_workspaces__workspace_id__routines_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "active",
+                "paused",
+                "archived",
+                "all"
+              ],
+              "type": "string",
+              "default": "active",
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoutineListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Create a routine",
+        "operationId": "create_routine_api_v1_workspaces__workspace_id__routines_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoutineRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoutineDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid fields, or a linked item doesn't exist in this workspace."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/routines/{routine_id}": {
+      "get": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Get a routine",
+        "operationId": "get_routine_api_v1_workspaces__workspace_id__routines__routine_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "routine_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The routine's ID.",
+              "title": "Routine Id"
+            },
+            "description": "The routine's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoutineDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Update a routine and its steps",
+        "description": "Sessions already started keep the steps they started with.",
+        "operationId": "update_routine_api_v1_workspaces__workspace_id__routines__routine_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "routine_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The routine's ID.",
+              "title": "Routine Id"
+            },
+            "description": "The routine's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoutineRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoutineDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid fields, or a linked item doesn't exist in this workspace."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Delete a routine",
+        "description": "Deletes its sessions and reminders too. Archive it instead to keep the history.",
+        "operationId": "delete_routine_api_v1_workspaces__workspace_id__routines__routine_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "routine_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The routine's ID.",
+              "title": "Routine Id"
+            },
+            "description": "The routine's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/routines/{routine_id}/reminders": {
+      "put": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Set a routine's reminder times",
+        "operationId": "set_routine_reminders_api_v1_workspaces__workspace_id__routines__routine_id__reminders_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "routine_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The routine's ID.",
+              "title": "Routine Id"
+            },
+            "description": "The routine's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetHabitRemindersRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoutineDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid fields, or a linked item doesn't exist in this workspace."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/routines/{routine_id}/sessions": {
+      "get": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "A routine's sessions, newest first",
+        "operationId": "list_sessions_api_v1_workspaces__workspace_id__routines__routine_id__sessions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "routine_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The routine's ID.",
+              "title": "Routine Id"
+            },
+            "description": "The routine's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoutineSessionListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Start a routine",
+        "description": "Copies the routine's steps into the session, so later edits leave it as it was.",
+        "operationId": "start_session_api_v1_workspaces__workspace_id__routines__routine_id__sessions_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "routine_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The routine's ID.",
+              "title": "Routine Id"
+            },
+            "description": "The routine's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartRoutineSessionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoutineSessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A session is already in progress."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/routines/{routine_id}/sessions/{session_id}": {
+      "get": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Get a session",
+        "operationId": "get_session_api_v1_workspaces__workspace_id__routines__routine_id__sessions__session_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "routine_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The routine's ID.",
+              "title": "Routine Id"
+            },
+            "description": "The routine's ID."
+          },
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The session's ID.",
+              "title": "Session Id"
+            },
+            "description": "The session's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoutineSessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Finish or abandon a session, or edit its notes",
+        "operationId": "update_session_api_v1_workspaces__workspace_id__routines__routine_id__sessions__session_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "routine_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The routine's ID.",
+              "title": "Routine Id"
+            },
+            "description": "The routine's ID."
+          },
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The session's ID.",
+              "title": "Session Id"
+            },
+            "description": "The session's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoutineSessionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoutineSessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The session has already ended."
+          },
+          "422": {
+            "description": "Invalid fields, or a linked item doesn't exist in this workspace."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/routines/{routine_id}/sessions/{session_id}/steps/{step_id}": {
+      "patch": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Complete, skip, or reset a step",
+        "description": "Completing a step linked to a yes-or-no habit also completes the habit for the\nsession's day.",
+        "operationId": "update_session_step_api_v1_workspaces__workspace_id__routines__routine_id__sessions__session_id__steps__step_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "routine_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The routine's ID.",
+              "title": "Routine Id"
+            },
+            "description": "The routine's ID."
+          },
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The session's ID.",
+              "title": "Session Id"
+            },
+            "description": "The session's ID."
+          },
+          {
+            "name": "step_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Step Id"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSessionStepRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoutineSessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The session has already ended."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/routines/{routine_id}/sessions/{session_id}/note": {
+      "post": {
+        "tags": [
+          "habits"
+        ],
+        "summary": "Write a note for a session",
+        "description": "Creates an ordinary note in the Inbox and attaches it to the session.",
+        "operationId": "create_session_note_api_v1_workspaces__workspace_id__routines__routine_id__sessions__session_id__note_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "routine_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The routine's ID.",
+              "title": "Routine Id"
+            },
+            "description": "The routine's ID."
+          },
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The session's ID.",
+              "title": "Session Id"
+            },
+            "description": "The session's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSessionNoteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkedNoteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/storage": {
       "get": {
         "tags": [
@@ -15854,6 +18329,12 @@
             "type": "boolean",
             "title": "Show Due Tasks",
             "default": true
+          },
+          "show_habits": {
+            "type": "boolean",
+            "title": "Show Habits",
+            "description": "Show habits and routines that have a time of day.",
+            "default": true
           }
         },
         "additionalProperties": false,
@@ -15912,6 +18393,12 @@
           "show_due_tasks": {
             "type": "boolean",
             "title": "Show Due Tasks",
+            "default": true
+          },
+          "show_habits": {
+            "type": "boolean",
+            "title": "Show Habits",
+            "description": "Show habits and routines that have a time of day.",
             "default": true
           },
           "updated_at": {
@@ -17239,6 +19726,250 @@
         ],
         "title": "CreateGoalRequest"
       },
+      "CreateHabitCategoryRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "blue",
+              "green",
+              "amber",
+              "rose",
+              "violet",
+              "teal",
+              "orange",
+              "slate"
+            ],
+            "title": "Color",
+            "default": "slate"
+          },
+          "icon": {
+            "type": "string",
+            "enum": [
+              "sparkles",
+              "book",
+              "dumbbell",
+              "droplet",
+              "brain",
+              "moon",
+              "sun",
+              "heart",
+              "leaf",
+              "pen",
+              "music",
+              "coffee",
+              "bike",
+              "footprints",
+              "wallet",
+              "graduation",
+              "briefcase",
+              "smile"
+            ],
+            "title": "Icon",
+            "default": "sparkles"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "CreateHabitCategoryRequest"
+      },
+      "CreateHabitNoteRequest": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Title",
+            "description": "Defaults to the habit's name and the date.",
+            "default": ""
+          },
+          "day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day",
+            "description": "The day it reflects on."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CreateHabitNoteRequest"
+      },
+      "CreateHabitRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Description",
+            "default": ""
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "icon": {
+            "type": "string",
+            "enum": [
+              "sparkles",
+              "book",
+              "dumbbell",
+              "droplet",
+              "brain",
+              "moon",
+              "sun",
+              "heart",
+              "leaf",
+              "pen",
+              "music",
+              "coffee",
+              "bike",
+              "footprints",
+              "wallet",
+              "graduation",
+              "briefcase",
+              "smile"
+            ],
+            "title": "Icon",
+            "default": "sparkles"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "blue",
+              "green",
+              "amber",
+              "rose",
+              "violet",
+              "teal",
+              "orange",
+              "slate"
+            ],
+            "title": "Color",
+            "default": "blue"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "boolean",
+              "numeric",
+              "duration"
+            ],
+            "title": "Kind",
+            "default": "boolean"
+          },
+          "unit": {
+            "type": "string",
+            "maxLength": 20,
+            "title": "Unit",
+            "description": "Numeric habits only, such as `litres`.",
+            "default": ""
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1000000.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target",
+            "description": "Required for numeric and duration (minutes) habits."
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/HabitScheduleModel"
+          },
+          "time_of_day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Of Day"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone",
+            "description": "Defaults to the user's preference, else UTC."
+          },
+          "reminders": {
+            "items": {
+              "$ref": "#/components/schemas/HabitReminderTimeModel"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Reminders"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "schedule",
+          "start_date"
+        ],
+        "title": "CreateHabitRequest"
+      },
       "CreateHoldingRequest": {
         "properties": {
           "account_id": {
@@ -17937,6 +20668,150 @@
           "time_of_day"
         ],
         "title": "CreateReminderRequest"
+      },
+      "CreateRoutineRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Description",
+            "default": ""
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "icon": {
+            "type": "string",
+            "enum": [
+              "sparkles",
+              "book",
+              "dumbbell",
+              "droplet",
+              "brain",
+              "moon",
+              "sun",
+              "heart",
+              "leaf",
+              "pen",
+              "music",
+              "coffee",
+              "bike",
+              "footprints",
+              "wallet",
+              "graduation",
+              "briefcase",
+              "smile"
+            ],
+            "title": "Icon",
+            "default": "sun"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "blue",
+              "green",
+              "amber",
+              "rose",
+              "violet",
+              "teal",
+              "orange",
+              "slate"
+            ],
+            "title": "Color",
+            "default": "amber"
+          },
+          "time_of_day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Of Day"
+          },
+          "weekdays": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "mon",
+                "tue",
+                "wed",
+                "thu",
+                "fri",
+                "sat",
+                "sun"
+              ]
+            },
+            "type": "array",
+            "title": "Weekdays"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/RoutineStepRequest"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Steps"
+          },
+          "reminders": {
+            "items": {
+              "$ref": "#/components/schemas/HabitReminderTimeModel"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Reminders"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "CreateRoutineRequest"
+      },
+      "CreateSessionNoteRequest": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Title",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CreateSessionNoteRequest"
       },
       "CreateSipPlanRequest": {
         "properties": {
@@ -19431,6 +22306,1437 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "HabitAnalyticsResponse": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date",
+            "title": "End"
+          },
+          "heatmap": {
+            "items": {
+              "$ref": "#/components/schemas/HabitHeatmapDayResponse"
+            },
+            "type": "array",
+            "title": "Heatmap"
+          },
+          "weekly": {
+            "items": {
+              "$ref": "#/components/schemas/HabitTrendPointResponse"
+            },
+            "type": "array",
+            "title": "Weekly"
+          },
+          "monthly": {
+            "items": {
+              "$ref": "#/components/schemas/HabitTrendPointResponse"
+            },
+            "type": "array",
+            "title": "Monthly"
+          },
+          "habits": {
+            "items": {
+              "$ref": "#/components/schemas/HabitPerformanceResponse"
+            },
+            "type": "array",
+            "title": "Habits"
+          },
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/HabitCategoryPerformanceResponse"
+            },
+            "type": "array",
+            "title": "Categories"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "heatmap",
+          "weekly",
+          "monthly",
+          "habits",
+          "categories"
+        ],
+        "title": "HabitAnalyticsResponse"
+      },
+      "HabitCalendarEntryResponse": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "habit",
+              "routine"
+            ],
+            "title": "Kind"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "blue",
+              "green",
+              "amber",
+              "rose",
+              "violet",
+              "teal",
+              "orange",
+              "slate"
+            ],
+            "title": "Color"
+          },
+          "icon": {
+            "type": "string",
+            "enum": [
+              "sparkles",
+              "book",
+              "dumbbell",
+              "droplet",
+              "brain",
+              "moon",
+              "sun",
+              "heart",
+              "leaf",
+              "pen",
+              "music",
+              "coffee",
+              "bike",
+              "footprints",
+              "wallet",
+              "graduation",
+              "briefcase",
+              "smile"
+            ],
+            "title": "Icon"
+          },
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "start_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start At"
+          },
+          "end_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End At"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "completed",
+                  "partial",
+                  "skipped",
+                  "missed",
+                  "pending",
+                  "open",
+                  "bonus",
+                  "unscheduled",
+                  "paused",
+                  "inactive"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "id",
+          "title",
+          "color",
+          "icon",
+          "day",
+          "start_at",
+          "end_at",
+          "state"
+        ],
+        "title": "HabitCalendarEntryResponse"
+      },
+      "HabitCalendarResponse": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/HabitCalendarEntryResponse"
+            },
+            "type": "array",
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entries"
+        ],
+        "title": "HabitCalendarResponse"
+      },
+      "HabitCategoryListResponse": {
+        "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/HabitCategoryResponse"
+            },
+            "type": "array",
+            "title": "Categories"
+          }
+        },
+        "type": "object",
+        "required": [
+          "categories"
+        ],
+        "title": "HabitCategoryListResponse"
+      },
+      "HabitCategoryPerformanceResponse": {
+        "properties": {
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "blue",
+              "green",
+              "amber",
+              "rose",
+              "violet",
+              "teal",
+              "orange",
+              "slate"
+            ],
+            "title": "Color"
+          },
+          "met": {
+            "type": "integer",
+            "title": "Met"
+          },
+          "missed": {
+            "type": "integer",
+            "title": "Missed"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category_id",
+          "name",
+          "color",
+          "met",
+          "missed",
+          "rate"
+        ],
+        "title": "HabitCategoryPerformanceResponse"
+      },
+      "HabitCategoryResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "blue",
+              "green",
+              "amber",
+              "rose",
+              "violet",
+              "teal",
+              "orange",
+              "slate"
+            ],
+            "title": "Color"
+          },
+          "icon": {
+            "type": "string",
+            "enum": [
+              "sparkles",
+              "book",
+              "dumbbell",
+              "droplet",
+              "brain",
+              "moon",
+              "sun",
+              "heart",
+              "leaf",
+              "pen",
+              "music",
+              "coffee",
+              "bike",
+              "footprints",
+              "wallet",
+              "graduation",
+              "briefcase",
+              "smile"
+            ],
+            "title": "Icon"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "color",
+          "icon",
+          "position"
+        ],
+        "title": "HabitCategoryResponse"
+      },
+      "HabitDayResponse": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "partial",
+              "skipped",
+              "missed",
+              "pending",
+              "open",
+              "bonus",
+              "unscheduled",
+              "paused",
+              "inactive"
+            ],
+            "title": "State"
+          },
+          "log": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HabitLogResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "state",
+          "log"
+        ],
+        "title": "HabitDayResponse"
+      },
+      "HabitDetailResponse": {
+        "properties": {
+          "habit": {
+            "$ref": "#/components/schemas/HabitResponse"
+          },
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "partial",
+              "skipped",
+              "missed",
+              "pending",
+              "open",
+              "bonus",
+              "unscheduled",
+              "paused",
+              "inactive"
+            ],
+            "title": "State"
+          },
+          "log": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HabitLogResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "period": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HabitPeriodResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The day (if due), or its week for weekly targets."
+          },
+          "week_done": {
+            "type": "integer",
+            "title": "Week Done"
+          },
+          "week_due": {
+            "type": "integer",
+            "title": "Week Due"
+          },
+          "current_streak": {
+            "type": "integer",
+            "title": "Current Streak"
+          },
+          "longest_streak": {
+            "type": "integer",
+            "title": "Longest Streak"
+          },
+          "streak_unit": {
+            "type": "string",
+            "enum": [
+              "day",
+              "week"
+            ],
+            "title": "Streak Unit"
+          },
+          "total_completions": {
+            "type": "integer",
+            "title": "Total Completions"
+          },
+          "completion_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Rate",
+            "description": "0 to 1; `null` when nothing was due."
+          },
+          "weekly_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekly Rate",
+            "description": "Over the last 7 days."
+          },
+          "monthly_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthly Rate",
+            "description": "Over the last 30 days."
+          },
+          "reminders": {
+            "items": {
+              "$ref": "#/components/schemas/HabitReminderTimeResponse"
+            },
+            "type": "array",
+            "title": "Reminders"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/TaskResponse"
+            },
+            "type": "array",
+            "title": "Tasks"
+          },
+          "notes": {
+            "items": {
+              "$ref": "#/components/schemas/LinkedNoteResponse"
+            },
+            "type": "array",
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "habit",
+          "day",
+          "state",
+          "log",
+          "period",
+          "week_done",
+          "week_due",
+          "current_streak",
+          "longest_streak",
+          "streak_unit",
+          "total_completions",
+          "completion_rate",
+          "weekly_rate",
+          "monthly_rate",
+          "reminders",
+          "tasks",
+          "notes"
+        ],
+        "title": "HabitDetailResponse"
+      },
+      "HabitHeatmapDayResponse": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "due": {
+            "type": "integer",
+            "title": "Due",
+            "description": "Fixed-day occurrences due."
+          },
+          "completed": {
+            "type": "integer",
+            "title": "Completed",
+            "description": "Of those, how many were completed."
+          },
+          "extra": {
+            "type": "integer",
+            "title": "Extra",
+            "description": "Other completions: weekly-target and extra days."
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "due",
+          "completed",
+          "extra"
+        ],
+        "title": "HabitHeatmapDayResponse"
+      },
+      "HabitHistoryResponse": {
+        "properties": {
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/HabitDayResponse"
+            },
+            "type": "array",
+            "title": "Days"
+          },
+          "periods": {
+            "items": {
+              "$ref": "#/components/schemas/HabitPeriodResponse"
+            },
+            "type": "array",
+            "title": "Periods"
+          }
+        },
+        "type": "object",
+        "required": [
+          "days",
+          "periods"
+        ],
+        "title": "HabitHistoryResponse"
+      },
+      "HabitListResponse": {
+        "properties": {
+          "habits": {
+            "items": {
+              "$ref": "#/components/schemas/HabitProgressResponse"
+            },
+            "type": "array",
+            "title": "Habits"
+          }
+        },
+        "type": "object",
+        "required": [
+          "habits"
+        ],
+        "title": "HabitListResponse"
+      },
+      "HabitLogResponse": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "target": {
+            "type": "number",
+            "title": "Target",
+            "description": "The target when the day was logged."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "partial",
+              "skipped"
+            ],
+            "title": "Status"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          },
+          "logged_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Logged At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "value",
+          "target",
+          "status",
+          "note",
+          "logged_at"
+        ],
+        "title": "HabitLogResponse"
+      },
+      "HabitPauseResponse": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date",
+            "title": "Start"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End",
+            "description": "The day tracking resumed; `null` while paused."
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "HabitPauseResponse"
+      },
+      "HabitPerformanceResponse": {
+        "properties": {
+          "habit_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Habit Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "blue",
+              "green",
+              "amber",
+              "rose",
+              "violet",
+              "teal",
+              "orange",
+              "slate"
+            ],
+            "title": "Color"
+          },
+          "icon": {
+            "type": "string",
+            "enum": [
+              "sparkles",
+              "book",
+              "dumbbell",
+              "droplet",
+              "brain",
+              "moon",
+              "sun",
+              "heart",
+              "leaf",
+              "pen",
+              "music",
+              "coffee",
+              "bike",
+              "footprints",
+              "wallet",
+              "graduation",
+              "briefcase",
+              "smile"
+            ],
+            "title": "Icon"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "archived"
+            ],
+            "title": "Status"
+          },
+          "met": {
+            "type": "integer",
+            "title": "Met"
+          },
+          "missed": {
+            "type": "integer",
+            "title": "Missed"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate"
+          },
+          "completions": {
+            "type": "integer",
+            "title": "Completions"
+          },
+          "current_streak": {
+            "type": "integer",
+            "title": "Current Streak"
+          },
+          "longest_streak": {
+            "type": "integer",
+            "title": "Longest Streak"
+          },
+          "streak_unit": {
+            "type": "string",
+            "enum": [
+              "day",
+              "week"
+            ],
+            "title": "Streak Unit"
+          },
+          "trend": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend",
+            "description": "The rate in the range's second half minus its first; negative is declining."
+          }
+        },
+        "type": "object",
+        "required": [
+          "habit_id",
+          "name",
+          "color",
+          "icon",
+          "category_id",
+          "status",
+          "met",
+          "missed",
+          "rate",
+          "completions",
+          "current_streak",
+          "longest_streak",
+          "streak_unit",
+          "trend"
+        ],
+        "title": "HabitPerformanceResponse"
+      },
+      "HabitPeriodResponse": {
+        "properties": {
+          "unit": {
+            "type": "string",
+            "enum": [
+              "day",
+              "week"
+            ],
+            "title": "Unit"
+          },
+          "start": {
+            "type": "string",
+            "format": "date",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date",
+            "title": "End"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "met",
+              "missed",
+              "skipped",
+              "pending"
+            ],
+            "title": "State"
+          },
+          "done": {
+            "type": "integer",
+            "title": "Done"
+          },
+          "required": {
+            "type": "integer",
+            "title": "Required"
+          }
+        },
+        "type": "object",
+        "required": [
+          "unit",
+          "start",
+          "end",
+          "state",
+          "done",
+          "required"
+        ],
+        "title": "HabitPeriodResponse"
+      },
+      "HabitProgressResponse": {
+        "properties": {
+          "habit": {
+            "$ref": "#/components/schemas/HabitResponse"
+          },
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "partial",
+              "skipped",
+              "missed",
+              "pending",
+              "open",
+              "bonus",
+              "unscheduled",
+              "paused",
+              "inactive"
+            ],
+            "title": "State"
+          },
+          "log": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HabitLogResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "period": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HabitPeriodResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The day (if due), or its week for weekly targets."
+          },
+          "week_done": {
+            "type": "integer",
+            "title": "Week Done"
+          },
+          "week_due": {
+            "type": "integer",
+            "title": "Week Due"
+          },
+          "current_streak": {
+            "type": "integer",
+            "title": "Current Streak"
+          },
+          "longest_streak": {
+            "type": "integer",
+            "title": "Longest Streak"
+          },
+          "streak_unit": {
+            "type": "string",
+            "enum": [
+              "day",
+              "week"
+            ],
+            "title": "Streak Unit"
+          },
+          "total_completions": {
+            "type": "integer",
+            "title": "Total Completions"
+          },
+          "completion_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Rate",
+            "description": "0 to 1; `null` when nothing was due."
+          },
+          "weekly_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekly Rate",
+            "description": "Over the last 7 days."
+          },
+          "monthly_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthly Rate",
+            "description": "Over the last 30 days."
+          }
+        },
+        "type": "object",
+        "required": [
+          "habit",
+          "day",
+          "state",
+          "log",
+          "period",
+          "week_done",
+          "week_due",
+          "current_streak",
+          "longest_streak",
+          "streak_unit",
+          "total_completions",
+          "completion_rate",
+          "weekly_rate",
+          "monthly_rate"
+        ],
+        "title": "HabitProgressResponse"
+      },
+      "HabitReminderTimeModel": {
+        "properties": {
+          "time": {
+            "type": "string",
+            "format": "time",
+            "title": "Time",
+            "description": "Local time in the habit's or routine's time zone."
+          },
+          "weekdays": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "mon",
+                "tue",
+                "wed",
+                "thu",
+                "fri",
+                "sat",
+                "sun"
+              ]
+            },
+            "type": "array",
+            "title": "Weekdays",
+            "description": "Only on these weekdays; empty means every day it's due."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "time"
+        ],
+        "title": "HabitReminderTimeModel"
+      },
+      "HabitReminderTimeResponse": {
+        "properties": {
+          "time": {
+            "type": "string",
+            "format": "time",
+            "title": "Time",
+            "description": "Local time in the habit's or routine's time zone."
+          },
+          "weekdays": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "mon",
+                "tue",
+                "wed",
+                "thu",
+                "fri",
+                "sat",
+                "sun"
+              ]
+            },
+            "type": "array",
+            "title": "Weekdays",
+            "description": "Only on these weekdays; empty means every day it's due."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "time",
+          "id"
+        ],
+        "title": "HabitReminderTimeResponse"
+      },
+      "HabitResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "icon": {
+            "type": "string",
+            "enum": [
+              "sparkles",
+              "book",
+              "dumbbell",
+              "droplet",
+              "brain",
+              "moon",
+              "sun",
+              "heart",
+              "leaf",
+              "pen",
+              "music",
+              "coffee",
+              "bike",
+              "footprints",
+              "wallet",
+              "graduation",
+              "briefcase",
+              "smile"
+            ],
+            "title": "Icon"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "blue",
+              "green",
+              "amber",
+              "rose",
+              "violet",
+              "teal",
+              "orange",
+              "slate"
+            ],
+            "title": "Color"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "boolean",
+              "numeric",
+              "duration"
+            ],
+            "title": "Kind"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target",
+            "description": "`null` for yes-or-no habits. Minutes for duration."
+          },
+          "time_of_day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Of Day"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "archived"
+            ],
+            "title": "Status"
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/HabitScheduleModel"
+          },
+          "schedule_history": {
+            "items": {
+              "$ref": "#/components/schemas/HabitScheduleVersionResponse"
+            },
+            "type": "array",
+            "title": "Schedule History"
+          },
+          "pauses": {
+            "items": {
+              "$ref": "#/components/schemas/HabitPauseResponse"
+            },
+            "type": "array",
+            "title": "Pauses"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "category_id",
+          "name",
+          "description",
+          "icon",
+          "color",
+          "kind",
+          "unit",
+          "target",
+          "time_of_day",
+          "start_date",
+          "end_date",
+          "timezone",
+          "status",
+          "schedule",
+          "schedule_history",
+          "pauses",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "HabitResponse"
+      },
+      "HabitScheduleModel": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "daily",
+              "weekdays",
+              "monthly",
+              "weekly_target"
+            ],
+            "title": "Type"
+          },
+          "every": {
+            "type": "integer",
+            "maximum": 365.0,
+            "minimum": 1.0,
+            "title": "Every",
+            "default": 1
+          },
+          "weekdays": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "mon",
+                "tue",
+                "wed",
+                "thu",
+                "fri",
+                "sat",
+                "sun"
+              ]
+            },
+            "type": "array",
+            "title": "Weekdays"
+          },
+          "month_days": {
+            "items": {
+              "type": "integer",
+              "maximum": 31.0,
+              "minimum": 1.0
+            },
+            "type": "array",
+            "title": "Month Days"
+          },
+          "times_per_week": {
+            "type": "integer",
+            "maximum": 7.0,
+            "minimum": 0.0,
+            "title": "Times Per Week",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "title": "HabitScheduleModel",
+        "description": "`daily` every `every` days; `weekdays` on `weekdays`; `monthly` on `month_days` (a day a\nmonth lacks falls on its last day); `weekly_target` any `times_per_week` days of each\nMonday-to-Sunday week."
+      },
+      "HabitScheduleVersionResponse": {
+        "properties": {
+          "effective_from": {
+            "type": "string",
+            "format": "date",
+            "title": "Effective From"
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/HabitScheduleModel"
+          }
+        },
+        "type": "object",
+        "required": [
+          "effective_from",
+          "schedule"
+        ],
+        "title": "HabitScheduleVersionResponse"
+      },
+      "HabitTodayResponse": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "habits": {
+            "items": {
+              "$ref": "#/components/schemas/HabitProgressResponse"
+            },
+            "type": "array",
+            "title": "Habits"
+          },
+          "week": {
+            "items": {
+              "$ref": "#/components/schemas/HabitHeatmapDayResponse"
+            },
+            "type": "array",
+            "title": "Week"
+          },
+          "upcoming": {
+            "items": {
+              "$ref": "#/components/schemas/HabitUpcomingDayResponse"
+            },
+            "type": "array",
+            "title": "Upcoming"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "habits",
+          "week",
+          "upcoming"
+        ],
+        "title": "HabitTodayResponse"
+      },
+      "HabitTrendPointResponse": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date",
+            "title": "End"
+          },
+          "met": {
+            "type": "integer",
+            "title": "Met"
+          },
+          "missed": {
+            "type": "integer",
+            "title": "Missed"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "met",
+          "missed",
+          "rate"
+        ],
+        "title": "HabitTrendPointResponse"
+      },
+      "HabitUpcomingDayResponse": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "habit_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Habit Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "habit_ids"
+        ],
+        "title": "HabitUpcomingDayResponse"
+      },
       "HealthResponse": {
         "properties": {
           "status": {
@@ -20665,6 +24971,43 @@
           "display_name"
         ],
         "title": "LocalSignUpRequest"
+      },
+      "LogHabitRequest": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "progress",
+              "skipped"
+            ],
+            "title": "Status",
+            "default": "completed"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Note",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "LogHabitRequest",
+        "description": "`completed` records the target (or `value`); `progress` records `value` toward it;\n`skipped` excuses the day, so it doesn't break a streak."
       },
       "MarkAllReadResponse": {
         "properties": {
@@ -23152,10 +27495,11 @@
               "loan",
               "recurring_payment",
               "deposit",
-              "calendar_alert"
+              "calendar_alert",
+              "habit_reminder"
             ],
             "title": "Kind",
-            "description": "`loan`, `recurring_payment` for a subscription or bill, `deposit` for a fixed or recurring deposit's maturity, or `calendar_alert` for one of a calendar event's alerts (`id` is the alert's)."
+            "description": "`loan`, `recurring_payment` for a subscription or bill, `deposit` for a fixed or recurring deposit's maturity, `calendar_alert` for one of a calendar event's alerts (`id` is the alert's), or `habit_reminder` for a habit's or routine's reminder time (`id` is the reminder time's)."
           },
           "id": {
             "type": "string",
@@ -23505,6 +27849,580 @@
         "type": "object",
         "title": "RescheduleLoanRequest",
         "description": "Regenerate the unpaid installments from what is still owed, after a prepayment (a\ntransfer into the loan account) or a rate change. Without `emi_amount` the number of\ninstallments stays the same and the EMI is recomputed; with it, the tenure changes."
+      },
+      "RoutineDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "icon": {
+            "type": "string",
+            "enum": [
+              "sparkles",
+              "book",
+              "dumbbell",
+              "droplet",
+              "brain",
+              "moon",
+              "sun",
+              "heart",
+              "leaf",
+              "pen",
+              "music",
+              "coffee",
+              "bike",
+              "footprints",
+              "wallet",
+              "graduation",
+              "briefcase",
+              "smile"
+            ],
+            "title": "Icon"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "blue",
+              "green",
+              "amber",
+              "rose",
+              "violet",
+              "teal",
+              "orange",
+              "slate"
+            ],
+            "title": "Color"
+          },
+          "time_of_day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Of Day"
+          },
+          "weekdays": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "mon",
+                "tue",
+                "wed",
+                "thu",
+                "fri",
+                "sat",
+                "sun"
+              ]
+            },
+            "type": "array",
+            "title": "Weekdays",
+            "description": "Empty means every day."
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "archived"
+            ],
+            "title": "Status"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/RoutineStepResponse"
+            },
+            "type": "array",
+            "title": "Steps"
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "title": "Estimated Minutes"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "reminders": {
+            "items": {
+              "$ref": "#/components/schemas/HabitReminderTimeResponse"
+            },
+            "type": "array",
+            "title": "Reminders"
+          },
+          "active_session": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RoutineSessionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "last_session": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RoutineSessionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sessions_completed": {
+            "type": "integer",
+            "title": "Sessions Completed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "category_id",
+          "name",
+          "description",
+          "icon",
+          "color",
+          "time_of_day",
+          "weekdays",
+          "timezone",
+          "status",
+          "steps",
+          "estimated_minutes",
+          "created_at",
+          "updated_at",
+          "reminders",
+          "active_session",
+          "last_session",
+          "sessions_completed"
+        ],
+        "title": "RoutineDetailResponse"
+      },
+      "RoutineListResponse": {
+        "properties": {
+          "routines": {
+            "items": {
+              "$ref": "#/components/schemas/RoutineDetailResponse"
+            },
+            "type": "array",
+            "title": "Routines"
+          }
+        },
+        "type": "object",
+        "required": [
+          "routines"
+        ],
+        "title": "RoutineListResponse"
+      },
+      "RoutineSessionListResponse": {
+        "properties": {
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/RoutineSessionResponse"
+            },
+            "type": "array",
+            "title": "Sessions"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sessions",
+          "total"
+        ],
+        "title": "RoutineSessionListResponse"
+      },
+      "RoutineSessionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "routine_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Routine Id"
+          },
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "routine_name": {
+            "type": "string",
+            "title": "Routine Name",
+            "description": "The routine's name when the session started."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "completed",
+              "abandoned"
+            ],
+            "title": "Status"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "note_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note Id"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/RoutineSessionStepResponse"
+            },
+            "type": "array",
+            "title": "Steps"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "routine_id",
+          "day",
+          "routine_name",
+          "status",
+          "started_at",
+          "finished_at",
+          "notes",
+          "note_id",
+          "steps"
+        ],
+        "title": "RoutineSessionResponse"
+      },
+      "RoutineSessionStepResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "duration_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Minutes"
+          },
+          "habit_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Habit Id"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "completed",
+              "skipped"
+            ],
+            "title": "Status"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "position",
+          "name",
+          "duration_minutes",
+          "habit_id",
+          "task_id",
+          "status",
+          "completed_at"
+        ],
+        "title": "RoutineSessionStepResponse"
+      },
+      "RoutineStepRequest": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id",
+            "description": "Keep an existing step; omit to add."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Description",
+            "default": ""
+          },
+          "duration_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1440.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Minutes"
+          },
+          "habit_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Habit Id"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          },
+          "note_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "RoutineStepRequest"
+      },
+      "RoutineStepResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "duration_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Minutes"
+          },
+          "habit_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Habit Id"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          },
+          "note_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "position",
+          "name",
+          "description",
+          "duration_minutes",
+          "habit_id",
+          "task_id",
+          "note_id"
+        ],
+        "title": "RoutineStepResponse"
+      },
+      "SetHabitRemindersRequest": {
+        "properties": {
+          "reminders": {
+            "items": {
+              "$ref": "#/components/schemas/HabitReminderTimeModel"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Reminders"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reminders"
+        ],
+        "title": "SetHabitRemindersRequest"
       },
       "SetIncomeRequest": {
         "properties": {
@@ -24245,6 +29163,26 @@
           "categories"
         ],
         "title": "SpendingResponse"
+      },
+      "StartRoutineSessionRequest": {
+        "properties": {
+          "day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day",
+            "description": "Defaults to today."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "StartRoutineSessionRequest"
       },
       "StorageLocationResponse": {
         "properties": {
@@ -25619,6 +30557,288 @@
         "title": "UpdateGoalRequest",
         "description": "Change a goal; its contributions stay. `state` pauses, completes, cancels, or reopens it."
       },
+      "UpdateHabitCategoryRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "blue",
+                  "green",
+                  "amber",
+                  "rose",
+                  "violet",
+                  "teal",
+                  "orange",
+                  "slate"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "sparkles",
+                  "book",
+                  "dumbbell",
+                  "droplet",
+                  "brain",
+                  "moon",
+                  "sun",
+                  "heart",
+                  "leaf",
+                  "pen",
+                  "music",
+                  "coffee",
+                  "bike",
+                  "footprints",
+                  "wallet",
+                  "graduation",
+                  "briefcase",
+                  "smile"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateHabitCategoryRequest"
+      },
+      "UpdateHabitRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "sparkles",
+                  "book",
+                  "dumbbell",
+                  "droplet",
+                  "brain",
+                  "moon",
+                  "sun",
+                  "heart",
+                  "leaf",
+                  "pen",
+                  "music",
+                  "coffee",
+                  "bike",
+                  "footprints",
+                  "wallet",
+                  "graduation",
+                  "briefcase",
+                  "smile"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "blue",
+                  "green",
+                  "amber",
+                  "rose",
+                  "violet",
+                  "teal",
+                  "orange",
+                  "slate"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1000000.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "schedule": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HabitScheduleModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "schedule_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule From"
+          },
+          "time_of_day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Of Day"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "paused",
+                  "archived"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status",
+            "description": "`paused` or `archived` stops tracking from today."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateHabitRequest",
+        "description": "Only the fields sent change. A new `schedule` applies from `schedule_from` (today by\ndefault); earlier days keep the schedule they had."
+      },
       "UpdateHoldingRequest": {
         "properties": {
           "name": {
@@ -26572,6 +31792,249 @@
         "type": "object",
         "title": "UpdateReminderRequest",
         "description": "Change some of a reminder's fields. Omitted fields keep their values; `task_id: null`\ndetaches the task and `recurrence: null` makes the reminder one-time. Changing the schedule\nor `enabled` replaces the pending occurrence."
+      },
+      "UpdateRoutineRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "sparkles",
+                  "book",
+                  "dumbbell",
+                  "droplet",
+                  "brain",
+                  "moon",
+                  "sun",
+                  "heart",
+                  "leaf",
+                  "pen",
+                  "music",
+                  "coffee",
+                  "bike",
+                  "footprints",
+                  "wallet",
+                  "graduation",
+                  "briefcase",
+                  "smile"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "blue",
+                  "green",
+                  "amber",
+                  "rose",
+                  "violet",
+                  "teal",
+                  "orange",
+                  "slate"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "time_of_day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Of Day"
+          },
+          "weekdays": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "mon",
+                    "tue",
+                    "wed",
+                    "thu",
+                    "fri",
+                    "sat",
+                    "sun"
+                  ]
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekdays"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "paused",
+                  "archived"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "steps": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/RoutineStepRequest"
+                },
+                "type": "array",
+                "maxItems": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Steps"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateRoutineRequest",
+        "description": "Only the fields sent change. `steps` is the whole ordered list: steps left out are\nremoved; sessions already started keep their copies."
+      },
+      "UpdateRoutineSessionRequest": {
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "completed",
+                  "abandoned"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status",
+            "description": "Finish or abandon an active session."
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "note_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note Id",
+            "description": "Link a note; `null` unlinks."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateRoutineSessionRequest"
+      },
+      "UpdateSessionStepRequest": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "completed",
+              "skipped"
+            ],
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "UpdateSessionStepRequest"
       },
       "UpdateSipPlanRequest": {
         "properties": {

@@ -21,8 +21,9 @@ Browser ──► apps/web (Next.js, :3000) ──HTTP/JSON──► apps/api (F
   workspaces, on the database foundation described under [Storage](#storage). Identity is
   described under [Identity and authorization](#identity-and-authorization). Product data:
   [tasks](#tasks), shopping lists, [reminders](#reminders-and-notifications), and
-  [finance](#finance), [notes](#notes-and-knowledge-management), and the
-  [calendar](#calendar-and-events); the assistant stores nothing yet.
+  [finance](#finance), [notes](#notes-and-knowledge-management), the
+  [calendar](#calendar-and-events), and [habits and routines](#habits-and-routines); the
+  assistant stores nothing yet.
 
 The two apps communicate only over HTTP and share no runtime code. They share one thing: the
 API contract in `packages/contracts`, described below.
@@ -235,7 +236,7 @@ apps/api/src/orbit_api/
     ├── database.py      # `open_database()`: connect, verify schema, sessions, dispose
     ├── migrate.py       # Programmatic Alembic: upgrade, downgrade, head revision
     └── migrations/      # Alembic environment and versioned revisions
-        └── versions/    # 0001_baseline … 0013_create_calendar
+        └── versions/    # 0001_baseline … 0014_create_habits
 ```
 
 Design decisions:
@@ -352,6 +353,12 @@ written once. SQLite is embedded in the API process; local mode needs no databas
   `calendar_event_tasks`, and `calendar_preferences` with RLS, adds `tasks.scheduled_start` and
   `scheduled_end`, and the reminders' unique link to an event alert (see
   [Calendar and events](#calendar-and-events)).
+- `0014_create_habits` creates `habit_categories`, `habits`, `habit_schedule_versions`,
+  `habit_pauses`, `habit_logs`, `habit_tasks`, `habit_notes`, `routines`, `routine_steps`,
+  `routine_sessions` (with a partial unique index for one active session per routine),
+  `routine_session_steps`, and `habit_reminders` with RLS, adds the reminders' unique link to a
+  habit reminder time, and `calendar_preferences.show_habits` (see
+  [Habits and routines](#habits-and-routines)).
 - Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
   Startup only checks that the database is at the head revision. For a shared cloud database,
   schema changes should be deliberate and reviewable.
@@ -433,7 +440,7 @@ structure.
      `finance_loans`, `finance_loan_installments`, `finance_recurring_payments`, and
      `finance_recurring_occurrences`; `0010` for the nine investment, asset, and snapshot tables;
      `0011` for the six budget, goal, and plan tables; `0012` for the seven note tables; `0013`
-     for the seven calendar tables.
+     for the seven calendar tables; `0014` for the twelve habit and routine tables.
   2. **No policies exist**, deliberately: the browser never queries tables directly, so the
      Data API's `anon` and `authenticated` roles get no rows. Add `authenticated` policies
      (for example `owner_id = auth.uid()`) only if a client is ever allowed direct access.
@@ -2261,6 +2268,206 @@ body or path link is a 422, like a missing one.
 - Event search matches series, not individual occurrences, and opens the series' first date.
 - The opt-in PostgreSQL suite covers the calendar's SQL through the service (cloud mode's API
   needs Supabase tokens); the HTTP tests run on SQLite.
+
+## Habits and routines
+
+Habits are things done on a schedule; routines are short sequences of steps run through in one
+go. Both live in a workspace and reuse the existing tasks, notes, reminders, and calendar rather
+than copying them. Code: `services/habits/` (`schedule.py` and `progress.py` hold the rules as
+pure functions, `insights.py` builds views from them, `service.py` and `routines.py` apply
+changes), `repositories/habits.py`, `api/v1/habits.py`, migration `0014_create_habits`.
+
+### Habit data model
+
+- `habits`: name, description, icon (a fixed set of names), color (the calendar's palette),
+  optional category, kind (`boolean`, `numeric`, `duration`), unit (numeric only), target
+  (`NULL` for yes-or-no habits, minutes for duration habits, a float above zero otherwise),
+  optional time of day, start and optional end date, an IANA time zone, and status (`active`,
+  `paused`, `archived`). The kind can't change once created.
+- `habit_schedule_versions`: the schedule, as versions. Each holds a versioned JSON document and
+  the date it takes effect (unique per habit and date).
+- `habit_pauses`: date ranges `[start, end)` the habit was paused or archived; `end` is `NULL`
+  while it still is.
+- `habit_logs`: at most one entry per habit and local date (`UNIQUE (habit_id, day)`): the value,
+  the target that applied when it was logged, a skipped flag, an optional note, and when it was
+  logged.
+- `habit_categories`: per-workspace categories with a color and icon. The first read creates
+  the defaults (Health, Fitness, Learning, Productivity, Personal, Finance, Lifestyle, Other);
+  deleting one leaves its habits and routines uncategorized.
+- `habit_tasks`, `habit_notes`: links to existing tasks and notes. Deleting either side removes
+  the link.
+
+Relationships inside the module are composite foreign keys on `(id, workspace_id)`, so the
+database refuses cross-workspace rows. Every new PostgreSQL table enables Row Level Security with
+no policies, like the others.
+
+### Schedule representation
+
+A schedule is one of:
+
+| Type            | Due                                                                 |
+| --------------- | ------------------------------------------------------------------- |
+| `daily`         | Every `every` days (1 to 365), counted from the version's first day |
+| `weekdays`      | On the listed weekdays                                              |
+| `monthly`       | On the listed days of the month                                     |
+| `weekly_target` | Any `times_per_week` days (1 to 7) in each week                     |
+
+- A day of the month a month lacks (29th to 31st) falls on its last day; two listed days that
+  land on the same date (30 and 31 in February) count once, so nothing is due twice. Leap years
+  follow the calendar.
+- Weeks run Monday to Sunday (ISO weeks) for every habit, whatever the calendar's display
+  preference, so weekly numbers never change with a setting.
+- Nothing is expanded into rows: whether a day is due is computed from the version in effect on
+  that day.
+- Changing a schedule adds a version from a date (today by default) and drops versions from that
+  date on; earlier days keep theirs, so history never changes after the fact. A change dated on
+  or before the start date replaces the whole history. Saving an edit with the same schedule
+  adds nothing.
+
+### Completion history
+
+Logging a day upserts its entry: `completed` records the target (or a given value), `progress`
+records a value toward it, `skipped` excuses the day. Undoing deletes the entry. Days after
+today (in the habit's time zone) and outside the habit's dates are refused. A new entry stores
+the habit's current target; editing an entry keeps the target it was logged with, so raising a
+target later doesn't turn finished days into partial ones. An entry is _completed_ when its value
+reaches its stored target, _partial_ when it's above zero but below it.
+
+### Streak calculation rules
+
+Everything below is derived on read from versions, pauses, and entries (`progress.py`).
+
+- **Periods.** Fixed-day schedules have one period per due day: _met_ when completed, _skipped_
+  when skipped, _pending_ while it's today and not met, otherwise _missed_ (a past partial day
+  shows its progress but counts as missed). Weekly targets have one period per week, needing
+  `min(times_per_week, tracked days in the week that weren't skipped)` completed days; a week
+  shortened by the start date, end date, a pause, or skips asks for less, and one that needs
+  nothing is skipped. The current week is pending until met. When a schedule changes mid-week
+  under a weekly target, each part of the week is its own period.
+- **Streaks** count consecutive met periods in the current schedule's unit: days for fixed-day
+  schedules, weeks for weekly targets. Skipped periods and paused days neither break nor extend a
+  streak, a missed period ends it, and a pending one (today, or this week) doesn't end it yet.
+  Changing between a fixed-day schedule and a weekly target ends the run, because days and weeks
+  can't be added; changes within one unit carry it on. The longest streak is the longest such
+  run in the current unit.
+- **Rates** are met periods over met plus missed. Skipped, pending, paused, and not-due days are
+  never counted, so days off can't lower a rate; a range with nothing due has no rate (`null`),
+  not 0%. Detail pages show all-time, last 7 days, and last 30 days.
+- Days completed when not due are shown as extra and count toward total completions, not
+  streaks.
+
+### Routine execution model
+
+- `routines` and `routine_steps`: name, description, icon, color, optional category, optional
+  time of day, applicable weekdays (empty means every day), time zone, and status; steps are
+  ordered, with an optional duration and optional links to a habit, task, or note. Step links
+  are plain foreign keys that clear when the item is deleted; the service checks they're in the
+  routine's workspace. The estimated duration is the sum of step durations.
+- Editing replaces the ordered step list: steps sent with their ID are kept, new ones are added,
+  and the rest are removed.
+- `routine_sessions` and `routine_session_steps`: starting a session copies the steps, so editing
+  or deleting steps later never changes past sessions. Each step is `pending`, `completed`, or
+  `skipped`; the session is `active`, then `completed` or `abandoned`, with optional notes and a
+  linked note. A partial unique index allows one active session per routine; a second start gets 409.
+- Completing a step linked to a yes-or-no habit also completes that habit for the session's day,
+  in the same transaction, unless the day is already logged. Other habit kinds and linked tasks
+  are left for the user to update, since there's no single right value to record.
+
+### Reminder and calendar integration
+
+- **Reminders.** `habit_reminders` holds up to five times per habit or routine (unique per
+  owner and time), each optionally limited to weekdays. Each manages one reminder through the
+  existing reminder system (`reminders.habit_reminder_id`, link kind `habit_reminder`), exactly
+  like calendar alerts: the habit or routine points it at its next due day that isn't done or
+  skipped (for weekly targets, each day of a week until the week's target is met), at the
+  reminder time in its time zone, re-pointing it in the same transaction as every change and
+  logged day. The reminder worker delivers it as an in-app notification and calls back
+  (`ManagedFollowUp`) to move it on. Pausing or archiving cancels it; removing a time deletes it.
+  There is no second scheduler. Such reminders can't be edited through the reminders API (409).
+- **Calendar.** `GET …/habits/calendar` returns habits and routines with a time of day on the
+  days they're due, computed on read; no calendar event rows are created. Weekly targets have no
+  fixed days, so they aren't shown. The calendar shows them with a dotted outline and a repeat
+  mark, labels them "Habit" or "Routine", doesn't let them be dragged, and opens their page under
+  Habits instead of event details. `calendar_preferences.show_habits` (on by default) turns them
+  off.
+- **Tasks and notes.** A habit can create a task (an ordinary task, linked) or link existing
+  ones, and can create a reflection note (an ordinary note in the Inbox, linked). A routine
+  session can create or link a note. Nothing is copied.
+
+### Timezone behavior
+
+Log entries are keyed by local date in the habit's time zone (defaulting to the user's
+preference, else UTC). "Today" for logging, pending states, and reminders is today in that zone.
+Changing a habit's time zone doesn't rewrite history: past entries keep their dates, and only
+what counts as today moves. The Today view takes the viewer's time zone. Reminder times are wall
+clock times in the habit's or routine's zone, converted to UTC one occurrence at a time, so they
+keep their local time across daylight-saving changes.
+
+### Habits API
+
+Under `/workspaces/{workspace_id}`, all behind `WorkspaceDep`:
+
+- `GET|POST /habits/categories`, `PATCH|DELETE /habits/categories/{id}`.
+- `GET /habits?status=active|paused|archived|all`, `POST /habits`, `GET|PATCH|DELETE
+/habits/{id}` (`PATCH` takes `schedule` with optional `schedule_from`, and `status` to pause,
+  archive, or restore).
+- `GET /habits/today?date=&timezone=`: every habit that isn't archived with its state, entry,
+  period, streaks, and rates, this week's heatmap, and the next seven days' due habits.
+- `GET /habits/{id}/history?start=&end=` (at most 366 days): each day's state and entry, and the
+  periods.
+- `PUT|DELETE /habits/{id}/log/{date}`: record or undo a day.
+- `PUT /habits/{id}/reminders`: replace the reminder times.
+- `POST /habits/{id}/tasks`, `PUT|DELETE /habits/{id}/tasks/{task_id}`; `POST
+/habits/{id}/notes`, `PUT|DELETE /habits/{id}/notes/{note_id}`.
+- `GET /habits/analytics?start=&end=&timezone=&category_id=` (at most 366 days): a heatmap,
+  weekly and monthly trends, each habit's met, missed, completions, streaks, and trend (the
+  rate's change between the range's halves), and rates by category.
+- `GET /habits/calendar?start=&end=&timezone=` (`end` exclusive).
+- `GET|POST /routines`, `GET|PATCH|DELETE /routines/{id}`, `PUT /routines/{id}/reminders`.
+- `GET|POST /routines/{id}/sessions`, `GET|PATCH /routines/{id}/sessions/{session_id}` (finish,
+  abandon, notes, linked note), `PATCH …/steps/{step_id}`, `POST …/note`.
+
+Errors: 404 for anything outside the workspace, 422 for invalid fields, future days, or links to
+items not in the workspace, and 409 for a second active session, an ended session, or a taken
+category name. The OpenAPI document (`packages/contracts/openapi.json`) is the reference for
+fields.
+
+### Habits in the web app
+
+- `/habits`, with views in the URL: Today (`/habits`), All habits, Routines, Analytics, and
+  Archived (`?view=`), and detail pages (`?habit=`, `?routine=`). One primary action, a New menu
+  for a habit or a routine.
+- Today groups habits into To do, Done, and others (skipped, resting, paused, or a weekly target
+  already met), with one-tap check-offs that show at once and roll back on failure, inline
+  progress for amounts and durations, skip and clear in a row menu, this week's dots, today's
+  routines with Start or Continue, and the days ahead.
+- A habit's page has its progress, streaks and rates, a six-month heatmap (not-due days drawn as
+  outlines), recent entries, recording a past day, reminders, related tasks, reflections, and the
+  schedule history. A routine's page runs the active session (complete, skip, or bring back
+  steps; notes; finish or stop) and lists past sessions.
+- Analytics: a date range and category filter, totals, a completion calendar, weekly and
+  monthly consistency bars, what's going well and what could use attention, rates by category,
+  and a table of every habit.
+- Wording stays encouraging: missed days are "Not done", streaks are shown quietly, and there
+  are no points or badges.
+- Code: `src/api/habits`, `src/hooks/use-habits.ts`, `src/lib/habits`, `src/components/habits`.
+  Query keys start `["workspaces", id, "habits", …]`; changes refetch habits, reminders, and the
+  calendar.
+
+### Habit limitations
+
+- Weekly targets use Monday-to-Sunday weeks only; there are no monthly targets ("10 times a
+  month") or "every other week" schedules.
+- A habit's kind can't change after creation; delete and recreate it instead.
+- Snoozing isn't supported, because the reminder system has none; notifications can be read or
+  dismissed as usual. Reminders look about 400 days ahead (routines two weeks), at the worker's
+  poll granularity.
+- Calendar entries can't be dragged to reschedule; set the time on the habit or routine.
+- Routine steps complete linked yes-or-no habits only, and never complete linked tasks.
+- Streak and rate history is computed on read from the whole log. That's fast at personal scale
+  (years of daily entries), but there's no cached summary.
+- The opt-in PostgreSQL suite covers the habit and routine SQL through the services; the HTTP
+  tests run on SQLite.
 
 ## Configuration
 

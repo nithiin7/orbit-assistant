@@ -1,17 +1,27 @@
 "use client";
 
 import type { CalendarCategory } from "@orbit/contracts";
-import { CheckCircle2, Circle, Repeat } from "lucide-react";
+import { CheckCircle2, Circle, Repeat, Repeat2 } from "lucide-react";
 import type { ComponentProps } from "react";
 
 import { type CalendarItem, CATEGORY_STYLES, describeWhen, itemTitle } from "@/lib/calendar";
 import { cn } from "@/utils/common";
 
-/** The look of an item: events are tinted with their category's color; tasks are outlined. */
+/**
+ * The look of an item: events are tinted with their category's color; tasks are outlined;
+ * habits and routines are outlined in their color, as schedules rather than appointments.
+ */
 export function itemClassName(
   item: CalendarItem,
   categories: ReadonlyMap<string, CalendarCategory>,
 ): string {
+  if (item.kind === "habit") {
+    return cn(
+      "border border-dotted bg-card text-foreground",
+      CATEGORY_STYLES[item.entry.color].block.split(" ")[0],
+      item.entry.state === "completed" && "text-muted-foreground",
+    );
+  }
   if (item.kind === "task") {
     return cn(
       "border border-dashed border-foreground/30 bg-card text-foreground",
@@ -29,8 +39,15 @@ export function itemClassName(
   );
 }
 
-/** The leading mark that tells tasks from events without relying on color. */
+/** The leading mark that tells tasks, habits, and events apart without relying on color. */
 export function ItemMark({ item }: { item: CalendarItem }) {
+  if (item.kind === "habit") {
+    return item.entry.state === "completed" ? (
+      <CheckCircle2 className="size-3.5 shrink-0 text-success" aria-hidden="true" />
+    ) : (
+      <Repeat2 className="size-3.5 shrink-0 opacity-70" aria-hidden="true" />
+    );
+  }
   if (item.kind === "event") {
     return item.occurrence.recurring ? (
       <Repeat className="size-3 shrink-0 opacity-70" aria-hidden="true" />
@@ -50,6 +67,11 @@ export function itemLabel(
   categories: ReadonlyMap<string, CalendarCategory>,
 ): string {
   const when = describeWhen(item, timeZone);
+  if (item.kind === "habit") {
+    const kind = item.entry.kind === "habit" ? "Habit" : "Routine";
+    const state = item.entry.state === "completed" ? ", done" : "";
+    return `${kind}: ${item.entry.title}, ${when}${state}`;
+  }
   if (item.kind === "task") {
     const state = item.task.status === "completed" ? ", completed" : "";
     return `Task: ${item.task.title}, ${when}${state}`;

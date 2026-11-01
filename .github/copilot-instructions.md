@@ -20,8 +20,10 @@ non-trivial work. The essentials are repeated here because Copilot may not load 
   monthly reports, CSV export, loans and EMIs, subscriptions, recurring bills, upcoming
   payments, investments with hand-entered prices, deposits, other assets, net worth, budgets,
   savings goals, monthly plans), notes (folders, tags, links, journal, attachments), and a
-  calendar (events, recurring series, task scheduling, event alerts as managed reminders); no
-  other features or AI integration exist yet.
+  calendar (events, recurring series, task scheduling, event alerts as managed reminders), and
+  habits and routines (versioned schedules, a daily log, streaks, analytics, routine sessions,
+  reminder times as managed reminders, calendar entries); no other features or AI integration
+  exist yet.
   Don't build on them unless the task asks.
 
 ## Rules

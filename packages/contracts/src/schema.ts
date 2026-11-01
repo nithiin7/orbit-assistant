@@ -2602,6 +2602,434 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/habits/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List habit categories
+         * @description The first call creates the defaults (Health, Fitness, Learning, Productivity, Personal,
+         *     Finance, Lifestyle, Other).
+         */
+        get: operations["list_categories_api_v1_workspaces__workspace_id__habits_categories_get"];
+        put?: never;
+        /** Create a habit category */
+        post: operations["create_category_api_v1_workspaces__workspace_id__habits_categories_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/categories/{category_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a category
+         * @description Its habits and routines keep no category.
+         */
+        delete: operations["delete_category_api_v1_workspaces__workspace_id__habits_categories__category_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename, recolor, or change a category's icon */
+        patch: operations["update_category_api_v1_workspaces__workspace_id__habits_categories__category_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Today's habits, this week, and the days ahead
+         * @description Every habit that isn't archived, as of `date`, with its state, progress, and streaks.
+         */
+        get: operations["today_api_v1_workspaces__workspace_id__habits_today_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/analytics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Habit analytics for a date range
+         * @description A heatmap, weekly and monthly trends, each habit's performance, and rates by category,
+         *     from `start` to `end` (inclusive). Rates only count days a habit was due.
+         */
+        get: operations["analytics_api_v1_workspaces__workspace_id__habits_analytics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Habits and routines on the calendar
+         * @description Habits and routines with a time of day, on the days they're due, for local dates
+         *     `[start, end)`. These are schedules, not calendar events; nothing is stored for them.
+         */
+        get: operations["calendar_api_v1_workspaces__workspace_id__habits_calendar_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List habits with their progress */
+        get: operations["list_habits_api_v1_workspaces__workspace_id__habits_get"];
+        put?: never;
+        /** Create a habit */
+        post: operations["create_habit_api_v1_workspaces__workspace_id__habits_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a habit with its progress and links */
+        get: operations["get_habit_api_v1_workspaces__workspace_id__habits__habit_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a habit
+         * @description Deletes its history and reminders. Archive it instead to keep the history.
+         */
+        delete: operations["delete_habit_api_v1_workspaces__workspace_id__habits__habit_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update, pause, archive, or reschedule a habit
+         * @description A new schedule applies from `schedule_from` (today by default); earlier days keep theirs.
+         *     Pausing or archiving cancels the habit's reminders until it's active again.
+         */
+        patch: operations["update_habit_api_v1_workspaces__workspace_id__habits__habit_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A habit's days and periods */
+        get: operations["habit_history_api_v1_workspaces__workspace_id__habits__habit_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/log/{day}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Record a day
+         * @description Complete, record progress on, or skip one local date. Replaces that day's entry; there is
+         *     never more than one. Days in the future or outside the habit's dates are refused.
+         */
+        put: operations["log_day_api_v1_workspaces__workspace_id__habits__habit_id__log__day__put"];
+        post?: never;
+        /**
+         * Undo a day
+         * @description Idempotent.
+         */
+        delete: operations["unlog_day_api_v1_workspaces__workspace_id__habits__habit_id__log__day__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/reminders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set a habit's reminder times
+         * @description Each time notifies on the habit's due days that aren't done yet, through the reminder
+         *     worker. Times left out are removed.
+         */
+        put: operations["set_habit_reminders_api_v1_workspaces__workspace_id__habits__habit_id__reminders_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a task related to a habit
+         * @description An ordinary task, linked to the habit.
+         */
+        post: operations["create_habit_task_api_v1_workspaces__workspace_id__habits__habit_id__tasks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Link a task to a habit */
+        put: operations["link_habit_task_api_v1_workspaces__workspace_id__habits__habit_id__tasks__task_id__put"];
+        post?: never;
+        /** Unlink a task from a habit */
+        delete: operations["unlink_habit_task_api_v1_workspaces__workspace_id__habits__habit_id__tasks__task_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write a reflection on a habit
+         * @description Creates an ordinary note in the Inbox and links it to the habit.
+         */
+        post: operations["create_habit_note_api_v1_workspaces__workspace_id__habits__habit_id__notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/notes/{note_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Link a note to a habit */
+        put: operations["link_habit_note_api_v1_workspaces__workspace_id__habits__habit_id__notes__note_id__put"];
+        post?: never;
+        /** Unlink a note from a habit */
+        delete: operations["unlink_habit_note_api_v1_workspaces__workspace_id__habits__habit_id__notes__note_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/routines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List routines */
+        get: operations["list_routines_api_v1_workspaces__workspace_id__routines_get"];
+        put?: never;
+        /** Create a routine */
+        post: operations["create_routine_api_v1_workspaces__workspace_id__routines_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/routines/{routine_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a routine */
+        get: operations["get_routine_api_v1_workspaces__workspace_id__routines__routine_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a routine
+         * @description Deletes its sessions and reminders too. Archive it instead to keep the history.
+         */
+        delete: operations["delete_routine_api_v1_workspaces__workspace_id__routines__routine_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update a routine and its steps
+         * @description Sessions already started keep the steps they started with.
+         */
+        patch: operations["update_routine_api_v1_workspaces__workspace_id__routines__routine_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/routines/{routine_id}/reminders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set a routine's reminder times */
+        put: operations["set_routine_reminders_api_v1_workspaces__workspace_id__routines__routine_id__reminders_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/routines/{routine_id}/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A routine's sessions, newest first */
+        get: operations["list_sessions_api_v1_workspaces__workspace_id__routines__routine_id__sessions_get"];
+        put?: never;
+        /**
+         * Start a routine
+         * @description Copies the routine's steps into the session, so later edits leave it as it was.
+         */
+        post: operations["start_session_api_v1_workspaces__workspace_id__routines__routine_id__sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/routines/{routine_id}/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a session */
+        get: operations["get_session_api_v1_workspaces__workspace_id__routines__routine_id__sessions__session_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Finish or abandon a session, or edit its notes */
+        patch: operations["update_session_api_v1_workspaces__workspace_id__routines__routine_id__sessions__session_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/routines/{routine_id}/sessions/{session_id}/steps/{step_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Complete, skip, or reset a step
+         * @description Completing a step linked to a yes-or-no habit also completes the habit for the
+         *     session's day.
+         */
+        patch: operations["update_session_step_api_v1_workspaces__workspace_id__routines__routine_id__sessions__session_id__steps__step_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/routines/{routine_id}/sessions/{session_id}/note": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write a note for a session
+         * @description Creates an ordinary note in the Inbox and attaches it to the session.
+         */
+        post: operations["create_session_note_api_v1_workspaces__workspace_id__routines__routine_id__sessions__session_id__note_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/storage": {
         parameters: {
             query?: never;
@@ -3243,6 +3671,12 @@ export interface components {
              * @default true
              */
             show_due_tasks: boolean;
+            /**
+             * Show Habits
+             * @description Show habits and routines that have a time of day.
+             * @default true
+             */
+            show_habits: boolean;
         };
         /** CalendarPreferencesResponse */
         CalendarPreferencesResponse: {
@@ -3284,6 +3718,12 @@ export interface components {
              * @default true
              */
             show_due_tasks: boolean;
+            /**
+             * Show Habits
+             * @description Show habits and routines that have a time of day.
+             * @default true
+             */
+            show_habits: boolean;
             /**
              * Updated At
              * @description `null` until the user saves preferences.
@@ -3902,6 +4342,95 @@ export interface components {
              */
             notes: string;
         };
+        /** CreateHabitCategoryRequest */
+        CreateHabitCategoryRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Color
+             * @default slate
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /**
+             * Icon
+             * @default sparkles
+             * @enum {string}
+             */
+            icon: "sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile";
+        };
+        /** CreateHabitNoteRequest */
+        CreateHabitNoteRequest: {
+            /**
+             * Title
+             * @description Defaults to the habit's name and the date.
+             * @default
+             */
+            title: string;
+            /**
+             * Day
+             * @description The day it reflects on.
+             */
+            day?: string | null;
+        };
+        /** CreateHabitRequest */
+        CreateHabitRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Category Id */
+            category_id?: string | null;
+            /**
+             * Icon
+             * @default sparkles
+             * @enum {string}
+             */
+            icon: "sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile";
+            /**
+             * Color
+             * @default blue
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /**
+             * Kind
+             * @default boolean
+             * @enum {string}
+             */
+            kind: "boolean" | "numeric" | "duration";
+            /**
+             * Unit
+             * @description Numeric habits only, such as `litres`.
+             * @default
+             */
+            unit: string;
+            /**
+             * Target
+             * @description Required for numeric and duration (minutes) habits.
+             */
+            target?: number | null;
+            schedule: components["schemas"]["HabitScheduleModel"];
+            /** Time Of Day */
+            time_of_day?: string | null;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** End Date */
+            end_date?: string | null;
+            /**
+             * Timezone
+             * @description Defaults to the user's preference, else UTC.
+             */
+            timezone?: string | null;
+            /** Reminders */
+            reminders?: components["schemas"]["HabitReminderTimeModel"][];
+        };
         /**
          * CreateHoldingRequest
          * @description Add a mutual fund, stock, or ETF to an investment account. Units come from its buys; one
@@ -4226,6 +4755,48 @@ export interface components {
              */
             timezone?: string | null;
             recurrence?: components["schemas"]["RecurrenceModel"] | null;
+        };
+        /** CreateRoutineRequest */
+        CreateRoutineRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Category Id */
+            category_id?: string | null;
+            /**
+             * Icon
+             * @default sun
+             * @enum {string}
+             */
+            icon: "sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile";
+            /**
+             * Color
+             * @default amber
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /** Time Of Day */
+            time_of_day?: string | null;
+            /** Weekdays */
+            weekdays?: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[];
+            /** Timezone */
+            timezone?: string | null;
+            /** Steps */
+            steps?: components["schemas"]["RoutineStepRequest"][];
+            /** Reminders */
+            reminders?: components["schemas"]["HabitReminderTimeModel"][];
+        };
+        /** CreateSessionNoteRequest */
+        CreateSessionNoteRequest: {
+            /**
+             * Title
+             * @default
+             */
+            title: string;
         };
         /** CreateSipPlanRequest */
         CreateSipPlanRequest: {
@@ -4925,6 +5496,565 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HabitAnalyticsResponse */
+        HabitAnalyticsResponse: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Heatmap */
+            heatmap: components["schemas"]["HabitHeatmapDayResponse"][];
+            /** Weekly */
+            weekly: components["schemas"]["HabitTrendPointResponse"][];
+            /** Monthly */
+            monthly: components["schemas"]["HabitTrendPointResponse"][];
+            /** Habits */
+            habits: components["schemas"]["HabitPerformanceResponse"][];
+            /** Categories */
+            categories: components["schemas"]["HabitCategoryPerformanceResponse"][];
+        };
+        /** HabitCalendarEntryResponse */
+        HabitCalendarEntryResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "habit" | "routine";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Color
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /**
+             * Icon
+             * @enum {string}
+             */
+            icon: "sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile";
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Start At
+             * Format: date-time
+             */
+            start_at: string;
+            /**
+             * End At
+             * Format: date-time
+             */
+            end_at: string;
+            /** State */
+            state: ("completed" | "partial" | "skipped" | "missed" | "pending" | "open" | "bonus" | "unscheduled" | "paused" | "inactive") | null;
+        };
+        /** HabitCalendarResponse */
+        HabitCalendarResponse: {
+            /** Entries */
+            entries: components["schemas"]["HabitCalendarEntryResponse"][];
+        };
+        /** HabitCategoryListResponse */
+        HabitCategoryListResponse: {
+            /** Categories */
+            categories: components["schemas"]["HabitCategoryResponse"][];
+        };
+        /** HabitCategoryPerformanceResponse */
+        HabitCategoryPerformanceResponse: {
+            /** Category Id */
+            category_id: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Color
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /** Met */
+            met: number;
+            /** Missed */
+            missed: number;
+            /** Rate */
+            rate: number | null;
+        };
+        /** HabitCategoryResponse */
+        HabitCategoryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Color
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /**
+             * Icon
+             * @enum {string}
+             */
+            icon: "sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile";
+            /** Position */
+            position: number;
+        };
+        /** HabitDayResponse */
+        HabitDayResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "completed" | "partial" | "skipped" | "missed" | "pending" | "open" | "bonus" | "unscheduled" | "paused" | "inactive";
+            log: components["schemas"]["HabitLogResponse"] | null;
+        };
+        /** HabitDetailResponse */
+        HabitDetailResponse: {
+            habit: components["schemas"]["HabitResponse"];
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "completed" | "partial" | "skipped" | "missed" | "pending" | "open" | "bonus" | "unscheduled" | "paused" | "inactive";
+            log: components["schemas"]["HabitLogResponse"] | null;
+            /** @description The day (if due), or its week for weekly targets. */
+            period: components["schemas"]["HabitPeriodResponse"] | null;
+            /** Week Done */
+            week_done: number;
+            /** Week Due */
+            week_due: number;
+            /** Current Streak */
+            current_streak: number;
+            /** Longest Streak */
+            longest_streak: number;
+            /**
+             * Streak Unit
+             * @enum {string}
+             */
+            streak_unit: "day" | "week";
+            /** Total Completions */
+            total_completions: number;
+            /**
+             * Completion Rate
+             * @description 0 to 1; `null` when nothing was due.
+             */
+            completion_rate: number | null;
+            /**
+             * Weekly Rate
+             * @description Over the last 7 days.
+             */
+            weekly_rate: number | null;
+            /**
+             * Monthly Rate
+             * @description Over the last 30 days.
+             */
+            monthly_rate: number | null;
+            /** Reminders */
+            reminders: components["schemas"]["HabitReminderTimeResponse"][];
+            /** Tasks */
+            tasks: components["schemas"]["TaskResponse"][];
+            /** Notes */
+            notes: components["schemas"]["LinkedNoteResponse"][];
+        };
+        /** HabitHeatmapDayResponse */
+        HabitHeatmapDayResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Due
+             * @description Fixed-day occurrences due.
+             */
+            due: number;
+            /**
+             * Completed
+             * @description Of those, how many were completed.
+             */
+            completed: number;
+            /**
+             * Extra
+             * @description Other completions: weekly-target and extra days.
+             */
+            extra: number;
+        };
+        /** HabitHistoryResponse */
+        HabitHistoryResponse: {
+            /** Days */
+            days: components["schemas"]["HabitDayResponse"][];
+            /** Periods */
+            periods: components["schemas"]["HabitPeriodResponse"][];
+        };
+        /** HabitListResponse */
+        HabitListResponse: {
+            /** Habits */
+            habits: components["schemas"]["HabitProgressResponse"][];
+        };
+        /** HabitLogResponse */
+        HabitLogResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Value */
+            value: number;
+            /**
+             * Target
+             * @description The target when the day was logged.
+             */
+            target: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "completed" | "partial" | "skipped";
+            /** Note */
+            note: string;
+            /**
+             * Logged At
+             * Format: date-time
+             */
+            logged_at: string;
+        };
+        /** HabitPauseResponse */
+        HabitPauseResponse: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * @description The day tracking resumed; `null` while paused.
+             */
+            end: string | null;
+        };
+        /** HabitPerformanceResponse */
+        HabitPerformanceResponse: {
+            /**
+             * Habit Id
+             * Format: uuid
+             */
+            habit_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Color
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /**
+             * Icon
+             * @enum {string}
+             */
+            icon: "sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile";
+            /** Category Id */
+            category_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "paused" | "archived";
+            /** Met */
+            met: number;
+            /** Missed */
+            missed: number;
+            /** Rate */
+            rate: number | null;
+            /** Completions */
+            completions: number;
+            /** Current Streak */
+            current_streak: number;
+            /** Longest Streak */
+            longest_streak: number;
+            /**
+             * Streak Unit
+             * @enum {string}
+             */
+            streak_unit: "day" | "week";
+            /**
+             * Trend
+             * @description The rate in the range's second half minus its first; negative is declining.
+             */
+            trend: number | null;
+        };
+        /** HabitPeriodResponse */
+        HabitPeriodResponse: {
+            /**
+             * Unit
+             * @enum {string}
+             */
+            unit: "day" | "week";
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "met" | "missed" | "skipped" | "pending";
+            /** Done */
+            done: number;
+            /** Required */
+            required: number;
+        };
+        /** HabitProgressResponse */
+        HabitProgressResponse: {
+            habit: components["schemas"]["HabitResponse"];
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "completed" | "partial" | "skipped" | "missed" | "pending" | "open" | "bonus" | "unscheduled" | "paused" | "inactive";
+            log: components["schemas"]["HabitLogResponse"] | null;
+            /** @description The day (if due), or its week for weekly targets. */
+            period: components["schemas"]["HabitPeriodResponse"] | null;
+            /** Week Done */
+            week_done: number;
+            /** Week Due */
+            week_due: number;
+            /** Current Streak */
+            current_streak: number;
+            /** Longest Streak */
+            longest_streak: number;
+            /**
+             * Streak Unit
+             * @enum {string}
+             */
+            streak_unit: "day" | "week";
+            /** Total Completions */
+            total_completions: number;
+            /**
+             * Completion Rate
+             * @description 0 to 1; `null` when nothing was due.
+             */
+            completion_rate: number | null;
+            /**
+             * Weekly Rate
+             * @description Over the last 7 days.
+             */
+            weekly_rate: number | null;
+            /**
+             * Monthly Rate
+             * @description Over the last 30 days.
+             */
+            monthly_rate: number | null;
+        };
+        /** HabitReminderTimeModel */
+        HabitReminderTimeModel: {
+            /**
+             * Time
+             * Format: time
+             * @description Local time in the habit's or routine's time zone.
+             */
+            time: string;
+            /**
+             * Weekdays
+             * @description Only on these weekdays; empty means every day it's due.
+             */
+            weekdays?: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[];
+        };
+        /** HabitReminderTimeResponse */
+        HabitReminderTimeResponse: {
+            /**
+             * Time
+             * Format: time
+             * @description Local time in the habit's or routine's time zone.
+             */
+            time: string;
+            /**
+             * Weekdays
+             * @description Only on these weekdays; empty means every day it's due.
+             */
+            weekdays?: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
+        /** HabitResponse */
+        HabitResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Category Id */
+            category_id: string | null;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Icon
+             * @enum {string}
+             */
+            icon: "sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile";
+            /**
+             * Color
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "boolean" | "numeric" | "duration";
+            /** Unit */
+            unit: string;
+            /**
+             * Target
+             * @description `null` for yes-or-no habits. Minutes for duration.
+             */
+            target: number | null;
+            /** Time Of Day */
+            time_of_day: string | null;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** End Date */
+            end_date: string | null;
+            /** Timezone */
+            timezone: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "paused" | "archived";
+            schedule: components["schemas"]["HabitScheduleModel"];
+            /** Schedule History */
+            schedule_history: components["schemas"]["HabitScheduleVersionResponse"][];
+            /** Pauses */
+            pauses: components["schemas"]["HabitPauseResponse"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * HabitScheduleModel
+         * @description `daily` every `every` days; `weekdays` on `weekdays`; `monthly` on `month_days` (a day a
+         *     month lacks falls on its last day); `weekly_target` any `times_per_week` days of each
+         *     Monday-to-Sunday week.
+         */
+        HabitScheduleModel: {
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "daily" | "weekdays" | "monthly" | "weekly_target";
+            /**
+             * Every
+             * @default 1
+             */
+            every: number;
+            /** Weekdays */
+            weekdays?: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[];
+            /** Month Days */
+            month_days?: number[];
+            /**
+             * Times Per Week
+             * @default 0
+             */
+            times_per_week: number;
+        };
+        /** HabitScheduleVersionResponse */
+        HabitScheduleVersionResponse: {
+            /**
+             * Effective From
+             * Format: date
+             */
+            effective_from: string;
+            schedule: components["schemas"]["HabitScheduleModel"];
+        };
+        /** HabitTodayResponse */
+        HabitTodayResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Habits */
+            habits: components["schemas"]["HabitProgressResponse"][];
+            /** Week */
+            week: components["schemas"]["HabitHeatmapDayResponse"][];
+            /** Upcoming */
+            upcoming: components["schemas"]["HabitUpcomingDayResponse"][];
+        };
+        /** HabitTrendPointResponse */
+        HabitTrendPointResponse: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Met */
+            met: number;
+            /** Missed */
+            missed: number;
+            /** Rate */
+            rate: number | null;
+        };
+        /** HabitUpcomingDayResponse */
+        HabitUpcomingDayResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Habit Ids */
+            habit_ids: string[];
+        };
         /**
          * HealthResponse
          * @description Reports that the API process is running and able to serve requests.
@@ -5527,6 +6657,26 @@ export interface components {
             password: string;
             /** Display Name */
             display_name: string;
+        };
+        /**
+         * LogHabitRequest
+         * @description `completed` records the target (or `value`); `progress` records `value` toward it;
+         *     `skipped` excuses the day, so it doesn't break a streak.
+         */
+        LogHabitRequest: {
+            /**
+             * Status
+             * @default completed
+             * @enum {string}
+             */
+            status: "completed" | "progress" | "skipped";
+            /** Value */
+            value?: number | null;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
         };
         /** MarkAllReadResponse */
         MarkAllReadResponse: {
@@ -6678,10 +7828,10 @@ export interface components {
         ReminderCommitmentResponse: {
             /**
              * Kind
-             * @description `loan`, `recurring_payment` for a subscription or bill, `deposit` for a fixed or recurring deposit's maturity, or `calendar_alert` for one of a calendar event's alerts (`id` is the alert's).
+             * @description `loan`, `recurring_payment` for a subscription or bill, `deposit` for a fixed or recurring deposit's maturity, `calendar_alert` for one of a calendar event's alerts (`id` is the alert's), or `habit_reminder` for a habit's or routine's reminder time (`id` is the reminder time's).
              * @enum {string}
              */
-            kind: "loan" | "recurring_payment" | "deposit" | "calendar_alert";
+            kind: "loan" | "recurring_payment" | "deposit" | "calendar_alert" | "habit_reminder";
             /**
              * Id
              * Format: uuid
@@ -6838,6 +7988,192 @@ export interface components {
             emi_amount?: number | null;
             /** Next Payment Date */
             next_payment_date?: string | null;
+        };
+        /** RoutineDetailResponse */
+        RoutineDetailResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Category Id */
+            category_id: string | null;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Icon
+             * @enum {string}
+             */
+            icon: "sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile";
+            /**
+             * Color
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /** Time Of Day */
+            time_of_day: string | null;
+            /**
+             * Weekdays
+             * @description Empty means every day.
+             */
+            weekdays: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[];
+            /** Timezone */
+            timezone: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "paused" | "archived";
+            /** Steps */
+            steps: components["schemas"]["RoutineStepResponse"][];
+            /** Estimated Minutes */
+            estimated_minutes: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Reminders */
+            reminders: components["schemas"]["HabitReminderTimeResponse"][];
+            active_session: components["schemas"]["RoutineSessionResponse"] | null;
+            last_session: components["schemas"]["RoutineSessionResponse"] | null;
+            /** Sessions Completed */
+            sessions_completed: number;
+        };
+        /** RoutineListResponse */
+        RoutineListResponse: {
+            /** Routines */
+            routines: components["schemas"]["RoutineDetailResponse"][];
+        };
+        /** RoutineSessionListResponse */
+        RoutineSessionListResponse: {
+            /** Sessions */
+            sessions: components["schemas"]["RoutineSessionResponse"][];
+            /** Total */
+            total: number;
+        };
+        /** RoutineSessionResponse */
+        RoutineSessionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Routine Id
+             * Format: uuid
+             */
+            routine_id: string;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Routine Name
+             * @description The routine's name when the session started.
+             */
+            routine_name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "completed" | "abandoned";
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Finished At */
+            finished_at: string | null;
+            /** Notes */
+            notes: string;
+            /** Note Id */
+            note_id: string | null;
+            /** Steps */
+            steps: components["schemas"]["RoutineSessionStepResponse"][];
+        };
+        /** RoutineSessionStepResponse */
+        RoutineSessionStepResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Position */
+            position: number;
+            /** Name */
+            name: string;
+            /** Duration Minutes */
+            duration_minutes: number | null;
+            /** Habit Id */
+            habit_id: string | null;
+            /** Task Id */
+            task_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "completed" | "skipped";
+            /** Completed At */
+            completed_at: string | null;
+        };
+        /** RoutineStepRequest */
+        RoutineStepRequest: {
+            /**
+             * Id
+             * @description Keep an existing step; omit to add.
+             */
+            id?: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Duration Minutes */
+            duration_minutes?: number | null;
+            /** Habit Id */
+            habit_id?: string | null;
+            /** Task Id */
+            task_id?: string | null;
+            /** Note Id */
+            note_id?: string | null;
+        };
+        /** RoutineStepResponse */
+        RoutineStepResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Position */
+            position: number;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Duration Minutes */
+            duration_minutes: number | null;
+            /** Habit Id */
+            habit_id: string | null;
+            /** Task Id */
+            task_id: string | null;
+            /** Note Id */
+            note_id: string | null;
+        };
+        /** SetHabitRemindersRequest */
+        SetHabitRemindersRequest: {
+            /** Reminders */
+            reminders: components["schemas"]["HabitReminderTimeModel"][];
         };
         /**
          * SetIncomeRequest
@@ -7213,6 +8549,14 @@ export interface components {
              * @description Largest net spending first. Categories whose refunds cancel their spending are left out.
              */
             categories: components["schemas"]["CategorySpendingResponse"][];
+        };
+        /** StartRoutineSessionRequest */
+        StartRoutineSessionRequest: {
+            /**
+             * Day
+             * @description Defaults to today.
+             */
+            day?: string | null;
         };
         /**
          * StorageLocationResponse
@@ -7665,6 +9009,52 @@ export interface components {
             /** Notes */
             notes?: string | null;
         };
+        /** UpdateHabitCategoryRequest */
+        UpdateHabitCategoryRequest: {
+            /** Name */
+            name?: string | null;
+            /** Color */
+            color?: ("blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate") | null;
+            /** Icon */
+            icon?: ("sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile") | null;
+        };
+        /**
+         * UpdateHabitRequest
+         * @description Only the fields sent change. A new `schedule` applies from `schedule_from` (today by
+         *     default); earlier days keep the schedule they had.
+         */
+        UpdateHabitRequest: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /** Icon */
+            icon?: ("sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile") | null;
+            /** Color */
+            color?: ("blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate") | null;
+            /** Unit */
+            unit?: string | null;
+            /** Target */
+            target?: number | null;
+            schedule?: components["schemas"]["HabitScheduleModel"] | null;
+            /** Schedule From */
+            schedule_from?: string | null;
+            /** Time Of Day */
+            time_of_day?: string | null;
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Timezone */
+            timezone?: string | null;
+            /**
+             * Status
+             * @description `paused` or `archived` stops tracking from today.
+             */
+            status?: ("active" | "paused" | "archived") | null;
+        };
         /** UpdateHoldingRequest */
         UpdateHoldingRequest: {
             /** Name */
@@ -7881,6 +9271,56 @@ export interface components {
             /** Timezone */
             timezone?: string | null;
             recurrence?: components["schemas"]["RecurrenceModel"] | null;
+        };
+        /**
+         * UpdateRoutineRequest
+         * @description Only the fields sent change. `steps` is the whole ordered list: steps left out are
+         *     removed; sessions already started keep their copies.
+         */
+        UpdateRoutineRequest: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /** Icon */
+            icon?: ("sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile") | null;
+            /** Color */
+            color?: ("blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate") | null;
+            /** Time Of Day */
+            time_of_day?: string | null;
+            /** Weekdays */
+            weekdays?: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[] | null;
+            /** Timezone */
+            timezone?: string | null;
+            /** Status */
+            status?: ("active" | "paused" | "archived") | null;
+            /** Steps */
+            steps?: components["schemas"]["RoutineStepRequest"][] | null;
+        };
+        /** UpdateRoutineSessionRequest */
+        UpdateRoutineSessionRequest: {
+            /**
+             * Status
+             * @description Finish or abandon an active session.
+             */
+            status?: ("completed" | "abandoned") | null;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Note Id
+             * @description Link a note; `null` unlinks.
+             */
+            note_id?: string | null;
+        };
+        /** UpdateSessionStepRequest */
+        UpdateSessionStepRequest: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "completed" | "skipped";
         };
         /**
          * UpdateSipPlanRequest
@@ -17918,6 +19358,1675 @@ export interface operations {
             };
             /** @description Not signed in. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_categories_api_v1_workspaces__workspace_id__habits_categories_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitCategoryListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_category_api_v1_workspaces__workspace_id__habits_categories_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateHabitCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitCategoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The name is taken, or there are too many categories. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_category_api_v1_workspaces__workspace_id__habits_categories__category_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_category_api_v1_workspaces__workspace_id__habits_categories__category_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateHabitCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitCategoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    today_api_v1_workspaces__workspace_id__habits_today_get: {
+        parameters: {
+            query?: {
+                /** @description Defaults to today. */
+                date?: string | null;
+                /** @description Where today is. Defaults to the user's preference, else UTC. */
+                timezone?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitTodayResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    analytics_api_v1_workspaces__workspace_id__habits_analytics_get: {
+        parameters: {
+            query: {
+                start: string;
+                /** @description The last date, inclusive; at most 366 days later. */
+                end: string;
+                timezone?: string | null;
+                category_id?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitAnalyticsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    calendar_api_v1_workspaces__workspace_id__habits_calendar_get: {
+        parameters: {
+            query: {
+                /** @description The first local date. */
+                start: string;
+                /** @description The day after the last local date (exclusive). */
+                end: string;
+                timezone?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitCalendarResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_habits_api_v1_workspaces__workspace_id__habits_get: {
+        parameters: {
+            query?: {
+                status?: "active" | "paused" | "archived" | "all";
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_habit_api_v1_workspaces__workspace_id__habits_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateHabitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_habit_api_v1_workspaces__workspace_id__habits__habit_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_habit_api_v1_workspaces__workspace_id__habits__habit_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_habit_api_v1_workspaces__workspace_id__habits__habit_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateHabitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    habit_history_api_v1_workspaces__workspace_id__habits__habit_id__history_get: {
+        parameters: {
+            query: {
+                start: string;
+                /** @description The last date, inclusive; at most 366 days later. */
+                end: string;
+            };
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitHistoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    log_day_api_v1_workspaces__workspace_id__habits__habit_id__log__day__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                /** @description A local date, such as `2026-11-02`. */
+                day: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogHabitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitProgressResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlog_day_api_v1_workspaces__workspace_id__habits__habit_id__log__day__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                /** @description A local date, such as `2026-11-02`. */
+                day: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitProgressResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_habit_reminders_api_v1_workspaces__workspace_id__habits__habit_id__reminders_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetHabitRemindersRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_habit_task_api_v1_workspaces__workspace_id__habits__habit_id__tasks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    link_habit_task_api_v1_workspaces__workspace_id__habits__habit_id__tasks__task_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                task_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlink_habit_task_api_v1_workspaces__workspace_id__habits__habit_id__tasks__task_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                task_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_habit_note_api_v1_workspaces__workspace_id__habits__habit_id__notes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateHabitNoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedNoteResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_habit_note_api_v1_workspaces__workspace_id__habits__habit_id__notes__note_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlink_habit_note_api_v1_workspaces__workspace_id__habits__habit_id__notes__note_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_routines_api_v1_workspaces__workspace_id__routines_get: {
+        parameters: {
+            query?: {
+                status?: "active" | "paused" | "archived" | "all";
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_routine_api_v1_workspaces__workspace_id__routines_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRoutineRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_routine_api_v1_workspaces__workspace_id__routines__routine_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The routine's ID. */
+                routine_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_routine_api_v1_workspaces__workspace_id__routines__routine_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The routine's ID. */
+                routine_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_routine_api_v1_workspaces__workspace_id__routines__routine_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The routine's ID. */
+                routine_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRoutineRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    set_routine_reminders_api_v1_workspaces__workspace_id__routines__routine_id__reminders_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The routine's ID. */
+                routine_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetHabitRemindersRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_sessions_api_v1_workspaces__workspace_id__routines__routine_id__sessions_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description The routine's ID. */
+                routine_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineSessionListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_session_api_v1_workspaces__workspace_id__routines__routine_id__sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The routine's ID. */
+                routine_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartRoutineSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineSessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A session is already in progress. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_session_api_v1_workspaces__workspace_id__routines__routine_id__sessions__session_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The routine's ID. */
+                routine_id: string;
+                /** @description The session's ID. */
+                session_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineSessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_session_api_v1_workspaces__workspace_id__routines__routine_id__sessions__session_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The routine's ID. */
+                routine_id: string;
+                /** @description The session's ID. */
+                session_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRoutineSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineSessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The session has already ended. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_session_step_api_v1_workspaces__workspace_id__routines__routine_id__sessions__session_id__steps__step_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The routine's ID. */
+                routine_id: string;
+                /** @description The session's ID. */
+                session_id: string;
+                step_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSessionStepRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineSessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The session has already ended. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_session_note_api_v1_workspaces__workspace_id__routines__routine_id__sessions__session_id__note_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The routine's ID. */
+                routine_id: string;
+                /** @description The session's ID. */
+                session_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSessionNoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedNoteResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

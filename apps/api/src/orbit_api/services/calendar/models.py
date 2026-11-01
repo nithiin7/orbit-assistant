@@ -240,6 +240,7 @@ class CalendarPreferences:
     show_completed_tasks: bool = True
     show_unscheduled_tasks: bool = True
     show_due_tasks: bool = True
+    show_habits: bool = True
     updated_at: datetime | None = None
 
 

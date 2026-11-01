@@ -51,6 +51,7 @@ const preferences: CalendarPreferences = {
   show_completed_tasks: true,
   show_unscheduled_tasks: true,
   show_due_tasks: true,
+  show_habits: true,
   updated_at: null,
 };
 
@@ -144,6 +145,7 @@ function api(
     [`GET ${WS}/tasks`]: json({ tasks: [report], total: 1 }),
     [`GET ${WS}/notes`]: json({ notes: [], total: 0 }),
     [`GET ${CAL}/events/${EVENT_ID}`]: json(event()),
+    [`GET ${WS}/habits/calendar`]: json({ entries: [] }),
     ...extra,
   });
 }
@@ -194,6 +196,34 @@ describe("Calendar", () => {
     expect(navigate).toHaveBeenLastCalledWith("/calendar?view=week&date=2030-02-01", {
       scroll: false,
     });
+  });
+
+  it("shows habits and routines as schedules that open their own page", async () => {
+    const user = userEvent.setup();
+    url.set("/calendar?view=week&date=2030-01-14");
+    api({
+      [`GET ${WS}/habits/calendar`]: json({
+        entries: [
+          {
+            kind: "routine",
+            id: "r-morning",
+            title: "Morning routine",
+            color: "amber",
+            icon: "sun",
+            day: "2030-01-14",
+            start_at: "2030-01-14T07:00:00Z",
+            end_at: "2030-01-14T07:20:00Z",
+            state: null,
+          },
+        ],
+      }),
+    });
+    await renderSignedIn(<CalendarPanel />);
+
+    await user.click(await screen.findByRole("button", { name: /^Routine: Morning routine, / }));
+    expect(navigate).toHaveBeenLastCalledWith("/habits?routine=r-morning");
+    // No event details open for it.
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("creates an event from the dialog", async () => {

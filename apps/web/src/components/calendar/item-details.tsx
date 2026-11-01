@@ -30,11 +30,11 @@ import { useCalendarEvent } from "@/hooks/use-calendar";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { useNoteList } from "@/hooks/use-notes";
 import {
-  type CalendarItem,
   CATEGORY_STYLES,
   describeAlert,
   describeRule,
   describeWhen,
+  type DetailItem,
 } from "@/lib/calendar";
 import { noteDisplayTitle, notesHref } from "@/lib/notes";
 import { cn } from "@/utils/common";
@@ -57,7 +57,8 @@ export type TaskActions = {
 };
 
 type ItemDetailsProps = {
-  item: CalendarItem;
+  /** Habits and routines open their own page instead. */
+  item: DetailItem;
   workspaceId: string;
   timeZone: string;
   categories: ReadonlyMap<string, CalendarCategory>;

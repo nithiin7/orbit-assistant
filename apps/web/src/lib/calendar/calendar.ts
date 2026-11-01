@@ -16,6 +16,7 @@ import type {
   CreateCalendarEventRequest,
   EventRecurrenceFrequency,
   EventRecurrenceRule,
+  HabitCalendarEntry,
   Task,
   Weekday,
 } from "@orbit/contracts";
@@ -179,9 +180,15 @@ export function weekdayNames(weekStart: number, style: "short" | "narrow" = "sho
 // Placing items
 
 /** Something the calendar shows: an event occurrence, or a task (scheduled, or due that day). */
+/**
+ * What the calendar shows: event occurrences, tasks (scheduled, or on their due date), and
+ * habits and routines at their time of day. Habits and routines are schedules from the Habits
+ * page, not appointments: they can't be moved here, and open their own page.
+ */
 export type CalendarItem =
   | { kind: "event"; id: string; occurrence: CalendarOccurrence }
-  | { kind: "task"; id: string; task: Task; due: boolean };
+  | { kind: "task"; id: string; task: Task; due: boolean }
+  | { kind: "habit"; id: string; entry: HabitCalendarEntry };
 
 export function eventItem(occurrence: CalendarOccurrence): CalendarItem {
   return { kind: "event", id: occurrence.id, occurrence };
@@ -191,8 +198,21 @@ export function taskItem(task: Task, due = false): CalendarItem {
   return { kind: "task", id: `task:${task.id}${due ? ":due" : ""}`, task, due };
 }
 
+/** An item that opens the calendar's details dialog: an event or a task. */
+export type DetailItem = Exclude<CalendarItem, { kind: "habit" }>;
+
+export function habitItem(entry: HabitCalendarEntry): CalendarItem {
+  return { kind: "habit", id: `${entry.kind}:${entry.id}:${entry.day}`, entry };
+}
+
+/** Where a habit or routine on the calendar leads: its page under Habits. */
+export function habitEntryHref(entry: HabitCalendarEntry): string {
+  return `/habits?${entry.kind}=${encodeURIComponent(entry.id)}`;
+}
+
 /** Whether an item belongs in the all-day row: all-day events and due (unscheduled) tasks. */
 export function isAllDay(item: CalendarItem): boolean {
+  if (item.kind === "habit") return false;
   return item.kind === "event" ? item.occurrence.all_day : item.due;
 }
 
@@ -204,6 +224,7 @@ export function allDayDates(item: CalendarItem): { start: string; end: string } 
     const after = end.slice(0, 10);
     return { start: first, end: after > first ? after : addDays(first, 1) };
   }
+  if (item.kind === "habit") return { start: item.entry.day, end: addDays(item.entry.day, 1) };
   const due = item.task.due_date ?? "";
   return { start: due, end: addDays(due, 1) };
 }
@@ -212,6 +233,7 @@ export function allDayDates(item: CalendarItem): { start: string; end: string } 
 export function itemInstants(item: CalendarItem): { start: string; end: string } {
   if (item.kind === "event")
     return { start: item.occurrence.start_at, end: item.occurrence.end_at };
+  if (item.kind === "habit") return { start: item.entry.start_at, end: item.entry.end_at };
   return { start: item.task.scheduled_start ?? "", end: item.task.scheduled_end ?? "" };
 }
 
@@ -320,6 +342,7 @@ export function itemsOnDay(
 }
 
 export function itemTitle(item: CalendarItem): string {
+  if (item.kind === "habit") return item.entry.title;
   return item.kind === "event" ? item.occurrence.title : item.task.title;
 }
 

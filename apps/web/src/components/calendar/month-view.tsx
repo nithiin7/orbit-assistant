@@ -149,11 +149,13 @@ export function MonthView({
                           "size-1.5 rounded-full",
                           item.kind === "task"
                             ? "border border-foreground/50"
-                            : CATEGORY_STYLES[
-                                (item.occurrence.category_id
-                                  ? categories.get(item.occurrence.category_id)?.color
-                                  : undefined) ?? "slate"
-                              ].dot,
+                            : item.kind === "habit"
+                              ? cn("border", CATEGORY_STYLES[item.entry.color].block.split(" ")[0])
+                              : CATEGORY_STYLES[
+                                  (item.occurrence.category_id
+                                    ? categories.get(item.occurrence.category_id)?.color
+                                    : undefined) ?? "slate"
+                                ].dot,
                         )}
                       />
                     ))}
@@ -166,7 +168,7 @@ export function MonthView({
                           timeZone={timeZone}
                           categories={categories}
                           showTime
-                          draggable={!(item.kind === "task" && item.due)}
+                          draggable={item.kind === "event" || (item.kind === "task" && !item.due)}
                           onDragStart={(event) => {
                             event.dataTransfer.setData(ITEM_DRAG_TYPE, item.id);
                             event.dataTransfer.effectAllowed = "move";

@@ -25,6 +25,7 @@ from orbit_api.db.database import Database
 from orbit_api.repositories.budgets import build_budget_service
 from orbit_api.repositories.calendar import build_calendar_service
 from orbit_api.repositories.commitments import build_commitment_service
+from orbit_api.repositories.habits import build_habit_service
 from orbit_api.repositories.investments import SqlSnapshotRepository, build_net_worth_service
 from orbit_api.repositories.notifications import SqlNotificationRepository
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
@@ -53,16 +54,21 @@ DEFAULT_BUDGET_INTERVAL = timedelta(minutes=5)
 
 class ManagedFollowUp:
     """Hands a delivered managed reminder to the record that manages it: a calendar event's
-    alert, or a financial commitment."""
+    alert, a habit's or routine's reminder time, or a financial commitment."""
 
-    def __init__(self, calendar: ReminderFollowUp, commitments: ReminderFollowUp) -> None:
+    def __init__(
+        self, calendar: ReminderFollowUp, commitments: ReminderFollowUp, habits: ReminderFollowUp
+    ) -> None:
         self._calendar = calendar
         self._commitments = commitments
+        self._habits = habits
 
     async def after_delivery(self, reminder: Reminder, now: datetime) -> None:
         link = reminder.commitment
         if link is not None and link.kind == "calendar_alert":
             await self._calendar.after_delivery(reminder, now)
+        elif link is not None and link.kind == "habit_reminder":
+            await self._habits.after_delivery(reminder, now)
         else:
             await self._commitments.after_delivery(reminder, now)
 
@@ -251,9 +257,11 @@ class ReminderWorker:
             clock=self._clock,
             max_attempts=self._max_attempts,
             # Loan, subscription, and bill reminders move on to the next payment once delivered;
-            # event alerts move on to the next occurrence.
+            # event alerts move on to the next occurrence; habit and routine reminders to the
+            # next due day.
             follow_up=ManagedFollowUp(
                 build_calendar_service(session, self._clock),
                 build_commitment_service(session, self._clock),
+                build_habit_service(session, self._clock).reminders,
             ),
         )
