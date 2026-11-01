@@ -17,7 +17,7 @@ from orbit_api.schemas.tasks import (
     TaskSummaryResponse,
     UpdateTaskRequest,
 )
-from orbit_api.services.tasks.models import TaskNotFoundError
+from orbit_api.services.tasks.models import InvalidTaskScheduleError, TaskNotFoundError
 
 router = APIRouter(
     prefix="/workspaces/{workspace_id}/tasks",
@@ -35,6 +35,10 @@ def task_not_found() -> HTTPException:
     return HTTPException(status.HTTP_404_NOT_FOUND, "Task not found.")
 
 
+def invalid_schedule(exc: InvalidTaskScheduleError) -> HTTPException:
+    return HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc))
+
+
 @router.get("", summary="List tasks")
 async def list_tasks(
     params: Annotated[TaskListParams, Query()], workspace: WorkspaceDep, tasks: TaskServiceDep
@@ -49,7 +53,10 @@ async def list_tasks(
 async def create_task(
     body: CreateTaskRequest, workspace: WorkspaceDep, tasks: TaskServiceDep
 ) -> TaskResponse:
-    return TaskResponse.of(await tasks.create(workspace.id, body.to_draft()))
+    try:
+        return TaskResponse.of(await tasks.create(workspace.id, body.to_draft()))
+    except InvalidTaskScheduleError as exc:
+        raise invalid_schedule(exc) from None
 
 
 @router.get("/summary", summary="Count tasks by state")
@@ -76,6 +83,8 @@ async def update_task(
         return TaskResponse.of(await tasks.update(workspace.id, task_id, body.to_changes()))
     except TaskNotFoundError:
         raise task_not_found() from None
+    except InvalidTaskScheduleError as exc:
+        raise invalid_schedule(exc) from None
 
 
 @router.post("/{task_id}/complete", summary="Complete a task")

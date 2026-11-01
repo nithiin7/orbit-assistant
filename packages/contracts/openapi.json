@@ -1026,6 +1026,24 @@
             "description": "Case-insensitive text to find in titles and descriptions."
           },
           {
+            "name": "scheduled",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "`true` for tasks with a scheduled time, `false` for tasks without one.",
+              "title": "Scheduled"
+            },
+            "description": "`true` for tasks with a scheduled time, `false` for tasks without one."
+          },
+          {
             "name": "sort",
             "in": "query",
             "required": false,
@@ -13005,6 +13023,1505 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/calendar/categories": {
+      "get": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "List event categories",
+        "description": "The first call creates the default categories (Personal, Work, Meeting, Appointment,\nBirthday, Travel, Other).",
+        "operationId": "list_categories_api_v1_workspaces__workspace_id__calendar_categories_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarCategoryListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or event does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Create an event category",
+        "operationId": "create_category_api_v1_workspaces__workspace_id__calendar_categories_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCalendarCategoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarCategoryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or event does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The name is taken, or there are too many categories."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/calendar/categories/{category_id}": {
+      "patch": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Rename, recolor, show, or hide a category",
+        "operationId": "update_category_api_v1_workspaces__workspace_id__calendar_categories__category_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The category's ID.",
+              "title": "Category Id"
+            },
+            "description": "The category's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCalendarCategoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarCategoryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or event does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The name is taken."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Delete a category",
+        "description": "Its events keep no category.",
+        "operationId": "delete_category_api_v1_workspaces__workspace_id__calendar_categories__category_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The category's ID.",
+              "title": "Category Id"
+            },
+            "description": "The category's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or event does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/calendar/range": {
+      "get": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Occurrences and tasks for a date range",
+        "description": "Local dates `[start, end)` in the viewer's time zone (at most 92 days). Recurring series\nare expanded; events in hidden categories are left out.",
+        "operationId": "calendar_range_api_v1_workspaces__workspace_id__calendar_range_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "The first local date.",
+              "title": "Start"
+            },
+            "description": "The first local date."
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "The day after the last local date (exclusive).",
+              "title": "End"
+            },
+            "description": "The day after the last local date (exclusive)."
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The viewer's time zone, which decides where days begin. Defaults to the user's preference, else UTC.",
+              "title": "Timezone"
+            },
+            "description": "The viewer's time zone, which decides where days begin. Defaults to the user's preference, else UTC."
+          },
+          {
+            "name": "include_tasks",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Include Tasks"
+            }
+          },
+          {
+            "name": "include_completed_tasks",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Include Completed Tasks"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarRangeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or event does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/calendar/agenda": {
+      "get": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Upcoming occurrences and scheduled tasks",
+        "description": "What hasn't ended by `start`, in order, a page at a time, up to a year ahead. Cancelled\noccurrences and completed tasks are left out.",
+        "operationId": "agenda_api_v1_workspaces__workspace_id__calendar_agenda_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Show what hasn't ended by this instant. Defaults to now.",
+              "title": "Start"
+            },
+            "description": "Show what hasn't ended by this instant. Defaults to now."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "`next_cursor` from the previous page.",
+              "title": "Cursor"
+            },
+            "description": "`next_cursor` from the previous page."
+          },
+          {
+            "name": "include_tasks",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Include Tasks"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgendaResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or event does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/calendar/events": {
+      "get": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "List or search events",
+        "description": "Events and series (not their occurrences), most recent first.",
+        "operationId": "list_events_api_v1_workspaces__workspace_id__calendar_events_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Text to find in titles, notes, or places.",
+              "title": "Q"
+            },
+            "description": "Text to find in titles, notes, or places."
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or event does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Create an event",
+        "operationId": "create_event_api_v1_workspaces__workspace_id__calendar_events_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEventRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or event does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid times or rule, or a linked item doesn't exist."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/calendar/events/{event_id}": {
+      "get": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Get an event",
+        "operationId": "get_event_api_v1_workspaces__workspace_id__calendar_events__event_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The event's ID.",
+              "title": "Event Id"
+            },
+            "description": "The event's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or event does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Update an event or whole series",
+        "description": "Changing a series' times, time zone, all-day setting, or rule resets changes made to its\nsingle occurrences. Setting `status` to `cancelled` cancels every occurrence and its alerts.",
+        "operationId": "update_event_api_v1_workspaces__workspace_id__calendar_events__event_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The event's ID.",
+              "title": "Event Id"
+            },
+            "description": "The event's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEventRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or event does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid times or rule, or a linked item doesn't exist."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Delete an event or whole series",
+        "description": "Its alerts' pending reminders go with it; delivered notifications stay.",
+        "operationId": "delete_event_api_v1_workspaces__workspace_id__calendar_events__event_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The event's ID.",
+              "title": "Event Id"
+            },
+            "description": "The event's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or event does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/calendar/events/{event_id}/duplicate": {
+      "post": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Duplicate an event or series",
+        "description": "Copies the event with its rule, alerts, and links, but not changes to single\noccurrences.",
+        "operationId": "duplicate_event_api_v1_workspaces__workspace_id__calendar_events__event_id__duplicate_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The event's ID.",
+              "title": "Event Id"
+            },
+            "description": "The event's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or event does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/calendar/events/{event_id}/occurrences/{original_start}": {
+      "patch": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Change an occurrence, the following ones, or the series",
+        "description": "Returns the event that now holds the occurrence: with `following`, a new series that\ncontinues from it (the original ends before it).",
+        "operationId": "update_occurrence_api_v1_workspaces__workspace_id__calendar_events__event_id__occurrences__original_start__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The event's ID.",
+              "title": "Event Id"
+            },
+            "description": "The event's ID."
+          },
+          {
+            "name": "original_start",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "The occurrence's original local start, such as `2026-11-02T09:00`.",
+              "title": "Original Start"
+            },
+            "description": "The occurrence's original local start, such as `2026-11-02T09:00`."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOccurrenceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or event does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Invalid times or rule, or a linked item doesn't exist."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Delete an occurrence, the following ones, or the series",
+        "operationId": "delete_occurrence_api_v1_workspaces__workspace_id__calendar_events__event_id__occurrences__original_start__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The event's ID.",
+              "title": "Event Id"
+            },
+            "description": "The event's ID."
+          },
+          {
+            "name": "original_start",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "The occurrence's original local start, such as `2026-11-02T09:00`.",
+              "title": "Original Start"
+            },
+            "description": "The occurrence's original local start, such as `2026-11-02T09:00`."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "this",
+                "following",
+                "series"
+              ],
+              "type": "string",
+              "default": "this",
+              "title": "Scope"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or event does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/calendar/events/{event_id}/notes": {
+      "post": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Create a note for an event",
+        "description": "Creates an ordinary note in the Inbox, such as meeting notes, and links it to the\nevent.",
+        "operationId": "create_event_note_api_v1_workspaces__workspace_id__calendar_events__event_id__notes_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The event's ID.",
+              "title": "Event Id"
+            },
+            "description": "The event's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEventNoteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkedNoteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or event does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/calendar/events/{event_id}/notes/{note_id}": {
+      "put": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Link a note to an event",
+        "description": "Idempotent.",
+        "operationId": "link_event_note_api_v1_workspaces__workspace_id__calendar_events__event_id__notes__note_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The event's ID.",
+              "title": "Event Id"
+            },
+            "description": "The event's ID."
+          },
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Note Id"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or event does not exist or is not accessible."
+          },
+          "422": {
+            "description": "The note doesn't exist in this workspace."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Unlink a note from an event",
+        "operationId": "unlink_event_note_api_v1_workspaces__workspace_id__calendar_events__event_id__notes__note_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The event's ID.",
+              "title": "Event Id"
+            },
+            "description": "The event's ID."
+          },
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Note Id"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or event does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/calendar/events/{event_id}/tasks/{task_id}": {
+      "put": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Link a task to an event",
+        "description": "Idempotent.",
+        "operationId": "link_event_task_api_v1_workspaces__workspace_id__calendar_events__event_id__tasks__task_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The event's ID.",
+              "title": "Event Id"
+            },
+            "description": "The event's ID."
+          },
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or event does not exist or is not accessible."
+          },
+          "422": {
+            "description": "The task doesn't exist in this workspace."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Unlink a task from an event",
+        "operationId": "unlink_event_task_api_v1_workspaces__workspace_id__calendar_events__event_id__tasks__task_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The event's ID.",
+              "title": "Event Id"
+            },
+            "description": "The event's ID."
+          },
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or event does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/calendar-preferences": {
+      "get": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Get the signed-in user's calendar preferences",
+        "description": "Defaults until the user saves some (`updated_at` is `null`).",
+        "operationId": "get_preferences_api_v1_me_calendar_preferences_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarPreferencesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "Save the signed-in user's calendar preferences",
+        "operationId": "put_preferences_api_v1_me_calendar_preferences_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalendarPreferencesModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarPreferencesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/storage": {
       "get": {
         "tags": [
@@ -13222,6 +14739,80 @@
           "name"
         ],
         "title": "AddNoteTagRequest"
+      },
+      "AgendaItemResponse": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "event",
+              "task"
+            ],
+            "title": "Kind"
+          },
+          "start_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start At"
+          },
+          "occurrence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OccurrenceResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "task": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "start_at",
+          "occurrence",
+          "task"
+        ],
+        "title": "AgendaItemResponse"
+      },
+      "AgendaResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AgendaItemResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor",
+            "description": "Pass as `cursor` for more; `null` at the end."
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "AgendaResponse"
       },
       "AssetListResponse": {
         "properties": {
@@ -14149,6 +15740,235 @@
         ],
         "title": "BulkChangeResponse"
       },
+      "CalendarCategoryListResponse": {
+        "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/CalendarCategoryResponse"
+            },
+            "type": "array",
+            "title": "Categories"
+          }
+        },
+        "type": "object",
+        "required": [
+          "categories"
+        ],
+        "title": "CalendarCategoryListResponse"
+      },
+      "CalendarCategoryResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "blue",
+              "green",
+              "amber",
+              "rose",
+              "violet",
+              "teal",
+              "orange",
+              "slate"
+            ],
+            "title": "Color"
+          },
+          "is_visible": {
+            "type": "boolean",
+            "title": "Is Visible",
+            "description": "Hidden categories' events are left out of views."
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "color",
+          "is_visible",
+          "position"
+        ],
+        "title": "CalendarCategoryResponse"
+      },
+      "CalendarPreferencesModel": {
+        "properties": {
+          "default_view": {
+            "type": "string",
+            "enum": [
+              "month",
+              "week",
+              "day",
+              "agenda"
+            ],
+            "title": "Default View",
+            "default": "month"
+          },
+          "week_start": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 6.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Week Start",
+            "description": "0 is Sunday; `null` follows the browser's locale."
+          },
+          "working_hours_start": {
+            "type": "string",
+            "format": "time",
+            "title": "Working Hours Start",
+            "default": "09:00:00"
+          },
+          "working_hours_end": {
+            "type": "string",
+            "format": "time",
+            "title": "Working Hours End",
+            "default": "17:00:00"
+          },
+          "show_completed_tasks": {
+            "type": "boolean",
+            "title": "Show Completed Tasks",
+            "default": true
+          },
+          "show_unscheduled_tasks": {
+            "type": "boolean",
+            "title": "Show Unscheduled Tasks",
+            "default": true
+          },
+          "show_due_tasks": {
+            "type": "boolean",
+            "title": "Show Due Tasks",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CalendarPreferencesModel"
+      },
+      "CalendarPreferencesResponse": {
+        "properties": {
+          "default_view": {
+            "type": "string",
+            "enum": [
+              "month",
+              "week",
+              "day",
+              "agenda"
+            ],
+            "title": "Default View",
+            "default": "month"
+          },
+          "week_start": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 6.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Week Start",
+            "description": "0 is Sunday; `null` follows the browser's locale."
+          },
+          "working_hours_start": {
+            "type": "string",
+            "format": "time",
+            "title": "Working Hours Start",
+            "default": "09:00:00"
+          },
+          "working_hours_end": {
+            "type": "string",
+            "format": "time",
+            "title": "Working Hours End",
+            "default": "17:00:00"
+          },
+          "show_completed_tasks": {
+            "type": "boolean",
+            "title": "Show Completed Tasks",
+            "default": true
+          },
+          "show_unscheduled_tasks": {
+            "type": "boolean",
+            "title": "Show Unscheduled Tasks",
+            "default": true
+          },
+          "show_due_tasks": {
+            "type": "boolean",
+            "title": "Show Due Tasks",
+            "default": true
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At",
+            "description": "`null` until the user saves preferences."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "updated_at"
+        ],
+        "title": "CalendarPreferencesResponse"
+      },
+      "CalendarRangeResponse": {
+        "properties": {
+          "occurrences": {
+            "items": {
+              "$ref": "#/components/schemas/OccurrenceResponse"
+            },
+            "type": "array",
+            "title": "Occurrences"
+          },
+          "scheduled_tasks": {
+            "items": {
+              "$ref": "#/components/schemas/TaskResponse"
+            },
+            "type": "array",
+            "title": "Scheduled Tasks",
+            "description": "Tasks whose scheduled time overlaps the range."
+          },
+          "due_tasks": {
+            "items": {
+              "$ref": "#/components/schemas/TaskResponse"
+            },
+            "type": "array",
+            "title": "Due Tasks",
+            "description": "Tasks without a scheduled time, due on a date in the range."
+          }
+        },
+        "type": "object",
+        "required": [
+          "occurrences",
+          "scheduled_tasks",
+          "due_tasks"
+        ],
+        "title": "CalendarRangeResponse"
+      },
       "CategoryListResponse": {
         "properties": {
           "categories": {
@@ -14859,6 +16679,37 @@
         "title": "CreateBudgetRequest",
         "description": "Limit net spending, overall or in one expense category. A monthly budget runs from the\nfirst of `start_date`'s month, every month until `end_date` (a month's last day) or without\nend; a custom one covers `start_date` to `end_date` once."
       },
+      "CreateCalendarCategoryRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "blue",
+              "green",
+              "amber",
+              "rose",
+              "violet",
+              "teal",
+              "orange",
+              "slate"
+            ],
+            "title": "Color",
+            "default": "blue"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "CreateCalendarCategoryRequest"
+      },
       "CreateCategoryRequest": {
         "properties": {
           "name": {
@@ -15098,6 +16949,158 @@
         ],
         "title": "CreateDepositRequest",
         "description": "Open a fixed deposit (`amount`: the principal) or a recurring deposit (`amount`: the\nmonthly installment). The first deposit is recorded on `start_date`, settled as given."
+      },
+      "CreateEventNoteRequest": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title",
+            "description": "Defaults to the event's title and the occurrence's date."
+          },
+          "occurrence_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurrence Start",
+            "description": "The occurrence the notes are for, to date the title."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CreateEventNoteRequest"
+      },
+      "CreateEventRequest": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone",
+            "description": "Defaults to the user's time zone preference, else UTC."
+          },
+          "all_day": {
+            "type": "boolean",
+            "title": "All Day",
+            "description": "All-day events run from midnight to midnight (`end`).",
+            "default": false
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 5000,
+            "title": "Description",
+            "default": ""
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Location",
+            "default": ""
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "recurrence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecurrenceRuleModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "confirmed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "default": "confirmed"
+          },
+          "alerts": {
+            "items": {
+              "type": "integer",
+              "maximum": 40320.0,
+              "minimum": 0.0
+            },
+            "type": "array",
+            "title": "Alerts"
+          },
+          "note_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Note Ids"
+          },
+          "task_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Task Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "start",
+          "end"
+        ],
+        "title": "CreateEventRequest"
       },
       "CreateFolderRequest": {
         "properties": {
@@ -16042,6 +18045,30 @@
               }
             ],
             "title": "Due Date"
+          },
+          "scheduled_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Start"
+          },
+          "scheduled_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled End"
           }
         },
         "additionalProperties": false,
@@ -16201,7 +18228,7 @@
               "$ref": "#/components/schemas/DashboardWidgetModel"
             },
             "type": "array",
-            "maxItems": 10,
+            "maxItems": 11,
             "title": "Widgets",
             "description": "The widgets to show, in order. Each widget may appear once; an empty list is an empty dashboard."
           }
@@ -16244,6 +18271,7 @@
               "status",
               "tasks",
               "reminders",
+              "calendar",
               "shopping",
               "cash_flow",
               "upcoming_payments",
@@ -16677,6 +18705,302 @@
           "deleted"
         ],
         "title": "EmptyTrashResponse"
+      },
+      "EventDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "all_day": {
+            "type": "boolean",
+            "title": "All Day"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone",
+            "description": "The IANA time zone `start` and `end` are in."
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start",
+            "description": "Local wall-clock time, without an offset."
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End",
+            "description": "Local wall-clock time. For all-day events, midnight after the last day."
+          },
+          "recurrence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecurrenceRuleModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "confirmed",
+              "cancelled"
+            ],
+            "title": "Status"
+          },
+          "series_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Series Id",
+            "description": "The series a 'this and following' edit split this event from."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "alerts": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Alerts",
+            "description": "Minutes before each occurrence to notify."
+          },
+          "notes": {
+            "items": {
+              "$ref": "#/components/schemas/LinkedNoteResponse"
+            },
+            "type": "array",
+            "title": "Notes"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/TaskResponse"
+            },
+            "type": "array",
+            "title": "Tasks"
+          },
+          "next_occurrence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OccurrenceResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The next occurrence that hasn't ended, within about a year."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "title",
+          "description",
+          "location",
+          "category_id",
+          "all_day",
+          "timezone",
+          "start",
+          "end",
+          "recurrence",
+          "status",
+          "series_id",
+          "created_at",
+          "updated_at",
+          "alerts",
+          "notes",
+          "tasks",
+          "next_occurrence"
+        ],
+        "title": "EventDetailResponse"
+      },
+      "EventListResponse": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/EventResponse"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "events",
+          "total"
+        ],
+        "title": "EventListResponse"
+      },
+      "EventResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "all_day": {
+            "type": "boolean",
+            "title": "All Day"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone",
+            "description": "The IANA time zone `start` and `end` are in."
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start",
+            "description": "Local wall-clock time, without an offset."
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End",
+            "description": "Local wall-clock time. For all-day events, midnight after the last day."
+          },
+          "recurrence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecurrenceRuleModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "confirmed",
+              "cancelled"
+            ],
+            "title": "Status"
+          },
+          "series_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Series Id",
+            "description": "The series a 'this and following' edit split this event from."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "title",
+          "description",
+          "location",
+          "category_id",
+          "all_day",
+          "timezone",
+          "start",
+          "end",
+          "recurrence",
+          "status",
+          "series_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "EventResponse"
       },
       "FixedCommitmentsResponse": {
         "properties": {
@@ -17939,6 +20263,41 @@
           "allocated"
         ],
         "title": "LinkedAccountResponse"
+      },
+      "LinkedNoteResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "note_type": {
+            "type": "string",
+            "title": "Note Type"
+          },
+          "trashed": {
+            "type": "boolean",
+            "title": "Trashed"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "note_type",
+          "trashed",
+          "updated_at"
+        ],
+        "title": "LinkedNoteResponse"
       },
       "LoanDetailResponse": {
         "properties": {
@@ -19256,6 +21615,117 @@
         ],
         "title": "NotificationResponse"
       },
+      "OccurrenceResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Stable: the event's ID and the original start."
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Event Id"
+          },
+          "original_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Original Start",
+            "description": "The occurrence's original local start: its identity within the series."
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "confirmed",
+              "cancelled"
+            ],
+            "title": "Status"
+          },
+          "all_day": {
+            "type": "boolean",
+            "title": "All Day"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start",
+            "description": "Local wall-clock time in `timezone`."
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End"
+          },
+          "start_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start At",
+            "description": "The start as a UTC instant."
+          },
+          "end_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End At"
+          },
+          "recurring": {
+            "type": "boolean",
+            "title": "Recurring"
+          },
+          "modified": {
+            "type": "boolean",
+            "title": "Modified",
+            "description": "Changed by a single-occurrence edit."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "event_id",
+          "original_start",
+          "title",
+          "description",
+          "location",
+          "category_id",
+          "status",
+          "all_day",
+          "timezone",
+          "start",
+          "end",
+          "start_at",
+          "end_at",
+          "recurring",
+          "modified"
+        ],
+        "title": "OccurrenceResponse"
+      },
       "PayInstallmentRequest": {
         "properties": {
           "paid_on": {
@@ -20360,6 +22830,76 @@
         "title": "RecurrenceModel",
         "description": "How a reminder repeats. Monthly reminders on a day a month lacks (29 to 31) fire on that\nmonth's last day."
       },
+      "RecurrenceRuleModel": {
+        "properties": {
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "daily",
+              "weekly",
+              "monthly",
+              "yearly"
+            ],
+            "title": "Frequency"
+          },
+          "interval": {
+            "type": "integer",
+            "maximum": 99.0,
+            "minimum": 1.0,
+            "title": "Interval",
+            "default": 1
+          },
+          "weekdays": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "mon",
+                "tue",
+                "wed",
+                "thu",
+                "fri",
+                "sat",
+                "sun"
+              ]
+            },
+            "type": "array",
+            "title": "Weekdays",
+            "description": "Weekly rules only: the days it repeats on, including the start's weekday."
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 999.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          },
+          "until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "frequency"
+        ],
+        "title": "RecurrenceRuleModel",
+        "description": "How a series repeats: every `interval` days, weeks, months, or years. Ends after `count`\noccurrences, on `until` (inclusive), or never."
+      },
       "RecurringPaymentListResponse": {
         "properties": {
           "recurring_payments": {
@@ -20611,10 +23151,11 @@
             "enum": [
               "loan",
               "recurring_payment",
-              "deposit"
+              "deposit",
+              "calendar_alert"
             ],
             "title": "Kind",
-            "description": "`loan`, `recurring_payment` for a subscription or bill, or `deposit` for a fixed or recurring deposit's maturity."
+            "description": "`loan`, `recurring_payment` for a subscription or bill, `deposit` for a fixed or recurring deposit's maturity, or `calendar_alert` for one of a calendar event's alerts (`id` is the alert's)."
           },
           "id": {
             "type": "string",
@@ -21990,6 +24531,31 @@
             "title": "Completed At",
             "description": "When the task was completed, if it is."
           },
+          "scheduled_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Start",
+            "description": "When the task is planned to be worked on (a calendar time block), separate from the due date. Set together with `scheduled_end`."
+          },
+          "scheduled_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled End"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -22011,6 +24577,8 @@
           "priority",
           "due_date",
           "completed_at",
+          "scheduled_start",
+          "scheduled_end",
           "created_at",
           "updated_at"
         ],
@@ -22542,6 +25110,58 @@
         "title": "UpdateBudgetRequest",
         "description": "Change a budget from the current period on; finished periods keep their amounts. Scope,\ncategory, currency, and period type are fixed."
       },
+      "UpdateCalendarCategoryRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "blue",
+                  "green",
+                  "amber",
+                  "rose",
+                  "violet",
+                  "teal",
+                  "orange",
+                  "slate"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "is_visible": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Visible"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateCalendarCategoryRequest"
+      },
       "UpdateDepositRequest": {
         "properties": {
           "name": {
@@ -22668,6 +25288,152 @@
         "type": "object",
         "title": "UpdateDepositRequest",
         "description": "`null` clears `stated_maturity_amount` or `reminder`."
+      },
+      "UpdateEventRequest": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "all_day": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "All Day"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "recurrence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecurrenceRuleModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "confirmed",
+                  "cancelled"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "alerts": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer",
+                  "maximum": 40320.0,
+                  "minimum": 0.0
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alerts"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateEventRequest",
+        "description": "Change the whole event or series. Omitted fields keep their values; `category_id: null`\nclears the category and `recurrence: null` makes the series a single event."
       },
       "UpdateFolderRequest": {
         "properties": {
@@ -23367,6 +26133,112 @@
         ],
         "title": "UpdateNotificationRequest"
       },
+      "UpdateOccurrenceRequest": {
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "this",
+              "following",
+              "series"
+            ],
+            "title": "Scope",
+            "default": "this"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "confirmed",
+                  "cancelled"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateOccurrenceRequest",
+        "description": "Change one occurrence (`this`), it and every later one (`following`), or the whole series\n(`series`). Moving or resizing an occurrence with `series` moves or resizes them all."
+      },
       "UpdateProfileRequest": {
         "properties": {
           "display_name": {
@@ -23860,6 +26732,31 @@
               }
             ],
             "title": "Due Date"
+          },
+          "scheduled_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Start",
+            "description": "Change with `scheduled_end`; both `null` unschedules the task."
+          },
+          "scheduled_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled End"
           }
         },
         "additionalProperties": false,

@@ -65,5 +65,31 @@ export function localParts(instant: Date, timeZone: string): { date: string; tim
   };
 }
 
+/**
+ * The instant a wall-clock date (`YYYY-MM-DD`) and time (`HH:MM`) happen in `timeZone`. Times a
+ * daylight-saving jump skips resolve forward (02:30 becomes 03:30), and repeated times resolve to
+ * the first, matching how the API converts local times.
+ */
+export function zonedTimeToInstant(date: string, time: string, timeZone: string): Date {
+  const [year = 1970, month = 1, day = 1] = date.split("-").map(Number);
+  const [hour = 0, minute = 0] = time.split(":").map(Number);
+  const wall = Date.UTC(year, month - 1, day, hour, minute);
+  const offsetAt = (instant: number) => {
+    const parts = localParts(new Date(instant), timeZone);
+    const [y = 1970, mo = 1, d = 1] = parts.date.split("-").map(Number);
+    const [h = 0, mi = 0] = parts.time.split(":").map(Number);
+    return Date.UTC(y, mo - 1, d, h, mi) - Math.floor(instant / 60_000) * 60_000;
+  };
+  // Try the offset in effect before and after the date. A wall time that exists once matches one
+  // of them; a repeated time matches both (take the first, earlier instant, which uses the offset
+  // from before); a skipped time matches neither (use the offset from before, which lands after
+  // the jump).
+  const before = wall - offsetAt(wall - 86_400_000);
+  const after = wall - offsetAt(wall + 86_400_000);
+  const reads = (instant: number) => offsetAt(instant) === wall - instant;
+  if (reads(before) || !reads(after)) return new Date(before);
+  return new Date(after);
+}
+
 /** Settings: the account's time zone; `""` clears the preference. */
 export const timeZonePreferenceSchema = object({ timeZone: string().defined() });

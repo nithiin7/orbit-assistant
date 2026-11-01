@@ -2343,6 +2343,265 @@ export interface paths {
         patch: operations["rename_tag_api_v1_workspaces__workspace_id__note_tags__tag_id__patch"];
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/calendar/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List event categories
+         * @description The first call creates the default categories (Personal, Work, Meeting, Appointment,
+         *     Birthday, Travel, Other).
+         */
+        get: operations["list_categories_api_v1_workspaces__workspace_id__calendar_categories_get"];
+        put?: never;
+        /** Create an event category */
+        post: operations["create_category_api_v1_workspaces__workspace_id__calendar_categories_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/calendar/categories/{category_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a category
+         * @description Its events keep no category.
+         */
+        delete: operations["delete_category_api_v1_workspaces__workspace_id__calendar_categories__category_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename, recolor, show, or hide a category */
+        patch: operations["update_category_api_v1_workspaces__workspace_id__calendar_categories__category_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/calendar/range": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Occurrences and tasks for a date range
+         * @description Local dates `[start, end)` in the viewer's time zone (at most 92 days). Recurring series
+         *     are expanded; events in hidden categories are left out.
+         */
+        get: operations["calendar_range_api_v1_workspaces__workspace_id__calendar_range_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/calendar/agenda": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Upcoming occurrences and scheduled tasks
+         * @description What hasn't ended by `start`, in order, a page at a time, up to a year ahead. Cancelled
+         *     occurrences and completed tasks are left out.
+         */
+        get: operations["agenda_api_v1_workspaces__workspace_id__calendar_agenda_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/calendar/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List or search events
+         * @description Events and series (not their occurrences), most recent first.
+         */
+        get: operations["list_events_api_v1_workspaces__workspace_id__calendar_events_get"];
+        put?: never;
+        /** Create an event */
+        post: operations["create_event_api_v1_workspaces__workspace_id__calendar_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/calendar/events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get an event */
+        get: operations["get_event_api_v1_workspaces__workspace_id__calendar_events__event_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete an event or whole series
+         * @description Its alerts' pending reminders go with it; delivered notifications stay.
+         */
+        delete: operations["delete_event_api_v1_workspaces__workspace_id__calendar_events__event_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update an event or whole series
+         * @description Changing a series' times, time zone, all-day setting, or rule resets changes made to its
+         *     single occurrences. Setting `status` to `cancelled` cancels every occurrence and its alerts.
+         */
+        patch: operations["update_event_api_v1_workspaces__workspace_id__calendar_events__event_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/calendar/events/{event_id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate an event or series
+         * @description Copies the event with its rule, alerts, and links, but not changes to single
+         *     occurrences.
+         */
+        post: operations["duplicate_event_api_v1_workspaces__workspace_id__calendar_events__event_id__duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/calendar/events/{event_id}/occurrences/{original_start}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an occurrence, the following ones, or the series */
+        delete: operations["delete_occurrence_api_v1_workspaces__workspace_id__calendar_events__event_id__occurrences__original_start__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Change an occurrence, the following ones, or the series
+         * @description Returns the event that now holds the occurrence: with `following`, a new series that
+         *     continues from it (the original ends before it).
+         */
+        patch: operations["update_occurrence_api_v1_workspaces__workspace_id__calendar_events__event_id__occurrences__original_start__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/calendar/events/{event_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a note for an event
+         * @description Creates an ordinary note in the Inbox, such as meeting notes, and links it to the
+         *     event.
+         */
+        post: operations["create_event_note_api_v1_workspaces__workspace_id__calendar_events__event_id__notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/calendar/events/{event_id}/notes/{note_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Link a note to an event
+         * @description Idempotent.
+         */
+        put: operations["link_event_note_api_v1_workspaces__workspace_id__calendar_events__event_id__notes__note_id__put"];
+        post?: never;
+        /** Unlink a note from an event */
+        delete: operations["unlink_event_note_api_v1_workspaces__workspace_id__calendar_events__event_id__notes__note_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/calendar/events/{event_id}/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Link a task to an event
+         * @description Idempotent.
+         */
+        put: operations["link_event_task_api_v1_workspaces__workspace_id__calendar_events__event_id__tasks__task_id__put"];
+        post?: never;
+        /** Unlink a task from an event */
+        delete: operations["unlink_event_task_api_v1_workspaces__workspace_id__calendar_events__event_id__tasks__task_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/calendar-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the signed-in user's calendar preferences
+         * @description Defaults until the user saves some (`updated_at` is `null`).
+         */
+        get: operations["get_preferences_api_v1_me_calendar_preferences_get"];
+        /** Save the signed-in user's calendar preferences */
+        put: operations["put_preferences_api_v1_me_calendar_preferences_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/storage": {
         parameters: {
             query?: never;
@@ -2465,6 +2724,31 @@ export interface components {
              * @description An existing tag's name (any case) or a new tag's.
              */
             name: string;
+        };
+        /** AgendaItemResponse */
+        AgendaItemResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "event" | "task";
+            /**
+             * Start At
+             * Format: date-time
+             */
+            start_at: string;
+            occurrence: components["schemas"]["OccurrenceResponse"] | null;
+            task: components["schemas"]["TaskResponse"] | null;
+        };
+        /** AgendaResponse */
+        AgendaResponse: {
+            /** Items */
+            items: components["schemas"]["AgendaItemResponse"][];
+            /**
+             * Next Cursor
+             * @description Pass as `cursor` for more; `null` at the end.
+             */
+            next_cursor: string | null;
         };
         /** AssetListResponse */
         AssetListResponse: {
@@ -2892,6 +3176,135 @@ export interface components {
              */
             count: number;
         };
+        /** CalendarCategoryListResponse */
+        CalendarCategoryListResponse: {
+            /** Categories */
+            categories: components["schemas"]["CalendarCategoryResponse"][];
+        };
+        /** CalendarCategoryResponse */
+        CalendarCategoryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Color
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /**
+             * Is Visible
+             * @description Hidden categories' events are left out of views.
+             */
+            is_visible: boolean;
+            /** Position */
+            position: number;
+        };
+        /** CalendarPreferencesModel */
+        CalendarPreferencesModel: {
+            /**
+             * Default View
+             * @default month
+             * @enum {string}
+             */
+            default_view: "month" | "week" | "day" | "agenda";
+            /**
+             * Week Start
+             * @description 0 is Sunday; `null` follows the browser's locale.
+             */
+            week_start?: number | null;
+            /**
+             * Working Hours Start
+             * Format: time
+             * @default 09:00:00
+             */
+            working_hours_start: string;
+            /**
+             * Working Hours End
+             * Format: time
+             * @default 17:00:00
+             */
+            working_hours_end: string;
+            /**
+             * Show Completed Tasks
+             * @default true
+             */
+            show_completed_tasks: boolean;
+            /**
+             * Show Unscheduled Tasks
+             * @default true
+             */
+            show_unscheduled_tasks: boolean;
+            /**
+             * Show Due Tasks
+             * @default true
+             */
+            show_due_tasks: boolean;
+        };
+        /** CalendarPreferencesResponse */
+        CalendarPreferencesResponse: {
+            /**
+             * Default View
+             * @default month
+             * @enum {string}
+             */
+            default_view: "month" | "week" | "day" | "agenda";
+            /**
+             * Week Start
+             * @description 0 is Sunday; `null` follows the browser's locale.
+             */
+            week_start?: number | null;
+            /**
+             * Working Hours Start
+             * Format: time
+             * @default 09:00:00
+             */
+            working_hours_start: string;
+            /**
+             * Working Hours End
+             * Format: time
+             * @default 17:00:00
+             */
+            working_hours_end: string;
+            /**
+             * Show Completed Tasks
+             * @default true
+             */
+            show_completed_tasks: boolean;
+            /**
+             * Show Unscheduled Tasks
+             * @default true
+             */
+            show_unscheduled_tasks: boolean;
+            /**
+             * Show Due Tasks
+             * @default true
+             */
+            show_due_tasks: boolean;
+            /**
+             * Updated At
+             * @description `null` until the user saves preferences.
+             */
+            updated_at: string | null;
+        };
+        /** CalendarRangeResponse */
+        CalendarRangeResponse: {
+            /** Occurrences */
+            occurrences: components["schemas"]["OccurrenceResponse"][];
+            /**
+             * Scheduled Tasks
+             * @description Tasks whose scheduled time overlaps the range.
+             */
+            scheduled_tasks: components["schemas"]["TaskResponse"][];
+            /**
+             * Due Tasks
+             * @description Tasks without a scheduled time, due on a date in the range.
+             */
+            due_tasks: components["schemas"]["TaskResponse"][];
+        };
         /** CategoryListResponse */
         CategoryListResponse: {
             /**
@@ -3239,6 +3652,17 @@ export interface components {
              */
             notes: string;
         };
+        /** CreateCalendarCategoryRequest */
+        CreateCalendarCategoryRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Color
+             * @default blue
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+        };
         /** CreateCategoryRequest */
         CreateCategoryRequest: {
             /** Name */
@@ -3356,6 +3780,70 @@ export interface components {
             notes: string;
             /** @description Remind before the maturity date. */
             reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
+        };
+        /** CreateEventNoteRequest */
+        CreateEventNoteRequest: {
+            /**
+             * Title
+             * @description Defaults to the event's title and the occurrence's date.
+             */
+            title?: string | null;
+            /**
+             * Occurrence Start
+             * @description The occurrence the notes are for, to date the title.
+             */
+            occurrence_start?: string | null;
+        };
+        /** CreateEventRequest */
+        CreateEventRequest: {
+            /** Title */
+            title: string;
+            /**
+             * Start
+             * Format: date-time
+             */
+            start: string;
+            /**
+             * End
+             * Format: date-time
+             */
+            end: string;
+            /**
+             * Timezone
+             * @description Defaults to the user's time zone preference, else UTC.
+             */
+            timezone?: string | null;
+            /**
+             * All Day
+             * @description All-day events run from midnight to midnight (`end`).
+             * @default false
+             */
+            all_day: boolean;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Location
+             * @default
+             */
+            location: string;
+            /** Category Id */
+            category_id?: string | null;
+            recurrence?: components["schemas"]["RecurrenceRuleModel"] | null;
+            /**
+             * Status
+             * @default confirmed
+             * @enum {string}
+             */
+            status: "confirmed" | "cancelled";
+            /** Alerts */
+            alerts?: number[];
+            /** Note Ids */
+            note_ids?: string[];
+            /** Task Ids */
+            task_ids?: string[];
         };
         /** CreateFolderRequest */
         CreateFolderRequest: {
@@ -3789,6 +4277,10 @@ export interface components {
             priority: "none" | "low" | "medium" | "high";
             /** Due Date */
             due_date?: string | null;
+            /** Scheduled Start */
+            scheduled_start?: string | null;
+            /** Scheduled End */
+            scheduled_end?: string | null;
         };
         /**
          * CreateTransactionRequest
@@ -3891,7 +4383,7 @@ export interface components {
              * Id
              * @enum {string}
              */
-            id: "workspace" | "status" | "tasks" | "reminders" | "shopping" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "modules";
+            id: "workspace" | "status" | "tasks" | "reminders" | "calendar" | "shopping" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "modules";
             /**
              * Size
              * @description `half` widgets sit side by side on wide screens.
@@ -4091,6 +4583,146 @@ export interface components {
         EmptyTrashResponse: {
             /** Deleted */
             deleted: number;
+        };
+        /** EventDetailResponse */
+        EventDetailResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Location */
+            location: string;
+            /** Category Id */
+            category_id: string | null;
+            /** All Day */
+            all_day: boolean;
+            /**
+             * Timezone
+             * @description The IANA time zone `start` and `end` are in.
+             */
+            timezone: string;
+            /**
+             * Start
+             * Format: date-time
+             * @description Local wall-clock time, without an offset.
+             */
+            start: string;
+            /**
+             * End
+             * Format: date-time
+             * @description Local wall-clock time. For all-day events, midnight after the last day.
+             */
+            end: string;
+            recurrence: components["schemas"]["RecurrenceRuleModel"] | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "confirmed" | "cancelled";
+            /**
+             * Series Id
+             * @description The series a 'this and following' edit split this event from.
+             */
+            series_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Alerts
+             * @description Minutes before each occurrence to notify.
+             */
+            alerts: number[];
+            /** Notes */
+            notes: components["schemas"]["LinkedNoteResponse"][];
+            /** Tasks */
+            tasks: components["schemas"]["TaskResponse"][];
+            /** @description The next occurrence that hasn't ended, within about a year. */
+            next_occurrence: components["schemas"]["OccurrenceResponse"] | null;
+        };
+        /** EventListResponse */
+        EventListResponse: {
+            /** Events */
+            events: components["schemas"]["EventResponse"][];
+            /** Total */
+            total: number;
+        };
+        /** EventResponse */
+        EventResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Location */
+            location: string;
+            /** Category Id */
+            category_id: string | null;
+            /** All Day */
+            all_day: boolean;
+            /**
+             * Timezone
+             * @description The IANA time zone `start` and `end` are in.
+             */
+            timezone: string;
+            /**
+             * Start
+             * Format: date-time
+             * @description Local wall-clock time, without an offset.
+             */
+            start: string;
+            /**
+             * End
+             * Format: date-time
+             * @description Local wall-clock time. For all-day events, midnight after the last day.
+             */
+            end: string;
+            recurrence: components["schemas"]["RecurrenceRuleModel"] | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "confirmed" | "cancelled";
+            /**
+             * Series Id
+             * @description The series a 'this and following' edit split this event from.
+             */
+            series_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * FixedCommitmentsResponse
@@ -4695,6 +5327,25 @@ export interface components {
              * @description Saved across every active or paused goal kept in this account. More than `balance` means the goals count on money the account doesn't hold.
              */
             allocated: number;
+        };
+        /** LinkedNoteResponse */
+        LinkedNoteResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /** Note Type */
+            note_type: string;
+            /** Trashed */
+            trashed: boolean;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** LoanDetailResponse */
         LoanDetailResponse: {
@@ -5324,6 +5975,71 @@ export interface components {
              */
             read_at: string | null;
         };
+        /** OccurrenceResponse */
+        OccurrenceResponse: {
+            /**
+             * Id
+             * @description Stable: the event's ID and the original start.
+             */
+            id: string;
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
+            /**
+             * Original Start
+             * Format: date-time
+             * @description The occurrence's original local start: its identity within the series.
+             */
+            original_start: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Location */
+            location: string;
+            /** Category Id */
+            category_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "confirmed" | "cancelled";
+            /** All Day */
+            all_day: boolean;
+            /** Timezone */
+            timezone: string;
+            /**
+             * Start
+             * Format: date-time
+             * @description Local wall-clock time in `timezone`.
+             */
+            start: string;
+            /**
+             * End
+             * Format: date-time
+             */
+            end: string;
+            /**
+             * Start At
+             * Format: date-time
+             * @description The start as a UTC instant.
+             */
+            start_at: string;
+            /**
+             * End At
+             * Format: date-time
+             */
+            end_at: string;
+            /** Recurring */
+            recurring: boolean;
+            /**
+             * Modified
+             * @description Changed by a single-occurrence edit.
+             */
+            modified: boolean;
+        };
         /**
          * PayInstallmentRequest
          * @description Record an installment as paid. Either give `from_account_id`, and Orbit records the
@@ -5829,6 +6545,32 @@ export interface components {
              */
             weekdays?: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[];
         };
+        /**
+         * RecurrenceRuleModel
+         * @description How a series repeats: every `interval` days, weeks, months, or years. Ends after `count`
+         *     occurrences, on `until` (inclusive), or never.
+         */
+        RecurrenceRuleModel: {
+            /**
+             * Frequency
+             * @enum {string}
+             */
+            frequency: "daily" | "weekly" | "monthly" | "yearly";
+            /**
+             * Interval
+             * @default 1
+             */
+            interval: number;
+            /**
+             * Weekdays
+             * @description Weekly rules only: the days it repeats on, including the start's weekday.
+             */
+            weekdays?: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[];
+            /** Count */
+            count?: number | null;
+            /** Until */
+            until?: string | null;
+        };
         /** RecurringPaymentListResponse */
         RecurringPaymentListResponse: {
             /**
@@ -5936,10 +6678,10 @@ export interface components {
         ReminderCommitmentResponse: {
             /**
              * Kind
-             * @description `loan`, `recurring_payment` for a subscription or bill, or `deposit` for a fixed or recurring deposit's maturity.
+             * @description `loan`, `recurring_payment` for a subscription or bill, `deposit` for a fixed or recurring deposit's maturity, or `calendar_alert` for one of a calendar event's alerts (`id` is the alert's).
              * @enum {string}
              */
-            kind: "loan" | "recurring_payment" | "deposit";
+            kind: "loan" | "recurring_payment" | "deposit" | "calendar_alert";
             /**
              * Id
              * Format: uuid
@@ -6623,6 +7365,13 @@ export interface components {
              */
             completed_at: string | null;
             /**
+             * Scheduled Start
+             * @description When the task is planned to be worked on (a calendar time block), separate from the due date. Set together with `scheduled_end`.
+             */
+            scheduled_start: string | null;
+            /** Scheduled End */
+            scheduled_end: string | null;
+            /**
              * Created At
              * Format: date-time
              */
@@ -6814,6 +7563,15 @@ export interface components {
             /** Notes */
             notes?: string | null;
         };
+        /** UpdateCalendarCategoryRequest */
+        UpdateCalendarCategoryRequest: {
+            /** Name */
+            name?: string | null;
+            /** Color */
+            color?: ("blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate") | null;
+            /** Is Visible */
+            is_visible?: boolean | null;
+        };
         /**
          * UpdateDepositRequest
          * @description `null` clears `stated_maturity_amount` or `reminder`.
@@ -6836,6 +7594,34 @@ export interface components {
             /** Notes */
             notes?: string | null;
             reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
+        };
+        /**
+         * UpdateEventRequest
+         * @description Change the whole event or series. Omitted fields keep their values; `category_id: null`
+         *     clears the category and `recurrence: null` makes the series a single event.
+         */
+        UpdateEventRequest: {
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /** All Day */
+            all_day?: boolean | null;
+            /** Timezone */
+            timezone?: string | null;
+            /** Start */
+            start?: string | null;
+            /** End */
+            end?: string | null;
+            recurrence?: components["schemas"]["RecurrenceRuleModel"] | null;
+            /** Status */
+            status?: ("confirmed" | "cancelled") | null;
+            /** Alerts */
+            alerts?: number[] | null;
         };
         /**
          * UpdateFolderRequest
@@ -6998,6 +7784,33 @@ export interface components {
             read: boolean;
         };
         /**
+         * UpdateOccurrenceRequest
+         * @description Change one occurrence (`this`), it and every later one (`following`), or the whole series
+         *     (`series`). Moving or resizing an occurrence with `series` moves or resizes them all.
+         */
+        UpdateOccurrenceRequest: {
+            /**
+             * Scope
+             * @default this
+             * @enum {string}
+             */
+            scope: "this" | "following" | "series";
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /** Start */
+            start?: string | null;
+            /** End */
+            end?: string | null;
+            /** Status */
+            status?: ("confirmed" | "cancelled") | null;
+        };
+        /**
          * UpdateProfileRequest
          * @description Change some profile fields. Omitted fields keep their values; `timezone: null` clears
          *     the time zone preference.
@@ -7104,6 +7917,13 @@ export interface components {
             priority?: ("none" | "low" | "medium" | "high") | null;
             /** Due Date */
             due_date?: string | null;
+            /**
+             * Scheduled Start
+             * @description Change with `scheduled_end`; both `null` unschedules the task.
+             */
+            scheduled_start?: string | null;
+            /** Scheduled End */
+            scheduled_end?: string | null;
         };
         /**
          * UpdateTransactionRequest
@@ -8043,6 +8863,8 @@ export interface operations {
                 priority?: ("none" | "low" | "medium" | "high")[];
                 /** @description Case-insensitive text to find in titles and descriptions. */
                 q?: string | null;
+                /** @description `true` for tasks with a scheduled time, `false` for tasks without one. */
+                scheduled?: boolean | null;
                 sort?: "due_date" | "priority" | "created_at";
                 /** @description Defaults to the sort's natural order: soonest due date, highest priority, or newest. Tasks without a due date always come last. */
                 order?: ("asc" | "desc") | null;
@@ -16102,6 +16924,1000 @@ export interface operations {
             };
             /** @description Another tag has this name (ignoring case and spacing). */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_categories_api_v1_workspaces__workspace_id__calendar_categories_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarCategoryListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or event does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_category_api_v1_workspaces__workspace_id__calendar_categories_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCalendarCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarCategoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or event does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The name is taken, or there are too many categories. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_category_api_v1_workspaces__workspace_id__calendar_categories__category_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The category's ID. */
+                category_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or event does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_category_api_v1_workspaces__workspace_id__calendar_categories__category_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The category's ID. */
+                category_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCalendarCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarCategoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or event does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The name is taken. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    calendar_range_api_v1_workspaces__workspace_id__calendar_range_get: {
+        parameters: {
+            query: {
+                /** @description The first local date. */
+                start: string;
+                /** @description The day after the last local date (exclusive). */
+                end: string;
+                /** @description The viewer's time zone, which decides where days begin. Defaults to the user's preference, else UTC. */
+                timezone?: string | null;
+                include_tasks?: boolean;
+                include_completed_tasks?: boolean;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarRangeResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or event does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    agenda_api_v1_workspaces__workspace_id__calendar_agenda_get: {
+        parameters: {
+            query?: {
+                /** @description Show what hasn't ended by this instant. Defaults to now. */
+                start?: string | null;
+                limit?: number;
+                /** @description `next_cursor` from the previous page. */
+                cursor?: string | null;
+                include_tasks?: boolean;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgendaResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or event does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_events_api_v1_workspaces__workspace_id__calendar_events_get: {
+        parameters: {
+            query?: {
+                /** @description Text to find in titles, notes, or places. */
+                q?: string | null;
+                category_id?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or event does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_event_api_v1_workspaces__workspace_id__calendar_events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateEventRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or event does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid times or rule, or a linked item doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_event_api_v1_workspaces__workspace_id__calendar_events__event_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The event's ID. */
+                event_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or event does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_event_api_v1_workspaces__workspace_id__calendar_events__event_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The event's ID. */
+                event_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or event does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_event_api_v1_workspaces__workspace_id__calendar_events__event_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The event's ID. */
+                event_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateEventRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or event does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid times or rule, or a linked item doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    duplicate_event_api_v1_workspaces__workspace_id__calendar_events__event_id__duplicate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The event's ID. */
+                event_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or event does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_occurrence_api_v1_workspaces__workspace_id__calendar_events__event_id__occurrences__original_start__delete: {
+        parameters: {
+            query?: {
+                scope?: "this" | "following" | "series";
+            };
+            header?: never;
+            path: {
+                /** @description The event's ID. */
+                event_id: string;
+                /** @description The occurrence's original local start, such as `2026-11-02T09:00`. */
+                original_start: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or event does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_occurrence_api_v1_workspaces__workspace_id__calendar_events__event_id__occurrences__original_start__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The event's ID. */
+                event_id: string;
+                /** @description The occurrence's original local start, such as `2026-11-02T09:00`. */
+                original_start: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOccurrenceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or event does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid times or rule, or a linked item doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_event_note_api_v1_workspaces__workspace_id__calendar_events__event_id__notes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The event's ID. */
+                event_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateEventNoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedNoteResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or event does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_event_note_api_v1_workspaces__workspace_id__calendar_events__event_id__notes__note_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The event's ID. */
+                event_id: string;
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or event does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The note doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlink_event_note_api_v1_workspaces__workspace_id__calendar_events__event_id__notes__note_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The event's ID. */
+                event_id: string;
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or event does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_event_task_api_v1_workspaces__workspace_id__calendar_events__event_id__tasks__task_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The event's ID. */
+                event_id: string;
+                task_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or event does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The task doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlink_event_task_api_v1_workspaces__workspace_id__calendar_events__event_id__tasks__task_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The event's ID. */
+                event_id: string;
+                task_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or event does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_preferences_api_v1_me_calendar_preferences_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarPreferencesResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    put_preferences_api_v1_me_calendar_preferences_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CalendarPreferencesModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarPreferencesResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

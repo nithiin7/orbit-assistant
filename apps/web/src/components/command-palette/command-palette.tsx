@@ -2,10 +2,16 @@
 
 import {
   BookOpen,
+  CalendarCheck,
+  CalendarClock,
+  CalendarDays,
+  CalendarPlus,
+  CalendarRange,
   Check,
   CornerDownLeft,
   FileText,
   Folder,
+  ListTodo,
   type LucideIcon,
   Monitor,
   Moon,
@@ -31,6 +37,7 @@ import {
 
 import { useQuickCapture } from "@/components/notes/quick-capture";
 import { Kbd } from "@/components/ui/kbd";
+import { useCalendarCommands } from "@/hooks/use-calendar-commands";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useNoteFolders, useNoteList, useNoteMutations } from "@/hooks/use-notes";
 import { filterCommands } from "@/lib/command-search";
@@ -42,7 +49,15 @@ import { cn } from "@/utils/common";
 import { isMacPlatform, matchesModShortcut } from "@/utils/keyboard";
 
 type CommandGroup =
-  "Notes" | "Matching notes" | "Recent notes" | "Folders" | "Go to" | "Theme" | "Search";
+  | "Notes"
+  | "Calendar"
+  | "Matching events"
+  | "Matching notes"
+  | "Recent notes"
+  | "Folders"
+  | "Go to"
+  | "Theme"
+  | "Search";
 
 type Command = {
   id: string;
@@ -60,8 +75,10 @@ type Command = {
 
 const GROUPS: readonly CommandGroup[] = [
   "Matching notes",
+  "Matching events",
   "Notes",
   "Go to",
+  "Calendar",
   "Recent notes",
   "Folders",
   "Theme",
@@ -193,6 +210,33 @@ function useNoteCommands(open: boolean, query: string): Command[] {
   return commands;
 }
 
+const CALENDAR_ICONS = {
+  new: CalendarPlus,
+  today: CalendarCheck,
+  month: CalendarDays,
+  week: CalendarRange,
+  day: CalendarClock,
+  agenda: ListTodo,
+  schedule: CalendarClock,
+  notes: NotebookPen,
+  event: CalendarDays,
+} as const;
+
+/** Calendar commands from `useCalendarCommands`, in the palette's shape. */
+function useCalendarPaletteCommands(open: boolean, query: string): Command[] {
+  return useCalendarCommands(open, query).map((command) => ({
+    id: command.id,
+    group: command.matched ? "Matching events" : "Calendar",
+    label: command.label,
+    description: command.description,
+    keywords: command.keywords,
+    icon: CALENDAR_ICONS[command.icon],
+    current: false,
+    matched: command.matched,
+    run: command.run,
+  }));
+}
+
 const THEMES = [
   { value: "light", label: "Light theme", icon: Sun },
   { value: "dark", label: "Dark theme", icon: Moon },
@@ -256,6 +300,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
   }, [open, close]);
 
   const noteCommands = useNoteCommands(isOpen, query);
+  const calendarCommands = useCalendarPaletteCommands(isOpen, query);
 
   const commands = useMemo<Command[]>(
     () => [
@@ -287,13 +332,18 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
   const results = useMemo(() => {
     const matches = [
       ...noteCommands.filter((command) => command.matched),
+      ...calendarCommands.filter((command) => command.matched),
       ...filterCommands(
-        [...noteCommands.filter((command) => !command.matched), ...commands],
+        [
+          ...noteCommands.filter((command) => !command.matched),
+          ...calendarCommands.filter((command) => !command.matched),
+          ...commands,
+        ],
         query,
       ),
     ];
     return GROUPS.flatMap((group) => matches.filter((command) => command.group === group));
-  }, [commands, noteCommands, query]);
+  }, [commands, noteCommands, calendarCommands, query]);
 
   const active = results.length > 0 ? Math.min(activeIndex, results.length - 1) : -1;
   const optionId = (command: Command) => `${listboxId}-${command.id}`;

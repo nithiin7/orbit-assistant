@@ -18,8 +18,8 @@ export function StatusWidget() {
             <Badge variant="brand">Preview</Badge>
           </div>
           <p className="max-w-prose text-sm text-pretty text-muted-foreground">
-            Tasks, Reminders, Shopping, Finance, and Notes are built. The calendar and the assistant
-            are planned.
+            Tasks, Reminders, Shopping, Calendar, Finance, and Notes are built. The assistant is
+            planned.
           </p>
         </div>
       </Card>

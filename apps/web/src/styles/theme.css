@@ -35,6 +35,14 @@
   --color-warning: var(--warning);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
+  --color-event-blue: var(--event-blue);
+  --color-event-green: var(--event-green);
+  --color-event-amber: var(--event-amber);
+  --color-event-rose: var(--event-rose);
+  --color-event-violet: var(--event-violet);
+  --color-event-teal: var(--event-teal);
+  --color-event-orange: var(--event-orange);
+  --color-event-slate: var(--event-slate);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

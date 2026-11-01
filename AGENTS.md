@@ -30,11 +30,15 @@ a monthly plan of expected income against commitments, budgets, savings, and inv
 recorded through the phase 1 ledger, and **notes** (a rich-text editor storing ProseMirror JSON,
 autosave with revision checks, nested folders, tags, an Inbox and quick capture, links and
 backlinks between notes, links to tasks, a one-entry-per-day journal, substring search, archive
-and trash, Markdown import and export, and file attachments stored outside the database). There
-are no other product features (calendar), no semantic search or knowledge graph, no
-recurring tasks, no automatically created transactions, no live market prices or bank
-integrations, no AI financial insights, no push, email, or mobile notifications, and no AI
-integration yet. Do not describe or build on capabilities that do not exist.
+and trash, Markdown import and export, and file attachments stored outside the database), and a
+**calendar** (events and recurring series with RFC 5545 rules expanded per date range,
+single-occurrence and "this and following" edits, categories, month, week, day, and agenda views
+with drag-and-drop, tasks scheduled into time blocks, notes linked to events, and event alerts
+delivered as managed reminders by the existing worker). There are no other product features,
+no external calendar sync (Google, Outlook, CalDAV, iCal import), no AI scheduling, no semantic
+search or knowledge graph, no recurring tasks, no automatically created transactions, no live
+market prices or bank integrations, no AI financial insights, no push, email, or mobile
+notifications, and no AI integration yet. Do not describe or build on capabilities that do not exist.
 
 ## Principles
 

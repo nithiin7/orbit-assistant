@@ -93,6 +93,7 @@ describe("layout changes", () => {
       "status",
       "tasks",
       "reminders",
+      "calendar",
       "cash_flow",
       "upcoming_payments",
       "budget",

@@ -21,8 +21,8 @@ Browser ──► apps/web (Next.js, :3000) ──HTTP/JSON──► apps/api (F
   workspaces, on the database foundation described under [Storage](#storage). Identity is
   described under [Identity and authorization](#identity-and-authorization). Product data:
   [tasks](#tasks), shopping lists, [reminders](#reminders-and-notifications), and
-  [finance](#finance), and [notes](#notes-and-knowledge-management); the calendar and the
-  assistant store nothing yet.
+  [finance](#finance), [notes](#notes-and-knowledge-management), and the
+  [calendar](#calendar-and-events); the assistant stores nothing yet.
 
 The two apps communicate only over HTTP and share no runtime code. They share one thing: the
 API contract in `packages/contracts`, described below.
@@ -136,6 +136,7 @@ apps/web/src/
 │   │   ├── reminders/   # Reminders page
 │   │   ├── finance/     # Finance page: 13 views in four groups, chosen by ?view=
 │   │   ├── notes/       # Notes page: view, folder, tag, search, and open note in the URL
+│   │   ├── calendar/    # Calendar page: month, week, day, or agenda, and the date, in the URL
 │   │   ├── settings/    # Settings: drill-down on small screens, split view on large; [panel]/ sub-pages
 │   │   └── [section]/   # Placeholder page for every other nav section
 │   ├── (auth)/          # Public routes without the shell: sign-in, sign-up
@@ -151,6 +152,7 @@ apps/web/src/
 │   ├── reminders/       # Reminders page (list, create/edit dialog), dashboard widget
 │   ├── finance/         # Finance page: navigation, views, shared blocks (tiles, panels, row actions), dialogs
 │   ├── notes/           # Notes page: rail, list, Tiptap editor and toolbar, details, pickers, quick capture
+│   ├── calendar/        # Calendar page: views, time grid, event and details dialogs, sidebar, dashboard widget
 │   ├── notifications/   # Notification bell and panel (in the sidebar and mobile top bar)
 │   ├── settings/        # Settings menu and the account, workspace, theme, and storage panels
 │   ├── storage/         # Storage-mode indicator and status card
@@ -215,6 +217,7 @@ apps/api/src/orbit_api/
 │       ├── finance.py   # Workspace-scoped finance: accounts, categories, transactions, reports, CSV
 │       ├── commitments.py # Loans and EMIs, subscriptions and bills, payments, upcoming, summary
 │       ├── notes.py     # Notes, folders, tags, links, tasks, journal, attachments
+│       ├── calendar.py  # Categories, events and occurrences, range, agenda, links, preferences
 │       └── notifications.py # The signed-in user's notifications: list, unread count, read state
 ├── auth/                # Adapters: Argon2 password hashing, Supabase JWT verification
 ├── system/              # Adapters: opening the OS file manager; storing note attachments as files
@@ -232,7 +235,7 @@ apps/api/src/orbit_api/
     ├── database.py      # `open_database()`: connect, verify schema, sessions, dispose
     ├── migrate.py       # Programmatic Alembic: upgrade, downgrade, head revision
     └── migrations/      # Alembic environment and versioned revisions
-        └── versions/    # 0001_baseline … 0012_create_notes
+        └── versions/    # 0001_baseline … 0013_create_calendar
 ```
 
 Design decisions:
@@ -344,6 +347,11 @@ written once. SQLite is embedded in the API process; local mode needs no databas
 - `0012_create_notes` creates `note_folders`, `notes`, `note_tags`, `note_tag_assignments`,
   `note_links`, `note_task_links`, and `note_attachments` with RLS (see
   [Notes and knowledge management](#notes-and-knowledge-management)).
+- `0013_create_calendar` creates `calendar_categories`, `calendar_events`,
+  `calendar_event_exceptions`, `calendar_event_alerts`, `calendar_event_notes`,
+  `calendar_event_tasks`, and `calendar_preferences` with RLS, adds `tasks.scheduled_start` and
+  `scheduled_end`, and the reminders' unique link to an event alert (see
+  [Calendar and events](#calendar-and-events)).
 - Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
   Startup only checks that the database is at the head revision. For a shared cloud database,
   schema changes should be deliberate and reviewable.
@@ -424,7 +432,8 @@ structure.
      `finance_accounts`, `finance_categories`, and `finance_transactions`; `0009` for
      `finance_loans`, `finance_loan_installments`, `finance_recurring_payments`, and
      `finance_recurring_occurrences`; `0010` for the nine investment, asset, and snapshot tables;
-     `0011` for the six budget, goal, and plan tables; `0012` for the seven note tables.
+     `0011` for the six budget, goal, and plan tables; `0012` for the seven note tables; `0013`
+     for the seven calendar tables.
   2. **No policies exist**, deliberately: the browser never queries tables directly, so the
      Data API's `anon` and `authenticated` roles get no rows. Add `authenticated` policies
      (for example `owner_id = auth.uid()`) only if a client is ever allowed direct access.
@@ -455,7 +464,8 @@ users ──< workspaces ──< tasks    (owner_id → users.id, workspace_id �
   │                 │                both ON DELETE CASCADE)
   │                 ├──< reminders   (see Reminders and notifications)
   │                 ├──< finance_accounts, finance_categories, finance_transactions (see Finance)
-  │                 └──< notes, note_folders, note_tags, … (see Notes and knowledge management)
+  │                 ├──< notes, note_folders, note_tags, … (see Notes and knowledge management)
+  │                 └──< calendar_events, calendar_categories, … (see Calendar and events)
   ├──< notifications              (in-app inbox, per recipient)
   │
   ├── user_avatars                (profile photo bytes and type, 1:1)
@@ -610,17 +620,18 @@ The first product feature: to-dos inside a workspace.
 
 `tasks` (`db/models/tasks.py`, migration `0004`):
 
-| Column                     | Notes                                                                           |
-| -------------------------- | ------------------------------------------------------------------------------- |
-| `id`                       | UUID primary key, generated by the service                                      |
-| `workspace_id`             | Non-null FK to `workspaces.id`, `ON DELETE CASCADE`                             |
-| `title`                    | 1 to 200 characters (CHECK); single line                                        |
-| `description`              | Text, at most 5,000 characters (CHECK); empty when unset                        |
-| `status`                   | `open` or `completed` (CHECK)                                                   |
-| `priority`                 | Rank 0 to 3 (none, low, medium, high), so sorting by priority is a column order |
-| `due_date`                 | Optional calendar date (no time or time zone)                                   |
-| `completed_at`             | Set exactly when `status` is `completed` (CHECK)                                |
-| `created_at`, `updated_at` | UTC timestamps; `updated_at` changes only when a field actually changes         |
+| Column                     | Notes                                                                             |
+| -------------------------- | --------------------------------------------------------------------------------- |
+| `id`                       | UUID primary key, generated by the service                                        |
+| `workspace_id`             | Non-null FK to `workspaces.id`, `ON DELETE CASCADE`                               |
+| `title`                    | 1 to 200 characters (CHECK); single line                                          |
+| `description`              | Text, at most 5,000 characters (CHECK); empty when unset                          |
+| `status`                   | `open` or `completed` (CHECK)                                                     |
+| `priority`                 | Rank 0 to 3 (none, low, medium, high), so sorting by priority is a column order   |
+| `due_date`                 | Optional calendar date (no time or time zone)                                     |
+| `completed_at`             | Set exactly when `status` is `completed` (CHECK)                                  |
+| `scheduled_start`, `_end`  | Optional UTC time block on the calendar, both or neither, end after start (CHECK) |
+| `created_at`, `updated_at` | UTC timestamps; `updated_at` changes only when a field actually changes           |
 
 Indexes: `(workspace_id, status, due_date)` and `(workspace_id, status, priority)`, matching the
 list's usual shape (one workspace, often one status, sorted by due date or priority). Search is
@@ -650,6 +661,9 @@ workspace is `404 Workspace not found.`, and a task from another workspace is
   uses its natural direction: soonest due date, highest priority, or newest. Tasks without a due
   date always come last. Ties fall back to priority, due date, and creation time, so the order is
   stable.
+- `GET` also filters by `scheduled` (`true` or `false`); `POST` and `PATCH` accept
+  `scheduled_start` and `scheduled_end` together (aware datetimes, at most a week apart; both
+  `null` unschedules). See [Calendar task integration](#calendar-task-integration).
 - Status changes only through `complete` and `reopen`, which keep `completed_at` consistent.
   Request models forbid unknown fields, so `status`, `completed_at`, `workspace_id`, or `id` in a
   body is a 422.
@@ -675,7 +689,8 @@ workspace is `404 Workspace not found.`, and a task from another workspace is
 
 ### Not implemented
 
-Recurring tasks, subtasks, tags, sharing, and drag-and-drop ordering. Tasks can have
+Recurring tasks, subtasks, tags, sharing, and drag-and-drop ordering. Tasks can have a
+scheduled time block on the [calendar](#calendar-task-integration), separate from the due date, and
 [reminders](#reminders-and-notifications), which are a separate feature.
 
 ## Reminders and notifications
@@ -761,6 +776,10 @@ cluttering reminders, and lets notifications outlive edits and deletions of thei
   the reminders list marked "Managed in Finance"; the reminders API refuses to edit or delete it
   (409). See [Reminder integration](#reminder-integration). A deposit's maturity reminder
   (`reminders.finance_deposit_id`) works the same way and fires once.
+- **Calendar-managed reminders.** Each alert on a calendar event owns one reminder
+  (`reminders.calendar_event_alert_id`, unique; a CHECK keeps it from also having a finance
+  link), marked "Managed in Calendar" and refused by the reminders API (409). See
+  [Reminder integration](#calendar-reminder-integration).
 
 ### Scheduling and delivery
 
@@ -2007,6 +2026,242 @@ Request models forbid unknown fields, so `workspace_id`, `revision`, `plain_text
   on leave and the browser warns on close or reload, but in-app navigation can't wait.
 - No templates, sharing, version history, graph view, AI features, or semantic search.
 
+## Calendar and events
+
+The calendar plans time in a workspace: events and recurring series, alongside the workspace's
+tasks and notes. It owns no copy of a task or note; it links to them by ID.
+
+### Event data model
+
+```text
+workspaces ──< calendar_categories
+     │                │ (category_id: no ON DELETE; the service clears it from events first)
+     ├──< calendar_events ──< calendar_event_exceptions   (one per original start, cascade)
+     │          ├──< calendar_event_alerts ──1 reminders   (reminders.calendar_event_alert_id)
+     │          ├──< calendar_event_notes >── notes        (both sides cascade)
+     │          └──< calendar_event_tasks >── tasks        (both sides cascade)
+users ──1 calendar_preferences
+```
+
+Every relationship is a composite foreign key on `(id, workspace_id)`, so the database refuses a
+category, exception, alert, or link that crosses workspaces. Migration `0013_create_calendar`
+creates the tables with RLS on PostgreSQL, adds `tasks.scheduled_start` and `scheduled_end`, and
+adds the reminders' link to an alert.
+
+| `calendar_events` column   | Notes                                                                                         |
+| -------------------------- | --------------------------------------------------------------------------------------------- |
+| `title`, `description`     | 1 to 200 characters; at most 5,000                                                            |
+| `location`                 | At most 200 characters                                                                        |
+| `category_id`              | Optional; a workspace category                                                                |
+| `all_day`                  | All-day events run from local midnight on the first day to midnight after the last            |
+| `timezone`                 | IANA zone the local times are in; defaults to the user's preference, else UTC                 |
+| `start_local`, `end_local` | **The source of truth**: wall-clock times without an offset; `end >= start` (CHECK)           |
+| `start_at`, `end_at`       | Derived UTC instants of the first occurrence, for range queries                               |
+| `until_at`                 | Derived UTC end of the last occurrence; `NULL` for a series that never ends                   |
+| `recurrence`               | `NULL` for a single event; otherwise a versioned JSON rule (below)                            |
+| `status`                   | `confirmed` or `cancelled`                                                                    |
+| `series_id`                | The series a "this and following" edit split this one from (informational, not a foreign key) |
+
+- **Categories** are per workspace: a name (unique case-insensitively), a color from a fixed
+  palette (`blue`, `green`, `amber`, `rose`, `violet`, `teal`, `orange`, `slate`; never CSS), and
+  visibility. The first request for a workspace's categories creates Personal, Work, Meeting,
+  Appointment, Birthday, Travel, and Other. Hidden categories' events are left out of ranges and
+  the agenda, not search. Deleting a category leaves its events without one.
+- **Exceptions** (`calendar_event_exceptions`) record one occurrence as `skipped` or `modified`,
+  keyed by its **original local start** (`unique(event_id, original_start)`). Override columns
+  that are `NULL` follow the series, so renaming a series renames every occurrence that wasn't
+  renamed on its own. A moved occurrence also stores its UTC bounds, indexed, so a range finds
+  occurrences moved into it from elsewhere.
+- **Alerts** (`calendar_event_alerts`): up to five per event, each a number of minutes before the
+  occurrence (0 to 40,320, four weeks), unique per event.
+- Indexes: `(workspace_id, start_at)` and `(workspace_id, until_at)` on events,
+  `(workspace_id, start_at)` on exceptions, `(workspace_id, scheduled_start)` on tasks.
+
+### Recurrence strategy
+
+`services/calendar/recurrence.py` and `occurrences.py` are pure and unit-tested
+(`tests/test_calendar_recurrence.py`).
+
+- **Rules, not rows.** A series stores its rule; occurrences are generated for the range a view
+  asks for. Nothing is pre-generated, so a series without an end costs one row.
+- **RFC 5545 through `python-dateutil`.** The stored rule is a small validated structure
+  (`{"version": 1, "frequency", "interval", "weekdays", "count", "until"}`), translated into a
+  `dateutil.rrule`. No user-supplied RRULE text is parsed. Frequencies: daily, weekly on chosen
+  weekdays (which must include the start's weekday, so the first occurrence is the event's own
+  start), monthly on the start's day, and yearly; every 1 to 99; ending after 1 to 999
+  occurrences, on a date (inclusive), or never.
+- **Month ends and leap years.** Monthly on the 29th to 31st falls on the last day of shorter
+  months and returns in longer ones, like reminders: `BYMONTHDAY=28,…,31;BYSETPOS=-1`. Yearly on
+  February 29 falls on February 28 in common years.
+- **Identity and duplicates.** An occurrence is its event plus its original local start (the
+  RFC 5545 `RECURRENCE-ID`), exposed as `OccurrenceResponse.id` and addressed in paths as
+  `…/occurrences/2030-01-14T09:00`. Expansion is keyed by it, so an occurrence appears once even
+  when an exception moves it, and expanding the same range twice gives the same IDs.
+- **Count** counts every generated occurrence, including skipped ones (RFC semantics), so
+  skipping never extends a series.
+- **Editing scopes.** `this` writes an exception. `following` splits the series: the original
+  ends the day before (`until`), and a new series (`series_id` pointing back) continues from that
+  occurrence with the change, keeping the remaining count, the alerts, and the note and task
+  links; later exceptions are dropped. `series` changes the event; moving an occurrence with
+  `series` moves every occurrence by the same amount (weekly weekdays shift with it). Changing a
+  whole series' times, time zone, all-day setting, or rule **clears its exceptions**, since their
+  original starts may no longer exist. Deleting `this` stores a `skipped` exception; `following`
+  truncates; at the first occurrence either deletes the series.
+- A repeating event must end before its next occurrence starts, and any event lasts at most a
+  year.
+
+### Timezone handling
+
+- **Event time zone.** Local times are stored in the event's IANA zone and converted to UTC one
+  occurrence at a time with the same rules as reminders (`local_to_utc`): a daily 09:00 meeting
+  stays at 09:00 across daylight-saving changes; a time skipped by a jump (02:30) happens at
+  03:30; a repeated time happens once, at the first. An occurrence's end is its local start plus
+  the series' local length.
+- **Viewer time zone.** `GET …/calendar/range` takes local dates `[start, end)` and the viewer's
+  zone (default: the user's preference, else UTC). Timed occurrences and scheduled tasks are
+  matched by instant against that zone's day boundaries (so a 23 or 25 hour DST day is right).
+  **All-day events are dates**, matched by date in any viewer's zone: a birthday stays on its day
+  wherever you are.
+- The web app shows times in the user's time zone preference (Settings → Account), else the
+  browser's. Dragging converts the drop point from the viewer's clock to the event's zone
+  (`zonedTimeToInstant` in `utils/time-zones`, which resolves DST like the API).
+- All stored instants are UTC (`UTCDateTime`); local times are naive `DateTime` columns that mean
+  nothing without the row's `timezone`.
+
+### Calendar task integration
+
+- Tasks gain an optional **scheduled time block** (`scheduled_start`, `scheduled_end`, UTC, both
+  or neither, end after start, at most a week; a CHECK constraint backs the rule). It is separate
+  from the **due date**, which stays a calendar date. Existing tasks are unscheduled; existing
+  clients that don't send the fields are unaffected.
+- `PATCH …/tasks/{id}` sets or clears the block (`null` for both); `GET …/tasks?scheduled=false`
+  lists unscheduled tasks. A range returns tasks scheduled in it (`scheduled_tasks`) and
+  unscheduled tasks due in it (`due_tasks`), each with its status; completed ones can be left
+  out.
+- Events can link to tasks (`calendar_event_tasks`); the event's details list them with their
+  status and open them at `/tasks?task=<id>`.
+
+### Note integration
+
+- Events link to existing notes by ID (`calendar_event_notes`), so renaming either keeps the
+  link; deleting either removes it. `PUT/DELETE …/events/{id}/notes/{note}` link and unlink
+  (the note must be in the workspace, 422 otherwise).
+- `POST …/events/{id}/notes` creates an ordinary note in the Inbox through the notes service
+  (titled with the event and the occurrence's date unless given one) and links it; the web app
+  opens it. Meeting and appointment notes are these notes; no note content lives in the
+  calendar.
+
+### Calendar reminder integration
+
+- Each alert manages **one reminder** in the existing `reminders` table
+  (`reminders.calendar_event_alert_id`, unique, cascading), delivered by the existing worker as an
+  in-app notification. There is no second scheduler. The reminder's link reports
+  `commitment.kind = "calendar_alert"`; the reminders API refuses to edit or delete it (409), and
+  the reminders page marks it "Managed in Calendar".
+- The reminder is a one-time reminder (in UTC) for the **next confirmed occurrence whose alert
+  time is still ahead**, computed from the expanded occurrences, so skipped, cancelled, and moved
+  occurrences are respected. All-day alerts count back from 09:00 on the first day in the event's
+  zone.
+- It is **re-pointed in the same transaction** as every change: creating, editing the series or
+  an occurrence, splitting, deleting occurrences, or cancelling (which removes it). Deleting the
+  event deletes its alerts and their reminders (cascade); delivered notifications stay.
+- **After it fires**, the worker's follow-up hook (`ManagedFollowUp` in `scheduler/worker.py`)
+  hands calendar reminders to `CalendarService.after_delivery`, inside the delivery transaction,
+  which points the reminder at the next occurrence. Delivery keeps the worker's guarantees: one
+  notification per reminder occurrence, retries, and recovery.
+- The next occurrence is looked for up to about 400 days past the later of now and the series'
+  start.
+
+### Calendar preferences
+
+`calendar_preferences` holds one row per user (like `dashboard_layouts`): default view, week
+start (`null` follows the browser's locale), working hours (shaded on the time grid; the grid
+opens scrolled to them), and whether to show completed tasks, tasks on their due dates, and the
+unscheduled tasks list. `GET /api/v1/me/calendar-preferences` returns the defaults until the user
+saves (`updated_at: null`); `PUT` replaces them. The preferred time zone is the account's existing
+`users.timezone`. Category visibility is a workspace setting, on the category.
+
+### Calendar API
+
+Under `/api/v1/workspaces/{workspace_id}/calendar`, authorized through `WorkspaceDep`. Another
+workspace's event is `404 Event not found.`; another workspace's category, note, or task in a
+body or path link is a 422, like a missing one.
+
+| Method                   | Path                                         | Purpose                                                                      |
+| ------------------------ | -------------------------------------------- | ---------------------------------------------------------------------------- |
+| `GET`, `POST`            | `/categories`                                | List (creating the defaults the first time); create (`name`, `color`)        |
+| `PATCH`, `DELETE`        | `/categories/{id}`                           | Rename, recolor, show or hide; delete (events keep no category)              |
+| `GET`                    | `/range`                                     | Occurrences and tasks for `start`, `end` (≤ 92 days), `timezone`             |
+| `GET`                    | `/agenda`                                    | What hasn't ended by `start`, in order; `limit` ≤ 100 and an opaque `cursor` |
+| `GET`, `POST`            | `/events`                                    | Search series (`q`, `category_id`, `limit` ≤ 100, `offset`); create          |
+| `GET`, `PATCH`, `DELETE` | `/events/{id}`                               | Details (alerts, notes, tasks, next occurrence); change or delete the series |
+| `POST`                   | `/events/{id}/duplicate`                     | Copy with rule, alerts, and links, not exceptions                            |
+| `PATCH`, `DELETE`        | `/events/{id}/occurrences/{original_start}`  | Change or delete with `scope`: `this`, `following`, or `series`              |
+| `POST`                   | `/events/{id}/notes`                         | Create a note for the event and link it                                      |
+| `PUT`, `DELETE`          | `/events/{id}/notes/{note}`, `/tasks/{task}` | Link (idempotent) or unlink                                                  |
+| `GET`, `PUT`             | `/api/v1/me/calendar-preferences`            | The signed-in user's preferences                                             |
+
+- Times in bodies are local, whole minutes, without an offset (`2030-01-14T09:30`), years 2000
+  to 2200; the zone is the event's `timezone`. All-day events send midnight to midnight.
+- Request models forbid unknown fields, so `workspace_id`, `series_id`, or derived bounds in a
+  body are a 422. Invalid times or rules are a 422 with a reason.
+- Event search is an escaped substring match on title, description, and location, like tasks.
+
+### Calendar in the web app
+
+- `/calendar` (`components/calendar/`): a toolbar (Today, previous and next, the range's title,
+  and a Month, Week, Day, Agenda switch), the view, and a sidebar with category filters (show or
+  hide, color, add, delete) and unscheduled tasks. The view and date live in the URL
+  (`?view=week&date=2030-01-14`), so Back and links work. Settings (gear) edits preferences.
+- **Month**: whole weeks starting on the preferred day; today highlighted; up to three items per
+  day with "N more"; dots on small screens; each day has open-day and new-event buttons.
+- **Week and Day**: an hourly grid with an all-day row, working hours shaded, a current-time
+  line, and overlapping items side by side (`layoutDay`). **Agenda**: upcoming items grouped by
+  day, a page at a time.
+- **Events and tasks look different**: events are tinted with their category's color and an
+  accent edge; tasks are outlined and dashed with a check mark for their status. Accessible names
+  say which is which, the time, and the state.
+- **Drag and drop** (mouse and pen): move events and scheduled tasks to another time or day,
+  resize from the bottom edge, drag across empty time to create, move all-day events in the
+  all-day row and any item between days in the month view, and drop unscheduled tasks onto the
+  grid. Moves show at once and roll back if the API refuses; a repeating event asks which
+  occurrences to change first. Touch keeps native scrolling: a tap opens an item or starts an
+  event. **Alternatives without dragging**: the event dialog edits dates and times, the
+  Schedule button gives a task a time block, and every item and day is a button.
+- Keyboard: `N` new event, `T` today, `M`/`W`/`D`/`A` views, `←`/`→` previous and next.
+- The event dialog covers title, all-day, start and end, time zone, category, location,
+  description, repeat (frequency, interval, weekdays, end), reminders (presets and custom
+  minutes), and a related task. Editing a single occurrence hides what belongs to the series.
+- The details dialog shows when, repeat, category, place, description, reminders, linked notes
+  (open, create meeting notes, link an existing note, unlink), and linked tasks, with Edit,
+  Duplicate, Cancel or Restore, and Delete.
+- **Dashboard**: the Agenda widget shows today's events and tasks, what's coming up, the
+  overdue-task count, and a New event button. **Command palette**: create event, go to today,
+  open month, week, day, or agenda, schedule a task, create meeting notes for the next event,
+  and live event search.
+- Query keys: `["workspaces", id, "calendar", …]`; preferences under
+  `["me", "calendar-preferences"]`. Changes refetch the calendar and reminders (alerts are
+  reminders); scheduling a task also refetches tasks.
+
+### Calendar limitations
+
+- No sync with external calendars (Google, Outlook, CalDAV) and no `.ics` import or export; no
+  attendees, invitations, or free/busy; no AI scheduling.
+- Recurrence covers daily, weekly on weekdays, monthly by day of month, and yearly by date, with
+  intervals, counts, and end dates. No "second Tuesday of the month" or other `BYDAY` ordinals,
+  no hourly rules, and no `RDATE`/`EXDATE` beyond skipped occurrences.
+- Changing a series' timing or rule clears its single-occurrence changes; "this and following"
+  drops later ones. Exceptions moved before the series' first start aren't found by ranges.
+- An alert looks for its next occurrence about 400 days ahead; one with nothing in that window
+  waits until the series changes. Alerts are in-app notifications only, at the worker's poll
+  granularity.
+- Conflicting events aren't flagged; overlapping items are shown side by side.
+- Drag and drop needs a mouse or pen; touch uses taps and the dialogs. Dragging a task's block
+  across midnight on the time grid isn't supported; use the Schedule dialog.
+- Event search matches series, not individual occurrences, and opens the series' first date.
+- The opt-in PostgreSQL suite covers the calendar's SQL through the service (cloud mode's API
+  needs Supabase tokens); the HTTP tests run on SQLite.
+
 ## Configuration
 
 | App | Source                                                    | Validation                                    | Visibility  |
@@ -2023,16 +2278,16 @@ Request models forbid unknown fields, so `workspace_id`, `revision`, `plain_text
 
 ## Testing strategy
 
-| Layer                    | Tool                                            | Location                                                                                   | Current coverage                                                                                                                                                                                                    |
-| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                                                 | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth, budgets, goals, plans, notes (views, autosave, Markdown, palette) |
-| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                                                          | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, budgets, goals, plans, notes, cross-user isolation                                         |
-| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_reminder_worker.py`, `tests/test_budget_alerts.py` | Recurrence, DST, month ends; delivery, concurrency, leases, retries, restarts; budget alerts and period closing                                                                                                     |
-| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                                                         | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                                                                                        |
-| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                                                    | Startup checks, sessions, migrations, constraints, 503 errors                                                                                                                                                       |
-| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                                                          | Migrations, connectivity, RLS; skipped by default                                                                                                                                                                   |
-| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                                                  | Generated contract matches the API                                                                                                                                                                                  |
-| End-to-end               | Not set up (**planned**)                        | —                                                                                          | —                                                                                                                                                                                                                   |
+| Layer                    | Tool                                            | Location                                                                                                                        | Current coverage                                                                                                                                                                                                                                                      |
+| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                                                                                      | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth, budgets, goals, plans, notes (views, autosave, Markdown, palette), calendar (views, dialogs, drag, scopes, palette) |
+| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                                                                                               | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, budgets, goals, plans, notes, calendar, cross-user isolation                                                                                 |
+| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_calendar_recurrence.py`, `tests/test_reminder_worker.py`, `tests/test_budget_alerts.py` | Recurrence, DST, month ends, leap years, exceptions; delivery, concurrency, leases, retries, restarts; event alerts; budget alerts and period closing                                                                                                                 |
+| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                                                                                              | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                                                                                                                                          |
+| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                                                                                         | Startup checks, sessions, migrations, constraints, 503 errors                                                                                                                                                                                                         |
+| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                                                                                               | Migrations, connectivity, RLS; skipped by default                                                                                                                                                                                                                     |
+| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                                                                                       | Generated contract matches the API                                                                                                                                                                                                                                    |
+| End-to-end               | Not set up (**planned**)                        | —                                                                                                                               | —                                                                                                                                                                                                                                                                     |
 
 Unit tests cover logic, route tests cover HTTP behavior and validation, and E2E tests will cover
 critical user journeys once real features exist. CI runs every layer on each pull request.
@@ -2053,7 +2308,7 @@ vendor SDKs.
 
 The database foundation is implemented (see [Storage](#storage)). Still planned:
 
-- More product tables (calendar, later [finance](#finance) phases), following the pattern
+- More product tables (later [finance](#finance) phases), following the pattern
   [tasks](#tasks) established.
 - Shared workspaces (a membership table, invitations, roles), if the product needs them.
 - Any synchronization or migration between local and cloud storage. This is undecided and
@@ -2072,7 +2327,8 @@ Workspace-scoped [tasks](#tasks), [reminders](#reminders-and-notifications) (wit
 database-backed worker), and four phases of [finance](#finance) (ledger, commitments,
 [investments and net worth](#investments-and-net-worth-phase-3), and
 [budgets, savings goals, and planning](#budgets-savings-goals-and-planning-phase-4)), and
-[notes](#notes-and-knowledge-management) are in place. Next: more
+[notes](#notes-and-knowledge-management), and the [calendar](#calendar-and-events) are in place.
+Next: more
 modules on the same pattern, AI-assisted features through the provider interface, then optional
 sync and extension points.
 Each step should leave the boundaries above intact.

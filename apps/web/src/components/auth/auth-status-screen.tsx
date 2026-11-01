@@ -2,6 +2,7 @@ import { LoaderCircle, TriangleAlert } from "lucide-react";
 
 import { OrbitMark } from "@/components/logo";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/utils/common";
 
 type ScreenProps = {
@@ -26,6 +27,40 @@ export function AuthLoadingScreen({
         <LoaderCircle className="size-4 motion-safe:animate-spin" aria-hidden="true" />
         {label}
       </p>
+    </div>
+  );
+}
+
+/** Placeholder shaped like the auth card while the sign-in configuration loads. */
+export function AuthFormSkeleton({ label, fields = 2 }: { label: string; fields?: number }) {
+  return (
+    <div className="w-full space-y-6">
+      <p role="status" className="sr-only">
+        {label}
+      </p>
+      <div
+        aria-hidden="true"
+        className="rounded-2xl border bg-card/95 p-6 shadow-elevation-3 sm:p-8"
+      >
+        <div className="mb-7 flex flex-col items-center gap-4">
+          <span className="flex size-12 items-center justify-center rounded-xl border bg-background shadow-elevation-1">
+            <OrbitMark className="size-7" />
+          </span>
+          <div className="flex w-full flex-col items-center gap-2">
+            <Skeleton className="h-6 w-44" />
+            <Skeleton className="h-4 w-56 max-w-full" />
+          </div>
+        </div>
+        <div className="space-y-4">
+          {Array.from({ length: fields }, (_, index) => (
+            <div key={index} className="space-y-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-9" />
+            </div>
+          ))}
+          <Skeleton className="h-9" />
+        </div>
+      </div>
     </div>
   );
 }

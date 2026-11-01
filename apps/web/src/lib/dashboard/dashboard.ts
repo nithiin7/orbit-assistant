@@ -17,6 +17,7 @@ export const widgetIds = [
   "status",
   "tasks",
   "reminders",
+  "calendar",
   "shopping",
   "cash_flow",
   "upcoming_payments",
@@ -56,6 +57,12 @@ export const widgetCatalog: readonly WidgetDefinition[] = [
     id: "reminders",
     title: "Reminders",
     description: "The next reminders due in this workspace.",
+    defaultSize: "full",
+  },
+  {
+    id: "calendar",
+    title: "Agenda",
+    description: "Today’s events and tasks, and what’s coming up.",
     defaultSize: "full",
   },
   {

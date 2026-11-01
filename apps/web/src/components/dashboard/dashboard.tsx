@@ -3,6 +3,7 @@
 import { ArrowDown, ArrowUp, LayoutDashboard, Plus, RotateCcw, X } from "lucide-react";
 import { type ComponentType, useEffect, useId, useRef, useState } from "react";
 
+import { CalendarWidget } from "@/components/calendar/calendar-widget";
 import { EmptyState } from "@/components/empty-state";
 import {
   BudgetWidget,
@@ -40,6 +41,7 @@ const widgetComponents: Record<WidgetId, ComponentType> = {
   status: StatusWidget,
   tasks: TaskOverview,
   reminders: ReminderOverview,
+  calendar: CalendarWidget,
   shopping: ShoppingOverview,
   cash_flow: CashFlowWidget,
   upcoming_payments: UpcomingPaymentsWidget,

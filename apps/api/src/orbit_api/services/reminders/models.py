@@ -23,9 +23,9 @@ OccurrenceStatus = Literal["pending", "processing", "delivered", "cancelled", "f
 DeliveryOutcome = Literal["delivered", "cancelled", "failed"]
 
 
-# The finance record a reminder is managed by: a loan, a subscription or bill, or a deposit
-# (its maturity).
-CommitmentLinkKind = Literal["loan", "recurring_payment", "deposit"]
+# The record a reminder is managed by: a loan, a subscription or bill, or a deposit (its
+# maturity) in Finance, or one of a calendar event's alerts.
+CommitmentLinkKind = Literal["loan", "recurring_payment", "deposit", "calendar_alert"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,8 +49,8 @@ class Reminder:
     last_outcome: DeliveryOutcome | None
     created_at: datetime
     updated_at: datetime
-    # Set for reminders a financial commitment manages (`services.commitments.reminders`): the
-    # commitment keeps them pointed at its next payment, and they can't be edited directly.
+    # Set for reminders a financial commitment or a calendar event's alert manages: the record
+    # keeps them pointed at its next payment or occurrence, and they can't be edited directly.
     commitment: CommitmentLink | None = None
 
 

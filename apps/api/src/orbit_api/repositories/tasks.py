@@ -41,6 +41,8 @@ def to_task(model: TaskModel) -> Task:
         completed_at=model.completed_at,
         created_at=model.created_at,
         updated_at=model.updated_at,
+        scheduled_start=model.scheduled_start,
+        scheduled_end=model.scheduled_end,
     )
 
 
@@ -48,6 +50,12 @@ def _filters(workspace_id: uuid.UUID, query: TaskQuery) -> list[ColumnElement[bo
     conditions = [TaskModel.workspace_id == workspace_id]
     if query.status is not None:
         conditions.append(TaskModel.status == query.status)
+    if query.scheduled is not None:
+        conditions.append(
+            TaskModel.scheduled_start.is_not(None)
+            if query.scheduled
+            else TaskModel.scheduled_start.is_(None)
+        )
     if query.priorities:
         conditions.append(TaskModel.priority.in_(_PRIORITY_RANKS[p] for p in query.priorities))
     if query.search:
@@ -99,6 +107,8 @@ class SqlTaskRepository:
                 completed_at=task.completed_at,
                 created_at=task.created_at,
                 updated_at=task.updated_at,
+                scheduled_start=task.scheduled_start,
+                scheduled_end=task.scheduled_end,
             )
         )
         await flush(self._session)
@@ -129,6 +139,8 @@ class SqlTaskRepository:
         model.priority = _PRIORITY_RANKS[task.priority]
         model.due_date = task.due_date
         model.completed_at = task.completed_at
+        model.scheduled_start = task.scheduled_start
+        model.scheduled_end = task.scheduled_end
         model.updated_at = task.updated_at
         await flush(self._session)
 

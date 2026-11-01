@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { type ReactNode, useEffect } from "react";
 
+import { AppShellSkeleton } from "@/components/app-shell/app-shell-skeleton";
 import { signInPath } from "@/lib/auth/redirect";
 import { useAuth } from "@/providers/auth";
 
@@ -29,6 +30,6 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     case "signed-out":
       return <AuthLoadingScreen label="Redirecting to sign in…" />;
     case "loading":
-      return <AuthLoadingScreen />;
+      return <AppShellSkeleton />;
   }
 }

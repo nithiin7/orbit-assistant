@@ -217,7 +217,7 @@ pnpm db:migrate                       # upgrade to the latest revision (from the
 cd apps/api
 uv run alembic current                # revision the database is at
 uv run alembic history                # all revisions
-uv run alembic revision --autogenerate --rev-id 0013 -m "create calendar tables"
+uv run alembic revision --autogenerate --rev-id 0014 -m "describe the change"
 uv run alembic downgrade -1           # revert the latest revision
 ```
 
