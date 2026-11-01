@@ -2,6 +2,7 @@
 
 import type { Reminder } from "@orbit/contracts";
 import { AlarmClock, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,8 @@ import { sameTimeZone } from "@/utils/time-zones";
 import {
   FireTimeChip,
   ManagedChip,
+  managingModule,
+  MODULE_LABEL,
   RecurrenceChip,
   StatusChip,
   TaskChip,
@@ -63,10 +66,11 @@ export function ReminderItem({
   const deleteRef = useRef<HTMLButtonElement>(null);
   const hint = statusHint(reminder);
   const muted = reminder.status === "disabled" || reminder.status === "completed";
-  // A loan, subscription, or bill keeps this reminder on its next payment, or an event's alert on
-  // its next occurrence; change it there.
-  const managed = reminder.commitment !== null && reminder.commitment !== undefined;
-  const managedBy = reminder.commitment?.kind === "calendar_alert" ? "calendar" : "finance";
+  // A loan, subscription, or bill keeps this reminder on its next payment, an event's alert on its
+  // next occurrence, a habit or routine on its reminder time, and a document on its next expiry,
+  // renewal, or review alert; change it there.
+  const managedBy = reminder.commitment ? managingModule(reminder.commitment.kind) : null;
+  const managed = managedBy !== null;
 
   useEffect(() => {
     if (confirming) confirmRef.current?.focus();
@@ -101,11 +105,7 @@ export function ReminderItem({
         aria-checked={reminder.enabled}
         aria-label={`${reminder.enabled ? "Disable" : "Enable"} “${reminder.title}”`}
         disabled={pending || managed}
-        title={
-          managed
-            ? `Change this reminder in ${managedBy === "calendar" ? "Calendar" : "Finance"}`
-            : undefined
-        }
+        title={managedBy ? `Change this reminder in ${MODULE_LABEL[managedBy]}` : undefined}
         onClick={() => onToggle(reminder)}
         className={cn(
           "relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none @2xl/rows:mt-0",
@@ -125,7 +125,15 @@ export function ReminderItem({
       {/* Chips sit beside the title only in roomy rows; reminders carry more of them than tasks. */}
       <div className="flex min-w-0 flex-1 flex-col gap-1.5 @2xl/rows:flex-row @2xl/rows:items-center @2xl/rows:gap-4">
         <div className="min-w-0 flex-1 space-y-0.5">
-          {managed ? (
+          {reminder.commitment?.kind === "document" ? (
+            // A document's expiry reminder opens the document it's about.
+            <Link
+              href={`/documents?document=${encodeURIComponent(reminder.commitment.id)}`}
+              className="block max-w-full rounded-sm text-sm font-medium break-words outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {title}
+            </Link>
+          ) : managed ? (
             <p className="text-sm font-medium break-words">{title}</p>
           ) : (
             <button
@@ -154,7 +162,7 @@ export function ReminderItem({
           {sameTimeZone(reminder.timezone, viewerTimeZone) ? null : (
             <TimeZoneChip timeZone={reminder.timezone} />
           )}
-          {managed ? <ManagedChip by={managedBy} /> : null}
+          {managedBy ? <ManagedChip by={managedBy} /> : null}
         </div>
       </div>
 

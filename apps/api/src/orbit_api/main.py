@@ -22,6 +22,7 @@ from orbit_api.auth.supabase import SupabaseTokenVerifier
 from orbit_api.config import Settings, get_settings
 from orbit_api.db.database import open_database
 from orbit_api.scheduler.worker import ReminderWorker
+from orbit_api.system.attachment_store import FileAttachmentStore
 from orbit_api.system.file_manager import SystemFileRevealer
 
 logger = logging.getLogger(__name__)
@@ -54,7 +55,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         worker = None
         if settings.scheduler_embedded:
             worker = asyncio.create_task(
-                ReminderWorker(database).run(stop, settings.scheduler_poll_seconds)
+                ReminderWorker(database, files=FileAttachmentStore(settings.attachments_dir)).run(
+                    stop, settings.scheduler_poll_seconds
+                )
             )
         try:
             yield

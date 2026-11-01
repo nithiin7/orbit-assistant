@@ -5,7 +5,6 @@ import logging
 import uuid
 from datetime import UTC, date, datetime
 from typing import Annotated, Any
-from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException, Path, Query, Request, Response, status
@@ -13,6 +12,7 @@ from fastapi.responses import FileResponse
 
 from orbit_api.api.auth import CurrentUserDep, WorkspaceDep
 from orbit_api.api.dependencies import AttachmentServiceDep, NoteServiceDep, SettingsDep
+from orbit_api.api.files import download_response, read_body
 from orbit_api.schemas.notes import (
     AddNoteTagRequest,
     AttachmentListResponse,
@@ -429,7 +429,7 @@ async def upload_attachment(
 ) -> AttachmentResponse:
     """The request body is the file itself. Its type is decided from the file name and checked
     against its contents; the declared content type is ignored."""
-    data = await _read_body(request, limit=settings.attachment_max_bytes)
+    data = await read_body(request, limit=settings.attachment_max_bytes, what="Attachments")
     try:
         attachment = await attachments.add(workspace.id, note_id, params.filename, data)
     except NoteNotFoundError:
@@ -457,16 +457,7 @@ async def download_attachment(
         attachment, path = await attachments.open(workspace.id, note_id, attachment_id)
     except AttachmentNotFoundError:
         raise _not_found("Attachment") from None
-    return FileResponse(
-        path,
-        media_type=attachment.content_type,
-        headers={
-            "Content-Disposition": f"attachment; filename*=UTF-8''{quote(attachment.filename)}",
-            "Cache-Control": "private, no-cache",
-            "X-Content-Type-Options": "nosniff",
-            "Content-Security-Policy": "default-src 'none'; sandbox",
-        },
-    )
+    return download_response(path, attachment.content_type, attachment.filename)
 
 
 @router.delete(
@@ -485,25 +476,6 @@ async def delete_attachment(
     except AttachmentNotFoundError:
         raise _not_found("Attachment") from None
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-async def _read_body(request: Request, *, limit: int) -> bytes:
-    """Read the body, stopping as soon as it exceeds `limit` rather than buffering it all."""
-    too_large = HTTPException(
-        status.HTTP_413_CONTENT_TOO_LARGE,
-        f"Attachments must be at most {limit // (1024 * 1024)} MB.",
-    )
-    declared = request.headers.get("content-length")
-    if declared is not None and declared.isdigit() and int(declared) > limit:
-        raise too_large
-    body = bytearray()
-    async for chunk in request.stream():
-        body.extend(chunk)
-        if len(body) > limit:
-            raise too_large
-    if not body:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "The file is empty.")
-    return bytes(body)
 
 
 # Folders

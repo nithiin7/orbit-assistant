@@ -111,6 +111,9 @@ class FinanceHoldingModel(Base):
         UniqueConstraint("account_id", "identity", name="uq_finance_holdings_identity"),
         # The target of prices', SIP plans', and transactions' foreign keys.
         UniqueConstraint("id", "workspace_id", "currency"),
+        # The target of documents' links (migration 0015). An index rather than a constraint,
+        # so SQLite needn't rebuild the table; both databases accept it as a key.
+        Index("uq_finance_holdings_id_workspace", "id", "workspace_id", unique=True),
         Index("ix_finance_holdings_workspace_account", "workspace_id", "account_id"),
     )
 

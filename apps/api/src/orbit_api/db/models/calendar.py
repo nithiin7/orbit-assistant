@@ -246,4 +246,6 @@ class CalendarPreferencesModel(Base):
     show_completed_tasks: Mapped[bool]
     show_unscheduled_tasks: Mapped[bool]
     show_due_tasks: Mapped[bool]
+    # Habits and routines with a time of day, shown as schedules beside events.
+    show_habits: Mapped[bool]
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)

@@ -22,6 +22,7 @@ import Link from "next/link";
 import { type ReactNode, useId, useState } from "react";
 
 import { describeApiError } from "@/api/client";
+import { LinkedDocuments } from "@/components/documents/linked-documents";
 import { FormAlert } from "@/components/form-field";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -30,11 +31,11 @@ import { useCalendarEvent } from "@/hooks/use-calendar";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { useNoteList } from "@/hooks/use-notes";
 import {
-  type CalendarItem,
   CATEGORY_STYLES,
   describeAlert,
   describeRule,
   describeWhen,
+  type DetailItem,
 } from "@/lib/calendar";
 import { noteDisplayTitle, notesHref } from "@/lib/notes";
 import { cn } from "@/utils/common";
@@ -57,7 +58,8 @@ export type TaskActions = {
 };
 
 type ItemDetailsProps = {
-  item: CalendarItem;
+  /** Habits and routines open their own page instead. */
+  item: DetailItem;
   workspaceId: string;
   timeZone: string;
   categories: ReadonlyMap<string, CalendarCategory>;
@@ -381,6 +383,10 @@ function EventBody({
           </div>
         ) : null}
       </section>
+
+      <div className="border-t pt-4">
+        <LinkedDocuments workspaceId={workspaceId} kind="event" recordId={occurrence.event_id} />
+      </div>
 
       <div className="flex flex-wrap gap-2 border-t pt-4">
         <Button disabled={busy} onClick={() => events.edit(occurrence)}>

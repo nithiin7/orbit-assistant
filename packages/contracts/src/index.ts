@@ -315,3 +315,104 @@ export type CalendarAgendaQuery = NonNullable<
 export type CalendarEventListQuery = NonNullable<
   paths["/api/v1/workspaces/{workspace_id}/calendar/events"]["get"]["parameters"]["query"]
 >;
+export type HabitCategory = Schemas["HabitCategoryResponse"];
+export type HabitCategoryList = Schemas["HabitCategoryListResponse"];
+export type CreateHabitCategoryRequest = Schemas["CreateHabitCategoryRequest"];
+export type UpdateHabitCategoryRequest = Schemas["UpdateHabitCategoryRequest"];
+export type Habit = Schemas["HabitResponse"];
+export type HabitKind = Habit["kind"];
+export type HabitStatus = Habit["status"];
+export type HabitColor = Habit["color"];
+export type HabitIcon = Habit["icon"];
+export type HabitSchedule = Schemas["HabitScheduleModel"];
+export type HabitScheduleType = HabitSchedule["type"];
+export type HabitLog = Schemas["HabitLogResponse"];
+export type HabitPeriod = Schemas["HabitPeriodResponse"];
+export type HabitProgress = Schemas["HabitProgressResponse"];
+export type HabitDayState = HabitProgress["state"];
+export type HabitDetail = Schemas["HabitDetailResponse"];
+export type HabitList = Schemas["HabitListResponse"];
+export type HabitReminderTime = Schemas["HabitReminderTimeModel"];
+export type HabitToday = Schemas["HabitTodayResponse"];
+export type HabitHeatmapDay = Schemas["HabitHeatmapDayResponse"];
+export type HabitHistory = Schemas["HabitHistoryResponse"];
+export type HabitAnalytics = Schemas["HabitAnalyticsResponse"];
+export type HabitPerformance = Schemas["HabitPerformanceResponse"];
+export type HabitTrendPoint = Schemas["HabitTrendPointResponse"];
+export type HabitCalendarEntry = Schemas["HabitCalendarEntryResponse"];
+export type HabitCalendar = Schemas["HabitCalendarResponse"];
+export type CreateHabitRequest = Schemas["CreateHabitRequest"];
+export type UpdateHabitRequest = Schemas["UpdateHabitRequest"];
+export type LogHabitRequest = Schemas["LogHabitRequest"];
+export type CreateHabitNoteRequest = Schemas["CreateHabitNoteRequest"];
+export type Routine = Schemas["RoutineDetailResponse"];
+export type RoutineList = Schemas["RoutineListResponse"];
+export type RoutineStep = Schemas["RoutineStepResponse"];
+export type RoutineStepRequest = Schemas["RoutineStepRequest"];
+export type RoutineSession = Schemas["RoutineSessionResponse"];
+export type RoutineSessionList = Schemas["RoutineSessionListResponse"];
+export type RoutineSessionStep = Schemas["RoutineSessionStepResponse"];
+export type RoutineStepStatus = RoutineSessionStep["status"];
+export type CreateRoutineRequest = Schemas["CreateRoutineRequest"];
+export type UpdateRoutineRequest = Schemas["UpdateRoutineRequest"];
+export type UpdateRoutineSessionRequest = Schemas["UpdateRoutineSessionRequest"];
+export type HabitListQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/habits"]["get"]["parameters"]["query"]
+>;
+export type HabitTodayQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/habits/today"]["get"]["parameters"]["query"]
+>;
+export type HabitAnalyticsQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/habits/analytics"]["get"]["parameters"]["query"]
+>;
+export type HabitCalendarQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/habits/calendar"]["get"]["parameters"]["query"]
+>;
+export type HabitHistoryQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/habits/{habit_id}/history"]["get"]["parameters"]["query"]
+>;
+export type RoutineSessionListQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/routines/{routine_id}/sessions"]["get"]["parameters"]["query"]
+>;
+
+// Documents and the personal vault
+export type DocumentSummary = Schemas["DocumentSummaryResponse"];
+export type DocumentRecord = Schemas["DocumentResponse"];
+export type DocumentDetail = Schemas["DocumentDetailResponse"];
+export type DocumentList = Schemas["DocumentListResponse"];
+export type DocumentFile = Schemas["DocumentFileResponse"];
+export type DocumentVersion = Schemas["DocumentVersionResponse"];
+export type DocumentRenewal = Schemas["DocumentRenewalResponse"];
+export type DocumentLink = Schemas["DocumentLinkResponse"];
+export type DocumentLinkKind = DocumentLink["kind"];
+export type DocumentLinkCandidates = Schemas["DocumentLinkCandidatesResponse"];
+export type DocumentCustomField = Schemas["DocumentCustomField"];
+export type DocumentCounts = Schemas["DocumentCountsResponse"];
+export type DocumentOverview = Schemas["DocumentOverviewResponse"];
+export type DocumentSettings = Schemas["DocumentSettingsResponse"];
+export type DocumentState = DocumentSummary["state"];
+export type ExpiryStatus = DocumentSummary["expiry_status"];
+export type DocumentFolder = Schemas["DocumentFolderResponse"];
+export type DocumentFolderList = Schemas["DocumentFolderListResponse"];
+export type CreateDocumentFolderRequest = Schemas["CreateDocumentFolderRequest"];
+export type UpdateDocumentFolderRequest = Schemas["UpdateDocumentFolderRequest"];
+export type DocumentFolderDeleteMode = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/document-folders/{folder_id}"]["delete"]["parameters"]["query"]
+>["documents"];
+export type DocumentCategory = Schemas["DocumentCategoryResponse"];
+export type DocumentCategoryList = Schemas["DocumentCategoryListResponse"];
+export type DocumentCategoryIcon = DocumentCategory["icon"];
+export type CreateDocumentCategoryRequest = Schemas["CreateDocumentCategoryRequest"];
+export type UpdateDocumentCategoryRequest = Schemas["UpdateDocumentCategoryRequest"];
+export type DocumentTag = Schemas["DocumentTagResponse"];
+export type DocumentTagList = Schemas["DocumentTagListResponse"];
+export type CreateDocumentRequest = Schemas["CreateDocumentRequest"];
+export type UpdateDocumentRequest = Schemas["UpdateDocumentRequest"];
+export type RenewDocumentRequest = Schemas["RenewDocumentRequest"];
+export type ExportDocumentsRequest = Schemas["ExportDocumentsRequest"];
+/** Filters, search, sorting, and paging accepted when listing documents. */
+export type DocumentListQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/documents"]["get"]["parameters"]["query"]
+>;
+export type DocumentSort = NonNullable<DocumentListQuery["sort"]>;
+export type DocumentFileKind = NonNullable<DocumentListQuery["file_kind"]>;

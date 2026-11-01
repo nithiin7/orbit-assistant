@@ -35,8 +35,10 @@ control.
 > shopping lists, reminders (with in-app notifications), and finance (accounts, transactions,
 > loans, subscriptions, bills, investments, other assets, net worth, budgets, savings goals, and
 > monthly plans), and notes (folders, tags, links and backlinks, a daily journal, search,
-> Markdown, and attachments), and a calendar (events, recurring series, task scheduling, and
-> event reminders) are built; the AI assistant is not.
+> Markdown, and attachments), a calendar (events, recurring series, task scheduling, and
+> event reminders), habits with routines (schedules, streaks, analytics, and reminders), and a
+> documents vault (uploads, versions, expiry reminders, links, and export) are built; the AI
+> assistant is not.
 
 ## Scope
 
@@ -85,10 +87,24 @@ control.
   time zone; drag to move, resize, or create, with keyboard-friendly alternatives; tasks
   scheduled into time blocks; meeting notes linked to events; a dashboard agenda; and calendar
   commands in the command palette.
+- Documents: upload PDFs, images, Office files, and text (validated by content, never
+  executed) or track records without a file; folders, categories (sensible defaults), tags,
+  favorites, archive, and trash; structured details with expiry, renewal, and review dates and
+  reminders before them; previews for PDFs, images, and text; version history with restore;
+  renewal history; links to notes, tasks, events, and finance records; search and filters; and
+  ZIP export with metadata. Files stay on your Orbit server and are not encrypted by Orbit.
+- Habits and routines: yes-or-no, amount, and time-spent habits on daily, every-N-days, chosen
+  weekday, day-of-month, or times-per-week schedules; one-tap check-offs, partial progress,
+  skips, and past days; streaks and rates that count only due days and respect pauses and
+  schedule changes; a Today dashboard, per-habit history with a heatmap, and analytics over a
+  date range; routines with ordered steps that can complete habits, sessions with history and
+  notes; reminders through the existing worker; habits and routines with a time on the
+  calendar; and related tasks and reflection notes.
 - Shared tooling for linting, formatting, type checking, testing, commit conventions, and CI.
 
 ### 🚫 Explicit non-goals for now
 
+- AI habit recommendations or gamification (points, badges, leaderboards).
 - Syncing with external calendars (Google, Outlook, CalDAV) or AI scheduling; semantic search,
   AI note generation, or a knowledge graph in notes;
   automatically created transactions, live market prices, AI financial insights, or bank

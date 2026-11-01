@@ -14,6 +14,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
+import { LinkedDocuments } from "@/components/documents/linked-documents";
 import { AmountField, DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -289,6 +290,15 @@ export function TransactionDialog({
             </p>
           ) : null}
         </div>
+
+        {transaction ? (
+          <LinkedDocuments
+            workspaceId={workspaceId}
+            kind="transaction"
+            recordId={transaction.id}
+            heading="Receipts and documents"
+          />
+        ) : null}
 
         <FormAlert message={errors.root?.server?.message ?? null} />
 

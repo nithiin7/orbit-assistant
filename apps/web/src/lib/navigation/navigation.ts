@@ -3,9 +3,11 @@ import {
   Bot,
   CalendarDays,
   CheckSquare,
+  FileLock2,
   LayoutDashboard,
   type LucideIcon,
   NotebookPen,
+  Repeat2,
   Settings,
   ShoppingCart,
   Wallet,
@@ -58,6 +60,13 @@ export const navItems: readonly NavItem[] = [
     group: "workspace",
   },
   {
+    title: "Habits",
+    href: "/habits",
+    icon: Repeat2,
+    description: "Build habits and routines, and see how they add up.",
+    group: "workspace",
+  },
+  {
     title: "Finance",
     href: "/finance",
     icon: Wallet,
@@ -69,6 +78,13 @@ export const navItems: readonly NavItem[] = [
     href: "/notes",
     icon: NotebookPen,
     description: "Capture, organize, and connect your notes and journal.",
+    group: "workspace",
+  },
+  {
+    title: "Documents",
+    href: "/documents",
+    icon: FileLock2,
+    description: "Store, organize, and find your important documents, and track when they expire.",
     group: "workspace",
   },
   {
@@ -94,8 +110,10 @@ const dedicatedRoutes: ReadonlySet<string> = new Set([
   "/reminders",
   "/shopping",
   "/calendar",
+  "/habits",
   "/finance",
   "/notes",
+  "/documents",
   "/settings",
 ]);
 

@@ -2602,6 +2602,906 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/habits/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List habit categories
+         * @description The first call creates the defaults (Health, Fitness, Learning, Productivity, Personal,
+         *     Finance, Lifestyle, Other).
+         */
+        get: operations["list_categories_api_v1_workspaces__workspace_id__habits_categories_get"];
+        put?: never;
+        /** Create a habit category */
+        post: operations["create_category_api_v1_workspaces__workspace_id__habits_categories_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/categories/{category_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a category
+         * @description Its habits and routines keep no category.
+         */
+        delete: operations["delete_category_api_v1_workspaces__workspace_id__habits_categories__category_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename, recolor, or change a category's icon */
+        patch: operations["update_category_api_v1_workspaces__workspace_id__habits_categories__category_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Today's habits, this week, and the days ahead
+         * @description Every habit that isn't archived, as of `date`, with its state, progress, and streaks.
+         */
+        get: operations["today_api_v1_workspaces__workspace_id__habits_today_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/analytics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Habit analytics for a date range
+         * @description A heatmap, weekly and monthly trends, each habit's performance, and rates by category,
+         *     from `start` to `end` (inclusive). Rates only count days a habit was due.
+         */
+        get: operations["analytics_api_v1_workspaces__workspace_id__habits_analytics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Habits and routines on the calendar
+         * @description Habits and routines with a time of day, on the days they're due, for local dates
+         *     `[start, end)`. These are schedules, not calendar events; nothing is stored for them.
+         */
+        get: operations["calendar_api_v1_workspaces__workspace_id__habits_calendar_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List habits with their progress */
+        get: operations["list_habits_api_v1_workspaces__workspace_id__habits_get"];
+        put?: never;
+        /** Create a habit */
+        post: operations["create_habit_api_v1_workspaces__workspace_id__habits_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a habit with its progress and links */
+        get: operations["get_habit_api_v1_workspaces__workspace_id__habits__habit_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a habit
+         * @description Deletes its history and reminders. Archive it instead to keep the history.
+         */
+        delete: operations["delete_habit_api_v1_workspaces__workspace_id__habits__habit_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update, pause, archive, or reschedule a habit
+         * @description A new schedule applies from `schedule_from` (today by default); earlier days keep theirs.
+         *     Pausing or archiving cancels the habit's reminders until it's active again.
+         */
+        patch: operations["update_habit_api_v1_workspaces__workspace_id__habits__habit_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A habit's days and periods */
+        get: operations["habit_history_api_v1_workspaces__workspace_id__habits__habit_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/log/{day}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Record a day
+         * @description Complete, record progress on, or skip one local date. Replaces that day's entry; there is
+         *     never more than one. Days in the future or outside the habit's dates are refused.
+         */
+        put: operations["log_day_api_v1_workspaces__workspace_id__habits__habit_id__log__day__put"];
+        post?: never;
+        /**
+         * Undo a day
+         * @description Idempotent.
+         */
+        delete: operations["unlog_day_api_v1_workspaces__workspace_id__habits__habit_id__log__day__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/reminders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set a habit's reminder times
+         * @description Each time notifies on the habit's due days that aren't done yet, through the reminder
+         *     worker. Times left out are removed.
+         */
+        put: operations["set_habit_reminders_api_v1_workspaces__workspace_id__habits__habit_id__reminders_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a task related to a habit
+         * @description An ordinary task, linked to the habit.
+         */
+        post: operations["create_habit_task_api_v1_workspaces__workspace_id__habits__habit_id__tasks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Link a task to a habit */
+        put: operations["link_habit_task_api_v1_workspaces__workspace_id__habits__habit_id__tasks__task_id__put"];
+        post?: never;
+        /** Unlink a task from a habit */
+        delete: operations["unlink_habit_task_api_v1_workspaces__workspace_id__habits__habit_id__tasks__task_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write a reflection on a habit
+         * @description Creates an ordinary note in the Inbox and links it to the habit.
+         */
+        post: operations["create_habit_note_api_v1_workspaces__workspace_id__habits__habit_id__notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/habits/{habit_id}/notes/{note_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Link a note to a habit */
+        put: operations["link_habit_note_api_v1_workspaces__workspace_id__habits__habit_id__notes__note_id__put"];
+        post?: never;
+        /** Unlink a note from a habit */
+        delete: operations["unlink_habit_note_api_v1_workspaces__workspace_id__habits__habit_id__notes__note_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/routines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List routines */
+        get: operations["list_routines_api_v1_workspaces__workspace_id__routines_get"];
+        put?: never;
+        /** Create a routine */
+        post: operations["create_routine_api_v1_workspaces__workspace_id__routines_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/routines/{routine_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a routine */
+        get: operations["get_routine_api_v1_workspaces__workspace_id__routines__routine_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a routine
+         * @description Deletes its sessions and reminders too. Archive it instead to keep the history.
+         */
+        delete: operations["delete_routine_api_v1_workspaces__workspace_id__routines__routine_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update a routine and its steps
+         * @description Sessions already started keep the steps they started with.
+         */
+        patch: operations["update_routine_api_v1_workspaces__workspace_id__routines__routine_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/routines/{routine_id}/reminders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set a routine's reminder times */
+        put: operations["set_routine_reminders_api_v1_workspaces__workspace_id__routines__routine_id__reminders_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/routines/{routine_id}/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A routine's sessions, newest first */
+        get: operations["list_sessions_api_v1_workspaces__workspace_id__routines__routine_id__sessions_get"];
+        put?: never;
+        /**
+         * Start a routine
+         * @description Copies the routine's steps into the session, so later edits leave it as it was.
+         */
+        post: operations["start_session_api_v1_workspaces__workspace_id__routines__routine_id__sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/routines/{routine_id}/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a session */
+        get: operations["get_session_api_v1_workspaces__workspace_id__routines__routine_id__sessions__session_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Finish or abandon a session, or edit its notes */
+        patch: operations["update_session_api_v1_workspaces__workspace_id__routines__routine_id__sessions__session_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/routines/{routine_id}/sessions/{session_id}/steps/{step_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Complete, skip, or reset a step
+         * @description Completing a step linked to a yes-or-no habit also completes the habit for the
+         *     session's day.
+         */
+        patch: operations["update_session_step_api_v1_workspaces__workspace_id__routines__routine_id__sessions__session_id__steps__step_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/routines/{routine_id}/sessions/{session_id}/note": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write a note for a session
+         * @description Creates an ordinary note in the Inbox and attaches it to the session.
+         */
+        post: operations["create_session_note_api_v1_workspaces__workspace_id__routines__routine_id__sessions__session_id__note_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List or search documents */
+        get: operations["list_documents_api_v1_workspaces__workspace_id__documents_get"];
+        put?: never;
+        /**
+         * Create a document without a file
+         * @description Track a document you haven't uploaded; add its file later as the first version.
+         */
+        post: operations["create_document_api_v1_workspaces__workspace_id__documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload a file as a new document
+         * @description The request body is the file itself. Its type is decided from the file name and checked
+         *     against its contents; the declared content type is ignored. The file and its metadata are
+         *     saved together: if either fails, neither is kept.
+         */
+        post: operations["upload_document_api_v1_workspaces__workspace_id__documents_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The documents overview
+         * @description Counts, recent and favorite documents, what's expiring or expired, and categories.
+         */
+        get: operations["documents_overview_api_v1_workspaces__workspace_id__documents_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Document counts per view */
+        get: operations["document_counts_api_v1_workspaces__workspace_id__documents_counts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Upload limits */
+        get: operations["document_settings_api_v1_workspaces__workspace_id__documents_settings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Tags used on documents */
+        get: operations["document_tags_api_v1_workspaces__workspace_id__documents_tags_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/link-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Records a document can be linked to
+         * @description Notes, tasks, events, or finance records of one kind, newest first, optionally searched
+         *     by title.
+         */
+        get: operations["link_candidates_api_v1_workspaces__workspace_id__documents_link_candidates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export documents as a ZIP archive
+         * @description Original files under their folders, with `metadata.json` describing every document
+         *     (including reference numbers: an export is the owner's own backup).
+         */
+        post: operations["export_documents_api_v1_workspaces__workspace_id__documents_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/empty-trash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Delete every trashed document for good */
+        post: operations["empty_document_trash_api_v1_workspaces__workspace_id__documents_empty_trash_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a document with its history and links */
+        get: operations["get_document_api_v1_workspaces__workspace_id__documents__document_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a trashed document permanently
+         * @description Deletes the document, every version, and their files.
+         */
+        delete: operations["delete_document_api_v1_workspaces__workspace_id__documents__document_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update a document's details
+         * @description Rename, move, classify, tag, favorite, archive, edit metadata or reminder timing. The
+         *     file is unaffected; replace it by uploading a new version.
+         */
+        patch: operations["update_document_api_v1_workspaces__workspace_id__documents__document_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record that a document was opened */
+        post: operations["open_document_api_v1_workspaces__workspace_id__documents__document_id__open_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}/trash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move a document to the trash
+         * @description Its reminders stop; its files are kept until it's deleted permanently.
+         */
+        post: operations["trash_document_api_v1_workspaces__workspace_id__documents__document_id__trash_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore a document from the trash */
+        post: operations["restore_document_api_v1_workspaces__workspace_id__documents__document_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}/renew": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record a renewal
+         * @description Replace the expiry (and optionally issue and renewal) dates, keeping the old ones in the
+         *     renewal history; reminders move to the new dates. Upload the renewed copy as a new version.
+         */
+        post: operations["renew_document_api_v1_workspaces__workspace_id__documents__document_id__renew_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download the current file
+         * @description Always a download (`Content-Disposition: attachment`) with the type Orbit detected,
+         *     `nosniff`, and a sandboxing CSP, so the browser never runs it as a page. There is no
+         *     public or guessable URL: every request needs the bearer token.
+         */
+        get: operations["download_document_api_v1_workspaces__workspace_id__documents__document_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload a new version
+         * @description Replace the file. Earlier versions are kept and can be restored.
+         */
+        post: operations["upload_version_api_v1_workspaces__workspace_id__documents__document_id__versions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}/versions/{version_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a version's file */
+        get: operations["download_version_api_v1_workspaces__workspace_id__documents__document_id__versions__version_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}/versions/{version_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore an earlier version
+         * @description Adds a new version with the earlier version's file, so no version is lost.
+         */
+        post: operations["restore_version_api_v1_workspaces__workspace_id__documents__document_id__versions__version_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}/versions/{version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an earlier version */
+        delete: operations["delete_version_api_v1_workspaces__workspace_id__documents__document_id__versions__version_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}/links/{kind}/{target_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Link a document to a record
+         * @description Idempotent. The record must be in the same workspace.
+         */
+        put: operations["link_document_api_v1_workspaces__workspace_id__documents__document_id__links__kind___target_id__put"];
+        post?: never;
+        /** Unlink a document from a record */
+        delete: operations["unlink_document_api_v1_workspaces__workspace_id__documents__document_id__links__kind___target_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/document-folders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List document folders */
+        get: operations["list_document_folders_api_v1_workspaces__workspace_id__document_folders_get"];
+        put?: never;
+        /** Create a document folder */
+        post: operations["create_document_folder_api_v1_workspaces__workspace_id__document_folders_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/document-folders/{folder_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a document folder
+         * @description Never deletes documents: `documents` chooses where they go.
+         */
+        delete: operations["delete_document_folder_api_v1_workspaces__workspace_id__document_folders__folder_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename or move a document folder */
+        patch: operations["update_document_folder_api_v1_workspaces__workspace_id__document_folders__folder_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/document-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List document categories
+         * @description Creates the default categories the first time.
+         */
+        get: operations["list_document_categories_api_v1_workspaces__workspace_id__document_categories_get"];
+        put?: never;
+        /** Create a document category */
+        post: operations["create_document_category_api_v1_workspaces__workspace_id__document_categories_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/document-categories/{category_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a document category
+         * @description Its documents stay, unclassified.
+         */
+        delete: operations["delete_document_category_api_v1_workspaces__workspace_id__document_categories__category_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename a document category or change its icon */
+        patch: operations["update_document_category_api_v1_workspaces__workspace_id__document_categories__category_id__patch"];
+        trace?: never;
+    };
     "/api/v1/storage": {
         parameters: {
             query?: never;
@@ -3243,6 +4143,12 @@ export interface components {
              * @default true
              */
             show_due_tasks: boolean;
+            /**
+             * Show Habits
+             * @description Show habits and routines that have a time of day.
+             * @default true
+             */
+            show_habits: boolean;
         };
         /** CalendarPreferencesResponse */
         CalendarPreferencesResponse: {
@@ -3284,6 +4190,12 @@ export interface components {
              * @default true
              */
             show_due_tasks: boolean;
+            /**
+             * Show Habits
+             * @description Show habits and routines that have a time of day.
+             * @default true
+             */
+            show_habits: boolean;
             /**
              * Updated At
              * @description `null` until the user saves preferences.
@@ -3781,6 +4693,90 @@ export interface components {
             /** @description Remind before the maturity date. */
             reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
         };
+        /** CreateDocumentCategoryRequest */
+        CreateDocumentCategoryRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Icon
+             * @default folder
+             * @enum {string}
+             */
+            icon: "id-card" | "briefcase" | "wallet" | "receipt" | "landmark" | "shield" | "car" | "home" | "heart-pulse" | "graduation-cap" | "file-text" | "plane" | "badge-check" | "folder";
+        };
+        /** CreateDocumentFolderRequest */
+        CreateDocumentFolderRequest: {
+            /** Name */
+            name: string;
+            /** Parent Id */
+            parent_id?: string | null;
+        };
+        /**
+         * CreateDocumentRequest
+         * @description A document without a file (upload one later as its first version).
+         */
+        CreateDocumentRequest: {
+            /** Title */
+            title: string;
+            /** Folder Id */
+            folder_id?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Reference Number */
+            reference_number?: string | null;
+            /** Issuing Authority */
+            issuing_authority?: string | null;
+            /** Provider */
+            provider?: string | null;
+            /** Issue Date */
+            issue_date?: string | null;
+            /** Effective Date */
+            effective_date?: string | null;
+            /** Expiry Date */
+            expiry_date?: string | null;
+            /** Renewal Date */
+            renewal_date?: string | null;
+            /** Review Date */
+            review_date?: string | null;
+            /** Amount */
+            amount?: number | null;
+            /** Currency */
+            currency?: ("INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY") | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            /** Custom Fields */
+            custom_fields?: components["schemas"]["DocumentCustomField"][];
+            /** Tags */
+            tags?: string[];
+            /**
+             * Is Favorite
+             * @default false
+             */
+            is_favorite: boolean;
+            /**
+             * Reminder Days
+             * @description Omit for the defaults: 30 and 7 days before, and on the day.
+             */
+            reminder_days?: number[] | null;
+            /**
+             * Reminder Time
+             * @description 09:00 by default.
+             */
+            reminder_time?: string | null;
+            /**
+             * Timezone
+             * @description For reminders; the user's time zone by default.
+             */
+            timezone?: string | null;
+        };
         /** CreateEventNoteRequest */
         CreateEventNoteRequest: {
             /**
@@ -3901,6 +4897,95 @@ export interface components {
              * @default
              */
             notes: string;
+        };
+        /** CreateHabitCategoryRequest */
+        CreateHabitCategoryRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Color
+             * @default slate
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /**
+             * Icon
+             * @default sparkles
+             * @enum {string}
+             */
+            icon: "sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile";
+        };
+        /** CreateHabitNoteRequest */
+        CreateHabitNoteRequest: {
+            /**
+             * Title
+             * @description Defaults to the habit's name and the date.
+             * @default
+             */
+            title: string;
+            /**
+             * Day
+             * @description The day it reflects on.
+             */
+            day?: string | null;
+        };
+        /** CreateHabitRequest */
+        CreateHabitRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Category Id */
+            category_id?: string | null;
+            /**
+             * Icon
+             * @default sparkles
+             * @enum {string}
+             */
+            icon: "sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile";
+            /**
+             * Color
+             * @default blue
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /**
+             * Kind
+             * @default boolean
+             * @enum {string}
+             */
+            kind: "boolean" | "numeric" | "duration";
+            /**
+             * Unit
+             * @description Numeric habits only, such as `litres`.
+             * @default
+             */
+            unit: string;
+            /**
+             * Target
+             * @description Required for numeric and duration (minutes) habits.
+             */
+            target?: number | null;
+            schedule: components["schemas"]["HabitScheduleModel"];
+            /** Time Of Day */
+            time_of_day?: string | null;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** End Date */
+            end_date?: string | null;
+            /**
+             * Timezone
+             * @description Defaults to the user's preference, else UTC.
+             */
+            timezone?: string | null;
+            /** Reminders */
+            reminders?: components["schemas"]["HabitReminderTimeModel"][];
         };
         /**
          * CreateHoldingRequest
@@ -4226,6 +5311,48 @@ export interface components {
              */
             timezone?: string | null;
             recurrence?: components["schemas"]["RecurrenceModel"] | null;
+        };
+        /** CreateRoutineRequest */
+        CreateRoutineRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Category Id */
+            category_id?: string | null;
+            /**
+             * Icon
+             * @default sun
+             * @enum {string}
+             */
+            icon: "sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile";
+            /**
+             * Color
+             * @default amber
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /** Time Of Day */
+            time_of_day?: string | null;
+            /** Weekdays */
+            weekdays?: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[];
+            /** Timezone */
+            timezone?: string | null;
+            /** Steps */
+            steps?: components["schemas"]["RoutineStepRequest"][];
+            /** Reminders */
+            reminders?: components["schemas"]["HabitReminderTimeModel"][];
+        };
+        /** CreateSessionNoteRequest */
+        CreateSessionNoteRequest: {
+            /**
+             * Title
+             * @default
+             */
+            title: string;
         };
         /** CreateSipPlanRequest */
         CreateSipPlanRequest: {
@@ -4579,6 +5706,499 @@ export interface components {
             /** Valued On */
             valued_on?: string | null;
         };
+        /** DocumentCategoryListResponse */
+        DocumentCategoryListResponse: {
+            /** Categories */
+            categories: components["schemas"]["DocumentCategoryResponse"][];
+        };
+        /** DocumentCategoryResponse */
+        DocumentCategoryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Icon
+             * @enum {string}
+             */
+            icon: "id-card" | "briefcase" | "wallet" | "receipt" | "landmark" | "shield" | "car" | "home" | "heart-pulse" | "graduation-cap" | "file-text" | "plane" | "badge-check" | "folder";
+            /** Position */
+            position: number;
+            /**
+             * Document Count
+             * @description Documents not in the trash.
+             */
+            document_count: number;
+        };
+        /** DocumentCountsResponse */
+        DocumentCountsResponse: {
+            /**
+             * All
+             * @description Active documents (not archived or trashed).
+             */
+            all: number;
+            /** Favorites */
+            favorites: number;
+            /** Unfiled */
+            unfiled: number;
+            /** Unclassified */
+            unclassified: number;
+            /** Without File */
+            without_file: number;
+            /** Expiring 7 */
+            expiring_7: number;
+            /** Expiring 30 */
+            expiring_30: number;
+            /** Expiring 90 */
+            expiring_90: number;
+            /** Expired */
+            expired: number;
+            /**
+             * Renewals
+             * @description Renewal dates in the next 90 days.
+             */
+            renewals: number;
+            /** Archived */
+            archived: number;
+            /** Trashed */
+            trashed: number;
+            /**
+             * Total Bytes
+             * @description Stored size of every version, before deduplication.
+             */
+            total_bytes: number;
+        };
+        /**
+         * DocumentCustomField
+         * @description A labelled detail the fixed fields don't cover, such as "Policy type".
+         */
+        DocumentCustomField: {
+            /** Label */
+            label: string;
+            /** Value */
+            value: string;
+        };
+        /** DocumentDetailResponse */
+        DocumentDetailResponse: {
+            document: components["schemas"]["DocumentResponse"];
+            /**
+             * Versions
+             * @description Newest first.
+             */
+            versions: components["schemas"]["DocumentVersionResponse"][];
+            /**
+             * Renewals
+             * @description Newest first.
+             */
+            renewals: components["schemas"]["DocumentRenewalResponse"][];
+            /** Links */
+            links: components["schemas"]["DocumentLinkResponse"][];
+            /**
+             * Next Reminder At
+             * @description When the next expiry, renewal, or review reminder fires.
+             */
+            next_reminder_at: string | null;
+        };
+        /** DocumentFileResponse */
+        DocumentFileResponse: {
+            /**
+             * Version Id
+             * Format: uuid
+             */
+            version_id: string;
+            /**
+             * Filename
+             * @description The original file name, as uploaded.
+             */
+            filename: string;
+            /** Extension */
+            extension: string;
+            /**
+             * Content Type
+             * @description Detected from the file, not from the upload.
+             */
+            content_type: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /**
+             * Uploaded At
+             * Format: date-time
+             */
+            uploaded_at: string;
+        };
+        /** DocumentFolderListResponse */
+        DocumentFolderListResponse: {
+            /**
+             * Folders
+             * @description Every folder, flat; build the tree from `parent_id`.
+             */
+            folders: components["schemas"]["DocumentFolderResponse"][];
+        };
+        /** DocumentFolderResponse */
+        DocumentFolderResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Parent Id */
+            parent_id: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Document Count
+             * @description Documents directly in the folder, not trashed.
+             */
+            document_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** DocumentLinkCandidatesResponse */
+        DocumentLinkCandidatesResponse: {
+            /**
+             * Records
+             * @description Records that can be linked; `linked_at` is when each was created.
+             */
+            records: components["schemas"]["DocumentLinkResponse"][];
+        };
+        /** DocumentLinkResponse */
+        DocumentLinkResponse: {
+            /**
+             * Kind
+             * @description `note`, `task`, `event` (calendar), or a finance `transaction`, `loan`, `recurring_payment` (subscription or bill), `deposit`, `holding`, or `asset`.
+             * @enum {string}
+             */
+            kind: "note" | "task" | "event" | "transaction" | "loan" | "recurring_payment" | "deposit" | "holding" | "asset";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Detail
+             * @description A short description, such as a date or a kind.
+             */
+            detail: string;
+            /**
+             * Linked At
+             * Format: date-time
+             */
+            linked_at: string;
+        };
+        /** DocumentListResponse */
+        DocumentListResponse: {
+            /** Documents */
+            documents: components["schemas"]["DocumentSummaryResponse"][];
+            /** Total */
+            total: number;
+        };
+        /** DocumentOverviewResponse */
+        DocumentOverviewResponse: {
+            counts: components["schemas"]["DocumentCountsResponse"];
+            /** Recently Added */
+            recently_added: components["schemas"]["DocumentSummaryResponse"][];
+            /** Recently Updated */
+            recently_updated: components["schemas"]["DocumentSummaryResponse"][];
+            /** Favorites */
+            favorites: components["schemas"]["DocumentSummaryResponse"][];
+            /**
+             * Expiring
+             * @description Expiring in the next 90 days.
+             */
+            expiring: components["schemas"]["DocumentSummaryResponse"][];
+            /** Expired */
+            expired: components["schemas"]["DocumentSummaryResponse"][];
+            /** Categories */
+            categories: components["schemas"]["DocumentCategoryResponse"][];
+        };
+        /** DocumentRenewalResponse */
+        DocumentRenewalResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Previous Issue Date */
+            previous_issue_date: string | null;
+            /** Previous Expiry Date */
+            previous_expiry_date: string | null;
+            /** Previous Renewal Date */
+            previous_renewal_date: string | null;
+            /** Issue Date */
+            issue_date: string | null;
+            /** Expiry Date */
+            expiry_date: string | null;
+            /** Renewal Date */
+            renewal_date: string | null;
+            /** Note */
+            note: string;
+            /**
+             * Renewed At
+             * Format: date-time
+             */
+            renewed_at: string;
+        };
+        /**
+         * DocumentResponse
+         * @description A single document with all its details.
+         */
+        DocumentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Title */
+            title: string;
+            /**
+             * Folder Id
+             * @description `null` for unfiled documents.
+             */
+            folder_id: string | null;
+            /**
+             * Category Id
+             * @description `null` for unclassified documents.
+             */
+            category_id: string | null;
+            /** Description */
+            description: string;
+            /** Issuing Authority */
+            issuing_authority: string | null;
+            /** Provider */
+            provider: string | null;
+            /** Issue Date */
+            issue_date: string | null;
+            /** Expiry Date */
+            expiry_date: string | null;
+            /** Renewal Date */
+            renewal_date: string | null;
+            /** Review Date */
+            review_date: string | null;
+            /**
+             * Expiry Status
+             * @description From the expiry date and today in the user's time zone: `expiring` within 30 days.
+             * @enum {string}
+             */
+            expiry_status: "none" | "valid" | "expiring" | "expired";
+            /** Is Favorite */
+            is_favorite: boolean;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "active" | "archived" | "trashed";
+            /** Archived At */
+            archived_at: string | null;
+            /** Trashed At */
+            trashed_at: string | null;
+            /** @description The current version's file; `null` for a document without one. */
+            file: components["schemas"]["DocumentFileResponse"] | null;
+            /** Version Count */
+            version_count: number;
+            /** Tags */
+            tags: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Last Opened At */
+            last_opened_at: string | null;
+            /**
+             * Reference Number
+             * @description A document number or reference. Sensitive: returned only here, never in lists, search results, or reminders.
+             */
+            reference_number: string | null;
+            /** Effective Date */
+            effective_date: string | null;
+            /**
+             * Amount
+             * @description Minor units, with `currency`.
+             */
+            amount: number | null;
+            /** Currency */
+            currency: ("INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY") | null;
+            /** Notes */
+            notes: string;
+            /** Custom Fields */
+            custom_fields: components["schemas"]["DocumentCustomField"][];
+            /**
+             * Reminder Days
+             * @description Days before the expiry, renewal, and review dates to remind; 0 is the day.
+             */
+            reminder_days: number[];
+            /**
+             * Reminder Time
+             * Format: time
+             */
+            reminder_time: string;
+            /** Timezone */
+            timezone: string;
+        };
+        /** DocumentSettingsResponse */
+        DocumentSettingsResponse: {
+            /**
+             * Max Bytes
+             * @description The largest file the server accepts.
+             */
+            max_bytes: number;
+            /** Accepted Extensions */
+            accepted_extensions: string[];
+        };
+        /**
+         * DocumentSummaryResponse
+         * @description A document in a list, without its sensitive details.
+         */
+        DocumentSummaryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Title */
+            title: string;
+            /**
+             * Folder Id
+             * @description `null` for unfiled documents.
+             */
+            folder_id: string | null;
+            /**
+             * Category Id
+             * @description `null` for unclassified documents.
+             */
+            category_id: string | null;
+            /** Description */
+            description: string;
+            /** Issuing Authority */
+            issuing_authority: string | null;
+            /** Provider */
+            provider: string | null;
+            /** Issue Date */
+            issue_date: string | null;
+            /** Expiry Date */
+            expiry_date: string | null;
+            /** Renewal Date */
+            renewal_date: string | null;
+            /** Review Date */
+            review_date: string | null;
+            /**
+             * Expiry Status
+             * @description From the expiry date and today in the user's time zone: `expiring` within 30 days.
+             * @enum {string}
+             */
+            expiry_status: "none" | "valid" | "expiring" | "expired";
+            /** Is Favorite */
+            is_favorite: boolean;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "active" | "archived" | "trashed";
+            /** Archived At */
+            archived_at: string | null;
+            /** Trashed At */
+            trashed_at: string | null;
+            /** @description The current version's file; `null` for a document without one. */
+            file: components["schemas"]["DocumentFileResponse"] | null;
+            /** Version Count */
+            version_count: number;
+            /** Tags */
+            tags: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Last Opened At */
+            last_opened_at: string | null;
+        };
+        /** DocumentTagListResponse */
+        DocumentTagListResponse: {
+            /** Tags */
+            tags: components["schemas"]["DocumentTagResponse"][];
+        };
+        /** DocumentTagResponse */
+        DocumentTagResponse: {
+            /** Name */
+            name: string;
+            /** Document Count */
+            document_count: number;
+        };
+        /** DocumentVersionResponse */
+        DocumentVersionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Number */
+            number: number;
+            /** Filename */
+            filename: string;
+            /** Extension */
+            extension: string;
+            /** Content Type */
+            content_type: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /**
+             * Sha256
+             * @description SHA-256 of the file, to verify a download.
+             */
+            sha256: string;
+            /** Note */
+            note: string;
+            /**
+             * Restored From
+             * @description The version this one restored, if any.
+             */
+            restored_from: number | null;
+            /**
+             * Uploaded At
+             * Format: date-time
+             */
+            uploaded_at: string;
+            /** Is Current */
+            is_current: boolean;
+        };
+        /** EmptyDocumentTrashResponse */
+        EmptyDocumentTrashResponse: {
+            /** Deleted */
+            deleted: number;
+        };
         /** EmptyTrashResponse */
         EmptyTrashResponse: {
             /** Deleted */
@@ -4723,6 +6343,25 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /**
+         * ExportDocumentsRequest
+         * @description Choose documents, a folder (with its subfolders), or a category; with none of them,
+         *     every document that isn't in the trash.
+         */
+        ExportDocumentsRequest: {
+            /** Document Ids */
+            document_ids?: string[];
+            /** Folder Id */
+            folder_id?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /**
+             * Include Versions
+             * @description Earlier versions as well.
+             * @default false
+             */
+            include_versions: boolean;
         };
         /**
          * FixedCommitmentsResponse
@@ -4924,6 +6563,565 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HabitAnalyticsResponse */
+        HabitAnalyticsResponse: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Heatmap */
+            heatmap: components["schemas"]["HabitHeatmapDayResponse"][];
+            /** Weekly */
+            weekly: components["schemas"]["HabitTrendPointResponse"][];
+            /** Monthly */
+            monthly: components["schemas"]["HabitTrendPointResponse"][];
+            /** Habits */
+            habits: components["schemas"]["HabitPerformanceResponse"][];
+            /** Categories */
+            categories: components["schemas"]["HabitCategoryPerformanceResponse"][];
+        };
+        /** HabitCalendarEntryResponse */
+        HabitCalendarEntryResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "habit" | "routine";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Color
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /**
+             * Icon
+             * @enum {string}
+             */
+            icon: "sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile";
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Start At
+             * Format: date-time
+             */
+            start_at: string;
+            /**
+             * End At
+             * Format: date-time
+             */
+            end_at: string;
+            /** State */
+            state: ("completed" | "partial" | "skipped" | "missed" | "pending" | "open" | "bonus" | "unscheduled" | "paused" | "inactive") | null;
+        };
+        /** HabitCalendarResponse */
+        HabitCalendarResponse: {
+            /** Entries */
+            entries: components["schemas"]["HabitCalendarEntryResponse"][];
+        };
+        /** HabitCategoryListResponse */
+        HabitCategoryListResponse: {
+            /** Categories */
+            categories: components["schemas"]["HabitCategoryResponse"][];
+        };
+        /** HabitCategoryPerformanceResponse */
+        HabitCategoryPerformanceResponse: {
+            /** Category Id */
+            category_id: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Color
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /** Met */
+            met: number;
+            /** Missed */
+            missed: number;
+            /** Rate */
+            rate: number | null;
+        };
+        /** HabitCategoryResponse */
+        HabitCategoryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Color
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /**
+             * Icon
+             * @enum {string}
+             */
+            icon: "sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile";
+            /** Position */
+            position: number;
+        };
+        /** HabitDayResponse */
+        HabitDayResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "completed" | "partial" | "skipped" | "missed" | "pending" | "open" | "bonus" | "unscheduled" | "paused" | "inactive";
+            log: components["schemas"]["HabitLogResponse"] | null;
+        };
+        /** HabitDetailResponse */
+        HabitDetailResponse: {
+            habit: components["schemas"]["HabitResponse"];
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "completed" | "partial" | "skipped" | "missed" | "pending" | "open" | "bonus" | "unscheduled" | "paused" | "inactive";
+            log: components["schemas"]["HabitLogResponse"] | null;
+            /** @description The day (if due), or its week for weekly targets. */
+            period: components["schemas"]["HabitPeriodResponse"] | null;
+            /** Week Done */
+            week_done: number;
+            /** Week Due */
+            week_due: number;
+            /** Current Streak */
+            current_streak: number;
+            /** Longest Streak */
+            longest_streak: number;
+            /**
+             * Streak Unit
+             * @enum {string}
+             */
+            streak_unit: "day" | "week";
+            /** Total Completions */
+            total_completions: number;
+            /**
+             * Completion Rate
+             * @description 0 to 1; `null` when nothing was due.
+             */
+            completion_rate: number | null;
+            /**
+             * Weekly Rate
+             * @description Over the last 7 days.
+             */
+            weekly_rate: number | null;
+            /**
+             * Monthly Rate
+             * @description Over the last 30 days.
+             */
+            monthly_rate: number | null;
+            /** Reminders */
+            reminders: components["schemas"]["HabitReminderTimeResponse"][];
+            /** Tasks */
+            tasks: components["schemas"]["TaskResponse"][];
+            /** Notes */
+            notes: components["schemas"]["LinkedNoteResponse"][];
+        };
+        /** HabitHeatmapDayResponse */
+        HabitHeatmapDayResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Due
+             * @description Fixed-day occurrences due.
+             */
+            due: number;
+            /**
+             * Completed
+             * @description Of those, how many were completed.
+             */
+            completed: number;
+            /**
+             * Extra
+             * @description Other completions: weekly-target and extra days.
+             */
+            extra: number;
+        };
+        /** HabitHistoryResponse */
+        HabitHistoryResponse: {
+            /** Days */
+            days: components["schemas"]["HabitDayResponse"][];
+            /** Periods */
+            periods: components["schemas"]["HabitPeriodResponse"][];
+        };
+        /** HabitListResponse */
+        HabitListResponse: {
+            /** Habits */
+            habits: components["schemas"]["HabitProgressResponse"][];
+        };
+        /** HabitLogResponse */
+        HabitLogResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Value */
+            value: number;
+            /**
+             * Target
+             * @description The target when the day was logged.
+             */
+            target: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "completed" | "partial" | "skipped";
+            /** Note */
+            note: string;
+            /**
+             * Logged At
+             * Format: date-time
+             */
+            logged_at: string;
+        };
+        /** HabitPauseResponse */
+        HabitPauseResponse: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * @description The day tracking resumed; `null` while paused.
+             */
+            end: string | null;
+        };
+        /** HabitPerformanceResponse */
+        HabitPerformanceResponse: {
+            /**
+             * Habit Id
+             * Format: uuid
+             */
+            habit_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Color
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /**
+             * Icon
+             * @enum {string}
+             */
+            icon: "sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile";
+            /** Category Id */
+            category_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "paused" | "archived";
+            /** Met */
+            met: number;
+            /** Missed */
+            missed: number;
+            /** Rate */
+            rate: number | null;
+            /** Completions */
+            completions: number;
+            /** Current Streak */
+            current_streak: number;
+            /** Longest Streak */
+            longest_streak: number;
+            /**
+             * Streak Unit
+             * @enum {string}
+             */
+            streak_unit: "day" | "week";
+            /**
+             * Trend
+             * @description The rate in the range's second half minus its first; negative is declining.
+             */
+            trend: number | null;
+        };
+        /** HabitPeriodResponse */
+        HabitPeriodResponse: {
+            /**
+             * Unit
+             * @enum {string}
+             */
+            unit: "day" | "week";
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "met" | "missed" | "skipped" | "pending";
+            /** Done */
+            done: number;
+            /** Required */
+            required: number;
+        };
+        /** HabitProgressResponse */
+        HabitProgressResponse: {
+            habit: components["schemas"]["HabitResponse"];
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "completed" | "partial" | "skipped" | "missed" | "pending" | "open" | "bonus" | "unscheduled" | "paused" | "inactive";
+            log: components["schemas"]["HabitLogResponse"] | null;
+            /** @description The day (if due), or its week for weekly targets. */
+            period: components["schemas"]["HabitPeriodResponse"] | null;
+            /** Week Done */
+            week_done: number;
+            /** Week Due */
+            week_due: number;
+            /** Current Streak */
+            current_streak: number;
+            /** Longest Streak */
+            longest_streak: number;
+            /**
+             * Streak Unit
+             * @enum {string}
+             */
+            streak_unit: "day" | "week";
+            /** Total Completions */
+            total_completions: number;
+            /**
+             * Completion Rate
+             * @description 0 to 1; `null` when nothing was due.
+             */
+            completion_rate: number | null;
+            /**
+             * Weekly Rate
+             * @description Over the last 7 days.
+             */
+            weekly_rate: number | null;
+            /**
+             * Monthly Rate
+             * @description Over the last 30 days.
+             */
+            monthly_rate: number | null;
+        };
+        /** HabitReminderTimeModel */
+        HabitReminderTimeModel: {
+            /**
+             * Time
+             * Format: time
+             * @description Local time in the habit's or routine's time zone.
+             */
+            time: string;
+            /**
+             * Weekdays
+             * @description Only on these weekdays; empty means every day it's due.
+             */
+            weekdays?: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[];
+        };
+        /** HabitReminderTimeResponse */
+        HabitReminderTimeResponse: {
+            /**
+             * Time
+             * Format: time
+             * @description Local time in the habit's or routine's time zone.
+             */
+            time: string;
+            /**
+             * Weekdays
+             * @description Only on these weekdays; empty means every day it's due.
+             */
+            weekdays?: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+        };
+        /** HabitResponse */
+        HabitResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Category Id */
+            category_id: string | null;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Icon
+             * @enum {string}
+             */
+            icon: "sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile";
+            /**
+             * Color
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "boolean" | "numeric" | "duration";
+            /** Unit */
+            unit: string;
+            /**
+             * Target
+             * @description `null` for yes-or-no habits. Minutes for duration.
+             */
+            target: number | null;
+            /** Time Of Day */
+            time_of_day: string | null;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** End Date */
+            end_date: string | null;
+            /** Timezone */
+            timezone: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "paused" | "archived";
+            schedule: components["schemas"]["HabitScheduleModel"];
+            /** Schedule History */
+            schedule_history: components["schemas"]["HabitScheduleVersionResponse"][];
+            /** Pauses */
+            pauses: components["schemas"]["HabitPauseResponse"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * HabitScheduleModel
+         * @description `daily` every `every` days; `weekdays` on `weekdays`; `monthly` on `month_days` (a day a
+         *     month lacks falls on its last day); `weekly_target` any `times_per_week` days of each
+         *     Monday-to-Sunday week.
+         */
+        HabitScheduleModel: {
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "daily" | "weekdays" | "monthly" | "weekly_target";
+            /**
+             * Every
+             * @default 1
+             */
+            every: number;
+            /** Weekdays */
+            weekdays?: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[];
+            /** Month Days */
+            month_days?: number[];
+            /**
+             * Times Per Week
+             * @default 0
+             */
+            times_per_week: number;
+        };
+        /** HabitScheduleVersionResponse */
+        HabitScheduleVersionResponse: {
+            /**
+             * Effective From
+             * Format: date
+             */
+            effective_from: string;
+            schedule: components["schemas"]["HabitScheduleModel"];
+        };
+        /** HabitTodayResponse */
+        HabitTodayResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Habits */
+            habits: components["schemas"]["HabitProgressResponse"][];
+            /** Week */
+            week: components["schemas"]["HabitHeatmapDayResponse"][];
+            /** Upcoming */
+            upcoming: components["schemas"]["HabitUpcomingDayResponse"][];
+        };
+        /** HabitTrendPointResponse */
+        HabitTrendPointResponse: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Met */
+            met: number;
+            /** Missed */
+            missed: number;
+            /** Rate */
+            rate: number | null;
+        };
+        /** HabitUpcomingDayResponse */
+        HabitUpcomingDayResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Habit Ids */
+            habit_ids: string[];
         };
         /**
          * HealthResponse
@@ -5527,6 +7725,26 @@ export interface components {
             password: string;
             /** Display Name */
             display_name: string;
+        };
+        /**
+         * LogHabitRequest
+         * @description `completed` records the target (or `value`); `progress` records `value` toward it;
+         *     `skipped` excuses the day, so it doesn't break a streak.
+         */
+        LogHabitRequest: {
+            /**
+             * Status
+             * @default completed
+             * @enum {string}
+             */
+            status: "completed" | "progress" | "skipped";
+            /** Value */
+            value?: number | null;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
         };
         /** MarkAllReadResponse */
         MarkAllReadResponse: {
@@ -6678,10 +8896,10 @@ export interface components {
         ReminderCommitmentResponse: {
             /**
              * Kind
-             * @description `loan`, `recurring_payment` for a subscription or bill, `deposit` for a fixed or recurring deposit's maturity, or `calendar_alert` for one of a calendar event's alerts (`id` is the alert's).
+             * @description `loan`, `recurring_payment` for a subscription or bill, `deposit` for a fixed or recurring deposit's maturity, `calendar_alert` for one of a calendar event's alerts (`id` is the alert's), `habit_reminder` for a habit's or routine's reminder time (`id` is the reminder time's), or `document` for a document's expiry, renewal, and review alerts (`id` is the document's).
              * @enum {string}
              */
-            kind: "loan" | "recurring_payment" | "deposit" | "calendar_alert";
+            kind: "loan" | "recurring_payment" | "deposit" | "calendar_alert" | "habit_reminder" | "document";
             /**
              * Id
              * Format: uuid
@@ -6826,6 +9044,32 @@ export interface components {
             name: string;
         };
         /**
+         * RenewDocumentRequest
+         * @description The new dates. The old ones are kept in the renewal history.
+         */
+        RenewDocumentRequest: {
+            /**
+             * Expiry Date
+             * @description The new expiry date, or `null` for none.
+             */
+            expiry_date: string | null;
+            /**
+             * Issue Date
+             * @description Omit to keep the current one.
+             */
+            issue_date?: string | null;
+            /**
+             * Renewal Date
+             * @description Omit to keep the current one.
+             */
+            renewal_date?: string | null;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+        };
+        /**
          * RescheduleLoanRequest
          * @description Regenerate the unpaid installments from what is still owed, after a prepayment (a
          *     transfer into the loan account) or a rate change. Without `emi_amount` the number of
@@ -6838,6 +9082,192 @@ export interface components {
             emi_amount?: number | null;
             /** Next Payment Date */
             next_payment_date?: string | null;
+        };
+        /** RoutineDetailResponse */
+        RoutineDetailResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Category Id */
+            category_id: string | null;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Icon
+             * @enum {string}
+             */
+            icon: "sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile";
+            /**
+             * Color
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /** Time Of Day */
+            time_of_day: string | null;
+            /**
+             * Weekdays
+             * @description Empty means every day.
+             */
+            weekdays: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[];
+            /** Timezone */
+            timezone: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "paused" | "archived";
+            /** Steps */
+            steps: components["schemas"]["RoutineStepResponse"][];
+            /** Estimated Minutes */
+            estimated_minutes: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Reminders */
+            reminders: components["schemas"]["HabitReminderTimeResponse"][];
+            active_session: components["schemas"]["RoutineSessionResponse"] | null;
+            last_session: components["schemas"]["RoutineSessionResponse"] | null;
+            /** Sessions Completed */
+            sessions_completed: number;
+        };
+        /** RoutineListResponse */
+        RoutineListResponse: {
+            /** Routines */
+            routines: components["schemas"]["RoutineDetailResponse"][];
+        };
+        /** RoutineSessionListResponse */
+        RoutineSessionListResponse: {
+            /** Sessions */
+            sessions: components["schemas"]["RoutineSessionResponse"][];
+            /** Total */
+            total: number;
+        };
+        /** RoutineSessionResponse */
+        RoutineSessionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Routine Id
+             * Format: uuid
+             */
+            routine_id: string;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Routine Name
+             * @description The routine's name when the session started.
+             */
+            routine_name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "completed" | "abandoned";
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Finished At */
+            finished_at: string | null;
+            /** Notes */
+            notes: string;
+            /** Note Id */
+            note_id: string | null;
+            /** Steps */
+            steps: components["schemas"]["RoutineSessionStepResponse"][];
+        };
+        /** RoutineSessionStepResponse */
+        RoutineSessionStepResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Position */
+            position: number;
+            /** Name */
+            name: string;
+            /** Duration Minutes */
+            duration_minutes: number | null;
+            /** Habit Id */
+            habit_id: string | null;
+            /** Task Id */
+            task_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "completed" | "skipped";
+            /** Completed At */
+            completed_at: string | null;
+        };
+        /** RoutineStepRequest */
+        RoutineStepRequest: {
+            /**
+             * Id
+             * @description Keep an existing step; omit to add.
+             */
+            id?: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Duration Minutes */
+            duration_minutes?: number | null;
+            /** Habit Id */
+            habit_id?: string | null;
+            /** Task Id */
+            task_id?: string | null;
+            /** Note Id */
+            note_id?: string | null;
+        };
+        /** RoutineStepResponse */
+        RoutineStepResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Position */
+            position: number;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Duration Minutes */
+            duration_minutes: number | null;
+            /** Habit Id */
+            habit_id: string | null;
+            /** Task Id */
+            task_id: string | null;
+            /** Note Id */
+            note_id: string | null;
+        };
+        /** SetHabitRemindersRequest */
+        SetHabitRemindersRequest: {
+            /** Reminders */
+            reminders: components["schemas"]["HabitReminderTimeModel"][];
         };
         /**
          * SetIncomeRequest
@@ -7213,6 +9643,14 @@ export interface components {
              * @description Largest net spending first. Categories whose refunds cancel their spending are left out.
              */
             categories: components["schemas"]["CategorySpendingResponse"][];
+        };
+        /** StartRoutineSessionRequest */
+        StartRoutineSessionRequest: {
+            /**
+             * Day
+             * @description Defaults to today.
+             */
+            day?: string | null;
         };
         /**
          * StorageLocationResponse
@@ -7595,6 +10033,74 @@ export interface components {
             notes?: string | null;
             reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
         };
+        /** UpdateDocumentCategoryRequest */
+        UpdateDocumentCategoryRequest: {
+            /** Name */
+            name?: string | null;
+            /** Icon */
+            icon?: ("id-card" | "briefcase" | "wallet" | "receipt" | "landmark" | "shield" | "car" | "home" | "heart-pulse" | "graduation-cap" | "file-text" | "plane" | "badge-check" | "folder") | null;
+        };
+        /**
+         * UpdateDocumentFolderRequest
+         * @description Rename, move (`parent_id: null` moves it to the top level), or both.
+         */
+        UpdateDocumentFolderRequest: {
+            /** Name */
+            name?: string | null;
+            /** Parent Id */
+            parent_id?: string | null;
+        };
+        /**
+         * UpdateDocumentRequest
+         * @description Change some of a document's fields. Omitted fields keep their values; `null` clears the
+         *     optional ones (`folder_id: null` makes it unfiled).
+         */
+        UpdateDocumentRequest: {
+            /** Title */
+            title?: string | null;
+            /** Folder Id */
+            folder_id?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /** Is Favorite */
+            is_favorite?: boolean | null;
+            /** Archived */
+            archived?: boolean | null;
+            /** Description */
+            description?: string | null;
+            /** Reference Number */
+            reference_number?: string | null;
+            /** Issuing Authority */
+            issuing_authority?: string | null;
+            /** Provider */
+            provider?: string | null;
+            /** Issue Date */
+            issue_date?: string | null;
+            /** Effective Date */
+            effective_date?: string | null;
+            /** Expiry Date */
+            expiry_date?: string | null;
+            /** Renewal Date */
+            renewal_date?: string | null;
+            /** Review Date */
+            review_date?: string | null;
+            /** Amount */
+            amount?: number | null;
+            /** Currency */
+            currency?: ("INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY") | null;
+            /** Notes */
+            notes?: string | null;
+            /** Custom Fields */
+            custom_fields?: components["schemas"]["DocumentCustomField"][] | null;
+            /** Tags */
+            tags?: string[] | null;
+            /** Reminder Days */
+            reminder_days?: number[] | null;
+            /** Reminder Time */
+            reminder_time?: string | null;
+            /** Timezone */
+            timezone?: string | null;
+        };
         /**
          * UpdateEventRequest
          * @description Change the whole event or series. Omitted fields keep their values; `category_id: null`
@@ -7664,6 +10170,52 @@ export interface components {
             account_id?: string | null;
             /** Notes */
             notes?: string | null;
+        };
+        /** UpdateHabitCategoryRequest */
+        UpdateHabitCategoryRequest: {
+            /** Name */
+            name?: string | null;
+            /** Color */
+            color?: ("blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate") | null;
+            /** Icon */
+            icon?: ("sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile") | null;
+        };
+        /**
+         * UpdateHabitRequest
+         * @description Only the fields sent change. A new `schedule` applies from `schedule_from` (today by
+         *     default); earlier days keep the schedule they had.
+         */
+        UpdateHabitRequest: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /** Icon */
+            icon?: ("sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile") | null;
+            /** Color */
+            color?: ("blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate") | null;
+            /** Unit */
+            unit?: string | null;
+            /** Target */
+            target?: number | null;
+            schedule?: components["schemas"]["HabitScheduleModel"] | null;
+            /** Schedule From */
+            schedule_from?: string | null;
+            /** Time Of Day */
+            time_of_day?: string | null;
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Timezone */
+            timezone?: string | null;
+            /**
+             * Status
+             * @description `paused` or `archived` stops tracking from today.
+             */
+            status?: ("active" | "paused" | "archived") | null;
         };
         /** UpdateHoldingRequest */
         UpdateHoldingRequest: {
@@ -7881,6 +10433,56 @@ export interface components {
             /** Timezone */
             timezone?: string | null;
             recurrence?: components["schemas"]["RecurrenceModel"] | null;
+        };
+        /**
+         * UpdateRoutineRequest
+         * @description Only the fields sent change. `steps` is the whole ordered list: steps left out are
+         *     removed; sessions already started keep their copies.
+         */
+        UpdateRoutineRequest: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /** Icon */
+            icon?: ("sparkles" | "book" | "dumbbell" | "droplet" | "brain" | "moon" | "sun" | "heart" | "leaf" | "pen" | "music" | "coffee" | "bike" | "footprints" | "wallet" | "graduation" | "briefcase" | "smile") | null;
+            /** Color */
+            color?: ("blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate") | null;
+            /** Time Of Day */
+            time_of_day?: string | null;
+            /** Weekdays */
+            weekdays?: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[] | null;
+            /** Timezone */
+            timezone?: string | null;
+            /** Status */
+            status?: ("active" | "paused" | "archived") | null;
+            /** Steps */
+            steps?: components["schemas"]["RoutineStepRequest"][] | null;
+        };
+        /** UpdateRoutineSessionRequest */
+        UpdateRoutineSessionRequest: {
+            /**
+             * Status
+             * @description Finish or abandon an active session.
+             */
+            status?: ("completed" | "abandoned") | null;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Note Id
+             * @description Link a note; `null` unlinks.
+             */
+            note_id?: string | null;
+        };
+        /** UpdateSessionStepRequest */
+        UpdateSessionStepRequest: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "completed" | "skipped";
         };
         /**
          * UpdateSipPlanRequest
@@ -17918,6 +20520,3294 @@ export interface operations {
             };
             /** @description Not signed in. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_categories_api_v1_workspaces__workspace_id__habits_categories_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitCategoryListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_category_api_v1_workspaces__workspace_id__habits_categories_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateHabitCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitCategoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The name is taken, or there are too many categories. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_category_api_v1_workspaces__workspace_id__habits_categories__category_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_category_api_v1_workspaces__workspace_id__habits_categories__category_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateHabitCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitCategoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    today_api_v1_workspaces__workspace_id__habits_today_get: {
+        parameters: {
+            query?: {
+                /** @description Defaults to today. */
+                date?: string | null;
+                /** @description Where today is. Defaults to the user's preference, else UTC. */
+                timezone?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitTodayResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    analytics_api_v1_workspaces__workspace_id__habits_analytics_get: {
+        parameters: {
+            query: {
+                start: string;
+                /** @description The last date, inclusive; at most 366 days later. */
+                end: string;
+                timezone?: string | null;
+                category_id?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitAnalyticsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    calendar_api_v1_workspaces__workspace_id__habits_calendar_get: {
+        parameters: {
+            query: {
+                /** @description The first local date. */
+                start: string;
+                /** @description The day after the last local date (exclusive). */
+                end: string;
+                timezone?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitCalendarResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_habits_api_v1_workspaces__workspace_id__habits_get: {
+        parameters: {
+            query?: {
+                status?: "active" | "paused" | "archived" | "all";
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_habit_api_v1_workspaces__workspace_id__habits_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateHabitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_habit_api_v1_workspaces__workspace_id__habits__habit_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_habit_api_v1_workspaces__workspace_id__habits__habit_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_habit_api_v1_workspaces__workspace_id__habits__habit_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateHabitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    habit_history_api_v1_workspaces__workspace_id__habits__habit_id__history_get: {
+        parameters: {
+            query: {
+                start: string;
+                /** @description The last date, inclusive; at most 366 days later. */
+                end: string;
+            };
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitHistoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    log_day_api_v1_workspaces__workspace_id__habits__habit_id__log__day__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                /** @description A local date, such as `2026-11-02`. */
+                day: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogHabitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitProgressResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlog_day_api_v1_workspaces__workspace_id__habits__habit_id__log__day__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                /** @description A local date, such as `2026-11-02`. */
+                day: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitProgressResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_habit_reminders_api_v1_workspaces__workspace_id__habits__habit_id__reminders_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetHabitRemindersRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_habit_task_api_v1_workspaces__workspace_id__habits__habit_id__tasks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    link_habit_task_api_v1_workspaces__workspace_id__habits__habit_id__tasks__task_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                task_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlink_habit_task_api_v1_workspaces__workspace_id__habits__habit_id__tasks__task_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                task_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_habit_note_api_v1_workspaces__workspace_id__habits__habit_id__notes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateHabitNoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedNoteResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_habit_note_api_v1_workspaces__workspace_id__habits__habit_id__notes__note_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlink_habit_note_api_v1_workspaces__workspace_id__habits__habit_id__notes__note_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The habit's ID. */
+                habit_id: string;
+                note_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_routines_api_v1_workspaces__workspace_id__routines_get: {
+        parameters: {
+            query?: {
+                status?: "active" | "paused" | "archived" | "all";
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_routine_api_v1_workspaces__workspace_id__routines_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRoutineRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_routine_api_v1_workspaces__workspace_id__routines__routine_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The routine's ID. */
+                routine_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_routine_api_v1_workspaces__workspace_id__routines__routine_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The routine's ID. */
+                routine_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_routine_api_v1_workspaces__workspace_id__routines__routine_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The routine's ID. */
+                routine_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRoutineRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    set_routine_reminders_api_v1_workspaces__workspace_id__routines__routine_id__reminders_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The routine's ID. */
+                routine_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetHabitRemindersRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_sessions_api_v1_workspaces__workspace_id__routines__routine_id__sessions_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description The routine's ID. */
+                routine_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineSessionListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_session_api_v1_workspaces__workspace_id__routines__routine_id__sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The routine's ID. */
+                routine_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartRoutineSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineSessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A session is already in progress. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_session_api_v1_workspaces__workspace_id__routines__routine_id__sessions__session_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The routine's ID. */
+                routine_id: string;
+                /** @description The session's ID. */
+                session_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineSessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_session_api_v1_workspaces__workspace_id__routines__routine_id__sessions__session_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The routine's ID. */
+                routine_id: string;
+                /** @description The session's ID. */
+                session_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRoutineSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineSessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The session has already ended. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_session_step_api_v1_workspaces__workspace_id__routines__routine_id__sessions__session_id__steps__step_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The routine's ID. */
+                routine_id: string;
+                /** @description The session's ID. */
+                session_id: string;
+                step_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSessionStepRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineSessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The session has already ended. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_session_note_api_v1_workspaces__workspace_id__routines__routine_id__sessions__session_id__note_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The routine's ID. */
+                routine_id: string;
+                /** @description The session's ID. */
+                session_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSessionNoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedNoteResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_documents_api_v1_workspaces__workspace_id__documents_get: {
+        parameters: {
+            query?: {
+                /** @description `any` is everything except the trash. */
+                state?: ("active" | "archived" | "trashed") | "any";
+                folder_id?: string | null;
+                /** @description With `folder_id`. */
+                include_subfolders?: boolean;
+                /** @description Only documents in no folder. */
+                unfiled?: boolean;
+                category_id?: string | null;
+                /** @description Only documents without a category. */
+                unclassified?: boolean;
+                tag?: string | null;
+                /** @description `pdf`, `image`, `text`, `office`, or `none` (no file). */
+                file_kind?: ("pdf" | "image" | "text" | "office" | "none") | null;
+                favorite?: boolean | null;
+                added_from?: string | null;
+                added_to?: string | null;
+                expires_from?: string | null;
+                expires_to?: string | null;
+                /** @description Expiring between today and this many days. */
+                expires_within?: number | null;
+                /** @description Only documents whose expiry has passed. */
+                expired?: boolean;
+                /** @description Renewal dates between today and this many days. */
+                renewal_within?: number | null;
+                linked_kind?: ("note" | "task" | "event" | "transaction" | "loan" | "recurring_payment" | "deposit" | "holding" | "asset") | null;
+                /** @description With `linked_kind`: documents linked to that record. */
+                linked_id?: string | null;
+                /** @description Words that must each appear in the title, description, file name, issuer, provider, notes, a tag, the category, or the folder (case-insensitive). Reference numbers are not searched. */
+                q?: string | null;
+                sort?: "title" | "created" | "updated" | "recent" | "expiry" | "size" | "category";
+                /** @description Newest or largest first by default; names and expiry ascending. */
+                order?: ("asc" | "desc") | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_document_api_v1_workspaces__workspace_id__documents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDocumentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or the folder or category doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    upload_document_api_v1_workspaces__workspace_id__documents_upload_post: {
+        parameters: {
+            query: {
+                /** @description The file's name (a name, not a path). Its extension decides the type. */
+                filename: string;
+                /** @description The file's name by default. */
+                title?: string | null;
+                folder_id?: string | null;
+                category_id?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The file is larger than the server accepts. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The file type isn't accepted, or doesn't match its contents. */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    documents_overview_api_v1_workspaces__workspace_id__documents_overview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOverviewResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    document_counts_api_v1_workspaces__workspace_id__documents_counts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentCountsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    document_settings_api_v1_workspaces__workspace_id__documents_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentSettingsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    document_tags_api_v1_workspaces__workspace_id__documents_tags_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentTagListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_candidates_api_v1_workspaces__workspace_id__documents_link_candidates_get: {
+        parameters: {
+            query: {
+                kind: "note" | "task" | "event" | "transaction" | "loan" | "recurring_payment" | "deposit" | "holding" | "asset";
+                q?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentLinkCandidatesResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_documents_api_v1_workspaces__workspace_id__documents_export_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportDocumentsRequest"];
+            };
+        };
+        responses: {
+            /** @description The archive. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": unknown;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    empty_document_trash_api_v1_workspaces__workspace_id__documents_empty_trash_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmptyDocumentTrashResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_document_api_v1_workspaces__workspace_id__documents__document_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_document_api_v1_workspaces__workspace_id__documents__document_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The document isn't in the trash. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_document_api_v1_workspaces__workspace_id__documents__document_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDocumentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The document is in the trash. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_document_api_v1_workspaces__workspace_id__documents__document_id__open_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trash_document_api_v1_workspaces__workspace_id__documents__document_id__trash_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_document_api_v1_workspaces__workspace_id__documents__document_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    renew_document_api_v1_workspaces__workspace_id__documents__document_id__renew_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenewDocumentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_document_api_v1_workspaces__workspace_id__documents__document_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": unknown;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_version_api_v1_workspaces__workspace_id__documents__document_id__versions_post: {
+        parameters: {
+            query: {
+                filename: string;
+                /** @description What changed, for the version history. */
+                note?: string;
+            };
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The document is in the trash. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The file is larger than the server accepts. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The file type isn't accepted, or doesn't match its contents. */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_version_api_v1_workspaces__workspace_id__documents__document_id__versions__version_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                /** @description The version's ID. */
+                version_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": unknown;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_version_api_v1_workspaces__workspace_id__documents__document_id__versions__version_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                /** @description The version's ID. */
+                version_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_version_api_v1_workspaces__workspace_id__documents__document_id__versions__version_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                /** @description The version's ID. */
+                version_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description It's the current version. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    link_document_api_v1_workspaces__workspace_id__documents__document_id__links__kind___target_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                kind: "note" | "task" | "event" | "transaction" | "loan" | "recurring_payment" | "deposit" | "holding" | "asset";
+                target_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The record doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlink_document_api_v1_workspaces__workspace_id__documents__document_id__links__kind___target_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                kind: "note" | "task" | "event" | "transaction" | "loan" | "recurring_payment" | "deposit" | "holding" | "asset";
+                target_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_document_folders_api_v1_workspaces__workspace_id__document_folders_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentFolderListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_document_folder_api_v1_workspaces__workspace_id__document_folders_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDocumentFolderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentFolderResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The parent doesn't exist, or it would nest too deeply. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_document_folder_api_v1_workspaces__workspace_id__document_folders__folder_id__delete: {
+        parameters: {
+            query: {
+                /** @description `parent` moves the folder's documents and subfolders up a level; `unfiled` deletes its subfolders too and leaves every document inside unfiled; `folder` does the same but moves them to `target_id`. */
+                documents: "parent" | "unfiled" | "folder";
+                target_id?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description The folder's ID. */
+                folder_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_document_folder_api_v1_workspaces__workspace_id__document_folders__folder_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The folder's ID. */
+                folder_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDocumentFolderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentFolderResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The move would create a loop or nest too deeply. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_document_categories_api_v1_workspaces__workspace_id__document_categories_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentCategoryListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_document_category_api_v1_workspaces__workspace_id__document_categories_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDocumentCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentCategoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A category with that name exists. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_document_category_api_v1_workspaces__workspace_id__document_categories__category_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The category's ID. */
+                category_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_document_category_api_v1_workspaces__workspace_id__document_categories__category_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The category's ID. */
+                category_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDocumentCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentCategoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A category with that name exists. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

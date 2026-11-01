@@ -10,12 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { buildFolderTree, flattenFolders, folderSubtree } from "@/lib/notes";
 import { cn } from "@/utils/common";
+import type { FolderLike } from "@/utils/folders";
 
 const TOP = "top";
 
 /** A folder picker's options, indented by depth, without `exclude` (and what's inside it). */
 function folderOptions(
-  folders: readonly NoteFolder[],
+  folders: readonly FolderLike[],
   { top, exclude }: { top: string; exclude?: string },
 ) {
   const hidden = exclude ? folderSubtree(folders, exclude) : new Set<string>();
@@ -109,7 +110,7 @@ export function FolderPickerDialog({
   onClose,
 }: {
   title: string;
-  folders: readonly NoteFolder[];
+  folders: readonly FolderLike[];
   current: string | null;
   /** A folder being moved can't go inside itself. */
   moving?: string;

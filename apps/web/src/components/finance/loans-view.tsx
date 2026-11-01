@@ -17,6 +17,7 @@ import { useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import { loanOptions } from "@/api/commitments";
+import { LinkedDocuments } from "@/components/documents/linked-documents";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
@@ -387,6 +388,14 @@ function LoanCard({
               onAdjust={onAdjust}
               onPay={onPay}
             />
+            <div className="mt-4 border-t pt-4">
+              <LinkedDocuments
+                workspaceId={workspaceId}
+                kind="loan"
+                recordId={loan.id}
+                heading="Loan documents"
+              />
+            </div>
           </div>
         ) : null}
       </Card>

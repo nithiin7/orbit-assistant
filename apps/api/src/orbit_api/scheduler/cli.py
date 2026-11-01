@@ -18,6 +18,7 @@ import signal
 from orbit_api.config import get_settings
 from orbit_api.db.database import open_database
 from orbit_api.scheduler.worker import ReminderWorker
+from orbit_api.system.attachment_store import FileAttachmentStore
 
 
 def main() -> None:
@@ -38,8 +39,9 @@ def main() -> None:
 
 
 async def _run(command: str, *, once: bool, poll_interval: float) -> None:
-    database = await open_database(get_settings())
-    worker = ReminderWorker(database)
+    settings = get_settings()
+    database = await open_database(settings)
+    worker = ReminderWorker(database, files=FileAttachmentStore(settings.attachments_dir))
     try:
         match command:
             case "status":

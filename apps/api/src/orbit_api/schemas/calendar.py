@@ -584,6 +584,9 @@ class CalendarPreferencesModel(BaseModel):
     show_completed_tasks: bool = True
     show_unscheduled_tasks: bool = True
     show_due_tasks: bool = True
+    show_habits: bool = Field(
+        default=True, description="Show habits and routines that have a time of day."
+    )
 
     @model_validator(mode="after")
     def _check_hours(self) -> Self:
@@ -600,6 +603,7 @@ class CalendarPreferencesModel(BaseModel):
             show_completed_tasks=self.show_completed_tasks,
             show_unscheduled_tasks=self.show_unscheduled_tasks,
             show_due_tasks=self.show_due_tasks,
+            show_habits=self.show_habits,
         )
 
 
@@ -616,5 +620,6 @@ class CalendarPreferencesResponse(CalendarPreferencesModel):
             show_completed_tasks=preferences.show_completed_tasks,
             show_unscheduled_tasks=preferences.show_unscheduled_tasks,
             show_due_tasks=preferences.show_due_tasks,
+            show_habits=preferences.show_habits,
             updated_at=preferences.updated_at,
         )

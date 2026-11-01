@@ -563,6 +563,7 @@ class SqlCalendarPreferenceRepository:
             show_completed_tasks=model.show_completed_tasks,
             show_unscheduled_tasks=model.show_unscheduled_tasks,
             show_due_tasks=model.show_due_tasks,
+            show_habits=model.show_habits,
             updated_at=model.updated_at,
         )
 
@@ -578,6 +579,7 @@ class SqlCalendarPreferenceRepository:
         model.show_completed_tasks = preferences.show_completed_tasks
         model.show_unscheduled_tasks = preferences.show_unscheduled_tasks
         model.show_due_tasks = preferences.show_due_tasks
+        model.show_habits = preferences.show_habits
         model.updated_at = preferences.updated_at or utc_now()
         await flush(self._session)
 

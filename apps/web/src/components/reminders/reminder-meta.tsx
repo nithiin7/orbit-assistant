@@ -1,5 +1,15 @@
 import type { Reminder } from "@orbit/contracts";
-import { AlarmClock, CalendarDays, CheckSquare, Globe, Landmark, Repeat } from "lucide-react";
+import {
+  AlarmClock,
+  CalendarDays,
+  CheckSquare,
+  FileText,
+  Globe,
+  Landmark,
+  type LucideIcon,
+  Repeat,
+  Repeat2,
+} from "lucide-react";
 import type { ReactNode } from "react";
 
 import { describeRecurrence, type FireGroupKey, formatOccurrence } from "@/lib/reminders";
@@ -74,13 +84,45 @@ export function TimeZoneChip({ timeZone }: { timeZone: string }) {
   );
 }
 
-/** Marks a reminder another module keeps up to date: Finance, or a calendar event's alert. */
-export function ManagedChip({ by }: { by: "finance" | "calendar" }) {
-  const Icon = by === "calendar" ? CalendarDays : Landmark;
+type CommitmentKind = NonNullable<Reminder["commitment"]>["kind"];
+
+/** The module that keeps a managed reminder up to date, by what manages it. */
+export type ManagingModule = "finance" | "calendar" | "habits" | "documents";
+
+const MANAGING_MODULE: Record<CommitmentKind, ManagingModule> = {
+  loan: "finance",
+  recurring_payment: "finance",
+  deposit: "finance",
+  calendar_alert: "calendar",
+  habit_reminder: "habits",
+  document: "documents",
+};
+
+export const MODULE_LABEL: Record<ManagingModule, string> = {
+  finance: "Finance",
+  calendar: "Calendar",
+  habits: "Habits",
+  documents: "Documents",
+};
+
+const MODULE_ICON: Record<ManagingModule, LucideIcon> = {
+  finance: Landmark,
+  calendar: CalendarDays,
+  habits: Repeat2,
+  documents: FileText,
+};
+
+export function managingModule(kind: CommitmentKind): ManagingModule {
+  return MANAGING_MODULE[kind];
+}
+
+/** Marks a reminder another module keeps up to date: Finance, Calendar, Habits, or Documents. */
+export function ManagedChip({ by }: { by: ManagingModule }) {
+  const Icon = MODULE_ICON[by];
   return (
     <Chip>
       <Icon className="size-3 shrink-0" aria-hidden="true" />
-      {by === "calendar" ? "Managed in Calendar" : "Managed in Finance"}
+      Managed in {MODULE_LABEL[by]}
     </Chip>
   );
 }

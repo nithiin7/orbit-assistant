@@ -27,14 +27,18 @@ import {
   useUnscheduledTasks,
   useViewerTimeZone,
 } from "@/hooks/use-calendar";
+import { useHabitCalendar } from "@/hooks/use-habits";
 import { useTaskList } from "@/hooks/use-tasks";
 import {
   CALENDAR_VIEWS,
   calendarHref,
   type CalendarItem,
   DEFAULT_TASK_MINUTES,
+  type DetailItem,
   type EventFormValues,
   eventItem,
+  habitEntryHref,
+  habitItem,
   minutesOfTime,
   movedDates,
   movedTimes,
@@ -161,6 +165,7 @@ function CalendarView({ workspaceId }: { workspaceId: string }) {
   };
   const showUnscheduled = preferences?.show_unscheduled_tasks ?? true;
   const showDue = preferences?.show_due_tasks ?? true;
+  const showHabits = preferences?.show_habits ?? true;
 
   const range = visibleRange(view, date, weekStart);
   const rangeQuery = {
@@ -174,12 +179,18 @@ function CalendarView({ workspaceId }: { workspaceId: string }) {
     view === "agenda" || !ready ? null : workspaceId,
     rangeQuery,
   );
+  const habitEntries = useHabitCalendar(
+    workspaceId,
+    view === "agenda" || !ready || !showHabits
+      ? null
+      : { start: range.start, end: range.end, timezone: timeZone },
+  );
   const unscheduled = useUnscheduledTasks(workspaceId, showUnscheduled);
   const openTasks = useTaskList(workspaceId, { status: "open", sort: "due_date", limit: 200 });
   const openTaskList = openTasks.state.status === "success" ? openTasks.state.data.tasks : [];
 
   const [editor, setEditor] = useState<EditorState | null>(null);
-  const [details, setDetails] = useState<CalendarItem | null>(null);
+  const [details, setDetails] = useState<DetailItem | null>(null);
   const [scheduling, setScheduling] = useState<Task | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -191,8 +202,18 @@ function CalendarView({ workspaceId }: { workspaceId: string }) {
           ...state.data.occurrences.map(eventItem),
           ...state.data.scheduled_tasks.map((task) => taskItem(task)),
           ...(showDue ? state.data.due_tasks.map((task) => taskItem(task, true)) : []),
+          ...habitEntries.map(habitItem),
         ]
       : [];
+
+  /** Habits and routines open their own page; everything else opens its details here. */
+  const openItem = (item: CalendarItem) => {
+    if (item.kind === "habit") {
+      router.push(habitEntryHref(item.entry));
+      return;
+    }
+    setDetails(item);
+  };
 
   const go = (next: { view?: ViewName; date?: string }) =>
     router.replace(calendarHref({ view: next.view ?? view, date: next.date ?? date }), {
@@ -296,6 +317,8 @@ function CalendarView({ workspaceId }: { workspaceId: string }) {
   }
 
   const onMoveTimed = (item: CalendarItem, day: string, minutes: number, edge: "start" | "end") => {
+    // Habits and routines are moved from their own page, not dragged here.
+    if (item.kind === "habit") return;
     if (item.kind === "event") {
       const { start, end } = movedTimes(item.occurrence, { date: day, minutes, edge }, timeZone);
       void moveOccurrence(item.occurrence, start, end);
@@ -312,6 +335,7 @@ function CalendarView({ workspaceId }: { workspaceId: string }) {
   };
 
   const onMoveToDate = (item: CalendarItem, day: string) => {
+    if (item.kind === "habit") return;
     if (item.kind === "event") {
       const moved = item.occurrence.all_day
         ? movedDates(item.occurrence, day)
@@ -538,7 +562,7 @@ function CalendarView({ workspaceId }: { workspaceId: string }) {
               today={today}
               timeZone={timeZone}
               categories={categoriesById}
-              onOpenItem={setDetails}
+              onOpenItem={openItem}
               onCreate={() => openCreate()}
             />
           ) : state.status === "error" ? (
@@ -561,7 +585,7 @@ function CalendarView({ workspaceId }: { workspaceId: string }) {
               timeZone={timeZone}
               items={items}
               categories={categoriesById}
-              onOpenItem={setDetails}
+              onOpenItem={openItem}
               onOpenDay={(day) => go({ view: "day", date: day })}
               onCreateOn={(day) => openCreate({ date: day, minutes: workingHours.start })}
               onMoveItem={onMoveToDate}
@@ -575,7 +599,7 @@ function CalendarView({ workspaceId }: { workspaceId: string }) {
               items={items}
               categories={categoriesById}
               workingHours={workingHours}
-              onOpenItem={setDetails}
+              onOpenItem={openItem}
               onOpenDay={view === "week" ? (day) => go({ view: "day", date: day }) : undefined}
               onCreate={(day, start, end) =>
                 openCreate({ date: day, minutes: start, endMinutes: end })

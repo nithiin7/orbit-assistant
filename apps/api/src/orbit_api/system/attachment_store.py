@@ -1,6 +1,7 @@
-"""Note attachments stored as files on the API's machine.
+"""Files stored on the API's machine: note attachments and document versions.
 
-Layout: `<root>/<workspace id>/<attachment id>`. File names come only from server-generated
+Layout: `<root>/<workspace id>/<blob id>`, where a blob ID is a note attachment's ID or a
+document version's blob ID. File names come only from server-generated
 UUIDs, never from uploads, so a request can't choose a path. New directories are `0700` and files
 `0600`, like the SQLite database. Writes go to a temporary file first and are renamed into place,
 so a crash never leaves a half-written attachment under its real name.
@@ -12,7 +13,8 @@ import logging
 import os
 import shutil
 import uuid
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
+from datetime import datetime
 from pathlib import Path
 
 import anyio.to_thread
@@ -69,3 +71,46 @@ class FileAttachmentStore:
         directory = self._directory(workspace_id)
         if directory.is_dir():
             shutil.rmtree(directory, ignore_errors=True)
+
+    async def sweep(self, referenced: Collection[uuid.UUID], older_than: datetime) -> int:
+        """Delete files no metadata references, and partial writes, last modified before
+        `older_than`; return how many were deleted.
+
+        The age limit protects uploads in progress: their file is written before their
+        metadata commits, so a fresh unreferenced file is expected. Names that aren't Orbit's
+        are left alone.
+        """
+        return await anyio.to_thread.run_sync(self._sweep, set(referenced), older_than)
+
+    def _sweep(self, referenced: set[uuid.UUID], older_than: datetime) -> int:
+        if not self._root.is_dir():
+            return 0
+        cutoff = older_than.timestamp()
+        removed = 0
+        for directory in self._root.iterdir():
+            if not directory.is_dir() or _as_uuid(directory.name) is None:
+                continue
+            for path in directory.iterdir():
+                name = path.name.removesuffix(".partial")
+                blob_id = _as_uuid(name)
+                if blob_id is None or not path.is_file():
+                    continue
+                partial = path.name.endswith(".partial")
+                if not partial and blob_id in referenced:
+                    continue
+                try:
+                    if path.stat().st_mtime < cutoff:
+                        path.unlink()
+                        removed += 1
+                except OSError:
+                    logger.warning("Couldn't remove an unreferenced file.", exc_info=True)
+        return removed
+
+
+def _as_uuid(name: str) -> uuid.UUID | None:
+    try:
+        value = uuid.UUID(name)
+    except ValueError:
+        return None
+    # Only the canonical spelling the store writes.
+    return value if str(value) == name else None

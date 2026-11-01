@@ -136,7 +136,7 @@ describe("CommandPalette", () => {
     await user.keyboard("{Control>}k{/Control}");
     expect(dialog).toHaveAttribute("open");
     expect(
-      screen.getByRole("combobox", { name: "Search pages, notes, and actions" }),
+      screen.getByRole("combobox", { name: "Search pages, notes, documents, and actions" }),
     ).toHaveFocus();
 
     await user.keyboard("{Control>}k{/Control}");
@@ -162,9 +162,10 @@ describe("CommandPalette", () => {
 
     await user.keyboard("calendar");
     const options = screen.getAllByRole("option").map((option) => option.textContent);
-    // The page comes first, then calendar actions, then searching notes.
+    // The page comes first, then calendar actions, then searching notes and documents.
     expect(options[0]).toContain("Plan events, meetings");
-    expect(options.at(-1)).toContain("Search notes for “calendar”");
+    expect(options.at(-2)).toContain("Search notes for “calendar”");
+    expect(options.at(-1)).toContain("Search documents for “calendar”");
     expect(options).toContain("Open week view");
 
     await user.keyboard("{Enter}");
@@ -209,9 +210,10 @@ describe("CommandPalette", () => {
     await user.click(screen.getByRole("button", { name: "Search" }));
 
     await user.keyboard("zzz");
-    // Only the offer to search notes for it.
-    expect(screen.getAllByRole("option")).toHaveLength(1);
+    // Only the offers to search notes and documents for it.
+    expect(screen.getAllByRole("option")).toHaveLength(2);
     expect(screen.getByRole("option", { name: /Search notes for “zzz”/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Search documents for “zzz”/ })).toBeInTheDocument();
   });
 
   it("lists recent notes and folders, and opens them", async () => {

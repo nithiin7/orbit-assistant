@@ -21,8 +21,9 @@ Browser ──► apps/web (Next.js, :3000) ──HTTP/JSON──► apps/api (F
   workspaces, on the database foundation described under [Storage](#storage). Identity is
   described under [Identity and authorization](#identity-and-authorization). Product data:
   [tasks](#tasks), shopping lists, [reminders](#reminders-and-notifications), and
-  [finance](#finance), [notes](#notes-and-knowledge-management), and the
-  [calendar](#calendar-and-events); the assistant stores nothing yet.
+  [finance](#finance), [notes](#notes-and-knowledge-management), the
+  [calendar](#calendar-and-events), [habits and routines](#habits-and-routines), and
+  [documents](#documents-and-the-personal-vault); the assistant stores nothing yet.
 
 The two apps communicate only over HTTP and share no runtime code. They share one thing: the
 API contract in `packages/contracts`, described below.
@@ -218,11 +219,12 @@ apps/api/src/orbit_api/
 │       ├── commitments.py # Loans and EMIs, subscriptions and bills, payments, upcoming, summary
 │       ├── notes.py     # Notes, folders, tags, links, tasks, journal, attachments
 │       ├── calendar.py  # Categories, events and occurrences, range, agenda, links, preferences
+│       ├── documents.py # Documents, uploads, versions, files, renewals, links, folders, export
 │       └── notifications.py # The signed-in user's notifications: list, unread count, read state
 ├── auth/                # Adapters: Argon2 password hashing, Supabase JWT verification
-├── system/              # Adapters: opening the OS file manager; storing note attachments as files
+├── system/              # Adapters: the OS file manager; the file store (attachments, documents); ZIPs
 ├── scheduler/           # Reminder worker (embedded in the API or `orbit-worker`) and its CLI
-├── utils/               # Plain-Python helpers any layer may use: UNSET, sort order, clock, LIKE patterns
+├── utils/               # Plain-Python helpers: UNSET, sort order, clock, LIKE patterns, file types
 ├── schemas/             # Pydantic request/response models (the API contract)
 ├── services/            # Domain logic, one package per feature (no FastAPI/SQLAlchemy):
 │                        #   models.py (dataclasses, errors) and service.py (protocols, service)
@@ -235,7 +237,7 @@ apps/api/src/orbit_api/
     ├── database.py      # `open_database()`: connect, verify schema, sessions, dispose
     ├── migrate.py       # Programmatic Alembic: upgrade, downgrade, head revision
     └── migrations/      # Alembic environment and versioned revisions
-        └── versions/    # 0001_baseline … 0013_create_calendar
+        └── versions/    # 0001_baseline … 0015_create_documents
 ```
 
 Design decisions:
@@ -352,6 +354,17 @@ written once. SQLite is embedded in the API process; local mode needs no databas
   `calendar_event_tasks`, and `calendar_preferences` with RLS, adds `tasks.scheduled_start` and
   `scheduled_end`, and the reminders' unique link to an event alert (see
   [Calendar and events](#calendar-and-events)).
+- `0014_create_habits` creates `habit_categories`, `habits`, `habit_schedule_versions`,
+  `habit_pauses`, `habit_logs`, `habit_tasks`, `habit_notes`, `routines`, `routine_steps`,
+  `routine_sessions` (with a partial unique index for one active session per routine),
+  `routine_session_steps`, and `habit_reminders` with RLS, adds the reminders' unique link to a
+  habit reminder time, and `calendar_preferences.show_habits` (see
+  [Habits and routines](#habits-and-routines)).
+- `0015_create_documents` creates `document_folders`, `document_categories`, `documents`,
+  `document_versions`, `document_tags`, `document_renewals`, and `document_links` with RLS, adds
+  a unique index on `finance_holdings(id, workspace_id)` (the target of holding links), and the
+  reminders' unique link to a document (see
+  [Documents and the personal vault](#documents-and-the-personal-vault)).
 - Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
   Startup only checks that the database is at the head revision. For a shared cloud database,
   schema changes should be deliberate and reviewable.
@@ -433,7 +446,8 @@ structure.
      `finance_loans`, `finance_loan_installments`, `finance_recurring_payments`, and
      `finance_recurring_occurrences`; `0010` for the nine investment, asset, and snapshot tables;
      `0011` for the six budget, goal, and plan tables; `0012` for the seven note tables; `0013`
-     for the seven calendar tables.
+     for the seven calendar tables; `0014` for the twelve habit and routine tables; `0015` for
+     the seven document tables.
   2. **No policies exist**, deliberately: the browser never queries tables directly, so the
      Data API's `anon` and `authenticated` roles get no rows. Add `authenticated` policies
      (for example `owner_id = auth.uid()`) only if a client is ever allowed direct access.
@@ -1948,7 +1962,7 @@ index, and lookups by target for backlinks, by tag, and by task.
 ### Attachments
 
 - There was no file storage to reuse (profile photos are small and stored in a column), so notes
-  add the minimum: metadata in `note_attachments`, bytes in files under
+  added the minimum, which [documents](#document-storage) now share: metadata in `note_attachments`, bytes in files under
   `ORBIT_ATTACHMENTS_PATH/<workspace id>/<attachment id>` (`system/attachment_store.py`). Names on
   disk are server-generated UUIDs; directories are `0700` and files `0600`; writes go to a
   temporary file and are renamed into place; blocking I/O runs in a worker thread.
@@ -1956,7 +1970,7 @@ index, and lookups by target for backlinks, by tag, and by task.
   `ORBIT_ATTACHMENT_MAX_BYTES` (default 10 MB) while reading. The type comes from the extension
   and is checked against the file's leading bytes (PNG, JPEG, GIF, WebP, PDF, ZIP-based Office and
   OpenDocument files) or, for text formats, the absence of NUL bytes; the declared content type is
-  ignored. At most 50 per note.
+  ignored (`utils/file_types.py`, shared with documents). At most 50 per note.
 - Downloads require the bearer token, so the web app fetches a blob. Responses always use
   `Content-Disposition: attachment`, the detected type, `nosniff`, and a sandboxing CSP.
 - Deleting an attachment, permanently deleting notes (including emptying the trash), and
@@ -1965,7 +1979,7 @@ index, and lookups by target for backlinks, by tag, and by task.
 - **Limitations:** files live on the API's machine. A cloud deployment with several API
   instances needs a shared volume; object storage is not implemented. Attachments are listed in a
   note's details, not shown inline in the document. If a file deletion fails (logged), the file is
-  orphaned but unreachable.
+  orphaned but unreachable until the worker's [sweep](#document-storage) removes it.
 
 ### Notes API
 
@@ -2262,6 +2276,495 @@ body or path link is a 422, like a missing one.
 - The opt-in PostgreSQL suite covers the calendar's SQL through the service (cloud mode's API
   needs Supabase tokens); the HTTP tests run on SQLite.
 
+## Habits and routines
+
+Habits are things done on a schedule; routines are short sequences of steps run through in one
+go. Both live in a workspace and reuse the existing tasks, notes, reminders, and calendar rather
+than copying them. Code: `services/habits/` (`schedule.py` and `progress.py` hold the rules as
+pure functions, `insights.py` builds views from them, `service.py` and `routines.py` apply
+changes), `repositories/habits.py`, `api/v1/habits.py`, migration `0014_create_habits`.
+
+### Habit data model
+
+- `habits`: name, description, icon (a fixed set of names), color (the calendar's palette),
+  optional category, kind (`boolean`, `numeric`, `duration`), unit (numeric only), target
+  (`NULL` for yes-or-no habits, minutes for duration habits, a float above zero otherwise),
+  optional time of day, start and optional end date, an IANA time zone, and status (`active`,
+  `paused`, `archived`). The kind can't change once created.
+- `habit_schedule_versions`: the schedule, as versions. Each holds a versioned JSON document and
+  the date it takes effect (unique per habit and date).
+- `habit_pauses`: date ranges `[start, end)` the habit was paused or archived; `end` is `NULL`
+  while it still is.
+- `habit_logs`: at most one entry per habit and local date (`UNIQUE (habit_id, day)`): the value,
+  the target that applied when it was logged, a skipped flag, an optional note, and when it was
+  logged.
+- `habit_categories`: per-workspace categories with a color and icon. The first read creates
+  the defaults (Health, Fitness, Learning, Productivity, Personal, Finance, Lifestyle, Other);
+  deleting one leaves its habits and routines uncategorized.
+- `habit_tasks`, `habit_notes`: links to existing tasks and notes. Deleting either side removes
+  the link.
+
+Relationships inside the module are composite foreign keys on `(id, workspace_id)`, so the
+database refuses cross-workspace rows. Every new PostgreSQL table enables Row Level Security with
+no policies, like the others.
+
+### Schedule representation
+
+A schedule is one of:
+
+| Type            | Due                                                                 |
+| --------------- | ------------------------------------------------------------------- |
+| `daily`         | Every `every` days (1 to 365), counted from the version's first day |
+| `weekdays`      | On the listed weekdays                                              |
+| `monthly`       | On the listed days of the month                                     |
+| `weekly_target` | Any `times_per_week` days (1 to 7) in each week                     |
+
+- A day of the month a month lacks (29th to 31st) falls on its last day; two listed days that
+  land on the same date (30 and 31 in February) count once, so nothing is due twice. Leap years
+  follow the calendar.
+- Weeks run Monday to Sunday (ISO weeks) for every habit, whatever the calendar's display
+  preference, so weekly numbers never change with a setting.
+- Nothing is expanded into rows: whether a day is due is computed from the version in effect on
+  that day.
+- Changing a schedule adds a version from a date (today by default) and drops versions from that
+  date on; earlier days keep theirs, so history never changes after the fact. A change dated on
+  or before the start date replaces the whole history. Saving an edit with the same schedule
+  adds nothing.
+
+### Completion history
+
+Logging a day upserts its entry: `completed` records the target (or a given value), `progress`
+records a value toward it, `skipped` excuses the day. Undoing deletes the entry. Days after
+today (in the habit's time zone) and outside the habit's dates are refused. A new entry stores
+the habit's current target; editing an entry keeps the target it was logged with, so raising a
+target later doesn't turn finished days into partial ones. An entry is _completed_ when its value
+reaches its stored target, _partial_ when it's above zero but below it.
+
+### Streak calculation rules
+
+Everything below is derived on read from versions, pauses, and entries (`progress.py`).
+
+- **Periods.** Fixed-day schedules have one period per due day: _met_ when completed, _skipped_
+  when skipped, _pending_ while it's today and not met, otherwise _missed_ (a past partial day
+  shows its progress but counts as missed). Weekly targets have one period per week, needing
+  `min(times_per_week, tracked days in the week that weren't skipped)` completed days; a week
+  shortened by the start date, end date, a pause, or skips asks for less, and one that needs
+  nothing is skipped. The current week is pending until met. When a schedule changes mid-week
+  under a weekly target, each part of the week is its own period.
+- **Streaks** count consecutive met periods in the current schedule's unit: days for fixed-day
+  schedules, weeks for weekly targets. Skipped periods and paused days neither break nor extend a
+  streak, a missed period ends it, and a pending one (today, or this week) doesn't end it yet.
+  Changing between a fixed-day schedule and a weekly target ends the run, because days and weeks
+  can't be added; changes within one unit carry it on. The longest streak is the longest such
+  run in the current unit.
+- **Rates** are met periods over met plus missed. Skipped, pending, paused, and not-due days are
+  never counted, so days off can't lower a rate; a range with nothing due has no rate (`null`),
+  not 0%. Detail pages show all-time, last 7 days, and last 30 days.
+- Days completed when not due are shown as extra and count toward total completions, not
+  streaks.
+
+### Routine execution model
+
+- `routines` and `routine_steps`: name, description, icon, color, optional category, optional
+  time of day, applicable weekdays (empty means every day), time zone, and status; steps are
+  ordered, with an optional duration and optional links to a habit, task, or note. Step links
+  are plain foreign keys that clear when the item is deleted; the service checks they're in the
+  routine's workspace. The estimated duration is the sum of step durations.
+- Editing replaces the ordered step list: steps sent with their ID are kept, new ones are added,
+  and the rest are removed.
+- `routine_sessions` and `routine_session_steps`: starting a session copies the steps, so editing
+  or deleting steps later never changes past sessions. Each step is `pending`, `completed`, or
+  `skipped`; the session is `active`, then `completed` or `abandoned`, with optional notes and a
+  linked note. A partial unique index allows one active session per routine; a second start gets 409.
+- Completing a step linked to a yes-or-no habit also completes that habit for the session's day,
+  in the same transaction, unless the day is already logged. Other habit kinds and linked tasks
+  are left for the user to update, since there's no single right value to record.
+
+### Reminder and calendar integration
+
+- **Reminders.** `habit_reminders` holds up to five times per habit or routine (unique per
+  owner and time), each optionally limited to weekdays. Each manages one reminder through the
+  existing reminder system (`reminders.habit_reminder_id`, link kind `habit_reminder`), exactly
+  like calendar alerts: the habit or routine points it at its next due day that isn't done or
+  skipped (for weekly targets, each day of a week until the week's target is met), at the
+  reminder time in its time zone, re-pointing it in the same transaction as every change and
+  logged day. The reminder worker delivers it as an in-app notification and calls back
+  (`ManagedFollowUp`) to move it on. Pausing or archiving cancels it; removing a time deletes it.
+  There is no second scheduler. Such reminders can't be edited through the reminders API (409).
+- **Calendar.** `GET …/habits/calendar` returns habits and routines with a time of day on the
+  days they're due, computed on read; no calendar event rows are created. Weekly targets have no
+  fixed days, so they aren't shown. The calendar shows them with a dotted outline and a repeat
+  mark, labels them "Habit" or "Routine", doesn't let them be dragged, and opens their page under
+  Habits instead of event details. `calendar_preferences.show_habits` (on by default) turns them
+  off.
+- **Tasks and notes.** A habit can create a task (an ordinary task, linked) or link existing
+  ones, and can create a reflection note (an ordinary note in the Inbox, linked). A routine
+  session can create or link a note. Nothing is copied.
+
+### Timezone behavior
+
+Log entries are keyed by local date in the habit's time zone (defaulting to the user's
+preference, else UTC). "Today" for logging, pending states, and reminders is today in that zone.
+Changing a habit's time zone doesn't rewrite history: past entries keep their dates, and only
+what counts as today moves. The Today view takes the viewer's time zone. Reminder times are wall
+clock times in the habit's or routine's zone, converted to UTC one occurrence at a time, so they
+keep their local time across daylight-saving changes.
+
+### Habits API
+
+Under `/workspaces/{workspace_id}`, all behind `WorkspaceDep`:
+
+- `GET|POST /habits/categories`, `PATCH|DELETE /habits/categories/{id}`.
+- `GET /habits?status=active|paused|archived|all`, `POST /habits`, `GET|PATCH|DELETE
+/habits/{id}` (`PATCH` takes `schedule` with optional `schedule_from`, and `status` to pause,
+  archive, or restore).
+- `GET /habits/today?date=&timezone=`: every habit that isn't archived with its state, entry,
+  period, streaks, and rates, this week's heatmap, and the next seven days' due habits.
+- `GET /habits/{id}/history?start=&end=` (at most 366 days): each day's state and entry, and the
+  periods.
+- `PUT|DELETE /habits/{id}/log/{date}`: record or undo a day.
+- `PUT /habits/{id}/reminders`: replace the reminder times.
+- `POST /habits/{id}/tasks`, `PUT|DELETE /habits/{id}/tasks/{task_id}`; `POST
+/habits/{id}/notes`, `PUT|DELETE /habits/{id}/notes/{note_id}`.
+- `GET /habits/analytics?start=&end=&timezone=&category_id=` (at most 366 days): a heatmap,
+  weekly and monthly trends, each habit's met, missed, completions, streaks, and trend (the
+  rate's change between the range's halves), and rates by category.
+- `GET /habits/calendar?start=&end=&timezone=` (`end` exclusive).
+- `GET|POST /routines`, `GET|PATCH|DELETE /routines/{id}`, `PUT /routines/{id}/reminders`.
+- `GET|POST /routines/{id}/sessions`, `GET|PATCH /routines/{id}/sessions/{session_id}` (finish,
+  abandon, notes, linked note), `PATCH …/steps/{step_id}`, `POST …/note`.
+
+Errors: 404 for anything outside the workspace, 422 for invalid fields, future days, or links to
+items not in the workspace, and 409 for a second active session, an ended session, or a taken
+category name. The OpenAPI document (`packages/contracts/openapi.json`) is the reference for
+fields.
+
+### Habits in the web app
+
+- `/habits`, with views in the URL: Today (`/habits`), All habits, Routines, Analytics, and
+  Archived (`?view=`), and detail pages (`?habit=`, `?routine=`). One primary action, a New menu
+  for a habit or a routine.
+- Today groups habits into To do, Done, and others (skipped, resting, paused, or a weekly target
+  already met), with one-tap check-offs that show at once and roll back on failure, inline
+  progress for amounts and durations, skip and clear in a row menu, this week's dots, today's
+  routines with Start or Continue, and the days ahead.
+- A habit's page has its progress, streaks and rates, a six-month heatmap (not-due days drawn as
+  outlines), recent entries, recording a past day, reminders, related tasks, reflections, and the
+  schedule history. A routine's page runs the active session (complete, skip, or bring back
+  steps; notes; finish or stop) and lists past sessions.
+- Analytics: a date range and category filter, totals, a completion calendar, weekly and
+  monthly consistency bars, what's going well and what could use attention, rates by category,
+  and a table of every habit.
+- Wording stays encouraging: missed days are "Not done", streaks are shown quietly, and there
+  are no points or badges.
+- Code: `src/api/habits`, `src/hooks/use-habits.ts`, `src/lib/habits`, `src/components/habits`.
+  Query keys start `["workspaces", id, "habits", …]`; changes refetch habits, reminders, and the
+  calendar.
+
+### Habit limitations
+
+- Weekly targets use Monday-to-Sunday weeks only; there are no monthly targets ("10 times a
+  month") or "every other week" schedules.
+- A habit's kind can't change after creation; delete and recreate it instead.
+- Snoozing isn't supported, because the reminder system has none; notifications can be read or
+  dismissed as usual. Reminders look about 400 days ahead (routines two weeks), at the worker's
+  poll granularity.
+- Calendar entries can't be dragged to reschedule; set the time on the habit or routine.
+- Routine steps complete linked yes-or-no habits only, and never complete linked tasks.
+- Streak and rate history is computed on read from the whole log. That's fast at personal scale
+  (years of daily entries), but there's no cached summary.
+- The opt-in PostgreSQL suite covers the habit and routine SQL through the services; the HTTP
+  tests run on SQLite.
+
+## Documents and the personal vault
+
+Documents keep a workspace's important records: identity documents, payslips, tax papers,
+policies, vehicle and property papers, medical records, certificates, receipts, and warranties.
+A document is a record first and a file second: it can exist without a file, and its file can be
+replaced while earlier versions are kept.
+
+### Document data model
+
+```text
+workspaces ──< document_folders ──< document_folders     (parent_id, ON DELETE CASCADE)
+     │               │
+     ├──< document_categories                           (unique normalized name)
+     │               │
+     ├──< documents >┘ (folder_id, category_id: no ON DELETE; the service moves or clears first)
+     │      ├──< document_versions                      (one per stored file; cascade)
+     │      ├──< document_tags                          (free text, unique per document; cascade)
+     │      ├──< document_renewals                      (dates before and after; cascade)
+     │      ├──< document_links >── a note, task, event, transaction, loan, subscription or
+     │      │                       bill, deposit, holding, or asset (both sides cascade)
+     │      └──  reminders.document_id                  (one managed reminder; cascade)
+```
+
+Every relationship is a composite foreign key on `(id, workspace_id)`, so the database refuses a
+folder, category, version, tag, renewal, or link that crosses workspaces. Migration
+`0015_create_documents` creates the tables with RLS on PostgreSQL.
+
+What belongs where:
+
+| Logical document (`documents`)                                           | File version (`document_versions`)              |
+| ------------------------------------------------------------------------ | ----------------------------------------------- |
+| Title, description, folder, category, tags, favorite, archive, trash     | Version number (from 1; the highest is current) |
+| Document number, issuer, provider, amount and currency, notes            | Original file name and extension                |
+| Issue, effective, expiry, renewal, and review dates                      | Detected content type, size, SHA-256            |
+| Up to 20 custom `{label, value}` details (category-specific information) | `blob_id`: the file's name in the store         |
+| Reminder days (0 to 365 before, at most 6), time of day, time zone       | Upload time, an optional note, `restored_from`  |
+
+- `documents` also copies the current version's file name, type, size, and upload time
+  (`file_*`, `current_version_id`), updated in the same transaction as every version change, so
+  lists sort and filter by them without a join. A CHECK keeps `current_version_id` and
+  `file_size` set together.
+- Archive and trash are timestamps. Trashed documents are read-only (409) and only they can be
+  deleted permanently. Archived documents stay editable but their reminders stop.
+- Custom details are text only; there are no typed per-category schemas. The web app shows the
+  common fields for every document and lets people add their own.
+- Default categories (Identity Documents, Employment, Salary & Payslips, Tax & Compliance,
+  Banking, Insurance, Vehicle Documents, Property, Medical Records, Education & Certificates,
+  Receipts & Invoices, Warranties, Travel, Other) are created the first time a workspace lists
+  them; a concurrent first request resolves to one set. Categories are optional; deleting one
+  leaves its documents unclassified.
+
+### Folders
+
+Folders nest up to 8 levels. The service walks the tree to refuse moving a folder into itself or
+a subfolder; a CHECK forbids a folder being its own parent. Deleting a folder never deletes
+documents (`?documents=`): `parent` moves its documents and subfolders up a level; `unfiled`
+deletes its subfolders too and leaves every document inside without a folder; `folder` does the
+same but moves them to `target_id`, which can't be inside the folder being deleted. Trashed and
+archived documents move as well, because `documents.folder_id` has no `ON DELETE` action.
+
+### Document storage
+
+- **One file store.** Documents reuse the note attachments' store
+  (`system/attachment_store.py`, `ORBIT_ATTACHMENTS_PATH/<workspace id>/<blob id>`): names on disk
+  are server-generated UUIDs, never upload names; directories are `0700`, files `0600`; writes go
+  to a `.partial` file and are renamed into place; blocking I/O runs in a worker thread. The
+  service depends on a small `FileStore` protocol, so object storage could replace the folder
+  later without changing it.
+- **Upload order.** The body is read with the size limit enforced as it streams
+  (`ORBIT_DOCUMENT_MAX_BYTES`, 25 MB by default), then the type is checked, then the file is
+  written, then the metadata is saved. If saving fails, the transaction is rolled back and the
+  file deleted, so no record points at a missing file and no file is left for nobody. An upload
+  interrupted mid-body fails before anything is written.
+- **Deduplication.** Within one document, restoring an earlier version or uploading bytes a
+  version already has reuses that version's blob; re-uploading the current file under the same
+  name is a no-op. Files are not shared across documents, so deleting one document can never
+  remove another's file.
+- **Deleting files.** Permanently deleting documents (one, or emptying the trash), deleting an
+  earlier version, and deleting a workspace delete files after the metadata commits, and only
+  blobs no remaining version references.
+- **Orphan sweep.** Every six hours the reminder worker lists every blob ID the database
+  references (note attachments and document versions) and deletes files in the store that none
+  references, plus leftover `.partial` files, but only ones last modified more than an hour ago,
+  so uploads in progress are safe. Names that aren't canonical UUIDs are never touched.
+
+### File validation
+
+- Accepted: PDF, JPEG, PNG, WebP, DOCX, XLSX, PPTX, TXT, and CSV. HTML, SVG, executables, and
+  archives are refused (415). The extension chooses the type; the file's leading bytes must
+  match it (`%PDF-`, PNG and JPEG signatures, `RIFF…WEBP`), Office files must be ZIP archives
+  containing `word/document.xml`, `xl/workbook.xml`, or `ppt/presentation.xml` (read from the
+  archive's directory only, so nothing is decompressed), and text files must not contain NUL
+  bytes. The type the browser declared is ignored.
+- The file name is reduced to its last path segment, stripped of control characters and leading
+  dots, and capped at 255 characters (keeping the extension). It's shown and exported, never used
+  as a path.
+- The web app checks the extension and size before uploading (from `GET …/documents/settings`)
+  to give an immediate message; the API checks again.
+
+### Security and privacy
+
+- **Authorization.** Every route takes `WorkspaceDep` first; repositories filter every query by
+  that workspace. An ID from another workspace behaves like a missing one: 404 in the path, 422
+  as a reference (a folder, category, or record to link).
+- **Downloads.** Files are served only by `GET …/documents/{id}/file` and
+  `…/versions/{version}/file`, which need the bearer token. There are no public, signed, or
+  guessable URLs, and responses never contain storage paths or blob IDs. Downloads are always
+  `Content-Disposition: attachment` with the detected type, `X-Content-Type-Options: nosniff`,
+  `Content-Security-Policy: default-src 'none'; sandbox`, and `Cache-Control: private,
+no-store`.
+- **Previews** fetch the file with the token and show it from a local object URL created with the
+  detected type, revoked when the preview closes. Only PDFs (the browser's PDF viewer in an
+  iframe), PNG, JPEG, and WebP images (`<img>`), and TXT and CSV (as React text, first 100,000
+  characters) are previewed; nothing uploaded is ever rendered as HTML, and SVG isn't accepted.
+- **Sensitive fields.** Lists, search results, the overview, and reminders use
+  `DocumentSummaryResponse`, which leaves out the document number, amount, notes, and custom
+  details; only a single document's response includes them. Search never matches document
+  numbers. Logs carry IDs and counts only; error messages never include file contents.
+- **Local-first.** Files stay on the API's machine; nothing is sent to an external service.
+
+### Encryption
+
+Orbit does **not** encrypt documents at rest, and the vault is **not** end-to-end encrypted.
+Files are protected by file permissions (`0600`), the API's authorization, and whatever disk
+encryption the machine has (FileVault, BitLocker, LUKS), like the SQLite database.
+
+Application-level encryption was evaluated and deferred. With the key on the same machine as the
+files (an environment variable or a key file), it would protect only copies of the attachments
+folder made without the key, while adding key generation, rotation (re-encrypting every file),
+and recovery (a lost key loses every document) that need their own design, and a new dependency
+(`cryptography`, for AES-GCM). Doing it properly means: authenticated encryption per file with a
+random nonce, a key identifier on each version, keys outside the database and outside the
+attachments folder, a documented rotation command, and exports decrypting through the API. Until
+then, use full-disk encryption and treat backups and exports as sensitive.
+
+### Versioning
+
+Uploading to an existing document (`POST …/versions`) adds the next version and makes it
+current; nothing is overwritten. `POST …/versions/{id}/restore` adds a new version that copies an
+earlier one (sharing its file) and records `restored_from`, so restoring never loses a version.
+`DELETE …/versions/{id}` removes an earlier version; the current one can't be deleted (422).
+Concurrent uploads to one document race on the unique `(document_id, number)` and the loser
+gets 409. There is no merging.
+
+### Expiry tracking
+
+- `expiry_status` is derived on read from the expiry date and today in the user's time zone:
+  `none`, `expired` (before today), `expiring` (within 30 days), or `valid`.
+- Views: expiring within 7, 30, or 90 days (`expires_within`), expired (`expired=true`), and
+  renewals within 90 days (`renewal_within`). Documents with a review date ("check this every
+  year") get review reminders.
+- **Renewals** (`POST …/renew`) replace the expiry date (and optionally the issue and renewal
+  dates) and record the old and new dates in `document_renewals`, so earlier expiry information
+  is kept. The renewed copy is uploaded as a new version.
+
+### Reminder integration
+
+- Each document manages **at most one reminder** in the existing `reminders` table
+  (`reminders.document_id`, unique, cascading; link kind `document`), delivered by the existing
+  worker as an in-app notification. There is no second scheduler.
+- For each tracked date (expiry, renewal, review) and reminder day, an alert falls at the
+  reminder time (09:00 by default) on that day in the document's time zone (the user's when it
+  was created). The reminder points at the **earliest alert still ahead**; alerts whose time has
+  passed are never sent late. Titles say what and when ("Passport expires in 30 days"); the
+  description carries only the date, never the document number.
+- It is re-pointed in the same transaction as every change: creating, editing dates or reminder
+  days, renewing, archiving or trashing (which removes it), and restoring. Permanent deletion
+  removes it by cascade; delivered notifications stay.
+- After it fires, the worker's `ManagedFollowUp` hands it to `DocumentReminders.after_delivery`,
+  inside the delivery transaction, which points it at the next alert or removes it when none is
+  left. The reminders API refuses to edit or delete it (409); the reminders page marks it
+  "Managed in Documents", and its title links to the document.
+
+### Cross-module links
+
+`document_links` relates a document to existing records without copying them: a note, task,
+calendar event, finance transaction (receipts, tax records), loan, subscription or bill
+(insurance premiums), deposit, holding, or asset. One nullable column per kind, each a cascading
+composite foreign key, and a CHECK that exactly one is set. Linking checks the record exists in
+the workspace (422 otherwise) and is idempotent; deleting either side removes the link.
+
+- The document's page lists its links with current titles, opening each where it lives, and
+  links more through `GET …/documents/link-candidates?kind=&q=` (records of one kind, by title).
+- Notes (details panel), tasks (edit dialog), calendar events (details), loans (expanded card),
+  and transactions (edit dialog) show a **Documents** section: `GET …/documents?linked_kind=&
+linked_id=`, open, link from the vault, unlink.
+
+### Search and filters
+
+`GET …/documents?q=` splits the search into words (at most eight); each must appear,
+case-insensitively, in the title, description, current file name, issuer, provider, notes, a
+tag, the category name, or the folder name: escaped `ILIKE`, the same approach as notes, on both
+SQLite and PostgreSQL. File contents are never indexed (no OCR or text extraction).
+
+Filters: state (`active`, `archived`, `trashed`, `any`), folder (optionally with subfolders) or
+unfiled, category or unclassified, tag, file kind (`pdf`, `image`, `text`, `office`, `none`),
+favorite, date added, expiry range or window, expired, renewal window, linked record. Sorts:
+name, date added, last modified, recent (opened or modified), expiry date, file size, category.
+`limit` (≤ 100) and `offset`; the web app pages by 50.
+
+### Export and backup
+
+`POST …/documents/export` with `document_ids`, a `folder_id` (with subfolders), a `category_id`,
+or nothing (every document not in the trash), optionally `include_versions`, returns a ZIP built
+in a private temporary file (deleted after it's sent):
+
+```text
+Orbit documents/
+├── metadata.json                         every document's fields, tags, versions, checksums
+├── <folder>/<subfolder>/<original name>  current files, in their folders
+├── Unfiled/<original name>
+└── …/<name> (versions)/v<n> <name>       earlier versions, when asked for
+```
+
+Original file names are kept; collisions in one folder get " (2)", and path segments are cleaned
+so they can't escape the archive. Metadata-only documents appear in `metadata.json` only. The
+export includes document numbers, since it's the owner's backup. Backups of a whole
+installation copy the database and the attachments folder together
+([development.md](development.md#backups)). There is no import yet.
+
+### Documents API
+
+All routes are under `/api/v1/workspaces/{workspace_id}`, behind `WorkspaceDep`.
+
+| Method                   | Path                                                                | Purpose                                                       |
+| ------------------------ | ------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `GET`, `POST`            | `/documents`                                                        | List or search; create without a file                         |
+| `POST`                   | `/documents/upload?filename=&title=&folder_id=&category_id=`        | Upload a file (raw body) as a new document                    |
+| `GET`                    | `/documents/overview`, `/counts`, `/settings`, `/tags`              | Dashboard, counts per view, upload limits, tags               |
+| `GET`                    | `/documents/link-candidates?kind=&q=`                               | Records that can be linked                                    |
+| `POST`                   | `/documents/export`, `/documents/empty-trash`                       | ZIP export; delete every trashed document                     |
+| `GET`, `PATCH`, `DELETE` | `/documents/{id}`                                                   | Detail (versions, renewals, links); update; delete if trashed |
+| `POST`                   | `/documents/{id}/open`, `/trash`, `/restore`, `/renew`              | Record an open; trash; restore; renewal                       |
+| `GET`                    | `/documents/{id}/file`, `/versions/{version}/file`                  | Download                                                      |
+| `POST`                   | `/documents/{id}/versions?filename=&note=`                          | Upload a new version                                          |
+| `POST`, `DELETE`         | `/documents/{id}/versions/{version}/restore`, `/versions/{version}` | Restore; delete an earlier version                            |
+| `PUT`, `DELETE`          | `/documents/{id}/links/{kind}/{record}`                             | Link; unlink                                                  |
+| `GET`, `POST`            | `/document-folders`                                                 | Folders with counts (flat); create                            |
+| `PATCH`, `DELETE`        | `/document-folders/{id}`                                            | Rename or move; delete with `?documents=`                     |
+| `GET`, `POST`            | `/document-categories`                                              | Categories with counts (defaults created first); create       |
+| `PATCH`, `DELETE`        | `/document-categories/{id}`                                         | Rename or change icon; delete                                 |
+
+Errors: 404 for anything outside the workspace, 413 for files over the limit, 415 for refused
+types, 422 for invalid fields, references, or moves, and 409 for trashed documents, a taken
+category name, or a concurrent version upload. Request models forbid unknown fields. The OpenAPI
+document is the reference for fields.
+
+### Documents in the web app
+
+- `/documents` (`components/documents/`), with the view, folder, category, tag, search, file
+  kind, expiry window, and open document in the URL. A rail (Overview, All documents, Recent,
+  Favorites, Expiring soon, Expired, Renewals, Archived, Trash with counts; the folder tree with
+  expand, collapse, and folder actions; categories; tags) beside the main column (behind
+  **Browse** on narrower screens).
+- **Overview**: totals and storage used, expiring in 30 days, expired, renewals, then expiring
+  and expired documents, recently added and modified, favorites, and documents by category.
+- **Library**: search, file type, sort, list or grid, per-document menu (download, favorite,
+  move, archive, trash; restore and delete forever in the Trash, after confirming), selection
+  with Export, pagination, and empty, loading, and error states.
+- **Upload**: one primary **Add** menu (upload files, or a record without a file), multiple
+  files from the picker or dropped on the library, each uploaded in turn with its own status
+  (waiting, uploading, uploaded, or the reason it failed, with Retry). Progress is per file;
+  `fetch` doesn't report bytes sent.
+- **Document page**: preview, version history (download, make current, delete), organize
+  (category, folder, tags), the details form (React Hook Form and Yup; amounts with
+  `AmountField`), expiry dates and reminder days with the next reminder's time, linked records,
+  and renewal history; header actions download, replace the file, renew, archive, and trash.
+- **Command palette**: Upload document, Search documents for …, matching documents as you type,
+  recent documents, expiring and expired documents, and categories.
+- Code: `src/api/documents`, `src/hooks/use-documents.ts`, `src/hooks/use-document-commands.ts`,
+  `src/lib/documents`, `src/components/documents`; folder trees are shared with notes in
+  `src/utils/folders`. Query keys start `["workspaces", id, "documents", …]`; changes refresh
+  documents and reminders.
+
+### Document limitations
+
+- No encryption at rest by Orbit (see [Encryption](#encryption)), no OCR or content search, no
+  AI extraction, no import of exports, no sharing.
+- Files live on one machine; several API instances need a shared volume. No object storage.
+- Uploads are read into memory up to the limit (25 MB by default, 200 MB at most).
+- Previews load the whole file; Office files can't be previewed. PDF previews rely on the
+  browser's viewer.
+- Custom details are untyped text. Reminder times use the document's stored time zone, which
+  doesn't follow later changes to the user's time zone.
+- Deduplication is within one document only.
+- Exports are built on the API's disk before being sent; very large exports need the space.
+- The opt-in PostgreSQL suite covers the document SQL through the service; the HTTP tests run on
+  SQLite.
+
 ## Configuration
 
 | App | Source                                                    | Validation                                    | Visibility  |
@@ -2278,16 +2781,16 @@ body or path link is a 422, like a missing one.
 
 ## Testing strategy
 
-| Layer                    | Tool                                            | Location                                                                                                                        | Current coverage                                                                                                                                                                                                                                                      |
-| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                                                                                      | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth, budgets, goals, plans, notes (views, autosave, Markdown, palette), calendar (views, dialogs, drag, scopes, palette) |
-| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                                                                                               | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, budgets, goals, plans, notes, calendar, cross-user isolation                                                                                 |
-| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_calendar_recurrence.py`, `tests/test_reminder_worker.py`, `tests/test_budget_alerts.py` | Recurrence, DST, month ends, leap years, exceptions; delivery, concurrency, leases, retries, restarts; event alerts; budget alerts and period closing                                                                                                                 |
-| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                                                                                              | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                                                                                                                                          |
-| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                                                                                         | Startup checks, sessions, migrations, constraints, 503 errors                                                                                                                                                                                                         |
-| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                                                                                               | Migrations, connectivity, RLS; skipped by default                                                                                                                                                                                                                     |
-| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                                                                                       | Generated contract matches the API                                                                                                                                                                                                                                    |
-| End-to-end               | Not set up (**planned**)                        | —                                                                                                                               | —                                                                                                                                                                                                                                                                     |
+| Layer                    | Tool                                            | Location                                                                                                                        | Current coverage                                                                                                                                                                                                                                                                                                  |
+| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                                                                                      | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth, budgets, goals, plans, notes (views, autosave, Markdown, palette), calendar (views, dialogs, drag, scopes, palette), documents (views, uploads, details, links) |
+| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                                                                                               | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, budgets, goals, plans, notes, calendar, documents (uploads, validation, versions, export, sweep), cross-user isolation                                                                   |
+| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_calendar_recurrence.py`, `tests/test_reminder_worker.py`, `tests/test_budget_alerts.py` | Recurrence, DST, month ends, leap years, exceptions; delivery, concurrency, leases, retries, restarts; event alerts; budget alerts and period closing                                                                                                                                                             |
+| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                                                                                              | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                                                                                                                                                                                      |
+| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                                                                                         | Startup checks, sessions, migrations, constraints, 503 errors                                                                                                                                                                                                                                                     |
+| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                                                                                               | Migrations, connectivity, RLS; skipped by default                                                                                                                                                                                                                                                                 |
+| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                                                                                       | Generated contract matches the API                                                                                                                                                                                                                                                                                |
+| End-to-end               | Not set up (**planned**)                        | —                                                                                                                               | —                                                                                                                                                                                                                                                                                                                 |
 
 Unit tests cover logic, route tests cover HTTP behavior and validation, and E2E tests will cover
 critical user journeys once real features exist. CI runs every layer on each pull request.
@@ -2313,6 +2816,9 @@ The database foundation is implemented (see [Storage](#storage)). Still planned:
 - Shared workspaces (a membership table, invitations, roles), if the product needs them.
 - Any synchronization or migration between local and cloud storage. This is undecided and
   needs its own design.
+- Object storage for attachment and document files, behind the existing `FileStore` protocol,
+  and application-level encryption at rest with a real key-management design (see
+  [Encryption](#encryption)).
 
 ### AI providers
 
@@ -2327,7 +2833,7 @@ Workspace-scoped [tasks](#tasks), [reminders](#reminders-and-notifications) (wit
 database-backed worker), and four phases of [finance](#finance) (ledger, commitments,
 [investments and net worth](#investments-and-net-worth-phase-3), and
 [budgets, savings goals, and planning](#budgets-savings-goals-and-planning-phase-4)), and
-[notes](#notes-and-knowledge-management), and the [calendar](#calendar-and-events) are in place.
+[notes](#notes-and-knowledge-management), the [calendar](#calendar-and-events), [habits](#habits-and-routines), and [documents](#documents-and-the-personal-vault) are in place.
 Next: more
 modules on the same pattern, AI-assisted features through the provider interface, then optional
 sync and extension points.

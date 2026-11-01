@@ -8,9 +8,8 @@ so the type the browser claimed is never trusted, and downloads are served with 
 
 import uuid
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
 from datetime import datetime
-from pathlib import Path, PurePath
+from pathlib import Path
 from typing import Protocol
 
 from orbit_api.services.notes.models import (
@@ -21,59 +20,18 @@ from orbit_api.services.notes.models import (
 )
 from orbit_api.services.transactions import Transaction
 from orbit_api.utils.clock import utc_now
+from orbit_api.utils.file_types import FILE_TYPES, FileType, FileTypeError
+from orbit_api.utils.file_types import detect_file_type as detect
 
 MAX_ATTACHMENTS_PER_NOTE = 50
-
-_ZIP = (b"PK\x03\x04", b"PK\x05\x06")
-
-
-@dataclass(frozen=True, slots=True)
-class FileType:
-    content_type: str
-    # Accepted leading bytes; empty means a text format, which must not contain NUL bytes.
-    signatures: tuple[bytes, ...] = ()
-
-
-# By lowercase extension. Office and OpenDocument files are ZIP archives.
-FILE_TYPES: dict[str, FileType] = {
-    "png": FileType("image/png", (b"\x89PNG\r\n\x1a\n",)),
-    "jpg": FileType("image/jpeg", (b"\xff\xd8\xff",)),
-    "jpeg": FileType("image/jpeg", (b"\xff\xd8\xff",)),
-    "gif": FileType("image/gif", (b"GIF87a", b"GIF89a")),
-    "webp": FileType("image/webp", (b"RIFF",)),
-    "pdf": FileType("application/pdf", (b"%PDF-",)),
-    "txt": FileType("text/plain"),
-    "md": FileType("text/markdown"),
-    "csv": FileType("text/csv"),
-    "json": FileType("application/json"),
-    "zip": FileType("application/zip", _ZIP),
-    "docx": FileType(
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document", _ZIP
-    ),
-    "xlsx": FileType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", _ZIP),
-    "pptx": FileType(
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation", _ZIP
-    ),
-    "odt": FileType("application/vnd.oasis.opendocument.text", _ZIP),
-    "ods": FileType("application/vnd.oasis.opendocument.spreadsheet", _ZIP),
-}
 
 
 def detect_file_type(filename: str, data: bytes) -> FileType:
     """The type of an upload, or `AttachmentRejectedError` if notes don't accept it."""
-    extension = PurePath(filename).suffix.lower().removeprefix(".")
-    file_type = FILE_TYPES.get(extension)
-    if file_type is None:
-        accepted = ", ".join(sorted(FILE_TYPES))
-        raise AttachmentRejectedError(f"That type of file can't be attached. Accepted: {accepted}.")
-    if file_type.signatures:
-        if not data.startswith(file_type.signatures):
-            raise AttachmentRejectedError("The file's contents don't match its extension.")
-        if extension == "webp" and data[8:12] != b"WEBP":
-            raise AttachmentRejectedError("The file's contents don't match its extension.")
-    elif b"\x00" in data:
-        raise AttachmentRejectedError("The file's contents don't match its extension.")
-    return file_type
+    try:
+        return detect(filename, data, FILE_TYPES)
+    except FileTypeError as error:
+        raise AttachmentRejectedError(str(error)) from None
 
 
 class AttachmentRepository(Protocol):

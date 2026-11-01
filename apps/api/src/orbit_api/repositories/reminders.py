@@ -86,6 +86,10 @@ def _commitment_of(model: ReminderModel) -> CommitmentLink | None:
         return CommitmentLink(kind="deposit", id=model.finance_deposit_id)
     if model.calendar_event_alert_id is not None:
         return CommitmentLink(kind="calendar_alert", id=model.calendar_event_alert_id)
+    if model.habit_reminder_id is not None:
+        return CommitmentLink(kind="habit_reminder", id=model.habit_reminder_id)
+    if model.document_id is not None:
+        return CommitmentLink(kind="document", id=model.document_id)
     return None
 
 
@@ -163,6 +167,8 @@ class SqlReminderRepository:
                 calendar_event_alert_id=(
                     link.id if link and link.kind == "calendar_alert" else None
                 ),
+                habit_reminder_id=link.id if link and link.kind == "habit_reminder" else None,
+                document_id=link.id if link and link.kind == "document" else None,
                 last_occurrence_at=reminder.last_occurrence_at,
                 last_outcome=reminder.last_outcome,
                 created_at=reminder.created_at,
@@ -184,6 +190,8 @@ class SqlReminderRepository:
             "recurring_payment": ReminderModel.finance_recurring_payment_id,
             "deposit": ReminderModel.finance_deposit_id,
             "calendar_alert": ReminderModel.calendar_event_alert_id,
+            "habit_reminder": ReminderModel.habit_reminder_id,
+            "document": ReminderModel.document_id,
         }[link.kind]
         model = await self._session.scalar(
             select(ReminderModel)
