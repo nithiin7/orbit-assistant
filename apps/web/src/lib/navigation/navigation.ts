@@ -3,6 +3,7 @@ import {
   Bot,
   CalendarDays,
   CheckSquare,
+  FileLock2,
   LayoutDashboard,
   type LucideIcon,
   NotebookPen,
@@ -80,6 +81,13 @@ export const navItems: readonly NavItem[] = [
     group: "workspace",
   },
   {
+    title: "Documents",
+    href: "/documents",
+    icon: FileLock2,
+    description: "Store, organize, and find your important documents, and track when they expire.",
+    group: "workspace",
+  },
+  {
     title: "Assistant",
     href: "/assistant",
     icon: Bot,
@@ -105,6 +113,7 @@ const dedicatedRoutes: ReadonlySet<string> = new Set([
   "/habits",
   "/finance",
   "/notes",
+  "/documents",
   "/settings",
 ]);
 

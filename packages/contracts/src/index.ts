@@ -374,3 +374,45 @@ export type HabitHistoryQuery = NonNullable<
 export type RoutineSessionListQuery = NonNullable<
   paths["/api/v1/workspaces/{workspace_id}/routines/{routine_id}/sessions"]["get"]["parameters"]["query"]
 >;
+
+// Documents and the personal vault
+export type DocumentSummary = Schemas["DocumentSummaryResponse"];
+export type DocumentRecord = Schemas["DocumentResponse"];
+export type DocumentDetail = Schemas["DocumentDetailResponse"];
+export type DocumentList = Schemas["DocumentListResponse"];
+export type DocumentFile = Schemas["DocumentFileResponse"];
+export type DocumentVersion = Schemas["DocumentVersionResponse"];
+export type DocumentRenewal = Schemas["DocumentRenewalResponse"];
+export type DocumentLink = Schemas["DocumentLinkResponse"];
+export type DocumentLinkKind = DocumentLink["kind"];
+export type DocumentLinkCandidates = Schemas["DocumentLinkCandidatesResponse"];
+export type DocumentCustomField = Schemas["DocumentCustomField"];
+export type DocumentCounts = Schemas["DocumentCountsResponse"];
+export type DocumentOverview = Schemas["DocumentOverviewResponse"];
+export type DocumentSettings = Schemas["DocumentSettingsResponse"];
+export type DocumentState = DocumentSummary["state"];
+export type ExpiryStatus = DocumentSummary["expiry_status"];
+export type DocumentFolder = Schemas["DocumentFolderResponse"];
+export type DocumentFolderList = Schemas["DocumentFolderListResponse"];
+export type CreateDocumentFolderRequest = Schemas["CreateDocumentFolderRequest"];
+export type UpdateDocumentFolderRequest = Schemas["UpdateDocumentFolderRequest"];
+export type DocumentFolderDeleteMode = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/document-folders/{folder_id}"]["delete"]["parameters"]["query"]
+>["documents"];
+export type DocumentCategory = Schemas["DocumentCategoryResponse"];
+export type DocumentCategoryList = Schemas["DocumentCategoryListResponse"];
+export type DocumentCategoryIcon = DocumentCategory["icon"];
+export type CreateDocumentCategoryRequest = Schemas["CreateDocumentCategoryRequest"];
+export type UpdateDocumentCategoryRequest = Schemas["UpdateDocumentCategoryRequest"];
+export type DocumentTag = Schemas["DocumentTagResponse"];
+export type DocumentTagList = Schemas["DocumentTagListResponse"];
+export type CreateDocumentRequest = Schemas["CreateDocumentRequest"];
+export type UpdateDocumentRequest = Schemas["UpdateDocumentRequest"];
+export type RenewDocumentRequest = Schemas["RenewDocumentRequest"];
+export type ExportDocumentsRequest = Schemas["ExportDocumentsRequest"];
+/** Filters, search, sorting, and paging accepted when listing documents. */
+export type DocumentListQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/documents"]["get"]["parameters"]["query"]
+>;
+export type DocumentSort = NonNullable<DocumentListQuery["sort"]>;
+export type DocumentFileKind = NonNullable<DocumentListQuery["file_kind"]>;

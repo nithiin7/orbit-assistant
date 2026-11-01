@@ -22,6 +22,7 @@ import Link from "next/link";
 import { type ReactNode, useId, useState } from "react";
 
 import { describeApiError } from "@/api/client";
+import { LinkedDocuments } from "@/components/documents/linked-documents";
 import { FormAlert } from "@/components/form-field";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -382,6 +383,10 @@ function EventBody({
           </div>
         ) : null}
       </section>
+
+      <div className="border-t pt-4">
+        <LinkedDocuments workspaceId={workspaceId} kind="event" recordId={occurrence.event_id} />
+      </div>
 
       <div className="flex flex-wrap gap-2 border-t pt-4">
         <Button disabled={busy} onClick={() => events.edit(occurrence)}>

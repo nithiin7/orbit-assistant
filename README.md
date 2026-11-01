@@ -36,8 +36,9 @@ control.
 > loans, subscriptions, bills, investments, other assets, net worth, budgets, savings goals, and
 > monthly plans), and notes (folders, tags, links and backlinks, a daily journal, search,
 > Markdown, and attachments), a calendar (events, recurring series, task scheduling, and
-> event reminders), and habits with routines (schedules, streaks, analytics, and reminders) are
-> built; the AI assistant is not.
+> event reminders), habits with routines (schedules, streaks, analytics, and reminders), and a
+> documents vault (uploads, versions, expiry reminders, links, and export) are built; the AI
+> assistant is not.
 
 ## Scope
 
@@ -86,6 +87,12 @@ control.
   time zone; drag to move, resize, or create, with keyboard-friendly alternatives; tasks
   scheduled into time blocks; meeting notes linked to events; a dashboard agenda; and calendar
   commands in the command palette.
+- Documents: upload PDFs, images, Office files, and text (validated by content, never
+  executed) or track records without a file; folders, categories (sensible defaults), tags,
+  favorites, archive, and trash; structured details with expiry, renewal, and review dates and
+  reminders before them; previews for PDFs, images, and text; version history with restore;
+  renewal history; links to notes, tasks, events, and finance records; search and filters; and
+  ZIP export with metadata. Files stay on your Orbit server and are not encrypted by Orbit.
 - Habits and routines: yes-or-no, amount, and time-spent habits on daily, every-N-days, chosen
   weekday, day-of-month, or times-per-week schedules; one-tap check-offs, partial progress,
   skips, and past days; streaks and rates that count only due days and respect pauses and

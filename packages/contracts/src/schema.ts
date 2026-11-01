@@ -3030,6 +3030,478 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List or search documents */
+        get: operations["list_documents_api_v1_workspaces__workspace_id__documents_get"];
+        put?: never;
+        /**
+         * Create a document without a file
+         * @description Track a document you haven't uploaded; add its file later as the first version.
+         */
+        post: operations["create_document_api_v1_workspaces__workspace_id__documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload a file as a new document
+         * @description The request body is the file itself. Its type is decided from the file name and checked
+         *     against its contents; the declared content type is ignored. The file and its metadata are
+         *     saved together: if either fails, neither is kept.
+         */
+        post: operations["upload_document_api_v1_workspaces__workspace_id__documents_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The documents overview
+         * @description Counts, recent and favorite documents, what's expiring or expired, and categories.
+         */
+        get: operations["documents_overview_api_v1_workspaces__workspace_id__documents_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Document counts per view */
+        get: operations["document_counts_api_v1_workspaces__workspace_id__documents_counts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Upload limits */
+        get: operations["document_settings_api_v1_workspaces__workspace_id__documents_settings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Tags used on documents */
+        get: operations["document_tags_api_v1_workspaces__workspace_id__documents_tags_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/link-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Records a document can be linked to
+         * @description Notes, tasks, events, or finance records of one kind, newest first, optionally searched
+         *     by title.
+         */
+        get: operations["link_candidates_api_v1_workspaces__workspace_id__documents_link_candidates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export documents as a ZIP archive
+         * @description Original files under their folders, with `metadata.json` describing every document
+         *     (including reference numbers: an export is the owner's own backup).
+         */
+        post: operations["export_documents_api_v1_workspaces__workspace_id__documents_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/empty-trash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Delete every trashed document for good */
+        post: operations["empty_document_trash_api_v1_workspaces__workspace_id__documents_empty_trash_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a document with its history and links */
+        get: operations["get_document_api_v1_workspaces__workspace_id__documents__document_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a trashed document permanently
+         * @description Deletes the document, every version, and their files.
+         */
+        delete: operations["delete_document_api_v1_workspaces__workspace_id__documents__document_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update a document's details
+         * @description Rename, move, classify, tag, favorite, archive, edit metadata or reminder timing. The
+         *     file is unaffected; replace it by uploading a new version.
+         */
+        patch: operations["update_document_api_v1_workspaces__workspace_id__documents__document_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record that a document was opened */
+        post: operations["open_document_api_v1_workspaces__workspace_id__documents__document_id__open_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}/trash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move a document to the trash
+         * @description Its reminders stop; its files are kept until it's deleted permanently.
+         */
+        post: operations["trash_document_api_v1_workspaces__workspace_id__documents__document_id__trash_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore a document from the trash */
+        post: operations["restore_document_api_v1_workspaces__workspace_id__documents__document_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}/renew": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record a renewal
+         * @description Replace the expiry (and optionally issue and renewal) dates, keeping the old ones in the
+         *     renewal history; reminders move to the new dates. Upload the renewed copy as a new version.
+         */
+        post: operations["renew_document_api_v1_workspaces__workspace_id__documents__document_id__renew_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download the current file
+         * @description Always a download (`Content-Disposition: attachment`) with the type Orbit detected,
+         *     `nosniff`, and a sandboxing CSP, so the browser never runs it as a page. There is no
+         *     public or guessable URL: every request needs the bearer token.
+         */
+        get: operations["download_document_api_v1_workspaces__workspace_id__documents__document_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload a new version
+         * @description Replace the file. Earlier versions are kept and can be restored.
+         */
+        post: operations["upload_version_api_v1_workspaces__workspace_id__documents__document_id__versions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}/versions/{version_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a version's file */
+        get: operations["download_version_api_v1_workspaces__workspace_id__documents__document_id__versions__version_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}/versions/{version_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore an earlier version
+         * @description Adds a new version with the earlier version's file, so no version is lost.
+         */
+        post: operations["restore_version_api_v1_workspaces__workspace_id__documents__document_id__versions__version_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}/versions/{version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an earlier version */
+        delete: operations["delete_version_api_v1_workspaces__workspace_id__documents__document_id__versions__version_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/documents/{document_id}/links/{kind}/{target_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Link a document to a record
+         * @description Idempotent. The record must be in the same workspace.
+         */
+        put: operations["link_document_api_v1_workspaces__workspace_id__documents__document_id__links__kind___target_id__put"];
+        post?: never;
+        /** Unlink a document from a record */
+        delete: operations["unlink_document_api_v1_workspaces__workspace_id__documents__document_id__links__kind___target_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/document-folders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List document folders */
+        get: operations["list_document_folders_api_v1_workspaces__workspace_id__document_folders_get"];
+        put?: never;
+        /** Create a document folder */
+        post: operations["create_document_folder_api_v1_workspaces__workspace_id__document_folders_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/document-folders/{folder_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a document folder
+         * @description Never deletes documents: `documents` chooses where they go.
+         */
+        delete: operations["delete_document_folder_api_v1_workspaces__workspace_id__document_folders__folder_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename or move a document folder */
+        patch: operations["update_document_folder_api_v1_workspaces__workspace_id__document_folders__folder_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/document-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List document categories
+         * @description Creates the default categories the first time.
+         */
+        get: operations["list_document_categories_api_v1_workspaces__workspace_id__document_categories_get"];
+        put?: never;
+        /** Create a document category */
+        post: operations["create_document_category_api_v1_workspaces__workspace_id__document_categories_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/document-categories/{category_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a document category
+         * @description Its documents stay, unclassified.
+         */
+        delete: operations["delete_document_category_api_v1_workspaces__workspace_id__document_categories__category_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename a document category or change its icon */
+        patch: operations["update_document_category_api_v1_workspaces__workspace_id__document_categories__category_id__patch"];
+        trace?: never;
+    };
     "/api/v1/storage": {
         parameters: {
             query?: never;
@@ -4221,6 +4693,90 @@ export interface components {
             /** @description Remind before the maturity date. */
             reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
         };
+        /** CreateDocumentCategoryRequest */
+        CreateDocumentCategoryRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Icon
+             * @default folder
+             * @enum {string}
+             */
+            icon: "id-card" | "briefcase" | "wallet" | "receipt" | "landmark" | "shield" | "car" | "home" | "heart-pulse" | "graduation-cap" | "file-text" | "plane" | "badge-check" | "folder";
+        };
+        /** CreateDocumentFolderRequest */
+        CreateDocumentFolderRequest: {
+            /** Name */
+            name: string;
+            /** Parent Id */
+            parent_id?: string | null;
+        };
+        /**
+         * CreateDocumentRequest
+         * @description A document without a file (upload one later as its first version).
+         */
+        CreateDocumentRequest: {
+            /** Title */
+            title: string;
+            /** Folder Id */
+            folder_id?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Reference Number */
+            reference_number?: string | null;
+            /** Issuing Authority */
+            issuing_authority?: string | null;
+            /** Provider */
+            provider?: string | null;
+            /** Issue Date */
+            issue_date?: string | null;
+            /** Effective Date */
+            effective_date?: string | null;
+            /** Expiry Date */
+            expiry_date?: string | null;
+            /** Renewal Date */
+            renewal_date?: string | null;
+            /** Review Date */
+            review_date?: string | null;
+            /** Amount */
+            amount?: number | null;
+            /** Currency */
+            currency?: ("INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY") | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            /** Custom Fields */
+            custom_fields?: components["schemas"]["DocumentCustomField"][];
+            /** Tags */
+            tags?: string[];
+            /**
+             * Is Favorite
+             * @default false
+             */
+            is_favorite: boolean;
+            /**
+             * Reminder Days
+             * @description Omit for the defaults: 30 and 7 days before, and on the day.
+             */
+            reminder_days?: number[] | null;
+            /**
+             * Reminder Time
+             * @description 09:00 by default.
+             */
+            reminder_time?: string | null;
+            /**
+             * Timezone
+             * @description For reminders; the user's time zone by default.
+             */
+            timezone?: string | null;
+        };
         /** CreateEventNoteRequest */
         CreateEventNoteRequest: {
             /**
@@ -5150,6 +5706,499 @@ export interface components {
             /** Valued On */
             valued_on?: string | null;
         };
+        /** DocumentCategoryListResponse */
+        DocumentCategoryListResponse: {
+            /** Categories */
+            categories: components["schemas"]["DocumentCategoryResponse"][];
+        };
+        /** DocumentCategoryResponse */
+        DocumentCategoryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Icon
+             * @enum {string}
+             */
+            icon: "id-card" | "briefcase" | "wallet" | "receipt" | "landmark" | "shield" | "car" | "home" | "heart-pulse" | "graduation-cap" | "file-text" | "plane" | "badge-check" | "folder";
+            /** Position */
+            position: number;
+            /**
+             * Document Count
+             * @description Documents not in the trash.
+             */
+            document_count: number;
+        };
+        /** DocumentCountsResponse */
+        DocumentCountsResponse: {
+            /**
+             * All
+             * @description Active documents (not archived or trashed).
+             */
+            all: number;
+            /** Favorites */
+            favorites: number;
+            /** Unfiled */
+            unfiled: number;
+            /** Unclassified */
+            unclassified: number;
+            /** Without File */
+            without_file: number;
+            /** Expiring 7 */
+            expiring_7: number;
+            /** Expiring 30 */
+            expiring_30: number;
+            /** Expiring 90 */
+            expiring_90: number;
+            /** Expired */
+            expired: number;
+            /**
+             * Renewals
+             * @description Renewal dates in the next 90 days.
+             */
+            renewals: number;
+            /** Archived */
+            archived: number;
+            /** Trashed */
+            trashed: number;
+            /**
+             * Total Bytes
+             * @description Stored size of every version, before deduplication.
+             */
+            total_bytes: number;
+        };
+        /**
+         * DocumentCustomField
+         * @description A labelled detail the fixed fields don't cover, such as "Policy type".
+         */
+        DocumentCustomField: {
+            /** Label */
+            label: string;
+            /** Value */
+            value: string;
+        };
+        /** DocumentDetailResponse */
+        DocumentDetailResponse: {
+            document: components["schemas"]["DocumentResponse"];
+            /**
+             * Versions
+             * @description Newest first.
+             */
+            versions: components["schemas"]["DocumentVersionResponse"][];
+            /**
+             * Renewals
+             * @description Newest first.
+             */
+            renewals: components["schemas"]["DocumentRenewalResponse"][];
+            /** Links */
+            links: components["schemas"]["DocumentLinkResponse"][];
+            /**
+             * Next Reminder At
+             * @description When the next expiry, renewal, or review reminder fires.
+             */
+            next_reminder_at: string | null;
+        };
+        /** DocumentFileResponse */
+        DocumentFileResponse: {
+            /**
+             * Version Id
+             * Format: uuid
+             */
+            version_id: string;
+            /**
+             * Filename
+             * @description The original file name, as uploaded.
+             */
+            filename: string;
+            /** Extension */
+            extension: string;
+            /**
+             * Content Type
+             * @description Detected from the file, not from the upload.
+             */
+            content_type: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /**
+             * Uploaded At
+             * Format: date-time
+             */
+            uploaded_at: string;
+        };
+        /** DocumentFolderListResponse */
+        DocumentFolderListResponse: {
+            /**
+             * Folders
+             * @description Every folder, flat; build the tree from `parent_id`.
+             */
+            folders: components["schemas"]["DocumentFolderResponse"][];
+        };
+        /** DocumentFolderResponse */
+        DocumentFolderResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Parent Id */
+            parent_id: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Document Count
+             * @description Documents directly in the folder, not trashed.
+             */
+            document_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** DocumentLinkCandidatesResponse */
+        DocumentLinkCandidatesResponse: {
+            /**
+             * Records
+             * @description Records that can be linked; `linked_at` is when each was created.
+             */
+            records: components["schemas"]["DocumentLinkResponse"][];
+        };
+        /** DocumentLinkResponse */
+        DocumentLinkResponse: {
+            /**
+             * Kind
+             * @description `note`, `task`, `event` (calendar), or a finance `transaction`, `loan`, `recurring_payment` (subscription or bill), `deposit`, `holding`, or `asset`.
+             * @enum {string}
+             */
+            kind: "note" | "task" | "event" | "transaction" | "loan" | "recurring_payment" | "deposit" | "holding" | "asset";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Detail
+             * @description A short description, such as a date or a kind.
+             */
+            detail: string;
+            /**
+             * Linked At
+             * Format: date-time
+             */
+            linked_at: string;
+        };
+        /** DocumentListResponse */
+        DocumentListResponse: {
+            /** Documents */
+            documents: components["schemas"]["DocumentSummaryResponse"][];
+            /** Total */
+            total: number;
+        };
+        /** DocumentOverviewResponse */
+        DocumentOverviewResponse: {
+            counts: components["schemas"]["DocumentCountsResponse"];
+            /** Recently Added */
+            recently_added: components["schemas"]["DocumentSummaryResponse"][];
+            /** Recently Updated */
+            recently_updated: components["schemas"]["DocumentSummaryResponse"][];
+            /** Favorites */
+            favorites: components["schemas"]["DocumentSummaryResponse"][];
+            /**
+             * Expiring
+             * @description Expiring in the next 90 days.
+             */
+            expiring: components["schemas"]["DocumentSummaryResponse"][];
+            /** Expired */
+            expired: components["schemas"]["DocumentSummaryResponse"][];
+            /** Categories */
+            categories: components["schemas"]["DocumentCategoryResponse"][];
+        };
+        /** DocumentRenewalResponse */
+        DocumentRenewalResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Previous Issue Date */
+            previous_issue_date: string | null;
+            /** Previous Expiry Date */
+            previous_expiry_date: string | null;
+            /** Previous Renewal Date */
+            previous_renewal_date: string | null;
+            /** Issue Date */
+            issue_date: string | null;
+            /** Expiry Date */
+            expiry_date: string | null;
+            /** Renewal Date */
+            renewal_date: string | null;
+            /** Note */
+            note: string;
+            /**
+             * Renewed At
+             * Format: date-time
+             */
+            renewed_at: string;
+        };
+        /**
+         * DocumentResponse
+         * @description A single document with all its details.
+         */
+        DocumentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Title */
+            title: string;
+            /**
+             * Folder Id
+             * @description `null` for unfiled documents.
+             */
+            folder_id: string | null;
+            /**
+             * Category Id
+             * @description `null` for unclassified documents.
+             */
+            category_id: string | null;
+            /** Description */
+            description: string;
+            /** Issuing Authority */
+            issuing_authority: string | null;
+            /** Provider */
+            provider: string | null;
+            /** Issue Date */
+            issue_date: string | null;
+            /** Expiry Date */
+            expiry_date: string | null;
+            /** Renewal Date */
+            renewal_date: string | null;
+            /** Review Date */
+            review_date: string | null;
+            /**
+             * Expiry Status
+             * @description From the expiry date and today in the user's time zone: `expiring` within 30 days.
+             * @enum {string}
+             */
+            expiry_status: "none" | "valid" | "expiring" | "expired";
+            /** Is Favorite */
+            is_favorite: boolean;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "active" | "archived" | "trashed";
+            /** Archived At */
+            archived_at: string | null;
+            /** Trashed At */
+            trashed_at: string | null;
+            /** @description The current version's file; `null` for a document without one. */
+            file: components["schemas"]["DocumentFileResponse"] | null;
+            /** Version Count */
+            version_count: number;
+            /** Tags */
+            tags: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Last Opened At */
+            last_opened_at: string | null;
+            /**
+             * Reference Number
+             * @description A document number or reference. Sensitive: returned only here, never in lists, search results, or reminders.
+             */
+            reference_number: string | null;
+            /** Effective Date */
+            effective_date: string | null;
+            /**
+             * Amount
+             * @description Minor units, with `currency`.
+             */
+            amount: number | null;
+            /** Currency */
+            currency: ("INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY") | null;
+            /** Notes */
+            notes: string;
+            /** Custom Fields */
+            custom_fields: components["schemas"]["DocumentCustomField"][];
+            /**
+             * Reminder Days
+             * @description Days before the expiry, renewal, and review dates to remind; 0 is the day.
+             */
+            reminder_days: number[];
+            /**
+             * Reminder Time
+             * Format: time
+             */
+            reminder_time: string;
+            /** Timezone */
+            timezone: string;
+        };
+        /** DocumentSettingsResponse */
+        DocumentSettingsResponse: {
+            /**
+             * Max Bytes
+             * @description The largest file the server accepts.
+             */
+            max_bytes: number;
+            /** Accepted Extensions */
+            accepted_extensions: string[];
+        };
+        /**
+         * DocumentSummaryResponse
+         * @description A document in a list, without its sensitive details.
+         */
+        DocumentSummaryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Title */
+            title: string;
+            /**
+             * Folder Id
+             * @description `null` for unfiled documents.
+             */
+            folder_id: string | null;
+            /**
+             * Category Id
+             * @description `null` for unclassified documents.
+             */
+            category_id: string | null;
+            /** Description */
+            description: string;
+            /** Issuing Authority */
+            issuing_authority: string | null;
+            /** Provider */
+            provider: string | null;
+            /** Issue Date */
+            issue_date: string | null;
+            /** Expiry Date */
+            expiry_date: string | null;
+            /** Renewal Date */
+            renewal_date: string | null;
+            /** Review Date */
+            review_date: string | null;
+            /**
+             * Expiry Status
+             * @description From the expiry date and today in the user's time zone: `expiring` within 30 days.
+             * @enum {string}
+             */
+            expiry_status: "none" | "valid" | "expiring" | "expired";
+            /** Is Favorite */
+            is_favorite: boolean;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "active" | "archived" | "trashed";
+            /** Archived At */
+            archived_at: string | null;
+            /** Trashed At */
+            trashed_at: string | null;
+            /** @description The current version's file; `null` for a document without one. */
+            file: components["schemas"]["DocumentFileResponse"] | null;
+            /** Version Count */
+            version_count: number;
+            /** Tags */
+            tags: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Last Opened At */
+            last_opened_at: string | null;
+        };
+        /** DocumentTagListResponse */
+        DocumentTagListResponse: {
+            /** Tags */
+            tags: components["schemas"]["DocumentTagResponse"][];
+        };
+        /** DocumentTagResponse */
+        DocumentTagResponse: {
+            /** Name */
+            name: string;
+            /** Document Count */
+            document_count: number;
+        };
+        /** DocumentVersionResponse */
+        DocumentVersionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Number */
+            number: number;
+            /** Filename */
+            filename: string;
+            /** Extension */
+            extension: string;
+            /** Content Type */
+            content_type: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /**
+             * Sha256
+             * @description SHA-256 of the file, to verify a download.
+             */
+            sha256: string;
+            /** Note */
+            note: string;
+            /**
+             * Restored From
+             * @description The version this one restored, if any.
+             */
+            restored_from: number | null;
+            /**
+             * Uploaded At
+             * Format: date-time
+             */
+            uploaded_at: string;
+            /** Is Current */
+            is_current: boolean;
+        };
+        /** EmptyDocumentTrashResponse */
+        EmptyDocumentTrashResponse: {
+            /** Deleted */
+            deleted: number;
+        };
         /** EmptyTrashResponse */
         EmptyTrashResponse: {
             /** Deleted */
@@ -5294,6 +6343,25 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /**
+         * ExportDocumentsRequest
+         * @description Choose documents, a folder (with its subfolders), or a category; with none of them,
+         *     every document that isn't in the trash.
+         */
+        ExportDocumentsRequest: {
+            /** Document Ids */
+            document_ids?: string[];
+            /** Folder Id */
+            folder_id?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /**
+             * Include Versions
+             * @description Earlier versions as well.
+             * @default false
+             */
+            include_versions: boolean;
         };
         /**
          * FixedCommitmentsResponse
@@ -7828,10 +8896,10 @@ export interface components {
         ReminderCommitmentResponse: {
             /**
              * Kind
-             * @description `loan`, `recurring_payment` for a subscription or bill, `deposit` for a fixed or recurring deposit's maturity, `calendar_alert` for one of a calendar event's alerts (`id` is the alert's), or `habit_reminder` for a habit's or routine's reminder time (`id` is the reminder time's).
+             * @description `loan`, `recurring_payment` for a subscription or bill, `deposit` for a fixed or recurring deposit's maturity, `calendar_alert` for one of a calendar event's alerts (`id` is the alert's), `habit_reminder` for a habit's or routine's reminder time (`id` is the reminder time's), or `document` for a document's expiry, renewal, and review alerts (`id` is the document's).
              * @enum {string}
              */
-            kind: "loan" | "recurring_payment" | "deposit" | "calendar_alert" | "habit_reminder";
+            kind: "loan" | "recurring_payment" | "deposit" | "calendar_alert" | "habit_reminder" | "document";
             /**
              * Id
              * Format: uuid
@@ -7974,6 +9042,32 @@ export interface components {
         RenameCategoryRequest: {
             /** Name */
             name: string;
+        };
+        /**
+         * RenewDocumentRequest
+         * @description The new dates. The old ones are kept in the renewal history.
+         */
+        RenewDocumentRequest: {
+            /**
+             * Expiry Date
+             * @description The new expiry date, or `null` for none.
+             */
+            expiry_date: string | null;
+            /**
+             * Issue Date
+             * @description Omit to keep the current one.
+             */
+            issue_date?: string | null;
+            /**
+             * Renewal Date
+             * @description Omit to keep the current one.
+             */
+            renewal_date?: string | null;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
         };
         /**
          * RescheduleLoanRequest
@@ -8938,6 +10032,74 @@ export interface components {
             /** Notes */
             notes?: string | null;
             reminder?: components["schemas"]["ReminderSettingsRequest"] | null;
+        };
+        /** UpdateDocumentCategoryRequest */
+        UpdateDocumentCategoryRequest: {
+            /** Name */
+            name?: string | null;
+            /** Icon */
+            icon?: ("id-card" | "briefcase" | "wallet" | "receipt" | "landmark" | "shield" | "car" | "home" | "heart-pulse" | "graduation-cap" | "file-text" | "plane" | "badge-check" | "folder") | null;
+        };
+        /**
+         * UpdateDocumentFolderRequest
+         * @description Rename, move (`parent_id: null` moves it to the top level), or both.
+         */
+        UpdateDocumentFolderRequest: {
+            /** Name */
+            name?: string | null;
+            /** Parent Id */
+            parent_id?: string | null;
+        };
+        /**
+         * UpdateDocumentRequest
+         * @description Change some of a document's fields. Omitted fields keep their values; `null` clears the
+         *     optional ones (`folder_id: null` makes it unfiled).
+         */
+        UpdateDocumentRequest: {
+            /** Title */
+            title?: string | null;
+            /** Folder Id */
+            folder_id?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /** Is Favorite */
+            is_favorite?: boolean | null;
+            /** Archived */
+            archived?: boolean | null;
+            /** Description */
+            description?: string | null;
+            /** Reference Number */
+            reference_number?: string | null;
+            /** Issuing Authority */
+            issuing_authority?: string | null;
+            /** Provider */
+            provider?: string | null;
+            /** Issue Date */
+            issue_date?: string | null;
+            /** Effective Date */
+            effective_date?: string | null;
+            /** Expiry Date */
+            expiry_date?: string | null;
+            /** Renewal Date */
+            renewal_date?: string | null;
+            /** Review Date */
+            review_date?: string | null;
+            /** Amount */
+            amount?: number | null;
+            /** Currency */
+            currency?: ("INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY") | null;
+            /** Notes */
+            notes?: string | null;
+            /** Custom Fields */
+            custom_fields?: components["schemas"]["DocumentCustomField"][] | null;
+            /** Tags */
+            tags?: string[] | null;
+            /** Reminder Days */
+            reminder_days?: number[] | null;
+            /** Reminder Time */
+            reminder_time?: string | null;
+            /** Timezone */
+            timezone?: string | null;
         };
         /**
          * UpdateEventRequest
@@ -21027,6 +22189,1625 @@ export interface operations {
             };
             /** @description The workspace or item does not exist or is not accessible. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_documents_api_v1_workspaces__workspace_id__documents_get: {
+        parameters: {
+            query?: {
+                /** @description `any` is everything except the trash. */
+                state?: ("active" | "archived" | "trashed") | "any";
+                folder_id?: string | null;
+                /** @description With `folder_id`. */
+                include_subfolders?: boolean;
+                /** @description Only documents in no folder. */
+                unfiled?: boolean;
+                category_id?: string | null;
+                /** @description Only documents without a category. */
+                unclassified?: boolean;
+                tag?: string | null;
+                /** @description `pdf`, `image`, `text`, `office`, or `none` (no file). */
+                file_kind?: ("pdf" | "image" | "text" | "office" | "none") | null;
+                favorite?: boolean | null;
+                added_from?: string | null;
+                added_to?: string | null;
+                expires_from?: string | null;
+                expires_to?: string | null;
+                /** @description Expiring between today and this many days. */
+                expires_within?: number | null;
+                /** @description Only documents whose expiry has passed. */
+                expired?: boolean;
+                /** @description Renewal dates between today and this many days. */
+                renewal_within?: number | null;
+                linked_kind?: ("note" | "task" | "event" | "transaction" | "loan" | "recurring_payment" | "deposit" | "holding" | "asset") | null;
+                /** @description With `linked_kind`: documents linked to that record. */
+                linked_id?: string | null;
+                /** @description Words that must each appear in the title, description, file name, issuer, provider, notes, a tag, the category, or the folder (case-insensitive). Reference numbers are not searched. */
+                q?: string | null;
+                sort?: "title" | "created" | "updated" | "recent" | "expiry" | "size" | "category";
+                /** @description Newest or largest first by default; names and expiry ascending. */
+                order?: ("asc" | "desc") | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_document_api_v1_workspaces__workspace_id__documents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDocumentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid fields, or the folder or category doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    upload_document_api_v1_workspaces__workspace_id__documents_upload_post: {
+        parameters: {
+            query: {
+                /** @description The file's name (a name, not a path). Its extension decides the type. */
+                filename: string;
+                /** @description The file's name by default. */
+                title?: string | null;
+                folder_id?: string | null;
+                category_id?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The file is larger than the server accepts. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The file type isn't accepted, or doesn't match its contents. */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    documents_overview_api_v1_workspaces__workspace_id__documents_overview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOverviewResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    document_counts_api_v1_workspaces__workspace_id__documents_counts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentCountsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    document_settings_api_v1_workspaces__workspace_id__documents_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentSettingsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    document_tags_api_v1_workspaces__workspace_id__documents_tags_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentTagListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_candidates_api_v1_workspaces__workspace_id__documents_link_candidates_get: {
+        parameters: {
+            query: {
+                kind: "note" | "task" | "event" | "transaction" | "loan" | "recurring_payment" | "deposit" | "holding" | "asset";
+                q?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentLinkCandidatesResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_documents_api_v1_workspaces__workspace_id__documents_export_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportDocumentsRequest"];
+            };
+        };
+        responses: {
+            /** @description The archive. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": unknown;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    empty_document_trash_api_v1_workspaces__workspace_id__documents_empty_trash_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmptyDocumentTrashResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_document_api_v1_workspaces__workspace_id__documents__document_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_document_api_v1_workspaces__workspace_id__documents__document_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The document isn't in the trash. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_document_api_v1_workspaces__workspace_id__documents__document_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDocumentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The document is in the trash. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_document_api_v1_workspaces__workspace_id__documents__document_id__open_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trash_document_api_v1_workspaces__workspace_id__documents__document_id__trash_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_document_api_v1_workspaces__workspace_id__documents__document_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    renew_document_api_v1_workspaces__workspace_id__documents__document_id__renew_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenewDocumentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_document_api_v1_workspaces__workspace_id__documents__document_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": unknown;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_version_api_v1_workspaces__workspace_id__documents__document_id__versions_post: {
+        parameters: {
+            query: {
+                filename: string;
+                /** @description What changed, for the version history. */
+                note?: string;
+            };
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The document is in the trash. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The file is larger than the server accepts. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The file type isn't accepted, or doesn't match its contents. */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_version_api_v1_workspaces__workspace_id__documents__document_id__versions__version_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                /** @description The version's ID. */
+                version_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": unknown;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_version_api_v1_workspaces__workspace_id__documents__document_id__versions__version_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                /** @description The version's ID. */
+                version_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_version_api_v1_workspaces__workspace_id__documents__document_id__versions__version_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                /** @description The version's ID. */
+                version_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description It's the current version. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    link_document_api_v1_workspaces__workspace_id__documents__document_id__links__kind___target_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                kind: "note" | "task" | "event" | "transaction" | "loan" | "recurring_payment" | "deposit" | "holding" | "asset";
+                target_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The record doesn't exist in this workspace. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlink_document_api_v1_workspaces__workspace_id__documents__document_id__links__kind___target_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The document's ID. */
+                document_id: string;
+                kind: "note" | "task" | "event" | "transaction" | "loan" | "recurring_payment" | "deposit" | "holding" | "asset";
+                target_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_document_folders_api_v1_workspaces__workspace_id__document_folders_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentFolderListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_document_folder_api_v1_workspaces__workspace_id__document_folders_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDocumentFolderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentFolderResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The parent doesn't exist, or it would nest too deeply. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_document_folder_api_v1_workspaces__workspace_id__document_folders__folder_id__delete: {
+        parameters: {
+            query: {
+                /** @description `parent` moves the folder's documents and subfolders up a level; `unfiled` deletes its subfolders too and leaves every document inside unfiled; `folder` does the same but moves them to `target_id`. */
+                documents: "parent" | "unfiled" | "folder";
+                target_id?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description The folder's ID. */
+                folder_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_document_folder_api_v1_workspaces__workspace_id__document_folders__folder_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The folder's ID. */
+                folder_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDocumentFolderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentFolderResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The move would create a loop or nest too deeply. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_document_categories_api_v1_workspaces__workspace_id__document_categories_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentCategoryListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_document_category_api_v1_workspaces__workspace_id__document_categories_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDocumentCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentCategoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A category with that name exists. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_document_category_api_v1_workspaces__workspace_id__document_categories__category_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The category's ID. */
+                category_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_document_category_api_v1_workspaces__workspace_id__document_categories__category_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The category's ID. */
+                category_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDocumentCategoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentCategoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or document does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A category with that name exists. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

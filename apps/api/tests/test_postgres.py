@@ -8,6 +8,7 @@ import os
 import uuid
 from collections.abc import Iterator
 from datetime import date, datetime
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -19,9 +20,20 @@ from orbit_api.db.engine import create_engine
 from orbit_api.db.migrate import downgrade, upgrade
 from orbit_api.main import create_app
 from orbit_api.repositories.calendar import build_calendar_service
+from orbit_api.repositories.documents import build_document_service
 from orbit_api.repositories.habits import build_habit_service, build_routine_service
+from orbit_api.repositories.tasks import SqlTaskRepository
+from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.services.calendar.models import DateWindow, EventDraft, OccurrenceChanges
 from orbit_api.services.calendar.recurrence import EventRecurrence
+from orbit_api.services.documents.models import (
+    DateRange,
+    DocumentChanges,
+    DocumentDetails,
+    DocumentDraft,
+    DocumentQuery,
+    LinkTarget,
+)
 from orbit_api.services.habits.models import (
     ActiveSessionExistsError,
     HabitChanges,
@@ -32,6 +44,9 @@ from orbit_api.services.habits.models import (
     StepDraft,
 )
 from orbit_api.services.habits.schedule import HabitSchedule
+from orbit_api.services.tasks.models import TaskDraft
+from orbit_api.services.tasks.service import TaskService
+from orbit_api.system.attachment_store import FileAttachmentStore
 
 TEST_DATABASE_URL = os.environ.get("ORBIT_TEST_DATABASE_URL")
 
@@ -92,6 +107,13 @@ PROTECTED_TABLES = (
     "calendar_event_notes",
     "calendar_event_tasks",
     "calendar_preferences",
+    "document_folders",
+    "document_categories",
+    "documents",
+    "document_versions",
+    "document_tags",
+    "document_renewals",
+    "document_links",
 )
 
 
@@ -312,4 +334,86 @@ async def test_habits_and_routines_on_postgres(cloud_settings: Settings) -> None
         async with database.session() as session:
             await session.execute(text("DELETE FROM users WHERE id = :id"), {"id": user_id})
             await session.commit()
+        await database.dispose()
+
+
+@pytest.mark.anyio
+async def test_documents_on_postgres(cloud_settings: Settings, tmp_path: Path) -> None:
+    """Documents on PostgreSQL: JSON metadata, ILIKE search across joined names, counts,
+    versions, tags, the one-target link check and its composite keys, managed reminders, and
+    permanent deletion."""
+    database = await open_database(cloud_settings)
+    user_id, workspace_id = uuid.uuid4(), uuid.uuid4()
+    pdf = b"%PDF-1.7\n%%EOF\n"
+    try:
+        async with database.session() as session:
+            await session.execute(
+                text(
+                    "INSERT INTO users (id, auth_provider, auth_subject, email, display_name,"
+                    " created_at, updated_at) VALUES (:id, 'local', :subject, 'd@example.com', 'D',"
+                    " now(), now())"
+                ),
+                {"id": user_id, "subject": str(user_id)},
+            )
+            await session.execute(
+                text(
+                    "INSERT INTO workspaces (id, owner_id, name, is_personal, created_at,"
+                    " updated_at) VALUES (:id, :owner, 'Personal', true, now(), now())"
+                ),
+                {"id": workspace_id, "owner": user_id},
+            )
+            await session.commit()
+
+            documents = build_document_service(session, FileAttachmentStore(tmp_path))
+            categories = await documents.categories(workspace_id)
+            assert len(categories) == 14
+            folder = await documents.create_folder(workspace_id, "Garage", None)
+            uploaded = await documents.upload(
+                workspace_id,
+                "insurance.pdf",
+                pdf,
+                DocumentDraft(
+                    title="Car insurance",
+                    folder_id=folder.id,
+                    category_id=categories[5].category.id,
+                    details=DocumentDetails(expiry_date=date(2030, 3, 31), provider="Acme"),
+                    tags=("Car",),
+                ),
+                default_timezone="Asia/Kolkata",
+            )
+            await documents.add_version(workspace_id, uploaded.id, "insurance-2.pdf", pdf + b"2")
+            found, total = await documents.find(
+                workspace_id, DocumentQuery(search="garage insurance car")
+            )
+            assert total == 1 and found[0].tags == ("Car",)
+            expiring, _ = await documents.find(
+                workspace_id,
+                DocumentQuery(
+                    expiry=DateRange(date(2030, 1, 1), date(2030, 12, 31)), sort="expiry"
+                ),
+            )
+            assert [d.id for d in expiring] == [uploaded.id]
+            counts = await documents.counts(workspace_id, date(2030, 3, 1))
+            assert (counts.all, counts.expiring_30, counts.total_bytes) == (1, 1, 2 * len(pdf) + 1)
+
+            tasks = TaskService(SqlTaskRepository(session), SqlTransaction(session))
+            task = await tasks.create(workspace_id, TaskDraft(title="Renew"))
+            await documents.link(workspace_id, uploaded.id, LinkTarget("task", task.id))
+            detail = await documents.detail(workspace_id, uploaded.id)
+            assert [link.title for link in detail.links] == ["Renew"]
+            assert detail.next_reminder_at is not None
+            updated = await documents.update(
+                workspace_id, uploaded.id, DocumentChanges(custom_fields=(), tags=("Car", "Tax"))
+            )
+            assert updated.tags == ("Car", "Tax")
+
+            await documents.trash(workspace_id, uploaded.id)
+            assert await documents.empty_trash(workspace_id) == 1
+            remaining = await session.scalar(
+                text("SELECT count(*) FROM reminders WHERE document_id IS NOT NULL")
+            )
+            assert remaining == 0
+            # The files went with the document.
+            assert not any(path.is_file() for path in tmp_path.rglob("*"))
+    finally:
         await database.dispose()

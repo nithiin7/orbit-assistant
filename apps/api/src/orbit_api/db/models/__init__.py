@@ -25,6 +25,15 @@ from orbit_api.db.models.commitments import (
     FinanceRecurringPaymentModel,
 )
 from orbit_api.db.models.dashboard import DashboardLayoutModel
+from orbit_api.db.models.documents import (
+    DocumentCategoryModel,
+    DocumentFolderModel,
+    DocumentLinkModel,
+    DocumentModel,
+    DocumentRenewalModel,
+    DocumentTagModel,
+    DocumentVersionModel,
+)
 from orbit_api.db.models.finance import (
     FinanceAccountModel,
     FinanceCategoryModel,
@@ -83,6 +92,13 @@ __all__ = [
     "CalendarEventTaskModel",
     "CalendarPreferencesModel",
     "DashboardLayoutModel",
+    "DocumentCategoryModel",
+    "DocumentFolderModel",
+    "DocumentLinkModel",
+    "DocumentModel",
+    "DocumentRenewalModel",
+    "DocumentTagModel",
+    "DocumentVersionModel",
     "FinanceAccountModel",
     "FinanceAssetModel",
     "FinanceAssetValuationModel",

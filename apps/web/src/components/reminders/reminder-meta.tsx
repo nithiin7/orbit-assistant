@@ -3,6 +3,7 @@ import {
   AlarmClock,
   CalendarDays,
   CheckSquare,
+  FileText,
   Globe,
   Landmark,
   type LucideIcon,
@@ -86,7 +87,7 @@ export function TimeZoneChip({ timeZone }: { timeZone: string }) {
 type CommitmentKind = NonNullable<Reminder["commitment"]>["kind"];
 
 /** The module that keeps a managed reminder up to date, by what manages it. */
-export type ManagingModule = "finance" | "calendar" | "habits";
+export type ManagingModule = "finance" | "calendar" | "habits" | "documents";
 
 const MANAGING_MODULE: Record<CommitmentKind, ManagingModule> = {
   loan: "finance",
@@ -94,25 +95,28 @@ const MANAGING_MODULE: Record<CommitmentKind, ManagingModule> = {
   deposit: "finance",
   calendar_alert: "calendar",
   habit_reminder: "habits",
+  document: "documents",
 };
 
 export const MODULE_LABEL: Record<ManagingModule, string> = {
   finance: "Finance",
   calendar: "Calendar",
   habits: "Habits",
+  documents: "Documents",
 };
 
 const MODULE_ICON: Record<ManagingModule, LucideIcon> = {
   finance: Landmark,
   calendar: CalendarDays,
   habits: Repeat2,
+  documents: FileText,
 };
 
 export function managingModule(kind: CommitmentKind): ManagingModule {
   return MANAGING_MODULE[kind];
 }
 
-/** Marks a reminder another module keeps up to date: Finance, Calendar, or Habits. */
+/** Marks a reminder another module keeps up to date: Finance, Calendar, Habits, or Documents. */
 export function ManagedChip({ by }: { by: ManagingModule }) {
   const Icon = MODULE_ICON[by];
   return (

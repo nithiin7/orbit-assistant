@@ -39,8 +39,15 @@ amount, and duration habits on versioned schedules, a one-entry-per-day log with
 progress and skips, streaks and rates computed on read, a Today view, history and analytics,
 routines with ordered steps and sessions that copy them, reminder times delivered as managed
 reminders, habits and routines with a time shown on the calendar without event rows, and links
-to tasks and notes). There are no other product features, no AI habit recommendations or
-gamification, no external calendar sync (Google, Outlook, CalDAV, iCal import), no AI
+to tasks and notes), and **documents** (a personal vault: uploads validated by content into the
+note attachments' file store, records without a file, nested folders, default and custom
+categories, tags, favorites, archive and trash, structured and custom metadata, expiry,
+renewal, and review dates with one managed reminder per document, previews for PDFs, images,
+and text, version history with restore and blob reuse, renewal history, links to notes, tasks,
+events, and finance records, search and filters, and ZIP export with metadata). There are no
+other product features, no OCR, document content indexing, or AI extraction, no encryption at
+rest by Orbit (documents rely on the OS's disk encryption), no document import, no AI habit
+recommendations or gamification, no external calendar sync (Google, Outlook, CalDAV, iCal import), no AI
 scheduling, no semantic search or knowledge graph, no recurring tasks, no automatically created
 transactions, no live market prices or bank integrations, no AI financial insights, no push,
 email, or mobile notifications, and no AI integration yet. Do not describe or build on
@@ -69,7 +76,7 @@ capabilities that do not exist.
 | `.github/workflows/ci.yml`     | CI: web, API, and commit-message jobs                                            |
 | `.husky/`, `.lintstagedrc.mjs` | Git hooks: staged-file lint/format and commitlint                                |
 
-Not present yet (planned; see `docs/architecture.md`): price providers,
+Not present yet (planned; see `docs/architecture.md`): object storage for files, price providers,
 shared workspaces, AI provider abstractions, end-to-end tests, and a `scripts/` directory.
 
 ### Boundaries

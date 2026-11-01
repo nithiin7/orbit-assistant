@@ -10,7 +10,9 @@ import {
   Check,
   CornerDownLeft,
   FileText,
+  FileUp,
   Folder,
+  Hourglass,
   ListTodo,
   type LucideIcon,
   Monitor,
@@ -38,6 +40,7 @@ import {
 import { useQuickCapture } from "@/components/notes/quick-capture";
 import { Kbd } from "@/components/ui/kbd";
 import { useCalendarCommands } from "@/hooks/use-calendar-commands";
+import { useDocumentCommands } from "@/hooks/use-document-commands";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useNoteFolders, useNoteList, useNoteMutations } from "@/hooks/use-notes";
 import { filterCommands } from "@/lib/command-search";
@@ -50,6 +53,9 @@ import { isMacPlatform, matchesModShortcut } from "@/utils/keyboard";
 
 type CommandGroup =
   | "Notes"
+  | "Documents"
+  | "Matching documents"
+  | "Recent documents"
   | "Calendar"
   | "Matching events"
   | "Matching notes"
@@ -76,10 +82,13 @@ type Command = {
 const GROUPS: readonly CommandGroup[] = [
   "Matching notes",
   "Matching events",
+  "Matching documents",
   "Notes",
   "Go to",
   "Calendar",
+  "Documents",
   "Recent notes",
+  "Recent documents",
   "Folders",
   "Theme",
   "Search",
@@ -237,6 +246,36 @@ function useCalendarPaletteCommands(open: boolean, query: string): Command[] {
   }));
 }
 
+const DOCUMENT_ICONS = {
+  upload: FileUp,
+  search: Search,
+  expiring: Hourglass,
+  category: Folder,
+  document: FileText,
+} as const;
+
+/** Documents commands from `useDocumentCommands`, in the palette's shape. */
+function useDocumentPaletteCommands(open: boolean, query: string): Command[] {
+  return useDocumentCommands(open, query).map((command) => ({
+    id: command.id,
+    group:
+      command.icon === "search"
+        ? "Search"
+        : command.matched
+          ? "Matching documents"
+          : command.recent
+            ? "Recent documents"
+            : "Documents",
+    label: command.label,
+    description: command.description,
+    keywords: command.keywords,
+    icon: DOCUMENT_ICONS[command.icon],
+    current: false,
+    matched: command.matched,
+    run: command.run,
+  }));
+}
+
 const THEMES = [
   { value: "light", label: "Light theme", icon: Sun },
   { value: "dark", label: "Dark theme", icon: Moon },
@@ -301,6 +340,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
 
   const noteCommands = useNoteCommands(isOpen, query);
   const calendarCommands = useCalendarPaletteCommands(isOpen, query);
+  const documentCommands = useDocumentPaletteCommands(isOpen, query);
 
   const commands = useMemo<Command[]>(
     () => [
@@ -333,17 +373,19 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
     const matches = [
       ...noteCommands.filter((command) => command.matched),
       ...calendarCommands.filter((command) => command.matched),
+      ...documentCommands.filter((command) => command.matched),
       ...filterCommands(
         [
           ...noteCommands.filter((command) => !command.matched),
           ...calendarCommands.filter((command) => !command.matched),
+          ...documentCommands.filter((command) => !command.matched),
           ...commands,
         ],
         query,
       ),
     ];
     return GROUPS.flatMap((group) => matches.filter((command) => command.group === group));
-  }, [commands, noteCommands, calendarCommands, query]);
+  }, [commands, noteCommands, calendarCommands, documentCommands, query]);
 
   const active = results.length > 0 ? Math.min(activeIndex, results.length - 1) : -1;
   const optionId = (command: Command) => `${listboxId}-${command.id}`;
@@ -399,14 +441,14 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
             ref={inputRef}
             type="text"
             role="combobox"
-            aria-label="Search pages, notes, and actions"
+            aria-label="Search pages, notes, documents, and actions"
             aria-expanded="true"
             aria-controls={listboxId}
             aria-autocomplete="list"
             aria-activedescendant={activeOptionId}
             autoComplete="off"
             spellCheck={false}
-            placeholder="Search pages, notes, and actions…"
+            placeholder="Search pages, notes, documents, and actions…"
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);

@@ -2,6 +2,7 @@
 
 import type { Reminder } from "@orbit/contracts";
 import { AlarmClock, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -66,7 +67,8 @@ export function ReminderItem({
   const hint = statusHint(reminder);
   const muted = reminder.status === "disabled" || reminder.status === "completed";
   // A loan, subscription, or bill keeps this reminder on its next payment, an event's alert on its
-  // next occurrence, and a habit or routine on its reminder time; change it there.
+  // next occurrence, a habit or routine on its reminder time, and a document on its next expiry,
+  // renewal, or review alert; change it there.
   const managedBy = reminder.commitment ? managingModule(reminder.commitment.kind) : null;
   const managed = managedBy !== null;
 
@@ -123,7 +125,15 @@ export function ReminderItem({
       {/* Chips sit beside the title only in roomy rows; reminders carry more of them than tasks. */}
       <div className="flex min-w-0 flex-1 flex-col gap-1.5 @2xl/rows:flex-row @2xl/rows:items-center @2xl/rows:gap-4">
         <div className="min-w-0 flex-1 space-y-0.5">
-          {managed ? (
+          {reminder.commitment?.kind === "document" ? (
+            // A document's expiry reminder opens the document it's about.
+            <Link
+              href={`/documents?document=${encodeURIComponent(reminder.commitment.id)}`}
+              className="block max-w-full rounded-sm text-sm font-medium break-words outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {title}
+            </Link>
+          ) : managed ? (
             <p className="text-sm font-medium break-words">{title}</p>
           ) : (
             <button

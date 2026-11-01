@@ -70,6 +70,8 @@ class Settings(BaseSettings):
     # an `attachments` folder beside the SQLite database (local mode) or in `apps/api/.data/`.
     attachments_path: Path | None = None
     attachment_max_bytes: int = Field(default=10 * 1024 * 1024, ge=1024, le=100 * 1024 * 1024)
+    # Documents use the same store and folder; their files may be larger.
+    document_max_bytes: int = Field(default=25 * 1024 * 1024, ge=1024, le=200 * 1024 * 1024)
 
     @property
     def attachments_dir(self) -> Path:

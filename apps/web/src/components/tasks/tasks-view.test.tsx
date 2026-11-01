@@ -25,6 +25,8 @@ const TASKS = `/api/v1/workspaces/${personal.id}/tasks`;
 const session = {
   ...signedIn,
   [`GET ${TASKS}/summary`]: json({ open: 2, completed: 5, overdue: 1, due_today: 1 }),
+  // The task dialog lists the task's linked documents.
+  [`GET /api/v1/workspaces/${personal.id}/documents`]: json({ documents: [], total: 0 }),
 };
 
 function daysFromToday(days: number): string {

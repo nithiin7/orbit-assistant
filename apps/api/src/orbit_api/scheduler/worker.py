@@ -1,7 +1,8 @@
 """The reminder worker: polls the database for due occurrences and delivers them. It also
-takes each workspace's month-end net worth snapshots (at most hourly) and checks budgets (every
-few minutes: closing finished periods and sending threshold alerts), so Orbit has one scheduler
-rather than several.
+takes each workspace's month-end net worth snapshots (at most hourly), checks budgets (every
+few minutes: closing finished periods and sending threshold alerts), and sweeps the attachment
+store for files no metadata references (every few hours), so Orbit has one scheduler rather
+than several.
 
 It holds no schedule in memory. Each poll reads due work from the database, so a restart loses
 nothing, and any number of workers (the one embedded in each API process, plus standalone
@@ -25,6 +26,7 @@ from orbit_api.db.database import Database
 from orbit_api.repositories.budgets import build_budget_service
 from orbit_api.repositories.calendar import build_calendar_service
 from orbit_api.repositories.commitments import build_commitment_service
+from orbit_api.repositories.documents import build_document_reminders, referenced_blob_ids
 from orbit_api.repositories.habits import build_habit_service
 from orbit_api.repositories.investments import SqlSnapshotRepository, build_net_worth_service
 from orbit_api.repositories.notifications import SqlNotificationRepository
@@ -37,6 +39,7 @@ from orbit_api.services.reminders.delivery import (
     ReminderFollowUp,
 )
 from orbit_api.services.reminders.models import ClaimedOccurrence, OccurrenceStatus, Reminder
+from orbit_api.system.attachment_store import FileAttachmentStore
 
 logger = logging.getLogger(__name__)
 
@@ -50,18 +53,27 @@ DEFAULT_SNAPSHOT_INTERVAL = timedelta(hours=1)
 # How often the worker checks budgets. Alerts are recorded per period and threshold, so a check
 # never repeats one; this only bounds how soon after spending an alert arrives.
 DEFAULT_BUDGET_INTERVAL = timedelta(minutes=5)
+# How often the worker looks for unreferenced files, and how old one must be to be deleted: an
+# upload writes its file a moment before its metadata commits, so younger files are left alone.
+DEFAULT_SWEEP_INTERVAL = timedelta(hours=6)
+SWEEP_MIN_AGE = timedelta(hours=1)
 
 
 class ManagedFollowUp:
     """Hands a delivered managed reminder to the record that manages it: a calendar event's
-    alert, a habit's or routine's reminder time, or a financial commitment."""
+    alert, a habit's or routine's reminder time, a document, or a financial commitment."""
 
     def __init__(
-        self, calendar: ReminderFollowUp, commitments: ReminderFollowUp, habits: ReminderFollowUp
+        self,
+        calendar: ReminderFollowUp,
+        commitments: ReminderFollowUp,
+        habits: ReminderFollowUp,
+        documents: ReminderFollowUp,
     ) -> None:
         self._calendar = calendar
         self._commitments = commitments
         self._habits = habits
+        self._documents = documents
 
     async def after_delivery(self, reminder: Reminder, now: datetime) -> None:
         link = reminder.commitment
@@ -69,6 +81,8 @@ class ManagedFollowUp:
             await self._calendar.after_delivery(reminder, now)
         elif link is not None and link.kind == "habit_reminder":
             await self._habits.after_delivery(reminder, now)
+        elif link is not None and link.kind == "document":
+            await self._documents.after_delivery(reminder, now)
         else:
             await self._commitments.after_delivery(reminder, now)
 
@@ -92,8 +106,13 @@ class ReminderWorker:
         max_attempts: int = DEFAULT_MAX_ATTEMPTS,
         snapshot_interval: timedelta = DEFAULT_SNAPSHOT_INTERVAL,
         budget_interval: timedelta = DEFAULT_BUDGET_INTERVAL,
+        files: FileAttachmentStore | None = None,
+        sweep_interval: timedelta = DEFAULT_SWEEP_INTERVAL,
     ) -> None:
         self._database = database
+        self._files = files
+        self._sweep_interval = sweep_interval
+        self._swept_at: datetime | None = None
         self._snapshot_interval = snapshot_interval
         self._snapshots_checked_at: datetime | None = None
         self._budget_interval = budget_interval
@@ -189,6 +208,31 @@ class ReminderWorker:
             # Deliberate boundary: budgets must never stop reminder delivery.
             logger.exception("Checking budgets failed; retrying later.")
 
+    async def sweep_files(self) -> int:
+        """Delete stored files that no note attachment or document version references and
+        that are older than `SWEEP_MIN_AGE`, such as leftovers of a crash mid-upload or of a
+        file deletion that failed; return how many."""
+        if self._files is None:
+            return 0
+        async with self._database.session() as session:
+            referenced = await referenced_blob_ids(session)
+        removed = await self._files.sweep(referenced, self._clock() - SWEEP_MIN_AGE)
+        if removed:
+            logger.info("Removed %d unreferenced file(s) from the attachment store.", removed)
+        return removed
+
+    async def _maybe_sweep_files(self) -> None:
+        now = self._clock()
+        last = self._swept_at
+        if last is not None and now - last < self._sweep_interval:
+            return
+        self._swept_at = now
+        try:
+            await self.sweep_files()
+        except Exception:
+            # Deliberate boundary: housekeeping must never stop reminder delivery.
+            logger.exception("Sweeping unreferenced files failed; retrying later.")
+
     async def run(self, stop: asyncio.Event, poll_interval: float) -> None:
         """Poll until `stop` is set. A poll in progress finishes first, so shutdown never
         abandons a claimed occurrence mid-transaction."""
@@ -205,6 +249,7 @@ class ReminderWorker:
                 continue  # More may be due: drain the backlog before sleeping.
             await self._maybe_take_snapshots()
             await self._maybe_check_budgets()
+            await self._maybe_sweep_files()
             # Sleep until the next poll, waking early when asked to stop.
             with contextlib.suppress(TimeoutError):
                 await asyncio.wait_for(stop.wait(), timeout=poll_interval)
@@ -258,10 +303,11 @@ class ReminderWorker:
             max_attempts=self._max_attempts,
             # Loan, subscription, and bill reminders move on to the next payment once delivered;
             # event alerts move on to the next occurrence; habit and routine reminders to the
-            # next due day.
+            # next due day; document reminders to the next expiry, renewal, or review alert.
             follow_up=ManagedFollowUp(
                 build_calendar_service(session, self._clock),
                 build_commitment_service(session, self._clock),
                 build_habit_service(session, self._clock).reminders,
+                build_document_reminders(session, self._clock),
             ),
         )

@@ -16,6 +16,7 @@ import Link from "next/link";
 import { type KeyboardEvent, type ReactNode, useId, useRef, useState } from "react";
 
 import { describeApiError } from "@/api/client";
+import { LinkedDocuments } from "@/components/documents/linked-documents";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -127,6 +128,13 @@ export function NoteDetails({
       <LinkedTasks workspaceId={workspaceId} note={note} readOnly={readOnly} onError={setError} />
 
       <Attachments workspaceId={workspaceId} noteId={note.id} readOnly={readOnly} />
+
+      <LinkedDocuments
+        workspaceId={workspaceId}
+        kind="note"
+        recordId={note.id}
+        readOnly={readOnly}
+      />
     </div>
   );
 }

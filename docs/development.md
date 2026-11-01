@@ -67,12 +67,14 @@ Storage (see [Database](#database)):
 | `ORBIT_DATABASE_POOL_SIZE`    | `5`                            | Cloud mode: persistent pooled connections                 |
 | `ORBIT_DATABASE_MAX_OVERFLOW` | `5`                            | Cloud mode: extra connections allowed under load          |
 
-Note attachments (see [architecture: Attachments](architecture.md#attachments)):
+Note attachments and documents (see [architecture: Attachments](architecture.md#attachments) and
+[Documents](architecture.md#documents-and-the-personal-vault)) share one file store:
 
-| Variable                     | Default                               | Purpose                                                      |
-| ---------------------------- | ------------------------------------- | ------------------------------------------------------------ |
-| `ORBIT_ATTACHMENTS_PATH`     | `attachments/` beside the SQLite file | Folder for attachment files (cloud mode: `apps/api/.data/…`) |
-| `ORBIT_ATTACHMENT_MAX_BYTES` | `10485760` (10 MB)                    | Largest attachment accepted (1 KB to 100 MB)                 |
+| Variable                     | Default                               | Purpose                                                              |
+| ---------------------------- | ------------------------------------- | -------------------------------------------------------------------- |
+| `ORBIT_ATTACHMENTS_PATH`     | `attachments/` beside the SQLite file | Folder for attachment and document files (cloud: `apps/api/.data/…`) |
+| `ORBIT_ATTACHMENT_MAX_BYTES` | `10485760` (10 MB)                    | Largest note attachment accepted (1 KB to 100 MB)                    |
+| `ORBIT_DOCUMENT_MAX_BYTES`   | `26214400` (25 MB)                    | Largest document file accepted (1 KB to 200 MB)                      |
 
 Reminders (see [Reminder worker](#reminder-worker)):
 
@@ -127,9 +129,16 @@ either approach:
 - Stop the API, then copy `orbit.sqlite3` (and any `-wal`/`-shm` files) together.
 - Or, while it runs: `sqlite3 path/to/orbit.sqlite3 ".backup 'orbit-backup.sqlite3'"`.
 
-Note attachments are files, not database rows: back up the attachments folder
-(`ORBIT_ATTACHMENTS_PATH`, by default `attachments/` beside the database) together with the
-database.
+Note attachments and document files are files, not database rows: back up the attachments
+folder (`ORBIT_ATTACHMENTS_PATH`, by default `attachments/` beside the database) together with
+the database, taken at the same time. The database maps each document version to its file by
+ID; a database without the folder (or the reverse) can't be restored on its own.
+
+For a portable copy of your documents that doesn't need Orbit to read, use **Export** in
+Documents (a folder, a category, or selected documents): a ZIP of the original files under
+their folders, with `metadata.json` describing every document, version, and checksum. It
+includes document numbers, since it's your own backup; keep it as safe as the originals. An
+export is not a restore format: Orbit can't import it yet.
 
 Backups contain all of your data unencrypted. Store them with the same care as the original.
 

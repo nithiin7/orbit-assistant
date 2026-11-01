@@ -18,6 +18,7 @@ from orbit_api.repositories.calendar import (
 )
 from orbit_api.repositories.commitments import build_commitment_service
 from orbit_api.repositories.dashboard import SqlDashboardRepository
+from orbit_api.repositories.documents import build_document_service
 from orbit_api.repositories.finance import (
     SqlFinanceAccountRepository,
     SqlFinanceCategoryRepository,
@@ -44,6 +45,7 @@ from orbit_api.services.budgets.service import BudgetService
 from orbit_api.services.calendar.service import CalendarPreferenceService, CalendarService
 from orbit_api.services.commitments.service import CommitmentService
 from orbit_api.services.dashboard.service import DashboardService
+from orbit_api.services.documents.service import DocumentService
 from orbit_api.services.finance.service import FinanceService
 from orbit_api.services.goals.service import GoalService
 from orbit_api.services.habits.routines import RoutineService
@@ -253,6 +255,13 @@ def get_attachment_service(session: SessionDep, store: AttachmentStoreDep) -> At
 
 
 AttachmentServiceDep = Annotated[AttachmentService, Depends(get_attachment_service)]
+
+
+def get_document_service(session: SessionDep, store: AttachmentStoreDep) -> DocumentService:
+    return build_document_service(session, store)
+
+
+DocumentServiceDep = Annotated[DocumentService, Depends(get_document_service)]
 
 
 def get_calendar_service(session: SessionDep) -> CalendarService:

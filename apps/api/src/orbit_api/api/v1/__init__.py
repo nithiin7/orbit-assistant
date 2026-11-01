@@ -7,6 +7,7 @@ from orbit_api.api.v1 import (
     budgets,
     calendar,
     commitments,
+    documents,
     finance,
     goals,
     habits,
@@ -45,4 +46,5 @@ router.include_router(calendar.router)
 router.include_router(calendar.preferences_router)
 router.include_router(habits.router)
 router.include_router(habits.routines_router)
+router.include_router(documents.router)
 router.include_router(storage.router)

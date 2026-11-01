@@ -8,11 +8,13 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
+import { LinkedDocuments } from "@/components/documents/linked-documents";
 import { FormAlert, FormField } from "@/components/form-field";
 import { TaskNotes } from "@/components/notes/task-notes";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
+import { useActiveWorkspaceId } from "@/hooks/use-calendar";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { TASK_DESCRIPTION_MAX_LENGTH, taskSchema } from "@/lib/tasks";
 
@@ -31,6 +33,7 @@ type TaskEditDialogProps = {
  */
 export function TaskEditDialog({ task, onSave, onClose }: TaskEditDialogProps) {
   const id = useId();
+  const workspaceId = useActiveWorkspaceId();
   const {
     register,
     control,
@@ -175,6 +178,10 @@ export function TaskEditDialog({ task, onSave, onClose }: TaskEditDialogProps) {
         </div>
 
         <TaskNotes taskId={task.id} />
+
+        {workspaceId ? (
+          <LinkedDocuments workspaceId={workspaceId} kind="task" recordId={task.id} />
+        ) : null}
 
         <FormAlert message={errors.root?.server?.message ?? null} />
 
