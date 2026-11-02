@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { filterCommands } from "./command-search";
+import { describeSearchHit, filterCommands, searchHitHref } from "./command-search";
 
 const items = [
   { label: "Go to Dashboard", keywords: ["home", "overview"] },
@@ -32,5 +32,34 @@ describe("filterCommands", () => {
       "Tasks archive",
       "Go to Tasks",
     ]);
+  });
+});
+
+describe("search hits", () => {
+  const hit = {
+    id: "id-1",
+    title: "Garden",
+    detail: "",
+    status: "open",
+    day: "2030-05-01",
+    starts_at: null,
+    all_day: false,
+  };
+
+  it("open the record in its own module", () => {
+    expect(searchHitHref("tasks", hit)).toBe("/tasks?task=id-1");
+    expect(searchHitHref("notes", hit)).toBe("/notes?note=id-1");
+    expect(searchHitHref("events", hit)).toBe("/calendar?view=day&date=2030-05-01");
+    expect(searchHitHref("documents", hit)).toBe("/documents?document=id-1");
+    expect(searchHitHref("habits", hit)).toBe("/habits?habit=id-1");
+    expect(searchHitHref("transactions", hit)).toBe("/finance?view=transactions");
+  });
+
+  it("describe hits without amounts", () => {
+    expect(describeSearchHit("tasks", hit)).toMatch(/^Task · due /);
+    expect(describeSearchHit("tasks", { ...hit, status: "completed" })).toBe("Completed task");
+    expect(describeSearchHit("events", { ...hit, detail: "Hall" })).toMatch(/ · Hall$/);
+    expect(describeSearchHit("transactions", { ...hit, status: "expense" })).toMatch(/^Expense · /);
+    expect(describeSearchHit("habits", { ...hit, status: "paused" })).toBe("Habit · paused");
   });
 });

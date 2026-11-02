@@ -77,7 +77,7 @@ export function useDocumentList(
   return { state, refreshing: state.status === "success" && result.isFetching, reload };
 }
 
-export function useDocumentOverview(workspaceId: string) {
+export function useDocumentOverview(workspaceId: string | null) {
   const { withToken } = useAuth();
   const result = useQuery(documentOverviewOptions(withToken, workspaceId));
   useWorkspaceNotFound(result.error);

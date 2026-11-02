@@ -13,6 +13,7 @@ from orbit_api.services.dashboard.models import (
     WIDGET_SIZES,
     DashboardLayout,
     DashboardWidget,
+    Density,
 )
 
 
@@ -46,18 +47,30 @@ class SqlDashboardRepository:
         model = await self._session.get(DashboardLayoutModel, user_id)
         if model is None:
             return None
-        return DashboardLayout(widgets=_decode(model.widgets), updated_at=model.updated_at)
+        density: Density = "compact" if model.density == "compact" else "comfortable"
+        return DashboardLayout(
+            widgets=_decode(model.widgets),
+            updated_at=model.updated_at,
+            density=density,
+            hide_amounts=model.hide_amounts,
+        )
 
     async def put(self, user_id: uuid.UUID, layout: DashboardLayout) -> None:
         model = await self._session.get(DashboardLayoutModel, user_id)
         if model is None:
             self._session.add(
                 DashboardLayoutModel(
-                    user_id=user_id, widgets=_encode(layout.widgets), updated_at=layout.updated_at
+                    user_id=user_id,
+                    widgets=_encode(layout.widgets),
+                    density=layout.density,
+                    hide_amounts=layout.hide_amounts,
+                    updated_at=layout.updated_at,
                 )
             )
         else:
             model.widgets = _encode(layout.widgets)
+            model.density = layout.density
+            model.hide_amounts = layout.hide_amounts
             model.updated_at = layout.updated_at
         await flush(self._session)
 

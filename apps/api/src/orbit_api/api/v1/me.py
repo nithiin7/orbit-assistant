@@ -121,7 +121,10 @@ async def put_dashboard(
 ) -> DashboardLayoutResponse:
     try:
         layout = await dashboard.replace(
-            user.id, tuple(widget.to_widget() for widget in body.widgets)
+            user.id,
+            tuple(widget.to_widget() for widget in body.widgets),
+            density=body.density,
+            hide_amounts=body.hide_amounts,
         )
     except DuplicateWidgetError:
         raise HTTPException(

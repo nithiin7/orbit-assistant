@@ -1,6 +1,8 @@
 "use client";
 
+import type { SearchModule } from "@orbit/contracts";
 import {
+  AlarmClock,
   BookOpen,
   CalendarCheck,
   CalendarClock,
@@ -9,6 +11,8 @@ import {
   CalendarRange,
   Check,
   CornerDownLeft,
+  Droplets,
+  Dumbbell,
   FileText,
   FileUp,
   Folder,
@@ -18,7 +22,10 @@ import {
   Monitor,
   Moon,
   NotebookPen,
+  Play,
+  Receipt,
   Search,
+  Sparkles,
   Sun,
   Zap,
 } from "lucide-react";
@@ -38,12 +45,20 @@ import {
 } from "react";
 
 import { useQuickCapture } from "@/components/notes/quick-capture";
+import { useQuickActions } from "@/components/quick-actions/quick-actions";
 import { Kbd } from "@/components/ui/kbd";
 import { useCalendarCommands } from "@/hooks/use-calendar-commands";
 import { useDocumentCommands } from "@/hooks/use-document-commands";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useNoteFolders, useNoteList, useNoteMutations } from "@/hooks/use-notes";
-import { filterCommands } from "@/lib/command-search";
+import { useWorkspaceSearch } from "@/hooks/use-workspace-search";
+import {
+  describeSearchHit,
+  filterCommands,
+  SEARCH_GROUP_LABELS,
+  searchHitHref,
+} from "@/lib/command-search";
+import { habitsHref } from "@/lib/habits";
 import { isActivePath, navItems } from "@/lib/navigation";
 import { journalToday, noteDisplayTitle, notesHref } from "@/lib/notes";
 import { useCurrentUser } from "@/providers/auth";
@@ -52,18 +67,17 @@ import { cn } from "@/utils/common";
 import { isMacPlatform, matchesModShortcut } from "@/utils/keyboard";
 
 type CommandGroup =
+  | "Create"
   | "Notes"
   | "Documents"
-  | "Matching documents"
   | "Recent documents"
   | "Calendar"
-  | "Matching events"
-  | "Matching notes"
   | "Recent notes"
   | "Folders"
   | "Go to"
   | "Theme"
-  | "Search";
+  | "Search"
+  | (typeof SEARCH_GROUP_LABELS)[SearchModule];
 
 type Command = {
   id: string;
@@ -80,9 +94,8 @@ type Command = {
 };
 
 const GROUPS: readonly CommandGroup[] = [
-  "Matching notes",
-  "Matching events",
-  "Matching documents",
+  ...Object.values(SEARCH_GROUP_LABELS),
+  "Create",
   "Notes",
   "Go to",
   "Calendar",
@@ -94,11 +107,9 @@ const GROUPS: readonly CommandGroup[] = [
   "Search",
 ];
 
-const NOTE_SEARCH_DELAY_MS = 200;
-
 /**
  * Notes commands for the palette: create, capture, journal, search, recent notes, and folders.
- * Data loads only while the palette is open.
+ * Data loads only while the palette is open. Matching notes come from the workspace search.
  */
 function useNoteCommands(open: boolean, query: string): Command[] {
   const router = useRouter();
@@ -107,22 +118,11 @@ function useNoteCommands(open: boolean, query: string): Command[] {
   const workspaceId = state.status === "ready" ? state.active.id : null;
   const quickCapture = useQuickCapture();
   const mutations = useNoteMutations(workspaceId ?? "");
-  const [search, setSearch] = useState("");
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setSearch(query.trim()), NOTE_SEARCH_DELAY_MS);
-    return () => window.clearTimeout(timer);
-  }, [query]);
-
-  const searching = open && search.length >= 2;
-  const recent = useNoteList(workspaceId, { sort: "recent", limit: 5 }, open && !search);
-  const matches = useNoteList(workspaceId, { q: search, limit: 6 }, searching);
+  const recent = useNoteList(workspaceId, { sort: "recent", limit: 5 }, open);
   const { folders } = useNoteFolders(open ? workspaceId : null);
 
   const openNote = (id: string) => router.push(notesHref({ noteId: id }));
   const recentNotes = recent.state.status === "success" ? recent.state.data.notes : [];
-  const matchingNotes =
-    searching && matches.state.status === "success" ? matches.state.data.notes : [];
 
   if (!workspaceId) return [];
   const commands: Command[] = [
@@ -178,19 +178,6 @@ function useNoteCommands(open: boolean, query: string): Command[] {
       run: () => router.push(notesHref({ view: "all", search: query.trim() })),
     });
   }
-  for (const note of matchingNotes) {
-    commands.push({
-      id: `note-match-${note.id}`,
-      group: "Matching notes",
-      label: noteDisplayTitle(note),
-      description: note.excerpt || undefined,
-      keywords: [],
-      icon: FileText,
-      current: false,
-      matched: true,
-      run: () => openNote(note.id),
-    });
-  }
   if (!query.trim()) {
     for (const note of recentNotes) {
       commands.push({
@@ -228,20 +215,18 @@ const CALENDAR_ICONS = {
   agenda: ListTodo,
   schedule: CalendarClock,
   notes: NotebookPen,
-  event: CalendarDays,
 } as const;
 
 /** Calendar commands from `useCalendarCommands`, in the palette's shape. */
-function useCalendarPaletteCommands(open: boolean, query: string): Command[] {
-  return useCalendarCommands(open, query).map((command) => ({
+function useCalendarPaletteCommands(open: boolean): Command[] {
+  return useCalendarCommands(open).map((command) => ({
     id: command.id,
-    group: command.matched ? "Matching events" : "Calendar",
+    group: "Calendar",
     label: command.label,
     description: command.description,
     keywords: command.keywords,
     icon: CALENDAR_ICONS[command.icon],
     current: false,
-    matched: command.matched,
     run: command.run,
   }));
 }
@@ -258,14 +243,7 @@ const DOCUMENT_ICONS = {
 function useDocumentPaletteCommands(open: boolean, query: string): Command[] {
   return useDocumentCommands(open, query).map((command) => ({
     id: command.id,
-    group:
-      command.icon === "search"
-        ? "Search"
-        : command.matched
-          ? "Matching documents"
-          : command.recent
-            ? "Recent documents"
-            : "Documents",
+    group: command.icon === "search" ? "Search" : command.recent ? "Recent documents" : "Documents",
     label: command.label,
     description: command.description,
     keywords: command.keywords,
@@ -274,6 +252,85 @@ function useDocumentPaletteCommands(open: boolean, query: string): Command[] {
     matched: command.matched,
     run: command.run,
   }));
+}
+
+const SEARCH_ICONS: Record<SearchModule, LucideIcon> = {
+  tasks: ListTodo,
+  notes: FileText,
+  events: CalendarDays,
+  documents: FileText,
+  habits: Sparkles,
+  transactions: Receipt,
+};
+
+/**
+ * Records matching the query across modules, from one workspace search once typing pauses,
+ * grouped by module. Each opens the record in its own module.
+ */
+function useSearchPaletteCommands(
+  open: boolean,
+  query: string,
+): { commands: Command[]; searching: boolean; failed: boolean } {
+  const router = useRouter();
+  const search = useWorkspaceSearch(query, open);
+  const commands: Command[] = [];
+  // Hits for an older query are hidden once the text no longer matches it.
+  const current = search.query !== "" && query.trim().startsWith(search.query);
+  for (const group of current ? (search.results?.groups ?? []) : []) {
+    for (const hit of group.hits) {
+      commands.push({
+        id: `search-${group.module}-${hit.id}`,
+        group: SEARCH_GROUP_LABELS[group.module],
+        label: hit.title || "Untitled",
+        description: describeSearchHit(group.module, hit),
+        keywords: [],
+        icon: SEARCH_ICONS[group.module],
+        current: false,
+        matched: true,
+        run: () => router.push(searchHitHref(group.module, hit)),
+      });
+    }
+  }
+  return { commands, searching: search.searching, failed: search.failed };
+}
+
+/** Create or record something without leaving the page, through the shared quick actions. */
+function useCreateCommands(): Command[] {
+  const { run, waterLabel } = useQuickActions();
+  const router = useRouter();
+  const create = (
+    id: string,
+    label: string,
+    icon: LucideIcon,
+    keywords: readonly string[],
+    action: () => void,
+  ): Command => ({
+    id: `create-${id}`,
+    group: "Create",
+    label,
+    keywords: ["new", "add", "create", ...keywords],
+    icon,
+    current: false,
+    run: action,
+  });
+  return [
+    create("task", "Create task", ListTodo, ["task", "todo", "to-do"], () => run("task")),
+    create("reminder", "Create reminder", AlarmClock, ["reminder", "remind", "alert"], () =>
+      run("reminder"),
+    ),
+    create("expense", "Record expense", Receipt, ["expense", "spend", "money", "payment"], () =>
+      run("expense"),
+    ),
+    create("workout", "Log workout", Dumbbell, ["workout", "exercise", "gym", "health"], () =>
+      run("workout"),
+    ),
+    create("water", `Record ${waterLabel} of water`, Droplets, ["water", "drink", "health"], () =>
+      run("water"),
+    ),
+    create("routine", "Start a routine", Play, ["routine", "habit", "start"], () =>
+      router.push(habitsHref({ kind: "view", view: "routines" })),
+    ),
+  ];
 }
 
 const THEMES = [
@@ -339,8 +396,10 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
   }, [open, close]);
 
   const noteCommands = useNoteCommands(isOpen, query);
-  const calendarCommands = useCalendarPaletteCommands(isOpen, query);
+  const calendarCommands = useCalendarPaletteCommands(isOpen);
   const documentCommands = useDocumentPaletteCommands(isOpen, query);
+  const createCommands = useCreateCommands();
+  const search = useSearchPaletteCommands(isOpen, query);
 
   const commands = useMemo<Command[]>(
     () => [
@@ -367,25 +426,24 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
     [pathname, router, hydrated, theme, setTheme],
   );
 
-  // Order results by group so arrow-key order matches what is on screen. Notes the API already
-  // matched skip the local filter.
-  const results = useMemo(() => {
-    const matches = [
-      ...noteCommands.filter((command) => command.matched),
-      ...calendarCommands.filter((command) => command.matched),
-      ...documentCommands.filter((command) => command.matched),
-      ...filterCommands(
-        [
-          ...noteCommands.filter((command) => !command.matched),
-          ...calendarCommands.filter((command) => !command.matched),
-          ...documentCommands.filter((command) => !command.matched),
-          ...commands,
-        ],
-        query,
-      ),
-    ];
-    return GROUPS.flatMap((group) => matches.filter((command) => command.group === group));
-  }, [commands, noteCommands, calendarCommands, documentCommands, query]);
+  // Order results by group so arrow-key order matches what is on screen. Records the API already
+  // matched, and the offers to search a module, skip the local filter.
+  const local = [
+    ...createCommands,
+    ...noteCommands,
+    ...calendarCommands,
+    ...documentCommands,
+    ...commands,
+  ];
+  const matches = [
+    ...search.commands,
+    ...local.filter((command) => command.matched),
+    ...filterCommands(
+      local.filter((command) => !command.matched),
+      query,
+    ),
+  ];
+  const results = GROUPS.flatMap((group) => matches.filter((command) => command.group === group));
 
   const active = results.length > 0 ? Math.min(activeIndex, results.length - 1) : -1;
   const optionId = (command: Command) => `${listboxId}-${command.id}`;
@@ -441,14 +499,14 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
             ref={inputRef}
             type="text"
             role="combobox"
-            aria-label="Search pages, notes, documents, and actions"
+            aria-label="Search Orbit and run actions"
             aria-expanded="true"
             aria-controls={listboxId}
             aria-autocomplete="list"
             aria-activedescendant={activeOptionId}
             autoComplete="off"
             spellCheck={false}
-            placeholder="Search pages, notes, documents, and actions…"
+            placeholder="Search tasks, notes, events, documents, and actions…"
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);
@@ -539,12 +597,21 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
 
         {results.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-muted-foreground">
-            No results for “{query.trim()}”
+            {search.searching ? "Searching…" : `No results for “${query.trim()}”`}
+          </p>
+        ) : null}
+        {search.failed ? (
+          <p role="alert" className="border-t px-4 py-2 text-xs text-muted-foreground">
+            Couldn’t search your records just now. Pages and actions still work.
           </p>
         ) : null}
 
         <p role="status" className="sr-only">
-          {results.length === 1 ? "1 result" : `${results.length} results`}
+          {search.searching
+            ? "Searching…"
+            : results.length === 1
+              ? "1 result"
+              : `${results.length} results`}
         </p>
 
         <footer

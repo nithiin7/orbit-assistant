@@ -1,7 +1,8 @@
-"""Dashboard layouts: which widgets a user shows, in what order, and how wide.
+"""Dashboard layouts: which widgets a user shows, in what order, how wide, and how densely.
 
-A layout belongs to one user and holds no workspace data, only arrangement. Each widget loads
-its own data through the workspace-scoped API.
+A layout belongs to one user and holds no workspace data, only arrangement and display
+preferences, so it follows the user across workspaces and is never shared with anyone else.
+Each widget loads its own data through the workspace-scoped API.
 """
 
 import uuid
@@ -11,6 +12,7 @@ from typing import Protocol
 from orbit_api.services.dashboard.models import (
     DashboardLayout,
     DashboardWidget,
+    Density,
     DuplicateWidgetError,
 )
 from orbit_api.services.transactions import Transaction
@@ -34,12 +36,21 @@ class DashboardService:
         return await self._layouts.get(user_id)
 
     async def replace(
-        self, user_id: uuid.UUID, widgets: tuple[DashboardWidget, ...]
+        self,
+        user_id: uuid.UUID,
+        widgets: tuple[DashboardWidget, ...],
+        density: Density = "comfortable",
+        hide_amounts: bool = False,
     ) -> DashboardLayout:
         ids = [widget.id for widget in widgets]
         if len(set(ids)) != len(ids):
             raise DuplicateWidgetError
-        layout = DashboardLayout(widgets=widgets, updated_at=datetime.now(UTC))
+        layout = DashboardLayout(
+            widgets=widgets,
+            updated_at=datetime.now(UTC),
+            density=density,
+            hide_amounts=hide_amounts,
+        )
         await self._layouts.put(user_id, layout)
         await self._transaction.commit()
         return layout

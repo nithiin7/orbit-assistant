@@ -4,53 +4,86 @@ import { ArrowDown, ArrowUp, LayoutDashboard, Plus, RotateCcw, X } from "lucide-
 import { type ComponentType, useEffect, useId, useRef, useState } from "react";
 
 import { CalendarWidget } from "@/components/calendar/calendar-widget";
+import { DocumentsWidget } from "@/components/documents/documents-widget";
 import { EmptyState } from "@/components/empty-state";
 import {
   BudgetWidget,
   CashFlowWidget,
   NetWorthWidget,
+  SavingsGoalsWidget,
   UpcomingPaymentsWidget,
 } from "@/components/finance/finance-widgets";
+import {
+  FitnessGoalsWidget,
+  NutritionWidget,
+  WaterWidget,
+  WeightWidget,
+  WorkoutsWidget,
+} from "@/components/fitness/fitness-widgets";
+import { HabitsWidget } from "@/components/habits/habits-widget";
+import { NotesWidget } from "@/components/notes/notes-widget";
 import { PageHeader } from "@/components/page-header";
 import { ReminderOverview } from "@/components/reminders/reminder-overview";
 import { ShoppingOverview } from "@/components/shopping/shopping-overview";
 import { StorageIndicator } from "@/components/storage/storage-indicator";
-import { TaskOverview } from "@/components/tasks/task-overview";
+import { TaskWidget } from "@/components/tasks/task-widget";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { WorkspaceOverview } from "@/components/workspace/workspace-overview";
 import { useDashboardLayout } from "@/hooks/use-dashboard-layout";
 import {
   addWidget,
   type DashboardWidget,
+  type Density,
   findWidget,
   hiddenWidgets,
   moveWidget,
   removeWidget,
   resizeWidget,
+  widgetGroups,
   type WidgetId,
   type WidgetSize,
 } from "@/lib/dashboard";
 import { useCurrentUser } from "@/providers/auth";
 import { cn } from "@/utils/common";
 
+import { HiddenAmountsProvider } from "./amount-visibility";
+import { AttentionWidget } from "./attention-widget";
 import { ModulesWidget } from "./modules-widget";
+import { QuickActionsWidget } from "./quick-actions-widget";
 import { StatusWidget } from "./status-widget";
+import { TodayWidget } from "./today-widget";
 
 const widgetComponents: Record<WidgetId, ComponentType> = {
+  today: TodayWidget,
+  quick_actions: QuickActionsWidget,
+  attention: AttentionWidget,
   workspace: WorkspaceOverview,
   status: StatusWidget,
-  tasks: TaskOverview,
+  tasks: TaskWidget,
   reminders: ReminderOverview,
   calendar: CalendarWidget,
+  habits: HabitsWidget,
+  notes: NotesWidget,
+  documents: DocumentsWidget,
   shopping: ShoppingOverview,
   cash_flow: CashFlowWidget,
   upcoming_payments: UpcomingPaymentsWidget,
   budget: BudgetWidget,
   net_worth: NetWorthWidget,
+  savings_goals: SavingsGoalsWidget,
+  workouts: WorkoutsWidget,
+  water: WaterWidget,
+  nutrition: NutritionWidget,
+  weight: WeightWidget,
+  fitness_goals: FitnessGoalsWidget,
   modules: ModulesWidget,
 };
 
-const sizeLabels: Record<WidgetSize, string> = { half: "Half", full: "Full" };
+// Narrow widgets share a row: two on laptops, three on very wide screens. Wide ones fill it.
+const sizeLabels: Record<WidgetSize, string> = { half: "Narrow", full: "Wide" };
+
+const densityLabels: Record<Density, string> = { comfortable: "Comfortable", compact: "Compact" };
 
 /** The dashboard, arranged by the signed-in user. Remounts when the user changes. */
 export function Dashboard() {
@@ -60,7 +93,15 @@ export function Dashboard() {
 
 function DashboardLayout({ userId }: { userId: string }) {
   const id = useId();
-  const { layout, update: save, reset: resetLayout, saveError, retry } = useDashboardLayout(userId);
+  const {
+    layout,
+    preferences,
+    update: save,
+    setPreferences,
+    reset: resetLayout,
+    saveError,
+    retry,
+  } = useDashboardLayout(userId);
   const [editing, setEditing] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   // Reordering and removing re-render the controls, so focus is restored by element ID.
@@ -105,13 +146,23 @@ function DashboardLayout({ userId }: { userId: string }) {
     setAnnouncement("Dashboard reset to the default layout.");
   }
 
+  function setDensity(density: Density) {
+    setPreferences({ ...preferences, density });
+    setAnnouncement(`${densityLabels[density]} layout.`);
+  }
+
+  function setHideAmounts(hideAmounts: boolean) {
+    setPreferences({ ...preferences, hideAmounts });
+    setAnnouncement(hideAmounts ? "Amounts hidden." : "Amounts shown.");
+  }
+
   const hidden = hiddenWidgets(layout);
 
   return (
-    <div className="space-y-10">
+    <div className="@container/dashboard space-y-6">
       <PageHeader
         title="Dashboard"
-        description="Your private, local-first assistant."
+        description="Your day across Orbit, private to you."
         actions={
           <>
             <StorageIndicator />
@@ -156,8 +207,8 @@ function DashboardLayout({ userId }: { userId: string }) {
                 Customize your dashboard
               </h2>
               <p className="max-w-prose text-sm text-pretty text-muted-foreground">
-                Add, remove, reorder, and resize widgets. Half-width widgets sit side by side on
-                wide screens. Your layout is saved to your account.
+                Add, remove, reorder, and resize widgets. Narrow widgets sit side by side on wide
+                screens. Your layout is saved to your account, just for you.
               </p>
             </div>
             <Button variant="ghost" size="sm" onClick={reset}>
@@ -166,37 +217,83 @@ function DashboardLayout({ userId }: { userId: string }) {
             </Button>
           </div>
 
-          <div className="space-y-2">
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium">Display</legend>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+              <div
+                role="group"
+                aria-label="Density"
+                className="flex rounded-md border bg-card p-0.5"
+              >
+                {(["comfortable", "compact"] as const).map((density) => (
+                  <Button
+                    key={density}
+                    variant={preferences.density === density ? "default" : "ghost"}
+                    size="sm"
+                    className="h-7 shadow-none"
+                    aria-pressed={preferences.density === density}
+                    onClick={() => setDensity(density)}
+                  >
+                    {densityLabels[density]}
+                  </Button>
+                ))}
+              </div>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={preferences.hideAmounts}
+                  onChange={(event) => setHideAmounts(event.target.checked)}
+                />
+                Hide money amounts
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Hiding amounts shows dots in place of money on this dashboard, for screens others can
+              see. Health widgets are off until you add them, and show only your own records.
+            </p>
+          </fieldset>
+
+          <div className="space-y-3">
             <h3 className="text-sm font-medium">Add widgets</h3>
             {hidden.length === 0 ? (
               <p className="text-sm text-muted-foreground">Every widget is on your dashboard.</p>
             ) : (
-              <ul className="divide-y rounded-lg border bg-card">
-                {hidden.map((widget) => (
-                  <li key={widget.id} className="flex flex-wrap items-center gap-3 px-3 py-2">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium">{widget.title}</p>
-                      <p className="text-xs text-muted-foreground">{widget.description}</p>
-                    </div>
-                    <Button
-                      id={`${id}-add-${widget.id}`}
-                      variant="outline"
-                      size="sm"
-                      aria-label={`Add ${widget.title}`}
-                      onClick={() =>
-                        update(
-                          addWidget(layout, widget.id),
-                          `${widget.title} added to the end of the dashboard.`,
-                          controlId(widget.id, "remove"),
-                        )
-                      }
-                    >
-                      <Plus aria-hidden="true" />
-                      Add
-                    </Button>
-                  </li>
-                ))}
-              </ul>
+              widgetGroups.map((group) => {
+                const inGroup = hidden.filter((widget) => widget.group === group);
+                if (inGroup.length === 0) return null;
+                return (
+                  <div key={group} className="space-y-1.5">
+                    <h4 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                      {group}
+                    </h4>
+                    <ul className="divide-y rounded-lg border bg-card">
+                      {inGroup.map((widget) => (
+                        <li key={widget.id} className="flex flex-wrap items-center gap-3 px-3 py-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium">{widget.title}</p>
+                            <p className="text-xs text-muted-foreground">{widget.description}</p>
+                          </div>
+                          <Button
+                            id={`${id}-add-${widget.id}`}
+                            variant="outline"
+                            size="sm"
+                            aria-label={`Add ${widget.title}`}
+                            onClick={() =>
+                              update(
+                                addWidget(layout, widget.id),
+                                `${widget.title} added to the end of the dashboard.`,
+                                controlId(widget.id, "remove"),
+                              )
+                            }
+                          >
+                            <Plus aria-hidden="true" />
+                            Add
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })
             )}
           </div>
         </section>
@@ -209,94 +306,103 @@ function DashboardLayout({ userId }: { userId: string }) {
           description="Choose Customize to add widgets back."
         />
       ) : (
-        <div className="grid gap-4 xl:grid-cols-2 2xl:gap-6">
-          {layout.map((widget, index) => {
-            const Widget = widgetComponents[widget.id];
-            const { title } = findWidget(widget.id);
-            return (
-              <div
-                key={widget.id}
-                role={editing ? "group" : undefined}
-                aria-label={editing ? `${title} widget` : undefined}
-                className={cn(
-                  "flex min-w-0 flex-col gap-2",
-                  widget.size === "full" && "xl:col-span-2",
-                  editing && "rounded-xl border border-dashed p-2",
-                )}
-              >
-                {editing ? (
-                  <div className="flex flex-wrap items-center gap-2 px-1">
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium">{title}</span>
-                    <div
-                      role="group"
-                      aria-label={`${title} width`}
-                      className="flex rounded-md border bg-card p-0.5"
-                    >
-                      {(["half", "full"] as const).map((size) => (
-                        <Button
-                          key={size}
-                          variant={widget.size === size ? "default" : "ghost"}
-                          size="sm"
-                          className="h-7 shadow-none"
-                          aria-pressed={widget.size === size}
-                          onClick={() =>
-                            update(
-                              resizeWidget(layout, widget.id, size),
-                              `${title} set to ${size} width.`,
-                            )
-                          }
-                        >
-                          {sizeLabels[size]}
-                        </Button>
-                      ))}
+        <HiddenAmountsProvider hidden={preferences.hideAmounts}>
+          <div
+            data-density={preferences.density}
+            className={cn(
+              "grid grid-cols-1 @3xl/dashboard:grid-cols-2 @[110rem]/dashboard:grid-cols-3",
+              preferences.density === "compact" ? "gap-3" : "gap-4 2xl:gap-6",
+            )}
+          >
+            {layout.map((widget, index) => {
+              const Widget = widgetComponents[widget.id];
+              const { title } = findWidget(widget.id);
+              return (
+                <div
+                  key={widget.id}
+                  role={editing ? "group" : undefined}
+                  aria-label={editing ? `${title} widget` : undefined}
+                  className={cn(
+                    "flex min-w-0 flex-col gap-2",
+                    widget.size === "full" &&
+                      "@3xl/dashboard:col-span-2 @[110rem]/dashboard:col-span-3",
+                    editing && "rounded-xl border border-dashed p-2",
+                  )}
+                >
+                  {editing ? (
+                    <div className="flex flex-wrap items-center gap-2 px-1">
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium">{title}</span>
+                      <div
+                        role="group"
+                        aria-label={`${title} width`}
+                        className="flex rounded-md border bg-card p-0.5"
+                      >
+                        {(["half", "full"] as const).map((size) => (
+                          <Button
+                            key={size}
+                            variant={widget.size === size ? "default" : "ghost"}
+                            size="sm"
+                            className="h-7 shadow-none"
+                            aria-pressed={widget.size === size}
+                            onClick={() =>
+                              update(
+                                resizeWidget(layout, widget.id, size),
+                                `${title} is now ${sizeLabels[size].toLowerCase()}.`,
+                              )
+                            }
+                          >
+                            {sizeLabels[size]}
+                          </Button>
+                        ))}
+                      </div>
+                      <Button
+                        id={controlId(widget.id, "earlier")}
+                        variant="ghost"
+                        size="icon"
+                        className="size-8"
+                        aria-label={`Move ${title} earlier`}
+                        disabled={index === 0}
+                        onClick={() => move(widget.id, -1)}
+                      >
+                        <ArrowUp aria-hidden="true" />
+                      </Button>
+                      <Button
+                        id={controlId(widget.id, "later")}
+                        variant="ghost"
+                        size="icon"
+                        className="size-8"
+                        aria-label={`Move ${title} later`}
+                        disabled={index === layout.length - 1}
+                        onClick={() => move(widget.id, 1)}
+                      >
+                        <ArrowDown aria-hidden="true" />
+                      </Button>
+                      <Button
+                        id={controlId(widget.id, "remove")}
+                        variant="ghost"
+                        size="icon"
+                        className="size-8"
+                        aria-label={`Remove ${title}`}
+                        onClick={() =>
+                          update(
+                            removeWidget(layout, widget.id),
+                            `${title} removed. You can add it back from Add widgets.`,
+                            `${id}-add-${widget.id}`,
+                          )
+                        }
+                      >
+                        <X aria-hidden="true" />
+                      </Button>
                     </div>
-                    <Button
-                      id={controlId(widget.id, "earlier")}
-                      variant="ghost"
-                      size="icon"
-                      className="size-8"
-                      aria-label={`Move ${title} earlier`}
-                      disabled={index === 0}
-                      onClick={() => move(widget.id, -1)}
-                    >
-                      <ArrowUp aria-hidden="true" />
-                    </Button>
-                    <Button
-                      id={controlId(widget.id, "later")}
-                      variant="ghost"
-                      size="icon"
-                      className="size-8"
-                      aria-label={`Move ${title} later`}
-                      disabled={index === layout.length - 1}
-                      onClick={() => move(widget.id, 1)}
-                    >
-                      <ArrowDown aria-hidden="true" />
-                    </Button>
-                    <Button
-                      id={controlId(widget.id, "remove")}
-                      variant="ghost"
-                      size="icon"
-                      className="size-8"
-                      aria-label={`Remove ${title}`}
-                      onClick={() =>
-                        update(
-                          removeWidget(layout, widget.id),
-                          `${title} removed. You can add it back from Add widgets.`,
-                          `${id}-add-${widget.id}`,
-                        )
-                      }
-                    >
-                      <X aria-hidden="true" />
-                    </Button>
+                  ) : null}
+                  <div className="min-h-0 flex-1">
+                    <Widget />
                   </div>
-                ) : null}
-                <div className="min-h-0 flex-1">
-                  <Widget />
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </HiddenAmountsProvider>
       )}
     </div>
   );

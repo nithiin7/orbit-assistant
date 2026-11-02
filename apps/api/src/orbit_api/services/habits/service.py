@@ -382,6 +382,19 @@ class HabitService:
 
     # Habits
 
+    async def search(self, workspace_id: uuid.UUID, text: str) -> list[Habit]:
+        """Habits whose name contains `text`, ignoring case: active first, then paused, then
+        archived, each by name. A workspace has tens of habits, so names are matched here."""
+        needle = text.casefold()
+        rank = {"active": 0, "paused": 1, "archived": 2}
+        matches = [
+            habit
+            for habit in await self._store.habits(workspace_id, None)
+            if needle in habit.name.casefold()
+        ]
+        matches.sort(key=lambda habit: (rank[habit.status], habit.name.casefold()))
+        return matches
+
     async def find(
         self, workspace_id: uuid.UUID, statuses: Sequence[HabitStatus] | None
     ) -> list[HabitProgress]:

@@ -139,3 +139,46 @@ def test_deleting_a_user_deletes_their_layout(
     query(database, "DELETE FROM users")
 
     assert query(database, "SELECT * FROM dashboard_layouts") == []
+
+
+def test_saves_density_and_hidden_amounts(client: TestClient) -> None:
+    ada = bearer(sign_up(client))
+
+    defaults = client.put(DASHBOARD, json={"widgets": LAYOUT}, headers=ada).json()
+    assert (defaults["density"], defaults["hide_amounts"]) == ("comfortable", False)
+
+    body = {"widgets": LAYOUT, "density": "compact", "hide_amounts": True}
+    saved = client.put(DASHBOARD, json=body, headers=ada)
+
+    assert saved.status_code == 200
+    stored = client.get(DASHBOARD, headers=ada).json()
+    assert (stored["density"], stored["hide_amounts"]) == ("compact", True)
+
+
+@pytest.mark.parametrize("change", [{"density": "cosy"}, {"hide_amounts": "maybe"}])
+def test_rejects_invalid_preferences(client: TestClient, change: dict[str, Any]) -> None:
+    ada = bearer(sign_up(client))
+
+    response = client.put(DASHBOARD, json={"widgets": LAYOUT, **change}, headers=ada)
+
+    assert response.status_code == 422
+
+
+def test_preferences_are_per_user(client: TestClient) -> None:
+    ada = bearer(sign_up(client, email="ada@example.com"))
+    grace = bearer(sign_up(client, email="grace@example.com"))
+    client.put(DASHBOARD, json={"widgets": LAYOUT, "hide_amounts": True}, headers=ada)
+    client.put(DASHBOARD, json={"widgets": [], "density": "compact"}, headers=grace)
+
+    assert client.get(DASHBOARD, headers=ada).json()["hide_amounts"] is True
+    assert client.get(DASHBOARD, headers=ada).json()["density"] == "comfortable"
+    assert client.get(DASHBOARD, headers=grace).json()["hide_amounts"] is False
+
+
+def test_resetting_clears_preferences(client: TestClient) -> None:
+    ada = bearer(sign_up(client))
+    client.put(DASHBOARD, json={"widgets": LAYOUT, "density": "compact"}, headers=ada)
+
+    client.delete(DASHBOARD, headers=ada)
+
+    assert client.get(DASHBOARD, headers=ada).status_code == 204

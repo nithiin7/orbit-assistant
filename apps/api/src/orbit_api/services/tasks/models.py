@@ -11,7 +11,7 @@ from orbit_api.utils.sorting import SortOrder
 TaskStatus = Literal["open", "completed"]
 # Ordered from lowest to highest.
 TaskPriority = Literal["none", "low", "medium", "high"]
-TaskSort = Literal["due_date", "priority", "created_at"]
+TaskSort = Literal["due_date", "priority", "created_at", "completed_at"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,8 +71,12 @@ class TaskQuery:
     search: str | None = None
     # `True`: only tasks with a scheduled time; `False`: only tasks without one.
     scheduled: bool | None = None
+    # Inclusive bounds on the due date; either set leaves out tasks without one.
+    due_from: date | None = None
+    due_to: date | None = None
     sort: TaskSort = "created_at"
-    # `None` uses the sort's natural order: earliest due date, highest priority, newest first.
+    # `None` uses the sort's natural order: earliest due date, highest priority, newest first,
+    # or most recently completed first.
     order: SortOrder | None = None
     limit: int = 100
     offset: int = 0

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CommandPaletteProvider } from "@/components/command-palette/command-palette";
 import { QuickCaptureProvider } from "@/components/notes/quick-capture";
+import { QuickActionsProvider } from "@/components/quick-actions/quick-actions";
 import { ada, json, mockApi, personal, status } from "@/test/api-mock";
 import { renderSignedIn } from "@/test/session";
 
@@ -31,9 +32,11 @@ afterEach(() => {
 async function renderMobileNav() {
   await renderSignedIn(
     <QuickCaptureProvider>
-      <CommandPaletteProvider>
-        <MobileNav />
-      </CommandPaletteProvider>
+      <QuickActionsProvider>
+        <CommandPaletteProvider>
+          <MobileNav />
+        </CommandPaletteProvider>
+      </QuickActionsProvider>
     </QuickCaptureProvider>,
   );
   return screen.getByLabelText("Navigation", { selector: "dialog" });

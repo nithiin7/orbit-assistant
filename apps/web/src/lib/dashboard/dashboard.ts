@@ -1,105 +1,264 @@
 import type {
+  DashboardDensity,
   DashboardWidget,
   DashboardWidgetId as WidgetId,
   DashboardWidgetSize as WidgetSize,
 } from "@orbit/contracts";
 
 /**
- * The dashboard layout: which widgets show, in what order, and how wide. The API saves it per
- * user (`/api/v1/me/dashboard`); this browser keeps a copy so the page shows the user's layout
- * before the API answers. It only arranges the page; each widget loads its own data.
+ * The dashboard layout: which widgets show, in what order, how wide, and how densely, and
+ * whether amounts are hidden. The API saves it per user (`/api/v1/me/dashboard`); this browser
+ * keeps a copy so the page shows the user's layout before the API answers. It only arranges the
+ * page; each widget loads its own data.
  */
 
 export type { DashboardWidget, WidgetId, WidgetSize };
 
+export type Density = DashboardDensity;
+
+/** How the dashboard is shown, saved with the layout. */
+export type DashboardPreferences = {
+  density: Density;
+  /** Show money amounts as dots, for screens other people can see. */
+  hideAmounts: boolean;
+};
+
+export const defaultPreferences: DashboardPreferences = {
+  density: "comfortable",
+  hideAmounts: false,
+};
+
 export const widgetIds = [
+  "today",
+  "quick_actions",
+  "calendar",
+  "tasks",
+  "habits",
+  "attention",
+  "notes",
+  "documents",
+  "cash_flow",
+  "budget",
+  "upcoming_payments",
+  "savings_goals",
+  "net_worth",
+  "reminders",
+  "shopping",
+  "workouts",
+  "water",
+  "nutrition",
+  "weight",
+  "fitness_goals",
   "workspace",
   "status",
-  "tasks",
-  "reminders",
-  "calendar",
-  "shopping",
-  "cash_flow",
-  "upcoming_payments",
-  "budget",
-  "net_worth",
   "modules",
 ] as const satisfies readonly WidgetId[];
+
+export type WidgetGroup = "Today" | "Plan and track" | "Money" | "Health" | "Orbit";
+
+export const widgetGroups: readonly WidgetGroup[] = [
+  "Today",
+  "Plan and track",
+  "Money",
+  "Health",
+  "Orbit",
+];
 
 export type WidgetDefinition = {
   id: WidgetId;
   title: string;
   description: string;
+  group: WidgetGroup;
   defaultSize: WidgetSize;
+  /** On a new dashboard. Health and the most sensitive money widgets are opt-in. */
+  defaultVisible: boolean;
 };
 
 /** Every widget the dashboard can show, in default order. */
 export const widgetCatalog: readonly WidgetDefinition[] = [
   {
-    id: "workspace",
-    title: "Workspace",
-    description: "The active workspace and who is signed in.",
-    defaultSize: "half",
-  },
-  {
-    id: "status",
-    title: "Orbit status",
-    description: "What is built so far and what comes next.",
-    defaultSize: "half",
-  },
-  {
-    id: "tasks",
-    title: "Tasks",
-    description: "Task counts and the next open tasks.",
+    id: "today",
+    title: "Today",
+    description: "A greeting, and what today holds across your modules.",
+    group: "Today",
     defaultSize: "full",
+    defaultVisible: true,
   },
   {
-    id: "reminders",
-    title: "Reminders",
-    description: "The next reminders due in this workspace.",
+    id: "quick_actions",
+    title: "Quick actions",
+    description: "Add a task, note, event, reminder, or expense without leaving.",
+    group: "Today",
     defaultSize: "full",
+    defaultVisible: true,
   },
   {
     id: "calendar",
     title: "Agenda",
     description: "Today’s events and tasks, and what’s coming up.",
-    defaultSize: "full",
+    group: "Today",
+    defaultSize: "half",
+    defaultVisible: true,
   },
   {
-    id: "shopping",
-    title: "Shopping",
-    description: "How much is left to buy on each list.",
-    defaultSize: "full",
+    id: "tasks",
+    title: "Tasks",
+    description: "Today, priorities, upcoming deadlines, and what you finished.",
+    group: "Today",
+    defaultSize: "half",
+    defaultVisible: true,
+  },
+  {
+    id: "habits",
+    title: "Habits",
+    description: "Today’s habits and routines, with streaks.",
+    group: "Today",
+    defaultSize: "half",
+    defaultVisible: true,
+  },
+  {
+    id: "attention",
+    title: "Needs attention",
+    description: "Overdue tasks, reminders due, expiring documents, and payments due.",
+    group: "Today",
+    defaultSize: "half",
+    defaultVisible: true,
+  },
+  {
+    id: "notes",
+    title: "Notes",
+    description: "Pinned, favorite, and recent notes, and today’s journal.",
+    group: "Plan and track",
+    defaultSize: "half",
+    defaultVisible: true,
+  },
+  {
+    id: "documents",
+    title: "Documents",
+    description: "Expiring and expired documents, favorites, and recently opened.",
+    group: "Plan and track",
+    defaultSize: "half",
+    defaultVisible: true,
   },
   {
     id: "cash_flow",
     title: "This month",
     description: "Income, spending, and account balances this month.",
+    group: "Money",
     defaultSize: "half",
-  },
-  {
-    id: "upcoming_payments",
-    title: "Upcoming payments",
-    description: "Overdue payments and what is due in the next 30 days.",
-    defaultSize: "half",
+    defaultVisible: true,
   },
   {
     id: "budget",
     title: "Budget",
     description: "How much of this month’s budget is spent.",
+    group: "Money",
     defaultSize: "half",
+    defaultVisible: true,
+  },
+  {
+    id: "upcoming_payments",
+    title: "Upcoming payments",
+    description: "Overdue EMIs, bills, and renewals, and what is due in the next 30 days.",
+    group: "Money",
+    defaultSize: "half",
+    defaultVisible: false,
+  },
+  {
+    id: "savings_goals",
+    title: "Savings goals",
+    description: "Progress toward each active savings goal.",
+    group: "Money",
+    defaultSize: "half",
+    defaultVisible: false,
   },
   {
     id: "net_worth",
     title: "Net worth",
     description: "What you own, what you owe, and the difference.",
+    group: "Money",
     defaultSize: "half",
+    defaultVisible: false,
+  },
+  {
+    id: "reminders",
+    title: "Reminders",
+    description: "The next reminders due in this workspace.",
+    group: "Plan and track",
+    defaultSize: "half",
+    defaultVisible: false,
+  },
+  {
+    id: "shopping",
+    title: "Shopping",
+    description: "How much is left to buy on each list.",
+    group: "Plan and track",
+    defaultSize: "half",
+    defaultVisible: false,
+  },
+  {
+    id: "workouts",
+    title: "Workouts",
+    description: "Today’s scheduled workout, your last one, and this week’s count.",
+    group: "Health",
+    defaultSize: "half",
+    defaultVisible: false,
+  },
+  {
+    id: "water",
+    title: "Water",
+    description: "Today’s water against your target, with quick add.",
+    group: "Health",
+    defaultSize: "half",
+    defaultVisible: false,
+  },
+  {
+    id: "nutrition",
+    title: "Nutrition",
+    description: "Today’s calories and protein against your targets.",
+    group: "Health",
+    defaultSize: "half",
+    defaultVisible: false,
+  },
+  {
+    id: "weight",
+    title: "Weight",
+    description: "Your weight trend over recent measurements.",
+    group: "Health",
+    defaultSize: "half",
+    defaultVisible: false,
+  },
+  {
+    id: "fitness_goals",
+    title: "Fitness goals",
+    description: "Progress toward your active fitness goals.",
+    group: "Health",
+    defaultSize: "half",
+    defaultVisible: false,
+  },
+  {
+    id: "workspace",
+    title: "Workspace",
+    description: "The active workspace and who is signed in.",
+    group: "Orbit",
+    defaultSize: "half",
+    defaultVisible: false,
+  },
+  {
+    id: "status",
+    title: "Orbit status",
+    description: "What is built so far and what comes next.",
+    group: "Orbit",
+    defaultSize: "half",
+    defaultVisible: false,
   },
   {
     id: "modules",
     title: "Planned modules",
     description: "Sections of Orbit that are not built yet.",
+    group: "Orbit",
     defaultSize: "full",
+    defaultVisible: false,
   },
 ];
 
@@ -109,9 +268,9 @@ export function findWidget(id: WidgetId): WidgetDefinition {
   return widget;
 }
 
-export const defaultLayout: readonly DashboardWidget[] = widgetCatalog.map(
-  ({ id, defaultSize }) => ({ id, size: defaultSize }),
-);
+export const defaultLayout: readonly DashboardWidget[] = widgetCatalog
+  .filter((widget) => widget.defaultVisible)
+  .map(({ id, defaultSize }) => ({ id, size: defaultSize }));
 
 const LAYOUT_VERSION = 1;
 
@@ -157,6 +316,24 @@ export function parseLayout(raw: string | null): DashboardWidget[] {
   return layout;
 }
 
+/** Read stored display preferences; anything missing or unreadable is the default. */
+export function parsePreferences(raw: string | null): DashboardPreferences {
+  if (raw === null) return { ...defaultPreferences };
+  let stored: unknown;
+  try {
+    stored = JSON.parse(raw);
+  } catch {
+    return { ...defaultPreferences };
+  }
+  if (typeof stored !== "object" || stored === null) return { ...defaultPreferences };
+  const density = "density" in stored ? stored.density : undefined;
+  const hideAmounts = "hideAmounts" in stored ? stored.hideAmounts : undefined;
+  return {
+    density: density === "compact" ? "compact" : "comfortable",
+    hideAmounts: hideAmounts === true,
+  };
+}
+
 /** Whether this browser has a layout saved for the user, as opposed to the default. */
 export function hasStoredDashboardLayout(userId: string): boolean {
   try {
@@ -174,11 +351,23 @@ export function readDashboardLayout(userId: string): DashboardWidget[] {
   }
 }
 
-export function writeDashboardLayout(userId: string, layout: readonly DashboardWidget[]): void {
+export function readDashboardPreferences(userId: string): DashboardPreferences {
+  try {
+    return parsePreferences(localStorage.getItem(dashboardPreferenceKey(userId)));
+  } catch {
+    return { ...defaultPreferences };
+  }
+}
+
+export function writeDashboardLayout(
+  userId: string,
+  layout: readonly DashboardWidget[],
+  preferences: DashboardPreferences = defaultPreferences,
+): void {
   try {
     localStorage.setItem(
       dashboardPreferenceKey(userId),
-      JSON.stringify({ version: LAYOUT_VERSION, widgets: layout }),
+      JSON.stringify({ version: LAYOUT_VERSION, widgets: layout, ...preferences }),
     );
   } catch {
     // Storage unavailable: the layout lasts for this page view only.

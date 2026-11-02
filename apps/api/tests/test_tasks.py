@@ -281,6 +281,45 @@ def test_sort_by_priority(client: TestClient, ada: Headers, tasks_url: str) -> N
     assert titles(client, tasks_url, ada, sort="priority", order="asc")[:2] == ["None", "Low"]
 
 
+def test_filter_by_due_date_range(client: TestClient, ada: Headers, tasks_url: str) -> None:
+    create(client, tasks_url, ada, title="Undated")
+    create(client, tasks_url, ada, title="Overdue", due_date="2026-10-30")
+    create(client, tasks_url, ada, title="Today", due_date="2026-11-02")
+    create(client, tasks_url, ada, title="Next week", due_date="2026-11-09")
+
+    assert titles(client, tasks_url, ada, sort="due_date", due_to="2026-11-01") == ["Overdue"]
+    assert titles(
+        client, tasks_url, ada, sort="due_date", due_from="2026-11-02", due_to="2026-11-02"
+    ) == ["Today"]
+    assert titles(client, tasks_url, ada, sort="due_date", due_from="2026-11-02") == [
+        "Today",
+        "Next week",
+    ]
+    response = client.get(
+        tasks_url, params={"due_from": "2026-11-05", "due_to": "2026-11-01"}, headers=ada
+    )
+    assert response.status_code == 422
+
+
+def test_sort_by_completion_puts_the_latest_first(
+    client: TestClient, ada: Headers, tasks_url: str
+) -> None:
+    create(client, tasks_url, ada, title="Open")
+    for title in ("First done", "Second done"):
+        task = create(client, tasks_url, ada, title=title)
+        client.post(f"{tasks_url}/{task['id']}/complete", headers=ada)
+
+    assert titles(client, tasks_url, ada, sort="completed_at", status="completed") == [
+        "Second done",
+        "First done",
+    ]
+    assert titles(client, tasks_url, ada, sort="completed_at") == [
+        "Second done",
+        "First done",
+        "Open",
+    ]
+
+
 def test_pagination_reports_the_total(client: TestClient, ada: Headers, tasks_url: str) -> None:
     for index in range(5):
         create(client, tasks_url, ada, title=f"Task {index}")

@@ -7,6 +7,7 @@ from orbit_api.api.v1 import (
     budgets,
     calendar,
     commitments,
+    dashboard,
     documents,
     finance,
     fitness,
@@ -20,6 +21,7 @@ from orbit_api.api.v1 import (
     notifications,
     planning,
     reminders,
+    search,
     shopping,
     storage,
     tasks,
@@ -49,4 +51,6 @@ router.include_router(habits.router)
 router.include_router(habits.routines_router)
 router.include_router(documents.router)
 router.include_router(fitness.router)
+router.include_router(dashboard.router)
+router.include_router(search.router)
 router.include_router(storage.router)

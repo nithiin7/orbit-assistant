@@ -2,11 +2,30 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { dashboardPreferenceKey, readDashboardLayout, writeDashboardLayout } from "@/lib/dashboard";
+import { QuickCaptureProvider } from "@/components/notes/quick-capture";
+import { QuickActionsProvider } from "@/components/quick-actions/quick-actions";
+import {
+  dashboardPreferenceKey,
+  defaultLayout,
+  readDashboardLayout,
+  writeDashboardLayout,
+} from "@/lib/dashboard";
 import { ada, json, mockApi, type MockRequest, personal, status } from "@/test/api-mock";
 import { renderSignedIn } from "@/test/session";
 
 import { Dashboard } from "./dashboard";
+
+/** The dashboard as the app shell renders it, with quick capture and quick actions. */
+const renderDashboard = () =>
+  renderSignedIn(
+    <QuickCaptureProvider>
+      <QuickActionsProvider>
+        <Dashboard />
+      </QuickActionsProvider>
+    </QuickCaptureProvider>,
+  );
+
+const PREFERENCES = { density: "comfortable", hide_amounts: false } as const;
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
@@ -41,7 +60,67 @@ const routes = {
   }),
   [`GET ${WORKSPACE}/calendar/agenda`]: json({ items: [], next_cursor: null }),
   [`GET ${WORKSPACE}/calendar/categories`]: json({ categories: [] }),
-  [`GET ${WORKSPACE}/finance/accounts`]: json({ accounts: [], totals: [] }),
+  [`GET ${WORKSPACE}/finance/accounts`]: json({
+    accounts: [
+      {
+        id: "acc-1",
+        workspace_id: personal.id,
+        name: "Wallet",
+        type: "cash",
+        currency: "INR",
+        opening_balance: 0,
+        balance: 500_000,
+        archived: false,
+        notes: "",
+        created_at: "2026-10-01T09:00:00Z",
+        updated_at: "2026-10-01T09:00:00Z",
+      },
+    ],
+    totals: [{ currency: "INR", assets: 500_000, liabilities: 0, net: 500_000 }],
+  }),
+  [`GET ${WORKSPACE}/finance/summary`]: json({
+    month: "2026-10",
+    currency: "INR",
+    income: 1_234_500,
+    expenses: 0,
+    refunds: 0,
+    net_expenses: 0,
+    net: 1_234_500,
+    transfers_in: 0,
+    transfers_out: 0,
+  }),
+  [`GET ${WORKSPACE}/dashboard/today`]: json(overview()),
+  [`GET ${WORKSPACE}/habits/today`]: json({
+    day: "2026-10-29",
+    habits: [],
+    week: [],
+    upcoming: [],
+  }),
+  [`GET ${WORKSPACE}/routines`]: json({ routines: [] }),
+  [`GET ${WORKSPACE}/notes`]: json({ notes: [], total: 0 }),
+  [`GET ${WORKSPACE}/documents/overview`]: json({
+    counts: {
+      all: 0,
+      favorites: 0,
+      unfiled: 0,
+      unclassified: 0,
+      without_file: 0,
+      expiring_7: 0,
+      expiring_30: 0,
+      expiring_90: 0,
+      expired: 0,
+      renewals: 0,
+      archived: 0,
+      trashed: 0,
+      total_bytes: 0,
+    },
+    recently_added: [],
+    recently_updated: [],
+    favorites: [],
+    expiring: [],
+    expired: [],
+    categories: [],
+  }),
   [`GET ${WORKSPACE}/finance/payments`]: json({
     today: "2026-10-29",
     date_from: "2026-10-29",
@@ -77,6 +156,22 @@ const routes = {
   }),
 };
 
+function overview(changes: Record<string, unknown> = {}) {
+  return {
+    date: "2026-10-29",
+    timezone: "UTC",
+    generated_at: "2026-10-29T08:00:00Z",
+    tasks: { open: 2, overdue: 1, due_today: 1, overdue_items: [], due_today_items: [] },
+    events: { today: [], next: null },
+    reminders: { pending: 0, items: [] },
+    habits: { remaining: 2, done: 1, total: 3 },
+    documents: { expired: 0, expiring: 0, items: [] },
+    payments: { overdue: 0, due_soon: 0, items: [] },
+    unavailable: [],
+    ...changes,
+  };
+}
+
 /** Bodies of the layouts the dashboard saved to the account, oldest first. */
 const savedLayouts = (api: ReturnType<typeof mockApi>) =>
   api.mock.calls
@@ -91,7 +186,7 @@ const widgetOrder = () =>
 
 async function customize() {
   const user = userEvent.setup();
-  await renderSignedIn(<Dashboard />);
+  await renderDashboard();
   await user.click(screen.getByRole("button", { name: "Customize" }));
   return user;
 }
@@ -102,39 +197,93 @@ afterEach(() => {
 });
 
 describe("Dashboard", () => {
-  it("shows every widget by default, without editing controls", async () => {
+  it("starts with today, actions, and the main modules, keeping health opt-in", async () => {
     mockApi(routes);
-    await renderSignedIn(<Dashboard />);
+    await renderDashboard();
 
-    expect(screen.getByRole("heading", { name: "Tasks" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Shopping" })).toBeInTheDocument();
-    for (const name of ["This month", "Upcoming payments", "Budget", "Net worth"]) {
+    expect(
+      screen.getByRole("heading", { name: /^Good (morning|afternoon|evening), Ada$/ }),
+    ).toBeInTheDocument();
+    for (const name of ["Today’s agenda", "Tasks", "Habits", "Needs attention", "Notes"]) {
       expect(screen.getByRole("heading", { name })).toBeInTheDocument();
     }
-    expect(screen.getByRole("heading", { name: "Planned modules" })).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Orbit is in early development" }),
-    ).toBeInTheDocument();
+    for (const name of ["Documents", "This month", "Budget"]) {
+      expect(screen.getByRole("heading", { name })).toBeInTheDocument();
+    }
+    expect(screen.getByRole("group", { name: "Create" })).toBeInTheDocument();
+    for (const name of ["Workouts", "Water", "Weight", "Net worth", "Shopping"]) {
+      expect(screen.queryByRole("heading", { name })).not.toBeInTheDocument();
+    }
     expect(screen.queryByRole("button", { name: /^Remove/ })).not.toBeInTheDocument();
+  });
+
+  it("summarizes today from the overview and links to each module", async () => {
+    mockApi(routes);
+    await renderDashboard();
+
+    const tasks = await screen.findByRole("link", { name: /Tasks due/ });
+    expect(tasks).toHaveTextContent("1 overdue");
+    expect(tasks).toHaveAttribute("href", "/tasks");
+    expect(screen.getByRole("link", { name: /Habits done/ })).toHaveTextContent("1/3");
+    expect(screen.getByRole("link", { name: /Events today/ })).toHaveAttribute(
+      "href",
+      "/calendar?view=day&date=2026-10-29",
+    );
+  });
+
+  it("keeps the rest of the dashboard when one module fails", async () => {
+    mockApi({
+      ...routes,
+      [`GET ${WORKSPACE}/documents/overview`]: status(500),
+      [`GET ${WORKSPACE}/dashboard/today`]: json(
+        overview({ habits: null, unavailable: ["habits"] }),
+      ),
+    });
+    await renderDashboard();
+
+    const documents = screen.getByRole("region", { name: "Documents" });
+    expect(
+      await within(documents).findByRole("button", { name: "Try again" }, { timeout: 4000 }),
+    ).toBeInTheDocument();
+    // Other widgets still load.
+    expect(await screen.findByText("Nothing due today. Enjoy the space.")).toBeInTheDocument();
+    const habits = await screen.findByRole("link", { name: /Habits done/ });
+    expect(habits).toHaveTextContent("Couldn’t load");
+    expect(screen.getByText(/Some of today couldn’t load just now/)).toBeInTheDocument();
   });
 
   it("removes a widget, then adds it back at the end", async () => {
     mockApi(routes);
     const user = await customize();
 
-    await user.click(screen.getByRole("button", { name: "Remove Shopping" }));
+    await user.click(screen.getByRole("button", { name: "Remove Notes" }));
 
-    expect(screen.queryByRole("heading", { name: "Shopping" })).not.toBeInTheDocument();
-    const add = screen.getByRole("button", { name: "Add Shopping" });
+    expect(screen.queryByRole("heading", { name: "Notes" })).not.toBeInTheDocument();
+    const add = screen.getByRole("button", { name: "Add Notes" });
     expect(add).toHaveFocus();
-    expect(readDashboardLayout(ada.id).map((widget) => widget.id)).not.toContain("shopping");
+    expect(readDashboardLayout(ada.id).map((widget) => widget.id)).not.toContain("notes");
 
     await user.click(add);
 
-    expect(screen.getByRole("heading", { name: "Shopping" })).toBeInTheDocument();
-    expect(widgetOrder().at(-1)).toBe("Shopping widget");
-    expect(screen.getByRole("button", { name: "Remove Shopping" })).toHaveFocus();
-    expect(screen.getByText("Every widget is on your dashboard.")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Notes" })).toBeInTheDocument();
+    expect(widgetOrder().at(-1)).toBe("Notes widget");
+    expect(screen.getByRole("button", { name: "Remove Notes" })).toHaveFocus();
+  });
+
+  it("adds an opt-in health widget from its group", async () => {
+    mockApi({
+      ...routes,
+      // Health data isn't needed to arrange the widget; it shows its own error.
+      [`GET ${WORKSPACE}/fitness/overview`]: status(500),
+      [`GET ${WORKSPACE}/fitness/profile`]: status(500),
+    });
+    const user = await customize();
+
+    const health = screen.getByRole("heading", { name: "Health", level: 4 });
+    expect(health.nextElementSibling).toHaveTextContent("Water");
+    await user.click(screen.getByRole("button", { name: "Add Water" }));
+
+    expect(readDashboardLayout(ada.id).at(-1)).toEqual({ id: "water", size: "half" });
   });
 
   it("resizes a widget and remembers it for the user", async () => {
@@ -142,18 +291,18 @@ describe("Dashboard", () => {
     const user = await customize();
     const width = screen.getByRole("group", { name: "Tasks width" });
 
-    await user.click(within(width).getByRole("button", { name: "Half" }));
+    await user.click(within(width).getByRole("button", { name: "Wide" }));
 
-    expect(within(width).getByRole("button", { name: "Half" })).toHaveAttribute(
+    expect(within(width).getByRole("button", { name: "Wide" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
-    expect(within(width).getByRole("button", { name: "Full" })).toHaveAttribute(
+    expect(within(width).getByRole("button", { name: "Narrow" })).toHaveAttribute(
       "aria-pressed",
       "false",
     );
-    expect(readDashboardLayout(ada.id)).toContainEqual({ id: "tasks", size: "half" });
-    expect(screen.getByText("Tasks set to half width.")).toBeInTheDocument();
+    expect(readDashboardLayout(ada.id)).toContainEqual({ id: "tasks", size: "full" });
+    expect(screen.getByText("Tasks is now wide.")).toBeInTheDocument();
   });
 
   it("reorders widgets and keeps focus on the control", async () => {
@@ -162,13 +311,15 @@ describe("Dashboard", () => {
 
     await user.click(screen.getByRole("button", { name: "Move Tasks earlier" }));
 
-    expect(widgetOrder().slice(0, 3)).toEqual([
-      "Workspace widget",
+    expect(widgetOrder().slice(0, 4)).toEqual([
+      "Today widget",
+      "Quick actions widget",
       "Tasks widget",
-      "Orbit status widget",
+      "Agenda widget",
     ]);
     expect(screen.getByRole("button", { name: "Move Tasks earlier" })).toHaveFocus();
 
+    await user.click(screen.getByRole("button", { name: "Move Tasks earlier" }));
     await user.click(screen.getByRole("button", { name: "Move Tasks earlier" }));
 
     // Tasks is now first, so "earlier" is disabled and focus moves to "later".
@@ -179,19 +330,20 @@ describe("Dashboard", () => {
   it("restores a saved layout and loads only the widgets on it", async () => {
     writeDashboardLayout(ada.id, [{ id: "tasks", size: "half" }]);
     const api = mockApi(routes);
-    await renderSignedIn(<Dashboard />);
+    await renderDashboard();
 
-    expect(await screen.findByText(/No tasks in this workspace yet/)).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Shopping" })).not.toBeInTheDocument();
+    expect(await screen.findByText("Nothing due today. Enjoy the space.")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Notes" })).not.toBeInTheDocument();
     const paths = api.mock.calls.map(([input]) => new URL(String(input)).pathname);
-    expect(paths).not.toContain(`${WORKSPACE}/shopping/lists`);
+    expect(paths).not.toContain(`${WORKSPACE}/notes`);
+    expect(paths).not.toContain(`${WORKSPACE}/dashboard/today`);
   });
 
   it("shows an empty state when every widget is removed, and can reset", async () => {
     writeDashboardLayout(ada.id, []);
     mockApi(routes);
     const user = userEvent.setup();
-    await renderSignedIn(<Dashboard />);
+    await renderDashboard();
 
     expect(screen.getByRole("heading", { name: "Your dashboard is empty" })).toBeInTheDocument();
 
@@ -213,10 +365,11 @@ describe("Dashboard account sync", () => {
       ...routes,
       [`GET ${DASHBOARD}`]: json({
         widgets: [{ id: "tasks", size: "half" }],
+        ...PREFERENCES,
         updated_at: UPDATED_AT,
       }),
     });
-    await renderSignedIn(<Dashboard />);
+    await renderDashboard();
 
     expect(await screen.findByRole("heading", { name: "Tasks" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Shopping" })).not.toBeInTheDocument();
@@ -226,16 +379,18 @@ describe("Dashboard account sync", () => {
   it("uploads a layout saved in this browser when the account has none", async () => {
     writeDashboardLayout(ada.id, [{ id: "shopping", size: "half" }]);
     const api = mockApi(routes);
-    await renderSignedIn(<Dashboard />);
+    await renderDashboard();
 
     await waitFor(() =>
-      expect(savedLayouts(api)).toEqual([{ widgets: [{ id: "shopping", size: "half" }] }]),
+      expect(savedLayouts(api)).toEqual([
+        { widgets: [{ id: "shopping", size: "half" }], ...PREFERENCES },
+      ]),
     );
   });
 
   it("keeps the default dashboard without saving when nothing was arranged", async () => {
     const api = mockApi(routes);
-    await renderSignedIn(<Dashboard />);
+    await renderDashboard();
 
     await waitFor(() =>
       expect(api.mock.calls.some(([input]) => String(input).endsWith(DASHBOARD))).toBe(true),
@@ -247,22 +402,13 @@ describe("Dashboard account sync", () => {
     const api = mockApi(routes);
     const user = await customize();
 
-    await user.click(screen.getByRole("button", { name: "Remove Shopping" }));
-    await user.click(screen.getByRole("button", { name: "Remove Planned modules" }));
+    await user.click(screen.getByRole("button", { name: "Remove Notes" }));
+    await user.click(screen.getByRole("button", { name: "Remove Documents" }));
 
     await waitFor(() => expect(savedLayouts(api)).toHaveLength(2));
     expect(savedLayouts(api).at(-1)).toEqual({
-      widgets: [
-        { id: "workspace", size: "half" },
-        { id: "status", size: "half" },
-        { id: "tasks", size: "full" },
-        { id: "reminders", size: "full" },
-        { id: "calendar", size: "full" },
-        { id: "cash_flow", size: "half" },
-        { id: "upcoming_payments", size: "half" },
-        { id: "budget", size: "half" },
-        { id: "net_worth", size: "half" },
-      ],
+      widgets: defaultLayout.filter((widget) => !["notes", "documents"].includes(widget.id)),
+      ...PREFERENCES,
     });
 
     await user.click(screen.getByRole("button", { name: "Reset to default" }));
@@ -285,20 +431,24 @@ describe("Dashboard account sync", () => {
     });
     const user = await customize();
 
-    await user.click(screen.getByRole("button", { name: "Remove Shopping" }));
+    await user.click(screen.getByRole("button", { name: "Remove Notes" }));
 
-    const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent(/database is unavailable/);
+    const alert = await screen.findByText(/database is unavailable/);
     // The change still applies in this browser.
-    expect(screen.queryByRole("heading", { name: "Shopping" })).not.toBeInTheDocument();
-    expect(readDashboardLayout(ada.id).map((widget) => widget.id)).not.toContain("shopping");
+    expect(screen.queryByRole("heading", { name: "Notes" })).not.toBeInTheDocument();
+    expect(readDashboardLayout(ada.id).map((widget) => widget.id)).not.toContain("notes");
 
     fail = false;
-    await user.click(within(alert).getByRole("button", { name: "Try again" }));
+    const banner = alert.closest("[role=alert]");
+    if (!(banner instanceof HTMLElement)) throw new Error("The save error is not an alert.");
+    await user.click(within(banner).getByRole("button", { name: "Try again" }));
 
-    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByText(/database is unavailable/)).not.toBeInTheDocument(),
+    );
     expect(savedLayouts(api).at(-1)).toEqual({
       widgets: readDashboardLayout(ada.id),
+      ...PREFERENCES,
     });
   });
 
@@ -317,37 +467,77 @@ describe("Dashboard account sync", () => {
     });
     const user = await customize();
 
-    await user.click(screen.getByRole("button", { name: "Remove Shopping" }));
+    await user.click(screen.getByRole("button", { name: "Remove Notes" }));
     await waitFor(() => expect(puts).toBe(1));
-    await user.click(screen.getByRole("button", { name: "Remove Planned modules" }));
-    await user.click(screen.getByRole("button", { name: "Remove Tasks" }));
+    await user.click(screen.getByRole("button", { name: "Remove Documents" }));
+    await user.click(screen.getByRole("button", { name: "Remove Budget" }));
     releaseFirst();
 
     await waitFor(() => expect(savedLayouts(api)).toHaveLength(2));
     expect(savedLayouts(api)[0]).toEqual({
-      widgets: [
-        { id: "workspace", size: "half" },
-        { id: "status", size: "half" },
-        { id: "tasks", size: "full" },
-        { id: "reminders", size: "full" },
-        { id: "calendar", size: "full" },
-        { id: "cash_flow", size: "half" },
-        { id: "upcoming_payments", size: "half" },
-        { id: "budget", size: "half" },
-        { id: "net_worth", size: "half" },
-        { id: "modules", size: "full" },
-      ],
+      widgets: defaultLayout.filter((widget) => widget.id !== "notes"),
+      ...PREFERENCES,
     });
-    expect(savedLayouts(api)[1]).toEqual({ widgets: readDashboardLayout(ada.id) });
-    expect(readDashboardLayout(ada.id).map((widget) => widget.id)).toEqual([
-      "workspace",
-      "status",
-      "reminders",
-      "calendar",
-      "cash_flow",
-      "upcoming_payments",
-      "budget",
-      "net_worth",
-    ]);
+    expect(savedLayouts(api)[1]).toEqual({ widgets: readDashboardLayout(ada.id), ...PREFERENCES });
+    expect(readDashboardLayout(ada.id).map((widget) => widget.id)).toEqual(
+      defaultLayout
+        .map((widget) => widget.id)
+        .filter((id) => !["notes", "documents", "budget"].includes(id)),
+    );
+  });
+});
+
+describe("Dashboard display", () => {
+  it("hides money amounts and saves the choice to the account", async () => {
+    const api = mockApi(routes);
+    const user = await customize();
+    const cashFlow = screen.getByRole("region", { name: "This month" });
+    expect((await within(cashFlow).findAllByText(/12,345/)).length).toBeGreaterThan(0);
+
+    await user.click(screen.getByRole("checkbox", { name: "Hide money amounts" }));
+
+    expect(within(cashFlow).queryByText(/12,345/)).not.toBeInTheDocument();
+    expect(within(cashFlow).getAllByText("••••").length).toBeGreaterThan(0);
+    await waitFor(() =>
+      expect(savedLayouts(api).at(-1)).toEqual({
+        widgets: [...defaultLayout],
+        density: "comfortable",
+        hide_amounts: true,
+      }),
+    );
+  });
+
+  it("switches to the compact density and remembers it", async () => {
+    const api = mockApi(routes);
+    const user = await customize();
+    const density = screen.getByRole("group", { name: "Density" });
+
+    await user.click(within(density).getByRole("button", { name: "Compact" }));
+
+    expect(within(density).getByRole("button", { name: "Compact" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(document.querySelector("[data-density]")).toHaveAttribute("data-density", "compact");
+    await waitFor(() =>
+      expect(savedLayouts(api).at(-1)).toMatchObject({ density: "compact", hide_amounts: false }),
+    );
+  });
+
+  it("shows the account's display preferences", async () => {
+    mockApi({
+      ...routes,
+      [`GET ${DASHBOARD}`]: json({
+        widgets: [{ id: "cash_flow", size: "half" }],
+        density: "compact",
+        hide_amounts: true,
+        updated_at: UPDATED_AT,
+      }),
+    });
+    await renderDashboard();
+
+    const cashFlow = await screen.findByRole("region", { name: "This month" });
+    expect((await within(cashFlow).findAllByText("••••")).length).toBeGreaterThan(0);
+    expect(document.querySelector("[data-density]")).toHaveAttribute("data-density", "compact");
   });
 });

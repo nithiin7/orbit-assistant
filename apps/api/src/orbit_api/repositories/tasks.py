@@ -56,6 +56,10 @@ def _filters(workspace_id: uuid.UUID, query: TaskQuery) -> list[ColumnElement[bo
             if query.scheduled
             else TaskModel.scheduled_start.is_(None)
         )
+    if query.due_from is not None:
+        conditions.append(TaskModel.due_date >= query.due_from)
+    if query.due_to is not None:
+        conditions.append(TaskModel.due_date <= query.due_to)
     if query.priorities:
         conditions.append(TaskModel.priority.in_(_PRIORITY_RANKS[p] for p in query.priorities))
     if query.search:
@@ -88,6 +92,14 @@ def _ordering(query: TaskQuery) -> Sequence[ColumnElement[Any]]:
         case "created_at":
             created = TaskModel.created_at.asc() if query.order == "asc" else newest
             return (created, TaskModel.id.asc())
+        case "completed_at":
+            # Open tasks have no completion time; they come last either way.
+            completed = (
+                TaskModel.completed_at.asc()
+                if query.order == "asc"
+                else TaskModel.completed_at.desc()
+            )
+            return (TaskModel.completed_at.is_(None), completed, newest, TaskModel.id.asc())
 
 
 class SqlTaskRepository:

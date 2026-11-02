@@ -4558,6 +4558,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/dashboard/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What needs attention today, across modules
+         * @description Counts and the first few items from tasks, the calendar, reminders, habits, documents,
+         *     and payments, for today in the user's time zone. A module that fails to load is listed in
+         *     `unavailable` and the rest still answer. Amounts and health data are never included.
+         */
+        get: operations["today_api_v1_workspaces__workspace_id__dashboard_today_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search tasks, notes, events, documents, habits, and transactions
+         * @description Each module's own substring search, grouped by module. Hits carry titles and an
+         *     identifying line only: no amounts, document metadata, or document contents. Health
+         *     records are not searched.
+         */
+        get: operations["search_api_v1_workspaces__workspace_id__search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/storage": {
         parameters: {
             query?: never;
@@ -6697,11 +6741,31 @@ export interface components {
              * @description The widgets to show, in order. Each widget may appear once; an empty list is an empty dashboard.
              */
             widgets: components["schemas"]["DashboardWidgetModel"][];
+            /**
+             * Density
+             * @description `compact` tightens spacing so more fits on screen.
+             * @default comfortable
+             * @enum {string}
+             */
+            density: "comfortable" | "compact";
+            /**
+             * Hide Amounts
+             * @description Hide money amounts on the dashboard, shown as dots instead.
+             * @default false
+             */
+            hide_amounts: boolean;
         };
         /** DashboardLayoutResponse */
         DashboardLayoutResponse: {
             /** Widgets */
             widgets: components["schemas"]["DashboardWidgetModel"][];
+            /**
+             * Density
+             * @enum {string}
+             */
+            density: "comfortable" | "compact";
+            /** Hide Amounts */
+            hide_amounts: boolean;
             /**
              * Updated At
              * Format: date-time
@@ -6714,7 +6778,7 @@ export interface components {
              * Id
              * @enum {string}
              */
-            id: "workspace" | "status" | "tasks" | "reminders" | "calendar" | "shopping" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "modules";
+            id: "today" | "quick_actions" | "attention" | "workspace" | "status" | "tasks" | "reminders" | "calendar" | "habits" | "notes" | "documents" | "shopping" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "savings_goals" | "workouts" | "water" | "nutrition" | "weight" | "fitness_goals" | "modules";
             /**
              * Size
              * @description `half` widgets sit side by side on wide screens.
@@ -10136,6 +10200,156 @@ export interface components {
             modified: boolean;
         };
         /**
+         * OverviewDocumentResponse
+         * @description Only what identifies a document and when it expires: no other metadata.
+         */
+        OverviewDocumentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Expiry Date
+             * Format: date
+             */
+            expiry_date: string;
+        };
+        /** OverviewDocumentsResponse */
+        OverviewDocumentsResponse: {
+            /** Expired */
+            expired: number;
+            /**
+             * Expiring
+             * @description Expiring in the next 30 days.
+             */
+            expiring: number;
+            /**
+             * Items
+             * @description Expired (most recent first), then the soonest to expire; at most 5.
+             */
+            items: components["schemas"]["OverviewDocumentResponse"][];
+        };
+        /** OverviewEventsResponse */
+        OverviewEventsResponse: {
+            /**
+             * Today
+             * @description Today's occurrences that aren't cancelled: all-day ones first, then by start.
+             */
+            today: components["schemas"]["OccurrenceResponse"][];
+            /** @description The next timed occurrence that hasn't started, within 7 days. */
+            next: components["schemas"]["OccurrenceResponse"] | null;
+        };
+        /** OverviewHabitsResponse */
+        OverviewHabitsResponse: {
+            /**
+             * Remaining
+             * @description Habits still to do today.
+             */
+            remaining: number;
+            /**
+             * Done
+             * @description Habits done today, including extra days.
+             */
+            done: number;
+            /** Total */
+            total: number;
+        };
+        /**
+         * OverviewPaymentResponse
+         * @description A payment falling due. Amounts are left out: the Finance page shows them.
+         */
+        OverviewPaymentResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "loan" | "subscription" | "bill";
+            /**
+             * Commitment Id
+             * Format: uuid
+             */
+            commitment_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "upcoming" | "due" | "overdue" | "paid" | "skipped";
+        };
+        /** OverviewPaymentsResponse */
+        OverviewPaymentsResponse: {
+            /** Overdue */
+            overdue: number;
+            /**
+             * Due Soon
+             * @description Unsettled payments due in the next 7 days.
+             */
+            due_soon: number;
+            /**
+             * Items
+             * @description Overdue first; at most 5.
+             */
+            items: components["schemas"]["OverviewPaymentResponse"][];
+        };
+        /** OverviewReminderResponse */
+        OverviewReminderResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Next Occurrence At
+             * Format: date-time
+             */
+            next_occurrence_at: string;
+            /** Task Id */
+            task_id: string | null;
+        };
+        /** OverviewRemindersResponse */
+        OverviewRemindersResponse: {
+            /**
+             * Pending
+             * @description Enabled reminders due before the end of today, including any already due.
+             */
+            pending: number;
+            /** Items */
+            items: components["schemas"]["OverviewReminderResponse"][];
+        };
+        /** OverviewTasksResponse */
+        OverviewTasksResponse: {
+            /** Open */
+            open: number;
+            /**
+             * Overdue
+             * @description Open tasks due before today.
+             */
+            overdue: number;
+            /** Due Today */
+            due_today: number;
+            /**
+             * Overdue Items
+             * @description The most overdue first, at most 5.
+             */
+            overdue_items: components["schemas"]["TaskResponse"][];
+            /**
+             * Due Today Items
+             * @description Highest priority first, at most 5.
+             */
+            due_today_items: components["schemas"]["TaskResponse"][];
+        };
+        /**
          * PayInstallmentRequest
          * @description Record an installment as paid. Either give `from_account_id`, and Orbit records the
          *     principal as a transfer into the loan account and the interest as a "Loan interest" expense,
@@ -11438,6 +11652,68 @@ export interface components {
              */
             session_ids: string[];
         };
+        /** SearchGroupResponse */
+        SearchGroupResponse: {
+            /**
+             * Module
+             * @enum {string}
+             */
+            module: "tasks" | "notes" | "events" | "documents" | "habits" | "transactions";
+            /** Hits */
+            hits: components["schemas"]["SearchHitResponse"][];
+            /**
+             * Total
+             * @description Every match in the module, beyond the hits returned.
+             */
+            total: number;
+            /**
+             * Unavailable
+             * @description The module couldn't be searched just now.
+             */
+            unavailable: boolean;
+        };
+        /** SearchHitResponse */
+        SearchHitResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Detail
+             * @description A note's excerpt or an event's place; may be empty.
+             */
+            detail: string;
+            /**
+             * Status
+             * @description A task's or habit's status, a note's or transaction's type, an event's status, or a document's state.
+             */
+            status: string;
+            /**
+             * Day
+             * @description A task's due date, an event's first day, a transaction's date, or a journal entry's day.
+             */
+            day: string | null;
+            /**
+             * Starts At
+             * @description A timed event's local start, as wall-clock time in its own time zone.
+             */
+            starts_at: string | null;
+            /** All Day */
+            all_day: boolean;
+        };
+        /** SearchResponse */
+        SearchResponse: {
+            /** Query */
+            query: string;
+            /**
+             * Groups
+             * @description One group per module searched, in a fixed order, even when empty.
+             */
+            groups: components["schemas"]["SearchGroupResponse"][];
+        };
         /** SessionExerciseResponse */
         SessionExerciseResponse: {
             /**
@@ -12372,6 +12648,33 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /**
+         * TodayOverviewResponse
+         * @description Each section is `null` when it wasn't requested or failed to load; failed ones are
+         *     listed in `unavailable`.
+         */
+        TodayOverviewResponse: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Timezone */
+            timezone: string;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            tasks: components["schemas"]["OverviewTasksResponse"] | null;
+            events: components["schemas"]["OverviewEventsResponse"] | null;
+            reminders: components["schemas"]["OverviewRemindersResponse"] | null;
+            habits: components["schemas"]["OverviewHabitsResponse"] | null;
+            documents: components["schemas"]["OverviewDocumentsResponse"] | null;
+            payments: components["schemas"]["OverviewPaymentsResponse"] | null;
+            /** Unavailable */
+            unavailable: ("tasks" | "events" | "reminders" | "habits" | "documents" | "payments")[];
         };
         /** TotalResponse */
         TotalResponse: {
@@ -14137,8 +14440,12 @@ export interface operations {
                 q?: string | null;
                 /** @description `true` for tasks with a scheduled time, `false` for tasks without one. */
                 scheduled?: boolean | null;
-                sort?: "due_date" | "priority" | "created_at";
-                /** @description Defaults to the sort's natural order: soonest due date, highest priority, or newest. Tasks without a due date always come last. */
+                /** @description Only tasks due on or after this date (inclusive). */
+                due_from?: string | null;
+                /** @description Only tasks due on or before this date (inclusive). */
+                due_to?: string | null;
+                sort?: "due_date" | "priority" | "created_at" | "completed_at";
+                /** @description Defaults to the sort's natural order: soonest due date, highest priority, newest, or most recently completed. Tasks without a due date always come last. */
                 order?: ("asc" | "desc") | null;
                 limit?: number;
                 offset?: number;
@@ -30755,6 +31062,108 @@ export interface operations {
                 content?: never;
             };
             /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    today_api_v1_workspaces__workspace_id__dashboard_today_get: {
+        parameters: {
+            query?: {
+                /** @description Where today is. Defaults to the user's preference, else UTC. */
+                timezone?: string | null;
+                /** @description Repeat to load only some sections, to refresh one widget. Omit for all. */
+                section?: ("tasks" | "events" | "reminders" | "habits" | "documents" | "payments")[];
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TodayOverviewResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_api_v1_workspaces__workspace_id__search_get: {
+        parameters: {
+            query: {
+                /** @description Text to find; at least 2 characters. */
+                q: string;
+                /** @description Hits per module. */
+                limit?: number;
+                /** @description Repeat to search only some modules. Omit for all. */
+                module?: ("tasks" | "notes" | "events" | "documents" | "habits" | "transactions")[];
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
             404: {
                 headers: {
                     [name: string]: unknown;

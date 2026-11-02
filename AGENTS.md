@@ -49,15 +49,20 @@ and fitness** (an exercise library, workout templates, live workout logging with
 records and analytics, body measurements and BMI, progress photos in the attachment store,
 hand-entered nutrition, water, and activity, and fitness goals; private to the person who
 records them, in canonical integer units, with opt-in habit contributions, workouts scheduled as
-calendar events, and links to notes and documents). There are no other product features, no
+calendar events, and links to notes and documents), brought together by a **daily dashboard and
+command center** (a per-user customizable dashboard with a daily overview aggregated from the
+modules' own services, widgets that act through each module's own APIs, quick actions that
+reuse each module's dialogs, opt-in health widgets, hidden amounts, and cross-module search in
+the command palette composed from each module's substring search). There are no other product
+features, no
 OCR, document content indexing, or AI extraction, no encryption at rest by Orbit (documents rely
 on the OS's disk encryption), no document import, no AI health recommendations, medical
 features, or external health or food-database integrations, no AI habit recommendations or
 gamification, no external calendar sync (Google, Outlook, CalDAV, iCal import), no AI
-scheduling, no semantic search or knowledge graph, no recurring tasks, no automatically created
-transactions, no live market prices or bank integrations, no AI financial insights, no push,
-email, or mobile notifications, and no AI integration yet. Do not describe or build on
-capabilities that do not exist.
+scheduling, no search index, semantic search, or knowledge graph, no AI briefings, no recurring
+tasks, no automatically created transactions, no live market prices or bank integrations, no AI
+financial insights, no push, email, or mobile notifications, and no AI integration yet. Do not
+describe or build on capabilities that do not exist.
 
 ## Principles
 

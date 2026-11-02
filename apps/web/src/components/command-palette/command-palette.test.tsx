@@ -1,9 +1,10 @@
-import type { NoteSummary } from "@orbit/contracts";
+import type { NoteSummary, SearchHit, SearchModule, SearchResults } from "@orbit/contracts";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { QuickCaptureProvider } from "@/components/notes/quick-capture";
+import { QuickActionsProvider } from "@/components/quick-actions/quick-actions";
 import { ada, json, mockApi, type MockRequest, personal, status } from "@/test/api-mock";
 import { renderSignedIn } from "@/test/session";
 
@@ -23,6 +24,32 @@ vi.mock("next-themes", () => ({
 }));
 
 const NOTES = `/api/v1/workspaces/${personal.id}/notes`;
+const SEARCH = `/api/v1/workspaces/${personal.id}/search`;
+
+const MODULES: readonly SearchModule[] = [
+  "tasks",
+  "notes",
+  "events",
+  "documents",
+  "habits",
+  "transactions",
+];
+
+function hit(overrides: Partial<SearchHit> & Pick<SearchHit, "id" | "title">): SearchHit {
+  return { detail: "", status: "", day: null, starts_at: null, all_day: false, ...overrides };
+}
+
+function results(hits: Partial<Record<SearchModule, SearchHit[]>>): SearchResults {
+  return {
+    query: "",
+    groups: MODULES.map((module) => ({
+      module,
+      hits: hits[module] ?? [],
+      total: hits[module]?.length ?? 0,
+      unavailable: false,
+    })),
+  };
+}
 
 function note(overrides: Partial<NoteSummary> & Pick<NoteSummary, "id" | "title">): NoteSummary {
   return {
@@ -79,7 +106,7 @@ function routes(
       items: [{ kind: "event", start_at: "2030-01-14T09:00:00Z", occurrence: standup, task: null }],
       next_cursor: null,
     }),
-    [`GET /api/v1/workspaces/${personal.id}/calendar/events`]: json({ events: [], total: 0 }),
+    [`GET ${SEARCH}`]: json(results({})),
     ...extra,
   };
 }
@@ -119,9 +146,11 @@ async function renderPalette(
   const api = mockApi(routes(extra));
   await renderSignedIn(
     <QuickCaptureProvider>
-      <CommandPaletteProvider>
-        <CommandPaletteTrigger />
-      </CommandPaletteProvider>
+      <QuickActionsProvider>
+        <CommandPaletteProvider>
+          <CommandPaletteTrigger />
+        </CommandPaletteProvider>
+      </QuickActionsProvider>
     </QuickCaptureProvider>,
   );
   return { dialog: screen.getByLabelText("Command palette", { selector: "dialog" }), api };
@@ -135,9 +164,7 @@ describe("CommandPalette", () => {
 
     await user.keyboard("{Control>}k{/Control}");
     expect(dialog).toHaveAttribute("open");
-    expect(
-      screen.getByRole("combobox", { name: "Search pages, notes, documents, and actions" }),
-    ).toHaveFocus();
+    expect(screen.getByRole("combobox", { name: "Search Orbit and run actions" })).toHaveFocus();
 
     await user.keyboard("{Control>}k{/Control}");
     expect(dialog).not.toHaveAttribute("open");
@@ -230,21 +257,65 @@ describe("CommandPalette", () => {
     expect(push).toHaveBeenCalledWith("/notes?folder=bbbbbbbb-0000-4000-8000-000000000001");
   });
 
-  it("searches notes as you type", async () => {
+  it("searches every module at once and groups matches by module", async () => {
     const user = userEvent.setup();
-    await renderPalette({
-      [`GET ${NOTES}`]: ({ path }) => {
-        void path;
-        return Response.json({ notes: [matchingNote], total: 1 });
-      },
+    const { api } = await renderPalette({
+      [`GET ${SEARCH}`]: json(
+        results({
+          notes: [
+            hit({ id: matchingNote.id, title: "Garden ideas", detail: "Tomatoes by the fence" }),
+          ],
+          tasks: [
+            hit({ id: "task-1", title: "Water the garden", status: "open", day: "2030-05-01" }),
+          ],
+          transactions: [
+            hit({ id: "tx-1", title: "Garden centre", status: "expense", day: "2030-04-01" }),
+          ],
+        }),
+      ),
     });
     await user.click(screen.getByRole("button", { name: "Search" }));
     await user.keyboard("garden");
 
-    const match = await screen.findByRole("option", { name: /Garden ideas/ });
-    expect(match).toHaveTextContent("Tomatoes by the fence");
-    await user.click(match);
+    const note = await screen.findByRole("option", { name: /Garden ideas/ });
+    expect(note).toHaveTextContent("Tomatoes by the fence");
+    expect(screen.getByRole("group", { name: "Matching tasks" })).toHaveTextContent(
+      "Water the garden",
+    );
+    expect(screen.getByRole("group", { name: "Matching transactions" })).toHaveTextContent(
+      "Expense",
+    );
+    // Results come grouped, tasks first, in the order the groups are listed.
+    const groups = screen.getAllByRole("group").map((group) => group.getAttribute("aria-label"));
+    expect(groups.indexOf("Matching tasks")).toBeLessThan(groups.indexOf("Matching notes"));
+
+    await user.click(note);
     expect(push).toHaveBeenCalledWith(`/notes?note=${matchingNote.id}`);
+    // One search request covers every module; no module is searched separately.
+    const searches = api.mock.calls.filter(([url]) => String(url).includes("/search"));
+    expect(searches.length).toBeGreaterThan(0);
+    expect(api.mock.calls.some(([url]) => /\/notes\?.*q=/.test(String(url)))).toBe(false);
+    expect(String(searches.at(-1)?.[0])).toContain("q=garden");
+  });
+
+  it("keeps pages and actions working when search fails", async () => {
+    const user = userEvent.setup();
+    await renderPalette({ [`GET ${SEARCH}`]: status(500) });
+    await user.click(screen.getByRole("button", { name: "Search" }));
+    await user.keyboard("calendar");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Couldn’t search your records");
+    expect(screen.getAllByRole("option")[0]).toHaveTextContent("Plan events, meetings");
+  });
+
+  it("creates a task in place from a create command", async () => {
+    const user = userEvent.setup();
+    await renderPalette({ [`GET ${NOTES}`]: json({ notes: [], total: 0 }) });
+    await user.click(screen.getByRole("button", { name: "Search" }));
+    await user.keyboard("create task{Enter}");
+
+    expect(await screen.findByRole("dialog", { name: "New task" })).toBeInTheDocument();
+    expect(push).not.toHaveBeenCalled();
   });
 
   it("creates a note and opens it", async () => {
@@ -282,10 +353,19 @@ describe("CommandPalette", () => {
     const eventsPath = `/api/v1/workspaces/${personal.id}/calendar/events`;
     const notePath = `${eventsPath}/${standup.event_id}/notes`;
     const { api } = await renderPalette({
-      [`GET ${eventsPath}`]: json({
-        events: [{ ...standup, id: standup.event_id, start: "2030-02-01T10:00:00" }],
-        total: 1,
-      }),
+      [`GET ${SEARCH}`]: json(
+        results({
+          events: [
+            hit({
+              id: standup.event_id,
+              title: "Standup",
+              status: "confirmed",
+              day: "2030-02-01",
+              starts_at: "2030-02-01T10:00:00",
+            }),
+          ],
+        }),
+      ),
       [`POST ${notePath}`]: json(
         {
           id: "note-1",
@@ -302,6 +382,7 @@ describe("CommandPalette", () => {
     await user.keyboard("standup");
     const match = await screen.findByRole("option", { name: /^Standup/ });
     expect(match).toHaveTextContent("Feb 1, 2030");
+    expect(match.closest("[role=group]")).toHaveAttribute("aria-label", "Matching events");
 
     await user.clear(screen.getByRole("combobox"));
     await user.keyboard("meeting notes");
