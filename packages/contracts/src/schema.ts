@@ -4640,6 +4640,354 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/ai/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get AI settings */
+        get: operations["get_settings_api_v1_me_ai_settings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update AI settings
+         * @description Switching a module off removes its records from the index of every workspace at once.
+         */
+        patch: operations["update_settings_api_v1_me_ai_settings_patch"];
+        trace?: never;
+    };
+    "/api/v1/me/ai/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List AI providers */
+        get: operations["list_providers_api_v1_me_ai_providers_get"];
+        put?: never;
+        /** Add an AI provider */
+        post: operations["create_provider_api_v1_me_ai_providers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/ai/providers/{provider_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an AI provider */
+        delete: operations["delete_provider_api_v1_me_ai_providers__provider_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update an AI provider */
+        patch: operations["update_provider_api_v1_me_ai_providers__provider_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/me/ai/providers/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test a provider connection without saving it
+         * @description Lists the provider's models, which spends no tokens.
+         */
+        post: operations["test_provider_api_v1_me_ai_providers_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/ai/providers/{provider_id}/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List a provider's models */
+        get: operations["list_models_api_v1_me_ai_providers__provider_id__models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/ai/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * AI usage
+         * @description Requests, tokens, and estimated cost per provider, model, and kind of request. No prompts
+         *     or answers are stored.
+         */
+        get: operations["usage_api_v1_me_ai_usage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/ai/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List assistant conversations */
+        get: operations["list_conversations_api_v1_workspaces__workspace_id__ai_conversations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/ai/conversations/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a conversation with its messages */
+        get: operations["get_conversation_api_v1_workspaces__workspace_id__ai_conversations__conversation_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete a conversation */
+        delete: operations["delete_conversation_api_v1_workspaces__workspace_id__ai_conversations__conversation_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename a conversation */
+        patch: operations["rename_conversation_api_v1_workspaces__workspace_id__ai_conversations__conversation_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/ai/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask the assistant (streamed)
+         * @description Checks settings and saves the question first (failures are ordinary errors), then
+         *     streams the answer. Closing the connection stops generation; what was written is kept.
+         */
+        post: operations["send_message_api_v1_workspaces__workspace_id__ai_messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/ai/proposals/{proposal_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve and run a proposed action
+         * @description Runs once: a second approval is 409. A refusal by the module is recorded as `failed`
+         *     with a safe message.
+         */
+        post: operations["approve_proposal_api_v1_workspaces__workspace_id__ai_proposals__proposal_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/ai/proposals/{proposal_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject a proposed action */
+        post: operations["reject_proposal_api_v1_workspaces__workspace_id__ai_proposals__proposal_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/ai/assist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run a contextual AI feature
+         * @description Summaries, extraction, and drafts for one record or range. Changes come back as pending
+         *     proposals; nothing is changed until approved.
+         */
+        post: operations["assist_api_v1_workspaces__workspace_id__ai_assist_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/ai/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search by meaning and keywords
+         * @description Hybrid search over modules AI may read. Without an embedding model it is keyword only
+         *     (`semantic: false`). The existing `/search` endpoint is unchanged.
+         */
+        get: operations["semantic_search_api_v1_workspaces__workspace_id__ai_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/ai/insights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Personal insights
+         * @description Deterministic observations from modules AI may read; no model is called.
+         */
+        get: operations["insights_api_v1_workspaces__workspace_id__ai_insights_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/ai/insights/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dismiss an insight */
+        post: operations["dismiss_insight_api_v1_workspaces__workspace_id__ai_insights_dismiss_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/ai/index": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Retrieval index status */
+        get: operations["index_status_api_v1_workspaces__workspace_id__ai_index_get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete the index
+         * @description Deletes indexed text and embeddings for the workspace; records are untouched. With
+         *     indexing on, the worker builds it again.
+         */
+        delete: operations["clear_index_api_v1_workspaces__workspace_id__ai_index_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/ai/index/rebuild": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Re-index everything
+         * @description Marks every indexed record pending; the worker re-embeds them.
+         */
+        post: operations["rebuild_index_api_v1_workspaces__workspace_id__ai_index_rebuild_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/ai/index/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry records that failed to index */
+        post: operations["retry_index_api_v1_workspaces__workspace_id__ai_index_retry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4830,6 +5178,485 @@ export interface components {
              * @description Pass as `cursor` for more; `null` at the end.
              */
             next_cursor: string | null;
+        };
+        /** AiAssistItemResponse */
+        AiAssistItemResponse: {
+            /** Label */
+            label: string;
+            /** Detail */
+            detail: string;
+            /** Confidence */
+            confidence: number | null;
+            ref: components["schemas"]["AiRecordRef"] | null;
+        };
+        /** AiAssistRequest */
+        AiAssistRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "note_summary" | "note_takeaways" | "note_action_items" | "note_tags" | "note_rewrite" | "related_notes" | "document_summary" | "document_extract" | "task_draft" | "task_breakdown" | "schedule_summary" | "event_draft" | "spending_summary" | "budget_explain" | "transaction_categories" | "commitments_summary" | "habits_summary" | "health_summary";
+            /** Target Id */
+            target_id?: string | null;
+            /** Text */
+            text?: string | null;
+            /** Instruction */
+            instruction?: string | null;
+            /** Start */
+            start?: string | null;
+            /** End */
+            end?: string | null;
+            /** Timezone */
+            timezone?: string | null;
+        };
+        /** AiAssistResponse */
+        AiAssistResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "note_summary" | "note_takeaways" | "note_action_items" | "note_tags" | "note_rewrite" | "related_notes" | "document_summary" | "document_extract" | "task_draft" | "task_breakdown" | "schedule_summary" | "event_draft" | "spending_summary" | "budget_explain" | "transaction_categories" | "commitments_summary" | "habits_summary" | "health_summary";
+            /** Text */
+            text: string;
+            /** Items */
+            items: components["schemas"]["AiAssistItemResponse"][];
+            /**
+             * Facts
+             * @description Figures calculated by Orbit, not the model.
+             */
+            facts: string[];
+            /** Citations */
+            citations: components["schemas"]["AiCitationResponse"][];
+            /** Proposals */
+            proposals: components["schemas"]["AiProposalResponse"][];
+            /** Provider Name */
+            provider_name: string | null;
+            /** Model */
+            model: string | null;
+            /** Processing */
+            processing: ("local" | "cloud") | null;
+        };
+        /** AiCapabilitiesModel */
+        AiCapabilitiesModel: {
+            /** Chat */
+            chat: boolean;
+            /** Streaming */
+            streaming: boolean;
+            /** Structured Output */
+            structured_output: boolean;
+            /** Embeddings */
+            embeddings: boolean;
+            /** Model Listing */
+            model_listing: boolean;
+            /** Usage Reporting */
+            usage_reporting: boolean;
+        };
+        /** AiCitationResponse */
+        AiCitationResponse: {
+            /** Number */
+            number: number;
+            ref: components["schemas"]["AiRecordRef"];
+            /**
+             * Cited
+             * @description Whether the answer cites it.
+             */
+            cited: boolean;
+        };
+        /** AiConnectionTestResponse */
+        AiConnectionTestResponse: {
+            /** Ok */
+            ok: boolean;
+            /**
+             * Processing
+             * @enum {string}
+             */
+            processing: "local" | "cloud";
+            /** Model Count */
+            model_count: number;
+            /** Message */
+            message: string;
+        };
+        /** AiConversationDetailResponse */
+        AiConversationDetailResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Messages */
+            messages: components["schemas"]["AiMessageResponse"][];
+            /** Proposals */
+            proposals: components["schemas"]["AiProposalResponse"][];
+        };
+        /** AiConversationListResponse */
+        AiConversationListResponse: {
+            /** Conversations */
+            conversations: components["schemas"]["AiConversationResponse"][];
+        };
+        /** AiConversationResponse */
+        AiConversationResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AiIndexActionResponse */
+        AiIndexActionResponse: {
+            /** Affected */
+            affected: number;
+        };
+        /** AiIndexResponse */
+        AiIndexResponse: {
+            /**
+             * Active
+             * @description An embedding model is configured and allowed, so indexing runs.
+             */
+            active: boolean;
+            /** Embedding Model */
+            embedding_model: string | null;
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Last Indexed At */
+            last_indexed_at: string | null;
+        };
+        /** AiInsightListResponse */
+        AiInsightListResponse: {
+            /** Insights */
+            insights: components["schemas"]["AiInsightResponse"][];
+        };
+        /** AiInsightResponse */
+        AiInsightResponse: {
+            /** Key */
+            key: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "spending_trend" | "budget" | "upcoming_payments" | "habit_consistency" | "task_completion" | "calendar_workload" | "document_expiry";
+            /**
+             * Module
+             * @enum {string}
+             */
+            module: "tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health";
+            /** Title */
+            title: string;
+            /** Body */
+            body: string;
+            /**
+             * Period Start
+             * Format: date
+             */
+            period_start: string;
+            /**
+             * Period End
+             * Format: date
+             */
+            period_end: string;
+            /** Refs */
+            refs: components["schemas"]["AiRecordRef"][];
+            /** Tone */
+            tone: string;
+        };
+        /** AiMessageResponse */
+        AiMessageResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Role */
+            role: string;
+            /** Content */
+            content: string;
+            /** Citations */
+            citations: components["schemas"]["AiCitationResponse"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "complete" | "error" | "stopped";
+            /** Provider Name */
+            provider_name: string | null;
+            /** Model */
+            model: string | null;
+            /** Processing */
+            processing: ("local" | "cloud") | null;
+            /** Input Tokens */
+            input_tokens: number | null;
+            /** Output Tokens */
+            output_tokens: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** AiModelListResponse */
+        AiModelListResponse: {
+            /** Models */
+            models: components["schemas"]["AiModelResponse"][];
+        };
+        /** AiModelResponse */
+        AiModelResponse: {
+            /** Id */
+            id: string;
+            /** Chat */
+            chat: boolean;
+            /** Embeddings */
+            embeddings: boolean;
+        };
+        /** AiProposalResponse */
+        AiProposalResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "create_task" | "create_reminder" | "create_event" | "create_note" | "append_to_note" | "add_note_tags" | "update_document_details";
+            /** Payload */
+            payload: {
+                [key: string]: unknown;
+            };
+            /** Summary */
+            summary: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "executing" | "executed" | "rejected" | "failed";
+            /**
+             * From Untrusted Context
+             * @description Proposed while reading records, which may contain injected instructions.
+             */
+            from_untrusted_context: boolean;
+            /** Result Kind */
+            result_kind: string | null;
+            /** Result Id */
+            result_id: string | null;
+            /** Error */
+            error: string | null;
+            /** Message Id */
+            message_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** AiProviderListResponse */
+        AiProviderListResponse: {
+            /** Providers */
+            providers: components["schemas"]["AiProviderResponse"][];
+        };
+        /** AiProviderResponse */
+        AiProviderResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "openai" | "anthropic" | "gemini" | "ollama" | "openai_compatible";
+            /**
+             * Base Url
+             * @description A custom endpoint; null uses the provider's own.
+             */
+            base_url: string | null;
+            /** Effective Base Url */
+            effective_base_url: string | null;
+            /**
+             * Has Api Key
+             * @description Whether a key is stored. The key itself never is returned.
+             */
+            has_api_key: boolean;
+            /**
+             * Processing
+             * @description Where this provider processes data.
+             * @enum {string}
+             */
+            processing: "local" | "cloud";
+            capabilities: components["schemas"]["AiCapabilitiesModel"];
+            /** Input Price */
+            input_price: number | null;
+            /** Output Price */
+            output_price: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** AiRecordRef */
+        AiRecordRef: {
+            /**
+             * Kind
+             * @description note, document, task, event, habit, transaction, reminder, loan, subscription, bill, budget, workout, or a *_summary calculated by Orbit.
+             */
+            kind: string;
+            /**
+             * Id
+             * @description Null for a summary, which links to its module.
+             */
+            id: string | null;
+            /** Title */
+            title: string;
+            /** Day */
+            day: string | null;
+            /** Detail */
+            detail: string;
+        };
+        /** AiSearchMatchResponse */
+        AiSearchMatchResponse: {
+            ref: components["schemas"]["AiRecordRef"];
+            /** Snippet */
+            snippet: string;
+            /** Score */
+            score: number;
+            /**
+             * Keyword
+             * @description Found by the keyword search.
+             */
+            keyword: boolean;
+            /**
+             * Semantic
+             * @description Found by meaning, with the embedding model.
+             */
+            semantic: boolean;
+        };
+        /** AiSearchResponse */
+        AiSearchResponse: {
+            /** Query */
+            query: string;
+            /** Matches */
+            matches: components["schemas"]["AiSearchMatchResponse"][];
+            /**
+             * Semantic
+             * @description Whether semantic search ran (needs an embedding model).
+             */
+            semantic: boolean;
+            /** Semantic Error */
+            semantic_error: string | null;
+        };
+        /** AiSettingsResponse */
+        AiSettingsResponse: {
+            /**
+             * Server Enabled
+             * @description False when the server operator turned AI off.
+             */
+            server_enabled: boolean;
+            /** Enabled */
+            enabled: boolean;
+            /** Chat Provider Id */
+            chat_provider_id: string | null;
+            /** Chat Model */
+            chat_model: string | null;
+            /** Embedding Provider Id */
+            embedding_provider_id: string | null;
+            /** Embedding Model */
+            embedding_model: string | null;
+            /** Fallback Provider Id */
+            fallback_provider_id: string | null;
+            /** Fallback Model */
+            fallback_model: string | null;
+            /**
+             * Allow Cloud
+             * @description Consent to send data to cloud providers.
+             */
+            allow_cloud: boolean;
+            /**
+             * Modules
+             * @description Modules AI may read.
+             */
+            modules: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health")[];
+            /**
+             * Response Style
+             * @enum {string}
+             */
+            response_style: "concise" | "balanced" | "detailed";
+            /** Monthly Token Limit */
+            monthly_token_limit: number | null;
+            /** Indexing Enabled */
+            indexing_enabled: boolean;
+        };
+        /** AiUsageLineResponse */
+        AiUsageLineResponse: {
+            /** Provider Name */
+            provider_name: string;
+            /** Model */
+            model: string;
+            /**
+             * Operation
+             * @enum {string}
+             */
+            operation: "chat" | "assist" | "embedding" | "test";
+            /** Requests */
+            requests: number;
+            /** Failures */
+            failures: number;
+            /** Input Tokens */
+            input_tokens: number;
+            /** Output Tokens */
+            output_tokens: number;
+            /**
+             * Cost Micros
+             * @description Estimated from your prices, in micro-USD.
+             */
+            cost_micros: number | null;
+        };
+        /** AiUsageResponse */
+        AiUsageResponse: {
+            /**
+             * Since
+             * Format: date-time
+             */
+            since: string;
+            /** Lines */
+            lines: components["schemas"]["AiUsageLineResponse"][];
+            /**
+             * Month Tokens
+             * @description Tokens this calendar month (UTC).
+             */
+            month_tokens: number;
+            /** Monthly Token Limit */
+            monthly_token_limit: number | null;
+            /** Near Limit */
+            near_limit: boolean;
         };
         /** ArchiveRequest */
         ArchiveRequest: {
@@ -5694,6 +6521,24 @@ export interface components {
              * @default
              */
             notes: string;
+        };
+        /** CreateAiProviderRequest */
+        CreateAiProviderRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "openai" | "anthropic" | "gemini" | "ollama" | "openai_compatible";
+            /** Base Url */
+            base_url?: string | null;
+            /** Api Key */
+            api_key?: string | null;
+            /** Input Price */
+            input_price?: number | null;
+            /** Output Price */
+            output_price?: number | null;
         };
         /**
          * CreateAssetRequest
@@ -6984,6 +7829,11 @@ export interface components {
             value: number | null;
             /** Valued On */
             valued_on?: string | null;
+        };
+        /** DismissAiInsightRequest */
+        DismissAiInsightRequest: {
+            /** Key */
+            key: string;
         };
         /** DocumentCategoryListResponse */
         DocumentCategoryListResponse: {
@@ -11366,6 +12216,11 @@ export interface components {
              */
             status: "open" | "completed";
         };
+        /** RenameAiConversationRequest */
+        RenameAiConversationRequest: {
+            /** Title */
+            title: string;
+        };
         /** RenameCategoryRequest */
         RenameCategoryRequest: {
             /** Name */
@@ -11713,6 +12568,21 @@ export interface components {
              * @description One group per module searched, in a fixed order, even when empty.
              */
             groups: components["schemas"]["SearchGroupResponse"][];
+        };
+        /** SendAiMessageRequest */
+        SendAiMessageRequest: {
+            /** Content */
+            content: string;
+            /**
+             * Conversation Id
+             * @description Omit to start a new conversation.
+             */
+            conversation_id?: string | null;
+            /**
+             * Timezone
+             * @description The viewer's zone for 'today'; defaults to the profile's.
+             */
+            timezone?: string | null;
         };
         /** SessionExerciseResponse */
         SessionExerciseResponse: {
@@ -12650,6 +13520,21 @@ export interface components {
             updated_at: string;
         };
         /**
+         * TestAiProviderRequest
+         * @description Test a connection without saving it. Give the settings, or `provider_id` alone to test a
+         *     saved one. With both, a missing key is taken from the saved connection.
+         */
+        TestAiProviderRequest: {
+            /** Provider Id */
+            provider_id?: string | null;
+            /** Kind */
+            kind?: ("openai" | "anthropic" | "gemini" | "ollama" | "openai_compatible") | null;
+            /** Base Url */
+            base_url?: string | null;
+            /** Api Key */
+            api_key?: string | null;
+        };
+        /**
          * TodayOverviewResponse
          * @description Each section is `null` when it wasn't requested or failed to load; failed ones are
          *     listed in `unavailable`.
@@ -12790,6 +13675,52 @@ export interface components {
             opening_balance?: number | null;
             /** Notes */
             notes?: string | null;
+        };
+        /**
+         * UpdateAiProviderRequest
+         * @description Omitted fields keep their values. `api_key: null` removes the stored key.
+         */
+        UpdateAiProviderRequest: {
+            /** Name */
+            name?: string | null;
+            /** Base Url */
+            base_url?: string | null;
+            /** Api Key */
+            api_key?: string | null;
+            /** Input Price */
+            input_price?: number | null;
+            /** Output Price */
+            output_price?: number | null;
+        };
+        /**
+         * UpdateAiSettingsRequest
+         * @description Change some settings. Omitted fields keep their values; `null` clears the nullable ones.
+         */
+        UpdateAiSettingsRequest: {
+            /** Enabled */
+            enabled?: boolean | null;
+            /** Chat Provider Id */
+            chat_provider_id?: string | null;
+            /** Chat Model */
+            chat_model?: string | null;
+            /** Embedding Provider Id */
+            embedding_provider_id?: string | null;
+            /** Embedding Model */
+            embedding_model?: string | null;
+            /** Fallback Provider Id */
+            fallback_provider_id?: string | null;
+            /** Fallback Model */
+            fallback_model?: string | null;
+            /** Allow Cloud */
+            allow_cloud?: boolean | null;
+            /** Modules */
+            modules?: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health")[] | null;
+            /** Response Style */
+            response_style?: ("concise" | "balanced" | "detailed") | null;
+            /** Monthly Token Limit */
+            monthly_token_limit?: number | null;
+            /** Indexing Enabled */
+            indexing_enabled?: boolean | null;
         };
         /**
          * UpdateAssetRequest
@@ -31244,6 +32175,1047 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    get_settings_api_v1_me_ai_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiSettingsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_settings_api_v1_me_ai_settings_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAiSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiSettingsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_providers_api_v1_me_ai_providers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiProviderListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_provider_api_v1_me_ai_providers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAiProviderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiProviderResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_provider_api_v1_me_ai_providers__provider_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_provider_api_v1_me_ai_providers__provider_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAiProviderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiProviderResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_provider_api_v1_me_ai_providers_test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestAiProviderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiConnectionTestResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_models_api_v1_me_ai_providers__provider_id__models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiModelListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    usage_api_v1_me_ai_usage_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiUsageResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_conversations_api_v1_workspaces__workspace_id__ai_conversations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiConversationListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_conversation_api_v1_workspaces__workspace_id__ai_conversations__conversation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiConversationDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_conversation_api_v1_workspaces__workspace_id__ai_conversations__conversation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_conversation_api_v1_workspaces__workspace_id__ai_conversations__conversation_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenameAiConversationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiConversationResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_message_api_v1_workspaces__workspace_id__ai_messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendAiMessageRequest"];
+            };
+        };
+        responses: {
+            /** @description Server-sent events: `start` (AiTurnStarted), `sources` ({citations}), `delta` ({text}), `error` ({message}), then `done` (AiStreamDone). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": unknown;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description AI is off, not configured, or cloud processing isn't allowed. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The monthly token limit has been reached. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    approve_proposal_api_v1_workspaces__workspace_id__ai_proposals__proposal_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                proposal_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiProposalResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_proposal_api_v1_workspaces__workspace_id__ai_proposals__proposal_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                proposal_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiProposalResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assist_api_v1_workspaces__workspace_id__ai_assist_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiAssistRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiAssistResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    semantic_search_api_v1_workspaces__workspace_id__ai_search_get: {
+        parameters: {
+            query: {
+                q: string;
+                /** @description Repeat to search some modules only. */
+                module?: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health")[];
+                date_from?: string | null;
+                date_to?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiSearchResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    insights_api_v1_workspaces__workspace_id__ai_insights_get: {
+        parameters: {
+            query?: {
+                timezone?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiInsightListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dismiss_insight_api_v1_workspaces__workspace_id__ai_insights_dismiss_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DismissAiInsightRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    index_status_api_v1_workspaces__workspace_id__ai_index_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiIndexResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clear_index_api_v1_workspaces__workspace_id__ai_index_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rebuild_index_api_v1_workspaces__workspace_id__ai_index_rebuild_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiIndexActionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retry_index_api_v1_workspaces__workspace_id__ai_index_retry_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiIndexActionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

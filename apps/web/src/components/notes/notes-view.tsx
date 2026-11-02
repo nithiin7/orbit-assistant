@@ -36,6 +36,7 @@ import {
 } from "react";
 
 import { describeApiError } from "@/api/client";
+import { AssistMenu } from "@/components/ai/assist-menu";
 import { useConfirm } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
@@ -53,6 +54,7 @@ import {
   useNoteMutations,
   useTags,
 } from "@/hooks/use-notes";
+import { ASSIST_ACTIONS } from "@/lib/ai";
 import {
   documentToMarkdown,
   markdownToDocument,
@@ -1057,6 +1059,9 @@ function NotePane({
               />
             </Button>
           </>
+        )}
+        {readOnly ? null : (
+          <AssistMenu module="notes" actions={ASSIST_ACTIONS.note} targetId={note.id} />
         )}
         <Button
           variant="ghost"

@@ -20,11 +20,17 @@ export function shouldRetry(failureCount: number, error: unknown): boolean {
 
 /**
  * Workspace data that summarizes other modules rather than owning any: the dashboard's daily
- * overview and cross-module search. Any change can affect them, so they go stale after every
- * successful mutation. Only those on screen refetch; the rest wait until they're shown again.
+ * overview, cross-module search, and AI insights and search. Any change can affect them, so
+ * they go stale after every successful mutation. Only those on screen refetch; the rest wait
+ * until they're shown again.
  */
 export function isSummaryQueryKey(key: QueryKey): boolean {
-  return key[0] === "workspaces" && (key[2] === "dashboard" || key[2] === "search");
+  if (key[0] !== "workspaces") return false;
+  return (
+    key[2] === "dashboard" ||
+    key[2] === "search" ||
+    (key[2] === "ai" && (key[3] === "insights" || key[3] === "search"))
+  );
 }
 
 /** The app's query cache. `queries` overrides the defaults, for example `retry: false` in tests. */

@@ -14,6 +14,7 @@ import type {
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Landmark, Plus, Undo2 } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
+import { AssistMenu } from "@/components/ai/assist-menu";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useBudgetMonth } from "@/hooks/use-budgets";
 import { useCommitmentSummary } from "@/hooks/use-commitments";
 import { useFinanceSetup } from "@/hooks/use-finance";
+import { ASSIST_ACTIONS } from "@/lib/ai";
 import { accountCurrencies, DEFAULT_CURRENCY } from "@/lib/finance";
 import {
   DEFAULT_FINANCE_VIEW,
@@ -117,7 +119,18 @@ export function FinancePanel() {
 function FinanceFrame({ actions, children }: { actions?: ReactNode; children: ReactNode }) {
   return (
     <div className="space-y-8">
-      <PageHeader title="Finance" description={DESCRIPTION} actions={actions} />
+      <PageHeader
+        title="Finance"
+        description={DESCRIPTION}
+        actions={
+          actions ? (
+            <>
+              <AssistMenu module="finance" actions={ASSIST_ACTIONS.finance} variant="outline" />
+              {actions}
+            </>
+          ) : undefined
+        }
+      />
       {children}
     </div>
   );

@@ -1,5 +1,7 @@
 """Centralized, environment-driven application configuration."""
 
+import base64
+import binascii
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal, Self
@@ -73,12 +75,36 @@ class Settings(BaseSettings):
     # Documents use the same store and folder; their files may be larger.
     document_max_bytes: int = Field(default=25 * 1024 * 1024, ge=1024, le=200 * 1024 * 1024)
 
+    # AI. Each person turns AI on in Settings; this turns it off for everyone on the server.
+    ai_enabled: bool = True
+    # A Fernet key (32 url-safe base64 bytes) that encrypts stored provider API keys. Unset in
+    # local mode, a key file beside the SQLite database is created on first use. Unset in cloud
+    # mode, API keys can't be stored (keyless providers such as a local Ollama still work).
+    ai_secret_key: SecretStr | None = None
+    # Whether provider endpoints may point at loopback or private addresses. Unset allows them
+    # in local mode (a local Ollama) and refuses them in cloud mode, where they would let
+    # anyone reach the server's internal network.
+    ai_allow_private_endpoints: bool | None = None
+    # How often the worker looks for records to index.
+    ai_index_interval_seconds: float = Field(default=60, ge=5, le=3600)
+
     @property
     def attachments_dir(self) -> Path:
         if self.attachments_path is not None:
             return self.attachments_path
         base = self.sqlite_path.parent if self.storage_mode == "local" else DEFAULT_DATA_DIR
         return base / "attachments"
+
+    @property
+    def ai_key_file(self) -> Path | None:
+        """Where local mode keeps a generated AI secret key; `None` in cloud mode."""
+        return self.sqlite_path.parent / "ai-secret.key" if self.storage_mode == "local" else None
+
+    @property
+    def ai_private_endpoints_allowed(self) -> bool:
+        if self.ai_allow_private_endpoints is None:
+            return self.storage_mode == "local"
+        return self.ai_allow_private_endpoints
 
     @property
     def is_development(self) -> bool:
@@ -126,6 +152,13 @@ class Settings(BaseSettings):
     def _resolve_attachments_path(cls, path: Path | None) -> Path | None:
         return path.expanduser().resolve() if path is not None else None
 
+    @field_validator("ai_secret_key")
+    @classmethod
+    def _check_ai_secret_key(cls, key: SecretStr | None) -> SecretStr | None:
+        if key is not None and not is_fernet_key(key.get_secret_value()):
+            raise ValueError("ORBIT_AI_SECRET_KEY must be a Fernet key (32 url-safe base64 bytes).")
+        return key
+
     @model_validator(mode="after")
     def _validate_production(self) -> Self:
         if self.is_production and "*" in self.cors_origins:
@@ -167,6 +200,13 @@ class Settings(BaseSettings):
         if self.is_production and self.supabase_url.scheme != "https":
             raise ValueError("ORBIT_SUPABASE_URL must use https in production.")
         return self
+
+
+def is_fernet_key(value: str) -> bool:
+    try:
+        return len(base64.urlsafe_b64decode(value.encode())) == 32
+    except (binascii.Error, ValueError):
+        return False
 
 
 def _parse_postgres_url(raw: str) -> URL:

@@ -24,8 +24,8 @@ Browser ──► apps/web (Next.js, :3000) ──HTTP/JSON──► apps/api (F
   [finance](#finance), [notes](#notes-and-knowledge-management), the
   [calendar](#calendar-and-events), [habits and routines](#habits-and-routines),
   [documents](#documents-and-the-personal-vault), and [health and fitness](#health-and-fitness),
-  brought together by the [daily dashboard and command center](#daily-dashboard-and-command-center);
-  the assistant stores nothing yet.
+  brought together by the [daily dashboard and command center](#daily-dashboard-and-command-center),
+  with an optional [AI layer](#ai-intelligence-layer) on top (off until each person turns it on).
 
 The two apps communicate only over HTTP and share no runtime code. They share one thing: the
 API contract in `packages/contracts`, described below.
@@ -158,6 +158,9 @@ apps/web/src/
 │   ├── notes/           # Notes page: rail, list, Tiptap editor and toolbar, details, pickers, quick capture
 │   ├── calendar/        # Calendar page: views, time grid, event and details dialogs, sidebar, dashboard widget
 │   ├── notifications/   # Notification bell and panel (in the sidebar and mobile top bar)
+│   ├── assistant/       # Assistant page: conversations, streaming answers, sources, proposals, insights
+│   ├── ai/              # The contextual "AI" menu and its result dialog, used inside modules
+│   ├── markdown/        # Safe Markdown rendering of model output (no HTML)
 │   ├── settings/        # Settings menu and the account, workspace, theme, and storage panels
 │   ├── storage/         # Storage-mode indicator and status card
 │   └── ui/              # Small shadcn/ui-compatible primitives
@@ -210,6 +213,7 @@ apps/api/src/orbit_api/
 ├── api/
 │   ├── dependencies.py  # FastAPI dependencies: database session, settings, services
 │   ├── auth.py          # Authentication and authorization dependencies (the single gate)
+│   ├── ai_actions.py    # AI proposals validated by module schemas, run by module services
 │   └── v1/              # Versioned HTTP API, mounted at /api/v1
 │       ├── health.py    # Liveness and database connectivity
 │       ├── auth.py      # Sign-in configuration; local sign-up, sign-in, sign-out
@@ -225,8 +229,10 @@ apps/api/src/orbit_api/
 │       ├── documents.py # Documents, uploads, versions, files, renewals, links, folders, export
 │       ├── dashboard.py # The daily overview: today across modules, section by section
 │       ├── search.py    # Search across tasks, notes, events, documents, habits, transactions
+│       ├── ai.py        # AI: settings, providers, usage (/me/ai); assistant, assist, search, insights, index
 │       └── notifications.py # The signed-in user's notifications: list, unread count, read state
 ├── auth/                # Adapters: Argon2 password hashing, Supabase JWT verification
+├── providers/ai/        # Adapters: OpenAI (and compatible), Anthropic, Gemini, Ollama over HTTP
 ├── system/              # Adapters: the OS file manager; the file store (attachments, documents); ZIPs
 ├── scheduler/           # Reminder worker (embedded in the API or `orbit-worker`) and its CLI
 ├── utils/               # Plain-Python helpers: UNSET, sort order, clock, LIKE patterns, file types
@@ -242,7 +248,7 @@ apps/api/src/orbit_api/
     ├── database.py      # `open_database()`: connect, verify schema, sessions, dispose
     ├── migrate.py       # Programmatic Alembic: upgrade, downgrade, head revision
     └── migrations/      # Alembic environment and versioned revisions
-        └── versions/    # 0001_baseline … 0017_add_dashboard_preferences
+        └── versions/    # 0001_baseline … 0018_create_ai
 ```
 
 Design decisions:
@@ -379,6 +385,9 @@ written once. SQLite is embedded in the API process; local mode needs no databas
 - `0017_add_dashboard_preferences` adds `density` (with a CHECK constraint) and `hide_amounts` to
   `dashboard_layouts`; existing layouts get the defaults (see
   [Customization model](#customization-model)).
+- `0018_create_ai` creates `ai_providers`, `ai_settings`, `ai_index_sources`, `ai_chunks`,
+  `ai_conversations`, `ai_messages`, `ai_action_proposals`, `ai_usage`, and
+  `ai_insight_dismissals` with RLS (see [AI intelligence layer](#ai-intelligence-layer)).
 - Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
   Startup only checks that the database is at the head revision. For a shared cloud database,
   schema changes should be deliberate and reviewable.
@@ -461,7 +470,8 @@ structure.
      `finance_recurring_occurrences`; `0010` for the nine investment, asset, and snapshot tables;
      `0011` for the six budget, goal, and plan tables; `0012` for the seven note tables; `0013`
      for the seven calendar tables; `0014` for the twelve habit and routine tables; `0015` for
-     the seven document tables; `0016` for the twenty fitness tables.
+     the seven document tables; `0016` for the twenty fitness tables; `0018` for the nine AI
+     tables.
   2. **No policies exist**, deliberately: the browser never queries tables directly, so the
      Data API's `anon` and `authenticated` roles get no rows. Add `authenticated` policies
      (for example `owner_id = auth.uid()`) only if a client is ever allowed direct access.
@@ -3194,7 +3204,8 @@ session, and returns one group per module in a fixed order (`tasks`, `notes`, `e
 `documents`, `habits`, `transactions`), each with up to `limit` hits (default 5, at most 10)
 and the module's total. `q` must be 2 to 200 characters. A module that fails is logged, rolled
 back, and returned with `unavailable: true`. There is no index, no ranking across modules, and
-no semantic search.
+no semantic search; the AI layer adds hybrid semantic search as a separate endpoint
+(`…/ai/search`) that reuses this one for its keyword half.
 
 What each module matches is what it already matched: task titles and descriptions; note words
 in titles, text, tags, and folder names; event titles, descriptions, and places; document
@@ -3228,6 +3239,326 @@ titles, descriptions, file names, issuers, providers, notes, tags, categories, a
   the dashboard; it is left in place for removal in a follow-up.
 - No end-to-end tests yet; widgets are covered by component tests with a mocked API.
 
+## AI intelligence layer
+
+An optional layer that answers questions about a person's own Orbit data, finds records by
+meaning, drafts and summarizes in the modules, and proposes actions that run only with approval.
+It owns no personal data: it reads through the modules' own services and acts through them.
+It is off by default, per person, and Orbit works the same with it off.
+
+### What existed before, and what didn't
+
+- **Search** was Phase 10's per-module substring search (`services/search/`), with no index or
+  ranking. It is unchanged; semantic search is a separate, additional endpoint that reuses it.
+- **Background jobs**: the database-backed reminder worker (leases, retries, periodic jobs).
+  Indexing runs as one more periodic job in it; there is no second job system.
+- **Files**: the attachment store (`system/attachment_store.py`) with document versions carrying a
+  SHA-256. Indexing reads files through `DocumentService.open_file`, never modifies them.
+- **Not present, so not built on**: multi-device sync, an external integration framework, OCR,
+  and any AI library or SDK. "External integrations" therefore has no AI permission yet.
+
+### Layout
+
+```text
+services/ai/            framework-free domain logic
+├── models.py           settings, connections, index, conversations, proposals, usage, insights
+├── providers.py        AiProvider protocol, capabilities per kind, provider errors, local/cloud
+├── configuration.py    settings and connections; resolves providers and enforces policy
+├── usage.py            usage records, monthly limit, MeteredProvider wrapper
+├── chunking.py         structure-aware chunking; note headings from ProseMirror JSON
+├── extraction.py       PDF, DOCX, PPTX, XLSX, TXT, CSV, Markdown text (no OCR)
+├── sources.py          SourceCatalog: lists, loads, and re-checks indexable records
+├── indexing.py         reconcile and process the index (the worker's job)
+├── vectors.py          float32 encoding, normalization, top-k
+├── retrieval.py        hybrid keyword + semantic retrieval with rank fusion
+├── routing.py          deterministic question routing: modules, dates, action intent
+├── context.py          structured context from module services (exact figures)
+├── prompts.py          prompt assembly, record fencing, citation and proposal checks
+├── assistant.py        conversations, grounding, streaming turns
+├── assist.py           contextual features (summaries, extraction, drafts)
+├── actions.py          proposal lifecycle; validator and executor protocols
+└── insights.py         deterministic insights and dismissals
+providers/ai/           HTTP adapters (openai.py, anthropic.py, gemini.py, ollama.py, registry.py)
+repositories/ai.py      SQL for the nine AI tables; ai_services.py builds the services on a session
+api/ai_actions.py       proposals validated by module request schemas, run by module services
+api/v1/ai.py            routes
+system/secrets.py       Fernet encryption of API keys; system/network.py resolves hosts
+```
+
+### Provider abstraction and capabilities
+
+Every adapter implements `AiProvider` (`services/ai/providers.py`): `complete`, `stream`,
+`embed`, `list_models`, plus `capabilities` (chat, streaming, structured output, embeddings,
+model listing, usage reporting). Adapters are plain HTTP over the shared `httpx2.AsyncClient`
+(no vendor SDKs), built only by `providers/ai/registry.py`.
+
+| Kind                | Endpoint (default)                          | Embeddings | Notes                                               |
+| ------------------- | ------------------------------------------- | ---------- | --------------------------------------------------- |
+| `ollama`            | `http://localhost:11434` (native API)       | Yes        | Local; NDJSON streaming; usage from eval counts     |
+| `openai_compatible` | Person's server (LM Studio, llama.cpp, …)   | Attempted  | No vendor-only options sent; usage if reported      |
+| `openai`            | `https://api.openai.com/v1`                 | Yes        | Bearer key; JSON mode; stream usage                 |
+| `anthropic`         | `https://api.anthropic.com` (Messages API)  | **No**     | `UnsupportedCapabilityError`; pick another embedder |
+| `gemini`            | `https://generativelanguage.googleapis.com` | Yes        | Key in `x-goog-api-key`, never the URL              |
+
+- **Structured output** is uniform: JSON mode where the provider has one (`response_format`,
+  `responseMimeType`, `format: json`), an instruction otherwise (Anthropic), then parsing and
+  validation in Orbit with one retry. Model output is never trusted to be well formed.
+- **Errors** map to `ProviderAuthError`, `ProviderRateLimitError`, `ProviderUnavailableError`,
+  `ProviderRequestError`, `ProviderResponseError`, `UnsupportedCapabilityError`. Messages are
+  safe to show: authentication errors use fixed text (some providers echo part of the key), and
+  provider detail is passed on only for request errors, truncated, with the key redacted.
+- **Model discovery** lists the provider's models; Gemini says which support embeddings, others
+  are classified by name. The settings UI falls back to typing a model name.
+- Redirects are not followed, so an endpoint can't bounce requests somewhere unchecked.
+
+### Configuration, credentials, and consent
+
+- `ai_settings` (one row per person): on/off, chat provider and model, embedding provider and
+  model, an optional fallback, `allow_cloud`, readable modules, response style, a monthly token
+  limit, and whether to keep an index. Defaults: off; tasks, notes, calendar, reminders, and
+  habits readable; documents, finance, and health off (sensitive); no cloud processing.
+- `ai_providers` (per person): kind, name, optional endpoint, optional user-entered prices (for
+  cost estimates; Orbit ships no price list), and the API key encrypted with Fernet. The key is
+  never returned (responses say `has_api_key`), never logged, and decrypted only to build an
+  adapter. The encryption key is `ORBIT_AI_SECRET_KEY`, or in local mode a `0600` key file beside
+  the database; in cloud mode without it, keys can't be stored (keyless local providers work).
+- **Local versus cloud** is decided from the endpoint's host: loopback, private, link-local, and
+  `.local` names are `local`; anything else is `cloud`. It is shown on every provider, answer,
+  and connection test.
+- **Policy in code** (`AiConfigService`): nothing runs unless the server (`ORBIT_AI_ENABLED`) and
+  the person allow it; a cloud provider is refused (409) without `allow_cloud`; the fallback is
+  used only if chosen, only for unreachable or rate-limited providers, only before any text was
+  shown, and passes the same checks. Orbit never switches providers on its own.
+- **Endpoints** are checked when saved or tested: `http`/`https` only, no credentials in the URL,
+  plain `http` only to private hosts, and (cloud mode by default) no endpoint that is or resolves
+  to a private address, so a hosted Orbit can't be used to reach its internal network.
+
+### Embeddings, vector storage, and the index
+
+**Decision: portable storage, brute-force scoring.** Chunks are stored in `ai_chunks` with
+normalized float32 embeddings as little-endian bytes (`LargeBinary`: BLOB on SQLite, BYTEA on
+PostgreSQL), and similarity is a dot product computed in Python (`vectors.py`) over the chunks of
+allowed modules embedded by the current model.
+
+| Option                   | Why not now                                                                                      |
+| ------------------------ | ------------------------------------------------------------------------------------------------ |
+| pgvector                 | Cloud only; needs the extension and a fixed dimension per column, while models vary in dimension |
+| sqlite-vec / SQLite VSS  | A native extension to ship and load per platform; local mode stays a plain SQLite file           |
+| A vector database server | A second server to run, secure, and back up; local-first can't depend on it                      |
+
+At personal scale (thousands to tens of thousands of chunks) scoring takes milliseconds to a
+fraction of a second, on both databases, with identical behavior. The `ChunkStore` protocol in
+`retrieval.py` is the seam for a pgvector adapter if an index outgrows this.
+
+**What is indexed** (`sources.py`): notes (active; text split at headings), documents (active or
+archived; descriptive metadata, without reference numbers, plus the file's text by page, heading,
+or slide), tasks, calendar events (series), and habits. Finance, reminders, and health are not
+embedded: questions about them are answered from structured queries, so their figures are
+exact.
+
+**Chunking** (`chunking.py`) never crosses a section, so every chunk keeps an accurate location
+(`Page 3`, a heading). Paragraphs are packed up to 1,200 characters with 150 characters of
+overlap; long paragraphs split at sentences, and only an over-long sentence between words. The
+embedding input is `title`, `location`, and the chunk, so short chunks keep their context. At most
+200,000 characters per record are indexed.
+
+**Lifecycle** (`indexing.py`, run by the worker every `ORBIT_AI_INDEX_INTERVAL_SECONDS` for people
+with AI and indexing on and an embedding model):
+
+1. **Reconcile:** list allowed records with fingerprints (a note's revision, title, and tags; a
+   document's metadata and current version; the full text of small records). New, changed, or
+   embedded-by-another-model records become `pending`; records gone, trashed, archived (notes),
+   or in a module switched off are deleted with their chunks. Unchanged records are untouched,
+   so nothing is embedded twice.
+2. **Process:** claim up to 20 pending records with a 5-minute lease (a conditional update, so
+   several workers never take the same one), load, chunk, embed in batches of 32, replace the
+   chunks, mark `indexed`.
+3. **Failures** retry with backoff (2^n minutes, up to 6 hours, 5 attempts), then stay `failed`
+   until **Retry failed**. An unreachable, rate-limiting, or misconfigured provider stops the
+   run so the rest wait for the backoff.
+
+**Rebuild** marks everything pending; **Delete index** removes it (records untouched). Changing the
+embedding model re-indexes, since chunks carry their model key (`provider id:model`) and search
+only compares chunks of the current one. Switching a module off removes its chunks at once.
+Restarts lose nothing (all state is stored). Restoring a backup restores the index with it, and
+reconcile corrects anything stale; deleting the index is always safe. There is no multi-device
+sync, so there is nothing to reconcile across devices.
+
+**Stale data can't leak:** every indexed match is re-checked against its module
+(`SourceCatalog.exists`) before it is returned or shown to a model, so a deleted or trashed record
+disappears from results immediately, before the index catches up.
+
+### Semantic and hybrid search
+
+`GET /api/v1/workspaces/{id}/ai/search?q=&module=&date_from=&date_to=&limit=` (`retrieval.py`):
+the keyword half runs the existing workspace search for the query's most distinctive words (it
+matches substrings, not whole questions); the semantic half embeds the query and ranks chunks.
+Results merge by reciprocal rank fusion (`1 / (60 + rank)` per list), so records found both ways
+rank first without comparing incomparable scores; each result says whether it matched by
+keyword, meaning, or both. Without an embedding model the response says `semantic: false` and is
+keyword only. Modules the person hasn't allowed are never searched. The existing `/search`
+endpoint and the command palette's search are unchanged.
+
+### Assistant and RAG orchestration
+
+One turn (`assistant.py`):
+
+1. **Prepare** before the response starts (so problems are ordinary HTTP errors): AI on, chat
+   provider chosen, cloud consent if needed, limit not reached; the question is saved; a new
+   conversation is titled from it (no extra model call).
+2. **Route** (`routing.py`): keywords and date phrases ("tomorrow", "last month", "next 3 days",
+   "on Friday") are resolved deterministically in the viewer's time zone into modules and a date
+   range, and whether the person asked for something to be created. Keyword routing is
+   predictable and works with small local models that can't plan tool calls.
+3. **Ground**: routed modules the person allows answer with structured data from their own
+   services (`context.py`): task counts and due lists, calendar ranges with overlaps found by
+   Orbit, upcoming reminders, spending by category and income from `FinanceService`, payments
+   from `CommitmentService`, budget use from `BudgetService`, habit streaks and rates from
+   `HabitService`, the health overview (owner-scoped), and expiring documents. Hybrid retrieval
+   adds the most relevant notes, documents, and other records. Each item becomes a numbered
+   source `[S1]…`, within a 16,000-character budget. If nothing is found, the context says so.
+4. **Generate**: the system rules, at most 8 recent messages (6,000 characters, long ones
+   shortened; never the whole conversation), the sources, and the question. The answer streams
+   back as server-sent events (`start`, `sources`, `delta`, `error`, `done`).
+5. **Check and save**: citations to sources that don't exist are removed and the rest marked
+   cited; the answer is saved with its sources, provider, model, local or cloud, and tokens.
+
+Closing the connection stops generation; what was written is saved as `stopped`. Provider
+failures are saved as an `error` message with a safe reason. The streaming response opens its
+own database session, since the request's may close first.
+
+### Grounded answers and citations
+
+- Sources are created only from records Orbit retrieved; the model can't add any. The UI shows
+  each answer's sources with links into their modules (a task opens the task, an event its day,
+  a summary its module), cited ones first, and says when an answer used no Orbit data.
+- "Calculated by Orbit" sources hold figures the app computed: totals and counts come from the
+  modules' services (or, for a total of listed category amounts, integer arithmetic in
+  `context.py`), formatted exactly from minor units. The model is told to repeat them and not to
+  compute its own; there is no LLM arithmetic in any figure Orbit supplies.
+- The model is told to label inferences and general knowledge as such, and to say plainly when
+  Orbit has no answer.
+
+### Contextual features and insights
+
+`POST …/ai/assist` (`assist.py`) runs one feature on one record or range, checking the module's
+permission first: note summary, key takeaways, action items (→ task proposals), tag suggestions
+(→ a tag proposal), rewriting (→ "save as a new note", never overwriting), related notes
+(retrieval only, no model); document summary and detail extraction (→ a proposal that fills only
+empty fields; files are never modified; unreadable files are reported, since there is no OCR);
+task drafts from text and task breakdowns (→ task proposals); schedule summaries with overlaps
+and busiest day computed by Orbit, and event drafts; spending summaries with category changes
+computed by Orbit, budget explanations, upcoming payments, and category suggestions with
+confidence (shown for review only: financial records are never changed by AI); habit and health
+summaries (descriptive, no diagnosis or advice). The web exposes these through a small "AI" menu
+in Notes, Documents, Calendar, Finance, Habits, and Health, shown only when AI is on and allowed
+to read that module.
+
+`GET …/ai/insights` (`insights.py`) is deterministic, with no model involved: spending changes
+against the same days last month, budgets near or over, payments due within a week, habit
+consistency against the 30-day rate, task completion and overdue counts, calendar workload, and
+documents expiring within 30 days. Each has a period, the records behind it, and a key that
+includes the period, so dismissing it hides it until the period changes. Insights appear on the
+assistant's start page and create no notifications.
+
+### Action approval model
+
+1. The model proposes an action as a fenced `orbit-action` block (hidden from the stream), or a
+   feature builds one.
+2. Kept only if the person's message asked for an action (`routing.wants_action`), only for
+   allowlisted kinds (`create_task`, `create_reminder`, `create_event`, `create_note`,
+   `append_to_note`, `add_note_tags`, `update_document_details`), at most three per answer, and
+   only after validation by the target module's own request schema (`api/ai_actions.py`).
+3. Stored as `pending` and shown as a preview of every field; proposals made while reading
+   records are flagged for extra care.
+4. **Approve** moves `pending` to `executing` with a conditional update (a second approval, a
+   double click, or another tab finds nothing to claim: 409), re-validates, and runs the
+   module's own service; the result (or the module's safe refusal) is recorded. **Reject**
+   changes nothing.
+
+There is no generic query or update action, no deletion, no financial action, and no
+multi-step agent.
+
+### Prompt injection and untrusted content
+
+Retrieved notes, document text, and every other record are untrusted. Defenses, mostly in code:
+
+- Records are fenced as `<orbit-record>` data and the system rules say content inside is never an
+  instruction; fence markers inside records are neutralized, so a record can't close the fence or
+  forge an action block.
+- The model has no tools and can't run anything. A proposal from text the person didn't ask for
+  is dropped, so instructions planted in a document can't make the assistant propose actions on
+  its own; anything proposed still needs approval and passes the module's validation.
+- Permissions are applied before retrieval, so text from modules the person didn't allow never
+  reaches a model, and workspace and owner filters apply to every query (conversations,
+  proposals, dismissals, and index rows are scoped to the workspace and person).
+- Citations are checked against the sources Orbit supplied; answers render as Markdown parsed
+  into React elements, never as HTML, with links limited to web, mail, and in-app addresses.
+- Health data is read only with the health permission and only for its owner.
+
+### Usage tracking
+
+Every provider call is recorded in `ai_usage` by `MeteredProvider`: person, workspace, provider,
+model, kind of request (chat, assist, embedding, test), input and output tokens where the provider
+reports them, estimated cost from the person's own prices, duration, and success or error type.
+Prompts and answers are never stored there. `GET /api/v1/me/ai/usage` aggregates the last N days;
+the optional monthly token limit is checked before each call (429 when reached), with a warning
+at 80%.
+
+### Privacy and authorization
+
+- AI settings, providers, and usage are per person (`/me/ai`); conversations, proposals, insight
+  dismissals, and the index are per workspace and person, through `WorkspaceDep`. Another
+  person's workspace is 404; another person's provider, conversation, or proposal is 404.
+- On PostgreSQL the nine tables have Row Level Security enabled with no policies, like the rest.
+- Conversations keep the person's questions and answers (like notes) until deleted. Index rows
+  are derived copies of record text, deleted with their records or modules.
+
+### API
+
+| Method and path                                          | Purpose                                       |
+| -------------------------------------------------------- | --------------------------------------------- |
+| `GET`, `PATCH /me/ai/settings`                           | Settings, permissions, consent, limits        |
+| `GET`, `POST /me/ai/providers`                           | List and add provider connections             |
+| `PATCH`, `DELETE /me/ai/providers/{id}`                  | Edit (name, endpoint, key, prices) and delete |
+| `POST /me/ai/providers/test`                             | Test a connection without saving it           |
+| `GET /me/ai/providers/{id}/models`                       | The provider's models                         |
+| `GET /me/ai/usage`                                       | Usage by provider, model, and kind            |
+| `GET …/ai/conversations`, `GET`, `PATCH`, `DELETE /{id}` | Conversations: list, open, rename, delete     |
+| `POST …/ai/messages`                                     | Ask (server-sent events)                      |
+| `POST …/ai/proposals/{id}/approve`, `/reject`            | Decide a proposal                             |
+| `POST …/ai/assist`                                       | Run a contextual feature                      |
+| `GET …/ai/search`                                        | Hybrid semantic search                        |
+| `GET …/ai/insights`, `POST …/ai/insights/dismiss`        | Insights                                      |
+| `GET …/ai/index`, `POST /rebuild`, `/retry`, `DELETE`    | Index status and maintenance                  |
+
+The stream's event payloads are described in `packages/contracts/src/index.ts` (`AiTurnStarted`,
+`AiStreamDone`), since OpenAPI can't describe event streams.
+
+### In the web app
+
+- `/assistant`: conversations beside the open one (in the URL as `?c=`), suggested questions for
+  allowed modules, insights, streaming answers with numbered source links, the provider and
+  whether it ran locally, stop, rename, delete, and proposal cards with approve and reject. The
+  command palette's **Ask Orbit** opens it with the question (`?q=`).
+- **Settings → AI**: on/off, providers (with connection test and stored-key status), answer,
+  embedding, and fallback models, where data is processed, cloud consent, module permissions,
+  response style, token limit, index status and maintenance, and usage.
+- Insights and AI search are marked stale after any mutation, like the dashboard overview.
+
+### Known limitations
+
+- Routing is keyword based; unusual phrasings may miss a module (retrieval still runs).
+- Vector scoring is brute force in Python: fine for a personal index, not for millions of chunks.
+- No OCR: scanned PDFs and images contribute only their metadata.
+- Endpoint DNS is checked when saved or tested, not on every request (DNS rebinding).
+- The model can still misstate a provided figure; sources let the person check.
+- Rewrites save as a new note; there's no in-place AI edit of note content.
+- Token counts depend on the provider; OpenAI-compatible servers may report none.
+- No agents, schedules, or automation (reserved for a later phase); no multi-device sync.
+- Stopping a stream is covered by design but not by an automated test (TestClient can't
+  disconnect mid-stream).
+
 ## Configuration
 
 | App | Source                                                    | Validation                                    | Visibility  |
@@ -3244,16 +3575,16 @@ titles, descriptions, file names, issuers, providers, notes, tags, categories, a
 
 ## Testing strategy
 
-| Layer                    | Tool                                            | Location                                                                                                                        | Current coverage                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                                                                                      | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth, budgets, goals, plans, notes (views, autosave, Markdown, palette), calendar (views, dialogs, drag, scopes, palette), documents (views, uploads, details, links), health (units, forms, overview, workout logging, water, event workouts), dashboard (widgets, preferences, partial failures, quick actions, palette search)                                                           |
-| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                                                                                               | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, budgets, goals, plans, notes, calendar, documents (uploads, validation, versions, export, sweep), health and fitness (library, templates, workouts and sets, records, measurements, photos, nutrition, goals, habit, calendar, note, and document integrations, per-person privacy), daily overview (time zones, sections, partial failures), cross-module search, dashboard preferences, cross-user isolation |
-| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_calendar_recurrence.py`, `tests/test_reminder_worker.py`, `tests/test_budget_alerts.py` | Recurrence, DST, month ends, leap years, exceptions; delivery, concurrency, leases, retries, restarts; event alerts; budget alerts and period closing                                                                                                                                                                                                                                                                                                                                                                                   |
-| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                                                                                              | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                                                                                         | Startup checks, sessions, migrations, constraints, 503 errors                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                                                                                               | Migrations, connectivity, RLS, feature SQL; skipped by default                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                                                                                       | Generated contract matches the API                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| End-to-end               | Not set up (**planned**)                        | —                                                                                                                               | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Layer                    | Tool                                            | Location                                                                                                                        | Current coverage                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                                                                                      | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth, budgets, goals, plans, notes (views, autosave, Markdown, palette), calendar (views, dialogs, drag, scopes, palette), documents (views, uploads, details, links), health (units, forms, overview, workout logging, water, event workouts), dashboard (widgets, preferences, partial failures, quick actions, palette search), AI (assistant streaming and sources, proposals, settings, contextual menu, Markdown, stream parsing)                                                                                                                                                                                                                                                                    |
+| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                                                                                               | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, budgets, goals, plans, notes, calendar, documents (uploads, validation, versions, export, sweep), health and fitness (library, templates, workouts and sets, records, measurements, photos, nutrition, goals, habit, calendar, note, and document integrations, per-person privacy), daily overview (time zones, sections, partial failures), cross-module search, dashboard preferences, AI (settings, encrypted keys, cloud consent, grounded streaming answers and citations, permissions, proposals and single approval, prompt injection, isolation, indexing and semantic search, assist, insights, usage and limits; provider adapters over mocked HTTP; chunking, extraction, routing, prompts), cross-user isolation |
+| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_calendar_recurrence.py`, `tests/test_reminder_worker.py`, `tests/test_budget_alerts.py` | Recurrence, DST, month ends, leap years, exceptions; delivery, concurrency, leases, retries, restarts; event alerts; budget alerts and period closing                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                                                                                              | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                                                                                         | Startup checks, sessions, migrations, constraints, 503 errors                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                                                                                               | Migrations, connectivity, RLS, feature SQL (including the AI layer); skipped by default                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                                                                                       | Generated contract matches the API                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| End-to-end               | Not set up (**planned**)                        | —                                                                                                                               | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 Unit tests cover logic, route tests cover HTTP behavior and validation, and E2E tests will cover
 critical user journeys once real features exist. CI runs every layer on each pull request.
@@ -3283,12 +3614,11 @@ The database foundation is implemented (see [Storage](#storage)). Still planned:
   and application-level encryption at rest with a real key-management design (see
   [Encryption](#encryption)).
 
-### AI providers
+### AI
 
-- AI features will call a provider interface defined by Orbit, not a vendor SDK directly.
-- Local models are the privacy-preserving default. Sending personal data to a third-party
-  provider must require explicit user configuration and consent.
-- Retrieved documents and model or tool output are treated as untrusted input.
+The provider interface, retrieval, and the assistant are implemented; see
+[AI intelligence layer](#ai-intelligence-layer). Still planned: a pgvector adapter behind the
+same chunk store for large cloud indexes, and agents or automation (reserved for a later phase).
 
 ### Evolution
 
@@ -3297,10 +3627,9 @@ database-backed worker), and four phases of [finance](#finance) (ledger, commitm
 [investments and net worth](#investments-and-net-worth-phase-3), and
 [budgets, savings goals, and planning](#budgets-savings-goals-and-planning-phase-4)), and
 [notes](#notes-and-knowledge-management), the [calendar](#calendar-and-events), [habits](#habits-and-routines), [documents](#documents-and-the-personal-vault), [health](#health-and-fitness), and the
-[daily dashboard and command center](#daily-dashboard-and-command-center) are in place.
-Next: more
-modules on the same pattern, AI-assisted features through the provider interface, then optional
-sync and extension points.
+[daily dashboard and command center](#daily-dashboard-and-command-center) and the
+[AI intelligence layer](#ai-intelligence-layer) are in place.
+Next: more modules on the same pattern, then optional sync and extension points.
 Each step should leave the boundaries above intact.
 
 ## Continuous integration

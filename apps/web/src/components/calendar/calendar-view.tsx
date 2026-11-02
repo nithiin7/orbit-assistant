@@ -14,6 +14,7 @@ import { useEffect, useEffectEvent, useState } from "react";
 
 import { calendarEventOptions } from "@/api/calendar";
 import { describeApiError } from "@/api/client";
+import { AssistMenu } from "@/components/ai/assist-menu";
 import { useConfirm } from "@/components/confirm-dialog";
 import { FormAlert } from "@/components/form-field";
 import { PageHeader } from "@/components/page-header";
@@ -29,6 +30,7 @@ import {
 } from "@/hooks/use-calendar";
 import { useHabitCalendar } from "@/hooks/use-habits";
 import { useTaskList } from "@/hooks/use-tasks";
+import { ASSIST_ACTIONS } from "@/lib/ai";
 import {
   CALENDAR_VIEWS,
   calendarHref,
@@ -486,6 +488,7 @@ function CalendarView({ workspaceId }: { workspaceId: string }) {
         title="Calendar"
         actions={
           <>
+            <AssistMenu module="calendar" actions={ASSIST_ACTIONS.calendar} />
             <Button
               variant="ghost"
               size="icon"

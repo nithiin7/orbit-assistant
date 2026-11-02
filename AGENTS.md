@@ -53,15 +53,23 @@ calendar events, and links to notes and documents), brought together by a **dail
 command center** (a per-user customizable dashboard with a daily overview aggregated from the
 modules' own services, widgets that act through each module's own APIs, quick actions that
 reuse each module's dialogs, opt-in health widgets, hidden amounts, and cross-module search in
-the command palette composed from each module's substring search). There are no other product
-features, no
-OCR, document content indexing, or AI extraction, no encryption at rest by Orbit (documents rely
+the command palette composed from each module's substring search), and an **AI layer** (off by
+default and per person: provider adapters for OpenAI, Anthropic, Gemini, Ollama, and
+OpenAI-compatible servers behind one interface with encrypted keys and explicit cloud consent;
+module-level read permissions; a retrieval index of notes, documents, tasks, events, and habits
+kept by the existing worker, with embeddings stored as bytes and scored in Python; hybrid
+keyword and semantic search; a streaming assistant whose answers cite the records they used and
+whose numbers come from the modules' services; contextual summaries and drafts in modules;
+allowlisted action proposals that run only after approval; deterministic insights; and usage
+tracking). There are no other product features, no
+OCR (scanned PDFs and images yield no text), no encryption at rest by Orbit (documents rely
 on the OS's disk encryption), no document import, no AI health recommendations, medical
 features, or external health or food-database integrations, no AI habit recommendations or
 gamification, no external calendar sync (Google, Outlook, CalDAV, iCal import), no AI
-scheduling, no search index, semantic search, or knowledge graph, no AI briefings, no recurring
-tasks, no automatically created transactions, no live market prices or bank integrations, no AI
-financial insights, no push, email, or mobile notifications, and no AI integration yet. Do not
+scheduling (time suggestions are text only), no knowledge graph, no AI briefings, no recurring
+tasks, no automatically created transactions, no live market prices or bank integrations, no push,
+email, or mobile notifications, no autonomous AI agents or AI actions without approval, no
+pgvector or external vector database, and no multi-device sync. Do not
 describe or build on capabilities that do not exist.
 
 ## Principles
@@ -88,7 +96,8 @@ describe or build on capabilities that do not exist.
 | `.husky/`, `.lintstagedrc.mjs` | Git hooks: staged-file lint/format and commitlint                                |
 
 Not present yet (planned; see `docs/architecture.md`): object storage for files, price providers,
-shared workspaces, AI provider abstractions, end-to-end tests, and a `scripts/` directory.
+shared workspaces, end-to-end tests, and a `scripts/` directory. AI provider adapters live in
+`apps/api/src/orbit_api/providers/ai/`, behind the interface in `services/ai/providers.py`.
 
 ### Boundaries
 

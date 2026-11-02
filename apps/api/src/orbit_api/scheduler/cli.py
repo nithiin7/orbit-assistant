@@ -17,7 +17,8 @@ import signal
 
 from orbit_api.config import get_settings
 from orbit_api.db.database import open_database
-from orbit_api.scheduler.worker import ReminderWorker
+from orbit_api.providers.ai.registry import HttpProviderFactory
+from orbit_api.scheduler.worker import AiIndexing, ReminderWorker
 from orbit_api.system.attachment_store import FileAttachmentStore
 
 
@@ -41,7 +42,12 @@ def main() -> None:
 async def _run(command: str, *, once: bool, poll_interval: float) -> None:
     settings = get_settings()
     database = await open_database(settings)
-    worker = ReminderWorker(database, files=FileAttachmentStore(settings.attachments_dir))
+    providers = HttpProviderFactory()
+    worker = ReminderWorker(
+        database,
+        files=FileAttachmentStore(settings.attachments_dir),
+        ai=AiIndexing(settings, providers),
+    )
     try:
         match command:
             case "status":
@@ -64,6 +70,7 @@ async def _run(command: str, *, once: bool, poll_interval: float) -> None:
                         loop.add_signal_handler(sig, stop.set)
                 await worker.run(stop, poll_interval)
     finally:
+        await providers.aclose()
         await database.dispose()
 
 

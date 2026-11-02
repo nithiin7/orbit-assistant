@@ -123,6 +123,7 @@ const dedicatedRoutes: ReadonlySet<string> = new Set([
   "/finance",
   "/notes",
   "/documents",
+  "/assistant",
   "/settings",
 ]);
 

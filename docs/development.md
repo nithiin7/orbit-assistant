@@ -85,6 +85,15 @@ Reminders (see [Reminder worker](#reminder-worker)):
 | `ORBIT_SCHEDULER_IN_API`       | unset   | Run the reminder worker inside the API process. Unset: yes, except tests |
 | `ORBIT_SCHEDULER_POLL_SECONDS` | `15`    | How often a worker looks for due reminders (1 to 300)                    |
 
+AI (see [AI providers](#ai-providers)):
+
+| Variable                           | Default | Purpose                                                                                                                           |
+| ---------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `ORBIT_AI_ENABLED`                 | `true`  | Server-wide switch; `false` turns every AI feature off for everyone                                                               |
+| `ORBIT_AI_SECRET_KEY`              | unset   | Fernet key encrypting stored API keys. Unset: local mode creates `ai-secret.key` beside the database; cloud mode can't store keys |
+| `ORBIT_AI_ALLOW_PRIVATE_ENDPOINTS` | unset   | Allow provider endpoints on loopback/private addresses. Unset: yes in local mode, no in cloud mode                                |
+| `ORBIT_AI_INDEX_INTERVAL_SECONDS`  | `60`    | How often the worker indexes records for semantic search (5 to 3600)                                                              |
+
 Accounts (see [Accounts](#accounts)):
 
 | Variable                         | Default | Purpose                                                                 |
@@ -297,6 +306,34 @@ design and its guarantees are in
   text), and `orbit-worker status` counts them.
 - Tests never start the embedded worker; they drive it directly with a controllable clock
   (`tests/test_reminder_worker.py`).
+
+## AI providers
+
+AI is off until each person turns it on in **Settings → AI**, adds a provider, and chooses a
+model. Design: [architecture.md](architecture.md#ai-intelligence-layer). Nothing needs real API
+keys for development or tests; the test suite uses a fake provider and mocked HTTP.
+
+- **Ollama (local, recommended):** install [Ollama](https://ollama.com), then
+  `ollama pull llama3.2` (answers) and `ollama pull nomic-embed-text` (semantic search). Add an
+  Ollama provider and leave the address empty for `http://localhost:11434`. Nothing leaves the
+  machine.
+- **OpenAI-compatible servers** (LM Studio, llama.cpp `server`, vLLM): add the server's address
+  including `/v1`, for example `http://localhost:1234/v1`; a key only if the server wants one.
+- **OpenAI, Anthropic, Google Gemini:** add the provider with an API key from the vendor's
+  console, then turn on **Allow cloud processing** (requests to cloud providers are refused
+  without it). Anthropic has no embeddings API: choose another provider (such as Ollama) for
+  semantic search.
+- **Test connection** lists the provider's models without saving or spending tokens.
+- **Keys** are encrypted with `ORBIT_AI_SECRET_KEY` (generate one with
+  `uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`).
+  In local mode Orbit creates `ai-secret.key` beside the database instead; back it up with the
+  database, or re-enter keys after restoring without it. Changing the secret key makes stored
+  keys unreadable (Orbit asks for them again).
+- **Indexing** for semantic search runs in the worker (embedded in the API by default) for
+  people with an embedding model. Settings → AI shows progress and can re-index, retry failures,
+  or delete the index. Without an embedding model, AI search is keyword only.
+- **Costs:** enter your provider's prices per million tokens on a provider to see estimates in
+  usage. A monthly token limit stops requests once reached.
 
 ## Finance data
 

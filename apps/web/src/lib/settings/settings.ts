@@ -1,4 +1,4 @@
-import { Database, Layers, type LucideIcon, Palette, UserRound } from "lucide-react";
+import { Bot, Database, Layers, type LucideIcon, Palette, UserRound } from "lucide-react";
 
 export type SettingsPanel = {
   slug: string;
@@ -30,6 +30,14 @@ export const settingsPanels: readonly SettingsPanel[] = [
     title: "Appearance",
     description: "Choose how Orbit looks. Saved in this browser.",
     icon: Palette,
+    group: "general",
+  },
+  {
+    slug: "ai",
+    title: "AI",
+    description:
+      "Providers, models, and what AI may read. Off until you turn it on; local models keep everything on your machine.",
+    icon: Bot,
     group: "general",
   },
   {

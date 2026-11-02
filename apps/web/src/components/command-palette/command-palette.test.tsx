@@ -189,10 +189,12 @@ describe("CommandPalette", () => {
 
     await user.keyboard("calendar");
     const options = screen.getAllByRole("option").map((option) => option.textContent);
-    // The page comes first, then calendar actions, then searching notes and documents.
+    // The page comes first, then calendar actions, then searching notes and documents, then
+    // asking the assistant.
     expect(options[0]).toContain("Plan events, meetings");
-    expect(options.at(-2)).toContain("Search notes for “calendar”");
-    expect(options.at(-1)).toContain("Search documents for “calendar”");
+    expect(options.at(-3)).toContain("Search notes for “calendar”");
+    expect(options.at(-2)).toContain("Search documents for “calendar”");
+    expect(options.at(-1)).toContain("Ask Orbit: “calendar”");
     expect(options).toContain("Open week view");
 
     await user.keyboard("{Enter}");
@@ -237,10 +239,21 @@ describe("CommandPalette", () => {
     await user.click(screen.getByRole("button", { name: "Search" }));
 
     await user.keyboard("zzz");
-    // Only the offers to search notes and documents for it.
-    expect(screen.getAllByRole("option")).toHaveLength(2);
+    // Only the offers to search notes and documents for it, and to ask the assistant.
+    expect(screen.getAllByRole("option")).toHaveLength(3);
     expect(screen.getByRole("option", { name: /Search notes for “zzz”/ })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /Search documents for “zzz”/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Ask Orbit: “zzz”/ })).toBeInTheDocument();
+  });
+
+  it("hands a question to the assistant", async () => {
+    const user = userEvent.setup();
+    await renderPalette();
+    await user.click(screen.getByRole("button", { name: "Search" }));
+
+    await user.keyboard("what is overdue");
+    await user.click(screen.getByRole("option", { name: /Ask Orbit: “what is overdue”/ }));
+    expect(push).toHaveBeenCalledWith("/assistant?q=what%20is%20overdue");
   });
 
   it("lists recent notes and folders, and opens them", async () => {
