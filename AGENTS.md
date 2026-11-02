@@ -44,10 +44,16 @@ note attachments' file store, records without a file, nested folders, default an
 categories, tags, favorites, archive and trash, structured and custom metadata, expiry,
 renewal, and review dates with one managed reminder per document, previews for PDFs, images,
 and text, version history with restore and blob reuse, renewal history, links to notes, tasks,
-events, and finance records, search and filters, and ZIP export with metadata). There are no
-other product features, no OCR, document content indexing, or AI extraction, no encryption at
-rest by Orbit (documents rely on the OS's disk encryption), no document import, no AI habit
-recommendations or gamification, no external calendar sync (Google, Outlook, CalDAV, iCal import), no AI
+events, and finance records, search and filters, and ZIP export with metadata), and **health
+and fitness** (an exercise library, workout templates, live workout logging with sets, personal
+records and analytics, body measurements and BMI, progress photos in the attachment store,
+hand-entered nutrition, water, and activity, and fitness goals; private to the person who
+records them, in canonical integer units, with opt-in habit contributions, workouts scheduled as
+calendar events, and links to notes and documents). There are no other product features, no
+OCR, document content indexing, or AI extraction, no encryption at rest by Orbit (documents rely
+on the OS's disk encryption), no document import, no AI health recommendations, medical
+features, or external health or food-database integrations, no AI habit recommendations or
+gamification, no external calendar sync (Google, Outlook, CalDAV, iCal import), no AI
 scheduling, no semantic search or knowledge graph, no recurring tasks, no automatically created
 transactions, no live market prices or bank integrations, no AI financial insights, no push,
 email, or mobile notifications, and no AI integration yet. Do not describe or build on

@@ -3502,6 +3502,1062 @@ export interface paths {
         patch: operations["update_document_category_api_v1_workspaces__workspace_id__document_categories__category_id__patch"];
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/fitness/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The Health & Fitness dashboard */
+        get: operations["overview_api_v1_workspaces__workspace_id__fitness_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Units, height, targets, and dashboard preferences
+         * @description Metric defaults until saved.
+         */
+        get: operations["get_profile_api_v1_workspaces__workspace_id__fitness_profile_get"];
+        /** Save the profile */
+        put: operations["put_profile_api_v1_workspaces__workspace_id__fitness_profile_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/exercises": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The exercise library
+         * @description Built-in and custom exercises, archived ones included. The first call adds the
+         *     built-ins.
+         */
+        get: operations["list_exercises_api_v1_workspaces__workspace_id__fitness_exercises_get"];
+        put?: never;
+        /** Create a custom exercise */
+        post: operations["create_exercise_api_v1_workspaces__workspace_id__fitness_exercises_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/exercises/{exercise_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get an exercise */
+        get: operations["get_exercise_api_v1_workspaces__workspace_id__fitness_exercises__exercise_id__get"];
+        /**
+         * Edit a custom exercise
+         * @description Past workouts keep the name and type they were logged with.
+         */
+        put: operations["update_exercise_api_v1_workspaces__workspace_id__fitness_exercises__exercise_id__put"];
+        post?: never;
+        /** Delete an unused custom exercise */
+        delete: operations["delete_exercise_api_v1_workspaces__workspace_id__fitness_exercises__exercise_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/exercises/{exercise_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive or restore an exercise */
+        post: operations["archive_exercise_api_v1_workspaces__workspace_id__fitness_exercises__exercise_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/exercises/{exercise_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * An exercise's history and records
+         * @description Each completed workout's best values, oldest first, and the exercise's records.
+         */
+        get: operations["exercise_history_api_v1_workspaces__workspace_id__fitness_exercises__exercise_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Workout templates */
+        get: operations["list_templates_api_v1_workspaces__workspace_id__fitness_templates_get"];
+        put?: never;
+        /** Create a template */
+        post: operations["create_template_api_v1_workspaces__workspace_id__fitness_templates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/templates/{template_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a template */
+        get: operations["get_template_api_v1_workspaces__workspace_id__fitness_templates__template_id__get"];
+        /**
+         * Replace a template
+         * @description Workouts already started from it don't change.
+         */
+        put: operations["update_template_api_v1_workspaces__workspace_id__fitness_templates__template_id__put"];
+        post?: never;
+        /** Delete a template */
+        delete: operations["delete_template_api_v1_workspaces__workspace_id__fitness_templates__template_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/templates/{template_id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Duplicate a template */
+        post: operations["duplicate_template_api_v1_workspaces__workspace_id__fitness_templates__template_id__duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/templates/{template_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive or restore a template */
+        post: operations["archive_template_api_v1_workspaces__workspace_id__fitness_templates__template_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Workout history
+         * @description Newest first.
+         */
+        get: operations["list_sessions_api_v1_workspaces__workspace_id__fitness_sessions_get"];
+        put?: never;
+        /**
+         * Start a workout
+         * @description Empty, from a template, or from a scheduled workout's calendar event. Only one workout
+         *     can be in progress (409).
+         */
+        post: operations["start_session_api_v1_workspaces__workspace_id__fitness_sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/sessions/log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Log a finished workout */
+        post: operations["log_session_api_v1_workspaces__workspace_id__fitness_sessions_log_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/sessions/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The workout in progress, if any */
+        get: operations["active_session_api_v1_workspaces__workspace_id__fitness_sessions_active_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a workout */
+        get: operations["get_session_api_v1_workspaces__workspace_id__fitness_sessions__session_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete a workout */
+        delete: operations["delete_session_api_v1_workspaces__workspace_id__fitness_sessions__session_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename, add notes, or correct a workout's times */
+        patch: operations["update_session_api_v1_workspaces__workspace_id__fitness_sessions__session_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/sessions/{session_id}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pause a workout */
+        post: operations["pause_session_api_v1_workspaces__workspace_id__fitness_sessions__session_id__pause_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/sessions/{session_id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resume a workout */
+        post: operations["resume_session_api_v1_workspaces__workspace_id__fitness_sessions__session_id__resume_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/sessions/{session_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete a workout
+         * @description Applies the day to habits that count workouts.
+         */
+        post: operations["complete_session_api_v1_workspaces__workspace_id__fitness_sessions__session_id__complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/sessions/{session_id}/abandon": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Abandon a workout
+         * @description Kept in history, but not counted toward totals, records, or habits.
+         */
+        post: operations["abandon_session_api_v1_workspaces__workspace_id__fitness_sessions__session_id__abandon_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/sessions/{session_id}/exercises": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add an exercise to a workout */
+        post: operations["add_session_exercise_api_v1_workspaces__workspace_id__fitness_sessions__session_id__exercises_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/sessions/{session_id}/exercises/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove an exercise from a workout */
+        delete: operations["remove_session_exercise_api_v1_workspaces__workspace_id__fitness_sessions__session_id__exercises__item_id__delete"];
+        options?: never;
+        head?: never;
+        /** Set an exercise's rest and notes */
+        patch: operations["update_session_exercise_api_v1_workspaces__workspace_id__fitness_sessions__session_id__exercises__item_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/sessions/{session_id}/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Reorder a workout's exercises */
+        put: operations["reorder_session_api_v1_workspaces__workspace_id__fitness_sessions__session_id__order_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/sessions/{session_id}/exercises/{item_id}/sets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a set */
+        post: operations["add_set_api_v1_workspaces__workspace_id__fitness_sessions__session_id__exercises__item_id__sets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/sessions/{session_id}/exercises/{item_id}/sets/{set_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Record a set */
+        put: operations["update_set_api_v1_workspaces__workspace_id__fitness_sessions__session_id__exercises__item_id__sets__set_id__put"];
+        post?: never;
+        /** Remove a set */
+        delete: operations["delete_set_api_v1_workspaces__workspace_id__fitness_sessions__session_id__exercises__item_id__sets__set_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/sessions/{session_id}/note": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write a training note for a workout
+         * @description Creates an ordinary note in the Inbox and links it to the workout.
+         */
+        post: operations["create_session_note_api_v1_workspaces__workspace_id__fitness_sessions__session_id__note_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/sessions/{session_id}/links/{target}/{target_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Link a note or document to a workout */
+        put: operations["link_session_api_v1_workspaces__workspace_id__fitness_sessions__session_id__links__target___target_id__put"];
+        post?: never;
+        /** Unlink a note or document from a workout */
+        delete: operations["unlink_session_api_v1_workspaces__workspace_id__fitness_sessions__session_id__links__target___target_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Personal records
+         * @description Every applicable record per exercise. One-rep maxes are estimates (`estimated`).
+         */
+        get: operations["records_api_v1_workspaces__workspace_id__fitness_records_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/analytics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Workout analytics for a date range */
+        get: operations["analytics_api_v1_workspaces__workspace_id__fitness_analytics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/measurements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Body measurements and BMI */
+        get: operations["list_measurements_api_v1_workspaces__workspace_id__fitness_measurements_get"];
+        put?: never;
+        /** Record measurements */
+        post: operations["create_measurement_api_v1_workspaces__workspace_id__fitness_measurements_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/measurements/{measurement_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Correct measurements */
+        put: operations["update_measurement_api_v1_workspaces__workspace_id__fitness_measurements__measurement_id__put"];
+        post?: never;
+        /** Delete measurements */
+        delete: operations["delete_measurement_api_v1_workspaces__workspace_id__fitness_measurements__measurement_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Progress photos */
+        get: operations["list_photos_api_v1_workspaces__workspace_id__fitness_photos_get"];
+        put?: never;
+        /**
+         * Upload a progress photo
+         * @description The body is the image. Its type comes from the file name and must match its bytes. It's
+         *     kept in the attachment store and served only to you.
+         */
+        post: operations["upload_photo_api_v1_workspaces__workspace_id__fitness_photos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/photos/{photo_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a progress photo */
+        get: operations["photo_file_api_v1_workspaces__workspace_id__fitness_photos__photo_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/photos/{photo_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a progress photo */
+        delete: operations["delete_photo_api_v1_workspaces__workspace_id__fitness_photos__photo_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/foods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Saved foods */
+        get: operations["list_foods_api_v1_workspaces__workspace_id__fitness_foods_get"];
+        put?: never;
+        /** Save a food */
+        post: operations["create_food_api_v1_workspaces__workspace_id__fitness_foods_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/foods/{food_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Edit a saved food
+         * @description Entries already logged keep their nutrients.
+         */
+        put: operations["update_food_api_v1_workspaces__workspace_id__fitness_foods__food_id__put"];
+        post?: never;
+        /** Delete a saved food */
+        delete: operations["delete_food_api_v1_workspaces__workspace_id__fitness_foods__food_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/meals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Saved meals */
+        get: operations["list_meals_api_v1_workspaces__workspace_id__fitness_meals_get"];
+        put?: never;
+        /** Save a meal */
+        post: operations["create_meal_api_v1_workspaces__workspace_id__fitness_meals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/meals/{meal_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Edit a saved meal */
+        put: operations["update_meal_api_v1_workspaces__workspace_id__fitness_meals__meal_id__put"];
+        post?: never;
+        /** Delete a saved meal */
+        delete: operations["delete_meal_api_v1_workspaces__workspace_id__fitness_meals__meal_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/meals/{meal_id}/log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Log a saved meal
+         * @description Adds an entry for each item.
+         */
+        post: operations["log_meal_api_v1_workspaces__workspace_id__fitness_meals__meal_id__log_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/nutrition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A day's food entries and totals */
+        get: operations["nutrition_day_api_v1_workspaces__workspace_id__fitness_nutrition_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/nutrition/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Daily nutrition totals */
+        get: operations["nutrition_history_api_v1_workspaces__workspace_id__fitness_nutrition_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/food-entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Log food */
+        post: operations["create_food_entry_api_v1_workspaces__workspace_id__fitness_food_entries_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/food-entries/{entry_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Edit a food entry */
+        put: operations["update_food_entry_api_v1_workspaces__workspace_id__fitness_food_entries__entry_id__put"];
+        post?: never;
+        /** Delete a food entry */
+        delete: operations["delete_food_entry_api_v1_workspaces__workspace_id__fitness_food_entries__entry_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/water": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A day's water */
+        get: operations["water_day_api_v1_workspaces__workspace_id__fitness_water_get"];
+        put?: never;
+        /**
+         * Add water
+         * @description Applies the day to habits that count water.
+         */
+        post: operations["add_water_api_v1_workspaces__workspace_id__fitness_water_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/water/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Daily water totals */
+        get: operations["water_history_api_v1_workspaces__workspace_id__fitness_water_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/water/{entry_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a water entry */
+        delete: operations["delete_water_api_v1_workspaces__workspace_id__fitness_water__entry_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/activities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Activity entries */
+        get: operations["list_activities_api_v1_workspaces__workspace_id__fitness_activities_get"];
+        put?: never;
+        /**
+         * Record activity
+         * @description Applies the day to habits that count this kind of activity.
+         */
+        post: operations["create_activity_api_v1_workspaces__workspace_id__fitness_activities_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/activities/{activity_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Correct an activity entry */
+        put: operations["update_activity_api_v1_workspaces__workspace_id__fitness_activities__activity_id__put"];
+        post?: never;
+        /** Delete an activity entry */
+        delete: operations["delete_activity_api_v1_workspaces__workspace_id__fitness_activities__activity_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/goals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Fitness goals with their progress */
+        get: operations["list_goals_api_v1_workspaces__workspace_id__fitness_goals_get"];
+        put?: never;
+        /** Create a goal */
+        post: operations["create_goal_api_v1_workspaces__workspace_id__fitness_goals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/goals/{goal_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a goal with its history and milestones */
+        get: operations["get_goal_api_v1_workspaces__workspace_id__fitness_goals__goal_id__get"];
+        /** Edit a goal */
+        put: operations["update_goal_api_v1_workspaces__workspace_id__fitness_goals__goal_id__put"];
+        post?: never;
+        /** Delete a goal */
+        delete: operations["delete_goal_api_v1_workspaces__workspace_id__fitness_goals__goal_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/goals/{goal_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pause, resume, complete, or reopen a goal */
+        post: operations["set_goal_status_api_v1_workspaces__workspace_id__fitness_goals__goal_id__status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/goals/{goal_id}/check-ins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record progress on a goal
+         * @description Auto-tracked goals read their records instead (409).
+         */
+        post: operations["check_in_api_v1_workspaces__workspace_id__fitness_goals__goal_id__check_ins_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/goals/{goal_id}/check-ins/{check_in_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a check-in */
+        delete: operations["delete_check_in_api_v1_workspaces__workspace_id__fitness_goals__goal_id__check_ins__check_in_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/goals/{goal_id}/links/{target}/{target_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Link a note or document to a goal */
+        put: operations["link_goal_api_v1_workspaces__workspace_id__fitness_goals__goal_id__links__target___target_id__put"];
+        post?: never;
+        /** Unlink a note or document from a goal */
+        delete: operations["unlink_goal_api_v1_workspaces__workspace_id__fitness_goals__goal_id__links__target___target_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/habit-links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Habits linked to health records */
+        get: operations["list_habit_links_api_v1_workspaces__workspace_id__fitness_habit_links_get"];
+        /**
+         * Link a habit to a kind of record
+         * @description One link per habit; sending another replaces it. With `contributes`, matching records
+         *     saved from now on record progress on the habit. Completing a habit never creates a health
+         *     record.
+         */
+        put: operations["put_habit_link_api_v1_workspaces__workspace_id__fitness_habit_links_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/habit-links/{habit_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Unlink a habit */
+        delete: operations["delete_habit_link_api_v1_workspaces__workspace_id__fitness_habit_links__habit_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Scheduled workouts in a date range */
+        get: operations["list_scheduled_api_v1_workspaces__workspace_id__fitness_schedule_get"];
+        put?: never;
+        /**
+         * Schedule a workout on the calendar
+         * @description Creates an ordinary calendar event (alerts notify through the reminder system) and
+         *     links it to the template.
+         */
+        post: operations["schedule_workout_api_v1_workspaces__workspace_id__fitness_schedule_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/fitness/schedule/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The workout a calendar event schedules
+         * @description 404 when the event isn't a scheduled workout.
+         */
+        get: operations["get_scheduled_api_v1_workspaces__workspace_id__fitness_schedule__event_id__get"];
+        /**
+         * Mark a calendar event as a workout
+         * @description Use an existing event rather than creating a second one.
+         */
+        put: operations["link_scheduled_api_v1_workspaces__workspace_id__fitness_schedule__event_id__put"];
+        post?: never;
+        /**
+         * Stop treating an event as a workout
+         * @description The event stays on the calendar.
+         */
+        delete: operations["unlink_scheduled_api_v1_workspaces__workspace_id__fitness_schedule__event_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/storage": {
         parameters: {
             query?: never;
@@ -3617,6 +4673,74 @@ export interface components {
              */
             updated_at: string;
         };
+        /** ActiveSessionResponse */
+        ActiveSessionResponse: {
+            session: components["schemas"]["SessionResponse"] | null;
+        };
+        /** ActivityListResponse */
+        ActivityListResponse: {
+            /**
+             * Activities
+             * @description Newest first.
+             */
+            activities: components["schemas"]["ActivityResponse"][];
+        };
+        /** ActivityRequest */
+        ActivityRequest: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "steps" | "walk" | "run" | "cycle" | "swim" | "cardio" | "sleep" | "rest_day";
+            /** Steps */
+            steps?: number | null;
+            /** Distance M */
+            distance_m?: number | null;
+            /** Duration S */
+            duration_s?: number | null;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+        };
+        /** ActivityResponse */
+        ActivityResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "steps" | "walk" | "run" | "cycle" | "swim" | "cardio" | "sleep" | "rest_day";
+            /** Steps */
+            steps: number | null;
+            /** Distance M */
+            distance_m: number | null;
+            /** Duration S */
+            duration_s: number | null;
+            /** Note */
+            note: string;
+            /**
+             * Source
+             * @description Recorded by hand; nothing is imported yet.
+             * @constant
+             */
+            source: "manual";
+        };
         /** AddNoteTagRequest */
         AddNoteTagRequest: {
             /**
@@ -3624,6 +4748,19 @@ export interface components {
              * @description An existing tag's name (any case) or a new tag's.
              */
             name: string;
+        };
+        /** AddSessionExerciseRequest */
+        AddSessionExerciseRequest: {
+            /**
+             * Exercise Id
+             * Format: uuid
+             */
+            exercise_id: string;
+        };
+        /** AddSetRequest */
+        AddSetRequest: {
+            /** @description Leave out to copy the last set (not yet done). */
+            values?: components["schemas"]["SetRequest"] | null;
         };
         /** AgendaItemResponse */
         AgendaItemResponse: {
@@ -3649,6 +4786,11 @@ export interface components {
              * @description Pass as `cursor` for more; `null` at the end.
              */
             next_cursor: string | null;
+        };
+        /** ArchiveRequest */
+        ArchiveRequest: {
+            /** Archived */
+            archived: boolean;
         };
         /** AssetListResponse */
         AssetListResponse: {
@@ -3823,6 +4965,23 @@ export interface components {
              * @description What credit cards and loans owe, as a positive amount in minor units.
              */
             liabilities: number;
+        };
+        /** BmiResponse */
+        BmiResponse: {
+            /**
+             * Value
+             * @description A general measure of weight for height; not an assessment of health.
+             */
+            value: number;
+            /** Weight G */
+            weight_g: number;
+            /** Height Mm */
+            height_mm: number;
+            /**
+             * Weight Day
+             * Format: date
+             */
+            weight_day: string;
         };
         /** BudgetDetailResponse */
         BudgetDetailResponse: {
@@ -4294,6 +5453,43 @@ export interface components {
              * @description `expenses` minus `refunds`.
              */
             net: number;
+        };
+        /** CheckInRequest */
+        CheckInRequest: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Value */
+            value: number;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+        };
+        /** CheckInResponse */
+        CheckInResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Value */
+            value: number;
+            /** Note */
+            note: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "manual" | "measurement" | "workout";
         };
         /**
          * CloseDepositRequest
@@ -5090,6 +6286,14 @@ export interface components {
              */
             notes: string;
         };
+        /** CreateLinkedNoteRequest */
+        CreateLinkedNoteRequest: {
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+        };
         /**
          * CreateLoanRequest
          * @description Track a loan. Orbit creates a `loan` account for it whose opening balance is the
@@ -5535,6 +6739,17 @@ export interface components {
              * @enum {string}
              */
             storage_mode: "local" | "cloud";
+        };
+        /** DayTotalResponse */
+        DayTotalResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            nutrients: components["schemas"]["NutrientsModel"];
+            /** Entries */
+            entries: number;
         };
         /**
          * DepositContributionRequest
@@ -6344,6 +7559,124 @@ export interface components {
              */
             updated_at: string;
         };
+        /** ExerciseHistoryResponse */
+        ExerciseHistoryResponse: {
+            exercise: components["schemas"]["ExerciseResponse"];
+            /** Points */
+            points: components["schemas"]["ExercisePointResponse"][];
+            /** Records */
+            records: components["schemas"]["PersonalRecordResponse"][];
+        };
+        /** ExerciseListResponse */
+        ExerciseListResponse: {
+            /** Exercises */
+            exercises: components["schemas"]["ExerciseResponse"][];
+        };
+        /** ExercisePointResponse */
+        ExercisePointResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Max Weight G */
+            max_weight_g: number | null;
+            /** Estimated 1Rm G */
+            estimated_1rm_g: number | null;
+            /** Volume G */
+            volume_g: number;
+            /** Max Reps */
+            max_reps: number | null;
+            /** Max Duration S */
+            max_duration_s: number | null;
+            /** Max Distance M */
+            max_distance_m: number | null;
+            /** Sets */
+            sets: components["schemas"]["SetResponse"][];
+        };
+        /** ExerciseRequest */
+        ExerciseRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "strength" | "cardio" | "mobility" | "flexibility" | "bodyweight" | "other";
+            /**
+             * Exercise Type
+             * @description What a set records: weight and reps, reps, duration, or distance and duration. It decides which records apply.
+             * @enum {string}
+             */
+            exercise_type: "weight_reps" | "reps" | "duration" | "distance_duration";
+            /**
+             * Equipment
+             * @default none
+             * @enum {string}
+             */
+            equipment: "barbell" | "dumbbell" | "cable" | "machine" | "kettlebell" | "band" | "bodyweight" | "none" | "other";
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Instructions
+             * @default
+             */
+            instructions: string;
+            /** Primary Muscles */
+            primary_muscles?: ("chest" | "upper_back" | "lats" | "lower_back" | "traps" | "shoulders" | "biceps" | "triceps" | "forearms" | "abs" | "obliques" | "glutes" | "quadriceps" | "hamstrings" | "calves" | "hip_flexors" | "adductors" | "full_body")[];
+            /** Secondary Muscles */
+            secondary_muscles?: ("chest" | "upper_back" | "lats" | "lower_back" | "traps" | "shoulders" | "biceps" | "triceps" | "forearms" | "abs" | "obliques" | "glutes" | "quadriceps" | "hamstrings" | "calves" | "hip_flexors" | "adductors" | "full_body")[];
+        };
+        /** ExerciseResponse */
+        ExerciseResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "strength" | "cardio" | "mobility" | "flexibility" | "bodyweight" | "other";
+            /**
+             * Exercise Type
+             * @enum {string}
+             */
+            exercise_type: "weight_reps" | "reps" | "duration" | "distance_duration";
+            /**
+             * Equipment
+             * @enum {string}
+             */
+            equipment: "barbell" | "dumbbell" | "cable" | "machine" | "kettlebell" | "band" | "bodyweight" | "none" | "other";
+            /** Description */
+            description: string;
+            /** Instructions */
+            instructions: string;
+            /** Primary Muscles */
+            primary_muscles: ("chest" | "upper_back" | "lats" | "lower_back" | "traps" | "shoulders" | "biceps" | "triceps" | "forearms" | "abs" | "obliques" | "glutes" | "quadriceps" | "hamstrings" | "calves" | "hip_flexors" | "adductors" | "full_body")[];
+            /** Secondary Muscles */
+            secondary_muscles: ("chest" | "upper_back" | "lats" | "lower_back" | "traps" | "shoulders" | "biceps" | "triceps" | "forearms" | "abs" | "obliques" | "glutes" | "quadriceps" | "hamstrings" | "calves" | "hip_flexors" | "adductors" | "full_body")[];
+            /** Is Custom */
+            is_custom: boolean;
+            /** Archived */
+            archived: boolean;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /**
          * ExportDocumentsRequest
          * @description Choose documents, a folder (with its subfolders), or a category; with none of them,
@@ -6362,6 +7695,109 @@ export interface components {
              * @default false
              */
             include_versions: boolean;
+        };
+        /** FitnessGoalListResponse */
+        FitnessGoalListResponse: {
+            /** Goals */
+            goals: components["schemas"]["FitnessGoalResponse"][];
+        };
+        /** FitnessGoalResponse */
+        FitnessGoalResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "body_weight" | "strength" | "workout_frequency" | "running_distance" | "running_duration" | "nutrition" | "water" | "custom";
+            /** Unit */
+            unit: string;
+            /** Start Value */
+            start_value: number;
+            /** Target Value */
+            target_value: number;
+            /** Current Value */
+            current_value: number;
+            /**
+             * Fraction
+             * @description 0 to 1: progress from the start value to the target.
+             */
+            fraction: number;
+            /** Reached */
+            reached: boolean;
+            /**
+             * Pace
+             * @enum {string}
+             */
+            pace: "ahead" | "on_track" | "behind" | "no_target_date" | "reached";
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Target Date */
+            target_date: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "paused" | "completed";
+            /** Completed At */
+            completed_at: string | null;
+            /** Auto Track */
+            auto_track: boolean;
+            /** Exercise Id */
+            exercise_id: string | null;
+            /** Exercise Name */
+            exercise_name: string | null;
+            /** Habit Id */
+            habit_id: string | null;
+            /** Habit Name */
+            habit_name: string | null;
+            /** History */
+            history: components["schemas"]["CheckInResponse"][];
+            /** Milestones */
+            milestones: components["schemas"]["MilestoneResponse"][];
+            /** Links */
+            links: components["schemas"]["LinkedRecordResponse"][];
+        };
+        /** FitnessOverviewResponse */
+        FitnessOverviewResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            active_session: components["schemas"]["SessionSummaryResponse"] | null;
+            /** Completed Today */
+            completed_today: components["schemas"]["SessionSummaryResponse"][];
+            /** Scheduled Today */
+            scheduled_today: components["schemas"]["ScheduledWorkoutResponse"][];
+            /** Recent Sessions */
+            recent_sessions: components["schemas"]["SessionSummaryResponse"][];
+            /** Week Workouts */
+            week_workouts: number;
+            /** Weight Trend */
+            weight_trend: components["schemas"]["WeightPointResponse"][];
+            /** Goals */
+            goals: components["schemas"]["FitnessGoalResponse"][];
+            nutrition: components["schemas"]["NutrientsModel"];
+            targets: components["schemas"]["TargetsModel"];
+            /** Water Ml */
+            water_ml: number;
+            /** Recent Activities */
+            recent_activities: components["schemas"]["ActivityResponse"][];
+            /** Records */
+            records: components["schemas"]["PersonalRecordResponse"][];
+            /** Hidden Sections */
+            hidden_sections: ("workout" | "recent_workouts" | "weight" | "goals" | "nutrition" | "water" | "activity" | "records")[];
         };
         /**
          * FixedCommitmentsResponse
@@ -6437,6 +7873,92 @@ export interface components {
              */
             updated_at: string;
         };
+        /** FoodEntryListResponse */
+        FoodEntryListResponse: {
+            /** Entries */
+            entries: components["schemas"]["FoodEntryResponse"][];
+        };
+        /** FoodEntryRequest */
+        FoodEntryRequest: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Meal
+             * @enum {string}
+             */
+            meal: "breakfast" | "lunch" | "dinner" | "snack" | "other";
+            portion: components["schemas"]["PortionRequest"];
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+        };
+        /** FoodEntryResponse */
+        FoodEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Meal
+             * @enum {string}
+             */
+            meal: "breakfast" | "lunch" | "dinner" | "snack" | "other";
+            portion: components["schemas"]["PortionResponse"];
+            /** Note */
+            note: string;
+        };
+        /** FoodListResponse */
+        FoodListResponse: {
+            /**
+             * Foods
+             * @description Most used first.
+             */
+            foods: components["schemas"]["FoodResponse"][];
+        };
+        /** FoodRequest */
+        FoodRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Serving Quantity Milli
+             * @description How much one serving is, in thousandths of the unit (100 g is 100000).
+             */
+            serving_quantity_milli: number;
+            /** Serving Unit */
+            serving_unit: string;
+            /** @description For one serving. */
+            nutrients: components["schemas"]["NutrientsModel"];
+        };
+        /** FoodResponse */
+        FoodResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Serving Quantity Milli */
+            serving_quantity_milli: number;
+            /** Serving Unit */
+            serving_unit: string;
+            nutrients: components["schemas"]["NutrientsModel"];
+            /** Use Count */
+            use_count: number;
+            /** Last Used At */
+            last_used_at: string | null;
+        };
         /** GoalListResponse */
         GoalListResponse: {
             /**
@@ -6444,6 +7966,48 @@ export interface components {
              * @description Active, paused, completed, then cancelled; by priority and target date.
              */
             goals: components["schemas"]["GoalResponse"][];
+        };
+        /** GoalRequest */
+        GoalRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "body_weight" | "strength" | "workout_frequency" | "running_distance" | "running_duration" | "nutrition" | "water" | "custom";
+            /** Start Value */
+            start_value: number;
+            /** Target Value */
+            target_value: number;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /**
+             * Unit
+             * @description Custom goals only; built-in kinds use canonical units.
+             * @default
+             */
+            unit: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Target Date */
+            target_date?: string | null;
+            /**
+             * Auto Track
+             * @description Body-weight goals read weight measurements; strength goals read the exercise's heaviest set per workout.
+             * @default false
+             */
+            auto_track: boolean;
+            /** Exercise Id */
+            exercise_id?: string | null;
+            /** Habit Id */
+            habit_id?: string | null;
         };
         /** GoalResponse */
         GoalResponse: {
@@ -6541,6 +8105,14 @@ export interface components {
              */
             available: number;
             account: components["schemas"]["LinkedAccountResponse"] | null;
+        };
+        /** GoalStatusRequest */
+        GoalStatusRequest: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "paused" | "completed";
         };
         /** GroupTotalResponse */
         GroupTotalResponse: {
@@ -6775,6 +8347,53 @@ export interface components {
             days: components["schemas"]["HabitDayResponse"][];
             /** Periods */
             periods: components["schemas"]["HabitPeriodResponse"][];
+        };
+        /** HabitLinkListResponse */
+        HabitLinkListResponse: {
+            /** Links */
+            links: components["schemas"]["HabitLinkResponse"][];
+        };
+        /** HabitLinkRequest */
+        HabitLinkRequest: {
+            /**
+             * Habit Id
+             * Format: uuid
+             */
+            habit_id: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "workout" | "water" | "activity";
+            /** Activity Kind */
+            activity_kind?: ("steps" | "walk" | "run" | "cycle" | "swim" | "cardio" | "sleep" | "rest_day") | null;
+            /**
+             * Contributes
+             * @description Record progress on the habit when matching records are saved.
+             * @default false
+             */
+            contributes: boolean;
+        };
+        /** HabitLinkResponse */
+        HabitLinkResponse: {
+            /**
+             * Habit Id
+             * Format: uuid
+             */
+            habit_id: string;
+            /** Habit Name */
+            habit_name: string;
+            /** Habit Kind */
+            habit_kind: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "workout" | "water" | "activity";
+            /** Activity Kind */
+            activity_kind: ("steps" | "walk" | "run" | "cycle" | "swim" | "cardio" | "sleep" | "rest_day") | null;
+            /** Contributes */
+            contributes: boolean;
         };
         /** HabitListResponse */
         HabitListResponse: {
@@ -7506,6 +9125,16 @@ export interface components {
             /** Actual */
             actual: number;
         };
+        /** LinkEventRequest */
+        LinkEventRequest: {
+            /** Template Id */
+            template_id?: string | null;
+        };
+        /** LinkListResponse */
+        LinkListResponse: {
+            /** Links */
+            links: components["schemas"]["LinkedRecordResponse"][];
+        };
         /** LinkedAccountResponse */
         LinkedAccountResponse: {
             /**
@@ -7544,6 +9173,21 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** LinkedRecordResponse */
+        LinkedRecordResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "note" | "document";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
         };
         /** LoanDetailResponse */
         LoanDetailResponse: {
@@ -7746,6 +9390,68 @@ export interface components {
              */
             note: string;
         };
+        /** LogMealRequest */
+        LogMealRequest: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Meal
+             * @enum {string}
+             */
+            meal: "breakfast" | "lunch" | "dinner" | "snack" | "other";
+        };
+        /**
+         * LogSessionRequest
+         * @description A workout that already happened, recorded as completed.
+         */
+        LogSessionRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Timezone */
+            timezone?: string | null;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /**
+             * Ended At
+             * Format: date-time
+             */
+            ended_at: string;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            /** Template Id */
+            template_id?: string | null;
+            /** Exercises */
+            exercises?: components["schemas"]["LoggedExerciseRequest"][];
+        };
+        /** LoggedExerciseRequest */
+        LoggedExerciseRequest: {
+            /**
+             * Exercise Id
+             * Format: uuid
+             */
+            exercise_id: string;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            /** Sets */
+            sets?: components["schemas"]["SetRequest"][];
+        };
         /** MarkAllReadResponse */
         MarkAllReadResponse: {
             /**
@@ -7753,6 +9459,124 @@ export interface components {
              * @description How many notifications were marked read.
              */
             count: number;
+        };
+        /** MealListResponse */
+        MealListResponse: {
+            /** Meals */
+            meals: components["schemas"]["MealResponse"][];
+        };
+        /** MealRequest */
+        MealRequest: {
+            /** Name */
+            name: string;
+            /** Items */
+            items: components["schemas"]["PortionRequest"][];
+        };
+        /** MealResponse */
+        MealResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Items */
+            items: components["schemas"]["PortionResponse"][];
+            totals: components["schemas"]["NutrientsModel"];
+        };
+        /** MeasurementListResponse */
+        MeasurementListResponse: {
+            /**
+             * Measurements
+             * @description Oldest first.
+             */
+            measurements: components["schemas"]["MeasurementResponse"][];
+            /** @description `null` without a valid weight and height. */
+            bmi: components["schemas"]["BmiResponse"] | null;
+        };
+        /** MeasurementRequest */
+        MeasurementRequest: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Weight G */
+            weight_g?: number | null;
+            /**
+             * Body Fat Pct
+             * @description As measured; Orbit never estimates it.
+             */
+            body_fat_pct?: number | null;
+            /** Height Mm */
+            height_mm?: number | null;
+            /** Waist Mm */
+            waist_mm?: number | null;
+            /** Chest Mm */
+            chest_mm?: number | null;
+            /** Hips Mm */
+            hips_mm?: number | null;
+            /** Arm Mm */
+            arm_mm?: number | null;
+            /** Thigh Mm */
+            thigh_mm?: number | null;
+            /** Neck Mm */
+            neck_mm?: number | null;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+        };
+        /** MeasurementResponse */
+        MeasurementResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Weight G */
+            weight_g: number | null;
+            /** Body Fat Pct */
+            body_fat_pct: number | null;
+            /** Height Mm */
+            height_mm: number | null;
+            /** Waist Mm */
+            waist_mm: number | null;
+            /** Chest Mm */
+            chest_mm: number | null;
+            /** Hips Mm */
+            hips_mm: number | null;
+            /** Arm Mm */
+            arm_mm: number | null;
+            /** Thigh Mm */
+            thigh_mm: number | null;
+            /** Neck Mm */
+            neck_mm: number | null;
+            /** Note */
+            note: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** MilestoneResponse */
+        MilestoneResponse: {
+            /** Fraction */
+            fraction: number;
+            /** Value */
+            value: number;
+            /** Expected By */
+            expected_by: string | null;
+            /** Reached On */
+            reached_on: string | null;
         };
         /** MonthCashFlowResponse */
         MonthCashFlowResponse: {
@@ -8193,6 +10017,59 @@ export interface components {
              */
             read_at: string | null;
         };
+        /** NutrientsModel */
+        NutrientsModel: {
+            /**
+             * Energy Cal
+             * @description Small calories (1 kcal = 1,000 cal).
+             * @default 0
+             */
+            energy_cal: number;
+            /**
+             * Protein Mg
+             * @description Milligrams.
+             * @default 0
+             */
+            protein_mg: number;
+            /**
+             * Carbs Mg
+             * @description Milligrams.
+             * @default 0
+             */
+            carbs_mg: number;
+            /**
+             * Fat Mg
+             * @description Milligrams.
+             * @default 0
+             */
+            fat_mg: number;
+            /** Fiber Mg */
+            fiber_mg?: number | null;
+        };
+        /** NutritionDayResponse */
+        NutritionDayResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Entries */
+            entries: components["schemas"]["FoodEntryResponse"][];
+            totals: components["schemas"]["NutrientsModel"];
+            /** By Meal */
+            by_meal: {
+                [key: string]: components["schemas"]["NutrientsModel"];
+            };
+            targets: components["schemas"]["TargetsModel"];
+        };
+        /** NutritionHistoryResponse */
+        NutritionHistoryResponse: {
+            /**
+             * Days
+             * @description Days with entries, oldest first.
+             */
+            days: components["schemas"]["DayTotalResponse"][];
+        };
         /** OccurrenceResponse */
         OccurrenceResponse: {
             /**
@@ -8392,6 +10269,91 @@ export interface components {
              */
             change: number | null;
         };
+        /** PeriodCountResponse */
+        PeriodCountResponse: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /** Workouts */
+            workouts: number;
+            /** Duration S */
+            duration_s: number;
+            /** Volume G */
+            volume_g: number;
+        };
+        /** PersonalRecordResponse */
+        PersonalRecordResponse: {
+            /**
+             * Exercise Id
+             * Format: uuid
+             */
+            exercise_id: string;
+            /** Exercise Name */
+            exercise_name: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "max_weight" | "max_reps" | "estimated_1rm" | "best_set_volume" | "max_duration" | "max_distance";
+            /**
+             * Value
+             * @description Grams, reps, gram-reps, seconds, or metres, by kind.
+             */
+            value: number;
+            /** Reps */
+            reps: number | null;
+            /** Weight G */
+            weight_g: number | null;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /**
+             * Estimated
+             * @description An estimate (one-rep max), not a lift performed.
+             */
+            estimated: boolean;
+        };
+        /** PhotoListResponse */
+        PhotoListResponse: {
+            /**
+             * Photos
+             * @description Newest first.
+             */
+            photos: components["schemas"]["PhotoResponse"][];
+        };
+        /** PhotoResponse */
+        PhotoResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Note */
+            note: string;
+            /** Content Type */
+            content_type: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** PlanResponse */
         PlanResponse: {
             /**
@@ -8507,6 +10469,52 @@ export interface components {
             /** Stale Prices */
             stale_prices: number;
         };
+        /**
+         * PortionRequest
+         * @description A saved food (`food_id`; its nutrients are scaled to the quantity), or a name, unit,
+         *     and nutrients typed in for this quantity.
+         */
+        PortionRequest: {
+            /**
+             * Quantity Milli
+             * @description Thousandths of a unit (1.5 is 1500).
+             */
+            quantity_milli: number;
+            /** Food Id */
+            food_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Serving Unit */
+            serving_unit?: string | null;
+            nutrients?: components["schemas"]["NutrientsModel"] | null;
+        };
+        /** PortionResponse */
+        PortionResponse: {
+            /** Food Id */
+            food_id: string | null;
+            /** Name */
+            name: string;
+            /** Quantity Milli */
+            quantity_milli: number;
+            /** Serving Unit */
+            serving_unit: string;
+            nutrients: components["schemas"]["NutrientsModel"];
+        };
+        /** PreviousPerformanceResponse */
+        PreviousPerformanceResponse: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Sets */
+            sets: components["schemas"]["SetResponse"][];
+        };
         /** PriceListResponse */
         PriceListResponse: {
             /**
@@ -8548,6 +10556,107 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /**
+         * ProfileRequest
+         * @description The whole profile; fields left out take their defaults.
+         */
+        ProfileRequest: {
+            /**
+             * Unit System
+             * @default metric
+             * @enum {string}
+             */
+            unit_system: "metric" | "imperial";
+            /**
+             * Weight Unit
+             * @default kg
+             * @enum {string}
+             */
+            weight_unit: "kg" | "lb";
+            /**
+             * Length Unit
+             * @default cm
+             * @enum {string}
+             */
+            length_unit: "cm" | "in";
+            /**
+             * Distance Unit
+             * @default km
+             * @enum {string}
+             */
+            distance_unit: "km" | "mi";
+            /**
+             * Energy Unit
+             * @default kcal
+             * @enum {string}
+             */
+            energy_unit: "kcal" | "kj";
+            /**
+             * Water Unit
+             * @default ml
+             * @enum {string}
+             */
+            water_unit: "ml" | "l" | "fl_oz";
+            /** Height Mm */
+            height_mm?: number | null;
+            /**
+             * Date Of Birth
+             * @description Optional; not needed for anything Orbit calculates.
+             */
+            date_of_birth?: string | null;
+            targets?: components["schemas"]["TargetsModel"];
+            /** Water Quick Amounts Ml */
+            water_quick_amounts_ml?: number[];
+            /** Hidden Sections */
+            hidden_sections?: ("workout" | "recent_workouts" | "weight" | "goals" | "nutrition" | "water" | "activity" | "records")[];
+        };
+        /** ProfileResponse */
+        ProfileResponse: {
+            /**
+             * Unit System
+             * @enum {string}
+             */
+            unit_system: "metric" | "imperial";
+            /**
+             * Weight Unit
+             * @enum {string}
+             */
+            weight_unit: "kg" | "lb";
+            /**
+             * Length Unit
+             * @enum {string}
+             */
+            length_unit: "cm" | "in";
+            /**
+             * Distance Unit
+             * @enum {string}
+             */
+            distance_unit: "km" | "mi";
+            /**
+             * Energy Unit
+             * @enum {string}
+             */
+            energy_unit: "kcal" | "kj";
+            /**
+             * Water Unit
+             * @enum {string}
+             */
+            water_unit: "ml" | "l" | "fl_oz";
+            /** Height Mm */
+            height_mm: number | null;
+            /** Date Of Birth */
+            date_of_birth: string | null;
+            targets: components["schemas"]["TargetsModel"];
+            /** Water Quick Amounts Ml */
+            water_quick_amounts_ml: number[];
+            /** Hidden Sections */
+            hidden_sections: ("workout" | "recent_workouts" | "weight" | "goals" | "nutrition" | "water" | "activity" | "records")[];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** QualityResponse */
         QualityResponse: {
@@ -8631,6 +10740,11 @@ export interface components {
              * @default
              */
             notes: string;
+        };
+        /** RecordListResponse */
+        RecordListResponse: {
+            /** Records */
+            records: components["schemas"]["PersonalRecordResponse"][];
         };
         /**
          * RecordPriceRequest
@@ -9069,6 +11183,11 @@ export interface components {
              */
             note: string;
         };
+        /** ReorderRequest */
+        ReorderRequest: {
+            /** Exercise Ids */
+            exercise_ids: string[];
+        };
         /**
          * RescheduleLoanRequest
          * @description Regenerate the unpaid installments from what is still owed, after a prepayment (a
@@ -9264,6 +11383,202 @@ export interface components {
             /** Note Id */
             note_id: string | null;
         };
+        /**
+         * ScheduleWorkoutRequest
+         * @description Creates an ordinary calendar event for the workout and links it.
+         */
+        ScheduleWorkoutRequest: {
+            /** Template Id */
+            template_id?: string | null;
+            /**
+             * Title
+             * @description Defaults to the template's name.
+             */
+            title?: string | null;
+            /**
+             * Start
+             * Format: date-time
+             */
+            start: string;
+            /**
+             * End
+             * Format: date-time
+             */
+            end: string;
+            /** Timezone */
+            timezone?: string | null;
+            /** Alerts */
+            alerts?: number[];
+        };
+        /** ScheduledWorkoutListResponse */
+        ScheduledWorkoutListResponse: {
+            /** Workouts */
+            workouts: components["schemas"]["ScheduledWorkoutResponse"][];
+        };
+        /** ScheduledWorkoutResponse */
+        ScheduledWorkoutResponse: {
+            /**
+             * Calendar Event Id
+             * Format: uuid
+             */
+            calendar_event_id: string;
+            /** Title */
+            title: string;
+            /** Template Id */
+            template_id: string | null;
+            /** Template Name */
+            template_name: string | null;
+            /** Start At */
+            start_at: string | null;
+            /** End At */
+            end_at: string | null;
+            /**
+             * Session Ids
+             * @description Workouts started from this event.
+             */
+            session_ids: string[];
+        };
+        /** SessionExerciseResponse */
+        SessionExerciseResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Exercise Id
+             * @description `null` once the exercise is deleted.
+             */
+            exercise_id: string | null;
+            /** Position */
+            position: number;
+            /**
+             * Name
+             * @description The exercise's name when it was added.
+             */
+            name: string;
+            /**
+             * Exercise Type
+             * @enum {string}
+             */
+            exercise_type: "weight_reps" | "reps" | "duration" | "distance_duration";
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "strength" | "cardio" | "mobility" | "flexibility" | "bodyweight" | "other";
+            /** Primary Muscles */
+            primary_muscles: ("chest" | "upper_back" | "lats" | "lower_back" | "traps" | "shoulders" | "biceps" | "triceps" | "forearms" | "abs" | "obliques" | "glutes" | "quadriceps" | "hamstrings" | "calves" | "hip_flexors" | "adductors" | "full_body")[];
+            /** Rest Seconds */
+            rest_seconds: number | null;
+            /** Notes */
+            notes: string;
+            /**
+             * Volume G
+             * @description Gram-reps: weight times reps of counted sets.
+             */
+            volume_g: number;
+            /** Sets */
+            sets: components["schemas"]["SetResponse"][];
+            previous: components["schemas"]["PreviousPerformanceResponse"] | null;
+        };
+        /** SessionListResponse */
+        SessionListResponse: {
+            /** Sessions */
+            sessions: components["schemas"]["SessionSummaryResponse"][];
+        };
+        /** SessionResponse */
+        SessionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Timezone */
+            timezone: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "paused" | "completed" | "abandoned";
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Ended At */
+            ended_at: string | null;
+            /** Paused At */
+            paused_at: string | null;
+            /** Paused Seconds */
+            paused_seconds: number;
+            /**
+             * Duration S
+             * @description Set when it ends: elapsed time minus pauses.
+             */
+            duration_s: number | null;
+            /** Notes */
+            notes: string;
+            /** Template Id */
+            template_id: string | null;
+            /** Template Name */
+            template_name: string | null;
+            /** Calendar Event Id */
+            calendar_event_id: string | null;
+            /** Volume G */
+            volume_g: number;
+            /** Exercises */
+            exercises: components["schemas"]["SessionExerciseResponse"][];
+            /** Links */
+            links: components["schemas"]["LinkedRecordResponse"][];
+        };
+        /** SessionSummaryResponse */
+        SessionSummaryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "paused" | "completed" | "abandoned";
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Ended At */
+            ended_at: string | null;
+            /** Duration S */
+            duration_s: number | null;
+            /** Template Id */
+            template_id: string | null;
+            /** Exercise Count */
+            exercise_count: number;
+            /**
+             * Set Count
+             * @description Completed sets.
+             */
+            set_count: number;
+            /** Volume G */
+            volume_g: number;
+        };
         /** SetHabitRemindersRequest */
         SetHabitRemindersRequest: {
             /** Reminders */
@@ -9290,6 +11605,59 @@ export interface components {
              * @default
              */
             notes: string;
+        };
+        /** SetRequest */
+        SetRequest: {
+            /**
+             * Set Type
+             * @default working
+             * @enum {string}
+             */
+            set_type: "warmup" | "working" | "drop" | "failure";
+            /** Reps */
+            reps?: number | null;
+            /** Weight G */
+            weight_g?: number | null;
+            /** Duration S */
+            duration_s?: number | null;
+            /** Distance M */
+            distance_m?: number | null;
+            /** Rpe */
+            rpe?: number | null;
+            /**
+             * Completed
+             * @default false
+             */
+            completed: boolean;
+        };
+        /** SetResponse */
+        SetResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Position */
+            position: number;
+            /**
+             * Set Type
+             * @enum {string}
+             */
+            set_type: "warmup" | "working" | "drop" | "failure";
+            /** Reps */
+            reps: number | null;
+            /** Weight G */
+            weight_g: number | null;
+            /** Duration S */
+            duration_s: number | null;
+            /** Distance M */
+            distance_m: number | null;
+            /** Rpe */
+            rpe: number | null;
+            /** Completed */
+            completed: boolean;
+            /** Completed At */
+            completed_at: string | null;
         };
         /** SettledOccurrenceListResponse */
         SettledOccurrenceListResponse: {
@@ -9652,6 +12020,32 @@ export interface components {
              */
             day?: string | null;
         };
+        /** StartSessionRequest */
+        StartSessionRequest: {
+            /**
+             * Day
+             * Format: date
+             * @description The local date the workout is on.
+             */
+            day: string;
+            /**
+             * Timezone
+             * @description Defaults to the user's preference, else UTC.
+             */
+            timezone?: string | null;
+            /**
+             * Name
+             * @description Defaults to the template's name.
+             */
+            name?: string | null;
+            /** Template Id */
+            template_id?: string | null;
+            /**
+             * Calendar Event Id
+             * @description A scheduled workout's event; its template is used.
+             */
+            calendar_event_id?: string | null;
+        };
         /**
          * StorageLocationResponse
          * @description Where this installation keeps its data, for signed-in users.
@@ -9753,6 +12147,21 @@ export interface components {
             /** Today */
             today?: string | null;
         };
+        /** TargetsModel */
+        TargetsModel: {
+            /** Energy Cal */
+            energy_cal?: number | null;
+            /** Protein Mg */
+            protein_mg?: number | null;
+            /** Carbs Mg */
+            carbs_mg?: number | null;
+            /** Fat Mg */
+            fat_mg?: number | null;
+            /** Fiber Mg */
+            fiber_mg?: number | null;
+            /** Water Ml */
+            water_ml?: number | null;
+        };
         /** TaskListResponse */
         TaskListResponse: {
             /** Tasks */
@@ -9836,6 +12245,133 @@ export interface components {
              * @description Open tasks due today.
              */
             due_today: number;
+        };
+        /** TemplateExerciseRequest */
+        TemplateExerciseRequest: {
+            /**
+             * Exercise Id
+             * Format: uuid
+             */
+            exercise_id: string;
+            /**
+             * Sets
+             * @default 3
+             */
+            sets: number;
+            /** Target Reps Min */
+            target_reps_min?: number | null;
+            /** Target Reps Max */
+            target_reps_max?: number | null;
+            /** Target Weight G */
+            target_weight_g?: number | null;
+            /** Target Duration S */
+            target_duration_s?: number | null;
+            /** Target Distance M */
+            target_distance_m?: number | null;
+            /** Rest Seconds */
+            rest_seconds?: number | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
+        /** TemplateExerciseResponse */
+        TemplateExerciseResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Position */
+            position: number;
+            /**
+             * Exercise Id
+             * Format: uuid
+             */
+            exercise_id: string;
+            /** Exercise Name */
+            exercise_name: string;
+            /**
+             * Exercise Type
+             * @enum {string}
+             */
+            exercise_type: "weight_reps" | "reps" | "duration" | "distance_duration";
+            /** Sets */
+            sets: number;
+            /** Target Reps Min */
+            target_reps_min: number | null;
+            /** Target Reps Max */
+            target_reps_max: number | null;
+            /** Target Weight G */
+            target_weight_g: number | null;
+            /** Target Duration S */
+            target_duration_s: number | null;
+            /** Target Distance M */
+            target_distance_m: number | null;
+            /** Rest Seconds */
+            rest_seconds: number | null;
+            /** Notes */
+            notes: string;
+        };
+        /** TemplateListResponse */
+        TemplateListResponse: {
+            /** Templates */
+            templates: components["schemas"]["TemplateResponse"][];
+        };
+        /**
+         * TemplateRequest
+         * @description The whole template. Exercises are in order; the list replaces the current one.
+         */
+        TemplateRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Category
+             * @default other
+             * @enum {string}
+             */
+            category: "push" | "pull" | "legs" | "upper" | "lower" | "full_body" | "cardio" | "mobility" | "other";
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            /** Exercises */
+            exercises?: components["schemas"]["TemplateExerciseRequest"][];
+        };
+        /** TemplateResponse */
+        TemplateResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "push" | "pull" | "legs" | "upper" | "lower" | "full_body" | "cardio" | "mobility" | "other";
+            /** Description */
+            description: string;
+            /** Notes */
+            notes: string;
+            /** Archived */
+            archived: boolean;
+            /** Exercises */
+            exercises: components["schemas"]["TemplateExerciseResponse"][];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** TotalResponse */
         TotalResponse: {
@@ -10476,6 +13012,32 @@ export interface components {
              */
             note_id?: string | null;
         };
+        /** UpdateSessionExerciseRequest */
+        UpdateSessionExerciseRequest: {
+            /** Rest Seconds */
+            rest_seconds?: number | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
+        /**
+         * UpdateSessionRequest
+         * @description Only the fields sent change. Times can be corrected once the workout has ended.
+         */
+        UpdateSessionRequest: {
+            /** Name */
+            name?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Day */
+            day?: string | null;
+            /** Started At */
+            started_at?: string | null;
+            /** Ended At */
+            ended_at?: string | null;
+        };
         /** UpdateSessionStepRequest */
         UpdateSessionStepRequest: {
             /**
@@ -10600,6 +13162,114 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** WaterDayResponse */
+        WaterDayResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Entries */
+            entries: components["schemas"]["WaterEntryResponse"][];
+            /** Total Ml */
+            total_ml: number;
+            /** Target Ml */
+            target_ml: number | null;
+        };
+        /** WaterEntryResponse */
+        WaterEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Amount Ml */
+            amount_ml: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** WaterHistoryResponse */
+        WaterHistoryResponse: {
+            /**
+             * Days
+             * @description Days with water, oldest first.
+             */
+            days: components["schemas"]["WaterTotalResponse"][];
+        };
+        /** WaterRequest */
+        WaterRequest: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Amount Ml */
+            amount_ml: number;
+        };
+        /** WaterTotalResponse */
+        WaterTotalResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Total Ml */
+            total_ml: number;
+        };
+        /** WeightPointResponse */
+        WeightPointResponse: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Weight G */
+            weight_g: number;
+        };
+        /** WorkoutAnalyticsResponse */
+        WorkoutAnalyticsResponse: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Workouts */
+            workouts: number;
+            /** Duration S */
+            duration_s: number;
+            /** Volume G */
+            volume_g: number;
+            /** Weekly */
+            weekly: components["schemas"]["PeriodCountResponse"][];
+            /** Monthly */
+            monthly: components["schemas"]["PeriodCountResponse"][];
+            /**
+             * Muscle Sets
+             * @description Counted sets per primary muscle.
+             */
+            muscle_sets: {
+                [key: string]: number;
+            };
+            /** Active Weeks */
+            active_weeks: number;
+            /** Total Weeks */
+            total_weeks: number;
+            /** Current Week Streak */
+            current_week_streak: number;
+            /**
+             * Records
+             * @description Records set in the range.
+             */
+            records: components["schemas"]["PersonalRecordResponse"][];
         };
         /** WorkspaceListResponse */
         WorkspaceListResponse: {
@@ -23808,6 +26478,4284 @@ export interface operations {
             };
             /** @description A category with that name exists. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    overview_api_v1_workspaces__workspace_id__fitness_overview_get: {
+        parameters: {
+            query: {
+                date: string;
+                timezone?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FitnessOverviewResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profile_api_v1_workspaces__workspace_id__fitness_profile_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_profile_api_v1_workspaces__workspace_id__fitness_profile_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_exercises_api_v1_workspaces__workspace_id__fitness_exercises_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExerciseListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_exercise_api_v1_workspaces__workspace_id__fitness_exercises_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExerciseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExerciseResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_exercise_api_v1_workspaces__workspace_id__fitness_exercises__exercise_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                exercise_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExerciseResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_exercise_api_v1_workspaces__workspace_id__fitness_exercises__exercise_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                exercise_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExerciseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExerciseResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The change conflicts with the record's current state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_exercise_api_v1_workspaces__workspace_id__fitness_exercises__exercise_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                exercise_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The change conflicts with the record's current state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_exercise_api_v1_workspaces__workspace_id__fitness_exercises__exercise_id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                exercise_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArchiveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExerciseResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    exercise_history_api_v1_workspaces__workspace_id__fitness_exercises__exercise_id__history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                exercise_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExerciseHistoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_templates_api_v1_workspaces__workspace_id__fitness_templates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_template_api_v1_workspaces__workspace_id__fitness_templates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_template_api_v1_workspaces__workspace_id__fitness_templates__template_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                template_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_template_api_v1_workspaces__workspace_id__fitness_templates__template_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                template_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_template_api_v1_workspaces__workspace_id__fitness_templates__template_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                template_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    duplicate_template_api_v1_workspaces__workspace_id__fitness_templates__template_id__duplicate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                template_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_template_api_v1_workspaces__workspace_id__fitness_templates__template_id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                template_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArchiveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sessions_api_v1_workspaces__workspace_id__fitness_sessions_get: {
+        parameters: {
+            query?: {
+                start?: string | null;
+                end?: string | null;
+                status?: "completed" | "abandoned" | "unfinished" | "all";
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_session_api_v1_workspaces__workspace_id__fitness_sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The change conflicts with the record's current state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    log_session_api_v1_workspaces__workspace_id__fitness_sessions_log_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    active_session_api_v1_workspaces__workspace_id__fitness_sessions_active_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActiveSessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_session_api_v1_workspaces__workspace_id__fitness_sessions__session_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The workout's ID. */
+                session_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_session_api_v1_workspaces__workspace_id__fitness_sessions__session_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The workout's ID. */
+                session_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_session_api_v1_workspaces__workspace_id__fitness_sessions__session_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The workout's ID. */
+                session_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The change conflicts with the record's current state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    pause_session_api_v1_workspaces__workspace_id__fitness_sessions__session_id__pause_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The workout's ID. */
+                session_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The change conflicts with the record's current state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resume_session_api_v1_workspaces__workspace_id__fitness_sessions__session_id__resume_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The workout's ID. */
+                session_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The change conflicts with the record's current state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_session_api_v1_workspaces__workspace_id__fitness_sessions__session_id__complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The workout's ID. */
+                session_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The change conflicts with the record's current state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    abandon_session_api_v1_workspaces__workspace_id__fitness_sessions__session_id__abandon_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The workout's ID. */
+                session_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The change conflicts with the record's current state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_session_exercise_api_v1_workspaces__workspace_id__fitness_sessions__session_id__exercises_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The workout's ID. */
+                session_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddSessionExerciseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    remove_session_exercise_api_v1_workspaces__workspace_id__fitness_sessions__session_id__exercises__item_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The workout's ID. */
+                session_id: string;
+                /** @description The exercise's ID within the workout. */
+                item_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_session_exercise_api_v1_workspaces__workspace_id__fitness_sessions__session_id__exercises__item_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The workout's ID. */
+                session_id: string;
+                /** @description The exercise's ID within the workout. */
+                item_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSessionExerciseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reorder_session_api_v1_workspaces__workspace_id__fitness_sessions__session_id__order_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The workout's ID. */
+                session_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    add_set_api_v1_workspaces__workspace_id__fitness_sessions__session_id__exercises__item_id__sets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The workout's ID. */
+                session_id: string;
+                /** @description The exercise's ID within the workout. */
+                item_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddSetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_set_api_v1_workspaces__workspace_id__fitness_sessions__session_id__exercises__item_id__sets__set_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The workout's ID. */
+                session_id: string;
+                /** @description The exercise's ID within the workout. */
+                item_id: string;
+                /** @description The set's ID. */
+                set_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_set_api_v1_workspaces__workspace_id__fitness_sessions__session_id__exercises__item_id__sets__set_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The workout's ID. */
+                session_id: string;
+                /** @description The exercise's ID within the workout. */
+                item_id: string;
+                /** @description The set's ID. */
+                set_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_session_note_api_v1_workspaces__workspace_id__fitness_sessions__session_id__note_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The workout's ID. */
+                session_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateLinkedNoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_session_api_v1_workspaces__workspace_id__fitness_sessions__session_id__links__target___target_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The workout's ID. */
+                session_id: string;
+                target: "note" | "document";
+                target_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlink_session_api_v1_workspaces__workspace_id__fitness_sessions__session_id__links__target___target_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The workout's ID. */
+                session_id: string;
+                target: "note" | "document";
+                target_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    records_api_v1_workspaces__workspace_id__fitness_records_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    analytics_api_v1_workspaces__workspace_id__fitness_analytics_get: {
+        parameters: {
+            query: {
+                start: string;
+                /** @description The last date, inclusive. */
+                end: string;
+                /** @description Today, for the streak. */
+                date: string;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkoutAnalyticsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_measurements_api_v1_workspaces__workspace_id__fitness_measurements_get: {
+        parameters: {
+            query?: {
+                start?: string | null;
+                end?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeasurementListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_measurement_api_v1_workspaces__workspace_id__fitness_measurements_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeasurementRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeasurementResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_measurement_api_v1_workspaces__workspace_id__fitness_measurements__measurement_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                measurement_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeasurementRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeasurementResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_measurement_api_v1_workspaces__workspace_id__fitness_measurements__measurement_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                measurement_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_photos_api_v1_workspaces__workspace_id__fitness_photos_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhotoListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_photo_api_v1_workspaces__workspace_id__fitness_photos_post: {
+        parameters: {
+            query: {
+                filename: string;
+                day: string;
+                note?: string;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhotoResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The image is larger than the server accepts. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a PNG, JPEG, or WebP image. */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    photo_file_api_v1_workspaces__workspace_id__fitness_photos__photo_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                photo_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The image. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": unknown;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_photo_api_v1_workspaces__workspace_id__fitness_photos__photo_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                photo_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_foods_api_v1_workspaces__workspace_id__fitness_foods_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FoodListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_food_api_v1_workspaces__workspace_id__fitness_foods_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FoodRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FoodResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_food_api_v1_workspaces__workspace_id__fitness_foods__food_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                food_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FoodRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FoodResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_food_api_v1_workspaces__workspace_id__fitness_foods__food_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                food_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_meals_api_v1_workspaces__workspace_id__fitness_meals_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MealListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_meal_api_v1_workspaces__workspace_id__fitness_meals_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MealRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MealResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_meal_api_v1_workspaces__workspace_id__fitness_meals__meal_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                meal_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MealRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MealResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_meal_api_v1_workspaces__workspace_id__fitness_meals__meal_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                meal_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    log_meal_api_v1_workspaces__workspace_id__fitness_meals__meal_id__log_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                meal_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogMealRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FoodEntryListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    nutrition_day_api_v1_workspaces__workspace_id__fitness_nutrition_get: {
+        parameters: {
+            query: {
+                /** @description A local date, such as `2026-11-02`. */
+                date: string;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NutritionDayResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    nutrition_history_api_v1_workspaces__workspace_id__fitness_nutrition_history_get: {
+        parameters: {
+            query: {
+                start: string;
+                /** @description The last date, inclusive. */
+                end: string;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NutritionHistoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_food_entry_api_v1_workspaces__workspace_id__fitness_food_entries_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FoodEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FoodEntryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_food_entry_api_v1_workspaces__workspace_id__fitness_food_entries__entry_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                entry_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FoodEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FoodEntryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_food_entry_api_v1_workspaces__workspace_id__fitness_food_entries__entry_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                entry_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    water_day_api_v1_workspaces__workspace_id__fitness_water_get: {
+        parameters: {
+            query: {
+                /** @description A local date, such as `2026-11-02`. */
+                date: string;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaterDayResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_water_api_v1_workspaces__workspace_id__fitness_water_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WaterRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaterDayResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    water_history_api_v1_workspaces__workspace_id__fitness_water_history_get: {
+        parameters: {
+            query: {
+                start: string;
+                /** @description The last date, inclusive. */
+                end: string;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaterHistoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_water_api_v1_workspaces__workspace_id__fitness_water__entry_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                entry_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaterDayResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_activities_api_v1_workspaces__workspace_id__fitness_activities_get: {
+        parameters: {
+            query?: {
+                start?: string | null;
+                end?: string | null;
+                kind?: ("steps" | "walk" | "run" | "cycle" | "swim" | "cardio" | "sleep" | "rest_day") | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_activity_api_v1_workspaces__workspace_id__fitness_activities_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_activity_api_v1_workspaces__workspace_id__fitness_activities__activity_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                activity_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_activity_api_v1_workspaces__workspace_id__fitness_activities__activity_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                activity_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_goals_api_v1_workspaces__workspace_id__fitness_goals_get: {
+        parameters: {
+            query: {
+                status?: "active" | "paused" | "completed" | "all";
+                /** @description Today, for pace. */
+                date: string;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FitnessGoalListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_goal_api_v1_workspaces__workspace_id__fitness_goals_post: {
+        parameters: {
+            query: {
+                /** @description Today, for pace. */
+                date: string;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoalRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FitnessGoalResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_goal_api_v1_workspaces__workspace_id__fitness_goals__goal_id__get: {
+        parameters: {
+            query: {
+                /** @description Today, for pace. */
+                date: string;
+            };
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                goal_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FitnessGoalResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_goal_api_v1_workspaces__workspace_id__fitness_goals__goal_id__put: {
+        parameters: {
+            query: {
+                /** @description Today, for pace. */
+                date: string;
+            };
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                goal_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoalRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FitnessGoalResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_goal_api_v1_workspaces__workspace_id__fitness_goals__goal_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                goal_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_goal_status_api_v1_workspaces__workspace_id__fitness_goals__goal_id__status_post: {
+        parameters: {
+            query: {
+                /** @description Today, for pace. */
+                date: string;
+            };
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                goal_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoalStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FitnessGoalResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_in_api_v1_workspaces__workspace_id__fitness_goals__goal_id__check_ins_post: {
+        parameters: {
+            query: {
+                /** @description Today, for pace. */
+                date: string;
+            };
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                goal_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckInRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FitnessGoalResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The change conflicts with the record's current state. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_check_in_api_v1_workspaces__workspace_id__fitness_goals__goal_id__check_ins__check_in_id__delete: {
+        parameters: {
+            query: {
+                /** @description Today, for pace. */
+                date: string;
+            };
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                goal_id: string;
+                check_in_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FitnessGoalResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_goal_api_v1_workspaces__workspace_id__fitness_goals__goal_id__links__target___target_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                goal_id: string;
+                target: "note" | "document";
+                target_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlink_goal_api_v1_workspaces__workspace_id__fitness_goals__goal_id__links__target___target_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The record's ID. */
+                goal_id: string;
+                target: "note" | "document";
+                target_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_habit_links_api_v1_workspaces__workspace_id__fitness_habit_links_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitLinkListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_habit_link_api_v1_workspaces__workspace_id__fitness_habit_links_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HabitLinkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitLinkResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_habit_link_api_v1_workspaces__workspace_id__fitness_habit_links__habit_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                habit_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_scheduled_api_v1_workspaces__workspace_id__fitness_schedule_get: {
+        parameters: {
+            query: {
+                start: string;
+                /** @description The day after the last date (exclusive). */
+                end: string;
+                timezone?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduledWorkoutListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    schedule_workout_api_v1_workspaces__workspace_id__fitness_schedule_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleWorkoutRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduledWorkoutResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_scheduled_api_v1_workspaces__workspace_id__fitness_schedule__event_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduledWorkoutResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_scheduled_api_v1_workspaces__workspace_id__fitness_schedule__event_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkEventRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduledWorkoutResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid values, or a reference that doesn't exist. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unlink_scheduled_api_v1_workspaces__workspace_id__fitness_schedule__event_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or record does not exist or is not yours. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

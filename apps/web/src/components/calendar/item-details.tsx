@@ -23,6 +23,7 @@ import { type ReactNode, useId, useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import { LinkedDocuments } from "@/components/documents/linked-documents";
+import { EventWorkout } from "@/components/fitness/event-workout";
 import { FormAlert } from "@/components/form-field";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -386,6 +387,10 @@ function EventBody({
 
       <div className="border-t pt-4">
         <LinkedDocuments workspaceId={workspaceId} kind="event" recordId={occurrence.event_id} />
+      </div>
+
+      <div className="border-t pt-4">
+        <EventWorkout workspaceId={workspaceId} eventId={occurrence.event_id} timeZone={timeZone} />
       </div>
 
       <div className="flex flex-wrap gap-2 border-t pt-4">

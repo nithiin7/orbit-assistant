@@ -27,6 +27,7 @@ from orbit_api.repositories.budgets import build_budget_service
 from orbit_api.repositories.calendar import build_calendar_service
 from orbit_api.repositories.commitments import build_commitment_service
 from orbit_api.repositories.documents import build_document_reminders, referenced_blob_ids
+from orbit_api.repositories.fitness import referenced_photo_blob_ids
 from orbit_api.repositories.habits import build_habit_service
 from orbit_api.repositories.investments import SqlSnapshotRepository, build_net_worth_service
 from orbit_api.repositories.notifications import SqlNotificationRepository
@@ -209,13 +210,14 @@ class ReminderWorker:
             logger.exception("Checking budgets failed; retrying later.")
 
     async def sweep_files(self) -> int:
-        """Delete stored files that no note attachment or document version references and
-        that are older than `SWEEP_MIN_AGE`, such as leftovers of a crash mid-upload or of a
-        file deletion that failed; return how many."""
+        """Delete stored files that no note attachment, document version, or progress photo
+        references and that are older than `SWEEP_MIN_AGE`, such as leftovers of a crash
+        mid-upload or of a file deletion that failed; return how many."""
         if self._files is None:
             return 0
         async with self._database.session() as session:
             referenced = await referenced_blob_ids(session)
+            referenced |= await referenced_photo_blob_ids(session)
         removed = await self._files.sweep(referenced, self._clock() - SWEEP_MIN_AGE)
         if removed:
             logger.info("Removed %d unreferenced file(s) from the attachment store.", removed)

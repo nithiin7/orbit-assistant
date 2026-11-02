@@ -24,8 +24,11 @@ non-trivial work. The essentials are repeated here because Copilot may not load 
   habits and routines (versioned schedules, a daily log, streaks, analytics, routine sessions,
   reminder times as managed reminders, calendar entries), and documents (a vault sharing the
   attachment file store: versions, folders, categories, tags, expiry reminders as managed
-  reminders, links to other modules, ZIP export; no OCR or encryption at rest by Orbit); no
-  other features or AI integration exist yet.
+  reminders, links to other modules, ZIP export; no OCR or encryption at rest by Orbit), and
+  health and fitness (exercises, templates, workouts and sets, records, measurements, photos,
+  nutrition, water, activity, goals; private per person, canonical integer units, opt-in habit
+  contributions, workouts scheduled as calendar events); no other features or AI integration
+  exist yet.
   Don't build on them unless the task asks.
 
 ## Rules
