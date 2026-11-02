@@ -2,7 +2,8 @@
 takes each workspace's month-end net worth snapshots (at most hourly), checks budgets (every
 few minutes: closing finished periods and sending threshold alerts), and sweeps the attachment
 store for files no metadata references (every few hours), and keeps AI retrieval indexes up to
-date for people who turned indexing on (every `ORBIT_AI_INDEX_INTERVAL_SECONDS`), so Orbit has
+date for people who turned indexing on (every `ORBIT_AI_INDEX_INTERVAL_SECONDS`), and runs
+external integrations' synchronization (every `ORBIT_INTEGRATIONS_POLL_SECONDS`), so Orbit has
 one scheduler rather than several.
 
 It holds no schedule in memory. Each poll reads due work from the database, so a restart loses
@@ -33,12 +34,14 @@ from orbit_api.repositories.commitments import build_commitment_service
 from orbit_api.repositories.documents import build_document_reminders, referenced_blob_ids
 from orbit_api.repositories.fitness import referenced_photo_blob_ids
 from orbit_api.repositories.habits import build_habit_service
+from orbit_api.repositories.integrations import build_integrations
 from orbit_api.repositories.investments import SqlSnapshotRepository, build_net_worth_service
 from orbit_api.repositories.notifications import SqlNotificationRepository
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.services.ai.indexing import IndexRun, permitted_types
 from orbit_api.services.ai.providers import ProviderFactory
+from orbit_api.services.integrations.connectors import ConnectorRegistry
 from orbit_api.services.reminders.delivery import (
     DEFAULT_MAX_ATTEMPTS,
     DeliveryResult,
@@ -64,6 +67,9 @@ DEFAULT_BUDGET_INTERVAL = timedelta(minutes=5)
 # upload writes its file a moment before its metadata commits, so younger files are left alone.
 DEFAULT_SWEEP_INTERVAL = timedelta(hours=6)
 SWEEP_MIN_AGE = timedelta(hours=1)
+# Synchronization runs taken per check, and how often imported files are checked for changes.
+INTEGRATION_BATCH = 10
+DEFAULT_FILE_CHECK_INTERVAL = timedelta(hours=6)
 
 
 class ManagedFollowUp:
@@ -105,6 +111,17 @@ class AiIndexing:
 
 
 @dataclass(frozen=True, slots=True)
+class IntegrationSync:
+    """What the worker needs to synchronize integrations: the settings (secret key, file store,
+    limits) and the provider connectors."""
+
+    settings: Settings
+    connectors: ConnectorRegistry
+    interval: timedelta | None = None
+    file_check_interval: timedelta = DEFAULT_FILE_CHECK_INTERVAL
+
+
+@dataclass(frozen=True, slots=True)
 class WorkerReport:
     """What one poll did."""
 
@@ -126,9 +143,13 @@ class ReminderWorker:
         files: FileAttachmentStore | None = None,
         sweep_interval: timedelta = DEFAULT_SWEEP_INTERVAL,
         ai: AiIndexing | None = None,
+        integrations: IntegrationSync | None = None,
     ) -> None:
         self._database = database
         self._ai = ai
+        self._integrations = integrations
+        self._integrations_checked_at: datetime | None = None
+        self._files_checked_at: datetime | None = None
         self._indexed_at: datetime | None = None
         self._files = files
         self._sweep_interval = sweep_interval
@@ -309,6 +330,66 @@ class ReminderWorker:
             # Deliberate boundary: indexing must never stop reminder delivery.
             logger.exception("AI indexing failed; retrying later.")
 
+    async def sync_integrations(self) -> int:
+        """Queue due synchronizations, then run a batch of queued ones, each in its own session,
+        so one provider's failure never blocks another's; return how many ran."""
+        config = self._integrations
+        if config is None or not config.settings.integrations_enabled:
+            return 0
+        async with self._database.session() as session:
+            runner = build_integrations(
+                session, config.settings, config.connectors, self._clock
+            ).runner
+            await runner.schedule_due()
+            now = self._clock()
+            last = self._files_checked_at
+            if last is None or now - last >= config.file_check_interval:
+                self._files_checked_at = now
+                await runner.queue_file_checks()
+            claims = await runner.claim(INTEGRATION_BATCH)
+        for run in claims:
+            async with self._database.session() as session:
+                try:
+                    integrations = build_integrations(
+                        session, config.settings, config.connectors, self._clock
+                    )
+                    await integrations.runner.process(run)
+                    continue
+                except Exception as exc:
+                    # Deliberate boundary: an unexpected failure is recorded on the run and
+                    # retried with backoff; it must not stop other runs. Type only: no content.
+                    await session.rollback()
+                    error = type(exc).__name__
+                    logger.warning("Integration run %s failed: %s", run.id, error, exc_info=exc)
+            async with self._database.session() as session:
+                try:
+                    runner = build_integrations(
+                        session, config.settings, config.connectors, self._clock
+                    ).runner
+                    await runner.record_crash(run.id, error)
+                except Exception:
+                    # Deliberate boundary: the lease expires and the run is claimed again.
+                    logger.exception("Recording the failure of integration run %s failed.", run.id)
+        if claims:
+            logger.info("Ran %d integration synchronization(s).", len(claims))
+        return len(claims)
+
+    async def _maybe_sync_integrations(self) -> None:
+        config = self._integrations
+        if config is None:
+            return
+        now = self._clock()
+        interval = config.interval or timedelta(seconds=config.settings.integrations_poll_seconds)
+        last = self._integrations_checked_at
+        if last is not None and now - last < interval:
+            return
+        self._integrations_checked_at = now
+        try:
+            await self.sync_integrations()
+        except Exception:
+            # Deliberate boundary: integrations must never stop reminder delivery.
+            logger.exception("Integration synchronization failed; retrying later.")
+
     async def run(self, stop: asyncio.Event, poll_interval: float) -> None:
         """Poll until `stop` is set. A poll in progress finishes first, so shutdown never
         abandons a claimed occurrence mid-transaction."""
@@ -327,6 +408,7 @@ class ReminderWorker:
             await self._maybe_check_budgets()
             await self._maybe_sweep_files()
             await self._maybe_index_ai()
+            await self._maybe_sync_integrations()
             # Sleep until the next poll, waking early when asked to stop.
             with contextlib.suppress(TimeoutError):
                 await asyncio.wait_for(stop.wait(), timeout=poll_interval)

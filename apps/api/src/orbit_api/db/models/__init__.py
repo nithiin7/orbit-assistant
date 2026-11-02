@@ -86,6 +86,13 @@ from orbit_api.db.models.habits import (
     RoutineSessionStepModel,
     RoutineStepModel,
 )
+from orbit_api.db.models.integrations import (
+    IntegrationConnectionModel,
+    IntegrationLinkModel,
+    IntegrationOAuthStateModel,
+    IntegrationResourceModel,
+    IntegrationSyncRunModel,
+)
 from orbit_api.db.models.investments import (
     FinanceAssetModel,
     FinanceAssetValuationModel,
@@ -191,6 +198,11 @@ __all__ = [
     "HabitReminderModel",
     "HabitScheduleVersionModel",
     "HabitTaskModel",
+    "IntegrationConnectionModel",
+    "IntegrationLinkModel",
+    "IntegrationOAuthStateModel",
+    "IntegrationResourceModel",
+    "IntegrationSyncRunModel",
     "LocalCredentialModel",
     "LocalSessionModel",
     "NoteAttachmentModel",

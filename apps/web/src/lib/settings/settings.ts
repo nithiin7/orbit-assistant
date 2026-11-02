@@ -1,4 +1,4 @@
-import { Bot, Database, Layers, type LucideIcon, Palette, UserRound } from "lucide-react";
+import { Bot, Database, Layers, type LucideIcon, Palette, Plug, UserRound } from "lucide-react";
 
 export type SettingsPanel = {
   slug: string;
@@ -38,6 +38,14 @@ export const settingsPanels: readonly SettingsPanel[] = [
     description:
       "Providers, models, and what AI may read. Off until you turn it on; local models keep everything on your machine.",
     icon: Bot,
+    group: "general",
+  },
+  {
+    slug: "integrations",
+    title: "Integrations",
+    description:
+      "Connect Google or Microsoft calendars, mail, and files. Nothing is synchronized until you choose.",
+    icon: Plug,
     group: "general",
   },
   {

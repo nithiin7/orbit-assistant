@@ -1,4 +1,5 @@
-"""Encrypting provider API keys at rest with Fernet (AES-128-CBC with HMAC-SHA256).
+"""Encrypting provider API keys and integration tokens at rest with Fernet (AES-128-CBC with
+HMAC-SHA256).
 
 The key comes from `ORBIT_AI_SECRET_KEY`, or in local mode from a key file beside the SQLite
 database, created on first use with mode `0600`. Keeping the key out of the database means a
@@ -13,6 +14,7 @@ from cryptography.fernet import Fernet, InvalidToken
 
 from orbit_api.config import Settings
 from orbit_api.services.ai.models import CredentialsUnavailableError
+from orbit_api.services.integrations.models import TokenStorageUnavailableError
 
 
 class FernetSecretBox:
@@ -59,3 +61,34 @@ class FernetSecretBox:
         with os.fdopen(descriptor, "wb") as file:
             file.write(key)
         return key
+
+
+class IntegrationSecretBox:
+    """Encrypts integration access and refresh tokens, with a key separate from the AI one
+    (`ORBIT_INTEGRATIONS_SECRET_KEY`, or `integrations-secret.key` beside the database in local
+    mode), so leaking one key exposes one kind of credential."""
+
+    def __init__(self, box: FernetSecretBox) -> None:
+        self._box = box
+
+    @classmethod
+    def from_settings(cls, settings: Settings) -> "IntegrationSecretBox":
+        key = settings.integrations_secret_key
+        return cls(
+            FernetSecretBox(
+                key.get_secret_value().encode() if key else None, settings.integrations_key_file
+            )
+        )
+
+    def encrypt(self, plaintext: str) -> str:
+        try:
+            return self._box.encrypt(plaintext)
+        except CredentialsUnavailableError:
+            raise TokenStorageUnavailableError from None
+
+    def decrypt(self, ciphertext: str) -> str:
+        try:
+            return self._box.decrypt(ciphertext)
+        except CredentialsUnavailableError:
+            # No key, or the key changed since the tokens were stored: reconnecting fixes it.
+            raise TokenStorageUnavailableError from None

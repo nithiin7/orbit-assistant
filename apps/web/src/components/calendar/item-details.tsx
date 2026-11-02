@@ -25,6 +25,7 @@ import { describeApiError } from "@/api/client";
 import { LinkedDocuments } from "@/components/documents/linked-documents";
 import { EventWorkout } from "@/components/fitness/event-workout";
 import { FormAlert } from "@/components/form-field";
+import { ExternalOrigin } from "@/components/integrations/external-origin";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -235,6 +236,7 @@ function EventBody({
             This occurrence is cancelled. Its reminders won’t notify.
           </p>
         ) : null}
+        <ExternalOrigin entityType="event" entityId={occurrence.event_id} />
       </div>
 
       <section aria-labelledby="event-notes" className="space-y-2 border-t pt-4">

@@ -80,6 +80,16 @@ If you already run a reverse proxy, skip the profile and route `/api/*` to port 
 everything else to port 3000 the same way. Don't buffer `text/event-stream` responses; the
 assistant streams its answers.
 
+## Integrations
+
+To offer Google or Microsoft accounts, create OAuth apps as in [integrations.md](integrations.md)
+and set their client IDs and secrets in `.env`. Register the redirect URI as
+`${PUBLIC_WEB_URL}/integrations/callback` and set `ORBIT_INTEGRATIONS_REDIRECT_URL` to the same
+value. In cloud mode also set `ORBIT_INTEGRATIONS_SECRET_KEY`; without it, accounts can't be
+connected. With the HTTPS proxy, setting
+`ORBIT_INTEGRATIONS_WEBHOOK_URL=https://orbit.example.com/api/v1/integrations/webhooks` lets
+calendars update as they change instead of on a schedule.
+
 ## Storage modes
 
 **Local mode (default).** SQLite, note attachments, document files, and the generated AI key
@@ -139,13 +149,16 @@ is stopped, so the SQLite database and files are consistent:
 ```bash
 docker compose stop api
 docker run --rm -v orbit_orbit-data:/data:ro -v "$PWD":/backup alpine \
-  tar czf /backup/orbit-backup-$(date +%F).tar.gz -C /data .
+  tar czf /backup/orbit-backup-$(date +%F).tar.gz --exclude=./integrations-secret.key -C /data .
 docker compose start api
 ```
 
 Restore into an empty volume with
 `tar xzf orbit-backup-<date>.tar.gz -C /data` in the same kind of throwaway container. The
-backup contains your personal data and `ai-secret.key`; store it encrypted. In cloud mode, back
+backup contains your personal data and `ai-secret.key`; store it encrypted. It leaves out
+`integrations-secret.key`, so the connected accounts' tokens in the backup can't be used by
+anyone holding it; after restoring onto a new volume, people reconnect their accounts (imported
+data is kept). In cloud mode, back
 up the database with Supabase and the volume as above.
 
 ## Upgrading
@@ -165,5 +178,7 @@ are not reversed automatically.
 - Leave `ORBIT_LOCAL_OPEN_REGISTRATION` unset unless you mean to let anyone who can reach the
   server create an account.
 - Orbit doesn't encrypt files at rest; use an encrypted disk for the Docker data directory.
+- OAuth client secrets and `ORBIT_INTEGRATIONS_SECRET_KEY` are server-only: never put them in
+  `PUBLIC_*` values, which reach browsers.
 - In cloud mode, `ORBIT_AI_ALLOW_PRIVATE_ENDPOINTS` stays off by default so AI provider URLs
   can't reach the server's internal network.

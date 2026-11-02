@@ -18,7 +18,8 @@ import signal
 from orbit_api.config import get_settings
 from orbit_api.db.database import open_database
 from orbit_api.providers.ai.registry import HttpProviderFactory
-from orbit_api.scheduler.worker import AiIndexing, ReminderWorker
+from orbit_api.providers.integrations.registry import HttpConnectorRegistry
+from orbit_api.scheduler.worker import AiIndexing, IntegrationSync, ReminderWorker
 from orbit_api.system.attachment_store import FileAttachmentStore
 
 
@@ -43,10 +44,12 @@ async def _run(command: str, *, once: bool, poll_interval: float) -> None:
     settings = get_settings()
     database = await open_database(settings)
     providers = HttpProviderFactory()
+    connectors = HttpConnectorRegistry(settings)
     worker = ReminderWorker(
         database,
         files=FileAttachmentStore(settings.attachments_dir),
         ai=AiIndexing(settings, providers),
+        integrations=IntegrationSync(settings, connectors),
     )
     try:
         match command:
@@ -71,6 +74,7 @@ async def _run(command: str, *, once: bool, poll_interval: float) -> None:
                 await worker.run(stop, poll_interval)
     finally:
         await providers.aclose()
+        await connectors.aclose()
         await database.dispose()
 
 

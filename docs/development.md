@@ -94,6 +94,21 @@ AI (see [AI providers](#ai-providers)):
 | `ORBIT_AI_ALLOW_PRIVATE_ENDPOINTS` | unset   | Allow provider endpoints on loopback/private addresses. Unset: yes in local mode, no in cloud mode                                |
 | `ORBIT_AI_INDEX_INTERVAL_SECONDS`  | `60`    | How often the worker indexes records for semantic search (5 to 3600)                                                              |
 
+Integrations (see [Integrations](#integrations) and [integrations.md](integrations.md)):
+
+| Variable                          | Default                                       | Purpose                                                                                                                         |
+| --------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `ORBIT_INTEGRATIONS_ENABLED`      | `true`                                        | Server-wide switch for connecting accounts and synchronizing                                                                    |
+| `ORBIT_GOOGLE_CLIENT_ID`          | unset                                         | Google OAuth client; Google is offered only when set                                                                            |
+| `ORBIT_GOOGLE_CLIENT_SECRET`      | unset                                         | Google OAuth client secret. Secret; server-side only                                                                            |
+| `ORBIT_MICROSOFT_CLIENT_ID`       | unset                                         | Microsoft (Entra ID) application ID; Microsoft is offered only when set                                                         |
+| `ORBIT_MICROSOFT_CLIENT_SECRET`   | unset                                         | Client secret for a confidential (web) app; omit for a public client. Secret                                                    |
+| `ORBIT_MICROSOFT_TENANT`          | `common`                                      | `common`, `organizations`, `consumers`, or a tenant ID                                                                          |
+| `ORBIT_INTEGRATIONS_REDIRECT_URL` | `http://localhost:3000/integrations/callback` | The web app's callback page, registered exactly with each provider; `https` in production except on loopback                    |
+| `ORBIT_INTEGRATIONS_SECRET_KEY`   | unset                                         | Fernet key encrypting tokens. Unset: local mode creates `integrations-secret.key` beside the database; cloud mode can't connect |
+| `ORBIT_INTEGRATIONS_WEBHOOK_URL`  | unset                                         | Public `https` address of `/api/v1/integrations/webhooks` for push notifications; unset polls                                   |
+| `ORBIT_INTEGRATIONS_POLL_SECONDS` | `30`                                          | How often the worker looks for due synchronization work (5 to 3600)                                                             |
+
 Accounts (see [Accounts](#accounts)):
 
 | Variable                         | Default | Purpose                                                                 |
@@ -152,6 +167,12 @@ includes document numbers, since it's your own backup; keep it as safe as the or
 export is not a restore format: Orbit can't import it yet.
 
 Backups contain all of your data unencrypted. Store them with the same care as the original.
+
+**Connected accounts' tokens** are in the database only encrypted, with a key kept outside it
+(`integrations-secret.key` beside the database, or `ORBIT_INTEGRATIONS_SECRET_KEY`). Leave that
+key out of backups: a restored database then holds tokens nobody can use, and you reconnect the
+accounts after restoring (imported events, documents, and links are kept). The Documents export
+never includes tokens or integration data.
 
 ### Cloud mode (Supabase PostgreSQL)
 
@@ -270,7 +291,8 @@ uv run alembic downgrade -1           # revert the latest revision
 
 ### Why there is no sync yet
 
-Synchronization between local and cloud storage, and migrating data from one mode to the
+External calendars are synchronized (see [Integrations](#integrations)); Orbit's own data is
+not. Synchronization between local and cloud storage, and migrating data from one mode to the
 other, are deliberately not implemented. Both need stable record identity, conflict
 resolution, and deletion tracking, which depend on product schemas that don't exist yet. Until
 then, choose one mode per installation. Switching modes starts with an empty database; it does
@@ -335,6 +357,22 @@ keys for development or tests; the test suite uses a fake provider and mocked HT
   or delete the index. Without an embedding model, AI search is keyword only.
 - **Costs:** enter your provider's prices per million tokens on a provider to see estimates in
   usage. A monthly token limit stops requests once reached.
+
+## Integrations
+
+Connecting Google or Microsoft accounts needs an OAuth app of your own with each provider;
+nothing is shared with or proxied through anyone else. Step-by-step setup, scopes, and
+limitations: [integrations.md](integrations.md). Design:
+[architecture.md](architecture.md#external-integrations).
+
+- **Without OAuth apps** the Integrations settings list both providers as "not set up"; the rest
+  of Orbit is unaffected. Tests never need real accounts: they use an in-memory provider
+  (`tests/integration_fakes.py`) and mocked HTTP.
+- **Synchronization** runs in the worker (embedded in the API by default), never in a request.
+  Selecting a calendar queues its first synchronization; **Sync now** queues another. Runs,
+  their counts, and errors are listed on the connection's page.
+- **Locally** calendars are polled on the interval set per calendar. Push notifications need
+  the API reachable at a public `https` address (`ORBIT_INTEGRATIONS_WEBHOOK_URL`).
 
 ## Finance data
 

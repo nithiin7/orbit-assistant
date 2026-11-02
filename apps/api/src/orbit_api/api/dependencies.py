@@ -28,6 +28,7 @@ from orbit_api.repositories.finance import (
 from orbit_api.repositories.fitness import build_fitness
 from orbit_api.repositories.goals import build_goal_service
 from orbit_api.repositories.habits import build_habit_service, build_routine_service
+from orbit_api.repositories.integrations import Integrations, build_integrations
 from orbit_api.repositories.investments import (
     build_asset_service,
     build_investment_service,
@@ -382,3 +383,11 @@ def build_ai_for(session: AsyncSession, state: object) -> AiServices:
 
 
 AiServicesDep = Annotated[AiServices, Depends(get_ai_services)]
+
+
+def get_integrations(request: Request, session: SessionDep, settings: SettingsDep) -> Integrations:
+    """The integration services on the request's session, over the app's shared connectors."""
+    return build_integrations(session, settings, request.app.state.integration_connectors)
+
+
+IntegrationsDep = Annotated[Integrations, Depends(get_integrations)]

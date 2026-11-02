@@ -28,6 +28,7 @@ import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { describeApiError } from "@/api/client";
 import { AssistMenu } from "@/components/ai/assist-menu";
 import { AmountField, DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
+import { ExternalOrigin } from "@/components/integrations/external-origin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Menu, type MenuItem } from "@/components/ui/menu";
@@ -274,6 +275,9 @@ function DocumentDetailView({
               </span>
             ) : null}
           </p>
+          <div className="mt-1.5">
+            <ExternalOrigin entityType="document" entityId={document.id} />
+          </div>
         </div>
         {!trashed ? (
           <Button

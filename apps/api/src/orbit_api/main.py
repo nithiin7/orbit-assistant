@@ -22,7 +22,8 @@ from orbit_api.auth.supabase import SupabaseTokenVerifier
 from orbit_api.config import Settings, get_settings
 from orbit_api.db.database import open_database
 from orbit_api.providers.ai.registry import HttpProviderFactory
-from orbit_api.scheduler.worker import AiIndexing, ReminderWorker
+from orbit_api.providers.integrations.registry import HttpConnectorRegistry
+from orbit_api.scheduler.worker import AiIndexing, IntegrationSync, ReminderWorker
 from orbit_api.system.attachment_store import FileAttachmentStore
 from orbit_api.system.file_manager import SystemFileRevealer
 
@@ -53,6 +54,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         database = await open_database(settings)
         app.state.database = database
         providers = app.state.ai_providers
+        connectors = app.state.integration_connectors
         stop = asyncio.Event()
         worker = None
         if settings.scheduler_embedded:
@@ -61,6 +63,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     database,
                     files=FileAttachmentStore(settings.attachments_dir),
                     ai=AiIndexing(settings, providers),
+                    integrations=IntegrationSync(settings, connectors),
                 ).run(stop, settings.scheduler_poll_seconds)
             )
         try:
@@ -71,6 +74,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             if worker is not None:
                 await worker
             await providers.aclose()
+            await connectors.aclose()
             await database.dispose()
 
     app = FastAPI(
@@ -87,6 +91,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.file_revealer = SystemFileRevealer()
     # One HTTP client for every AI provider call; tests replace the factory with fakes.
     app.state.ai_providers = HttpProviderFactory()
+    # One HTTP client for every Google and Microsoft call; tests replace it with fakes.
+    app.state.integration_connectors = HttpConnectorRegistry(settings)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
