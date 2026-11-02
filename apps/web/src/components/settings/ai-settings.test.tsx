@@ -152,7 +152,7 @@ describe("AiSettingsPanel", () => {
     });
     await renderSignedIn(<AiSettingsPanel />);
     await user.click(await screen.findByRole("checkbox", { name: /Finance/ }));
-    await user.click(screen.getByRole("checkbox", { name: "Allow cloud processing" }));
+    await user.click(screen.getByRole("switch", { name: "Allow cloud processing" }));
 
     const patches = api.mock.calls
       .filter(([, init]) => init?.method === "PATCH")
@@ -161,5 +161,49 @@ describe("AiSettingsPanel", () => {
       modules: ["tasks", "notes", "calendar", "reminders", "habits", "finance"],
     });
     expect(patches[1]).toEqual({ allow_cloud: true });
+  });
+  it("lists the setup steps left, and links to the assistant once AI is ready", async () => {
+    mockApi({
+      ...session,
+      "GET /api/v1/me/ai/settings": json(off),
+      "GET /api/v1/me/ai/providers": json({ providers: [openai] }),
+    });
+    const { unmount } = await renderSignedIn(<AiSettingsPanel />);
+    expect(await screen.findByRole("switch", { name: "Use AI in Orbit" })).toHaveAttribute(
+      "aria-checked",
+      "false",
+    );
+    const steps = screen
+      .getAllByRole("listitem")
+      .filter((item) => /\((done|to do)\)/.test(item.textContent ?? ""));
+    expect(steps.map((step) => step.textContent)).toEqual([
+      expect.stringContaining("Connect a provider (done)"),
+      expect.stringContaining("Choose a model for answers (to do)"),
+      expect.stringContaining("Turn on AI (to do)"),
+    ]);
+    unmount();
+
+    mockApi({
+      ...session,
+      "GET /api/v1/me/ai/settings": json({
+        ...off,
+        enabled: true,
+        chat_provider_id: "p1",
+        chat_model: "gpt",
+      }),
+      "GET /api/v1/me/ai/providers": json({ providers: [openai] }),
+      "GET /api/v1/me/ai/providers/p1/models": json({
+        models: [{ id: "gpt", chat: true, embeddings: false }],
+      }),
+    });
+    await renderSignedIn(<AiSettingsPanel />);
+    expect(await screen.findByRole("link", { name: "Open the assistant" })).toHaveAttribute(
+      "href",
+      "/assistant",
+    );
+    expect(
+      screen.getByText(/Answers come from OpenAI · gpt, a cloud provider/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Get started in three steps")).not.toBeInTheDocument();
   });
 });
