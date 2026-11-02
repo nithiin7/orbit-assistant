@@ -88,6 +88,29 @@ class Settings(BaseSettings):
     # How often the worker looks for records to index.
     ai_index_interval_seconds: float = Field(default=60, ge=5, le=3600)
 
+    # External integrations (Google, Microsoft). A provider is offered only when its OAuth
+    # client ID is set. Client secrets stay on the server; the browser never sees them.
+    integrations_enabled: bool = True
+    google_client_id: str | None = None
+    google_client_secret: SecretStr | None = None
+    microsoft_client_id: str | None = None
+    microsoft_client_secret: SecretStr | None = None
+    # `common` accepts work, school, and personal Microsoft accounts.
+    microsoft_tenant: str = Field(default="common", pattern=r"^[A-Za-z0-9.-]{1,100}$")
+    # The web app's OAuth callback page, registered exactly with each provider.
+    integrations_redirect_url: AnyHttpUrl = AnyHttpUrl(
+        "http://localhost:3000/integrations/callback"
+    )
+    # A Fernet key that encrypts stored access and refresh tokens. Unset in local mode, a key
+    # file beside the SQLite database is created on first use; unset in cloud mode, accounts
+    # can't be connected.
+    integrations_secret_key: SecretStr | None = None
+    # The public HTTPS address of `/api/v1/integrations/webhooks`, for provider push
+    # notifications. Unset (the local-first default), calendars are polled instead.
+    integrations_webhook_url: AnyHttpUrl | None = None
+    # How often the worker looks for due synchronization work.
+    integrations_poll_seconds: float = Field(default=30, ge=5, le=3600)
+
     @property
     def attachments_dir(self) -> Path:
         if self.attachments_path is not None:
@@ -99,6 +122,13 @@ class Settings(BaseSettings):
     def ai_key_file(self) -> Path | None:
         """Where local mode keeps a generated AI secret key; `None` in cloud mode."""
         return self.sqlite_path.parent / "ai-secret.key" if self.storage_mode == "local" else None
+
+    @property
+    def integrations_key_file(self) -> Path | None:
+        """Where local mode keeps a generated integrations secret key; `None` in cloud mode."""
+        if self.storage_mode != "local":
+            return None
+        return self.sqlite_path.parent / "integrations-secret.key"
 
     @property
     def ai_private_endpoints_allowed(self) -> bool:
@@ -159,10 +189,31 @@ class Settings(BaseSettings):
             raise ValueError("ORBIT_AI_SECRET_KEY must be a Fernet key (32 url-safe base64 bytes).")
         return key
 
+    @field_validator("integrations_secret_key")
+    @classmethod
+    def _check_integrations_secret_key(cls, key: SecretStr | None) -> SecretStr | None:
+        if key is not None and not is_fernet_key(key.get_secret_value()):
+            raise ValueError(
+                "ORBIT_INTEGRATIONS_SECRET_KEY must be a Fernet key (32 url-safe base64 bytes)."
+            )
+        return key
+
     @model_validator(mode="after")
     def _validate_production(self) -> Self:
         if self.is_production and "*" in self.cors_origins:
             raise ValueError("ORBIT_CORS_ORIGINS must list explicit origins in production.")
+        return self
+
+    @model_validator(mode="after")
+    def _validate_integrations(self) -> Self:
+        redirect = self.integrations_redirect_url
+        loopback = redirect.host in {"localhost", "127.0.0.1", "::1", "[::1]"}
+        if self.is_production and redirect.scheme != "https" and not loopback:
+            raise ValueError("ORBIT_INTEGRATIONS_REDIRECT_URL must use https in production.")
+        webhook = self.integrations_webhook_url
+        if webhook is not None and webhook.scheme != "https":
+            # Providers only deliver push notifications to public HTTPS endpoints.
+            raise ValueError("ORBIT_INTEGRATIONS_WEBHOOK_URL must use https.")
         return self
 
     @model_validator(mode="after")

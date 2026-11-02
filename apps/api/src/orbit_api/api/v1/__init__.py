@@ -15,6 +15,7 @@ from orbit_api.api.v1 import (
     goals,
     habits,
     health,
+    integrations,
     investments,
     me,
     networth,
@@ -57,3 +58,6 @@ router.include_router(search.router)
 router.include_router(storage.router)
 router.include_router(ai.me_router)
 router.include_router(ai.router)
+router.include_router(integrations.router)
+router.include_router(integrations.oauth_router)
+router.include_router(integrations.webhook_router)

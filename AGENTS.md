@@ -61,11 +61,20 @@ kept by the existing worker, with embeddings stored as bytes and scored in Pytho
 keyword and semantic search; a streaming assistant whose answers cite the records they used and
 whose numbers come from the modules' services; contextual summaries and drafts in modules;
 allowlisted action proposals that run only after approval; deterministic insights; and usage
-tracking). There are no other product features, no
+tracking), and **external integrations** (Google and Microsoft accounts connected per person and
+workspace with OAuth 2.0 Authorization Code and PKCE, minimal scopes, and tokens encrypted on
+the server; a provider-independent connector contract; Google Calendar and Outlook calendars
+imported into the existing calendar by the existing worker with sync tokens or delta links,
+checkpoints, leases, retries, duplicate prevention, recurring series and their exceptions, and
+conflicts recorded rather than overwritten, optionally two-way for single events; Gmail and
+Outlook mail read on demand from chosen labels to create linked tasks, notes, and reminders;
+Google Drive and OneDrive files imported one by one into Documents with change and deletion
+checks; verified push notifications when a public HTTPS URL is configured, polling otherwise).
+There are no other product features, no
 OCR (scanned PDFs and images yield no text), no encryption at rest by Orbit (documents rely
-on the OS's disk encryption), no document import, no AI health recommendations, medical
+on the OS's disk encryption), no bulk document import, no AI health recommendations, medical
 features, or external health or food-database integrations, no AI habit recommendations or
-gamification, no external calendar sync (Google, Outlook, CalDAV, iCal import), no AI
+gamification, no CalDAV or iCal import or export, no email sending, no AI
 scheduling (time suggestions are text only), no knowledge graph, no AI briefings, no recurring
 tasks, no automatically created transactions, no live market prices or bank integrations, no push,
 email, or mobile notifications, no autonomous AI agents or AI actions without approval, no
@@ -99,7 +108,9 @@ describe or build on capabilities that do not exist.
 
 Not present yet (planned; see `docs/architecture.md`): object storage for files, price providers,
 shared workspaces, end-to-end tests, and a `scripts/` directory. AI provider adapters live in
-`apps/api/src/orbit_api/providers/ai/`, behind the interface in `services/ai/providers.py`.
+`apps/api/src/orbit_api/providers/ai/`, behind the interface in `services/ai/providers.py`;
+Google and Microsoft adapters live in `providers/integrations/`, behind the connector contract in
+`services/integrations/connectors.py`.
 
 ### Boundaries
 

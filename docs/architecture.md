@@ -25,7 +25,9 @@ Browser ──► apps/web (Next.js, :3000) ──HTTP/JSON──► apps/api (F
   [calendar](#calendar-and-events), [habits and routines](#habits-and-routines),
   [documents](#documents-and-the-personal-vault), and [health and fitness](#health-and-fitness),
   brought together by the [daily dashboard and command center](#daily-dashboard-and-command-center),
-  with an optional [AI layer](#ai-intelligence-layer) on top (off until each person turns it on).
+  with an optional [AI layer](#ai-intelligence-layer) on top (off until each person turns it on),
+  and [external integrations](#external-integrations) that bring Google and Microsoft calendars,
+  mail, and files into those modules.
 
 The two apps communicate only over HTTP and share no runtime code. They share one thing: the
 API contract in `packages/contracts`, described below.
@@ -230,9 +232,11 @@ apps/api/src/orbit_api/
 │       ├── dashboard.py # The daily overview: today across modules, section by section
 │       ├── search.py    # Search across tasks, notes, events, documents, habits, transactions
 │       ├── ai.py        # AI: settings, providers, usage (/me/ai); assistant, assist, search, insights, index
+│       ├── integrations.py # Connections, OAuth, calendars, sync runs, conflicts, mail, files, webhooks
 │       └── notifications.py # The signed-in user's notifications: list, unread count, read state
 ├── auth/                # Adapters: Argon2 password hashing, Supabase JWT verification
 ├── providers/ai/        # Adapters: OpenAI (and compatible), Anthropic, Gemini, Ollama over HTTP
+├── providers/integrations/ # Adapters: Google (Calendar, Gmail, Drive), Microsoft Graph over HTTP
 ├── system/              # Adapters: the OS file manager; the file store (attachments, documents); ZIPs
 ├── scheduler/           # Reminder worker (embedded in the API or `orbit-worker`) and its CLI
 ├── utils/               # Plain-Python helpers: UNSET, sort order, clock, LIKE patterns, file types
@@ -248,7 +252,7 @@ apps/api/src/orbit_api/
     ├── database.py      # `open_database()`: connect, verify schema, sessions, dispose
     ├── migrate.py       # Programmatic Alembic: upgrade, downgrade, head revision
     └── migrations/      # Alembic environment and versioned revisions
-        └── versions/    # 0001_baseline … 0018_create_ai
+        └── versions/    # 0001_baseline … 0019_create_integrations
 ```
 
 Design decisions:
@@ -388,6 +392,9 @@ written once. SQLite is embedded in the API process; local mode needs no databas
 - `0018_create_ai` creates `ai_providers`, `ai_settings`, `ai_index_sources`, `ai_chunks`,
   `ai_conversations`, `ai_messages`, `ai_action_proposals`, `ai_usage`, and
   `ai_insight_dismissals` with RLS (see [AI intelligence layer](#ai-intelligence-layer)).
+- `0019_create_integrations` creates `integration_connections`, `integration_resources`,
+  `integration_oauth_states`, `integration_links`, and `integration_sync_runs` with RLS (see
+  [External integrations](#external-integrations)).
 - Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
   Startup only checks that the database is at the head revision. For a shared cloud database,
   schema changes should be deliberate and reviewable.
@@ -471,7 +478,7 @@ structure.
      `0011` for the six budget, goal, and plan tables; `0012` for the seven note tables; `0013`
      for the seven calendar tables; `0014` for the twelve habit and routine tables; `0015` for
      the seven document tables; `0016` for the twenty fitness tables; `0018` for the nine AI
-     tables.
+     tables; `0019` for the five integration tables.
   2. **No policies exist**, deliberately: the browser never queries tables directly, so the
      Data API's `anon` and `authenticated` roles get no rows. Add `authenticated` policies
      (for example `owner_id = auth.uid()`) only if a client is ever allowed direct access.
@@ -2260,8 +2267,9 @@ body or path link is a 422, like a missing one.
 
 ### Calendar limitations
 
-- No sync with external calendars (Google, Outlook, CalDAV) and no `.ics` import or export; no
-  attendees, invitations, or free/busy; no AI scheduling.
+- Google and Outlook calendars are synchronized by [external integrations](#external-integrations);
+  there is no CalDAV and no `.ics` import or export; no attendees, invitations, or free/busy; no
+  AI scheduling.
 - Recurrence covers daily, weekly on weekdays, monthly by day of month, and yearly by date, with
   intervals, counts, and end dates. No "second Tuesday of the month" or other `BYDAY` ordinals,
   no hourly rules, and no `RDATE`/`EXDATE` beyond skipped occurrences.
@@ -3255,7 +3263,10 @@ It is off by default, per person, and Orbit works the same with it off.
 - **Files**: the attachment store (`system/attachment_store.py`) with document versions carrying a
   SHA-256. Indexing reads files through `DocumentService.open_file`, never modifies them.
 - **Not present, so not built on**: multi-device sync, an external integration framework, OCR,
-  and any AI library or SDK. "External integrations" therefore has no AI permission yet.
+  and any AI library or SDK. (Integrations were added later; see
+  [External integrations](#external-integrations). Imported events and documents are ordinary
+  records, so AI reads them under the calendar and documents permissions; mail is never stored,
+  so it isn't indexed.)
 
 ### Layout
 
@@ -3559,6 +3570,285 @@ The stream's event payloads are described in `packages/contracts/src/index.ts` (
 - Stopping a stream is covered by design but not by an automated test (TestClient can't
   disconnect mid-stream).
 
+## External integrations
+
+Google and Microsoft accounts connected per person and workspace. They feed the existing
+modules rather than parallel ones: calendars become ordinary calendar events, files become
+ordinary documents, and email becomes the tasks, notes, and reminders people make from it.
+Setup, scopes, and operator guidance: [integrations.md](integrations.md).
+
+### What existed, and what didn't
+
+- **Reused:** workspace authorization (`WorkspaceDep`), the reminder worker (leases, retries,
+  periodic jobs), Fernet encryption (`system/secrets.py`), the shared `httpx2` client pattern of
+  the AI adapters, `CalendarService` (series, exceptions, alerts), `DocumentService` (content
+  validation, versions, the file store), the task, note, and reminder services, in-app
+  notifications, and search (imported records are found by the existing substring search and
+  indexed by the AI layer like any other record).
+- **Not present, and still not built:** multi-device sync of Orbit's own data and any backup
+  or restore beyond copying the database and the Documents export. There was no sync engine to
+  plug into, so integrations have their own synchronization runs inside the existing worker,
+  scoped to external accounts. They don't synchronize Orbit between devices.
+
+### Layout
+
+```text
+services/integrations/     framework-free domain logic
+├── models.py              connections, resources, links, runs, OAuth states, errors
+├── connectors.py          the connector contract: OAuth, calendar, mail, files; normalized types
+├── store.py               repository protocol and secret box protocol
+├── oauth.py               state, PKCE (S256), digests
+├── tokens.py              TokenManager: decrypt, refresh with locking, revoked consent
+├── mapping.py             RRULE translation, field limits, snapshots, change fingerprints
+├── service.py             IntegrationService: providers, authorization, connections, calendars,
+│                          sync requests, conflicts, origins, webhooks, disconnect
+├── calendar_sync.py       CalendarSync: pull, reconcile, push, conflicts, push channels
+├── mail.py                MailService: labels, on-demand messages, records from email
+├── files.py               FileService: browse, import into Documents, change checks
+└── runner.py              SyncRunner: schedule, claim, process, retry with backoff
+providers/integrations/    http.py (timeouts, retries, error mapping), google.py, microsoft.py,
+                           text.py (email HTML to text), registry.py (the one place that knows vendors)
+repositories/integrations.py   SQL for the five tables; build_integrations() wires the services
+api/v1/integrations.py     routes; schemas/integrations.py the contract
+```
+
+### Connector contract
+
+A `ProviderConnector` bundles an `OAuthClient` and the capability connectors it supports
+(`CalendarConnector`, `MailConnector`, `FilesConnector`), with the scopes per capability.
+`HttpConnectorRegistry` builds one per provider whose OAuth client ID is configured; services
+ask `ConnectorRegistry.get(provider)` and never import a vendor module. Adapters translate the
+vendor's JSON into normalized types (`RemoteEvent`, `RemoteDeletion`, `ChangePage`,
+`MessageSummary`, `RemoteFile`, …) and its failures into connector errors: `ReauthRequiredError`
+(401 or `invalid_grant`), `AccessDeniedError` (403), `RateLimitedError` (429, Google's quota
+403s, with `Retry-After`), `ProviderUnavailableError` (5xx, network), `RemoteNotFoundError`,
+`CursorExpiredError` (410 on a sync token or delta link), and `VersionConflictError` (412).
+Errors carry fixed, safe messages: never tokens or response bodies. Adding a provider means
+writing its adapter and registering it; nothing else changes. Tests swap in an in-memory
+provider (`tests/integration_fakes.py`).
+
+`ApiClient` gives every call a 30-second timeout (10 to connect), retries idempotent requests
+twice with exponential backoff when the wait is short, and never follows redirects with a token
+attached. Graph's paging links are followed only on `graph.microsoft.com`; Drive and OneDrive
+IDs are checked against their character sets, and Drive query literals are escaped.
+
+### Data model
+
+```text
+users, workspaces ──< integration_connections ──< integration_resources   (calendars, mail labels)
+                              │       └──< integration_sync_runs
+                              ├──< integration_links ──> (event | document | task | note | reminder)
+                              └──< integration_oauth_states                (also per user, workspace)
+```
+
+- **`integration_connections`:** provider, the account's stable ID, email, and display name,
+  granted scopes and the capabilities they cover, status (`active`, `reauth_required`,
+  `error`), encrypted access and refresh tokens with their expiry and a `token_version`, the
+  mail period, and the last sync and error. Unique per workspace, provider, and account, so
+  reconnecting the same account updates it and several accounts per provider are possible.
+- **`integration_resources`:** each calendar (and selected mail label): whether selected,
+  writable at the provider, direction, interval, the Orbit category for its events, its time
+  zone, and synchronization state (cursor, checkpoint page, window start, next sync, push
+  channel with its secret's SHA-256).
+- **`integration_links`:** where an Orbit record came from. External kind and ID (with parent:
+  a series, a thread, a folder), the Orbit entity type and ID, origin (`external`, `orbit`,
+  `linked`), the provider's version, a normalized snapshot of what it last sent, a fingerprint
+  of the Orbit record as last synchronized, and status (`synced`, `conflict`, `local_changes`,
+  `update_available`, `missing`, `deleted_locally`). A partial unique index allows one link per
+  external event or file per connection, so nothing is imported twice. Orbit's own tables
+  gain no provider columns; `entity_id` is checked when the link is used (a deleted record is
+  noticed, not cascaded).
+- **`integration_sync_runs`:** kind (`calendar`, `files`), trigger, status, whether full,
+  counts (imported, updated, deleted, skipped, conflicts, exported, failed), a safe error,
+  attempts, cancellation, and the lease. No record content.
+- **`integration_oauth_states`:** single-use, ten-minute authorizations (below).
+
+Every table carries `workspace_id` and cascades with the workspace; RLS is enabled on
+PostgreSQL. Person-facing queries filter by workspace and the connection's owner.
+
+### OAuth and tokens
+
+```text
+browser ──POST …/integrations/authorize──► API: state (SHA-256 stored), PKCE verifier (encrypted)
+   ◄── provider consent URL (state, S256 challenge, chosen scopes, fixed redirect URI)
+browser ──► provider consent ──► web /integrations/callback?code&state
+callback page ──POST /integrations/oauth/complete (Bearer session)──► API
+   API: take state (delete, once) → same person? unexpired? → exchange code + verifier
+        → keep only fully granted capabilities → account ID → encrypt and store tokens
+```
+
+- **Authorization Code with PKCE** for both providers; Google also gets `access_type=offline`
+  and `prompt=consent` so a refresh token is issued on reconnecting.
+- **CSRF and login CSRF:** the state is 256 random bits, bound to the person, workspace,
+  provider, and capabilities, used once, and valid for ten minutes. Completing requires the
+  same person's session, so a crafted link can't attach someone else's account. The callback
+  page clears the code from the address and history immediately and sends no referrer.
+- **Redirect URI** is configuration (`ORBIT_INTEGRATIONS_REDIRECT_URL`), never taken from a
+  request, and must be `https` in production (loopback excepted).
+- **Scope validation:** the token response's scopes decide the connection's capabilities; a
+  capability whose scopes weren't all granted is absent, and consent that granted none of the
+  requested ones connects nothing.
+- **Storage:** tokens are Fernet-encrypted with `ORBIT_INTEGRATIONS_SECRET_KEY`, or in local
+  mode a `0600` key file beside the database, separate from the AI key. Cloud mode without a
+  key refuses to connect. Tokens are decrypted only inside `TokenManager` and never returned,
+  logged, exported, or sent to the browser.
+- **Refresh** happens two minutes before expiry, and once more if the provider refuses a token
+  early (revoked consent). An in-process lock per connection and an optimistic `token_version`
+  update serialize refreshes; a loser uses the winner's tokens. A refused refresh marks the
+  connection `reauth_required`, stops its synchronization, and sends the owner an in-app
+  notification; imported data is kept.
+- **Revocation** on disconnect: Google's revoke endpoint; Microsoft has none for a single app,
+  which the UI says before confirming. Tokens are deleted either way, with the connection, its
+  resources, runs, and links. Imported records stay as Orbit-only records unless the person asks
+  to remove them (events deleted, documents moved to the trash).
+
+### Synchronization protocol
+
+```text
+API (select calendar, Sync now, webhook) ──► integration_sync_runs (queued)
+worker poll ──► schedule due calendars ──► claim runs (conditional UPDATE, 5-min lease)
+  per run, own session:  page ← provider changes(cursor | checkpoint | window)
+                         apply page via CalendarService (flush-only) + links + checkpoint → COMMIT
+                         … up to 20 pages, then yield and continue next poll
+                         full sync? reconcile unseen links → push Orbit changes → push channel
+                         finish: cursor, next sync, counts → COMMIT
+```
+
+- **No long work in requests.** Routes queue runs and return 202; the worker does the work. A
+  request may make one short provider call (listing calendars, a page of mail, one file import
+  within Documents' size limit, exporting one event).
+- **Incremental:** Google `syncToken` (full list with `showDeleted`, series as masters);
+  Microsoft `calendarView/delta` over a window a month back to a year ahead, moved monthly. A 410
+  restarts a full synchronization.
+- **Checkpoints and recovery:** each page commits with its links and the next page token, so a
+  crash loses at most the page in progress, and a restarted worker reclaims the run once its
+  lease expires and continues from the checkpoint. Every write is an idempotent upsert by
+  external ID, so a repeated page changes nothing.
+- **Atomic with the module:** module services are built on a `FlushTransaction` (their commit
+  flushes), so an event or document and the link that prevents re-importing it commit together.
+- **Retries:** rate limits and outages requeue the run with backoff (30 s doubling to 30 min,
+  or the provider's `Retry-After`), five attempts at most. Unexpected errors are recorded by
+  type only and retried the same way. A refused token fails the run and pauses the connection.
+- **Isolation:** each run and each scheduled check has its own session, so one provider or
+  account failing never blocks another, or reminder delivery.
+- **Cancellation:** a queued run is cancelled at once; a running one stops before its next page.
+- **Schedules:** each calendar's interval (15 min to daily, or manual) sets `next_sync_at`;
+  imported files are checked every six hours. Webhooks queue a run immediately.
+- **Push:** with `ORBIT_INTEGRATIONS_WEBHOOK_URL`, a Google watch channel or Graph subscription
+  is registered after each sync and renewed 12 hours before expiry. Notifications are verified
+  by the channel's secret (constant-time against its SHA-256) and only queue a run.
+
+### Calendar mapping
+
+| Provider item                                    | Orbit                                                              |
+| ------------------------------------------------ | ------------------------------------------------------------------ |
+| Single event                                     | An event (title ≤ 200, description ≤ 5,000, location ≤ 200)        |
+| Google series with a representable RRULE         | A series (`EventRecurrence`); `EXDATE`s become skipped occurrences |
+| Changed or cancelled instance of such a series   | A `modified` or `skipped` exception, keyed by its original start   |
+| Google series with another rule (`BYDAY=2TU`, …) | Its instances a month back to a year ahead, as single events       |
+| Outlook occurrence, exception, or single event   | A single event (Graph's delta works on expanded views)             |
+| Cancelled or removed                             | The event deleted (unless changed in Orbit; see conflicts)         |
+
+- Times are kept in the event's IANA zone (Google), or converted from UTC to the Outlook event's
+  original zone where its Windows name is known (else UTC). All-day events stay dates.
+- Occurrences that arrive before their series (on an earlier page) are imported standalone and
+  adopted as exceptions when the series arrives. Changing a series' timing re-applies its
+  remembered exceptions, as Orbit clears them on such changes.
+- Imported events get the calendar's chosen Orbit category, have no alerts, and are indexed,
+  searched, and shown like any event. The event details say where an event came from and
+  whether Orbit changes go back (`GET …/integrations/origins`).
+
+### Conflict resolution
+
+Each link stores the provider's version and a fingerprint of the Orbit event as last
+synchronized, so either side's changes can be told apart:
+
+| Provider          | Orbit     | Result                                                                                                          |
+| ----------------- | --------- | --------------------------------------------------------------------------------------------------------------- |
+| changed           | unchanged | Applied                                                                                                         |
+| unchanged         | changed   | Two-way single event: sent with the known version (`If-Match`); otherwise kept in Orbit, marked `local_changes` |
+| changed           | changed   | **Conflict** (`both_changed`): nothing overwritten; the provider's version is kept on the link                  |
+| deleted           | unchanged | Deleted in Orbit                                                                                                |
+| deleted           | changed   | **Conflict** (`deleted_remotely`): the Orbit event is kept                                                      |
+| any               | deleted   | `deleted_locally`: never re-imported, never deleted at the provider                                             |
+| changed meanwhile | sending   | 412: not sent; the next pull sees both changes and records a conflict                                           |
+
+Resolving (`POST …/conflicts/{link}/resolve`): **keep external** applies the provider's
+version (or deletes the Orbit event); **keep Orbit** sends Orbit's version on two-way calendars,
+or otherwise keeps it locally (later provider changes conflict again), or for a deletion keeps
+the event as Orbit-only. Files never conflict: a changed file is `update_available`, and
+updating adds a document version; a deleted or inaccessible one is `missing`, and the document
+stays. Revoked permission pauses the connection; nothing imported is removed.
+
+### Mail and files
+
+- **Mail** is never ingested. Messages are listed from the labels (Gmail) or folders (Outlook)
+  the person selected, within their chosen period (7 to 365 days), checked again server-side
+  for every message opened or acted on. Bodies are reduced to plain text (no HTML is
+  rendered). Creating a task, note, or reminder from a message goes through that module's
+  service and links the record to the message and thread ID, storing only the subject as the
+  link's title. Nothing is sent.
+- **Files** are browsed and searched at the provider; importing downloads one file (capped at
+  `ORBIT_DOCUMENT_MAX_BYTES`, Google Docs exported as PDF) into `DocumentService.upload`, which
+  validates it like any upload. OneDrive's pre-authenticated download redirect is fetched
+  without Orbit's token.
+
+### API
+
+Under `/api/v1/workspaces/{workspace_id}/integrations`, authorized by `WorkspaceDep` and the
+connection's owner. Another person's connection is a 404.
+
+| Method            | Path                                                   | Purpose                                                 |
+| ----------------- | ------------------------------------------------------ | ------------------------------------------------------- |
+| `GET`             | `/providers`                                           | Providers, whether configured, capabilities and why     |
+| `POST`            | `/authorize`                                           | Start connecting (or reconnecting); returns consent URL |
+| `POST`            | `/api/v1/integrations/oauth/complete`                  | Finish connecting (state, code or error)                |
+| `GET`             | `/connections`, `/connections/{id}`                    | Connections; one with calendars, recent runs, counts    |
+| `PATCH`, `DELETE` | `/connections/{id}`                                    | Mail period; disconnect (`remove_imported`)             |
+| `POST`            | `/connections/{id}/check`                              | Health check                                            |
+| `POST`, `PATCH`   | `/connections/{id}/calendars/refresh`, `…/{calendar}`  | List again; select, direction, interval, category       |
+| `POST`            | `/connections/{id}/calendars/{calendar}/events`        | Add an Orbit event to the calendar                      |
+| `POST`, `GET`     | `/connections/{id}/sync`, `/connections/{id}/runs`     | Queue synchronization (202); history                    |
+| `POST`            | `/connections/{id}/runs/{run}/cancel`, `…/retry`       | Cancel or retry                                         |
+| `GET`, `POST`     | `/conflicts`, `/conflicts/{link}/resolve`              | Conflicts; resolve                                      |
+| `GET`             | `/origins?entity_type&entity_id`                       | Where an Orbit record came from                         |
+| `GET`, `PUT`      | `/connections/{id}/mail/labels`                        | Labels; choose which may be shown                       |
+| `GET`             | `/connections/{id}/mail/messages`, `…/{message}`       | List or search; read one (with its links)               |
+| `POST`            | `…/mail/messages/{message}/task`, `/note`, `/reminder` | Create a linked record (the module's own request body)  |
+| `DELETE`          | `/connections/{id}/links/{link}`                       | Unlink a message                                        |
+| `GET`, `POST`     | `/connections/{id}/files`, `…/files/{file}/import`     | Browse or search; import into Documents                 |
+| `POST`            | `/connections/{id}/files/links/{link}/update`          | Import the file's new version                           |
+| `POST`            | `/api/v1/integrations/webhooks/google`, `/microsoft`   | Push notifications (verified by channel secret)         |
+
+### In the web app
+
+- **Settings → Integrations** (`components/integrations/`): conflicts needing a choice,
+  connected accounts with status and services, connecting (provider, then what Orbit may access,
+  each with why; read-only calendars by default; editing implies reading), and a privacy note.
+- **A connection's page** (`?connection=<id>`): status with Sync now and a health check, a
+  reconnect warning, calendars (select, direction, interval, category, last sync and errors,
+  what happens to Orbit edits), mail (labels, period, list, search, plain-text reading, Create
+  task, Save as note, Remind me), files (folders, search, import, new versions), sync activity
+  (counts, errors, retry, cancel), permissions with reconnecting to add more, and disconnecting.
+- **`/integrations/callback`** completes the authorization and opens the connection.
+- **Origins** appear in calendar event details and document details.
+- Query keys: `["workspaces", id, "integrations", …]`; a connection polls while a run is in
+  progress. Tokens and client secrets never reach the browser.
+
+### Known limitations
+
+- Google and Microsoft only; no CalDAV, iCal, or other providers yet.
+- Outlook series come in as separate occurrences in a moving window; Google rules Orbit can't
+  represent are expanded over a window. Edits of imported repeating series stay in Orbit.
+- Deleting in Orbit isn't sent to providers. Attendees, invitations, and alerts aren't imported.
+- Outlook time zones outside the mapped Windows names fall back to UTC.
+- Mail: chosen labels or folders only (not subfolders), the 20 most recent matches, plain text,
+  no attachments, no sending.
+- Files: one at a time, within Documents' size limit; Drive versions may change on renames.
+- Push notifications need a public HTTPS API; local installs poll.
+- The opt-in PostgreSQL suite checks RLS on the new tables; integration HTTP tests run on SQLite
+  against an in-memory provider and mocked HTTP, not real accounts.
+
 ## Configuration
 
 | App | Source                                                    | Validation                                    | Visibility  |
@@ -3575,16 +3865,16 @@ The stream's event payloads are described in `packages/contracts/src/index.ts` (
 
 ## Testing strategy
 
-| Layer                    | Tool                                            | Location                                                                                                                        | Current coverage                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                                                                                      | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth, budgets, goals, plans, notes (views, autosave, Markdown, palette), calendar (views, dialogs, drag, scopes, palette), documents (views, uploads, details, links), health (units, forms, overview, workout logging, water, event workouts), dashboard (widgets, preferences, partial failures, quick actions, palette search), AI (assistant streaming and sources, proposals, settings, contextual menu, Markdown, stream parsing)                                                                                                                                                                                                                                                                    |
-| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                                                                                               | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, budgets, goals, plans, notes, calendar, documents (uploads, validation, versions, export, sweep), health and fitness (library, templates, workouts and sets, records, measurements, photos, nutrition, goals, habit, calendar, note, and document integrations, per-person privacy), daily overview (time zones, sections, partial failures), cross-module search, dashboard preferences, AI (settings, encrypted keys, cloud consent, grounded streaming answers and citations, permissions, proposals and single approval, prompt injection, isolation, indexing and semantic search, assist, insights, usage and limits; provider adapters over mocked HTTP; chunking, extraction, routing, prompts), cross-user isolation |
-| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_calendar_recurrence.py`, `tests/test_reminder_worker.py`, `tests/test_budget_alerts.py` | Recurrence, DST, month ends, leap years, exceptions; delivery, concurrency, leases, retries, restarts; event alerts; budget alerts and period closing                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                                                                                              | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                                                                                         | Startup checks, sessions, migrations, constraints, 503 errors                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                                                                                               | Migrations, connectivity, RLS, feature SQL (including the AI layer); skipped by default                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                                                                                       | Generated contract matches the API                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| End-to-end               | Not set up (**planned**)                        | —                                                                                                                               | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Layer                    | Tool                                            | Location                                                                                                                        | Current coverage                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                                                                                      | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth, budgets, goals, plans, notes (views, autosave, Markdown, palette), calendar (views, dialogs, drag, scopes, palette), documents (views, uploads, details, links), health (units, forms, overview, workout logging, water, event workouts), dashboard (widgets, preferences, partial failures, quick actions, palette search), AI (assistant streaming and sources, proposals, settings, contextual menu, Markdown, stream parsing), integrations (connecting, calendars, conflicts, mail, files, callback, origins)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                                                                                               | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, budgets, goals, plans, notes, calendar, documents (uploads, validation, versions, export, sweep), health and fitness (library, templates, workouts and sets, records, measurements, photos, nutrition, goals, habit, calendar, note, and document integrations, per-person privacy), daily overview (time zones, sections, partial failures), cross-module search, dashboard preferences, AI (settings, encrypted keys, cloud consent, grounded streaming answers and citations, permissions, proposals and single approval, prompt injection, isolation, indexing and semantic search, assist, insights, usage and limits; provider adapters over mocked HTTP; chunking, extraction, routing, prompts), integrations (OAuth state and PKCE, encrypted tokens, refresh and revocation, calendar import, recurrence, duplicates, pagination and checkpoints, rate limits, conflicts, two-way, webhooks, mail scope, file import and changes; Google and Graph adapters over mocked HTTP), cross-user isolation |
+| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_calendar_recurrence.py`, `tests/test_reminder_worker.py`, `tests/test_budget_alerts.py` | Recurrence, DST, month ends, leap years, exceptions; delivery, concurrency, leases, retries, restarts; event alerts; budget alerts and period closing                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                                                                                              | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                                                                                         | Startup checks, sessions, migrations, constraints, 503 errors                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                                                                                               | Migrations, connectivity, RLS, feature SQL (including the AI layer); skipped by default                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                                                                                       | Generated contract matches the API                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| End-to-end               | Not set up (**planned**)                        | —                                                                                                                               | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 Unit tests cover logic, route tests cover HTTP behavior and validation, and E2E tests will cover
 critical user journeys once real features exist. CI runs every layer on each pull request.
@@ -3597,9 +3887,9 @@ critical user journeys once real features exist. CI runs every layer on each pul
 
 ### Backend layering
 
-Storage layers are described under [Backend layers](#backend-layers). External integrations
-such as AI providers will live in `providers/`, behind interfaces, so services don't import
-vendor SDKs.
+Storage layers are described under [Backend layers](#backend-layers). External services live in
+`providers/` (AI providers in `providers/ai/`, Google and Microsoft in
+`providers/integrations/`), behind interfaces, so services don't import vendor SDKs.
 
 ### Storage
 
@@ -3627,8 +3917,9 @@ database-backed worker), and four phases of [finance](#finance) (ledger, commitm
 [investments and net worth](#investments-and-net-worth-phase-3), and
 [budgets, savings goals, and planning](#budgets-savings-goals-and-planning-phase-4)), and
 [notes](#notes-and-knowledge-management), the [calendar](#calendar-and-events), [habits](#habits-and-routines), [documents](#documents-and-the-personal-vault), [health](#health-and-fitness), and the
-[daily dashboard and command center](#daily-dashboard-and-command-center) and the
-[AI intelligence layer](#ai-intelligence-layer) are in place.
+[daily dashboard and command center](#daily-dashboard-and-command-center), the
+[AI intelligence layer](#ai-intelligence-layer), and
+[external integrations](#external-integrations) are in place.
 Next: more modules on the same pattern, then optional sync and extension points.
 Each step should leave the boundaries above intact.
 

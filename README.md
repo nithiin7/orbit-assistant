@@ -122,6 +122,11 @@ control.
   read permissions; a streaming assistant whose answers cite the Orbit records they came from;
   hybrid keyword and semantic search; summaries, extraction, and drafts inside modules; actions
   that run only after you approve them; deterministic insights; and usage tracking.
+- External integrations (Settings → Integrations): connect Google or Microsoft accounts to bring
+  chosen Google or Outlook calendars into Orbit's calendar (incrementally, with conflicts shown
+  rather than overwritten, and optionally two-way), turn Gmail or Outlook messages into tasks,
+  notes, and reminders without copying the mailbox, and import Google Drive or OneDrive files
+  into Documents. Tokens stay encrypted on the server. Setup: [docs/integrations.md](docs/integrations.md).
 - Shared tooling for linting, formatting, type checking, testing, commit conventions, and CI.
 
 ### 🚫 Explicit non-goals for now
@@ -129,7 +134,7 @@ control.
 - AI habit recommendations or gamification (points, badges, leaderboards).
 - AI health recommendations, medical diagnosis or treatment, and health or food-database
   integrations (Apple Health, Google Fit, wearables, barcode lookups).
-- Syncing with external calendars (Google, Outlook, CalDAV) or AI scheduling; a knowledge graph
+- CalDAV or iCal calendars, sending email, or AI scheduling; a knowledge graph
   in notes; automatically created transactions, live market prices, or bank integrations in
   finance.
 - Shared workspaces, invitations, password recovery for local accounts, and account linking

@@ -246,4 +246,45 @@ describe("AssistantView", () => {
     );
     expect(await screen.findByText("What is overdue?")).toBeInTheDocument();
   });
+  it("offers rename and delete from an icon-only menu on each conversation", async () => {
+    const user = userEvent.setup();
+    mockApi({
+      ...session,
+      [`GET ${WS}/ai/conversations`]: json({ conversations: [conversation] }),
+      "GET /api/v1/me/ai/settings": json(enabled),
+    });
+    await renderSignedIn(<AssistantView />);
+    const rail = await screen.findByRole("navigation", { name: "Conversations" });
+    const trigger = await within(rail).findByRole("button", {
+      name: "Options for What tasks are overdue?",
+    });
+    // Only the "more" icon: a chevron beside it overflowed the trigger and misplaced its hover.
+    expect(trigger.querySelectorAll("svg")).toHaveLength(1);
+    await user.click(trigger);
+    expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
+      "Rename",
+      "Delete",
+    ]);
+  });
+
+  it("opens a conversation from the drawer on narrow screens", async () => {
+    const user = userEvent.setup();
+    mockApi({
+      ...session,
+      [`GET ${WS}/ai/conversations`]: json({ conversations: [conversation] }),
+      [`GET ${WS}/ai/conversations/c1`]: json(saved("Renew your passport [S1].")),
+      "GET /api/v1/me/ai/settings": json(enabled),
+    });
+    await renderSignedIn(<AssistantView />);
+    await user.click(await screen.findByRole("button", { name: "Show conversations" }));
+    const drawer = await screen.findByRole("dialog", { name: "Conversations" });
+    await user.click(
+      await within(drawer).findByRole("button", { name: "What tasks are overdue?" }),
+    );
+
+    expect(navigation.replace).toHaveBeenCalledWith("/assistant?c=c1", { scroll: false });
+    expect(
+      await screen.findByRole("heading", { name: "What tasks are overdue?" }),
+    ).toBeInTheDocument();
+  });
 });

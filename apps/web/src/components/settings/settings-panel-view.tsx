@@ -2,6 +2,7 @@ import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { IntegrationsSettings } from "@/components/integrations/integrations-settings";
 import { PageHeader } from "@/components/page-header";
 import type { SettingsPanel } from "@/lib/settings";
 
@@ -16,6 +17,7 @@ const panelContent: Readonly<Record<string, ReactNode>> = {
   workspaces: <WorkspaceSettings />,
   appearance: <ThemeSelector />,
   ai: <AiSettingsPanel />,
+  integrations: <IntegrationsSettings />,
   storage: <StorageSettings />,
 };
 

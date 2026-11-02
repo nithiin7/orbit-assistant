@@ -4988,6 +4988,509 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/integrations/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the providers this server can connect to */
+        get: operations["list_providers_api_v1_workspaces__workspace_id__integrations_providers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start connecting an account
+         * @description Returns the provider's consent page. After consent, the provider sends the browser to
+         *     Orbit's callback page, which completes the connection.
+         */
+        post: operations["authorize_api_v1_workspaces__workspace_id__integrations_authorize_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List connected accounts */
+        get: operations["list_connections_api_v1_workspaces__workspace_id__integrations_connections_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/connections/{connection_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a connection with its calendars and history */
+        get: operations["get_connection_api_v1_workspaces__workspace_id__integrations_connections__connection_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Disconnect an account
+         * @description Revokes Orbit's access where the provider supports it and deletes the tokens. Imported
+         *     records are kept as ordinary Orbit records unless `remove_imported` (events are deleted,
+         *     documents go to the trash).
+         */
+        delete: operations["disconnect_api_v1_workspaces__workspace_id__integrations_connections__connection_id__delete"];
+        options?: never;
+        head?: never;
+        /** Change a connection's settings */
+        patch: operations["update_connection_api_v1_workspaces__workspace_id__integrations_connections__connection_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/connections/{connection_id}/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check that a connection still works */
+        post: operations["check_connection_api_v1_workspaces__workspace_id__integrations_connections__connection_id__check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/connections/{connection_id}/calendars/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** List the account's calendars again */
+        post: operations["refresh_calendars_api_v1_workspaces__workspace_id__integrations_connections__connection_id__calendars_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/connections/{connection_id}/calendars/{resource_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change a calendar's settings
+         * @description Selecting a calendar (`enabled`) queues its first synchronization.
+         */
+        patch: operations["update_calendar_api_v1_workspaces__workspace_id__integrations_connections__connection_id__calendars__resource_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/connections/{connection_id}/calendars/{resource_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add an Orbit event to an external calendar */
+        post: operations["export_event_api_v1_workspaces__workspace_id__integrations_connections__connection_id__calendars__resource_id__events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/connections/{connection_id}/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Synchronize now
+         * @description Queues synchronization (one calendar, or everything); the worker runs it shortly.
+         */
+        post: operations["sync_now_api_v1_workspaces__workspace_id__integrations_connections__connection_id__sync_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/connections/{connection_id}/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Synchronization history */
+        get: operations["list_runs_api_v1_workspaces__workspace_id__integrations_connections__connection_id__runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/connections/{connection_id}/runs/{run_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a synchronization */
+        post: operations["cancel_run_api_v1_workspaces__workspace_id__integrations_connections__connection_id__runs__run_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/connections/{connection_id}/runs/{run_id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry a synchronization */
+        post: operations["retry_run_api_v1_workspaces__workspace_id__integrations_connections__connection_id__runs__run_id__retry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/conflicts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Events changed in both places */
+        get: operations["list_conflicts_api_v1_workspaces__workspace_id__integrations_conflicts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/conflicts/{link_id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve a conflict
+         * @description `keep_external` applies the provider's version (or, for a deletion, deletes the Orbit
+         *     event); `keep_orbit` keeps Orbit's version, sending it back on two-way calendars (or, for a
+         *     deletion, keeps the event as an Orbit-only event).
+         */
+        post: operations["resolve_conflict_api_v1_workspaces__workspace_id__integrations_conflicts__link_id__resolve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/origins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Where an Orbit record came from */
+        get: operations["list_origins_api_v1_workspaces__workspace_id__integrations_origins_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/connections/{connection_id}/mail/labels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List mail labels or folders */
+        get: operations["list_labels_api_v1_workspaces__workspace_id__integrations_connections__connection_id__mail_labels_get"];
+        /** Choose which labels Orbit may show */
+        put: operations["select_labels_api_v1_workspaces__workspace_id__integrations_connections__connection_id__mail_labels_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/connections/{connection_id}/mail/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List or search messages
+         * @description Metadata only (sender, subject, date, a snippet), from a selected label, within the
+         *     connection's mail period.
+         */
+        get: operations["list_messages_api_v1_workspaces__workspace_id__integrations_connections__connection_id__mail_messages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/connections/{connection_id}/mail/messages/{message_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read a message */
+        get: operations["get_message_api_v1_workspaces__workspace_id__integrations_connections__connection_id__mail_messages__message_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/connections/{connection_id}/mail/messages/{message_id}/task": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a task from a message */
+        post: operations["task_from_message_api_v1_workspaces__workspace_id__integrations_connections__connection_id__mail_messages__message_id__task_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/connections/{connection_id}/mail/messages/{message_id}/note": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a note from a message */
+        post: operations["note_from_message_api_v1_workspaces__workspace_id__integrations_connections__connection_id__mail_messages__message_id__note_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/connections/{connection_id}/mail/messages/{message_id}/reminder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a reminder from a message */
+        post: operations["reminder_from_message_api_v1_workspaces__workspace_id__integrations_connections__connection_id__mail_messages__message_id__reminder_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/connections/{connection_id}/links/{link_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a link to a message */
+        delete: operations["unlink_message_api_v1_workspaces__workspace_id__integrations_connections__connection_id__links__link_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/connections/{connection_id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Browse or search files */
+        get: operations["list_files_api_v1_workspaces__workspace_id__integrations_connections__connection_id__files_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/connections/{connection_id}/files/{file_id}/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import a file into Documents */
+        post: operations["import_file_api_v1_workspaces__workspace_id__integrations_connections__connection_id__files__file_id__import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/integrations/connections/{connection_id}/files/links/{link_id}/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import an external file's new version */
+        post: operations["update_file_api_v1_workspaces__workspace_id__integrations_connections__connection_id__files_links__link_id__update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/oauth/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Finish connecting an account */
+        post: operations["complete_authorization_api_v1_integrations_oauth_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/webhooks/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Google Calendar push channel */
+        post: operations["google_webhook_api_v1_integrations_webhooks_google_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/webhooks/microsoft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Microsoft Graph change notifications */
+        post: operations["microsoft_webhook_api_v1_integrations_webhooks_microsoft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -5819,6 +6322,26 @@ export interface components {
              */
             created_at: string;
         };
+        /** AuthorizeIntegrationRequest */
+        AuthorizeIntegrationRequest: {
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "google" | "microsoft";
+            /** Capabilities */
+            capabilities: ("calendar" | "calendar_write" | "mail" | "files")[];
+            /**
+             * Connection Id
+             * @description Reconnect this connection (renew access or add capabilities).
+             */
+            connection_id?: string | null;
+        };
+        /** AuthorizeIntegrationResponse */
+        AuthorizeIntegrationResponse: {
+            /** Authorization Url */
+            authorization_url: string;
+        };
         /** BalanceTotalsResponse */
         BalanceTotalsResponse: {
             /**
@@ -6422,6 +6945,18 @@ export interface components {
             /** @description Expected payments of any kind due from today to the end of the month. */
             due_this_month: components["schemas"]["TotalResponse"];
             overdue: components["schemas"]["TotalResponse"];
+        };
+        /**
+         * CompleteAuthorizationRequest
+         * @description What the provider sent back to the callback page.
+         */
+        CompleteAuthorizationRequest: {
+            /** State */
+            state: string;
+            /** Code */
+            code?: string | null;
+            /** Error */
+            error?: string | null;
         };
         /** ContributionListResponse */
         ContributionListResponse: {
@@ -7830,6 +8365,18 @@ export interface components {
             /** Valued On */
             valued_on?: string | null;
         };
+        /** DisconnectIntegrationResponse */
+        DisconnectIntegrationResponse: {
+            /**
+             * Revoked
+             * @description Whether the provider confirmed revoking access. When false, remove Orbit from the account's app permissions page; Orbit has deleted its tokens either way.
+             */
+            revoked: boolean;
+            /** Removed Events */
+            removed_events: number;
+            /** Trashed Documents */
+            trashed_documents: number;
+        };
         /** DismissAiInsightRequest */
         DismissAiInsightRequest: {
             /** Key */
@@ -8609,6 +9156,14 @@ export interface components {
              * @default false
              */
             include_versions: boolean;
+        };
+        /** ExportEventRequest */
+        ExportEventRequest: {
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
         };
         /** FitnessGoalListResponse */
         FitnessGoalListResponse: {
@@ -9796,6 +10351,24 @@ export interface components {
              */
             updated_at: string;
         };
+        /** ImportFileRequest */
+        ImportFileRequest: {
+            /** Folder Id */
+            folder_id?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+        };
+        /** ImportedFileResponse */
+        ImportedFileResponse: {
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /** Title */
+            title: string;
+            link: components["schemas"]["IntegrationLinkResponse"];
+        };
         /** InstallmentResponse */
         InstallmentResponse: {
             /**
@@ -9865,6 +10438,346 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** IntegrationCalendarListResponse */
+        IntegrationCalendarListResponse: {
+            /** Resources */
+            resources: components["schemas"]["IntegrationCalendarResponse"][];
+        };
+        /** IntegrationCalendarResponse */
+        IntegrationCalendarResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "calendar" | "mail_label";
+            /** External Id */
+            external_id: string;
+            /** Name */
+            name: string;
+            /** Enabled */
+            enabled: boolean;
+            /** Writable */
+            writable: boolean;
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "import" | "two_way";
+            /** Sync Interval Minutes */
+            sync_interval_minutes: number;
+            /** Category Id */
+            category_id: string | null;
+            /** Timezone */
+            timezone: string | null;
+            /** Last Synced At */
+            last_synced_at: string | null;
+            /** Next Sync At */
+            next_sync_at: string | null;
+            /** Last Error */
+            last_error: string | null;
+            /**
+             * Push
+             * @description Whether the provider pushes changes for it.
+             */
+            push: boolean;
+        };
+        /** IntegrationCapabilityResponse */
+        IntegrationCapabilityResponse: {
+            /**
+             * Capability
+             * @enum {string}
+             */
+            capability: "calendar" | "calendar_write" | "mail" | "files";
+            /** Purpose */
+            purpose: string;
+            /**
+             * Scopes
+             * @description The provider permissions requested for it.
+             */
+            scopes: string[];
+        };
+        /** IntegrationConflictListResponse */
+        IntegrationConflictListResponse: {
+            /** Conflicts */
+            conflicts: components["schemas"]["IntegrationConflictResponse"][];
+        };
+        /** IntegrationConflictResponse */
+        IntegrationConflictResponse: {
+            link: components["schemas"]["IntegrationLinkResponse"];
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "google" | "microsoft";
+            /** Account Email */
+            account_email: string;
+            /** @description The provider's version; `null` when it was deleted there. */
+            external: components["schemas"]["IntegrationConflictVersion"] | null;
+        };
+        /** IntegrationConflictVersion */
+        IntegrationConflictVersion: {
+            /** Title */
+            title: string;
+            /** Start */
+            start: string;
+            /** End */
+            end: string;
+            /** All Day */
+            all_day: boolean;
+            /** Location */
+            location: string;
+        };
+        /** IntegrationConnectionDetailResponse */
+        IntegrationConnectionDetailResponse: {
+            connection: components["schemas"]["IntegrationConnectionResponse"];
+            /** Resources */
+            resources: components["schemas"]["IntegrationCalendarResponse"][];
+            /** Runs */
+            runs: components["schemas"]["IntegrationSyncRunResponse"][];
+            /** Conflicts */
+            conflicts: number;
+            /** Imported Files */
+            imported_files: number;
+        };
+        /** IntegrationConnectionListResponse */
+        IntegrationConnectionListResponse: {
+            /** Connections */
+            connections: components["schemas"]["IntegrationConnectionResponse"][];
+        };
+        /** IntegrationConnectionResponse */
+        IntegrationConnectionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "google" | "microsoft";
+            /** Account Email */
+            account_email: string;
+            /** Display Name */
+            display_name: string;
+            /** Capabilities */
+            capabilities: ("calendar" | "calendar_write" | "mail" | "files")[];
+            /**
+             * Scopes
+             * @description Permissions the account granted.
+             */
+            scopes: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "reauth_required" | "error";
+            /** Mail Days */
+            mail_days: number;
+            /** Last Synced At */
+            last_synced_at: string | null;
+            /** Last Error */
+            last_error: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** IntegrationLinkResponse */
+        IntegrationLinkResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Connection Id
+             * Format: uuid
+             */
+            connection_id: string;
+            /**
+             * External Kind
+             * @enum {string}
+             */
+            external_kind: "event" | "message" | "file";
+            /** External Id */
+            external_id: string;
+            /**
+             * Entity Type
+             * @enum {string}
+             */
+            entity_type: "event" | "task" | "note" | "reminder" | "document";
+            /**
+             * Entity Id
+             * Format: uuid
+             */
+            entity_id: string;
+            /**
+             * Origin
+             * @enum {string}
+             */
+            origin: "external" | "orbit" | "linked";
+            /** Title */
+            title: string;
+            /** External Url */
+            external_url: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "synced" | "conflict" | "local_changes" | "update_available" | "missing" | "deleted_locally";
+            /** Conflict Kind */
+            conflict_kind: ("both_changed" | "deleted_remotely") | null;
+            /** Conflict Detected At */
+            conflict_detected_at: string | null;
+            /** Last Synced At */
+            last_synced_at: string | null;
+        };
+        /** IntegrationOriginListResponse */
+        IntegrationOriginListResponse: {
+            /** Origins */
+            origins: components["schemas"]["IntegrationOriginResponse"][];
+        };
+        /** IntegrationOriginResponse */
+        IntegrationOriginResponse: {
+            link: components["schemas"]["IntegrationLinkResponse"];
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "google" | "microsoft";
+            /** Account Email */
+            account_email: string;
+            /** Resource Name */
+            resource_name: string | null;
+            /**
+             * Two Way
+             * @description Whether Orbit changes to the record are sent back.
+             */
+            two_way: boolean;
+        };
+        /** IntegrationProviderListResponse */
+        IntegrationProviderListResponse: {
+            /** Providers */
+            providers: components["schemas"]["IntegrationProviderResponse"][];
+            /**
+             * Webhooks
+             * @description Whether providers push changes (else Orbit polls).
+             */
+            webhooks: boolean;
+        };
+        /** IntegrationProviderResponse */
+        IntegrationProviderResponse: {
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "google" | "microsoft";
+            /** Name */
+            name: string;
+            /**
+             * Configured
+             * @description Whether this server has an OAuth client for the provider.
+             */
+            configured: boolean;
+            /** Capabilities */
+            capabilities: components["schemas"]["IntegrationCapabilityResponse"][];
+        };
+        /**
+         * IntegrationRecordResponse
+         * @description A record created from an email.
+         */
+        IntegrationRecordResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "task" | "note" | "reminder";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+        };
+        /** IntegrationSyncRequest */
+        IntegrationSyncRequest: {
+            /** Resource Id */
+            resource_id?: string | null;
+        };
+        /** IntegrationSyncRunListResponse */
+        IntegrationSyncRunListResponse: {
+            /** Runs */
+            runs: components["schemas"]["IntegrationSyncRunResponse"][];
+        };
+        /** IntegrationSyncRunResponse */
+        IntegrationSyncRunResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Resource Id */
+            resource_id: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "calendar" | "files";
+            /**
+             * Trigger
+             * @enum {string}
+             */
+            trigger: "manual" | "scheduled" | "webhook" | "initial" | "retry";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "running" | "succeeded" | "partial" | "failed" | "cancelled";
+            /** Full */
+            full: boolean;
+            /** Imported */
+            imported: number;
+            /** Updated */
+            updated: number;
+            /** Deleted */
+            deleted: number;
+            /** Skipped */
+            skipped: number;
+            /** Conflicts */
+            conflicts: number;
+            /** Exported */
+            exported: number;
+            /** Failed */
+            failed: number;
+            /** Error */
+            error: string | null;
+            /** Attempts */
+            attempts: number;
+            /** Next Attempt At */
+            next_attempt_at: string | null;
+            /** Started At */
+            started_at: string | null;
+            /** Finished At */
+            finished_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** InvestmentAccountListResponse */
         InvestmentAccountListResponse: {
@@ -10366,6 +11279,22 @@ export interface components {
             /** Sets */
             sets?: components["schemas"]["SetRequest"][];
         };
+        /** MailLabelListResponse */
+        MailLabelListResponse: {
+            /** Labels */
+            labels: components["schemas"]["MailLabelResponse"][];
+        };
+        /** MailLabelResponse */
+        MailLabelResponse: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** System */
+            system: boolean;
+            /** Selected */
+            selected: boolean;
+        };
         /** MarkAllReadResponse */
         MarkAllReadResponse: {
             /**
@@ -10480,6 +11409,46 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** MessageDetailResponse */
+        MessageDetailResponse: {
+            message: components["schemas"]["MessageSummaryResponse"];
+            /** Recipients */
+            recipients: string[];
+            /**
+             * Body
+             * @description Plain text. HTML is reduced to its text, never rendered.
+             */
+            body: string;
+            /** Links */
+            links: components["schemas"]["IntegrationLinkResponse"][];
+        };
+        /** MessageListResponse */
+        MessageListResponse: {
+            /** Messages */
+            messages: components["schemas"]["MessageSummaryResponse"][];
+            /** Next Page */
+            next_page: string | null;
+        };
+        /** MessageSummaryResponse */
+        MessageSummaryResponse: {
+            /** Id */
+            id: string;
+            /** Thread Id */
+            thread_id: string | null;
+            /** Subject */
+            subject: string;
+            /** Sender */
+            sender: string;
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /** Snippet */
+            snippet: string;
+            /** Url */
+            url: string | null;
         };
         /** MilestoneResponse */
         MilestoneResponse: {
@@ -12216,6 +13185,31 @@ export interface components {
              */
             status: "open" | "completed";
         };
+        /** RemoteFileListResponse */
+        RemoteFileListResponse: {
+            /** Files */
+            files: components["schemas"]["RemoteFileResponse"][];
+            /** Next Page */
+            next_page: string | null;
+        };
+        /** RemoteFileResponse */
+        RemoteFileResponse: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Folder */
+            folder: boolean;
+            /** Mime Type */
+            mime_type: string;
+            /** Size */
+            size: number | null;
+            /** Modified At */
+            modified_at: string | null;
+            /** Url */
+            url: string | null;
+            imported: components["schemas"]["IntegrationLinkResponse"] | null;
+        };
         /** RenameAiConversationRequest */
         RenameAiConversationRequest: {
             /** Title */
@@ -12270,6 +13264,19 @@ export interface components {
             emi_amount?: number | null;
             /** Next Payment Date */
             next_payment_date?: string | null;
+        };
+        /** ResolveIntegrationConflictRequest */
+        ResolveIntegrationConflictRequest: {
+            /**
+             * Resolution
+             * @enum {string}
+             */
+            resolution: "keep_orbit" | "keep_external";
+        };
+        /** ResolveIntegrationConflictResponse */
+        ResolveIntegrationConflictResponse: {
+            /** @description `null` when the link no longer exists (deleted, or kept only in Orbit). */
+            link: components["schemas"]["IntegrationLinkResponse"] | null;
         };
         /** RoutineDetailResponse */
         RoutineDetailResponse: {
@@ -12568,6 +13575,11 @@ export interface components {
              * @description One group per module searched, in a fixed order, even when empty.
              */
             groups: components["schemas"]["SearchGroupResponse"][];
+        };
+        /** SelectLabelsRequest */
+        SelectLabelsRequest: {
+            /** Label Ids */
+            label_ids: string[];
         };
         /** SendAiMessageRequest */
         SendAiMessageRequest: {
@@ -14017,6 +15029,27 @@ export interface components {
             principal?: number | null;
             /** Interest */
             interest?: number | null;
+        };
+        /** UpdateIntegrationCalendarRequest */
+        UpdateIntegrationCalendarRequest: {
+            /** Enabled */
+            enabled?: boolean | null;
+            /** Direction */
+            direction?: ("import" | "two_way") | null;
+            /** Sync Interval Minutes */
+            sync_interval_minutes?: (0 | 15 | 30 | 60 | 360 | 1440) | null;
+            /** Category Id */
+            category_id?: string | null;
+            /**
+             * Clear Category
+             * @default false
+             */
+            clear_category: boolean;
+        };
+        /** UpdateIntegrationConnectionRequest */
+        UpdateIntegrationConnectionRequest: {
+            /** Mail Days */
+            mail_days?: (7 | 30 | 90 | 365) | null;
         };
         /**
          * UpdateInvestmentAccountRequest
@@ -33215,6 +34248,1435 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_providers_api_v1_workspaces__workspace_id__integrations_providers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationProviderListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    authorize_api_v1_workspaces__workspace_id__integrations_authorize_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthorizeIntegrationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthorizeIntegrationResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_connections_api_v1_workspaces__workspace_id__integrations_connections_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationConnectionListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_connection_api_v1_workspaces__workspace_id__integrations_connections__connection_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationConnectionDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disconnect_api_v1_workspaces__workspace_id__integrations_connections__connection_id__delete: {
+        parameters: {
+            query?: {
+                remove_imported?: boolean;
+            };
+            header?: never;
+            path: {
+                connection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisconnectIntegrationResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_connection_api_v1_workspaces__workspace_id__integrations_connections__connection_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateIntegrationConnectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationConnectionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_connection_api_v1_workspaces__workspace_id__integrations_connections__connection_id__check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationConnectionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_calendars_api_v1_workspaces__workspace_id__integrations_connections__connection_id__calendars_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationCalendarListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_calendar_api_v1_workspaces__workspace_id__integrations_connections__connection_id__calendars__resource_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+                resource_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateIntegrationCalendarRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationCalendarResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_event_api_v1_workspaces__workspace_id__integrations_connections__connection_id__calendars__resource_id__events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+                resource_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportEventRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationLinkResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_now_api_v1_workspaces__workspace_id__integrations_connections__connection_id__sync_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntegrationSyncRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationSyncRunListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_runs_api_v1_workspaces__workspace_id__integrations_connections__connection_id__runs_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                connection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationSyncRunListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_run_api_v1_workspaces__workspace_id__integrations_connections__connection_id__runs__run_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+                run_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationSyncRunResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retry_run_api_v1_workspaces__workspace_id__integrations_connections__connection_id__runs__run_id__retry_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+                run_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationSyncRunResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_conflicts_api_v1_workspaces__workspace_id__integrations_conflicts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationConflictListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_conflict_api_v1_workspaces__workspace_id__integrations_conflicts__link_id__resolve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                link_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveIntegrationConflictRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResolveIntegrationConflictResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_origins_api_v1_workspaces__workspace_id__integrations_origins_get: {
+        parameters: {
+            query: {
+                entity_type: "event" | "task" | "note" | "reminder" | "document";
+                entity_id: string;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationOriginListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_labels_api_v1_workspaces__workspace_id__integrations_connections__connection_id__mail_labels_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailLabelListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    select_labels_api_v1_workspaces__workspace_id__integrations_connections__connection_id__mail_labels_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SelectLabelsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailLabelListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_messages_api_v1_workspaces__workspace_id__integrations_connections__connection_id__mail_messages_get: {
+        parameters: {
+            query: {
+                label_id: string;
+                q?: string | null;
+                page?: string | null;
+            };
+            header?: never;
+            path: {
+                connection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_message_api_v1_workspaces__workspace_id__integrations_connections__connection_id__mail_messages__message_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+                message_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    task_from_message_api_v1_workspaces__workspace_id__integrations_connections__connection_id__mail_messages__message_id__task_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+                message_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationRecordResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    note_from_message_api_v1_workspaces__workspace_id__integrations_connections__connection_id__mail_messages__message_id__note_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+                message_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateNoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationRecordResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reminder_from_message_api_v1_workspaces__workspace_id__integrations_connections__connection_id__mail_messages__message_id__reminder_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+                message_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReminderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationRecordResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unlink_message_api_v1_workspaces__workspace_id__integrations_connections__connection_id__links__link_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+                link_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_files_api_v1_workspaces__workspace_id__integrations_connections__connection_id__files_get: {
+        parameters: {
+            query?: {
+                folder_id?: string | null;
+                q?: string | null;
+                page?: string | null;
+            };
+            header?: never;
+            path: {
+                connection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RemoteFileListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_file_api_v1_workspaces__workspace_id__integrations_connections__connection_id__files__file_id__import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+                file_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportFileRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportedFileResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_file_api_v1_workspaces__workspace_id__integrations_connections__connection_id__files_links__link_id__update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                connection_id: string;
+                link_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportedFileResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or connection) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_authorization_api_v1_integrations_oauth_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteAuthorizationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationConnectionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    google_webhook_api_v1_integrations_webhooks_google_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    microsoft_webhook_api_v1_integrations_webhooks_microsoft_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };

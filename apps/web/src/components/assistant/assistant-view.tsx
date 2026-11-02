@@ -7,36 +7,39 @@ import {
   CircleAlert,
   Cloud,
   HardDrive,
-  MessageSquarePlus,
-  MoreHorizontal,
+  PanelLeft,
+  Sparkles,
   Square,
+  SquarePen,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
+import {
+  type FormEvent,
+  type KeyboardEvent,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
-import { useConfirm } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
-import { Menu } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import {
   type PendingTurn,
   useAiSettings,
   useAssistantChat,
   useConversation,
-  useConversationMutations,
   useConversations,
 } from "@/hooks/use-ai";
 import { processingLabel, suggestedQuestions } from "@/lib/ai";
 import { settingsHref } from "@/lib/settings";
-import { cn } from "@/utils/common";
 
 import { Answer, Sources } from "./answer";
+import { ConversationDrawer, ConversationList } from "./conversation-list";
 import { InsightsPanel } from "./insights-panel";
 import { ProposalCard } from "./proposal-card";
-import { RenameDialog } from "./rename-dialog";
 
 /** The assistant page: conversations beside the open one. The open conversation is in the URL. */
 export function AssistantView() {
@@ -86,14 +89,20 @@ function SetupNotice({ settings }: { settings: AiSettings }) {
   );
 }
 
+/**
+ * A chat layout: past conversations in a rail on wide screens (a drawer on narrow ones) beside
+ * the open conversation, which reads in one centered column above a composer pinned to the bottom.
+ */
 function Assistant({ settings }: { settings: AiSettings }) {
   const params = useSearchParams();
   const router = useRouter();
+  const conversations = useConversations();
   const conversationId = params.get("c");
   const initialQuestion = params.get("q");
   // Changes only when the person opens a conversation or starts a new one, not when a new
   // conversation's first answer reports its ID, so a streaming answer isn't remounted away.
   const [chatKey, setChatKey] = useState(() => conversationId ?? "new");
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const show = (id: string | null) => {
     router.replace(id ? `/assistant?c=${encodeURIComponent(id)}` : "/assistant", { scroll: false });
@@ -103,107 +112,61 @@ function Assistant({ settings }: { settings: AiSettings }) {
     show(id);
   };
 
-  return (
-    <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
-      <ConversationList activeId={conversationId} onOpen={open} />
-      <Chat
-        key={chatKey}
-        conversationId={conversationId}
-        initialQuestion={conversationId ? null : initialQuestion}
-        settings={settings}
-        onConversation={show}
-      />
-    </div>
-  );
-}
-
-function ConversationList({
-  activeId,
-  onOpen,
-}: {
-  activeId: string | null;
-  onOpen: (id: string | null) => void;
-}) {
-  const conversations = useConversations();
-  const { rename, remove } = useConversationMutations();
-  const { confirm, confirmDialog } = useConfirm();
-  const [renaming, setRenaming] = useState<{ id: string; title: string } | null>(null);
+  const title =
+    (conversations.status === "success"
+      ? conversations.data.conversations.find((c) => c.id === conversationId)?.title
+      : undefined) ?? (conversationId ? "" : "New chat");
 
   return (
-    <nav aria-label="Conversations" className="space-y-2">
-      <Button variant="soft" className="w-full justify-start" onClick={() => onOpen(null)}>
-        <MessageSquarePlus aria-hidden="true" />
-        New conversation
-      </Button>
-      {conversations.status === "loading" ? (
-        <Skeleton className="h-24 w-full" />
-      ) : conversations.status === "error" ? (
-        <p role="alert" className="text-xs text-destructive">
-          {conversations.message}
-        </p>
-      ) : conversations.data.conversations.length === 0 ? (
-        <p className="px-2 text-xs text-muted-foreground">No conversations yet.</p>
-      ) : (
-        <ul className="space-y-0.5">
-          {conversations.data.conversations.map((conversation) => (
-            <li key={conversation.id} className="group flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => onOpen(conversation.id)}
-                aria-current={conversation.id === activeId ? "page" : undefined}
-                className={cn(
-                  "min-w-0 flex-1 truncate rounded-md px-2 py-1.5 text-left text-sm outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
-                  conversation.id === activeId && "bg-accent font-medium",
-                )}
-              >
-                {conversation.title}
-              </button>
-              <Menu
-                aria-label={`Options for ${conversation.title}`}
-                variant="ghost"
-                size="icon"
-                align="end"
-                className="size-7 opacity-60 group-hover:opacity-100"
-                items={[
-                  {
-                    id: "rename",
-                    label: "Rename",
-                    onSelect: () => setRenaming({ id: conversation.id, title: conversation.title }),
-                  },
-                  {
-                    id: "delete",
-                    label: "Delete",
-                    destructive: true,
-                    onSelect: () => {
-                      void confirm({
-                        title: "Delete this conversation?",
-                        description: "Its messages are deleted. Records created from it stay.",
-                        confirmLabel: "Delete",
-                        destructive: true,
-                      }).then((yes) => {
-                        if (!yes) return;
-                        remove.mutate(conversation.id);
-                        if (conversation.id === activeId) onOpen(null);
-                      });
-                    },
-                  },
-                ]}
-              >
-                <MoreHorizontal aria-hidden="true" />
-              </Menu>
-            </li>
-          ))}
-        </ul>
-      )}
-      {confirmDialog}
-      {renaming ? (
-        <RenameDialog
-          initialTitle={renaming.title}
-          onSave={(title) => rename.mutateAsync({ id: renaming.id, title })}
-          onClose={() => setRenaming(null)}
+    <div className="@container/assistant">
+      <div className="grid gap-8 @4xl/assistant:grid-cols-[15rem_minmax(0,1fr)] @7xl/assistant:grid-cols-[17rem_minmax(0,1fr)]">
+        <aside className="hidden min-w-0 @4xl/assistant:sticky @4xl/assistant:top-6 @4xl/assistant:block @4xl/assistant:max-h-[calc(100dvh-3rem)] @4xl/assistant:self-start @4xl/assistant:overflow-y-auto @4xl/assistant:p-0.5">
+          <ConversationList activeId={conversationId} onOpen={open} />
+        </aside>
+        <div className="flex min-w-0 flex-col">
+          <header className="flex min-h-9 items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="@4xl/assistant:hidden"
+              aria-label="Show conversations"
+              aria-haspopup="dialog"
+              onClick={() => setDrawerOpen(true)}
+            >
+              <PanelLeft aria-hidden="true" />
+            </Button>
+            <div className="min-w-0 flex-1 px-1">
+              {title ? (
+                <h2 className="truncate text-sm font-medium text-muted-foreground">{title}</h2>
+              ) : null}
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="@4xl/assistant:hidden"
+              aria-label="New chat"
+              onClick={() => open(null)}
+            >
+              <SquarePen aria-hidden="true" />
+            </Button>
+          </header>
+          <Chat
+            key={chatKey}
+            conversationId={conversationId}
+            initialQuestion={conversationId ? null : initialQuestion}
+            settings={settings}
+            onConversation={show}
+          />
+        </div>
+      </div>
+      {drawerOpen ? (
+        <ConversationDrawer
+          activeId={conversationId}
+          onOpen={open}
+          onClose={() => setDrawerOpen(false)}
         />
       ) : null}
-    </nav>
+    </div>
   );
 }
 
@@ -239,45 +202,59 @@ function Chat({
   const messages = detail.status === "success" ? detail.data.messages : [];
   const proposals = detail.status === "success" ? detail.data.proposals : [];
   const empty = conversationId === null && chat.pending === null;
+  const composer = (
+    <Composer
+      model={settings.chat_model}
+      streaming={chat.streaming}
+      onSend={(text) => void chat.send(text)}
+      onStop={chat.stop}
+    />
+  );
+
+  if (empty) {
+    return (
+      <Welcome settings={settings} onAsk={(question) => void chat.send(question)}>
+        {composer}
+      </Welcome>
+    );
+  }
 
   return (
-    <section aria-label="Conversation" className="flex min-h-[60vh] flex-col gap-4">
-      {empty ? (
-        <Welcome settings={settings} onAsk={(question) => void chat.send(question)} />
-      ) : detail.status === "loading" && conversationId !== null && chat.pending === null ? (
-        <Skeleton className="h-64 w-full rounded-xl" />
-      ) : detail.status === "error" ? (
-        <p role="alert" className="text-sm text-destructive">
-          {detail.message}
-        </p>
-      ) : (
-        <ol className="space-y-5" aria-live="polite" aria-busy={chat.streaming}>
-          {visibleMessages(messages, chat.pending).map((message) => (
-            <MessageItem key={message.id} message={message} proposals={proposals} />
-          ))}
-          {chat.pending ? <PendingItem pending={chat.pending} /> : null}
-          {chat.proposals
-            .filter((p) => !proposals.some((known) => known.id === p.id))
-            .map((proposal) => (
-              <li key={proposal.id}>
-                <ProposalCard proposal={proposal} />
-              </li>
+    <section aria-label="Conversation" className="flex min-h-[70dvh] flex-col">
+      <div className="mx-auto w-full max-w-3xl flex-1 pt-6 pb-8">
+        {detail.status === "loading" && conversationId !== null && chat.pending === null ? (
+          <div className="space-y-6">
+            <Skeleton className="ml-auto h-10 w-2/5 rounded-2xl" />
+            <Skeleton className="h-32 w-full rounded-xl" />
+          </div>
+        ) : detail.status === "error" ? (
+          <p role="alert" className="text-sm text-destructive">
+            {detail.message}
+          </p>
+        ) : (
+          <ol className="space-y-8" aria-live="polite" aria-busy={chat.streaming}>
+            {visibleMessages(messages, chat.pending).map((message) => (
+              <MessageItem key={message.id} message={message} proposals={proposals} />
             ))}
-        </ol>
-      )}
+            {chat.pending ? <PendingItem pending={chat.pending} /> : null}
+            {chat.proposals
+              .filter((p) => !proposals.some((known) => known.id === p.id))
+              .map((proposal) => (
+                <li key={proposal.id} className="pl-11">
+                  <ProposalCard proposal={proposal} />
+                </li>
+              ))}
+          </ol>
+        )}
+      </div>
+      {/* Pinned to the bottom of the screen; the fade lets the conversation scroll beneath it. */}
+      <div className="sticky bottom-0 bg-linear-to-t from-background from-70% to-transparent pt-6 pb-3">
+        <div className="mx-auto w-full max-w-3xl space-y-2">
+          {composer}
+          <Disclaimer />
+        </div>
+      </div>
       <div ref={endRef} />
-      <Composer
-        streaming={chat.streaming}
-        onSend={(text) => void chat.send(text)}
-        onStop={chat.stop}
-      />
-      <p className="text-xs text-muted-foreground">
-        Answers use only the modules you allow in{" "}
-        <Link href={settingsHref("ai")} className="text-brand hover:underline">
-          AI settings
-        </Link>
-        . Check important details against the sources.
-      </p>
     </section>
   );
 }
@@ -291,61 +268,104 @@ function visibleMessages(messages: AiMessage[], pending: PendingTurn | null): Ai
     : messages;
 }
 
-function Welcome({ settings, onAsk }: { settings: AiSettings; onAsk: (q: string) => void }) {
+function Disclaimer() {
+  return (
+    <p className="text-center text-xs text-pretty text-muted-foreground">
+      Answers use only the modules you allow in{" "}
+      <Link href={settingsHref("ai")} className="text-brand hover:underline">
+        AI settings
+      </Link>
+      , and nothing changes without your approval. Check important details against the sources.
+    </p>
+  );
+}
+
+/** A new chat: a greeting, the composer, and suggestions, centered like a blank page. */
+function Welcome({
+  settings,
+  onAsk,
+  children,
+}: {
+  settings: AiSettings;
+  onAsk: (q: string) => void;
+  /** The composer. */
+  children: ReactNode;
+}) {
   const questions = suggestedQuestions(settings.modules);
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h2 className="text-lg font-semibold">What would you like to know?</h2>
-        <p className="text-sm text-muted-foreground">
+    <section
+      aria-label="New chat"
+      className="mx-auto flex min-h-[70dvh] w-full max-w-3xl flex-col justify-center gap-8 py-10"
+    >
+      <div className="space-y-3 text-center">
+        <span className="mx-auto flex size-11 items-center justify-center rounded-2xl bg-brand-subtle text-brand">
+          <Sparkles className="size-5" aria-hidden="true" />
+        </span>
+        <h2 className="text-2xl font-semibold tracking-tight text-balance">
+          What would you like to know?
+        </h2>
+        <p className="mx-auto max-w-prose text-sm text-pretty text-muted-foreground">
           Ask about your tasks, schedule, notes, and anything else you’ve allowed. Orbit answers
           from your own records and shows where each fact came from.
         </p>
       </div>
-      {questions.length ? (
-        <ul className="grid gap-2 sm:grid-cols-2" aria-label="Suggested questions">
-          {questions.map((question) => (
-            <li key={question}>
-              <button
-                type="button"
-                onClick={() => onAsk(question)}
-                className="w-full rounded-xl border bg-card p-3 text-left text-sm shadow-elevation-1 outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                {question}
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      <div className="space-y-3">
+        {children}
+        {questions.length ? (
+          <ul className="flex flex-wrap justify-center gap-2" aria-label="Suggested questions">
+            {questions.map((question) => (
+              <li key={question}>
+                <button
+                  type="button"
+                  onClick={() => onAsk(question)}
+                  className="rounded-full border bg-card px-3.5 py-1.5 text-sm text-foreground/85 outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {question}
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
       <InsightsPanel />
+      <Disclaimer />
+    </section>
+  );
+}
+
+/** The assistant's side of the conversation: a small Orbit mark beside unboxed text. */
+function AssistantTurn({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex gap-3">
+      <span
+        aria-hidden="true"
+        className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-subtle text-brand"
+      >
+        <Sparkles className="size-4" />
+      </span>
+      <div className="min-w-0 flex-1 space-y-3">{children}</div>
     </div>
   );
 }
 
+function UserTurn({ text }: { text: string }) {
+  return (
+    <li className="flex justify-end">
+      <p className="max-w-[85%] rounded-3xl bg-muted px-4 py-2.5 text-sm whitespace-pre-wrap">
+        {text}
+      </p>
+    </li>
+  );
+}
+
 function MessageItem({ message, proposals }: { message: AiMessage; proposals: AiProposal[] }) {
-  if (message.role === "user") {
-    return (
-      <li className="flex justify-end">
-        <p className="max-w-[85%] rounded-2xl rounded-br-sm bg-brand-subtle px-4 py-2 text-sm whitespace-pre-wrap">
-          {message.content}
-        </p>
-      </li>
-    );
-  }
+  if (message.role === "user") return <UserTurn text={message.content} />;
   const own = proposals.filter((p) => p.message_id === message.id);
   return (
-    <li className="space-y-3">
-      <div
-        className={cn(
-          "space-y-3 rounded-2xl rounded-bl-sm border bg-card p-4 shadow-elevation-1",
-          message.status === "error" && "border-destructive/40",
-        )}
-      >
+    <li>
+      <AssistantTurn>
         {message.status === "error" ? (
-          <p role="alert" className="flex items-center gap-2 text-sm text-destructive">
-            <CircleAlert className="size-4" aria-hidden="true" />
-            {message.content}
-          </p>
+          <ErrorLine text={message.content} />
         ) : (
           <Answer id={message.id} text={message.content} citations={message.citations} />
         )}
@@ -353,17 +373,19 @@ function MessageItem({ message, proposals }: { message: AiMessage; proposals: Ai
           <p className="text-xs text-muted-foreground">Stopped before finishing.</p>
         ) : null}
         {message.status !== "error" ? (
-          <Sources id={message.id} citations={message.citations} />
+          <div className="rounded-xl border bg-card/60 p-2.5">
+            <Sources id={message.id} citations={message.citations} />
+          </div>
         ) : null}
         <ProviderLine
           name={message.provider_name}
           model={message.model}
           processing={message.processing}
         />
-      </div>
-      {own.map((proposal) => (
-        <ProposalCard key={proposal.id} proposal={proposal} />
-      ))}
+        {own.map((proposal) => (
+          <ProposalCard key={proposal.id} proposal={proposal} />
+        ))}
+      </AssistantTurn>
     </li>
   );
 }
@@ -371,35 +393,42 @@ function MessageItem({ message, proposals }: { message: AiMessage; proposals: Ai
 function PendingItem({ pending }: { pending: PendingTurn }) {
   return (
     <>
-      <li className="flex justify-end">
-        <p className="max-w-[85%] rounded-2xl rounded-br-sm bg-brand-subtle px-4 py-2 text-sm whitespace-pre-wrap">
-          {pending.question}
-        </p>
-      </li>
-      <li className="space-y-3 rounded-2xl rounded-bl-sm border bg-card p-4 shadow-elevation-1">
-        {pending.status === "error" ? (
-          <p role="alert" className="flex items-center gap-2 text-sm text-destructive">
-            <CircleAlert className="size-4" aria-hidden="true" />
-            {pending.error}
-          </p>
-        ) : pending.text ? (
-          <Answer id="pending" text={pending.text} citations={pending.citations} />
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            {pending.citations.length
-              ? `Reading ${pending.citations.length} source${pending.citations.length === 1 ? "" : "s"}…`
-              : "Thinking…"}
-          </p>
-        )}
-        {pending.provider ? (
-          <ProviderLine
-            name={pending.provider.name}
-            model={pending.provider.model}
-            processing={pending.provider.processing}
-          />
-        ) : null}
+      <UserTurn text={pending.question} />
+      <li>
+        <AssistantTurn>
+          {pending.status === "error" ? (
+            <ErrorLine text={pending.error} />
+          ) : pending.text ? (
+            <Answer id="pending" text={pending.text} citations={pending.citations} />
+          ) : (
+            <p className="animate-pulse py-1 text-sm text-muted-foreground">
+              {pending.citations.length
+                ? `Reading ${pending.citations.length} source${pending.citations.length === 1 ? "" : "s"}…`
+                : "Thinking…"}
+            </p>
+          )}
+          {pending.provider ? (
+            <ProviderLine
+              name={pending.provider.name}
+              model={pending.provider.model}
+              processing={pending.provider.processing}
+            />
+          ) : null}
+        </AssistantTurn>
       </li>
     </>
+  );
+}
+
+function ErrorLine({ text }: { text: string | null }) {
+  return (
+    <p
+      role="alert"
+      className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+    >
+      <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+      {text}
+    </p>
   );
 }
 
@@ -424,15 +453,25 @@ function ProviderLine({
 }
 
 function Composer({
+  model,
   streaming,
   onSend,
   onStop,
 }: {
+  model: string | null;
   streaming: boolean;
   onSend: (text: string) => void;
   onStop: () => void;
 }) {
   const [text, setText] = useState("");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // The composer moves from the centered new-chat screen to the bottom once a question is sent;
+  // keep typing where the person was. Skipped on touch screens, where it would raise the keyboard.
+  useEffect(() => {
+    if (window.matchMedia?.("(pointer: fine)").matches) inputRef.current?.focus();
+  }, []);
+
   const submit = (event?: FormEvent) => {
     event?.preventDefault();
     const question = text.trim();
@@ -449,12 +488,13 @@ function Composer({
   return (
     <form
       onSubmit={submit}
-      className="sticky bottom-4 flex items-end gap-2 rounded-2xl border bg-card p-2 shadow-elevation-2"
+      className="rounded-3xl border bg-card p-2 shadow-elevation-2 transition-[border-color,box-shadow] focus-within:border-ring/60 focus-within:ring-2 focus-within:ring-ring/20"
     >
       <label htmlFor="assistant-input" className="sr-only">
         Ask Orbit
       </label>
-      <Textarea
+      <textarea
+        ref={inputRef}
         id="assistant-input"
         value={text}
         onChange={(event) => setText(event.target.value)}
@@ -462,23 +502,36 @@ function Composer({
         placeholder="Ask about your tasks, schedule, notes…"
         rows={1}
         maxLength={4000}
-        className="max-h-40 min-h-9 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
+        className="block field-sizing-content max-h-60 min-h-11 w-full resize-none bg-transparent px-3 pt-2 text-base outline-none placeholder:text-muted-foreground sm:text-sm"
       />
-      {streaming ? (
-        <Button
-          type="button"
-          size="icon"
-          variant="outline"
-          onClick={onStop}
-          aria-label="Stop answering"
-        >
-          <Square aria-hidden="true" />
-        </Button>
-      ) : (
-        <Button type="submit" size="icon" aria-label="Send" disabled={!text.trim()}>
-          <ArrowUp aria-hidden="true" />
-        </Button>
-      )}
+      <div className="flex items-center justify-between gap-2 pl-3">
+        <span className="truncate text-xs text-muted-foreground">
+          {model ?? ""}
+          <span className="hidden sm:inline"> · Shift+Enter for a new line</span>
+        </span>
+        {streaming ? (
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            className="rounded-full"
+            onClick={onStop}
+            aria-label="Stop answering"
+          >
+            <Square className="size-3.5 fill-current" aria-hidden="true" />
+          </Button>
+        ) : (
+          <Button
+            type="submit"
+            size="icon"
+            className="rounded-full"
+            aria-label="Send"
+            disabled={!text.trim()}
+          >
+            <ArrowUp aria-hidden="true" />
+          </Button>
+        )}
+      </div>
     </form>
   );
 }
