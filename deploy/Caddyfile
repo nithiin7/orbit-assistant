@@ -1,0 +1,25 @@
+# Caddy reverse proxy for `docker compose --profile proxy`. Caddy obtains and renews TLS
+# certificates for {$DOMAIN} automatically (the domain's DNS must point at this server, and
+# ports 80 and 443 must be reachable). With DOMAIN=localhost it uses a local, self-signed CA.
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "DENY"
+		-Server
+	}
+
+	# The API serves everything under /api (including /api/v1/health). Server-sent events from
+	# the assistant are flushed as they arrive.
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+}

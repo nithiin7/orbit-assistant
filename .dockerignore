@@ -1,0 +1,46 @@
+# Keep the Docker build context small and free of local state and secrets. Both images build
+# from the repository root (see apps/api/Dockerfile and apps/web/Dockerfile).
+
+# VCS, editors, and tooling
+.git
+.github
+.husky
+.claude
+.cursor
+.vscode
+.idea
+.x
+**/.DS_Store
+
+# Dependencies and build output (installed or built fresh inside the image)
+**/node_modules
+**/.next
+**/.venv
+**/__pycache__
+**/*.py[cod]
+**/.ruff_cache
+**/.pytest_cache
+**/.pyright
+**/*.tsbuildinfo
+**/coverage
+
+# Local data and secrets: never bake these into an image
+**/.data
+**/*.sqlite
+**/*.sqlite-*
+**/*.sqlite3
+**/*.sqlite3-*
+**/*.db
+**/*.db-*
+**/.env
+**/.env.*
+!**/.env.example
+**/*.pem
+**/*.key
+
+# Not needed to build or run either app
+docs
+apps/api/tests
+**/*.test.ts
+**/*.test.tsx
+**/*.log
