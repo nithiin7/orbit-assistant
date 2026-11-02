@@ -3644,3 +3644,18 @@ Each step should leave the boundaries above intact.
 
 CI requires no secrets. API tests use temporary SQLite databases. The PostgreSQL tests are
 skipped unless `ORBIT_TEST_DATABASE_URL` is set.
+
+`.github/workflows/containers.yml` builds both container images and smoke-tests the Docker
+Compose stack (migrate, API, web) on every pull request. On pushes to `main` and `v*` tags it
+publishes multi-architecture images to the GitHub Container Registry, using only the workflow's
+own `GITHUB_TOKEN`.
+
+## Deployment
+
+Each app has a Dockerfile built from the repository root: `apps/api/Dockerfile` (uv, a
+non-editable install in a slim Python image, data in a `/data` volume) and `apps/web/Dockerfile`
+(Next.js `output: "standalone"`, so the image carries only traced dependencies). Both run as
+unprivileged users. `compose.yaml` runs a one-shot migration, then the API and web app, and an
+optional Caddy profile serves both on one HTTPS origin. Images change no application behavior:
+configuration still flows through `ORBIT_*` settings and `NEXT_PUBLIC_API_URL`, which is inlined
+at build time. Operator guide: [deployment.md](deployment.md).

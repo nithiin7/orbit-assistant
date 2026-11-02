@@ -1,0 +1,85 @@
+# Self-host Orbit with Docker Compose. Guide: docs/deployment.md
+#
+#   cp .env.example .env              # optional: adjust URLs, ports, and ORBIT_* settings
+#   docker compose up -d --build      # http://localhost:3000
+#
+# Behind HTTPS on your own domain (Caddy obtains certificates automatically):
+#
+#   docker compose --profile proxy up -d --build
+#
+# Values in `.env` are interpolated below and also passed to the API, which reads its ORBIT_*
+# settings from them. Data lives in the `orbit-data` volume; back it up (see the guide).
+
+name: orbit
+
+x-api: &api
+  build:
+    context: .
+    dockerfile: apps/api/Dockerfile
+  image: ${ORBIT_API_IMAGE:-orbit-api:local}
+  env_file:
+    - path: .env
+      required: false
+  environment:
+    # Browsers may call the API only from the web app's own origin.
+    ORBIT_CORS_ORIGINS: '["${PUBLIC_WEB_URL:-http://localhost:3000}"]'
+  volumes:
+    - orbit-data:/data
+
+services:
+  # Brings the database schema up to date, then exits. The API refuses to start on an
+  # unmigrated database, so it waits for this to succeed.
+  migrate:
+    <<: *api
+    command: ["migrate"]
+    restart: "no"
+
+  api:
+    <<: *api
+    command: ["api"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${API_PORT:-8000}:8000"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # Inlined into the browser bundle at build time: rebuild after changing it.
+        NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8000}
+    image: ${ORBIT_WEB_IMAGE:-orbit-web:local}
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${WEB_PORT:-3000}:3000"
+    restart: unless-stopped
+
+  # Optional HTTPS reverse proxy: one domain, `/api/*` to the API and everything else to the
+  # web app. Enable with `--profile proxy` and set DOMAIN, PUBLIC_WEB_URL, and PUBLIC_API_URL.
+  proxy:
+    image: caddy:2
+    profiles: [proxy]
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    depends_on:
+      - api
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    restart: unless-stopped
+
+volumes:
+  orbit-data:
+  caddy-data:
+  caddy-config:

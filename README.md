@@ -137,7 +137,7 @@ control.
 - Synchronization or data migration between local and cloud storage.
 - Autonomous AI agents, automation, or AI actions without your approval; OCR.
 - Push, email, SMS, or mobile notifications (reminders notify in the app only).
-- Containers or deployment infrastructure.
+- Managed hosting, Kubernetes manifests, or scaling beyond one API container in local mode.
 
 ## Architecture
 
@@ -171,9 +171,11 @@ See [docs/architecture.md](docs/architecture.md) for details and design decision
 │   ├── contracts/            # API contract: openapi.json + generated TS types
 │   ├── eslint-config/        # Shared ESLint flat config
 │   └── typescript-config/    # Shared tsconfig presets
-├── docs/                     # Architecture and development guides
-├── .github/                  # CI workflow, issue and PR templates
+├── deploy/                   # Caddy reverse proxy config for HTTPS
+├── docs/                     # Architecture, development, and deployment guides
+├── .github/                  # CI and container workflows, issue and PR templates
 ├── .husky/                   # Git hooks (pre-commit, commit-msg)
+├── compose.yaml              # Docker Compose: migrate, API, web, optional HTTPS proxy
 ├── package.json              # Root scripts and JS tooling
 ├── pnpm-workspace.yaml
 ├── pyproject.toml            # uv workspace root and shared Ruff config
@@ -203,6 +205,21 @@ pnpm dev                  # web on http://localhost:3000, API on http://localhos
 > [!TIP]
 > Check the API with `curl http://localhost:8000/api/v1/health`. Interactive API docs are
 > served at <http://localhost:8000/docs> outside production.
+
+## Self-hosting with Docker
+
+Run Orbit without installing Node.js or Python. Only Docker with the Compose plugin is needed:
+
+```bash
+cp .env.example .env            # optional; defaults work on localhost
+docker compose up -d --build    # migrates the database, then starts the API and web app
+```
+
+Open <http://localhost:3000>. Data lives in the `orbit-data` Docker volume. For HTTPS on your own
+domain, run `docker compose --profile proxy up -d --build` after setting `DOMAIN` and the public
+URLs in `.env`. Prebuilt images are published to the GitHub Container Registry. See
+[docs/deployment.md](docs/deployment.md) for configuration, published images, backups, and
+upgrades.
 
 ## Configuration
 
@@ -271,6 +288,7 @@ commit message. CI runs the full suite. See [CONTRIBUTING.md](CONTRIBUTING.md).
 | Database (local/cloud)  | ✅ In place    |
 | Accounts and workspaces | ✅ In place    |
 | CI                      | ✅ In place    |
+| Containers and deploy   | ✅ In place    |
 | Product features        | ⏳ Not started |
 | AI integration          | ✅ In place    |
 

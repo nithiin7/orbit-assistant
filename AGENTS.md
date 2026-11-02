@@ -84,16 +84,18 @@ describe or build on capabilities that do not exist.
 
 ## Repository map
 
-| Path                           | Responsibility                                                                   |
-| ------------------------------ | -------------------------------------------------------------------------------- |
-| `apps/web`                     | Next.js 16 App Router UI (React 19, strict TypeScript, Tailwind CSS v4)          |
-| `apps/api`                     | FastAPI service, Python 3.12, `src/orbit_api` package, uv-managed                |
-| `packages/contracts`           | API contract: `openapi.json` + TS types generated from the API's Pydantic models |
-| `packages/eslint-config`       | Shared ESLint flat config (`@orbit/eslint-config/next`)                          |
-| `packages/typescript-config`   | Shared strict tsconfig presets (`base.json`, `nextjs.json`)                      |
-| `docs/`                        | Architecture and development guides                                              |
-| `.github/workflows/ci.yml`     | CI: web, API, and commit-message jobs                                            |
-| `.husky/`, `.lintstagedrc.mjs` | Git hooks: staged-file lint/format and commitlint                                |
+| Path                                           | Responsibility                                                                   |
+| ---------------------------------------------- | -------------------------------------------------------------------------------- |
+| `apps/web`                                     | Next.js 16 App Router UI (React 19, strict TypeScript, Tailwind CSS v4)          |
+| `apps/api`                                     | FastAPI service, Python 3.12, `src/orbit_api` package, uv-managed                |
+| `packages/contracts`                           | API contract: `openapi.json` + TS types generated from the API's Pydantic models |
+| `packages/eslint-config`                       | Shared ESLint flat config (`@orbit/eslint-config/next`)                          |
+| `packages/typescript-config`                   | Shared strict tsconfig presets (`base.json`, `nextjs.json`)                      |
+| `docs/`                                        | Architecture, development, and deployment guides                                 |
+| `.github/workflows/ci.yml`                     | CI: web, API, and commit-message jobs                                            |
+| `.github/workflows/containers.yml`             | Build and smoke-test images; publish them to GHCR from `main` and `v*` tags      |
+| `apps/*/Dockerfile`, `compose.yaml`, `deploy/` | Container images, Compose stack, Caddy HTTPS proxy (`docs/deployment.md`)        |
+| `.husky/`, `.lintstagedrc.mjs`                 | Git hooks: staged-file lint/format and commitlint                                |
 
 Not present yet (planned; see `docs/architecture.md`): object storage for files, price providers,
 shared workspaces, end-to-end tests, and a `scripts/` directory. AI provider adapters live in
@@ -128,6 +130,7 @@ Run from the repository root. Setup: `pnpm install` (also installs Git hooks) an
 | Regenerate API contract | `pnpm contracts:generate`; verify with `pnpm contracts:check`     |
 | Apply DB migrations     | `pnpm db:migrate` (Alembic, against the configured database)      |
 | Reminder worker         | `pnpm worker` (standalone; the API also runs one by default)      |
+| Self-host in containers | `docker compose up -d --build` (see `docs/deployment.md`)         |
 
 Narrow commands, for fast iteration:
 
