@@ -30,3 +30,21 @@
     --scroll-fade-end: 1.5rem;
   }
 }
+
+/*
+ * The dashboard's compact density: tighter padding inside every widget's card. Widgets use the
+ * shared card spacing (`p-5` bodies, `px-5 py-4` headers), so this narrows those in one place
+ * rather than in each widget. Unlayered on purpose, so it overrides Tailwind's utilities layer;
+ * it only applies under the dashboard grid's `data-density="compact"`.
+ */
+[data-density="compact"] [data-slot="card"] .p-5 {
+  padding: calc(var(--spacing) * 3.5);
+}
+
+[data-density="compact"] [data-slot="card"] .px-5 {
+  padding-inline: calc(var(--spacing) * 3.5);
+}
+
+[data-density="compact"] [data-slot="card"] .py-4 {
+  padding-block: calc(var(--spacing) * 2.5);
+}

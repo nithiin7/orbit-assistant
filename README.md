@@ -109,6 +109,14 @@ control.
   targets, water, activity, and fitness goals with milestones. Metric or imperial units; health
   records are private to you. Optional links to habits (counting records toward them), workouts
   scheduled on the calendar with reminders, and notes and documents.
+- A daily dashboard as the landing page: a greeting and today's overview (events, tasks due
+  and overdue, habit progress, reminders, the next appointment), what needs attention (overdue
+  tasks, reminders, expiring documents, payments due), quick actions (task, note, event,
+  reminder, expense, workout, water, routine, upload) that open each module's own dialog, and
+  widgets for the agenda, tasks, habits and routines, notes, documents, finance, and opt-in
+  health. Widgets can be added, removed, reordered, and resized, with a compact density and a
+  setting to hide money amounts, saved to your account. The command palette searches tasks,
+  notes, events, documents, habits, and transactions at once, grouped by module.
 - Shared tooling for linting, formatting, type checking, testing, commit conventions, and CI.
 
 ### 🚫 Explicit non-goals for now

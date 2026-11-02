@@ -111,14 +111,7 @@ export function CalendarWidget() {
               variant="soft"
               size="sm"
               disabled={!workspaceId}
-              onClick={() =>
-                setCreating(
-                  newEventValues(timeZone, {
-                    date: today,
-                    minutes: Math.min(snap(minutesNow(timeZone) + 60, 30), 22 * 60),
-                  }),
-                )
-              }
+              onClick={() => setCreating(nextEventValues(timeZone))}
             >
               <CalendarPlus aria-hidden="true" />
               New event
@@ -218,7 +211,7 @@ export function CalendarWidget() {
         )}
       </Card>
       {creating && workspaceId ? (
-        <QuickCreate
+        <NewEventDialog
           workspaceId={workspaceId}
           initial={creating}
           categories={categories}
@@ -229,16 +222,27 @@ export function CalendarWidget() {
   );
 }
 
-function QuickCreate({
+/** A new event's starting values: today, about an hour from now on the half hour. */
+export function nextEventValues(timeZone: string): EventFormValues {
+  return newEventValues(timeZone, {
+    date: todayIn(timeZone),
+    minutes: Math.min(snap(minutesNow(timeZone) + 60, 30), 22 * 60),
+  });
+}
+
+/** Create an event in place, without opening the calendar. */
+export function NewEventDialog({
   workspaceId,
   initial,
   categories,
   onClose,
+  onCreated,
 }: {
   workspaceId: string;
   initial: EventFormValues;
   categories: Parameters<typeof EventDialog>[0]["categories"];
   onClose: () => void;
+  onCreated?: (title: string) => void;
 }) {
   const mutations = useCalendarMutations(workspaceId);
   return (
@@ -247,7 +251,11 @@ function QuickCreate({
       initial={initial}
       categories={categories}
       onSave={async (values) => {
-        await mutations.create.mutateAsync({ ...toEventRequest(values), status: "confirmed" });
+        const event = await mutations.create.mutateAsync({
+          ...toEventRequest(values),
+          status: "confirmed",
+        });
+        onCreated?.(event.title);
       }}
       onClose={onClose}
     />

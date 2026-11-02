@@ -102,14 +102,26 @@ class TaskListParams(BaseModel):
         default=None,
         description="`true` for tasks with a scheduled time, `false` for tasks without one.",
     )
+    due_from: date | None = Field(
+        default=None, description="Only tasks due on or after this date (inclusive)."
+    )
+    due_to: date | None = Field(
+        default=None, description="Only tasks due on or before this date (inclusive)."
+    )
     sort: TaskSort = "created_at"
     order: SortOrder | None = Field(
         default=None,
         description="Defaults to the sort's natural order: soonest due date, highest priority, "
-        "or newest. Tasks without a due date always come last.",
+        "newest, or most recently completed. Tasks without a due date always come last.",
     )
     limit: int = Field(default=100, ge=1, le=PAGE_MAX_SIZE)
     offset: int = Field(default=0, ge=0)
+
+    @model_validator(mode="after")
+    def _check_due_range(self) -> Self:
+        if self.due_from and self.due_to and self.due_to < self.due_from:
+            raise ValueError("due_to must not be before due_from")
+        return self
 
     def to_query(self) -> TaskQuery:
         return TaskQuery(
@@ -117,6 +129,8 @@ class TaskListParams(BaseModel):
             priorities=frozenset(self.priority),
             search=self.q,
             scheduled=self.scheduled,
+            due_from=self.due_from,
+            due_to=self.due_to,
             sort=self.sort,
             order=self.order,
             limit=self.limit,

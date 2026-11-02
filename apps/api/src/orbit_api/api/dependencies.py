@@ -46,6 +46,7 @@ from orbit_api.services.budgets.service import BudgetService
 from orbit_api.services.calendar.service import CalendarPreferenceService, CalendarService
 from orbit_api.services.commitments.service import CommitmentService
 from orbit_api.services.dashboard.service import DashboardService
+from orbit_api.services.dashboard.today import DailyOverviewService
 from orbit_api.services.documents.service import DocumentService
 from orbit_api.services.finance.service import FinanceService
 from orbit_api.services.fitness.overview import Fitness
@@ -61,6 +62,7 @@ from orbit_api.services.notes.service import NoteService
 from orbit_api.services.notifications.service import NotificationService
 from orbit_api.services.planning.service import PlanningService
 from orbit_api.services.reminders.service import ReminderService
+from orbit_api.services.search.service import SearchService
 from orbit_api.services.shopping.service import ShoppingService
 from orbit_api.services.tasks.service import TaskService
 from orbit_api.services.workspaces.service import WorkspaceService
@@ -301,3 +303,51 @@ def get_fitness(session: SessionDep, store: AttachmentStoreDep) -> Fitness:
 
 
 FitnessDep = Annotated[Fitness, Depends(get_fitness)]
+
+
+def get_daily_overview_service(
+    session: SessionDep,
+    tasks: TaskServiceDep,
+    calendar: CalendarServiceDep,
+    reminders: ReminderServiceDep,
+    habits: HabitServiceDep,
+    documents: DocumentServiceDep,
+    commitments: CommitmentServiceDep,
+) -> DailyOverviewService:
+    """The overview composes the modules' own services; it has no repository of its own."""
+    return DailyOverviewService(
+        tasks=tasks,
+        calendar=calendar,
+        reminders=reminders,
+        habits=habits,
+        documents=documents,
+        payments=commitments,
+        transaction=SqlTransaction(session),
+    )
+
+
+DailyOverviewServiceDep = Annotated[DailyOverviewService, Depends(get_daily_overview_service)]
+
+
+def get_search_service(
+    session: SessionDep,
+    tasks: TaskServiceDep,
+    notes: NoteServiceDep,
+    calendar: CalendarServiceDep,
+    documents: DocumentServiceDep,
+    habits: HabitServiceDep,
+    finance: FinanceServiceDep,
+) -> SearchService:
+    """Search composes the modules' own searches; there is no index."""
+    return SearchService(
+        tasks=tasks,
+        notes=notes,
+        events=calendar,
+        documents=documents,
+        habits=habits,
+        transactions=finance,
+        transaction=SqlTransaction(session),
+    )
+
+
+SearchServiceDep = Annotated[SearchService, Depends(get_search_service)]

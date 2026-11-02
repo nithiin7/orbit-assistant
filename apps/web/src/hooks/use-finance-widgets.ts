@@ -7,6 +7,7 @@ import type {
   MonthlySummary,
   NetWorth,
   PaymentItem,
+  SavingsGoal,
 } from "@orbit/contracts";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 
@@ -14,6 +15,7 @@ import { budgetMonthOptions } from "@/api/budgets";
 import { describeApiError } from "@/api/client";
 import { paymentsOptions } from "@/api/commitments";
 import { financeAccountsOptions, monthlySummaryOptions } from "@/api/finance";
+import { goalsOptions } from "@/api/goals";
 import { netWorthOptions } from "@/api/investments";
 import type { Resource } from "@/hooks/query-resource";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
@@ -138,4 +140,17 @@ export function useNetWorthWidget(): FinanceWidget<NetWorth> {
   );
   useWorkspaceNotFound(accounts.error ?? netWorth.error);
   return widget([accounts, netWorth], "Couldn’t load your net worth.", netWorth.data);
+}
+
+/** Active savings goals, those closest to their target date first. */
+export function useSavingsGoalsWidget(): FinanceWidget<SavingsGoal[]> {
+  const { withToken } = useAuth();
+  const { state } = useWorkspaces();
+  const workspaceId = state.status === "ready" ? state.active.id : null;
+  const goals = useQuery(goalsOptions(withToken, workspaceId, localDateString()));
+  useWorkspaceNotFound(goals.error);
+  const data = goals.data?.goals
+    .filter((goal) => goal.state === "active")
+    .sort((a, b) => (a.target_date ?? "9999").localeCompare(b.target_date ?? "9999"));
+  return widget([goals], "Couldn’t load your savings goals.", data);
 }

@@ -11,21 +11,28 @@ import {
   dashboardLayoutOptions,
   sendDashboardLayout,
 } from "@/api/dashboard";
+import { DASHBOARD_LAYOUT_SCOPE } from "@/api/query-client";
 import {
   clearDashboardLayout,
+  type DashboardPreferences,
   type DashboardWidget,
   defaultLayout,
+  defaultPreferences,
   hasStoredDashboardLayout,
   readDashboardLayout,
+  readDashboardPreferences,
   writeDashboardLayout,
 } from "@/lib/dashboard";
 import { useAuth } from "@/providers/auth";
 
 type DashboardLayoutState = {
   layout: DashboardWidget[];
+  preferences: DashboardPreferences;
   /** Show `next` at once, then save it to the user's account. */
   update: (next: DashboardWidget[]) => void;
-  /** Go back to the default layout, here and in the user's account. */
+  /** Change how the dashboard is shown, here and in the user's account. */
+  setPreferences: (next: DashboardPreferences) => void;
+  /** Go back to the default layout and display, here and in the user's account. */
   reset: () => void;
   /** Set when the last save failed; the layout still applies in this browser. */
   saveError: string | null;
@@ -33,37 +40,48 @@ type DashboardLayoutState = {
   retry: () => void;
 };
 
-const toWidgets = (saved: DashboardLayout) => saved.widgets.map(({ id, size }) => ({ id, size }));
+type Arrangement = { widgets: DashboardWidget[]; preferences: DashboardPreferences };
+
+const fromAccount = (saved: DashboardLayout): Arrangement => ({
+  widgets: saved.widgets.map(({ id, size }) => ({ id, size })),
+  preferences: { density: saved.density, hideAmounts: saved.hide_amounts },
+});
+
+const toRequest = ({ widgets, preferences }: Arrangement): DashboardLayoutChange => ({
+  kind: "save",
+  layout: { widgets, density: preferences.density, hide_amounts: preferences.hideAmounts },
+});
 
 /**
- * The signed-in user's dashboard layout. The account (API) is the source of truth; this
- * browser's copy shows the layout instantly while the API answers. A layout saved in this
- * browser before the account had one is uploaded once, so existing arrangements carry over.
+ * The signed-in user's dashboard layout and display preferences. The account (API) is the
+ * source of truth; this browser's copy shows the layout instantly while the API answers. A
+ * layout saved in this browser before the account had one is uploaded once, so existing
+ * arrangements carry over.
  */
 export function useDashboardLayout(userId: string): DashboardLayoutState {
   const { withToken } = useAuth();
   const queryClient = useQueryClient();
   const account = useQuery(dashboardLayoutOptions(withToken));
-  const [local, setLocal] = useState(() => readDashboardLayout(userId));
+  const [local, setLocal] = useState<Arrangement>(() => ({
+    widgets: readDashboardLayout(userId),
+    preferences: readDashboardPreferences(userId),
+  }));
   // Set once the user changes the layout, so a slow first load can't overwrite their change.
   const [changed, setChanged] = useState(false);
-  const fromAccount = useMemo(
-    () => (account.data ? toWidgets(account.data) : null),
-    [account.data],
-  );
-  const layout = !changed && fromAccount ? fromAccount : local;
+  const saved = useMemo(() => (account.data ? fromAccount(account.data) : null), [account.data]);
+  const current = !changed && saved ? saved : local;
 
   // Changes share a mutation scope, so they're sent one at a time in order. The whole layout is
   // sent each time, so a change that a newer one has overtaken is skipped rather than sent.
   const latest = useRef(0);
   const save = useMutation({
-    scope: { id: "dashboard-layout" },
+    scope: { id: DASHBOARD_LAYOUT_SCOPE },
     mutationFn: ({ change, version }: { change: DashboardLayoutChange; version: number }) =>
       version === latest.current
         ? sendDashboardLayout(withToken, change)
         : Promise.resolve(undefined),
-    onSuccess: (saved) => {
-      if (saved !== undefined) queryClient.setQueryData(dashboardKeys.layout(), saved);
+    onSuccess: (result) => {
+      if (result !== undefined) queryClient.setQueryData(dashboardKeys.layout(), result);
     },
   });
   const { mutate } = save;
@@ -77,8 +95,8 @@ export function useDashboardLayout(userId: string): DashboardLayoutState {
 
   // Keep this browser's copy in step with the account.
   useEffect(() => {
-    if (!changed && fromAccount) writeDashboardLayout(userId, fromAccount);
-  }, [changed, fromAccount, userId]);
+    if (!changed && saved) writeDashboardLayout(userId, saved.widgets, saved.preferences);
+  }, [changed, saved, userId]);
 
   // The account has no layout yet: upload the one arranged in this browser, once.
   const uploaded = useRef(false);
@@ -86,29 +104,39 @@ export function useDashboardLayout(userId: string): DashboardLayoutState {
     if (account.data !== null || changed || uploaded.current) return;
     if (!hasStoredDashboardLayout(userId)) return;
     uploaded.current = true;
-    send({ kind: "save", widgets: local });
+    send(toRequest(local));
   }, [account.data, changed, userId, local, send]);
 
-  const update = useCallback(
-    (next: DashboardWidget[]) => {
+  const apply = useCallback(
+    (next: Arrangement) => {
       setChanged(true);
       setLocal(next);
-      writeDashboardLayout(userId, next);
-      send({ kind: "save", widgets: next });
+      writeDashboardLayout(userId, next.widgets, next.preferences);
+      send(toRequest(next));
     },
     [userId, send],
   );
 
+  const update = useCallback(
+    (widgets: DashboardWidget[]) => apply({ widgets, preferences: current.preferences }),
+    [apply, current.preferences],
+  );
+
+  const setPreferences = useCallback(
+    (preferences: DashboardPreferences) => apply({ widgets: current.widgets, preferences }),
+    [apply, current.widgets],
+  );
+
   const reset = useCallback(() => {
     setChanged(true);
-    setLocal([...defaultLayout]);
+    setLocal({ widgets: [...defaultLayout], preferences: { ...defaultPreferences } });
     clearDashboardLayout(userId);
     send({ kind: "reset" });
   }, [userId, send]);
 
   const retry = useCallback(() => {
-    send(hasStoredDashboardLayout(userId) ? { kind: "save", widgets: layout } : { kind: "reset" });
-  }, [userId, layout, send]);
+    send(hasStoredDashboardLayout(userId) ? toRequest(current) : { kind: "reset" });
+  }, [userId, current, send]);
 
   const saveError = save.isError
     ? describeApiError(
@@ -117,5 +145,13 @@ export function useDashboardLayout(userId: string): DashboardLayoutState {
       )
     : null;
 
-  return { layout, update, reset, saveError, retry };
+  return {
+    layout: current.widgets,
+    preferences: current.preferences,
+    update,
+    setPreferences,
+    reset,
+    saveError,
+    retry,
+  };
 }

@@ -1,10 +1,19 @@
 "use client";
 
 import type { PaymentItem } from "@orbit/contracts";
-import { ArrowRight, CalendarClock, type LucideIcon, PiggyBank, Scale, Wallet } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarClock,
+  Goal,
+  type LucideIcon,
+  PiggyBank,
+  Scale,
+  Wallet,
+} from "lucide-react";
 import Link from "next/link";
 import { type ReactNode, useId } from "react";
 
+import { useAmounts } from "@/components/dashboard/amount-visibility";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,6 +24,7 @@ import {
   useBudgetWidget,
   useCashFlowWidget,
   useNetWorthWidget,
+  useSavingsGoalsWidget,
   useUpcomingPaymentsWidget,
 } from "@/hooks/use-finance-widgets";
 import { formatMoney } from "@/lib/finance";
@@ -25,11 +35,18 @@ import { formatCalendarDate, localDateString, monthLabel } from "@/utils/dates";
 import { UtilizationBar } from "./budget-parts";
 import { PaymentStatusBadge } from "./commitment-parts";
 
+/** Formats money, or hides it when the dashboard hides amounts. */
+function useMoney(): (...args: Parameters<typeof formatMoney>) => string {
+  const { show } = useAmounts();
+  return (...args) => show(formatMoney(...args));
+}
+
 /** How many payments the payments widget lists before summing up the rest. */
 const PAYMENTS_SHOWN = 5;
 
 /** This month's income, spending, and net, with account balances, for the dashboard. */
 export function CashFlowWidget() {
+  const money = useMoney();
   return (
     <WidgetCard title="This month" icon={Wallet} view="overview" {...useCashFlowWidget()}>
       {({ currency, summary, totals }) =>
@@ -40,20 +57,18 @@ export function CashFlowWidget() {
         ) : (
           <div className="space-y-4">
             <dl className="grid grid-cols-3 gap-3">
-              <Figure label="Income" value={formatMoney(summary.income, currency)} />
-              <Figure label="Spending" value={formatMoney(summary.net_expenses, currency)} />
+              <Figure label="Income" value={money(summary.income, currency)} />
+              <Figure label="Spending" value={money(summary.net_expenses, currency)} />
               <Figure
                 label="Net"
-                value={formatMoney(summary.net, currency, { signDisplay: "always" })}
+                value={money(summary.net, currency, { signDisplay: "always" })}
                 tone={summary.net < 0 ? "negative" : "default"}
               />
             </dl>
             {totals ? (
               <p className="text-xs text-muted-foreground tabular-nums">
-                {formatMoney(totals.assets, currency)} in accounts
-                {totals.liabilities !== 0
-                  ? ` · ${formatMoney(totals.liabilities, currency)} owed`
-                  : ""}
+                {money(totals.assets, currency)} in accounts
+                {totals.liabilities !== 0 ? ` · ${money(totals.liabilities, currency)} owed` : ""}
               </p>
             ) : null}
           </div>
@@ -84,6 +99,7 @@ export function UpcomingPaymentsWidget() {
 }
 
 function PaymentList({ payments }: { payments: PaymentItem[] }) {
+  const money = useMoney();
   const year = Number(localDateString().slice(0, 4));
   const rest = payments.length - PAYMENTS_SHOWN;
   return (
@@ -101,7 +117,7 @@ function PaymentList({ payments }: { payments: PaymentItem[] }) {
             <span className="text-sm tabular-nums">
               {payment.estimated ? <span className="sr-only">About </span> : null}
               {payment.estimated ? "≈ " : ""}
-              {formatMoney(payment.amount, payment.currency)}
+              {money(payment.amount, payment.currency)}
             </span>
             {payment.status === "upcoming" ? null : <PaymentStatusBadge status={payment.status} />}
           </li>
@@ -118,6 +134,7 @@ function PaymentList({ payments }: { payments: PaymentItem[] }) {
 
 /** How much of this month's budget is spent, for the dashboard. */
 export function BudgetWidget() {
+  const money = useMoney();
   return (
     <WidgetCard title="Budget" icon={PiggyBank} view="budgets" {...useBudgetWidget()}>
       {({ currency, month }) =>
@@ -128,8 +145,8 @@ export function BudgetWidget() {
         ) : month.total !== null && month.status ? (
           <div className="space-y-1.5">
             <p className="text-sm tabular-nums">
-              <span className="text-lg font-semibold">{formatMoney(month.spent, currency)}</span>{" "}
-              <span className="text-muted-foreground">of {formatMoney(month.total, currency)}</span>
+              <span className="text-lg font-semibold">{money(month.spent, currency)}</span>{" "}
+              <span className="text-muted-foreground">of {money(month.total, currency)}</span>
             </p>
             <UtilizationBar
               label="Monthly budget used"
@@ -143,8 +160,8 @@ export function BudgetWidget() {
               )}
             >
               {month.remaining !== null && month.remaining < 0
-                ? `${formatMoney(-month.remaining, currency)} over budget`
-                : `${formatMoney(month.remaining ?? 0, currency)} left`}
+                ? `${money(-month.remaining, currency)} over budget`
+                : `${money(month.remaining ?? 0, currency)} left`}
               {month.budgets_counted > 0
                 ? ` · ${month.budgets_within} of ${month.budgets_counted} on track`
                 : ""}
@@ -152,7 +169,7 @@ export function BudgetWidget() {
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            {formatMoney(month.spent, currency)} spent this month.
+            {money(month.spent, currency)} spent this month.
           </p>
         )
       }
@@ -162,6 +179,7 @@ export function BudgetWidget() {
 
 /** Assets, liabilities, and net worth today, for the dashboard. */
 export function NetWorthWidget() {
+  const money = useMoney();
   return (
     <WidgetCard title="Net worth" icon={Scale} view="net-worth" {...useNetWorthWidget()}>
       {(netWorth) =>
@@ -174,20 +192,49 @@ export function NetWorthWidget() {
             <dl className="grid grid-cols-2 gap-3">
               <Figure
                 label="Net worth"
-                value={formatMoney(netWorth.net_worth, netWorth.currency)}
+                value={money(netWorth.net_worth, netWorth.currency)}
                 tone={netWorth.net_worth < 0 ? "negative" : "default"}
                 className="col-span-2"
               />
-              <Figure label="Assets" value={formatMoney(netWorth.assets, netWorth.currency)} />
-              <Figure
-                label="Liabilities"
-                value={formatMoney(netWorth.liabilities, netWorth.currency)}
-              />
+              <Figure label="Assets" value={money(netWorth.assets, netWorth.currency)} />
+              <Figure label="Liabilities" value={money(netWorth.liabilities, netWorth.currency)} />
             </dl>
             <p className="text-xs text-muted-foreground">
               As of {formatCalendarDate(netWorth.as_of)}, in {netWorth.currency}.
             </p>
           </div>
+        )
+      }
+    </WidgetCard>
+  );
+}
+
+const GOALS_SHOWN = 4;
+
+/** Progress toward each active savings goal, for the dashboard. */
+export function SavingsGoalsWidget() {
+  const money = useMoney();
+  return (
+    <WidgetCard title="Savings goals" icon={Goal} view="goals" {...useSavingsGoalsWidget()}>
+      {(goals) =>
+        goals.length === 0 ? (
+          <EmptyMessage action="Set a goal" view="goals">
+            No active savings goals.
+          </EmptyMessage>
+        ) : (
+          <ul className="space-y-3" aria-label="Active savings goals">
+            {goals.slice(0, GOALS_SHOWN).map((goal) => (
+              <li key={goal.id} className="space-y-1">
+                <div className="flex items-baseline justify-between gap-3 text-sm">
+                  <span className="truncate">{goal.name}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                    {money(goal.saved, goal.currency)} of {money(goal.target_amount, goal.currency)}
+                  </span>
+                </div>
+                <UtilizationBar label={`${goal.name} progress`} percent={goal.progress_percent} />
+              </li>
+            ))}
+          </ul>
         )
       }
     </WidgetCard>

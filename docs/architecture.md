@@ -23,7 +23,8 @@ Browser ──► apps/web (Next.js, :3000) ──HTTP/JSON──► apps/api (F
   [tasks](#tasks), shopping lists, [reminders](#reminders-and-notifications), and
   [finance](#finance), [notes](#notes-and-knowledge-management), the
   [calendar](#calendar-and-events), [habits and routines](#habits-and-routines),
-  [documents](#documents-and-the-personal-vault), and [health and fitness](#health-and-fitness);
+  [documents](#documents-and-the-personal-vault), and [health and fitness](#health-and-fitness),
+  brought together by the [daily dashboard and command center](#daily-dashboard-and-command-center);
   the assistant stores nothing yet.
 
 The two apps communicate only over HTTP and share no runtime code. They share one thing: the
@@ -148,7 +149,8 @@ apps/web/src/
 │   ├── app-shell/       # Sidebar, mobile drawer, navigation links
 │   ├── auth/            # RequireAuth, sign-in and sign-up forms
 │   ├── avatar/          # UserAvatar
-│   ├── dashboard/       # Customizable dashboard grid and widgets without a module of their own
+│   ├── dashboard/       # Customizable dashboard grid, shared widget frame, Today, Needs attention, quick actions
+│   ├── quick-actions/   # Create or record from anywhere with each module's own dialog (dashboard, palette)
 │   ├── workspace/       # Workspace switcher, dashboard overview
 │   ├── tasks/           # Tasks page (composer, toolbar, list, edit dialog), dashboard summary
 │   ├── reminders/       # Reminders page (list, create/edit dialog), dashboard widget
@@ -221,6 +223,8 @@ apps/api/src/orbit_api/
 │       ├── notes.py     # Notes, folders, tags, links, tasks, journal, attachments
 │       ├── calendar.py  # Categories, events and occurrences, range, agenda, links, preferences
 │       ├── documents.py # Documents, uploads, versions, files, renewals, links, folders, export
+│       ├── dashboard.py # The daily overview: today across modules, section by section
+│       ├── search.py    # Search across tasks, notes, events, documents, habits, transactions
 │       └── notifications.py # The signed-in user's notifications: list, unread count, read state
 ├── auth/                # Adapters: Argon2 password hashing, Supabase JWT verification
 ├── system/              # Adapters: the OS file manager; the file store (attachments, documents); ZIPs
@@ -238,7 +242,7 @@ apps/api/src/orbit_api/
     ├── database.py      # `open_database()`: connect, verify schema, sessions, dispose
     ├── migrate.py       # Programmatic Alembic: upgrade, downgrade, head revision
     └── migrations/      # Alembic environment and versioned revisions
-        └── versions/    # 0001_baseline … 0015_create_documents
+        └── versions/    # 0001_baseline … 0017_add_dashboard_preferences
 ```
 
 Design decisions:
@@ -372,6 +376,9 @@ written once. SQLite is embedded in the API process; local mode needs no databas
   water entries, activities, goals and their progress, habit links, workout events, and links)
   with RLS; every top-level row carries an owning `user_id` (see
   [Health and fitness](#health-and-fitness)).
+- `0017_add_dashboard_preferences` adds `density` (with a CHECK constraint) and `hide_amounts` to
+  `dashboard_layouts`; existing layouts get the defaults (see
+  [Customization model](#customization-model)).
 - Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
   Startup only checks that the database is at the head revision. For a shared cloud database,
   schema changes should be deliberate and reviewable.
@@ -606,32 +613,9 @@ All rules live in `api/auth.py` and `services/workspaces/service.py`:
 
 ### Dashboard layout
 
-- The dashboard is a grid of widgets listed in `lib/dashboard/dashboard.ts` (workspace, Orbit status,
-  tasks, reminders, shopping, finance, planned modules). The finance widgets (this month's cash
-  flow, upcoming payments, budget, net worth; `components/finance/finance-widgets.tsx`) report in
-  the currency most of the active workspace's open accounts use, like the Finance page. **Customize** lets the user add, remove, reorder, and resize
-  them. Each widget is half or full width; half-width widgets sit side by side from the `xl`
-  breakpoint, and every widget is full width below it.
-- The layout is saved per user in the `dashboard_layouts` table: one row per user with an
-  ordered JSON list of `{ id, size }` widgets. It holds no data, only arrangement, and it
-  follows the user across browsers and devices.
-  - `GET /api/v1/me/dashboard` returns it, or 204 when the user hasn't arranged their
-    dashboard. `PUT` replaces it; `DELETE` resets to the default. Widget IDs and sizes are
-    enums in the contract (`DashboardWidgetId`, `DashboardWidgetSize`), so the web app's widget
-    list can't drift from what the API accepts. Unknown fields, unknown widgets, and repeats are
-    rejected (422). On read, stored widgets this version doesn't know are skipped, so retiring a
-    widget can't break the response.
-  - The web app (`hooks/use-dashboard-layout.ts`) caches the layout in `localStorage`
-    (`orbit:dashboard:<user id>`, validated on read) so the page shows it before the API answers.
-    The account copy (a TanStack Query, `["me", "dashboard"]`) wins when it loads, unless the user
-    has already changed the layout. A layout cached before the account had one is uploaded once.
-    Changes show at once and save in order, one request at a time (a shared mutation scope); a
-    change overtaken by a newer one is skipped, since each save sends the whole layout. Each save
-    updates the cached account copy, so returning to the dashboard can't show an older layout. A
-    failed save keeps the change in this browser and offers a retry.
-- Removed widgets are not rendered, so they make no API requests.
-- Reordering uses move-earlier/later buttons, not drag and drop, so it works from the keyboard.
-  Changes are announced through a polite status region, and focus is kept on the control.
+The dashboard's arrangement and display preferences are saved per user; see
+[Customization model](#customization-model). The dashboard itself is described under
+[Daily dashboard and command center](#daily-dashboard-and-command-center).
 
 ## Tasks
 
@@ -3044,6 +3028,206 @@ The OpenAPI document is the reference for fields.
 - The opt-in PostgreSQL suite covers the fitness SQL through the services; the HTTP tests run on
   SQLite.
 
+## Daily dashboard and command center
+
+The dashboard (`/`) is the landing page: one place to see and act on today across every
+module. It owns no data. Each widget reads its module's own API and changes records through
+that module's own mutations, so there is one source of truth and one set of rules per record.
+
+### Aggregation architecture
+
+```text
+Dashboard grid (apps/web, components/dashboard/)
+ ├─ Today, Needs attention ─► GET …/dashboard/today ─► DailyOverviewService
+ │                                                      ├─ TaskService.summarize / find
+ │                                                      ├─ CalendarService.range / agenda
+ │                                                      ├─ ReminderService.upcoming
+ │                                                      ├─ HabitService.today
+ │                                                      ├─ DocumentService.counts / find
+ │                                                      └─ CommitmentService.payments
+ ├─ Agenda, Tasks, Habits, Notes, Documents, Finance, Health widgets
+ │     └─ each module's existing endpoints (tasks list, calendar range, habits today, …)
+ └─ Quick actions ─► QuickActionsProvider ─► each module's own dialog and mutation
+```
+
+- **One lightweight aggregate, everything else reused.** Only the daily overview needed a new
+  endpoint: `GET /api/v1/workspaces/{workspace_id}/dashboard/today`
+  (`services/dashboard/today.py`). It depends on small protocols that the modules' existing
+  services already satisfy, and asks each for a bounded slice: counts, and at most five items.
+  It recomputes nothing a module already decides (overdue, habit states, expiry, payment
+  status); habits' "still to do" rule (`habit_is_remaining`) mirrors the web's `isRemaining`.
+- **Sections fail on their own.** Each section (`tasks`, `events`, `reminders`, `habits`,
+  `documents`, `payments`) loads inside a deliberate boundary: an exception is logged with its
+  traceback, the request's session is rolled back (so a failed statement can't poison the next
+  section on PostgreSQL), and the section is returned as `null` and listed in `unavailable`.
+  The rest of the overview still answers with 200.
+- **Sequential on the server, parallel in the browser.** Sections share the request's
+  `AsyncSession`, which can't run concurrent queries, so they run one after another (a handful
+  of indexed or bounded queries each). Parallelism comes from the browser: every widget is its
+  own TanStack Query, fetched concurrently, and widgets that need the same data share one
+  cached request (Today and Needs attention share the overview; the five health widgets share
+  the Health overview).
+- **Time zones.** "Today" is the user's date: the `timezone` parameter, else the profile's
+  time zone, else UTC. Overdue tasks are due before that date; reminders are pending when their
+  next occurrence is before the next local midnight; the next appointment is the first timed
+  occurrence that hasn't started, within 7 days. The web passes the viewer's zone (the profile
+  preference, else the browser's) everywhere, so the overview and the widgets agree.
+- **Storage modes.** The overview and search only call existing services, so they run
+  unchanged on SQLite and PostgreSQL.
+- **Small additions to modules, not copies.** Tasks gained `due_from` and `due_to` filters and a
+  `completed_at` sort (for Today, Upcoming, and Completed); habits gained
+  `HabitService.search`; the calendar widget's in-place event dialog is exported
+  (`NewEventDialog`) for quick actions; `useDocumentOverview` accepts a missing workspace.
+
+### Widget data contracts
+
+`TodayOverviewResponse` has `date`, `timezone`, `generated_at`, one object per section, and
+`unavailable`. `section=` (repeatable) loads only some sections.
+
+| Section     | Fields                                                                                    |
+| ----------- | ----------------------------------------------------------------------------------------- |
+| `tasks`     | `open`, `overdue`, `due_today`, and up to 5 `overdue_items` and `due_today_items` (tasks) |
+| `events`    | `today` (non-cancelled occurrences, all-day first) and `next` (an occurrence or `null`)   |
+| `reminders` | `pending` (counted over the soonest 50) and up to 5 items: id, title, time, task          |
+| `habits`    | `remaining`, `done`, `total`                                                              |
+| `documents` | `expired`, `expiring` (30 days), and up to 5 items with only id, title, and expiry date   |
+| `payments`  | `overdue`, `due_soon` (7 days), and up to 5 items: kind, name, due date, status           |
+
+Payments carry no amounts, documents no metadata beyond the expiry date, and the overview has
+no health data.
+
+The other widgets use existing contracts: tasks lists and summaries, calendar ranges and
+agenda, habits today and routines, notes lists, the documents overview and list, finance
+accounts, monthly summary, payments, budgets, savings goals, and net worth, and the Health
+overview and profile.
+
+| Widget          | Data                                                              | Interactions                                                          |
+| --------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Today           | Daily overview                                                    | Links to each module; refresh                                         |
+| Quick actions   | Routines (for the routine menu)                                   | Task, note, event, reminder, expense, workout, water, routine, upload |
+| Agenda          | Calendar range (today) and agenda                                 | Open an event or task; create an event in place                       |
+| Tasks           | One small task list per tab: Today, Priority, Upcoming, Completed | Add (due today from Today), complete, reopen, change priority, open   |
+| Habits          | Habits today, routines                                            | Check in, record amounts, skip, undo; start or continue a routine     |
+| Needs attention | Daily overview                                                    | Each item opens its module                                            |
+| Notes           | Notes list (recent, pinned, favorites), latest journal            | Quick note; open or write today's journal; open a note                |
+| Documents       | Documents overview; recent list on demand                         | Upload; open a document                                               |
+| Finance (5)     | Existing finance widgets, plus savings goals                      | Open the matching Finance view                                        |
+| Health (5)      | Health overview and profile                                       | Start or continue a workout, add water, open nutrition and body       |
+
+### Widget loading strategy
+
+- Each widget renders its own loading, error (with Try again), empty, and success states
+  (`WidgetBody`), so a failing module shows one card's error and nothing else.
+- Widgets removed from the layout are not rendered, so they make no requests. Tabs load only
+  the selected tab's list.
+- Query keys start with `["workspaces", workspaceId, …]`, so data is never shared across
+  workspaces, and the cache is cleared when the user changes.
+- **Invalidation.** Module mutations already refresh their own data. The overview and search
+  summarize other modules, so the query client marks them stale after every successful
+  mutation (`isSummaryQueryKey` in `api/query-client.ts`; dashboard layout saves are skipped).
+  Only those on screen refetch.
+- **No aggressive polling.** The overview refreshes every 5 minutes while the tab is visible,
+  so "today" and "overdue" roll over past midnight; Today has a manual refresh button.
+  Everything else uses the default 30-second stale time.
+
+### Customization model
+
+- The layout is one row per user in `dashboard_layouts`: an ordered JSON list of `{ id, size }`
+  widgets, plus `density` (`comfortable` or `compact`) and `hide_amounts`. It holds no workspace
+  data and is never shared with other users, so the same arrangement follows the user across
+  workspaces, browsers, and devices.
+  - `GET /api/v1/me/dashboard` returns it, or 204 when the user hasn't arranged their
+    dashboard. `PUT` replaces it (`density` and `hide_amounts` default to `comfortable` and
+    `false`); `DELETE` resets to the default. Widget IDs and sizes are enums in the contract
+    (`DashboardWidgetId`, `DashboardWidgetSize`, `DashboardDensity`). Unknown fields, unknown
+    widgets, repeats, and bad preferences are rejected (422). On read, stored widgets this
+    version doesn't know are skipped, so retiring a widget can't break the response.
+  - The web app (`hooks/use-dashboard-layout.ts`) caches the layout and preferences in
+    `localStorage` (`orbit:dashboard:<user id>`, validated on read) so the page shows them
+    before the API answers. The account copy (a TanStack Query, `["me", "dashboard"]`) wins when
+    it loads, unless the user has already changed something. A layout cached before the account
+    had one is uploaded once. Changes show at once and save in order, one request at a time (a
+    shared mutation scope); a change overtaken by a newer one is skipped, since each save sends
+    the whole layout. A failed save keeps the change in this browser and offers a retry.
+- **Customize** adds (grouped: Today, Plan and track, Money, Health, Orbit), removes, reorders
+  (move earlier/later buttons, so it works from the keyboard), and resizes widgets (narrow or
+  wide), sets the density, hides amounts, and resets to the default. Changes are announced
+  through a polite status region, and focus is kept on the control.
+- **Defaults** (`lib/dashboard/dashboard.ts`, `defaultVisible`): Today, Quick actions, Agenda,
+  Tasks, Habits, Needs attention, Notes, Documents, This month, and Budget. Health widgets,
+  net worth, upcoming payments, savings goals, reminders, shopping, and the Orbit widgets are
+  opt-in. Users with a saved layout keep it.
+- **Layout.** The page is a container (`@container/dashboard`): one column on phones (Today,
+  Quick actions, Agenda, and Tasks come first), two from `@3xl`, three from `110rem`. Narrow
+  widgets take one column, wide ones the whole row. Compact density tightens the grid gap and,
+  through one unlayered rule in `styles/utilities.css`, the shared card padding.
+- There is no free-form drag-and-drop builder or per-widget settings; a side panel layout is not
+  built (the grid's third column serves very wide screens).
+
+### Global command center
+
+The command palette (Cmd/Ctrl+K, `components/command-palette/`) now covers:
+
+- **Navigation:** every module (from `lib/navigation`), today's calendar and its views, Notes
+  views and folders, document views and categories, and the theme.
+- **Creation:** Create task, Create reminder, Record expense, Log workout, Record water, and
+  Start a routine (the "Create" group, through quick actions), alongside the existing New note,
+  Quick note, today's journal, Create event, meeting notes, and Upload document commands.
+- **Search:** as you type, after a 200 ms pause, one request to the workspace search; results
+  are grouped as Matching tasks, notes, events, documents, habits, and transactions, each opening
+  the record in its module. While a search runs the palette says "Searching…"; a failed search
+  shows a notice and leaves pages and actions working. Arrow keys, Enter, and Escape work as
+  before. The previous per-module palette searches (notes, events, documents) were replaced by
+  this single request.
+
+**Quick actions** (`components/quick-actions/quick-actions.tsx`, mounted in the app shell)
+are the one way both the dashboard and the palette create things: the Tasks quick-entry bar in a
+small dialog, the calendar's event dialog, the reminder dialog, the Finance transaction dialog
+(for an expense), quick capture, starting an empty workout, adding the person's first quick
+water amount, and the vault's upload. Nothing is created by new code paths.
+
+### Search composition
+
+`GET /api/v1/workspaces/{workspace_id}/search?q=&limit=&module=` (`services/search/`) runs each
+module's existing case-insensitive substring search, one after another on the request's
+session, and returns one group per module in a fixed order (`tasks`, `notes`, `events`,
+`documents`, `habits`, `transactions`), each with up to `limit` hits (default 5, at most 10)
+and the module's total. `q` must be 2 to 200 characters. A module that fails is logged, rolled
+back, and returned with `unavailable: true`. There is no index, no ranking across modules, and
+no semantic search.
+
+What each module matches is what it already matched: task titles and descriptions; note words
+in titles, text, tags, and folder names; event titles, descriptions, and places; document
+titles, descriptions, file names, issuers, providers, notes, tags, categories, and folders
+(never reference numbers or file contents); habit names; transaction descriptions and notes.
+
+### Privacy and authorization
+
+- Both new endpoints are workspace-scoped through `WorkspaceDep`: another user's workspace is
+  `404 Workspace not found.`, and every module call receives the authorized workspace ID.
+  Isolation is tested for the overview, search, and the per-user layout.
+- **Health data** is personal: the health widgets are opt-in and read the Health overview,
+  which the API scopes to the signed-in person, so shared workspaces in future wouldn't show one
+  person's health to another. Health records are not searched and not in the daily overview.
+- **Finance:** the overview and search carry no amounts. Hide money amounts replaces every
+  amount in the dashboard's finance widgets with dots (`HiddenAmountsProvider`); net worth is
+  opt-in. The Finance page itself is unchanged.
+- **Documents:** the overview returns only id, title, and expiry date; search hits carry only the
+  title and state. Opening a document goes through the vault's own routes.
+- Caching is per workspace and cleared on sign-out or user change; nothing is cached across
+  users or workspaces.
+
+### Dashboard limitations
+
+- Sections and modules are queried one after another on the server; at personal scale that is
+  tens of milliseconds, but the overview is not parallelized in the database.
+- Pending reminders are counted over the soonest 50 enabled reminders.
+- Transaction search hits open the Transactions view, not the transaction itself (Finance has
+  no per-transaction URL yet).
+- The old `TaskOverview` component (`components/tasks/task-overview.tsx`) is no longer used by
+  the dashboard; it is left in place for removal in a follow-up.
+- No end-to-end tests yet; widgets are covered by component tests with a mocked API.
+
 ## Configuration
 
 | App | Source                                                    | Validation                                    | Visibility  |
@@ -3060,16 +3244,16 @@ The OpenAPI document is the reference for fields.
 
 ## Testing strategy
 
-| Layer                    | Tool                                            | Location                                                                                                                        | Current coverage                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                                                                                      | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth, budgets, goals, plans, notes (views, autosave, Markdown, palette), calendar (views, dialogs, drag, scopes, palette), documents (views, uploads, details, links), health (units, forms, overview, workout logging, water, event workouts)                                         |
-| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                                                                                               | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, budgets, goals, plans, notes, calendar, documents (uploads, validation, versions, export, sweep), health and fitness (library, templates, workouts and sets, records, measurements, photos, nutrition, goals, habit, calendar, note, and document integrations, per-person privacy), cross-user isolation |
-| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_calendar_recurrence.py`, `tests/test_reminder_worker.py`, `tests/test_budget_alerts.py` | Recurrence, DST, month ends, leap years, exceptions; delivery, concurrency, leases, retries, restarts; event alerts; budget alerts and period closing                                                                                                                                                                                                                                                                              |
-| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                                                                                              | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                                                                                                                                                                                                                                                                                                       |
-| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                                                                                         | Startup checks, sessions, migrations, constraints, 503 errors                                                                                                                                                                                                                                                                                                                                                                      |
-| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                                                                                               | Migrations, connectivity, RLS, feature SQL; skipped by default                                                                                                                                                                                                                                                                                                                                                                     |
-| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                                                                                       | Generated contract matches the API                                                                                                                                                                                                                                                                                                                                                                                                 |
-| End-to-end               | Not set up (**planned**)                        | —                                                                                                                               | —                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Layer                    | Tool                                            | Location                                                                                                                        | Current coverage                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                                                                                      | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth, budgets, goals, plans, notes (views, autosave, Markdown, palette), calendar (views, dialogs, drag, scopes, palette), documents (views, uploads, details, links), health (units, forms, overview, workout logging, water, event workouts), dashboard (widgets, preferences, partial failures, quick actions, palette search)                                                           |
+| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                                                                                               | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, budgets, goals, plans, notes, calendar, documents (uploads, validation, versions, export, sweep), health and fitness (library, templates, workouts and sets, records, measurements, photos, nutrition, goals, habit, calendar, note, and document integrations, per-person privacy), daily overview (time zones, sections, partial failures), cross-module search, dashboard preferences, cross-user isolation |
+| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_calendar_recurrence.py`, `tests/test_reminder_worker.py`, `tests/test_budget_alerts.py` | Recurrence, DST, month ends, leap years, exceptions; delivery, concurrency, leases, retries, restarts; event alerts; budget alerts and period closing                                                                                                                                                                                                                                                                                                                                                                                   |
+| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                                                                                              | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                                                                                         | Startup checks, sessions, migrations, constraints, 503 errors                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                                                                                               | Migrations, connectivity, RLS, feature SQL; skipped by default                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                                                                                       | Generated contract matches the API                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| End-to-end               | Not set up (**planned**)                        | —                                                                                                                               | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 Unit tests cover logic, route tests cover HTTP behavior and validation, and E2E tests will cover
 critical user journeys once real features exist. CI runs every layer on each pull request.
@@ -3112,7 +3296,8 @@ Workspace-scoped [tasks](#tasks), [reminders](#reminders-and-notifications) (wit
 database-backed worker), and four phases of [finance](#finance) (ledger, commitments,
 [investments and net worth](#investments-and-net-worth-phase-3), and
 [budgets, savings goals, and planning](#budgets-savings-goals-and-planning-phase-4)), and
-[notes](#notes-and-knowledge-management), the [calendar](#calendar-and-events), [habits](#habits-and-routines), and [documents](#documents-and-the-personal-vault) are in place.
+[notes](#notes-and-knowledge-management), the [calendar](#calendar-and-events), [habits](#habits-and-routines), [documents](#documents-and-the-personal-vault), [health](#health-and-fitness), and the
+[daily dashboard and command center](#daily-dashboard-and-command-center) are in place.
 Next: more
 modules on the same pattern, AI-assisted features through the provider interface, then optional
 sync and extension points.

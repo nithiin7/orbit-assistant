@@ -2,9 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 
-import { calendarAgendaOptions, calendarEventListOptions } from "@/api/calendar";
+import { calendarAgendaOptions } from "@/api/calendar";
 import {
   useActiveWorkspaceId,
   useCalendarMutations,
@@ -20,36 +19,21 @@ export type CalendarCommand = {
   label: string;
   description?: string;
   keywords: readonly string[];
-  icon: "new" | "today" | "month" | "week" | "day" | "agenda" | "schedule" | "notes" | "event";
-  /** Found by the API's search; shown whatever the query. */
-  matched?: boolean;
+  icon: "new" | "today" | "month" | "week" | "day" | "agenda" | "schedule" | "notes";
   run: () => void;
 };
 
-const SEARCH_DELAY_MS = 200;
-
 /**
- * Calendar commands for the command palette: create, navigate, schedule tasks, meeting notes for
- * the next event, and live event search. Data loads only while the palette is open.
+ * Calendar commands for the command palette: create, navigate, schedule tasks, and meeting notes
+ * for the next event. Data loads only while the palette is open; matching events come from the
+ * workspace search.
  */
-export function useCalendarCommands(open: boolean, query: string): CalendarCommand[] {
+export function useCalendarCommands(open: boolean): CalendarCommand[] {
   const router = useRouter();
   const { withToken } = useAuth();
   const workspaceId = useActiveWorkspaceId();
   const timeZone = useViewerTimeZone();
   const mutations = useCalendarMutations(workspaceId ?? "");
-  const [search, setSearch] = useState("");
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setSearch(query.trim()), SEARCH_DELAY_MS);
-    return () => window.clearTimeout(timer);
-  }, [query]);
-
-  const searching = open && search.length >= 2;
-  const matches = useQuery({
-    ...calendarEventListOptions(withToken, workspaceId, { q: search, limit: 6 }),
-    enabled: searching,
-  });
   const next = useQuery({
     ...calendarAgendaOptions(withToken, workspaceId, { limit: 1, include_tasks: false }),
     enabled: open,
@@ -128,19 +112,6 @@ export function useCalendarCommands(open: boolean, query: string): CalendarComma
           );
       },
     });
-  }
-  if (searching && matches.data) {
-    for (const event of matches.data.events) {
-      commands.push({
-        id: `calendar-event-${event.id}`,
-        label: event.title,
-        description: `${formatCalendarDate(event.start.slice(0, 10))}${event.location ? ` · ${event.location}` : ""}`,
-        keywords: [],
-        icon: "event",
-        matched: true,
-        run: go(calendarHref({ view: "day", date: event.start.slice(0, 10) })),
-      });
-    }
   }
   return commands;
 }

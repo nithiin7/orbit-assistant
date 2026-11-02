@@ -4,10 +4,13 @@ import {
   addWidget,
   dashboardPreferenceKey,
   defaultLayout,
+  findWidget,
   hiddenWidgets,
   moveWidget,
   parseLayout,
+  parsePreferences,
   readDashboardLayout,
+  readDashboardPreferences,
   removeWidget,
   resizeWidget,
   widgetCatalog,
@@ -55,7 +58,7 @@ describe("parseLayout", () => {
           null,
         ]),
       ),
-    ).toEqual([{ id: "tasks", size: "full" }]);
+    ).toEqual([{ id: "tasks", size: findWidget("tasks").defaultSize }]);
   });
 
   it("keeps an empty dashboard empty", () => {
@@ -88,19 +91,14 @@ describe("layout changes", () => {
     const next = removeWidget(layout, "tasks");
 
     expect(next).toEqual([{ id: "shopping", size: "half" }]);
-    expect(hiddenWidgets(next).map((widget) => widget.id)).toEqual([
-      "workspace",
-      "status",
-      "tasks",
-      "reminders",
-      "calendar",
-      "cash_flow",
-      "upcoming_payments",
-      "budget",
-      "net_worth",
-      "modules",
-    ]);
-    expect(hiddenWidgets(defaultLayout)).toEqual([]);
+    const hidden = hiddenWidgets(next).map((widget) => widget.id);
+    expect(hidden).toContain("tasks");
+    expect(hidden).not.toContain("shopping");
+    expect(hidden).toEqual(widgetIds.filter((id) => id !== "shopping"));
+    // Opt-in widgets are hidden on a new dashboard: health data and the most sensitive money.
+    expect(hiddenWidgets(defaultLayout).map((widget) => widget.id)).toEqual(
+      widgetCatalog.filter((widget) => !widget.defaultVisible).map((widget) => widget.id),
+    );
     expect(hiddenWidgets([])).toEqual(widgetCatalog);
   });
 
@@ -129,5 +127,43 @@ describe("layout changes", () => {
 describe("widgetCatalog", () => {
   it("describes every widget the API accepts, once", () => {
     expect(widgetCatalog.map((widget) => widget.id)).toEqual(widgetIds);
+  });
+
+  it("starts new dashboards with today first and keeps health and net worth opt-in", () => {
+    expect(defaultLayout.slice(0, 4).map((widget) => widget.id)).toEqual([
+      "today",
+      "quick_actions",
+      "calendar",
+      "tasks",
+    ]);
+    const shown = new Set(defaultLayout.map((widget) => widget.id));
+    for (const id of ["workouts", "water", "nutrition", "weight", "fitness_goals", "net_worth"]) {
+      expect(shown.has(id as never)).toBe(false);
+    }
+  });
+});
+
+describe("display preferences", () => {
+  it("default to comfortable with amounts shown", () => {
+    expect(parsePreferences(null)).toEqual({ density: "comfortable", hideAmounts: false });
+    expect(parsePreferences("not json")).toEqual({ density: "comfortable", hideAmounts: false });
+    expect(parsePreferences(JSON.stringify({ density: "tiny", hideAmounts: "yes" }))).toEqual({
+      density: "comfortable",
+      hideAmounts: false,
+    });
+  });
+
+  it("are stored with the layout, per user", () => {
+    writeDashboardLayout("user-a", [{ id: "tasks", size: "half" }], {
+      density: "compact",
+      hideAmounts: true,
+    });
+
+    expect(readDashboardPreferences("user-a")).toEqual({ density: "compact", hideAmounts: true });
+    expect(readDashboardPreferences("user-b")).toEqual({
+      density: "comfortable",
+      hideAmounts: false,
+    });
+    expect(readDashboardLayout("user-a")).toEqual([{ id: "tasks", size: "half" }]);
   });
 });

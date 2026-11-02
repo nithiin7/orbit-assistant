@@ -52,6 +52,28 @@ export type DashboardLayoutRequest = Schemas["DashboardLayoutRequest"];
 export type DashboardWidget = Schemas["DashboardWidgetModel"];
 export type DashboardWidgetId = DashboardWidget["id"];
 export type DashboardWidgetSize = DashboardWidget["size"];
+export type DashboardDensity = DashboardLayout["density"];
+export type TodayOverview = Schemas["TodayOverviewResponse"];
+export type TodayOverviewSection = TodayOverview["unavailable"][number];
+export type TodayOverviewQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/dashboard/today"]["get"]["parameters"]["query"]
+>;
+export type OverviewTasks = Schemas["OverviewTasksResponse"];
+export type OverviewEvents = Schemas["OverviewEventsResponse"];
+export type OverviewReminders = Schemas["OverviewRemindersResponse"];
+export type OverviewReminder = Schemas["OverviewReminderResponse"];
+export type OverviewHabits = Schemas["OverviewHabitsResponse"];
+export type OverviewDocuments = Schemas["OverviewDocumentsResponse"];
+export type OverviewDocument = Schemas["OverviewDocumentResponse"];
+export type OverviewPayments = Schemas["OverviewPaymentsResponse"];
+export type OverviewPayment = Schemas["OverviewPaymentResponse"];
+export type SearchResults = Schemas["SearchResponse"];
+export type SearchGroup = Schemas["SearchGroupResponse"];
+export type SearchHit = Schemas["SearchHitResponse"];
+export type SearchModule = SearchGroup["module"];
+export type SearchQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/search"]["get"]["parameters"]["query"]
+>;
 export type Reminder = Schemas["ReminderResponse"];
 export type ReminderStatus = Reminder["status"];
 export type ReminderList = Schemas["ReminderListResponse"];

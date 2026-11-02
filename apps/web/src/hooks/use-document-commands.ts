@@ -2,7 +2,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 
 import { documentCategoriesOptions, documentListOptions } from "@/api/documents";
 import { useActiveWorkspaceId } from "@/hooks/use-calendar";
@@ -15,35 +14,22 @@ export type DocumentCommand = {
   description?: string;
   keywords: readonly string[];
   icon: "upload" | "search" | "expiring" | "category" | "document";
-  /** Found by the API's search; shown whatever the query. */
+  /** Shown whatever the query, like the offer to search for it. */
   matched?: boolean;
   /** Recently opened documents, shown in their own group. */
   recent?: boolean;
   run: () => void;
 };
 
-const SEARCH_DELAY_MS = 200;
-
 /**
- * Documents commands for the command palette: upload, search, what's expiring, categories,
- * recent documents, and live search by name. Data loads only while the palette is open.
+ * Documents commands for the command palette: upload, search, what's expiring, categories, and
+ * recent documents. Data loads only while the palette is open; matching documents come from the
+ * workspace search.
  */
 export function useDocumentCommands(open: boolean, query: string): DocumentCommand[] {
   const router = useRouter();
   const { withToken } = useAuth();
   const workspaceId = useActiveWorkspaceId();
-  const [search, setSearch] = useState("");
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setSearch(query.trim()), SEARCH_DELAY_MS);
-    return () => window.clearTimeout(timer);
-  }, [query]);
-
-  const searching = open && search.length >= 2;
-  const matches = useQuery({
-    ...documentListOptions(withToken, workspaceId, { q: search, limit: 6, sort: "title" }),
-    enabled: searching,
-  });
   const recent = useQuery({
     ...documentListOptions(withToken, workspaceId, { sort: "recent", limit: 5 }),
     enabled: open,
@@ -90,19 +76,6 @@ export function useDocumentCommands(open: boolean, query: string): DocumentComma
       matched: true,
       run: go(documentsHref({ view: "all", search: text })),
     });
-  }
-  if (searching) {
-    for (const document of matches.data?.documents ?? []) {
-      commands.push({
-        id: `documents-match-${document.id}`,
-        label: document.title,
-        description: "Document",
-        keywords: [],
-        icon: "document",
-        matched: true,
-        run: go(documentsHref({ documentId: document.id })),
-      });
-    }
   }
   for (const document of recent.data?.documents ?? []) {
     commands.push({

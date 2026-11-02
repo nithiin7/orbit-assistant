@@ -1044,6 +1044,44 @@
             "description": "`true` for tasks with a scheduled time, `false` for tasks without one."
           },
           {
+            "name": "due_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tasks due on or after this date (inclusive).",
+              "title": "Due From"
+            },
+            "description": "Only tasks due on or after this date (inclusive)."
+          },
+          {
+            "name": "due_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tasks due on or before this date (inclusive).",
+              "title": "Due To"
+            },
+            "description": "Only tasks due on or before this date (inclusive)."
+          },
+          {
             "name": "sort",
             "in": "query",
             "required": false,
@@ -1051,7 +1089,8 @@
               "enum": [
                 "due_date",
                 "priority",
-                "created_at"
+                "created_at",
+                "completed_at"
               ],
               "type": "string",
               "default": "created_at",
@@ -1075,10 +1114,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Defaults to the sort's natural order: soonest due date, highest priority, or newest. Tasks without a due date always come last.",
+              "description": "Defaults to the sort's natural order: soonest due date, highest priority, newest, or most recently completed. Tasks without a due date always come last.",
               "title": "Order"
             },
-            "description": "Defaults to the sort's natural order: soonest due date, highest priority, or newest. Tasks without a due date always come last."
+            "description": "Defaults to the sort's natural order: soonest due date, highest priority, newest, or most recently completed. Tasks without a due date always come last."
           },
           {
             "name": "limit",
@@ -25702,6 +25741,207 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/dashboard/today": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "What needs attention today, across modules",
+        "description": "Counts and the first few items from tasks, the calendar, reminders, habits, documents,\nand payments, for today in the user's time zone. A module that fails to load is listed in\n`unavailable` and the rest still answer. Amounts and health data are never included.",
+        "operationId": "today_api_v1_workspaces__workspace_id__dashboard_today_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Where today is. Defaults to the user's preference, else UTC.",
+              "title": "Timezone"
+            },
+            "description": "Where today is. Defaults to the user's preference, else UTC."
+          },
+          {
+            "name": "section",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "tasks",
+                  "events",
+                  "reminders",
+                  "habits",
+                  "documents",
+                  "payments"
+                ],
+                "type": "string"
+              },
+              "description": "Repeat to load only some sections, to refresh one widget. Omit for all.",
+              "title": "Section"
+            },
+            "description": "Repeat to load only some sections, to refresh one widget. Omit for all."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodayOverviewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/search": {
+      "get": {
+        "tags": [
+          "search"
+        ],
+        "summary": "Search tasks, notes, events, documents, habits, and transactions",
+        "description": "Each module's own substring search, grouped by module. Hits carry titles and an\nidentifying line only: no amounts, document metadata, or document contents. Health\nrecords are not searched.",
+        "operationId": "search_api_v1_workspaces__workspace_id__search_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 200,
+              "description": "Text to find; at least 2 characters.",
+              "title": "Q"
+            },
+            "description": "Text to find; at least 2 characters."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 10,
+              "minimum": 1,
+              "description": "Hits per module.",
+              "default": 5,
+              "title": "Limit"
+            },
+            "description": "Hits per module."
+          },
+          {
+            "name": "module",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "tasks",
+                  "notes",
+                  "events",
+                  "documents",
+                  "habits",
+                  "transactions"
+                ],
+                "type": "string"
+              },
+              "description": "Repeat to search only some modules. Omit for all.",
+              "title": "Module"
+            },
+            "description": "Repeat to search only some modules. Omit for all."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/storage": {
       "get": {
         "tags": [
@@ -30479,9 +30719,25 @@
               "$ref": "#/components/schemas/DashboardWidgetModel"
             },
             "type": "array",
-            "maxItems": 11,
+            "maxItems": 23,
             "title": "Widgets",
             "description": "The widgets to show, in order. Each widget may appear once; an empty list is an empty dashboard."
+          },
+          "density": {
+            "type": "string",
+            "enum": [
+              "comfortable",
+              "compact"
+            ],
+            "title": "Density",
+            "description": "`compact` tightens spacing so more fits on screen.",
+            "default": "comfortable"
+          },
+          "hide_amounts": {
+            "type": "boolean",
+            "title": "Hide Amounts",
+            "description": "Hide money amounts on the dashboard, shown as dots instead.",
+            "default": false
           }
         },
         "additionalProperties": false,
@@ -30500,6 +30756,18 @@
             "type": "array",
             "title": "Widgets"
           },
+          "density": {
+            "type": "string",
+            "enum": [
+              "comfortable",
+              "compact"
+            ],
+            "title": "Density"
+          },
+          "hide_amounts": {
+            "type": "boolean",
+            "title": "Hide Amounts"
+          },
           "updated_at": {
             "type": "string",
             "format": "date-time",
@@ -30509,6 +30777,8 @@
         "type": "object",
         "required": [
           "widgets",
+          "density",
+          "hide_amounts",
           "updated_at"
         ],
         "title": "DashboardLayoutResponse"
@@ -30518,16 +30788,28 @@
           "id": {
             "type": "string",
             "enum": [
+              "today",
+              "quick_actions",
+              "attention",
               "workspace",
               "status",
               "tasks",
               "reminders",
               "calendar",
+              "habits",
+              "notes",
+              "documents",
               "shopping",
               "cash_flow",
               "upcoming_payments",
               "budget",
               "net_worth",
+              "savings_goals",
+              "workouts",
+              "water",
+              "nutrition",
+              "weight",
+              "fitness_goals",
               "modules"
             ],
             "title": "Id"
@@ -38739,6 +39021,292 @@
         ],
         "title": "OccurrenceResponse"
       },
+      "OverviewDocumentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "expiry_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Expiry Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "expiry_date"
+        ],
+        "title": "OverviewDocumentResponse",
+        "description": "Only what identifies a document and when it expires: no other metadata."
+      },
+      "OverviewDocumentsResponse": {
+        "properties": {
+          "expired": {
+            "type": "integer",
+            "title": "Expired"
+          },
+          "expiring": {
+            "type": "integer",
+            "title": "Expiring",
+            "description": "Expiring in the next 30 days."
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OverviewDocumentResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Expired (most recent first), then the soonest to expire; at most 5."
+          }
+        },
+        "type": "object",
+        "required": [
+          "expired",
+          "expiring",
+          "items"
+        ],
+        "title": "OverviewDocumentsResponse"
+      },
+      "OverviewEventsResponse": {
+        "properties": {
+          "today": {
+            "items": {
+              "$ref": "#/components/schemas/OccurrenceResponse"
+            },
+            "type": "array",
+            "title": "Today",
+            "description": "Today's occurrences that aren't cancelled: all-day ones first, then by start."
+          },
+          "next": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OccurrenceResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The next timed occurrence that hasn't started, within 7 days."
+          }
+        },
+        "type": "object",
+        "required": [
+          "today",
+          "next"
+        ],
+        "title": "OverviewEventsResponse"
+      },
+      "OverviewHabitsResponse": {
+        "properties": {
+          "remaining": {
+            "type": "integer",
+            "title": "Remaining",
+            "description": "Habits still to do today."
+          },
+          "done": {
+            "type": "integer",
+            "title": "Done",
+            "description": "Habits done today, including extra days."
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "remaining",
+          "done",
+          "total"
+        ],
+        "title": "OverviewHabitsResponse"
+      },
+      "OverviewPaymentResponse": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "loan",
+              "subscription",
+              "bill"
+            ],
+            "title": "Kind"
+          },
+          "commitment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Commitment Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Due Date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "upcoming",
+              "due",
+              "overdue",
+              "paid",
+              "skipped"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "commitment_id",
+          "name",
+          "due_date",
+          "status"
+        ],
+        "title": "OverviewPaymentResponse",
+        "description": "A payment falling due. Amounts are left out: the Finance page shows them."
+      },
+      "OverviewPaymentsResponse": {
+        "properties": {
+          "overdue": {
+            "type": "integer",
+            "title": "Overdue"
+          },
+          "due_soon": {
+            "type": "integer",
+            "title": "Due Soon",
+            "description": "Unsettled payments due in the next 7 days."
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OverviewPaymentResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Overdue first; at most 5."
+          }
+        },
+        "type": "object",
+        "required": [
+          "overdue",
+          "due_soon",
+          "items"
+        ],
+        "title": "OverviewPaymentsResponse"
+      },
+      "OverviewReminderResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "next_occurrence_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Next Occurrence At"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "next_occurrence_at",
+          "task_id"
+        ],
+        "title": "OverviewReminderResponse"
+      },
+      "OverviewRemindersResponse": {
+        "properties": {
+          "pending": {
+            "type": "integer",
+            "title": "Pending",
+            "description": "Enabled reminders due before the end of today, including any already due."
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OverviewReminderResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pending",
+          "items"
+        ],
+        "title": "OverviewRemindersResponse"
+      },
+      "OverviewTasksResponse": {
+        "properties": {
+          "open": {
+            "type": "integer",
+            "title": "Open"
+          },
+          "overdue": {
+            "type": "integer",
+            "title": "Overdue",
+            "description": "Open tasks due before today."
+          },
+          "due_today": {
+            "type": "integer",
+            "title": "Due Today"
+          },
+          "overdue_items": {
+            "items": {
+              "$ref": "#/components/schemas/TaskResponse"
+            },
+            "type": "array",
+            "title": "Overdue Items",
+            "description": "The most overdue first, at most 5."
+          },
+          "due_today_items": {
+            "items": {
+              "$ref": "#/components/schemas/TaskResponse"
+            },
+            "type": "array",
+            "title": "Due Today Items",
+            "description": "Highest priority first, at most 5."
+          }
+        },
+        "type": "object",
+        "required": [
+          "open",
+          "overdue",
+          "due_today",
+          "overdue_items",
+          "due_today_items"
+        ],
+        "title": "OverviewTasksResponse"
+      },
       "PayInstallmentRequest": {
         "properties": {
           "paid_on": {
@@ -41879,6 +42447,133 @@
         ],
         "title": "ScheduledWorkoutResponse"
       },
+      "SearchGroupResponse": {
+        "properties": {
+          "module": {
+            "type": "string",
+            "enum": [
+              "tasks",
+              "notes",
+              "events",
+              "documents",
+              "habits",
+              "transactions"
+            ],
+            "title": "Module"
+          },
+          "hits": {
+            "items": {
+              "$ref": "#/components/schemas/SearchHitResponse"
+            },
+            "type": "array",
+            "title": "Hits"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Every match in the module, beyond the hits returned."
+          },
+          "unavailable": {
+            "type": "boolean",
+            "title": "Unavailable",
+            "description": "The module couldn't be searched just now."
+          }
+        },
+        "type": "object",
+        "required": [
+          "module",
+          "hits",
+          "total",
+          "unavailable"
+        ],
+        "title": "SearchGroupResponse"
+      },
+      "SearchHitResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail",
+            "description": "A note's excerpt or an event's place; may be empty."
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "A task's or habit's status, a note's or transaction's type, an event's status, or a document's state."
+          },
+          "day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day",
+            "description": "A task's due date, an event's first day, a transaction's date, or a journal entry's day."
+          },
+          "starts_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Starts At",
+            "description": "A timed event's local start, as wall-clock time in its own time zone."
+          },
+          "all_day": {
+            "type": "boolean",
+            "title": "All Day"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "detail",
+          "status",
+          "day",
+          "starts_at",
+          "all_day"
+        ],
+        "title": "SearchHitResponse"
+      },
+      "SearchResponse": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/SearchGroupResponse"
+            },
+            "type": "array",
+            "title": "Groups",
+            "description": "One group per module searched, in a fixed order, even when empty."
+          }
+        },
+        "type": "object",
+        "required": [
+          "query",
+          "groups"
+        ],
+        "title": "SearchResponse"
+      },
       "SessionExerciseResponse": {
         "properties": {
           "id": {
@@ -44142,6 +44837,114 @@
           "updated_at"
         ],
         "title": "TemplateResponse"
+      },
+      "TodayOverviewResponse": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "tasks": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OverviewTasksResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "events": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OverviewEventsResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reminders": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OverviewRemindersResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "habits": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OverviewHabitsResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "documents": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OverviewDocumentsResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "payments": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OverviewPaymentsResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unavailable": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "tasks",
+                "events",
+                "reminders",
+                "habits",
+                "documents",
+                "payments"
+              ]
+            },
+            "type": "array",
+            "title": "Unavailable"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "timezone",
+          "generated_at",
+          "tasks",
+          "events",
+          "reminders",
+          "habits",
+          "documents",
+          "payments",
+          "unavailable"
+        ],
+        "title": "TodayOverviewResponse",
+        "description": "Each section is `null` when it wasn't requested or failed to load; failed ones are\nlisted in `unavailable`."
       },
       "TotalResponse": {
         "properties": {
