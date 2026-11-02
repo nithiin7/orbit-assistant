@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from orbit_api.config import Settings
 from orbit_api.db.database import Database
 from orbit_api.repositories.accounts import SqlAccountRepository, SqlLocalAuthRepository
+from orbit_api.repositories.ai_services import AiServices, build_ai
 from orbit_api.repositories.avatars import SqlAvatarRepository
 from orbit_api.repositories.budgets import build_budget_service
 from orbit_api.repositories.calendar import (
@@ -351,3 +352,33 @@ def get_search_service(
 
 
 SearchServiceDep = Annotated[SearchService, Depends(get_search_service)]
+
+
+def get_ai_services(request: Request, session: SessionDep, settings: SettingsDep) -> AiServices:
+    """The AI services on the request's session. Action proposals run through the modules' own
+    request schemas and services (`api/ai_actions.py`)."""
+    return build_ai_for(session, request.app.state)
+
+
+def build_ai_for(session: AsyncSession, state: object) -> AiServices:
+    # Imported here: `ai_actions` depends on the route schemas, which import this module's
+    # neighbours; a top-level import would be circular.
+    from orbit_api.api.ai_actions import ModuleActionExecutor, ModuleActionValidator
+
+    app_settings: Settings = getattr(state, "settings")  # noqa: B009 - Starlette's State is untyped
+    return build_ai(
+        session,
+        app_settings,
+        getattr(state, "ai_providers"),  # noqa: B009
+        validator=ModuleActionValidator(),
+        executor=lambda modules: ModuleActionExecutor(
+            tasks=modules.tasks,
+            reminders=modules.reminders,
+            calendar=modules.calendar,
+            notes=modules.notes,
+            documents=modules.documents,
+        ),
+    )
+
+
+AiServicesDep = Annotated[AiServices, Depends(get_ai_services)]

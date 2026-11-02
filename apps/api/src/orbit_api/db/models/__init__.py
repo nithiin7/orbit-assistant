@@ -1,5 +1,16 @@
 """ORM models. Importing this package registers every table on `Base.metadata`."""
 
+from orbit_api.db.models.ai import (
+    AiActionProposalModel,
+    AiChunkModel,
+    AiConversationModel,
+    AiIndexSourceModel,
+    AiInsightDismissalModel,
+    AiMessageModel,
+    AiProviderModel,
+    AiSettingsModel,
+    AiUsageModel,
+)
 from orbit_api.db.models.avatars import UserAvatarModel
 from orbit_api.db.models.budgets import (
     FinanceBudgetAlertModel,
@@ -106,6 +117,15 @@ from orbit_api.db.models.users import LocalCredentialModel, LocalSessionModel, U
 from orbit_api.db.models.workspaces import WorkspaceModel
 
 __all__ = [
+    "AiActionProposalModel",
+    "AiChunkModel",
+    "AiConversationModel",
+    "AiIndexSourceModel",
+    "AiInsightDismissalModel",
+    "AiMessageModel",
+    "AiProviderModel",
+    "AiSettingsModel",
+    "AiUsageModel",
     "CalendarCategoryModel",
     "CalendarEventAlertModel",
     "CalendarEventExceptionModel",

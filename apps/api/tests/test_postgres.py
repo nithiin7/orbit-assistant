@@ -155,6 +155,15 @@ PROTECTED_TABLES = (
     "fitness_habit_links",
     "fitness_workout_events",
     "fitness_links",
+    "ai_providers",
+    "ai_settings",
+    "ai_index_sources",
+    "ai_chunks",
+    "ai_conversations",
+    "ai_messages",
+    "ai_action_proposals",
+    "ai_usage",
+    "ai_insight_dismissals",
 )
 
 
@@ -590,5 +599,92 @@ async def test_fitness_on_postgres(cloud_settings: Settings, tmp_path: Path) -> 
             assert await fitness.tracking.goals(other, today) == []
             overview = await fitness.overview(owner, today, "UTC")
             assert overview.week_workouts == 1 and overview.water_ml == 0
+    finally:
+        await database.dispose()
+
+
+@pytest.mark.anyio
+async def test_ai_layer_on_postgres(cloud_settings: Settings, tmp_path: Path) -> None:
+    """The AI layer on PostgreSQL: settings JSON, providers and the settings' foreign keys,
+    indexing with BYTEA embeddings and leased claims, hybrid retrieval, usage aggregation, and
+    the proposals' conditional approval."""
+    from orbit_api.repositories.ai import SqlProposalRepository
+    from orbit_api.repositories.ai_services import build_ai
+    from orbit_api.services.ai.configuration import ProviderDraft, SettingsChanges
+    from orbit_api.services.tasks.models import TaskDraft
+    from tests.ai_fakes import FakeProviderFactory
+
+    database = await open_database(cloud_settings)
+    user_id, workspace_id = uuid.uuid4(), uuid.uuid4()
+    factory = FakeProviderFactory()
+    settings = cloud_settings.model_copy(
+        update={"attachments_path": tmp_path, "ai_allow_private_endpoints": True}
+    )
+    try:
+        async with database.session() as session:
+            await session.execute(
+                text(
+                    "INSERT INTO users (id, auth_provider, auth_subject, email, display_name,"
+                    " created_at, updated_at) VALUES (:id, 'local', :subject, 'a@example.com', 'A',"
+                    " now(), now())"
+                ),
+                {"id": user_id, "subject": str(user_id)},
+            )
+            await session.execute(
+                text(
+                    "INSERT INTO workspaces (id, owner_id, name, is_personal, created_at,"
+                    " updated_at) VALUES (:id, :owner, 'Personal', true, now(), now())"
+                ),
+                {"id": workspace_id, "owner": user_id},
+            )
+            await session.commit()
+
+            ai = build_ai(session, settings, factory)
+            # Keyless and local, so no secret key is needed in cloud mode.
+            provider = await ai.config.create_provider(
+                user_id, ProviderDraft(name="Local", kind="ollama")
+            )
+            current = await ai.config.update_settings(
+                user_id,
+                SettingsChanges(
+                    enabled=True,
+                    chat_provider_id=provider.id,
+                    chat_model="chat-model",
+                    embedding_provider_id=provider.id,
+                    embedding_model="embed-model",
+                ),
+            )
+            await ai.modules.tasks.create(workspace_id, TaskDraft(title="Prepare tax documents"))
+            embedder = await ai.config.embedding_provider(current, workspace_id)
+            assert embedder is not None
+            queued = await ai.index.reconcile(workspace_id, current.modules, embedder.embedding_key)
+            assert queued.queued == 1
+            run = await ai.index.process(workspace_id, embedder)
+            assert run.indexed == 1
+            # A claimed record can't be claimed again while leased.
+            assert (await ai.index.summary(workspace_id, embedder)).counts["indexed"] == 1
+
+            result = await ai.retriever.search(
+                workspace_id, "tax paperwork", modules=current.modules, embedder=embedder
+            )
+            assert result.semantic and result.matches[0].ref.title == "Prepare tax documents"
+
+            summary = await ai.usage.summary(user_id, 30, None)
+            assert summary.lines[0].operation == "embedding" and summary.month_tokens > 0
+
+            [proposal] = await ai.proposals.propose(
+                workspace_id,
+                user_id,
+                [("create_task", {"title": "x"}, "Create task")],
+            )
+            repository = SqlProposalRepository(session)
+            now = datetime.now().astimezone()
+            assert await repository.transition(proposal.id, "pending", "rejected", now)
+            assert not await repository.transition(proposal.id, "pending", "executing", now)
+            await session.commit()
+
+            await ai.config.delete_provider(user_id, provider.id)
+            after = await ai.config.settings(user_id)
+            assert after.chat_provider_id is None and after.embedding_model is None
     finally:
         await database.dispose()

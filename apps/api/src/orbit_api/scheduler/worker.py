@@ -1,8 +1,9 @@
 """The reminder worker: polls the database for due occurrences and delivers them. It also
 takes each workspace's month-end net worth snapshots (at most hourly), checks budgets (every
 few minutes: closing finished periods and sending threshold alerts), and sweeps the attachment
-store for files no metadata references (every few hours), so Orbit has one scheduler rather
-than several.
+store for files no metadata references (every few hours), and keeps AI retrieval indexes up to
+date for people who turned indexing on (every `ORBIT_AI_INDEX_INTERVAL_SECONDS`), so Orbit has
+one scheduler rather than several.
 
 It holds no schedule in memory. Each poll reads due work from the database, so a restart loses
 nothing, and any number of workers (the one embedded in each API process, plus standalone
@@ -21,8 +22,11 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from orbit_api.config import Settings
 from orbit_api.db.columns import utc_now
 from orbit_api.db.database import Database
+from orbit_api.repositories.ai import SqlAiSettingsRepository
+from orbit_api.repositories.ai_services import build_ai
 from orbit_api.repositories.budgets import build_budget_service
 from orbit_api.repositories.calendar import build_calendar_service
 from orbit_api.repositories.commitments import build_commitment_service
@@ -33,6 +37,8 @@ from orbit_api.repositories.investments import SqlSnapshotRepository, build_net_
 from orbit_api.repositories.notifications import SqlNotificationRepository
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.transaction import SqlTransaction
+from orbit_api.services.ai.indexing import IndexRun, permitted_types
+from orbit_api.services.ai.providers import ProviderFactory
 from orbit_api.services.reminders.delivery import (
     DEFAULT_MAX_ATTEMPTS,
     DeliveryResult,
@@ -89,6 +95,16 @@ class ManagedFollowUp:
 
 
 @dataclass(frozen=True, slots=True)
+class AiIndexing:
+    """What the worker needs to index: the settings (for the file store and the AI secret
+    key) and the provider factory."""
+
+    settings: Settings
+    providers: ProviderFactory
+    interval: timedelta | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class WorkerReport:
     """What one poll did."""
 
@@ -109,8 +125,11 @@ class ReminderWorker:
         budget_interval: timedelta = DEFAULT_BUDGET_INTERVAL,
         files: FileAttachmentStore | None = None,
         sweep_interval: timedelta = DEFAULT_SWEEP_INTERVAL,
+        ai: AiIndexing | None = None,
     ) -> None:
         self._database = database
+        self._ai = ai
+        self._indexed_at: datetime | None = None
         self._files = files
         self._sweep_interval = sweep_interval
         self._swept_at: datetime | None = None
@@ -235,6 +254,61 @@ class ReminderWorker:
             # Deliberate boundary: housekeeping must never stop reminder delivery.
             logger.exception("Sweeping unreferenced files failed; retrying later.")
 
+    async def index_ai(self) -> IndexRun:
+        """Reconcile and index a batch for every workspace whose owner has AI indexing on.
+        Each workspace runs in its own sessions; one failing never stops the others."""
+        if self._ai is None or not self._ai.settings.ai_enabled:
+            return IndexRun()
+        async with self._database.session() as session:
+            targets = await SqlAiSettingsRepository(session).indexing_workspaces()
+        queued = removed = indexed = failed = 0
+        for user_id, workspace_id in targets:
+            async with self._database.session() as session:
+                try:
+                    ai = build_ai(session, self._ai.settings, self._ai.providers, clock=self._clock)
+                    settings = await ai.config.settings(user_id)
+                    embedder = await ai.config.embedding_provider(settings, workspace_id)
+                    if embedder is None or not permitted_types(settings.modules):
+                        continue
+                    reconciled = await ai.index.reconcile(
+                        workspace_id, settings.modules, embedder.embedding_key
+                    )
+                    run = await ai.index.process(workspace_id, embedder)
+                    queued += reconciled.queued
+                    removed += reconciled.removed + run.removed
+                    indexed += run.indexed
+                    failed += run.failed
+                except Exception:
+                    # Deliberate boundary: one workspace's failure must not stop the others;
+                    # the next check retries it. IDs only: content is personal data.
+                    await session.rollback()
+                    logger.exception("AI indexing for workspace %s failed.", workspace_id)
+        if indexed or failed or removed:
+            logger.info(
+                "AI index: %d queued, %d indexed, %d failed, %d removed.",
+                queued,
+                indexed,
+                failed,
+                removed,
+            )
+        return IndexRun(queued=queued, removed=removed, indexed=indexed, failed=failed)
+
+    async def _maybe_index_ai(self) -> None:
+        if self._ai is None:
+            return
+        now = self._clock()
+        interval = self._ai.interval or timedelta(
+            seconds=self._ai.settings.ai_index_interval_seconds
+        )
+        if self._indexed_at is not None and now - self._indexed_at < interval:
+            return
+        self._indexed_at = now
+        try:
+            await self.index_ai()
+        except Exception:
+            # Deliberate boundary: indexing must never stop reminder delivery.
+            logger.exception("AI indexing failed; retrying later.")
+
     async def run(self, stop: asyncio.Event, poll_interval: float) -> None:
         """Poll until `stop` is set. A poll in progress finishes first, so shutdown never
         abandons a claimed occurrence mid-transaction."""
@@ -252,6 +326,7 @@ class ReminderWorker:
             await self._maybe_take_snapshots()
             await self._maybe_check_budgets()
             await self._maybe_sweep_files()
+            await self._maybe_index_ai()
             # Sleep until the next poll, waking early when asked to stop.
             with contextlib.suppress(TimeoutError):
                 await asyncio.wait_for(stop.wait(), timeout=poll_interval)

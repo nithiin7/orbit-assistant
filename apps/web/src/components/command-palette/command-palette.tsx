@@ -4,6 +4,7 @@ import type { SearchModule } from "@orbit/contracts";
 import {
   AlarmClock,
   BookOpen,
+  Bot,
   CalendarCheck,
   CalendarClock,
   CalendarDays,
@@ -435,9 +436,27 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
     ...documentCommands,
     ...commands,
   ];
+  const question = query.trim();
+  const ask: Command[] =
+    question.length >= 3
+      ? [
+          {
+            id: "ask-orbit",
+            group: "Search",
+            label: `Ask Orbit: “${question}”`,
+            description: "Answer from your own records, with sources.",
+            keywords: [],
+            icon: Bot,
+            current: false,
+            matched: true,
+            run: () => router.push(`/assistant?q=${encodeURIComponent(question)}`),
+          },
+        ]
+      : [];
   const matches = [
     ...search.commands,
     ...local.filter((command) => command.matched),
+    ...ask,
     ...filterCommands(
       local.filter((command) => !command.matched),
       query,

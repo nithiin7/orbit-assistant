@@ -22,6 +22,8 @@ describe("summary queries", () => {
     expect(isSummaryQueryKey(["workspaces", "w1", "search", { q: "rent" }])).toBe(true);
     expect(isSummaryQueryKey(["workspaces", "w1", "tasks", "list"])).toBe(false);
     expect(isSummaryQueryKey(["me", "dashboard"])).toBe(false);
+    expect(isSummaryQueryKey(["workspaces", "w1", "ai", "insights", "UTC"])).toBe(true);
+    expect(isSummaryQueryKey(["workspaces", "w1", "ai", "conversations"])).toBe(false);
   });
 
   it("go stale after any successful change", async () => {

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import { AssistMenu } from "@/components/ai/assist-menu";
 import { HabitsPanel } from "@/components/habits/habits-view";
 import { PageHeader } from "@/components/page-header";
+import { ASSIST_ACTIONS } from "@/lib/ai";
 
 export const metadata: Metadata = { title: "Habits" };
 
@@ -13,6 +15,7 @@ export default function HabitsPage() {
       <PageHeader
         title="Habits"
         description="Small things, done often. Check them off each day, run your routines, and see how they build over time."
+        actions={<AssistMenu module="habits" actions={ASSIST_ACTIONS.habits} variant="outline" />}
       />
       <Suspense>
         <HabitsPanel />

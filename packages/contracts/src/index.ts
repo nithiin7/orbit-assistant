@@ -529,3 +529,50 @@ export type ScheduleWorkoutRequest = Schemas["ScheduleWorkoutRequest"];
 export type FitnessLinkedRecord = Schemas["LinkedRecordResponse"];
 export type FitnessLinkList = Schemas["LinkListResponse"];
 export type FitnessOverview = Schemas["FitnessOverviewResponse"];
+
+// AI
+export type AiSettings = Schemas["AiSettingsResponse"];
+export type UpdateAiSettingsRequest = Schemas["UpdateAiSettingsRequest"];
+export type AiModule = AiSettings["modules"][number];
+export type AiResponseStyle = AiSettings["response_style"];
+export type AiProvider = Schemas["AiProviderResponse"];
+export type AiProviderList = Schemas["AiProviderListResponse"];
+export type AiProviderKind = AiProvider["kind"];
+export type AiProcessing = AiProvider["processing"];
+export type CreateAiProviderRequest = Schemas["CreateAiProviderRequest"];
+export type UpdateAiProviderRequest = Schemas["UpdateAiProviderRequest"];
+export type TestAiProviderRequest = Schemas["TestAiProviderRequest"];
+export type AiConnectionTest = Schemas["AiConnectionTestResponse"];
+export type AiModel = Schemas["AiModelResponse"];
+export type AiModelList = Schemas["AiModelListResponse"];
+export type AiUsage = Schemas["AiUsageResponse"];
+export type AiUsageLine = Schemas["AiUsageLineResponse"];
+export type AiRecordRef = Schemas["AiRecordRef"];
+export type AiCitation = Schemas["AiCitationResponse"];
+export type AiProposal = Schemas["AiProposalResponse"];
+export type AiMessage = Schemas["AiMessageResponse"];
+export type AiConversation = Schemas["AiConversationResponse"];
+export type AiConversationList = Schemas["AiConversationListResponse"];
+export type AiConversationDetail = Schemas["AiConversationDetailResponse"];
+export type SendAiMessageRequest = Schemas["SendAiMessageRequest"];
+/** The first event of a streamed answer (`AiTurnStarted` in the API; not in OpenAPI, which
+ * can't describe event streams). */
+export type AiTurnStarted = {
+  conversation: AiConversation;
+  provider_name: string;
+  model: string;
+  processing: AiProcessing;
+};
+/** The last event of a streamed answer (`AiStreamDone` in the API). */
+export type AiStreamDone = { message: AiMessage; proposals: AiProposal[] };
+export type AiAssistRequest = Schemas["AiAssistRequest"];
+export type AiAssistKind = AiAssistRequest["kind"];
+export type AiAssistResult = Schemas["AiAssistResponse"];
+export type AiSearchQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/ai/search"]["get"]["parameters"]["query"]
+>;
+export type AiSearchResults = Schemas["AiSearchResponse"];
+export type AiSearchMatch = Schemas["AiSearchMatchResponse"];
+export type AiInsight = Schemas["AiInsightResponse"];
+export type AiInsightList = Schemas["AiInsightListResponse"];
+export type AiIndexStatus = Schemas["AiIndexResponse"];

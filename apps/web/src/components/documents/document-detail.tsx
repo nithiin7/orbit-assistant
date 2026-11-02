@@ -26,6 +26,7 @@ import { type ReactNode, useId, useRef, useState } from "react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 
 import { describeApiError } from "@/api/client";
+import { AssistMenu } from "@/components/ai/assist-menu";
 import { AmountField, DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +35,7 @@ import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useDocument, useDocumentMutations, useDocumentSettings } from "@/hooks/use-documents";
+import { ASSIST_ACTIONS } from "@/lib/ai";
 import {
   detailsValues,
   documentDetailsSchema,
@@ -293,6 +295,9 @@ function DocumentDetailView({
             />
           </Button>
         ) : null}
+        {trashed ? null : (
+          <AssistMenu module="documents" actions={ASSIST_ACTIONS.document} targetId={document.id} />
+        )}
         {document.file && !trashed ? (
           <Button
             variant="outline"

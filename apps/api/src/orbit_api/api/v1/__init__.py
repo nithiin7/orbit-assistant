@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from orbit_api.api.v1 import (
+    ai,
     auth,
     budgets,
     calendar,
@@ -54,3 +55,5 @@ router.include_router(fitness.router)
 router.include_router(dashboard.router)
 router.include_router(search.router)
 router.include_router(storage.router)
+router.include_router(ai.me_router)
+router.include_router(ai.router)

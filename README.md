@@ -38,8 +38,8 @@ control.
 > Markdown, and attachments), a calendar (events, recurring series, task scheduling, and
 > event reminders), habits with routines (schedules, streaks, analytics, and reminders), a
 > documents vault (uploads, versions, expiry reminders, links, and export), and health and
-> fitness (workouts, records, measurements, nutrition, water, activity, and goals) are built;
-> the AI assistant is not.
+> fitness (workouts, records, measurements, nutrition, water, activity, and goals) are built,
+> with an optional AI assistant on top (off until you turn it on; local models supported).
 
 ## Scope
 
@@ -117,6 +117,11 @@ control.
   health. Widgets can be added, removed, reordered, and resized, with a compact density and a
   setting to hide money amounts, saved to your account. The command palette searches tasks,
   notes, events, documents, habits, and transactions at once, grouped by module.
+- An optional AI layer, off by default: local models (Ollama, OpenAI-compatible servers) or
+  cloud providers (OpenAI, Anthropic, Gemini) with explicit consent and encrypted keys; per-module
+  read permissions; a streaming assistant whose answers cite the Orbit records they came from;
+  hybrid keyword and semantic search; summaries, extraction, and drafts inside modules; actions
+  that run only after you approve them; deterministic insights; and usage tracking.
 - Shared tooling for linting, formatting, type checking, testing, commit conventions, and CI.
 
 ### 🚫 Explicit non-goals for now
@@ -124,14 +129,13 @@ control.
 - AI habit recommendations or gamification (points, badges, leaderboards).
 - AI health recommendations, medical diagnosis or treatment, and health or food-database
   integrations (Apple Health, Google Fit, wearables, barcode lookups).
-- Syncing with external calendars (Google, Outlook, CalDAV) or AI scheduling; semantic search,
-  AI note generation, or a knowledge graph in notes;
-  automatically created transactions, live market prices, AI financial insights, or bank
-  integrations in finance.
+- Syncing with external calendars (Google, Outlook, CalDAV) or AI scheduling; a knowledge graph
+  in notes; automatically created transactions, live market prices, or bank integrations in
+  finance.
 - Shared workspaces, invitations, password recovery for local accounts, and account linking
   between local and cloud.
 - Synchronization or data migration between local and cloud storage.
-- AI or LLM integration or data synchronization.
+- Autonomous AI agents, automation, or AI actions without your approval; OCR.
 - Push, email, SMS, or mobile notifications (reminders notify in the app only).
 - Containers or deployment infrastructure.
 
@@ -268,7 +272,7 @@ commit message. CI runs the full suite. See [CONTRIBUTING.md](CONTRIBUTING.md).
 | Accounts and workspaces | ✅ In place    |
 | CI                      | ✅ In place    |
 | Product features        | ⏳ Not started |
-| AI integration          | ⏳ Not started |
+| AI integration          | ✅ In place    |
 
 ## Contributing and security
 

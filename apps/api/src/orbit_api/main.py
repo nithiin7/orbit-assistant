@@ -21,7 +21,8 @@ from orbit_api.auth.passwords import Argon2PasswordHasher
 from orbit_api.auth.supabase import SupabaseTokenVerifier
 from orbit_api.config import Settings, get_settings
 from orbit_api.db.database import open_database
-from orbit_api.scheduler.worker import ReminderWorker
+from orbit_api.providers.ai.registry import HttpProviderFactory
+from orbit_api.scheduler.worker import AiIndexing, ReminderWorker
 from orbit_api.system.attachment_store import FileAttachmentStore
 from orbit_api.system.file_manager import SystemFileRevealer
 
@@ -51,13 +52,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         # fallback to another storage mode.
         database = await open_database(settings)
         app.state.database = database
+        providers = app.state.ai_providers
         stop = asyncio.Event()
         worker = None
         if settings.scheduler_embedded:
             worker = asyncio.create_task(
-                ReminderWorker(database, files=FileAttachmentStore(settings.attachments_dir)).run(
-                    stop, settings.scheduler_poll_seconds
-                )
+                ReminderWorker(
+                    database,
+                    files=FileAttachmentStore(settings.attachments_dir),
+                    ai=AiIndexing(settings, providers),
+                ).run(stop, settings.scheduler_poll_seconds)
             )
         try:
             yield
@@ -66,6 +70,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             stop.set()
             if worker is not None:
                 await worker
+            await providers.aclose()
             await database.dispose()
 
     app = FastAPI(
@@ -80,6 +85,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.authenticator = _create_authenticator(settings)
     app.state.password_hasher = Argon2PasswordHasher()
     app.state.file_revealer = SystemFileRevealer()
+    # One HTTP client for every AI provider call; tests replace the factory with fakes.
+    app.state.ai_providers = HttpProviderFactory()
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
