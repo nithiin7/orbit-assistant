@@ -24,6 +24,7 @@ from orbit_api.repositories.finance import (
     SqlFinanceCategoryRepository,
     SqlFinanceTransactionRepository,
 )
+from orbit_api.repositories.fitness import build_fitness
 from orbit_api.repositories.goals import build_goal_service
 from orbit_api.repositories.habits import build_habit_service, build_routine_service
 from orbit_api.repositories.investments import (
@@ -47,6 +48,7 @@ from orbit_api.services.commitments.service import CommitmentService
 from orbit_api.services.dashboard.service import DashboardService
 from orbit_api.services.documents.service import DocumentService
 from orbit_api.services.finance.service import FinanceService
+from orbit_api.services.fitness.overview import Fitness
 from orbit_api.services.goals.service import GoalService
 from orbit_api.services.habits.routines import RoutineService
 from orbit_api.services.habits.service import HabitService
@@ -292,3 +294,10 @@ def get_routine_service(session: SessionDep) -> RoutineService:
 
 
 RoutineServiceDep = Annotated[RoutineService, Depends(get_routine_service)]
+
+
+def get_fitness(session: SessionDep, store: AttachmentStoreDep) -> Fitness:
+    return build_fitness(session, store)
+
+
+FitnessDep = Annotated[Fitness, Depends(get_fitness)]

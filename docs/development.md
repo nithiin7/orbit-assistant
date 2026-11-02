@@ -67,13 +67,15 @@ Storage (see [Database](#database)):
 | `ORBIT_DATABASE_POOL_SIZE`    | `5`                            | Cloud mode: persistent pooled connections                 |
 | `ORBIT_DATABASE_MAX_OVERFLOW` | `5`                            | Cloud mode: extra connections allowed under load          |
 
-Note attachments and documents (see [architecture: Attachments](architecture.md#attachments) and
-[Documents](architecture.md#documents-and-the-personal-vault)) share one file store:
+Note attachments, documents, and progress photos (see
+[architecture: Attachments](architecture.md#attachments),
+[Documents](architecture.md#documents-and-the-personal-vault), and
+[Health and fitness](architecture.md#health-data-privacy)) share one file store:
 
 | Variable                     | Default                               | Purpose                                                              |
 | ---------------------------- | ------------------------------------- | -------------------------------------------------------------------- |
 | `ORBIT_ATTACHMENTS_PATH`     | `attachments/` beside the SQLite file | Folder for attachment and document files (cloud: `apps/api/.data/…`) |
-| `ORBIT_ATTACHMENT_MAX_BYTES` | `10485760` (10 MB)                    | Largest note attachment accepted (1 KB to 100 MB)                    |
+| `ORBIT_ATTACHMENT_MAX_BYTES` | `10485760` (10 MB)                    | Largest note attachment or progress photo accepted (1 KB to 100 MB)  |
 | `ORBIT_DOCUMENT_MAX_BYTES`   | `26214400` (25 MB)                    | Largest document file accepted (1 KB to 200 MB)                      |
 
 Reminders (see [Reminder worker](#reminder-worker)):

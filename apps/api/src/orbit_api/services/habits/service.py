@@ -591,6 +591,36 @@ class HabitService:
         )
         await self.reminders.sync_habit(habit)
 
+    async def contribute(
+        self, workspace_id: uuid.UUID, habit_id: uuid.UUID, day: date, value: float | None
+    ) -> bool:
+        """Record progress that a linked health record contributes, without committing: `None`
+        completes the day, a value records progress toward the target. Contributions only ever
+        raise a day: a skipped day, a completed one, or one with as much progress is left as it
+        is, and nothing is ever lowered or removed. Days the habit can't record (paused,
+        archived, outside its dates, or in the future) are left alone. Returns whether it
+        wrote."""
+        habit = await self._store.get_habit(workspace_id, habit_id)
+        if habit is None or habit.status != "active":
+            return False
+        existing = (await self._store.logs(workspace_id, [habit_id], day, day)).get(habit_id, [])
+        current = existing[0] if existing else None
+        if current is not None:
+            done = current.value >= current.target
+            if current.skipped or done or (value is not None and current.value >= value):
+                return False
+        note = current.note if current else ""
+        draft = (
+            LogDraft(status="completed", note=note)
+            if value is None
+            else LogDraft(status="progress", value=value, note=note)
+        )
+        try:
+            await self.record(habit, day, draft)
+        except InvalidLogError:
+            return False
+        return True
+
     async def unlog(self, workspace_id: uuid.UUID, habit_id: uuid.UUID, day: date) -> HabitProgress:
         """Undo the day's entry. Idempotent."""
         habit = await self._require_habit(workspace_id, habit_id)

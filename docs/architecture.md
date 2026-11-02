@@ -22,8 +22,9 @@ Browser ──► apps/web (Next.js, :3000) ──HTTP/JSON──► apps/api (F
   described under [Identity and authorization](#identity-and-authorization). Product data:
   [tasks](#tasks), shopping lists, [reminders](#reminders-and-notifications), and
   [finance](#finance), [notes](#notes-and-knowledge-management), the
-  [calendar](#calendar-and-events), [habits and routines](#habits-and-routines), and
-  [documents](#documents-and-the-personal-vault); the assistant stores nothing yet.
+  [calendar](#calendar-and-events), [habits and routines](#habits-and-routines),
+  [documents](#documents-and-the-personal-vault), and [health and fitness](#health-and-fitness);
+  the assistant stores nothing yet.
 
 The two apps communicate only over HTTP and share no runtime code. They share one thing: the
 API contract in `packages/contracts`, described below.
@@ -365,6 +366,12 @@ written once. SQLite is embedded in the API process; local mode needs no databas
   a unique index on `finance_holdings(id, workspace_id)` (the target of holding links), and the
   reminders' unique link to a document (see
   [Documents and the personal vault](#documents-and-the-personal-vault)).
+- `0016_create_fitness` creates the twenty `fitness_*` tables (profiles, exercises, templates
+  and their exercises, sessions with a partial unique index for one unfinished workout per
+  person, session exercises, sets, measurements, photos, foods, meals and their items, food and
+  water entries, activities, goals and their progress, habit links, workout events, and links)
+  with RLS; every top-level row carries an owning `user_id` (see
+  [Health and fitness](#health-and-fitness)).
 - Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
   Startup only checks that the database is at the head revision. For a shared cloud database,
   schema changes should be deliberate and reviewable.
@@ -447,7 +454,7 @@ structure.
      `finance_recurring_occurrences`; `0010` for the nine investment, asset, and snapshot tables;
      `0011` for the six budget, goal, and plan tables; `0012` for the seven note tables; `0013`
      for the seven calendar tables; `0014` for the twelve habit and routine tables; `0015` for
-     the seven document tables.
+     the seven document tables; `0016` for the twenty fitness tables.
   2. **No policies exist**, deliberately: the browser never queries tables directly, so the
      Data API's `anon` and `authenticated` roles get no rows. Add `authenticated` policies
      (for example `owner_id = auth.uid()`) only if a client is ever allowed direct access.
@@ -2765,6 +2772,278 @@ document is the reference for fields.
 - The opt-in PostgreSQL suite covers the document SQL through the service; the HTTP tests run on
   SQLite.
 
+## Health and fitness
+
+A personal wellness tracker: workouts, an exercise library and templates, body measurements and
+progress photos, nutrition and water, activity, and fitness goals. It isn't a medical
+application: nothing is diagnosed, prescribed, recommended by AI, imported from devices, or sent
+to another service. Code: `services/fitness/` (`records.py` and `calculations.py` hold the rules
+as pure functions; `service.py` covers the profile, library, and templates; `workouts.py`,
+`body.py`, `nutrition.py`, `tracking.py`, and `integrations.py` the rest; `overview.py` the
+dashboard), `repositories/fitness.py`, `api/v1/fitness.py`, migration `0016_create_fitness`. The
+module is called `fitness` in code because `health` already names the health-check endpoints; the
+web page is **Health** (`/health`).
+
+### Health data privacy
+
+- **Private to its owner.** Every top-level row carries the owner's `user_id` as well as its
+  `workspace_id`, and the repository filters every query by both (`Owner` in the services). Today
+  a workspace has one member, but if workspaces are ever shared, health records stay private to
+  whoever recorded them. Another person's record behaves like a missing one: 404.
+- Routes take `WorkspaceDep` first, then build the owner from the signed-in user; IDs in bodies
+  are only references, checked against the owner's records (422 when they aren't theirs).
+- Little is collected: height and date of birth are optional, and nothing is computed from the
+  date of birth. Body fat is stored only when the person measured it.
+- **Progress photos** use the attachment store (no second file store): server-generated names,
+  `0700`/`0600` permissions, written before the metadata and deleted if saving fails, and kept by
+  the worker's orphan sweep (`referenced_photo_blob_ids`). Only PNG, JPEG, and WebP whose bytes
+  match the extension are accepted (415 otherwise), up to `ORBIT_ATTACHMENT_MAX_BYTES`. They're
+  served only by `GET …/fitness/photos/{id}/file` with the owner's token, as downloads with
+  `nosniff`, a sandboxing CSP, and `private, no-store`; there are no public or signed URLs, and
+  responses never include blob IDs. The web app shows them through object URLs.
+- Health data isn't encrypted by Orbit beyond the database and the disk (see
+  [Encryption](#encryption)), and appears in no notification text.
+
+### Measurement units
+
+The API stores and exchanges **integers in canonical units**, named by their suffix, so nothing
+accumulates floating-point error: grams (`_g`) for body and lifted weight, millimetres (`_mm`)
+for height and circumferences, metres (`_m`) for distances, seconds (`_s`), millilitres (`_ml`),
+milligrams (`_mg`) for nutrients, small calories (`_cal`; 1 kcal = 1,000 cal) for energy, and
+thousandths (`_milli`) for serving quantities. Body fat is a percentage to one decimal and effort
+(RPE) 1 to 10 in halves.
+
+The profile holds the person's units (kg or lb, cm or in, km or mi, kcal or kJ, ml, L, or US
+fl oz; metric or imperial presets). The web app (`lib/fitness/units.ts`) converts at the edges
+with exact factors (1 lb = 453.59237 g, 1 in = 25.4 mm, 1 mi = 1,609.344 m, 1 kcal = 4.184 kJ,
+1 fl oz = 29.5735295625 ml), rounding input to the nearest canonical unit and display to a few
+decimals, so a typed 225 lb is stored as 102,058 g and shown as 225 lb again. Changing units
+never rewrites data.
+
+### Workout data model
+
+```text
+fitness_exercises (library: built-ins created per person on first use, plus custom)
+fitness_templates ──< fitness_template_exercises >── fitness_exercises   (ordered; defaults)
+fitness_sessions  ──< fitness_session_exercises  (snapshot of the exercise) ──< fitness_sets
+      │                       └── exercise_id: plain FK, SET NULL
+      ├── template_id, calendar_event_id: plain FKs, SET NULL
+      └── at most one unfinished (active or paused) per person: partial unique index
+```
+
+- **Exercises** have a category (strength, cardio, bodyweight, mobility, flexibility, other),
+  equipment, primary and secondary muscles, instructions, and a type that decides what a set
+  records: weight and reps, reps, time, or distance and time. About 55 built-ins (no images) are
+  created per person the first time the library is read (`builtin_key`, unique; a concurrent
+  first request resolves to one set). Built-ins can be archived but not edited or deleted;
+  custom exercises can be edited, archived, or deleted while no template or workout uses them
+  (409, "archive it instead").
+- **Templates** hold ordered exercises with default sets, a rep range, a target weight, and
+  rest. Editing replaces the list; duplicate, archive, and delete are available.
+- **Sessions** record the day (local date), time zone, start, end, time paused, duration, status
+  (`active`, `paused`, `completed`, `abandoned`), notes, and the template or calendar event they
+  came from. Every set change is saved as it's made, so a refresh or a closed app never loses a
+  workout in progress (`GET …/sessions/active`).
+- **Exercise history snapshots.** Adding an exercise to a workout copies its name, type,
+  category, and primary muscles into `fitness_session_exercises`; starting from a template copies
+  the template's exercises and targets into sets. History, records, and analytics read the
+  copies, so renaming, retyping, or archiving an exercise, or editing a template, never changes a
+  past workout. A deleted custom exercise leaves its workouts intact (`exercise_id` becomes null).
+- **Sets** have a type (warm-up, working, drop, failure), reps, weight, duration, distance, RPE,
+  and a completed flag with its time. A new set without values copies the previous set (not yet
+  done). The rest timer counts down from the last completed set's time and the exercise's rest
+  (90 seconds by default), so it survives a refresh.
+- **Duration** is end minus start minus time paused. Ended workouts can be renamed, annotated, and
+  have their times corrected; the duration follows. A finished workout can also be logged after
+  the fact (`POST …/sessions/log`), with its sets done.
+
+### Workout calculations
+
+`services/fitness/records.py`; formulas are the same everywhere.
+
+- Only **completed** sets count, and **warm-up sets never count**; working, drop, and failure sets
+  do. Abandoned and unfinished workouts count toward nothing.
+- **Volume** is reps × weight summed over counted sets (gram-reps, shown in kg or lb). Only
+  weight-and-reps exercises have volume; bodyweight, timed, and distance exercises don't, because
+  their load isn't recorded.
+- **Estimated one-rep max** uses the Epley formula, weight × (1 + reps / 30), only for sets of 1
+  to 10 reps (a single is the weight itself), and is always marked as an estimate.
+- **Personal records** depend on the exercise type recorded with the workout: weight and reps give
+  heaviest weight (ties broken by more reps), most reps (ties by more weight), estimated 1RM, and
+  best set volume; reps give most reps; time gives longest time; distance and time give longest
+  distance and longest time. No strength figures are computed for exercises they don't apply to.
+  The first workout to reach a value holds the record.
+- **Analytics** for a range of up to two years: workouts, time, volume, workouts and volume per
+  ISO week and per month, completed sets per primary muscle, weeks with a workout over all weeks,
+  and the streak of consecutive weeks with a workout (the current week doesn't break it while
+  it's still going).
+- **Previous performance**: each exercise in a workout shows the sets from the most recent earlier
+  completed workout with the same exercise.
+
+### Body measurements
+
+`fitness_measurements` are dated entries with any subset of weight, body fat, height, and waist,
+chest, hips, arm, thigh, and neck circumferences (at least one; CHECKs keep values plausible).
+Corrections replace an entry; deleting removes one; every other entry stays as history. **BMI**
+is weight (kg) / height (m)², to one decimal, from the latest weight and the latest height (a
+measurement's, else the profile's), and only when both are plausible; it's labelled as a general
+measure that doesn't account for muscle, frame, age, or sex. No body-fat figure is ever estimated.
+
+### Nutrition calculations
+
+- **Foods** hold nutrients (energy, protein, carbohydrates, fat, optional fiber) for one serving
+  of a given quantity and unit (100 g, 1 slice). There's no food database; everything is entered
+  by hand.
+- **Food entries** are a portion on a date and meal (breakfast, lunch, dinner, snacks, other):
+  either a saved food, whose nutrients are scaled by quantity / serving quantity with integer
+  round-half-up to the canonical unit, or typed-in nutrients for the whole quantity. Entries copy
+  their nutrients, so editing or deleting a food never changes what was logged. Logging a saved
+  food counts it as used ("frequent foods" sort by use).
+- **Saved meals** are named lists of portions; logging one adds an entry per item. The web app
+  saves a day's meal as one.
+- **Daily totals** are exact integer sums, per meal and for the day, beside the profile's targets.
+- **Water** is its own log in millilitres with a daily target, quick-add amounts, and history.
+  Food entries never count as water.
+
+### Activity
+
+`fitness_activities` are entries recorded by hand (`source = manual`; a later import would use
+another value): steps, walks, runs, rides, swims, and other cardio (distance and/or time), sleep
+(time), and rest days (no values). A CHECK ties values to the kind. Nothing is estimated.
+
+### Goal tracking
+
+- **Goals** (`fitness_goals`) have a category (body weight, strength, workouts per week, running
+  distance, running time, daily energy, daily water, or custom with its own unit), start and
+  target values in canonical units, start and optional target dates, a status (`active`,
+  `paused`, `completed`), and optional links to an exercise and a habit. Reaching the target
+  doesn't complete a goal; the person does. Paused and completed goals can be resumed or reopened.
+- **Progress** comes from manual check-ins (`fitness_goal_progress`), except under an explicit,
+  opt-in rule (`auto_track`): body-weight goals read weight measurements from the start date, and
+  strength goals read the linked exercise's heaviest counted set per completed workout from the
+  start date (the current value is the best so far). Auto-tracked goals refuse manual check-ins
+  (409). Nothing else updates a goal.
+- **Calculations** (`calculations.py`): the fraction is (current − start) / (target − start),
+  clamped to 0–1, so losing and gaining both work. Milestones sit at 25, 50, 75, and 100 percent,
+  each with the first check-in that reached it and, with a target date, when a straight line from
+  the start puts it. Pace compares progress with that line: ahead or behind by more than 5
+  points, else on track; or reached, or no target date.
+
+### Integration behavior
+
+- **Habits.** A habit can be linked (`fitness_habit_links`, one per habit) to workouts, water, or
+  one kind of activity. Only with **Count toward the habit** on (off by default) does saving such
+  a record record progress on the habit, through `HabitService.contribute` in the same
+  transaction: a yes-or-no habit is completed by a completed workout, by reaching the water target
+  (any water without one), or by an entry of that activity; duration habits get the minutes;
+  amount habits get the number of workouts, the water total in the profile's unit, the steps, the
+  distance in km or mi, sleep hours, or cardio minutes. Contributions only raise a day: a skipped
+  day, a completed one, or one with as much progress is left alone, nothing is lowered or removed
+  (deleting a record keeps the habit's day), and the habit log's one entry per day means nothing
+  is counted twice. Completing a habit never creates a health record.
+- **Calendar and reminders.** Scheduling a workout (`POST …/fitness/schedule`) creates an ordinary
+  calendar event through `CalendarService` (its alerts are managed reminders delivered by the
+  existing worker) and links it in `fitness_workout_events` (keyed by event, so never twice); an
+  existing event can be marked as a workout instead (`PUT …/schedule/{event}`), so there's no
+  second event. Workouts started from the event record it. The calendar's event details show a
+  **Workout** section (start, open the workouts started from it, mark or unmark), and the Health
+  overview lists today's scheduled workouts. Deleting the event removes the link and keeps the
+  workouts.
+- **Notes and documents.** `fitness_links` relates notes and documents to workouts and goals
+  (composite foreign keys, cascading on both sides; trashed records can't be linked). A workout
+  can create a training note (an ordinary note in the Inbox, linked). The records stay in Notes
+  and Documents.
+
+### Health and fitness API
+
+All under `/api/v1/workspaces/{workspace_id}/fitness`, behind `WorkspaceDep`, acting as the
+signed-in person.
+
+| Method                         | Path                                                       | Purpose                                            |
+| ------------------------------ | ---------------------------------------------------------- | -------------------------------------------------- |
+| `GET`                          | `/overview?date=&timezone=`                                | Dashboard sections                                 |
+| `GET`, `PUT`                   | `/profile`                                                 | Units, height, targets, quick amounts, sections    |
+| `GET`, `POST`                  | `/exercises`                                               | Library (built-ins on first read); create          |
+| `GET`, `PUT`, `DELETE`         | `/exercises/{id}`                                          | Get; edit custom; delete unused custom             |
+| `POST`, `GET`                  | `/exercises/{id}/archive`, `/exercises/{id}/history`       | Archive or restore; history and records            |
+| `GET`, `POST`                  | `/templates`                                               | List; create                                       |
+| `GET`, `PUT`, `DELETE`         | `/templates/{id}`                                          | Get; replace; delete                               |
+| `POST`                         | `/templates/{id}/duplicate`, `/templates/{id}/archive`     | Duplicate; archive or restore                      |
+| `GET`, `POST`                  | `/sessions`, `/sessions/log`, `/sessions/active`           | History; start (409 if one is unfinished); log     |
+| `GET`, `PATCH`, `DELETE`       | `/sessions/{id}`                                           | Detail; rename, notes, times; delete               |
+| `POST`                         | `/sessions/{id}/pause`, `/resume`, `/complete`, `/abandon` | Status changes                                     |
+| `POST`, `PATCH`, `DELETE`      | `/sessions/{id}/exercises`, `/sessions/{id}/exercises/{e}` | Add; rest and notes; remove                        |
+| `PUT`                          | `/sessions/{id}/order`                                     | Reorder exercises                                  |
+| `POST`, `PUT`, `DELETE`        | `/sessions/{id}/exercises/{e}/sets`, `…/sets/{set}`        | Add (copies the last without values); save; remove |
+| `POST`, `PUT`, `DELETE`        | `/sessions/{id}/note`, `/sessions/{id}/links/{kind}/{id}`  | Training note; link or unlink a note or document   |
+| `GET`                          | `/records`, `/analytics?start=&end=&date=`                 | Personal records; analytics                        |
+| `GET`, `POST`                  | `/measurements`                                            | History with BMI; record                           |
+| `PUT`, `DELETE`                | `/measurements/{id}`                                       | Correct; delete                                    |
+| `GET`, `POST`                  | `/photos`, `/photos?filename=&day=&note=` (raw body)       | List; upload                                       |
+| `GET`, `DELETE`                | `/photos/{id}/file`, `/photos/{id}`                        | Download; delete                                   |
+| `GET`, `POST`, `PUT`, `DELETE` | `/foods`, `/foods/{id}`, `/meals`, `/meals/{id}`           | Saved foods and meals                              |
+| `POST`                         | `/meals/{id}/log`                                          | Log a saved meal                                   |
+| `GET`                          | `/nutrition?date=`, `/nutrition/history?start=&end=`       | A day's entries and totals; daily totals           |
+| `POST`, `PUT`, `DELETE`        | `/food-entries`, `/food-entries/{id}`                      | Log, edit, delete food                             |
+| `GET`, `POST`, `DELETE`        | `/water?date=`, `/water/history`, `/water`, `/water/{id}`  | Water day and history; add; remove                 |
+| `GET`, `POST`, `PUT`, `DELETE` | `/activities`, `/activities/{id}`                          | Activity entries                                   |
+| `GET`, `POST`, `PUT`, `DELETE` | `/goals?date=`, `/goals/{id}?date=`                        | Goals with progress                                |
+| `POST`, `DELETE`               | `/goals/{id}/status`, `/goals/{id}/check-ins[/{id}]`       | Status; check-ins                                  |
+| `PUT`, `DELETE`                | `/goals/{id}/links/{kind}/{id}`                            | Link a note or document                            |
+| `GET`, `PUT`, `DELETE`         | `/habit-links`, `/habit-links/{habit}`                     | Habit links                                        |
+| `GET`, `POST`                  | `/schedule?start=&end=`, `/schedule`                       | Scheduled workouts; schedule one                   |
+| `GET`, `PUT`, `DELETE`         | `/schedule/{event}`                                        | The workout an event schedules; mark; unmark       |
+
+Errors: 404 for anything that isn't the person's, 422 for invalid values or references, 409 for a
+second unfinished workout, an ended workout's status change, a built-in or used exercise, or a
+check-in on an auto-tracked goal, 413 and 415 for photos. Request models forbid unknown fields.
+The OpenAPI document is the reference for fields.
+
+### Health in the web app
+
+- `/health` (`components/fitness/`), with views in the URL (`?view=` overview, workouts,
+  exercises, templates, body, nutrition, water, activity, goals, progress, settings) and detail
+  pages (`?workout=`, `?exercise=`, `?goal=`). One primary **Log** menu: start a workout (the
+  first template), a past workout, food, water, measurements, or activity.
+- **Overview**: today's workout (in progress, scheduled, or done), nutrition and water against
+  targets (water quick-add), weight trend, active goals, recent workouts and activity, and the
+  latest records. Sections can be hidden in Settings.
+- **Workout logger** (mobile-first): a sticky header with the elapsed clock, Finish, Pause or
+  Resume, and a rest countdown; each exercise shows last time's sets, then one row per set with
+  large inputs in the person's units (saved when a field loses focus) and a check to mark it done;
+  add a set (copying the last), set types, rest time, reorder, remove, add exercises from a
+  searchable picker, notes, training notes, and linked documents.
+- **Exercises** (search, category and equipment filters, archived, custom exercises, and each
+  exercise's records, estimated 1RM chart, and history), **Templates** (ordered editor, start,
+  duplicate, archive, schedule on the calendar with a reminder), **Body** (measurements, weight
+  trend, BMI with its caveat, progress photos with side-by-side comparison), **Nutrition** (a day
+  by meal, totals and targets, saved foods and meals, 14-day history), **Water**, **Activity**,
+  **Goals** (progress, pace, milestones, check-ins, related habit, notes and documents),
+  **Progress** (analytics and records), and **Settings** (units, height, targets, quick amounts,
+  overview sections, and linked habits).
+- Charts are small SVGs with the same values in a visually hidden table.
+- Code: `src/api/fitness`, `src/hooks/use-fitness.ts`, `src/lib/fitness` (units, display, forms),
+  `src/components/fitness`. Query keys start `["workspaces", id, "fitness", …]`; every change
+  refetches the module (records affect each other) plus habits, the calendar, reminders, or notes
+  when it touches them. A saved workout is written into the cache at once.
+
+### Health limitations
+
+- No external integrations (Apple Health, Google Fit, wearables, food databases, barcodes), no
+  AI recommendations, and no medical features.
+- Contributions to habits apply to records saved after the link is turned on; they never lower a
+  day, so deleting a workout leaves its habit day done.
+- Goals track themselves only for body weight and strength; other kinds use check-ins.
+  Workouts-per-week goals don't count workouts automatically.
+- The rest timer runs in the browser; there's no notification when it ends.
+- Exercises have no images or videos; muscle groups use a fixed list.
+- Progress photos share the attachment limit (`ORBIT_ATTACHMENT_MAX_BYTES`) and aren't resized.
+- Documents don't show the workouts and goals linked to them; the link is visible from Health.
+- Records and analytics are computed on read from every completed workout; fast at personal
+  scale, with no cached summaries.
+- The opt-in PostgreSQL suite covers the fitness SQL through the services; the HTTP tests run on
+  SQLite.
+
 ## Configuration
 
 | App | Source                                                    | Validation                                    | Visibility  |
@@ -2781,16 +3060,16 @@ document is the reference for fields.
 
 ## Testing strategy
 
-| Layer                    | Tool                                            | Location                                                                                                                        | Current coverage                                                                                                                                                                                                                                                                                                  |
-| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                                                                                      | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth, budgets, goals, plans, notes (views, autosave, Markdown, palette), calendar (views, dialogs, drag, scopes, palette), documents (views, uploads, details, links) |
-| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                                                                                               | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, budgets, goals, plans, notes, calendar, documents (uploads, validation, versions, export, sweep), cross-user isolation                                                                   |
-| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_calendar_recurrence.py`, `tests/test_reminder_worker.py`, `tests/test_budget_alerts.py` | Recurrence, DST, month ends, leap years, exceptions; delivery, concurrency, leases, retries, restarts; event alerts; budget alerts and period closing                                                                                                                                                             |
-| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                                                                                              | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                                                                                                                                                                                      |
-| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                                                                                         | Startup checks, sessions, migrations, constraints, 503 errors                                                                                                                                                                                                                                                     |
-| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                                                                                               | Migrations, connectivity, RLS; skipped by default                                                                                                                                                                                                                                                                 |
-| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                                                                                       | Generated contract matches the API                                                                                                                                                                                                                                                                                |
-| End-to-end               | Not set up (**planned**)                        | —                                                                                                                               | —                                                                                                                                                                                                                                                                                                                 |
+| Layer                    | Tool                                            | Location                                                                                                                        | Current coverage                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                                                                                      | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth, budgets, goals, plans, notes (views, autosave, Markdown, palette), calendar (views, dialogs, drag, scopes, palette), documents (views, uploads, details, links), health (units, forms, overview, workout logging, water, event workouts)                                         |
+| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                                                                                               | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, budgets, goals, plans, notes, calendar, documents (uploads, validation, versions, export, sweep), health and fitness (library, templates, workouts and sets, records, measurements, photos, nutrition, goals, habit, calendar, note, and document integrations, per-person privacy), cross-user isolation |
+| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_calendar_recurrence.py`, `tests/test_reminder_worker.py`, `tests/test_budget_alerts.py` | Recurrence, DST, month ends, leap years, exceptions; delivery, concurrency, leases, retries, restarts; event alerts; budget alerts and period closing                                                                                                                                                                                                                                                                              |
+| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                                                                                              | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                                                                                                                                                                                                                                                                                                       |
+| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                                                                                         | Startup checks, sessions, migrations, constraints, 503 errors                                                                                                                                                                                                                                                                                                                                                                      |
+| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                                                                                               | Migrations, connectivity, RLS, feature SQL; skipped by default                                                                                                                                                                                                                                                                                                                                                                     |
+| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                                                                                       | Generated contract matches the API                                                                                                                                                                                                                                                                                                                                                                                                 |
+| End-to-end               | Not set up (**planned**)                        | —                                                                                                                               | —                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 Unit tests cover logic, route tests cover HTTP behavior and validation, and E2E tests will cover
 critical user journeys once real features exist. CI runs every layer on each pull request.

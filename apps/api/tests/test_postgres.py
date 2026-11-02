@@ -7,7 +7,7 @@ migrated up and back down to an empty schema, so never point this at real data.
 import os
 import uuid
 from collections.abc import Iterator
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -21,6 +21,7 @@ from orbit_api.db.migrate import downgrade, upgrade
 from orbit_api.main import create_app
 from orbit_api.repositories.calendar import build_calendar_service
 from orbit_api.repositories.documents import build_document_service
+from orbit_api.repositories.fitness import build_fitness
 from orbit_api.repositories.habits import build_habit_service, build_routine_service
 from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import SqlTransaction
@@ -33,6 +34,26 @@ from orbit_api.services.documents.models import (
     DocumentDraft,
     DocumentQuery,
     LinkTarget,
+)
+from orbit_api.services.fitness.models import (
+    ActivityDraft,
+    FitnessConflictError,
+    FoodEntryDraft,
+    GoalDraft,
+    HabitLinkDraft,
+    LoggedExercise,
+    LoggedSession,
+    MeasurementDraft,
+    MeasurementValues,
+    Nutrients,
+    Owner,
+    PortionDraft,
+    ProfileDraft,
+    SessionStart,
+    SetValues,
+    Targets,
+    TemplateDraft,
+    TemplateExerciseDraft,
 )
 from orbit_api.services.habits.models import (
     ActiveSessionExistsError,
@@ -114,6 +135,26 @@ PROTECTED_TABLES = (
     "document_tags",
     "document_renewals",
     "document_links",
+    "fitness_profiles",
+    "fitness_exercises",
+    "fitness_templates",
+    "fitness_template_exercises",
+    "fitness_sessions",
+    "fitness_session_exercises",
+    "fitness_sets",
+    "fitness_measurements",
+    "fitness_photos",
+    "fitness_foods",
+    "fitness_meals",
+    "fitness_meal_items",
+    "fitness_food_entries",
+    "fitness_water_entries",
+    "fitness_activities",
+    "fitness_goals",
+    "fitness_goal_progress",
+    "fitness_habit_links",
+    "fitness_workout_events",
+    "fitness_links",
 )
 
 
@@ -415,5 +456,139 @@ async def test_documents_on_postgres(cloud_settings: Settings, tmp_path: Path) -
             assert remaining == 0
             # The files went with the document.
             assert not any(path.is_file() for path in tmp_path.rglob("*"))
+    finally:
+        await database.dispose()
+
+
+@pytest.mark.anyio
+async def test_fitness_on_postgres(cloud_settings: Settings, tmp_path: Path) -> None:
+    """Health and fitness on PostgreSQL: built-ins and the custom-or-built-in check, JSON
+    muscles, templates, the one-unfinished-workout partial index, logged workouts and records,
+    measurements, nutrition totals, goals, habit contributions, and per-person filtering."""
+    database = await open_database(cloud_settings)
+    user_id, other_id, workspace_id = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+    try:
+        async with database.session() as session:
+            for person, email in ((user_id, "f@example.com"), (other_id, "o@example.com")):
+                await session.execute(
+                    text(
+                        "INSERT INTO users (id, auth_provider, auth_subject, email, display_name,"
+                        " created_at, updated_at) VALUES (:id, 'local', :subject, :email, 'F',"
+                        " now(), now())"
+                    ),
+                    {"id": person, "subject": str(person), "email": email},
+                )
+            await session.execute(
+                text(
+                    "INSERT INTO workspaces (id, owner_id, name, is_personal, created_at,"
+                    " updated_at) VALUES (:id, :owner, 'Personal', true, now(), now())"
+                ),
+                {"id": workspace_id, "owner": user_id},
+            )
+            await session.commit()
+
+            fitness = build_fitness(session, FileAttachmentStore(tmp_path))
+            owner = Owner(workspace_id, user_id)
+            await fitness.library.update_profile(
+                owner, ProfileDraft(weight_unit="lb", targets=Targets(water_ml=2000))
+            )
+            exercises = {e.details.name: e for e in await fitness.library.exercises(owner)}
+            assert len(await fitness.library.exercises(owner)) == len(exercises)
+            bench = exercises["Bench press"]
+            assert bench.details.primary_muscles == ("chest",)
+            template = await fitness.library.create_template(
+                owner,
+                TemplateDraft(
+                    name="Push",
+                    exercises=(TemplateExerciseDraft(bench.id, sets=2, target_reps_max=5),),
+                ),
+            )
+            today = date.today()
+            started = await fitness.workouts.start(
+                owner, SessionStart(day=today, timezone="UTC", template_id=template.id)
+            )
+            assert len(started.exercises[0].sets) == 2
+            with pytest.raises(FitnessConflictError):
+                await fitness.workouts.start(owner, SessionStart(day=today, timezone="UTC"))
+            await fitness.workouts.finish(owner, started.session.id, "abandoned")
+
+            habit = await build_habit_service(session).create(
+                workspace_id,
+                HabitDraft(
+                    name="Lift",
+                    kind="boolean",
+                    schedule=HabitSchedule(type="daily"),
+                    start_date=today,
+                    timezone="UTC",
+                ),
+                default_timezone="UTC",
+            )
+            await fitness.integrations.link_habit(
+                owner, HabitLinkDraft(habit.progress.habit.id, "workout", contributes=True)
+            )
+            now = datetime.now().astimezone()
+            await fitness.workouts.log(
+                owner,
+                LoggedSession(
+                    name="Push",
+                    day=today,
+                    timezone="UTC",
+                    started_at=now.replace(microsecond=0) - timedelta(hours=1),
+                    ended_at=now.replace(microsecond=0),
+                    exercises=(
+                        LoggedExercise(
+                            bench.id, (SetValues(reps=5, weight_g=100_000, completed=True),)
+                        ),
+                    ),
+                ),
+            )
+            records = {r.kind: r.value for r in await fitness.workouts.records(owner)}
+            assert records["max_weight"] == 100_000
+            logged = await session.scalar(
+                text("SELECT count(*) FROM habit_logs WHERE habit_id = :id"),
+                {"id": habit.progress.habit.id},
+            )
+            assert logged == 1
+
+            await fitness.body.add_measurement(
+                owner, MeasurementDraft(today, MeasurementValues(weight_g=80_000, height_mm=1800))
+            )
+            assert (await fitness.body.bmi(owner)) is not None
+            await fitness.nutrition.add_entry(
+                owner,
+                FoodEntryDraft(
+                    today,
+                    "lunch",
+                    PortionDraft(
+                        quantity_milli=1000,
+                        name="Rice",
+                        serving_unit="cup",
+                        nutrients=Nutrients(energy_cal=200_000),
+                    ),
+                ),
+            )
+            assert (await fitness.nutrition.day(owner, today)).totals.energy_cal == 200_000
+            await fitness.tracking.add_activity(owner, ActivityDraft(today, "steps", steps=5000))
+            goal = await fitness.tracking.create_goal(
+                owner,
+                GoalDraft(
+                    name="Weight",
+                    category="body_weight",
+                    start_value=82_000,
+                    target_value=78_000,
+                    start_date=today,
+                    auto_track=True,
+                ),
+                today,
+            )
+            assert goal.fraction == 0.5
+
+            # Another person in the same workspace sees none of it.
+            other = Owner(workspace_id, other_id)
+            assert await fitness.workouts.records(other) == []
+            assert await fitness.body.measurements(other) == []
+            assert await fitness.tracking.goals(other, today) == []
+            overview = await fitness.overview(owner, today, "UTC")
+            assert overview.week_workouts == 1 and overview.water_ml == 0
     finally:
         await database.dispose()

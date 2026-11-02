@@ -36,9 +36,10 @@ control.
 > loans, subscriptions, bills, investments, other assets, net worth, budgets, savings goals, and
 > monthly plans), and notes (folders, tags, links and backlinks, a daily journal, search,
 > Markdown, and attachments), a calendar (events, recurring series, task scheduling, and
-> event reminders), habits with routines (schedules, streaks, analytics, and reminders), and a
-> documents vault (uploads, versions, expiry reminders, links, and export) are built; the AI
-> assistant is not.
+> event reminders), habits with routines (schedules, streaks, analytics, and reminders), a
+> documents vault (uploads, versions, expiry reminders, links, and export), and health and
+> fitness (workouts, records, measurements, nutrition, water, activity, and goals) are built;
+> the AI assistant is not.
 
 ## Scope
 
@@ -100,11 +101,21 @@ control.
   date range; routines with ordered steps that can complete habits, sessions with history and
   notes; reminders through the existing worker; habits and routines with a time on the
   calendar; and related tasks and reflection notes.
+- Health and fitness: an exercise library (built-in and custom), workout templates, a
+  mobile-friendly workout logger (sets with warm-up, working, drop, and failure types, last
+  time's numbers, a rest timer, pause and resume, saved as you go), history, personal records
+  with clearly labelled 1RM estimates, analytics, body measurements with BMI and trends, private
+  progress photos with comparison, hand-entered nutrition with saved foods and meals and daily
+  targets, water, activity, and fitness goals with milestones. Metric or imperial units; health
+  records are private to you. Optional links to habits (counting records toward them), workouts
+  scheduled on the calendar with reminders, and notes and documents.
 - Shared tooling for linting, formatting, type checking, testing, commit conventions, and CI.
 
 ### 🚫 Explicit non-goals for now
 
 - AI habit recommendations or gamification (points, badges, leaderboards).
+- AI health recommendations, medical diagnosis or treatment, and health or food-database
+  integrations (Apple Health, Google Fit, wearables, barcode lookups).
 - Syncing with external calendars (Google, Outlook, CalDAV) or AI scheduling; semantic search,
   AI note generation, or a knowledge graph in notes;
   automatically created transactions, live market prices, AI financial insights, or bank

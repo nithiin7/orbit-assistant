@@ -14,6 +14,7 @@ describe("navigation", () => {
     expect(hrefs).not.toContain("/tasks");
     expect(hrefs).not.toContain("/shopping");
     expect(hrefs).not.toContain("/calendar");
+    expect(hrefs).not.toContain("/health");
     expect(hrefs).not.toContain("/settings");
   });
 
