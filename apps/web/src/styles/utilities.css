@@ -48,3 +48,12 @@
 [data-density="compact"] [data-slot="card"] .py-4 {
   padding-block: calc(var(--spacing) * 2.5);
 }
+
+/*
+ * A thin scrollbar with its own gutter, for side rails that scroll on their own: rows keep clear
+ * of the scrollbar instead of sliding under it (overlay scrollbars get the padding instead).
+ */
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+}
