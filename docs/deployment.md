@@ -185,7 +185,7 @@ anyone holding it; after restoring onto a new volume, people reconnect their acc
 data is kept). In cloud mode, back
 up the database with Supabase and the volume as above.
 
-Workspace backups made in **Settings → Backup & restore** (see [backups.md](backups.md)) are
+Workspace backups made in **Settings → Backup & restore** are
 stored in the same volume (`backups/`, or `ORBIT_BACKUPS_PATH`), so a copy of the volume includes
 them; download important ones to keep a copy off the server. They're also the way to move a
 workspace between installations, including from local to cloud mode.

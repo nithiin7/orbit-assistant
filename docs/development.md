@@ -81,7 +81,7 @@ Note attachments, documents, and progress photos (see
 | `ORBIT_ATTACHMENT_MAX_BYTES` | `10485760` (10 MB)                    | Largest note attachment or progress photo accepted (1 KB to 100 MB)  |
 | `ORBIT_DOCUMENT_MAX_BYTES`   | `26214400` (25 MB)                    | Largest document file accepted (1 KB to 200 MB)                      |
 
-Backups (see [Backups](#backups) and [backups.md](backups.md)):
+Backups (see [Backups](#backups)):
 
 | Variable                           | Default                           | Purpose                                                                  |
 | ---------------------------------- | --------------------------------- | ------------------------------------------------------------------------ |
@@ -171,8 +171,7 @@ pnpm dev:api        # logs "Storage mode: local. Using the SQLite database at â€
 The simplest way to back up a workspace is **Settings â†’ Backup & restore**: a backup is a
 checksummed ZIP of the workspace's records and files, read from one consistent snapshot while
 the API keeps running, optionally password-encrypted, and restorable into this or another Orbit
-installation (local or cloud). Automatic daily, weekly, or monthly backups can run too. See
-[backups.md](backups.md). Stored backups live in `ORBIT_BACKUPS_PATH`; download copies to keep
+installation (local or cloud). Automatic daily, weekly, or monthly backups can run too. Stored backups live in `ORBIT_BACKUPS_PATH`; download copies to keep
 them on another disk.
 
 To back up a whole installation (every account and workspace) instead, copy the database and

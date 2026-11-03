@@ -12,8 +12,8 @@ Follows the shared rules in `AGENTS.md`. Backend specifics:
   and `api/v1/` the versioned routers mounted at `/api/v1`.
 - Routes stay thin: validate with Pydantic request/response models, delegate logic, and return
   typed models (the return annotation is the response schema).
-- As features land, separate schemas, framework-free services, and infrastructure adapters, as
-  described in `docs/architecture.md`. Create these packages only when a feature needs them.
+- Layers: `api/v1/` routes → `schemas/` → framework-free `services/` → `repositories/` →
+  `db/`; external adapters in `providers/`. Mirror the closest existing module.
 - Database: `db/` holds engines, sessions, and Alembic migrations (no FastAPI imports). Routes
   take `SessionDep`; services stay free of SQLAlchemy. Storage mode is explicit, with no
   fallback between `local` and `cloud`. Schema changes are Alembic revisions that work on

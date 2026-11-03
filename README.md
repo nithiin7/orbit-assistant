@@ -2,346 +2,105 @@
 
 # 🪐 Orbit
 
-**An open-source, privacy-first personal assistant.**
+**Your personal assistant, on your own server.**
 
-Tasks, calendar, finances, notes, and an AI assistant in one place, with your data under your
-control.
+Tasks, calendar, money, notes, habits, documents, and fitness in one calm app,
+with an optional AI assistant that only sees what you allow.
 
 [![CI](https://github.com/nithiin7/orbit-assistant/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nithiin7/orbit-assistant/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](LICENSE)
-![Status: early development](https://img.shields.io/badge/status-early_development-orange)
-[![Conventional Commits](https://img.shields.io/badge/commits-conventional-fe5196?logo=conventionalcommits&logoColor=white)](https://www.conventionalcommits.org/)
+[![Docker](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)](docs/deployment.md)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
-![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
-![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?logo=tailwindcss&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
-![SQLite](https://img.shields.io/badge/SQLite-local-003B57?logo=sqlite&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-3ECF8E?logo=supabase&logoColor=white)
-![pnpm](https://img.shields.io/badge/pnpm-11-F69220?logo=pnpm&logoColor=white)
-![uv](https://img.shields.io/badge/uv-managed-DE5FE9?logo=uv&logoColor=white)
+[Quick start](#quick-start) · [Features](#features) · [Self-hosting](docs/deployment.md) ·
+[Contributing](CONTRIBUTING.md)
 
-[Getting started](#getting-started) · [Architecture](docs/architecture.md) ·
-[Development guide](docs/development.md) · [Contributing](CONTRIBUTING.md)
+<img src="docs/screenshots/dashboard.webp" alt="Orbit dashboard" width="900">
 
 </div>
 
-> [!NOTE]
-> **Early development.** This repository contains the project foundation: the monorepo, tooling,
-> an application shell, an API with a database layer, and accounts with workspaces. Tasks,
-> shopping lists, reminders (with in-app notifications), and finance (accounts, transactions,
-> loans, subscriptions, bills, investments, other assets, net worth, budgets, savings goals, and
-> monthly plans), and notes (folders, tags, links and backlinks, a daily journal, search,
-> Markdown, and attachments), a calendar (events, recurring series, task scheduling, and
-> event reminders), habits with routines (schedules, streaks, analytics, and reminders), a
-> documents vault (uploads, versions, expiry reminders, links, and export), and health and
-> fitness (workouts, records, measurements, nutrition, water, activity, and goals) are built,
-> with an optional AI assistant on top (off until you turn it on; local models supported).
+## Why Orbit
 
-## Scope
+- **Private by design.** Your data stays on the server you run. Nothing leaves it unless you
+  connect an AI provider or a Google or Microsoft account.
+- **Everything in one place.** One search, one command palette, and one dashboard for your
+  whole day.
+- **AI on your terms.** Off by default. Use local models with Ollama, or bring your own OpenAI,
+  Anthropic, or Gemini key. Answers cite their sources, and actions wait for your approval.
+- **Easy to run.** One `docker compose up`, on SQLite or PostgreSQL.
 
-### ✅ In scope today
+## Features
 
-- A Next.js web app with a responsive application shell (collapsible sidebar on Cmd/Ctrl+B,
-  mobile drawer, command palette on Cmd/Ctrl+K, light/dark/system themes chosen in Settings) and
-  placeholder sections.
-- A FastAPI service with centralized configuration, health endpoints, and a database layer:
-  SQLite on your machine (local mode) or PostgreSQL on Supabase (cloud mode), with SQLAlchemy and
-  Alembic migrations.
-- Accounts and workspaces: local accounts (several per machine in local mode) or Supabase Auth
-  (cloud mode), profile photos, a default Personal workspace per user, creating, switching, and
-  deleting workspaces, server-side authorization, password changes for local accounts (which
-  sign out other sessions), sign-in rate limits, and password reset by email for cloud accounts.
-- Tasks, shopping lists, and reminders: one-time or recurring (daily, chosen weekdays, monthly),
-  time-zone aware, optionally about a task, and delivered as in-app notifications by a
-  database-backed worker.
-- Finance, phase 1: hand-entered accounts (bank, cash, wallet, credit card, investment),
-  income, expenses, refunds, and transfers in exact integer minor units, default categories for
-  India, a monthly overview (cash flow, balances, trend, spending by category), filterable
-  history, and CSV export. No bank connections.
-- Finance, phase 2: loans with EMI schedules (principal paid as a transfer that reduces the
-  loan's balance, interest as an expense), subscriptions and recurring bills, a unified view of
-  upcoming, due, overdue, and recently paid payments, commitment totals on the overview, and
-  reminders before each payment.
-- Finance, phase 3: investment accounts; mutual funds, stocks, and ETFs with buys, sales
-  (FIFO realized gains), dividends, charges, SIP plans, and prices you enter; fixed and recurring
-  deposits with estimated values and maturity reminders; other assets with dated valuations; a
-  portfolio dashboard; and net worth with monthly snapshots that mark stale, missing, and
-  estimated values. No live market data.
-- Finance, phase 4: overall and category budgets (monthly, repeating or not, or custom dates)
-  with optional rollover, spending read from the ledger (transfers, investments, savings, and
-  loan principal never count), in-app alerts at thresholds you choose, history that keeps past
-  amounts, and copying last month; savings goals with contributions, withdrawals, and a suggested
-  monthly amount; and a monthly plan of expected income against commitments, budgets, savings,
-  and investments.
-- Notes: a rich-text editor (headings, lists, checklists, tables, code with highlighting, links)
-  that saves as you type and never silently overwrites a newer edit; nested folders, tags, an
-  Inbox with quick capture from anywhere, pins, favorites, archive, and trash; links between
-  notes with backlinks; links to tasks; a daily journal in your time zone; search across titles,
-  text, tags, and folders; Markdown import, export, and paste; and file attachments.
-- Calendar: events with categories, locations, and reminders; recurring series (daily, weekly on
-  chosen days, monthly, yearly; every N; ending after a count, on a date, or never) with
-  single-occurrence and "this and following" edits; month, week, day, and agenda views in your
-  time zone; drag to move, resize, or create, with keyboard-friendly alternatives; tasks
-  scheduled into time blocks; meeting notes linked to events; a dashboard agenda; and calendar
-  commands in the command palette.
-- Documents: upload PDFs, images, Office files, and text (validated by content, never
-  executed) or track records without a file; folders, categories (sensible defaults), tags,
-  favorites, archive, and trash; structured details with expiry, renewal, and review dates and
-  reminders before them; previews for PDFs, images, and text; version history with restore;
-  renewal history; links to notes, tasks, events, and finance records; search and filters; and
-  ZIP export with metadata. Files stay on your Orbit server and are not encrypted by Orbit.
-- Habits and routines: yes-or-no, amount, and time-spent habits on daily, every-N-days, chosen
-  weekday, day-of-month, or times-per-week schedules; one-tap check-offs, partial progress,
-  skips, and past days; streaks and rates that count only due days and respect pauses and
-  schedule changes; a Today dashboard, per-habit history with a heatmap, and analytics over a
-  date range; routines with ordered steps that can complete habits, sessions with history and
-  notes; reminders through the existing worker; habits and routines with a time on the
-  calendar; and related tasks and reflection notes.
-- Health and fitness: an exercise library (built-in and custom), workout templates, a
-  mobile-friendly workout logger (sets with warm-up, working, drop, and failure types, last
-  time's numbers, a rest timer, pause and resume, saved as you go), history, personal records
-  with clearly labelled 1RM estimates, analytics, body measurements with BMI and trends, private
-  progress photos with comparison, hand-entered nutrition with saved foods and meals and daily
-  targets, water, activity, and fitness goals with milestones. Metric or imperial units; health
-  records are private to you. Optional links to habits (counting records toward them), workouts
-  scheduled on the calendar with reminders, and notes and documents.
-- A daily dashboard as the landing page: a greeting and today's overview (events, tasks due
-  and overdue, habit progress, reminders, the next appointment), what needs attention (overdue
-  tasks, reminders, expiring documents, payments due), quick actions (task, note, event,
-  reminder, expense, workout, water, routine, upload) that open each module's own dialog, and
-  widgets for the agenda, tasks, habits and routines, notes, documents, finance, and opt-in
-  health. Widgets can be added, removed, reordered, and resized, with a compact density and a
-  setting to hide money amounts, saved to your account.
-- Universal search: one search across tasks, notes, calendar, reminders, finance, habits,
-  documents, and your own health records, from the command palette or the Search page
-  (Cmd/Ctrl+Shift+F). Results are ranked (titles first, then tags and details, then descriptions
-  and text), grouped by module with counts, filterable by date, status, priority, category,
-  transaction type, and habit type, kept in the URL, and open in their own module. Recent and
-  saved searches are private to you.
-- An optional AI layer, off by default: local models (Ollama, OpenAI-compatible servers) or
-  cloud providers (OpenAI, Anthropic, Gemini) with explicit consent and encrypted keys; per-module
-  read permissions; a streaming assistant whose answers cite the Orbit records they came from;
-  hybrid keyword and semantic search; summaries, extraction, and drafts inside modules; actions
-  that run only after you approve them; deterministic insights; and usage tracking.
-- External integrations (Settings → Integrations): connect Google or Microsoft accounts to bring
-  chosen Google or Outlook calendars into Orbit's calendar (incrementally, with conflicts shown
-  rather than overwritten, and optionally two-way), turn Gmail or Outlook messages into tasks,
-  notes, and reminders without copying the mailbox, and import Google Drive or OneDrive files
-  into Documents. Tokens stay encrypted on the server. Setup: [docs/integrations.md](docs/integrations.md).
-- Backup & restore (Settings → Backup & restore): checksummed backups of a workspace's records
-  and files, optionally password-encrypted, made by hand or automatically (daily, weekly, or
-  monthly, with retention); restores that are inspected and dry-run first, into a new
-  workspace, an empty one, or replacing the current one after a safety backup; exports as JSON,
-  CSV, iCalendar, and Markdown; and JSON imports without duplicates. Guide:
-  [docs/backups.md](docs/backups.md).
-- Automation (off by default): a personal agent that uses only the tools you allow, asks before
-  changing anything unless you choose limited autonomy for low-risk actions, and shows every
-  step it took and why; workflows on a schedule, when something happens (a task is created, a
-  document is about to expire, a budget alert), when a condition becomes true, or on demand; an
-  approval center where you approve exact actions; monitoring of deadlines, conflicts, bills,
-  and expiring documents as in-app notifications; and memory you can review and edit. Finance,
-  email, and health stay read only, and it never deletes, pays, sends, or shares anything.
-- Shared tooling for linting, formatting, type checking, testing, commit conventions, and CI.
+| Module                  | What you get                                                                        |
+| ----------------------- | ----------------------------------------------------------------------------------- |
+| 🏠 **Dashboard**        | Today at a glance: agenda, due tasks, habits, payments, and customizable widgets    |
+| ✅ **Tasks**            | Tasks, shopping lists, and reminders, including recurring ones                      |
+| 📅 **Calendar**         | Month, week, day, and agenda views, recurring events, and drag-and-drop scheduling  |
+| 💰 **Finance**          | Accounts, budgets, loans, subscriptions, investments, goals, and net worth          |
+| 📝 **Notes**            | Rich-text editor, folders, tags, backlinks, a daily journal, and Markdown           |
+| 🔁 **Habits**           | Streaks, routines, a Today view, and history heatmaps                               |
+| 📂 **Documents**        | A personal vault with previews, versions, and expiry reminders                      |
+| 💪 **Health**           | Workout logging, personal records, body measurements, nutrition, and goals          |
+| 🔍 **Search**           | One search across every module, from anywhere with <kbd>Cmd/Ctrl</kbd>+<kbd>K</kbd> |
+| ✨ **AI assistant**     | Chat with your data, summaries and drafts, and automations you approve              |
+| 🔗 **Integrations**     | Google and Microsoft calendars, mail, and files                                     |
+| 🛡️ **Backup & restore** | Encrypted, scheduled backups and exports to JSON, CSV, iCalendar, and Markdown      |
 
-### 🚫 Explicit non-goals for now
+## Screenshots
 
-- AI habit recommendations or gamification (points, badges, leaderboards).
-- AI health recommendations, medical diagnosis or treatment, and health or food-database
-  integrations (Apple Health, Google Fit, wearables, barcode lookups).
-- CalDAV or importing iCal calendars (the calendar exports `.ics`), sending email, or AI scheduling; a knowledge graph
-  in notes; automatically created transactions, live market prices, or bank integrations in
-  finance.
-- Shared workspaces, invitations, password recovery for local accounts, deleting an account
-  from the app, and account linking between local and cloud.
-- Synchronization or data migration between local and cloud storage. Several devices can use
-  one Orbit server through the browser; there is no offline copy that syncs.
-- A voice interface (speech input or spoken answers).
-- Unrestricted AI autonomy, or agent actions that delete, pay, send email, or share; OCR.
-- Push, email, SMS, or mobile notifications (reminders notify in the app only).
-- Managed hosting, Kubernetes manifests, or scaling beyond one API container in local mode.
+<table>
+  <tr>
+    <td><img src="docs/screenshots/tasks.webp" alt="Tasks"></td>
+    <td><img src="docs/screenshots/calendar.webp" alt="Calendar"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/health.webp" alt="Health"></td>
+    <td><img src="docs/screenshots/assistant.webp" alt="AI assistant"></td>
+  </tr>
+</table>
 
-## Architecture
+## Quick start
 
-| Part       | Path                                                       | Stack                                                     |
-| ---------- | ---------------------------------------------------------- | --------------------------------------------------------- |
-| Web app    | [`apps/web`](apps/web)                                     | Next.js (App Router), React, TypeScript, Tailwind CSS v4  |
-| API        | [`apps/api`](apps/api)                                     | Python 3.12, FastAPI, SQLAlchemy, Alembic, Uvicorn        |
-| Contracts  | [`packages/contracts`](packages/contracts)                 | OpenAPI schema and TS types generated from the API        |
-| TS configs | [`packages/typescript-config`](packages/typescript-config) | Shared strict `tsconfig` presets                          |
-| ESLint     | [`packages/eslint-config`](packages/eslint-config)         | Shared flat config (Next.js, TypeScript, import ordering) |
-
-JavaScript packages are managed with **pnpm workspaces**. Python is managed with a **uv
-workspace** rooted at the repository. The API also has a small `package.json` that wraps `uv`
-commands, so `pnpm` can drive both stacks from the repository root.
-
-**Shared API types.** The Pydantic models in the API are the single source of truth for the API
-contract. `pnpm contracts:generate` exports the OpenAPI schema to `packages/contracts` and
-generates matching TypeScript types, which the web app imports from `@orbit/contracts`. Tests
-and CI fail if the generated contract falls out of date.
-
-See [docs/architecture.md](docs/architecture.md) for details and design decisions.
-
-## Repository structure
-
-```text
-.
-├── apps/
-│   ├── api/                  # FastAPI service (src/ layout, uv-managed)
-│   └── web/                  # Next.js web app
-├── packages/
-│   ├── contracts/            # API contract: openapi.json + generated TS types
-│   ├── eslint-config/        # Shared ESLint flat config
-│   └── typescript-config/    # Shared tsconfig presets
-├── deploy/                   # Caddy reverse proxy config for HTTPS
-├── docs/                     # Architecture, development, and deployment guides
-├── .github/                  # CI and container workflows, issue and PR templates
-├── .husky/                   # Git hooks (pre-commit, commit-msg)
-├── compose.yaml              # Docker Compose: migrate, API, web, optional HTTPS proxy
-├── package.json              # Root scripts and JS tooling
-├── pnpm-workspace.yaml
-├── pyproject.toml            # uv workspace root and shared Ruff config
-└── uv.lock
-```
-
-## Prerequisites
-
-- **Node.js 24 LTS** (see [`.nvmrc`](.nvmrc); newer versions generally work)
-- **pnpm 11** (`npm install -g pnpm`, or `corepack enable`)
-- **Python 3.12** (see [`.python-version`](.python-version); uv can install it for you)
-- **uv 0.8+** ([installation guide](https://docs.astral.sh/uv/getting-started/installation/))
-
-## Getting started
+### With Docker
 
 ```bash
 git clone https://github.com/nithiin7/orbit-assistant.git
 cd orbit-assistant
-
-pnpm install              # JS dependencies + Git hooks
-uv sync --all-packages    # Python virtual environment in .venv
-pnpm db:migrate           # create the local SQLite database (apps/api/.data/, git-ignored)
-
-pnpm dev                  # web on http://localhost:3000, API on http://localhost:8000
+docker compose up -d --build
 ```
 
-> [!TIP]
-> Check the API with `curl http://localhost:8000/api/v1/health/ready` (database reachable and
-> migrated). Interactive API docs are served at <http://localhost:8000/docs> outside production.
+Open <http://localhost:3000> and create your account. For HTTPS on your own domain, backups, and
+upgrades, see the [deployment guide](docs/deployment.md).
 
-## Self-hosting with Docker
+### From source
 
-Run Orbit without installing Node.js or Python. Only Docker with the Compose plugin is needed:
+Requires Node.js 24, pnpm 11, Python 3.12, and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-cp .env.example .env            # optional; defaults work on localhost
-docker compose up -d --build    # migrates the database, then starts the API and web app
+pnpm install
+uv sync --all-packages
+pnpm db:migrate
+pnpm dev        # web on :3000, API on :8000
 ```
 
-Open <http://localhost:3000>. Data lives in the `orbit-data` Docker volume. For HTTPS on your own
-domain, run `docker compose --profile proxy up -d --build` after setting `DOMAIN` and the public
-URLs in `.env`. Prebuilt images are published to the GitHub Container Registry. See
-[docs/deployment.md](docs/deployment.md) for configuration, published images, backups, and
-upgrades.
+## Built with
 
-## Configuration
-
-Each app has its own example file. Copy it to configure local overrides. Both apps run with
-safe defaults and no configuration.
-
-| File                                             | Copy to               | Visibility                        |
-| ------------------------------------------------ | --------------------- | --------------------------------- |
-| [`apps/web/.env.example`](apps/web/.env.example) | `apps/web/.env.local` | `NEXT_PUBLIC_*` values are public |
-| [`apps/api/.env.example`](apps/api/.env.example) | `apps/api/.env`       | Server-only                       |
-
-- Variables prefixed `NEXT_PUBLIC_` are embedded into the browser bundle. **Never put secrets in
-  them.**
-- API variables use the `ORBIT_` prefix and are validated at startup by Pydantic Settings. Invalid
-  values stop the server with a clear error.
-- `.env` files are git-ignored. Only commit `.env.example` files, and only with placeholder values.
-
-## Commands
-
-Run everything from the repository root.
-
-| Command                   | What it does                                                 |
-| ------------------------- | ------------------------------------------------------------ |
-| `pnpm dev`                | Start the web app and API together (Ctrl+C stops both)       |
-| `pnpm dev:web`            | Start only the web app                                       |
-| `pnpm dev:api`            | Start only the API (auto-reload in development)              |
-| `pnpm lint`               | ESLint (web) and Ruff (API)                                  |
-| `pnpm lint:web`           | ESLint only                                                  |
-| `pnpm lint:api`           | Ruff lint only                                               |
-| `pnpm format`             | Format everything (Prettier + Ruff)                          |
-| `pnpm format:check`       | Check formatting without writing                             |
-| `pnpm typecheck`          | TypeScript (`tsc`) and Pyright                               |
-| `pnpm test`               | Vitest (web) and Pytest (API)                                |
-| `pnpm test:web`           | Vitest only                                                  |
-| `pnpm test:api`           | Pytest only                                                  |
-| `pnpm test:e2e`           | Browser journeys (Playwright) against a throwaway database   |
-| `pnpm check`              | All quality gates: lint, format check, type check, tests     |
-| `pnpm build`              | Production build of the web app                              |
-| `pnpm contracts:generate` | Regenerate the shared API contract after changing API models |
-| `pnpm contracts:check`    | Verify the shared API contract is up to date                 |
-| `pnpm db:migrate`         | Apply database migrations to the configured database         |
-
-You can also use `uv` directly inside `apps/api`, for example `uv run pytest -k health`. See
-[docs/development.md](docs/development.md) for the full workflow.
-
-## Commit conventions
-
-Commits follow [Conventional Commits](https://www.conventionalcommits.org/). The subject should
-be short (72 characters at most) and use the imperative mood:
-
-```text
-feat(web): add responsive app shell
-fix(api): validate health response
-docs: document local development
-```
-
-Git hooks (installed by `pnpm install`) format and lint staged files on commit and validate the
-commit message. CI runs the full suite. See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Development status
-
-Orbit is pre-1.0: usable, tested, and not yet released. Expect breaking changes between minor
-versions until 1.0 (see [docs/release.md](docs/release.md)).
-
-| Area                                                     | Status                     |
-| -------------------------------------------------------- | -------------------------- |
-| Monorepo, tooling, CI, containers                        | ✅ In place                |
-| Accounts, workspaces, authorization                      | ✅ In place                |
-| Tasks, shopping, reminders, finance, notes, calendar     | ✅ In place                |
-| Habits, documents, health and fitness, dashboard, search | ✅ In place                |
-| AI layer, integrations, backups, agent and automation    | ✅ In place                |
-| Browser end-to-end tests                                 | ✅ A few critical journeys |
-| Voice, multi-device offline sync, shared workspaces      | ❌ Not built               |
-| Independent security audit, first tagged release         | ⏳ Not yet                 |
-
-The engineering assessment, with known risks and what was verified, is in
-[docs/assessment.md](docs/assessment.md). Changes are recorded in [CHANGELOG.md](CHANGELOG.md).
+Next.js 16 · React 19 · TypeScript · Tailwind CSS v4 · FastAPI · Python 3.12 · SQLAlchemy ·
+SQLite or PostgreSQL
 
 ## Documentation
 
-| Guide                                | For                                                          |
-| ------------------------------------ | ------------------------------------------------------------ |
-| [User guide](docs/user-guide.md)     | Using each module, backups, AI, automation, and integrations |
-| [Deployment](docs/deployment.md)     | Self-hosting with Docker, HTTPS, monitoring, upgrades        |
-| [Development](docs/development.md)   | Local setup, settings, tests, and workflow                   |
-| [Architecture](docs/architecture.md) | How the web app, API, storage, AI, and agent fit together    |
-| [Backups](docs/backups.md)           | Backup format, encryption, and restore                       |
-| [Integrations](docs/integrations.md) | Setting up Google and Microsoft                              |
-| [Assessment](docs/assessment.md)     | Engineering and security review, known risks                 |
-| [Releasing](docs/release.md)         | Versioning, changelog, and the release checklist             |
+- [Deployment](docs/deployment.md): self-hosting, HTTPS, and upgrades
+- [Integrations](docs/integrations.md): connecting Google and Microsoft
+- [Development](docs/development.md): local setup, configuration, and tests
+- [Architecture](docs/architecture.md): how Orbit is built
 
-## Contributing and security
+## Contributing
 
-- [Contributing guide](CONTRIBUTING.md)
-- [Code of conduct](CODE_OF_CONDUCT.md)
-- [Security policy](SECURITY.md): please report vulnerabilities privately.
+Contributions are welcome. Read the [contributing guide](CONTRIBUTING.md) and the
+[code of conduct](CODE_OF_CONDUCT.md). Please report security issues privately as described in
+the [security policy](SECURITY.md).
 
 ## License
 
-Orbit is licensed under the [Apache License 2.0](LICENSE).
+[Apache License 2.0](LICENSE)
