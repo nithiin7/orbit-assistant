@@ -10722,6 +10722,8 @@ export interface components {
             secondary_muscles: ("chest" | "upper_back" | "lats" | "lower_back" | "traps" | "shoulders" | "biceps" | "triceps" | "forearms" | "abs" | "obliques" | "glutes" | "quadriceps" | "hamstrings" | "calves" | "hip_flexors" | "adductors" | "full_body")[];
             /** Is Custom */
             is_custom: boolean;
+            /** Builtin Key */
+            builtin_key: string | null;
             /** Archived */
             archived: boolean;
             /**

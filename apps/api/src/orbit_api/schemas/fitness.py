@@ -355,6 +355,8 @@ class ExerciseResponse(BaseModel):
     primary_muscles: list[Muscle]
     secondary_muscles: list[Muscle]
     is_custom: bool
+    builtin_key: str | None
+    """The stable key of a built-in exercise, for ready-made templates; `None` when custom."""
     archived: bool
     updated_at: datetime
 
@@ -372,6 +374,7 @@ class ExerciseResponse(BaseModel):
             primary_muscles=list(d.primary_muscles),
             secondary_muscles=list(d.secondary_muscles),
             is_custom=exercise.is_custom,
+            builtin_key=exercise.builtin_key,
             archived=exercise.archived_at is not None,
             updated_at=exercise.updated_at,
         )

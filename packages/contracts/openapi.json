@@ -44061,6 +44061,17 @@
             "type": "boolean",
             "title": "Is Custom"
           },
+          "builtin_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Builtin Key"
+          },
           "archived": {
             "type": "boolean",
             "title": "Archived"
@@ -44083,6 +44094,7 @@
           "primary_muscles",
           "secondary_muscles",
           "is_custom",
+          "builtin_key",
           "archived",
           "updated_at"
         ],

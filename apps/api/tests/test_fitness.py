@@ -164,6 +164,7 @@ class TestExercises:
         first = library(client, fit, ada)
         assert {"Bench press", "Back squat", "Running", "Plank"} <= set(first)
         assert first["Bench press"]["is_custom"] is False
+        assert first["Bench press"]["builtin_key"] == "barbell_bench_press"
         assert first["Running"]["exercise_type"] == "distance_duration"
         assert library(client, fit, ada).keys() == first.keys()
         count = query(_db(client), "SELECT COUNT(*) FROM fitness_exercises")[0][0]
@@ -181,6 +182,7 @@ class TestExercises:
         }
         exercise = ok(client.post(f"{fit}/exercises", json=body, headers=ada), 201)
         assert exercise["is_custom"] is True
+        assert exercise["builtin_key"] is None
         edited = ok(
             client.put(
                 f"{fit}/exercises/{exercise['id']}",
