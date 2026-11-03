@@ -69,18 +69,46 @@ export type FitnessView =
   | "settings";
 
 export const FITNESS_VIEWS: readonly Option<FitnessView>[] = [
-  { value: "overview", label: "Overview" },
+  { value: "overview", label: "Today" },
   { value: "workouts", label: "Workouts" },
-  { value: "exercises", label: "Exercises" },
   { value: "templates", label: "Templates" },
-  { value: "body", label: "Body" },
-  { value: "nutrition", label: "Nutrition" },
+  { value: "exercises", label: "Exercises" },
+  { value: "nutrition", label: "Food" },
   { value: "water", label: "Water" },
+  { value: "body", label: "Body" },
   { value: "activity", label: "Activity" },
   { value: "goals", label: "Goals" },
   { value: "progress", label: "Progress" },
   { value: "settings", label: "Settings" },
 ];
+
+/** The views in the order and groups the side rail shows them; a group without a label leads. */
+export const FITNESS_VIEW_GROUPS: readonly {
+  label: string | null;
+  views: readonly FitnessView[];
+}[] = [
+  { label: null, views: ["overview"] },
+  { label: "Train", views: ["workouts", "templates", "exercises"] },
+  { label: "Track daily", views: ["nutrition", "water", "body", "activity"] },
+  { label: "Review", views: ["goals", "progress"] },
+  { label: null, views: ["settings"] },
+];
+
+/** What each view is for, in a line, so it's clear whether to use it. */
+export const FITNESS_VIEW_HINTS: Record<FitnessView, string> = {
+  overview: "Today at a glance. Start a workout or log something in a tap.",
+  workouts: "Start a workout and log sets as you go, or record one you’ve already done.",
+  templates:
+    "Workouts you repeat, ready to start in one tap. Add a starter plan or build your own.",
+  exercises: "Every exercise you can add to a workout, with your history for each.",
+  nutrition: "Optional. Log meals to see calories and protein against your daily targets.",
+  water: "Optional. Tap to add a glass and see how close you are to your target.",
+  body: "Optional. Record your weight and measurements now and then to see the trend.",
+  activity: "Optional. Steps, runs, walks, and other movement outside your workouts.",
+  goals: "Set a target, like a body weight or a lift, and see if you’re on pace.",
+  progress: "Personal records, weekly volume, and which muscles you’ve trained.",
+  settings: "Units, daily targets, and which sections show on Today.",
+};
 
 export type FitnessLocation =
   | { kind: "view"; view: FitnessView }

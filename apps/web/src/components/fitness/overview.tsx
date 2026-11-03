@@ -1,7 +1,14 @@
 "use client";
 
 import type { FitnessSection } from "@orbit/contracts";
-import { CalendarClock, Droplets } from "lucide-react";
+import {
+  CalendarClock,
+  Droplets,
+  LayoutTemplate,
+  type LucideIcon,
+  Play,
+  Settings2,
+} from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useState } from "react";
@@ -48,6 +55,69 @@ function More({ view, children }: { view: FitnessView; children: ReactNode }) {
   );
 }
 
+/** First steps for someone who hasn't logged a workout yet; it goes away after the first. */
+function GettingStarted({ hasTemplates }: { hasTemplates: boolean }) {
+  const steps: { view: FitnessView; icon: LucideIcon; title: string; text: string }[] = [
+    {
+      view: "templates",
+      icon: LayoutTemplate,
+      title: hasTemplates ? "Check your templates" : "Pick a starter template",
+      text: "Full body, push/pull/legs, home workouts, and more. Add one in a tap.",
+    },
+    {
+      view: "workouts",
+      icon: Play,
+      title: "Start your first workout",
+      text: "Tick off each set as you go. Rest timers and last time’s numbers are built in.",
+    },
+    {
+      view: "settings",
+      icon: Settings2,
+      title: "Set your units and targets",
+      text: "Optional. Daily calories, protein, and water, if you want to track them.",
+    },
+  ];
+  return (
+    <section
+      aria-labelledby="health-start-heading"
+      className="space-y-4 rounded-xl border border-brand/30 bg-brand-subtle/40 p-4 @3xl:p-5"
+    >
+      <div className="space-y-0.5">
+        <h2 id="health-start-heading" className="text-sm font-semibold">
+          New here? Start with these
+        </h2>
+        <p className="text-xs text-muted-foreground">
+          Everything else is optional. Use only the parts that help you.
+        </p>
+      </div>
+      <ol className="grid gap-3 @3xl:grid-cols-3">
+        {steps.map((step, index) => (
+          <li key={step.view}>
+            <Link
+              href={fitnessHref({ kind: "view", view: step.view })}
+              className="flex h-full gap-3 rounded-lg border bg-card p-3 transition-colors duration-150 outline-none hover:border-brand/40 focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <span
+                aria-hidden="true"
+                className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-subtle text-xs font-semibold text-brand tabular-nums"
+              >
+                {index + 1}
+              </span>
+              <span className="min-w-0 space-y-0.5">
+                <span className="flex items-center gap-1.5 text-sm font-medium">
+                  <step.icon className="size-3.5 text-muted-foreground" aria-hidden="true" />
+                  {step.title}
+                </span>
+                <span className="block text-xs text-pretty text-muted-foreground">{step.text}</span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 export function OverviewView({
   workspaceId,
   today,
@@ -82,21 +152,25 @@ export function OverviewView({
         const shown = (section: FitnessSection) => !data.hidden_sections.includes(section);
         const weights = data.weight_trend;
         const latest = weights[weights.length - 1];
+        const ready =
+          templates.state.status === "success"
+            ? templates.state.data.templates.filter((t) => !t.archived)
+            : [];
+        const fresh =
+          data.recent_sessions.length === 0 &&
+          data.completed_today.length === 0 &&
+          data.active_session === null &&
+          data.week_workouts === 0;
         return (
           <div className="space-y-4">
             <FormAlert message={error} />
+            {fresh ? <GettingStarted hasTemplates={ready.length > 0} /> : null}
             {shown("workout") ? (
               <Section
                 title="Today’s workout"
                 action={
                   data.active_session === null ? (
-                    <StartWorkoutMenu
-                      workspaceId={workspaceId}
-                      templates={
-                        templates.state.status === "success" ? templates.state.data.templates : []
-                      }
-                      onStart={begin}
-                    />
+                    <StartWorkoutMenu workspaceId={workspaceId} templates={ready} onStart={begin} />
                   ) : null
                 }
               >
@@ -148,17 +222,31 @@ export function OverviewView({
                     ))}
                   </ul>
                 ) : data.active_session === null && data.scheduled_today.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Nothing yet today. {data.week_workouts} workout
-                    {data.week_workouts === 1 ? "" : "s"} so far this week.
-                  </p>
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Nothing yet today. {data.week_workouts} workout
+                      {data.week_workouts === 1 ? "" : "s"} so far this week.
+                    </p>
+                    {ready.length > 0 ? (
+                      <ul aria-label="Quick start" className="flex flex-wrap gap-2">
+                        {ready.slice(0, 4).map((template) => (
+                          <li key={template.id}>
+                            <Button size="sm" variant="soft" onClick={() => begin(template.id)}>
+                              <Play aria-hidden="true" />
+                              {template.name}
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
                 ) : null}
               </Section>
             ) : null}
 
-            <div className="grid gap-4 @4xl:grid-cols-2">
+            <div className="grid gap-4 @3xl:grid-cols-2 @6xl:grid-cols-3">
               {shown("nutrition") ? (
-                <Section title="Nutrition today" action={<More view="nutrition">Open</More>}>
+                <Section title="Food today" action={<More view="nutrition">Open</More>}>
                   <Meter
                     label="Energy"
                     value={`${formatEnergy(data.nutrition.energy_cal, units.energy_unit)}${data.targets.energy_cal ? ` of ${formatEnergy(data.targets.energy_cal, units.energy_unit)}` : ""}`}

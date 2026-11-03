@@ -14,7 +14,7 @@ export default function HealthPage() {
     <div className="space-y-8">
       <PageHeader
         title="Health"
-        description="Log workouts, track measurements, food, water, and activity, and work toward your goals. A personal tracker, not medical advice."
+        description="Train, track what matters to you, and see your progress. A personal tracker, not medical advice."
         actions={<AssistMenu module="health" actions={ASSIST_ACTIONS.health} variant="outline" />}
       />
       <Suspense>

@@ -1,14 +1,17 @@
 import type {
+  Exercise,
   FitnessOverview,
   FitnessProfile,
   Workout,
   WorkoutExercise,
   WorkoutSet,
+  WorkoutTemplate,
 } from "@orbit/contracts";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { STARTER_TEMPLATES } from "@/lib/fitness";
 import { ada, json, mockApi, personal, status } from "@/test/api-mock";
 import { renderSignedIn } from "@/test/session";
 
@@ -153,6 +156,38 @@ function session(units: Partial<FitnessProfile> = {}) {
   };
 }
 
+function builtin(key: string): Exercise {
+  return {
+    id: `ex-${key}`,
+    name: key,
+    category: "strength",
+    exercise_type: "weight_reps",
+    equipment: "dumbbell",
+    description: "",
+    instructions: "",
+    primary_muscles: [],
+    secondary_muscles: [],
+    is_custom: false,
+    builtin_key: key,
+    archived: false,
+    updated_at: "2030-01-01T00:00:00Z",
+  };
+}
+
+function template(overrides: Partial<WorkoutTemplate> = {}): WorkoutTemplate {
+  return {
+    id: "t1",
+    name: "Push day",
+    category: "push",
+    description: "",
+    notes: "",
+    archived: false,
+    exercises: [],
+    updated_at: "2030-01-01T00:00:00Z",
+    ...overrides,
+  };
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
   localStorage.clear();
@@ -170,7 +205,7 @@ describe("HealthPanel: overview", () => {
       "aria-valuenow",
       "60",
     );
-    expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Today" })).toHaveAttribute("aria-current", "page");
   });
 
   it("leaves out the sections the person hid", async () => {
@@ -181,7 +216,7 @@ describe("HealthPanel: overview", () => {
     await renderSignedIn(<HealthPanel />);
     expect(await screen.findByRole("heading", { name: "Water today" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Weight" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Nutrition today" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Food today" })).not.toBeInTheDocument();
   });
 
   it("adds water in one tap", async () => {
@@ -202,6 +237,94 @@ describe("HealthPanel: overview", () => {
       const call = api.mock.calls.find(([, init]) => init?.method === "POST");
       expect(JSON.parse(String(call?.[1]?.body))).toMatchObject({ amount_ml: 250 });
     });
+  });
+});
+
+describe("HealthPanel: getting started", () => {
+  it("guides someone who hasn't trained yet", async () => {
+    mockApi({ ...session(), [`GET ${WS}/overview`]: json(overview({ week_workouts: 0 })) });
+    await renderSignedIn(<HealthPanel />);
+    expect(
+      await screen.findByRole("heading", { name: "New here? Start with these" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Pick a starter template/ })).toHaveAttribute(
+      "href",
+      "/health?view=templates",
+    );
+  });
+
+  it("stays out of the way once there are workouts", async () => {
+    mockApi({ ...session(), [`GET ${WS}/overview`]: json(overview()) });
+    await renderSignedIn(<HealthPanel />);
+    expect(await screen.findByText(/2 workouts so far this week/)).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /New here/ })).not.toBeInTheDocument();
+  });
+});
+
+describe("HealthPanel: workouts", () => {
+  it("starts a template from its card", async () => {
+    navigation.params = new URLSearchParams("view=workouts");
+    const user = userEvent.setup();
+    const api = mockApi({
+      ...session(),
+      [`GET ${WS}/templates`]: json({ templates: [template()] }),
+      [`GET ${WS}/sessions`]: json({ sessions: [] }),
+      [`POST ${WS}/sessions`]: json(workout({ id: "w9", template_id: "t1" })),
+    });
+    await renderSignedIn(<HealthPanel />);
+    expect(screen.queryByRole("link", { name: /Browse starter templates/ })).toBeNull();
+    await user.click(await screen.findByRole("button", { name: "Start Push day" }));
+    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith("/health?workout=w9"));
+    const call = api.mock.calls.find(([, init]) => init?.method === "POST");
+    expect(JSON.parse(String(call?.[1]?.body))).toMatchObject({ template_id: "t1" });
+  });
+
+  it("points to the starter templates when there are none", async () => {
+    navigation.params = new URLSearchParams("view=workouts");
+    mockApi({ ...session(), [`GET ${WS}/sessions`]: json({ sessions: [] }) });
+    await renderSignedIn(<HealthPanel />);
+    expect(await screen.findByRole("link", { name: /Browse starter templates/ })).toHaveAttribute(
+      "href",
+      "/health?view=templates",
+    );
+    expect(screen.getByRole("button", { name: /Empty workout/ })).toBeInTheDocument();
+    expect(screen.getByText("No workouts yet")).toBeInTheDocument();
+  });
+});
+
+describe("HealthPanel: starter templates", () => {
+  it("adds a starter as the person's own template", async () => {
+    navigation.params = new URLSearchParams("view=templates");
+    const user = userEvent.setup();
+    const starter = STARTER_TEMPLATES.find((t) => t.id === "full-body");
+    const saved: WorkoutTemplate[] = [];
+    const api = mockApi({
+      ...session(),
+      [`GET ${WS}/templates`]: (request) => json({ templates: saved })(request),
+      [`GET ${WS}/exercises`]: json({
+        exercises: starter?.exercises.map((item) => builtin(item.key)) ?? [],
+      }),
+      [`POST ${WS}/templates`]: (request) => {
+        saved.push(template({ id: "t2", name: "Full body", category: "full_body" }));
+        return json(saved[0])(request);
+      },
+    });
+    await renderSignedIn(<HealthPanel />);
+    const add = await screen.findByRole("button", { name: "Add Full body to my templates" });
+    await waitFor(() => expect(add).toBeEnabled());
+    await user.click(add);
+    await waitFor(() => {
+      const call = api.mock.calls.find(([, init]) => init?.method === "POST");
+      expect(JSON.parse(String(call?.[1]?.body))).toMatchObject({
+        name: "Full body",
+        category: "full_body",
+        exercises: expect.arrayContaining([
+          expect.objectContaining({ exercise_id: "ex-goblet_squat", sets: 3 }),
+        ]) as unknown,
+      });
+    });
+    expect(await screen.findByText("In your templates")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Start Full body" })).toBeInTheDocument();
   });
 });
 

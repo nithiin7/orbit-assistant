@@ -3037,20 +3037,32 @@ The OpenAPI document is the reference for fields.
 
 - `/health` (`components/fitness/`), with views in the URL (`?view=` overview, workouts,
   exercises, templates, body, nutrition, water, activity, goals, progress, settings) and detail
-  pages (`?workout=`, `?exercise=`, `?goal=`). One primary **Log** menu: start a workout (the
-  first template), a past workout, food, water, measurements, or activity.
-- **Overview**: today's workout (in progress, scheduled, or done), nutrition and water against
-  targets (water quick-add), weight trend, active goals, recent workouts and activity, and the
-  latest records. Sections can be hidden in Settings.
-- **Workout logger** (mobile-first): a sticky header with the elapsed clock, Finish, Pause or
-  Resume, and a rest countdown; each exercise shows last time's sets, then one row per set with
-  large inputs in the person's units (saved when a field loses focus) and a check to mark it done;
-  add a set (copying the last), set types, rest time, reorder, remove, add exercises from a
-  searchable picker, notes, training notes, and linked documents.
+  pages (`?workout=`, `?exercise=`, `?goal=`). Like Habits, a sticky side rail from `@5xl/health`
+  (chips below that) groups the views: Today; Train (Workouts, Templates, Exercises); Track daily
+  (Food, Water, Body, Activity, each marked optional); Review (Goals, Progress); and Settings.
+  Each view opens with a one-line hint of what it's for (`FITNESS_VIEW_HINTS`).
+- **Today** (overview): a three-step getting-started card until the first workout; today's
+  workout (in progress, scheduled, or done, with one-tap starts for up to four templates); food
+  and water against targets (water quick-add); weight trend; active goals; recent workouts and
+  activity; and the latest records. Its **Log** menu starts a workout (the first template) or logs
+  a past workout, food, water, measurements, or activity. Sections can be hidden in Settings.
+- **Workouts**: a start card per template plus an empty workout (or a link to the starter
+  templates when there are none), hidden while a workout is in progress; history by month.
+- **Workout logger** (mobile-first): a header that sticks below the mobile app bar, with the
+  elapsed clock, sets done, Finish, Pause or Resume, a rest countdown, and a menu to stop early or
+  delete; each exercise shows last time's sets, then one row per set with large inputs in the
+  person's units (saved when a field loses focus), last time's matching set (tap to copy it, on
+  wider screens), and a check to mark it done; add a set (copying the last), set types, rest time,
+  reorder, remove, add exercises from a searchable picker, notes, training notes, and linked
+  documents.
+- **Starter templates** (`src/lib/fitness/starter-templates.ts`): nine ready-made plans (full
+  body, home bodyweight, push/pull/legs, upper/lower, cardio, mobility) listed by built-in
+  exercise key. Adding one saves an ordinary template with the person's copies of those
+  exercises, matched by the exercise response's `builtin_key` (archived ones are skipped).
 - **Exercises** (search, category and equipment filters, archived, custom exercises, and each
   exercise's records, estimated 1RM chart, and history), **Templates** (ordered editor, start,
   duplicate, archive, schedule on the calendar with a reminder), **Body** (measurements, weight
-  trend, BMI with its caveat, progress photos with side-by-side comparison), **Nutrition** (a day
+  trend, BMI with its caveat, progress photos with side-by-side comparison), **Food** (a day
   by meal, totals and targets, saved foods and meals, 14-day history), **Water**, **Activity**,
   **Goals** (progress, pace, milestones, check-ins, related habit, notes and documents),
   **Progress** (analytics and records), and **Settings** (units, height, targets, quick amounts,

@@ -12,7 +12,7 @@ import {
   ArrowDown,
   ArrowUp,
   Check,
-  Copy,
+  ChevronLeft,
   FileText,
   MoreHorizontal,
   Pause,
@@ -70,7 +70,7 @@ import {
 } from "@/lib/fitness";
 import { cn } from "@/utils/common";
 
-import { ExercisePicker, LinkedRecords, Loaded, shortDate } from "./shared";
+import { ExercisePicker, LinkedRecords, Loaded, Meter, shortDate } from "./shared";
 import { Clock, elapsedSeconds } from "./workouts";
 
 const DEFAULT_REST = 90;
@@ -99,9 +99,10 @@ export function WorkoutDetail({
     <div className="space-y-4">
       <Link
         href={fitnessHref({ kind: "view", view: "workouts" })}
-        className="text-sm text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        className="inline-flex items-center gap-1 rounded-md text-sm text-muted-foreground transition-colors duration-150 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
       >
-        ← Workouts
+        <ChevronLeft className="size-4" aria-hidden="true" />
+        Workouts
       </Link>
       <Loaded resource={workout.state} reload={workout.reload} skeleton="h-96">
         {(data) => <WorkoutLogger key={data.id} workspaceId={workspaceId} workout={data} />}
@@ -121,6 +122,11 @@ function WorkoutLogger({ workspaceId, workout }: { workspaceId: string; workout:
   const live = workout.status === "active" || workout.status === "paused";
   const now = useNow(live);
   const rest = restTimer(workout, now);
+  const totalSets = workout.exercises.reduce((sum, item) => sum + item.sets.length, 0);
+  const doneSets = workout.exercises.reduce(
+    (sum, item) => sum + item.sets.filter((set) => set.completed).length,
+    0,
+  );
 
   const act = (call: (token: string) => Promise<unknown>, touchesHabits = false) => {
     setError(null);
@@ -168,7 +174,8 @@ function WorkoutLogger({ workspaceId, workout }: { workspaceId: string; workout:
 
   return (
     <div className="space-y-4">
-      <header className="sticky top-0 z-10 -mx-1 space-y-3 rounded-xl border bg-card/95 p-4 backdrop-blur">
+      {/* Sticks below the mobile app bar (h-14), so the clock and Finish stay in reach. */}
+      <header className="sticky top-16 z-10 space-y-3 rounded-xl border bg-card/95 p-4 shadow-elevation-1 backdrop-blur md:top-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 space-y-0.5">
             <h2 className="truncate text-lg font-semibold">{workout.name}</h2>
@@ -190,49 +197,64 @@ function WorkoutLogger({ workspaceId, workout }: { workspaceId: string; workout:
             ) : null}
           </div>
         </div>
-        {live ? (
-          <div className="flex flex-wrap gap-2">
-            <Button className="flex-1 sm:flex-none" onClick={() => action("complete")}>
-              <Check aria-hidden="true" />
-              Finish
-            </Button>
-            {workout.status === "active" ? (
-              <Button variant="outline" onClick={() => action("pause")}>
-                <Pause aria-hidden="true" />
-                Pause
-              </Button>
-            ) : (
-              <Button variant="soft" onClick={() => action("resume")}>
-                <Play aria-hidden="true" />
-                Resume
-              </Button>
-            )}
-            <Menu
-              variant="ghost"
-              size="icon"
-              chevron={false}
-              align="end"
-              aria-label="More workout actions"
-              items={[
-                {
-                  id: "abandon",
-                  label: "Stop early",
-                  icon: Square,
-                  onSelect: () => void abandon(),
-                },
-                {
-                  id: "delete",
-                  label: "Delete workout",
-                  icon: Trash2,
-                  destructive: true,
-                  onSelect: () => void remove(),
-                },
-              ]}
-            >
-              <MoreHorizontal aria-hidden="true" />
-            </Menu>
-          </div>
+        {totalSets > 0 ? (
+          <Meter
+            label="Sets done"
+            value={`${doneSets} of ${totalSets}`}
+            fraction={doneSets / totalSets}
+            tone={doneSets === totalSets ? "success" : "brand"}
+          />
         ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          {live ? (
+            <>
+              <Button className="flex-1 sm:flex-none" onClick={() => action("complete")}>
+                <Check aria-hidden="true" />
+                Finish
+              </Button>
+              {workout.status === "active" ? (
+                <Button variant="outline" onClick={() => action("pause")}>
+                  <Pause aria-hidden="true" />
+                  Pause
+                </Button>
+              ) : (
+                <Button variant="soft" onClick={() => action("resume")}>
+                  <Play aria-hidden="true" />
+                  Resume
+                </Button>
+              )}
+            </>
+          ) : null}
+          <Menu
+            variant="ghost"
+            size="icon"
+            chevron={false}
+            align="end"
+            aria-label="More workout actions"
+            className="ml-auto"
+            items={[
+              ...(live
+                ? [
+                    {
+                      id: "abandon",
+                      label: "Stop early",
+                      icon: Square,
+                      onSelect: () => void abandon(),
+                    },
+                  ]
+                : []),
+              {
+                id: "delete",
+                label: "Delete workout",
+                icon: Trash2,
+                destructive: true,
+                onSelect: () => void remove(),
+              },
+            ]}
+          >
+            <MoreHorizontal aria-hidden="true" />
+          </Menu>
+        </div>
         {rest ? (
           <div
             role="timer"
@@ -251,9 +273,12 @@ function WorkoutLogger({ workspaceId, workout }: { workspaceId: string; workout:
       <FormAlert message={error} />
 
       {workout.exercises.length === 0 ? (
-        <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-          No exercises yet. Add the first one to start logging sets.
-        </p>
+        <div className="flex flex-col items-center gap-1 rounded-xl border border-dashed p-8 text-center">
+          <p className="text-sm font-medium">No exercises yet</p>
+          <p className="text-xs text-muted-foreground">
+            Add the first one, then tick off each set as you finish it.
+          </p>
+        </div>
       ) : null}
 
       <ol className="space-y-3">
@@ -276,7 +301,7 @@ function WorkoutLogger({ workspaceId, workout }: { workspaceId: string; workout:
 
       <Button
         variant="outline"
-        className="w-full"
+        className="w-full border-dashed"
         onClick={() => setPicking(true)}
         disabled={exercises.state.status !== "success"}
       >
@@ -285,15 +310,6 @@ function WorkoutLogger({ workspaceId, workout }: { workspaceId: string; workout:
       </Button>
 
       <WorkoutNotes workspaceId={workspaceId} workout={workout} act={act} />
-
-      {!live ? (
-        <div className="flex flex-wrap gap-2">
-          <Button variant="destructive" size="sm" onClick={() => void remove()}>
-            <Trash2 aria-hidden="true" />
-            Delete workout
-          </Button>
-        </div>
-      ) : null}
 
       {picking && exercises.state.status === "success" ? (
         <ExercisePicker
@@ -467,6 +483,11 @@ function ExerciseCard({
                 Time
               </th>
             ) : null}
+            {previous ? (
+              <th scope="col" className="hidden pb-1 font-medium @lg:table-cell">
+                Last time
+              </th>
+            ) : null}
             <th scope="col" className="w-20 pb-1 text-right font-medium">
               <span className="sr-only">Done</span>
             </th>
@@ -479,6 +500,7 @@ function ExerciseCard({
               set={set}
               number={index + 1}
               item={item}
+              previous={previous?.sets[index] ?? null}
               units={units}
               onSave={(values) =>
                 act((token) =>
@@ -498,8 +520,11 @@ function ExerciseCard({
         size="sm"
         onClick={() => act((token) => addWorkoutSet(token, workspaceId, workout.id, item.id, null))}
       >
-        <Copy aria-hidden="true" />
-        {item.sets.length > 0 ? "Add set (copy last)" : "Add set"}
+        <Plus aria-hidden="true" />
+        Add set
+        {item.sets.length > 0 ? (
+          <span className="font-normal text-muted-foreground">(copies the last)</span>
+        ) : null}
       </Button>
     </article>
   );
@@ -603,6 +628,7 @@ function SetRow({
   set,
   number,
   item,
+  previous,
   units,
   onSave,
   onDelete,
@@ -610,6 +636,8 @@ function SetRow({
   set: WorkoutSet;
   number: number;
   item: WorkoutExercise;
+  /** The same set last time, when there was one; tapping it copies its values. */
+  previous: WorkoutSet | null;
   units: Units;
   onSave: (values: WorkoutSetRequest) => void;
   onDelete: () => void;
@@ -674,6 +702,27 @@ function SetRow({
       {fields.reps ? field("reps", "reps") : null}
       {fields.distance ? field("distance", units.distance_unit) : null}
       {fields.duration ? field("duration", "time") : null}
+      {item.previous ? (
+        <td className="hidden py-1 pr-2 @lg:table-cell">
+          {previous ? (
+            <button
+              type="button"
+              aria-label={`${label}: use last time, ${describeSet(previous, item.exercise_type, units)}`}
+              title="Use these values"
+              onClick={() => {
+                const next = { ...draftOf(previous, units), setType: draft.setType };
+                setDraft(next);
+                save(set.completed, next);
+              }}
+              className="rounded-md px-1.5 py-1 text-xs whitespace-nowrap text-muted-foreground tabular-nums transition-colors duration-150 outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {describeSet(previous, item.exercise_type, units)}
+            </button>
+          ) : (
+            <span className="px-1.5 text-xs text-muted-foreground/60">—</span>
+          )}
+        </td>
+      ) : null}
       <td className="py-1 text-right whitespace-nowrap">
         <Button
           size="icon"
@@ -689,7 +738,7 @@ function SetRow({
           size="icon"
           variant="ghost"
           aria-label={`Remove ${label.toLowerCase()}`}
-          className="size-8"
+          className="size-8 text-muted-foreground hover:text-foreground"
           onClick={onDelete}
         >
           <X aria-hidden="true" />
