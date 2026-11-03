@@ -116,7 +116,7 @@ function RenameWorkspaceForm({ workspace }: { workspace: Workspace }) {
   return (
     <form noValidate onSubmit={onSubmit} className="space-y-3">
       <FormField
-        label="Current workspace name"
+        label="Workspace name"
         autoComplete="off"
         {...register("name", { onChange: () => setSaved(false) })}
         error={errors.name?.message}
@@ -168,7 +168,6 @@ function CreateWorkspaceForm() {
         label="New workspace"
         autoComplete="off"
         placeholder="For example, Side project"
-        hint="Workspaces are private to you. Sharing isn’t available yet."
         {...register("name")}
         error={errors.name?.message}
       />
@@ -218,8 +217,7 @@ function DeleteWorkspaceSection({ workspace }: { workspace: Workspace }) {
           Delete this workspace
         </h3>
         <p className="text-sm text-pretty text-muted-foreground">
-          Permanently deletes {workspace.name} and everything in it. This can’t be undone. Your
-          personal workspace becomes active.
+          Deletes {workspace.name} and everything in it. This can’t be undone.
         </p>
       </div>
       {confirming ? (

@@ -85,7 +85,7 @@ export function AutomaticBackups({ settings }: { settings: BackupSettings }) {
       id="backup-schedule"
       icon={CalendarClock}
       title="Automatic backups"
-      description="The server backs this workspace up on a schedule and keeps the most recent ones. Each run is recorded in the history, including failures."
+      description="Back up this workspace on a schedule."
     >
       <form noValidate onSubmit={(event) => void onSubmit(event)} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -96,7 +96,7 @@ export function AutomaticBackups({ settings }: { settings: BackupSettings }) {
             inputMode="numeric"
             min={1}
             max={MAX_RETENTION}
-            hint="Older automatic backups are deleted. Manual ones are kept until you delete them."
+            hint="Manual backups are always kept."
             {...register("retention", { valueAsNumber: true })}
             error={errors.retention?.message}
           />
@@ -105,9 +105,7 @@ export function AutomaticBackups({ settings }: { settings: BackupSettings }) {
           <Checkbox {...register("includeFiles")} className="mt-0.5" />
           <span>
             <span className="block font-medium">Include files</span>
-            <span className="block text-muted-foreground">
-              Documents, attachments, and photos. Large vaults make large backups.
-            </span>
+            <span className="block text-muted-foreground">Documents, attachments, and photos.</span>
           </span>
         </label>
         <label className="flex items-start gap-3 text-sm">
@@ -118,9 +116,7 @@ export function AutomaticBackups({ settings }: { settings: BackupSettings }) {
               {settings.has_backup_password && settings.backup_password_set_at
                 ? `Password set ${formatWhen(settings.backup_password_set_at)}. `
                 : ""}
-              Orbit keeps only a key that can lock backups, never the password, so the server can
-              encrypt without being able to open them. If you forget it, these backups can’t be
-              restored.
+              If you forget it, these backups can’t be restored.
             </span>
           </span>
         </label>
@@ -135,7 +131,7 @@ export function AutomaticBackups({ settings }: { settings: BackupSettings }) {
               label={settings.has_backup_password ? "New backup password" : "Backup password"}
               type="password"
               autoComplete="new-password"
-              hint={`At least ${MIN_PASSWORD_LENGTH} characters. Earlier backups keep the password they were made with.`}
+              hint={`At least ${MIN_PASSWORD_LENGTH} characters.`}
               {...register("password")}
               error={errors.password?.message}
             />

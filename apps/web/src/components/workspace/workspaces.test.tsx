@@ -263,7 +263,7 @@ describe("WorkspaceSettings", () => {
     });
     await renderSignedIn(<WorkspaceSettings />);
 
-    const name = await screen.findByLabelText("Current workspace name");
+    const name = await screen.findByLabelText("Workspace name");
     await user.clear(name);
     await user.type(name, "Home");
     await user.click(screen.getByRole("button", { name: "Rename" }));
@@ -310,7 +310,7 @@ describe("WorkspaceSettings", () => {
     mockApi({ ...session, "GET /api/v1/workspaces": json({ workspaces: [personal, lab] }) });
     await renderSignedIn(<WorkspaceSettings />);
 
-    await screen.findByLabelText("Current workspace name");
+    await screen.findByLabelText("Workspace name");
     expect(screen.queryByRole("button", { name: /Delete workspace/ })).not.toBeInTheDocument();
   });
 

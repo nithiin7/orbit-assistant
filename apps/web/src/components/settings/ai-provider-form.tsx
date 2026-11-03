@@ -132,8 +132,8 @@ export function ProviderForm({ provider, onDone }: ProviderFormProps) {
         autoComplete="off"
         hint={
           provider?.has_api_key
-            ? "A key is stored. Leave empty to keep it. Keys are encrypted on the server and never shown again."
-            : "Stored encrypted on the Orbit server. It never reaches this browser again."
+            ? "Leave empty to keep the saved key."
+            : "Stored encrypted on the server."
         }
         {...register("api_key")}
         error={errors.api_key?.message}

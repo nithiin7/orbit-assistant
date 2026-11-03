@@ -233,30 +233,25 @@ function Overview({
     {
       done: providers.length > 0,
       label: "Connect a provider",
-      hint: "A local one, like Ollama, keeps everything on your machine.",
       href: "#ai-providers",
     },
     {
       done: hasModel,
       label: "Choose a model for answers",
-      hint: "Pick which of the provider’s models writes answers.",
       href: "#ai-models",
     },
     {
       done: settings.enabled,
       label: "Turn on AI",
-      hint: "Use the switch at the top. You can turn it off at any time.",
       href: null,
     },
   ];
 
   const status = ready
-    ? `Answers come from ${chat.name} · ${settings.chat_model}, ${
-        chat.processing === "local" ? "on this device or your network" : "a cloud provider"
-      }.`
+    ? `${chat.name} · ${settings.chat_model} (${chat.processing === "local" ? "local" : "cloud"})`
     : settings.enabled
-      ? "On, but it needs a provider and model before it can answer."
-      : "Off. No AI feature runs, and nothing is sent anywhere.";
+      ? "Add a provider and model to finish setup."
+      : "Off. Nothing is sent anywhere.";
 
   return (
     <section
@@ -288,9 +283,7 @@ function Overview({
       </div>
       {ready ? (
         <div className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/30 px-4 py-3 sm:px-5">
-          <p className="text-xs text-muted-foreground">
-            Changes on this page save as you make them.
-          </p>
+          <p className="text-xs text-muted-foreground">Changes save automatically.</p>
           <Link
             href="/assistant"
             className="inline-flex items-center gap-1 rounded-md text-sm font-medium text-brand outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
@@ -301,7 +294,7 @@ function Overview({
         </div>
       ) : (
         <div className="space-y-3 border-t bg-muted/30 px-4 py-4 sm:px-5">
-          <p className="text-sm font-medium">Get started in three steps</p>
+          <p className="text-sm font-medium">Get started</p>
           <ol className="space-y-2.5">
             {steps.map((step, index) => (
               <li key={step.label} className="flex items-start gap-3">
@@ -316,7 +309,7 @@ function Overview({
                 >
                   {step.done ? <Check className="size-3.5" /> : index + 1}
                 </span>
-                <div className="min-w-0 space-y-0.5">
+                <div className="min-w-0">
                   <p className={cn("text-sm", step.done && "text-muted-foreground line-through")}>
                     {step.href && !step.done ? (
                       <a
@@ -330,14 +323,11 @@ function Overview({
                     )}
                     <span className="sr-only">{step.done ? " (done)" : " (to do)"}</span>
                   </p>
-                  {step.done ? null : <p className="text-xs text-muted-foreground">{step.hint}</p>}
                 </div>
               </li>
             ))}
           </ol>
-          <p className="text-xs text-muted-foreground">
-            Changes on this page save as you make them.
-          </p>
+          <p className="text-xs text-muted-foreground">Changes save automatically.</p>
         </div>
       )}
     </section>
@@ -366,7 +356,7 @@ function Providers({ providers, settings }: { providers: AiProvider[]; settings:
       id="ai-providers"
       icon={Plug}
       title="Providers"
-      description="Where AI runs. A local provider (Ollama, LM Studio) keeps everything on your machine; a cloud provider receives questions and the records needed to answer them, and only if you allow it under Privacy."
+      description="Local providers keep everything on your machine."
       action={
         editing === null ? (
           <Button variant="soft" size="sm" onClick={() => setEditing("new")}>
@@ -468,12 +458,7 @@ function Models({
 }) {
   const embedders = providers.filter((p) => p.capabilities.embeddings);
   return (
-    <Section
-      id="ai-models"
-      icon={Cpu}
-      title="Models"
-      description="Which model does which job. Only answers need a model; the others are optional."
-    >
+    <Section id="ai-models" icon={Cpu} title="Models" description="Only answers need a model.">
       {providers.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           Add a provider above, then choose its models here.
@@ -483,7 +468,6 @@ function Models({
           <ModelChoice
             label="Answers"
             required
-            hint="Writes the assistant’s answers and the AI actions in each module."
             providers={providers}
             providerId={settings.chat_provider_id}
             model={settings.chat_model}
@@ -492,7 +476,7 @@ function Models({
           />
           <ModelChoice
             label="Semantic search (embeddings)"
-            hint="Finds records by meaning. Without it, search matches keywords only."
+            hint="Enables search by meaning."
             providers={embedders}
             providerId={settings.embedding_provider_id}
             model={settings.embedding_model}
@@ -503,7 +487,7 @@ function Models({
           />
           <ModelChoice
             label="Fallback"
-            hint="Used only when the answers provider can’t be reached. Orbit never switches providers unless you choose one here."
+            hint="Used if the answers provider is down."
             providers={providers}
             providerId={settings.fallback_provider_id}
             model={settings.fallback_model}
@@ -530,7 +514,7 @@ function ModelChoice({
 }: {
   label: string;
   required?: boolean;
-  hint: string;
+  hint?: string;
   providers: AiProvider[];
   providerId: string | null;
   model: string | null;
@@ -546,15 +530,20 @@ function ModelChoice({
       : [];
   const options = [...new Set([...(model ? [model] : []), ...listed])];
   return (
-    <fieldset className="space-y-2.5 py-4 first:pt-0 last:pb-0" aria-describedby={`${id}-hint`}>
+    <fieldset
+      className="space-y-2.5 py-4 first:pt-0 last:pb-0"
+      aria-describedby={hint ? `${id}-hint` : undefined}
+    >
       <legend className="float-left flex w-full items-center gap-2 text-sm font-medium">
         {label}
         <Badge variant={required ? "brand" : "outline"}>{required ? "Required" : "Optional"}</Badge>
       </legend>
-      <p id={`${id}-hint`} className="clear-left text-xs text-pretty text-muted-foreground">
-        {hint}
-      </p>
-      <div className="grid gap-2 sm:grid-cols-2">
+      {hint ? (
+        <p id={`${id}-hint`} className="clear-left text-xs text-pretty text-muted-foreground">
+          {hint}
+        </p>
+      ) : null}
+      <div className="clear-left grid gap-2 sm:grid-cols-2">
         <Select
           aria-label={`${label}: provider`}
           value={providerId ?? NONE}
@@ -588,7 +577,7 @@ function ModelChoice({
       </div>
       {models.status === "error" && providerId ? (
         <p className="text-xs text-muted-foreground">
-          Couldn’t list models ({models.message}). Type the model’s name instead.
+          Couldn’t list models. Type a model name instead.
         </p>
       ) : null}
     </fieldset>
@@ -617,9 +606,9 @@ function Privacy({
   const sensitive = AI_MODULES.filter((m) => m.sensitive);
   const where = chat
     ? chat.processing === "local"
-      ? `Answers are generated by ${chat.name}, on this device or your network.`
-      : `Answers are generated by ${chat.name}, a cloud provider: your question and the records needed to answer it are sent to it.`
-    : "Choose a provider for answers to see where your data is processed.";
+      ? `${chat.name} runs locally. Nothing leaves your network.`
+      : `${chat.name} is a cloud provider. Questions and related records are sent to it.`
+    : "No provider chosen for answers yet.";
   const WhereIcon = chat?.processing === "cloud" ? Cloud : HardDrive;
 
   const moduleTile = (module: (typeof AI_MODULES)[number]) => {
@@ -647,7 +636,7 @@ function Privacy({
       id="ai-privacy"
       icon={ShieldCheck}
       title="Privacy"
-      description="What AI may read, and whether anything may leave this device. Checked before anything is read."
+      description="What AI may read, and where it runs."
     >
       <p
         className={cn(
@@ -660,7 +649,7 @@ function Privacy({
       </p>
       <SwitchRow
         label="Allow cloud processing"
-        description="Lets Orbit send questions and relevant records to cloud providers. Off means only local providers are used, and cloud requests are refused."
+        description="Off means only local providers are used."
         checked={settings.allow_cloud}
         onChange={(allow_cloud) => onSave({ allow_cloud })}
       />
@@ -672,16 +661,14 @@ function Privacy({
           </span>
         </legend>
         <p id="ai-modules-hint" className="clear-left text-xs text-pretty text-muted-foreground">
-          Switching a module off also removes it from the search index right away.
+          Turning a module off also removes it from the search index.
         </p>
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground">Everyday</p>
           <ul className="grid gap-2 sm:grid-cols-2">{everyday.map(moduleTile)}</ul>
         </div>
         <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">
-            Sensitive — off unless you choose them
-          </p>
+          <p className="text-xs font-medium text-muted-foreground">Sensitive</p>
           <ul className="grid gap-2 sm:grid-cols-2">{sensitive.map(moduleTile)}</ul>
         </div>
       </fieldset>
@@ -703,7 +690,7 @@ function AnswersAndLimits({
       id="ai-answers"
       icon={SlidersHorizontal}
       title="Answers and limits"
-      description="How long answers are, and an optional monthly cap on use."
+      description="Answer length and monthly cap."
     >
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">Response style</legend>
@@ -777,7 +764,7 @@ function TokenLimit({
       >
         {invalid
           ? "Enter a whole number of at least 1,000, or leave it empty."
-          : "Requests stop once it’s reached, until next month."}
+          : "Optional. Requests pause until next month once reached."}
       </p>
     </div>
   );
@@ -803,11 +790,11 @@ function Indexing({
       id="ai-index"
       icon={DatabaseZap}
       title="Search index"
-      description="For semantic search in this workspace. Needs an embedding model under Models."
+      description="Needs a search model under Models."
     >
       <SwitchRow
         label="Keep an index for semantic search"
-        description="The background worker embeds new and changed records with your embedding model. Unchanged records are never embedded twice."
+        description="New and changed records are indexed in the background."
         checked={settings.indexing_enabled}
         onChange={(indexing_enabled) => onSave({ indexing_enabled })}
       />
@@ -824,7 +811,7 @@ function Indexing({
             <span>
               {resource.data.active
                 ? `Indexing with ${resource.data.embedding_model}.`
-                : "Not indexing: choose an embedding model (and allow cloud processing if it’s a cloud provider)."}{" "}
+                : "Not indexing. Choose a search model first."}{" "}
               <span className="text-muted-foreground">
                 {resource.data.counts.indexed} indexed, {resource.data.counts.pending} waiting,{" "}
                 {resource.data.counts.failed} failed.
@@ -867,7 +854,7 @@ function Usage() {
       id="ai-usage"
       icon={Gauge}
       title="Usage"
-      description="Requests and tokens in the last 30 days. Only counts and timings are kept, never your questions or answers."
+      description="Last 30 days. Only counts are kept, never content."
     >
       {usage.status === "loading" ? (
         <Skeleton className="h-16 w-full" />

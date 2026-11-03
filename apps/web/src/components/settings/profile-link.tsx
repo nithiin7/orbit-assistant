@@ -25,9 +25,7 @@ export function ProfileLink({ active = false }: { active?: boolean }) {
       <UserAvatar />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="truncate text-base font-semibold">{user.display_name}</span>
-        <span className="truncate text-sm text-muted-foreground">
-          {user.email} · Profile and sign-in
-        </span>
+        <span className="truncate text-sm text-muted-foreground">{user.email}</span>
       </span>
       <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
     </Link>

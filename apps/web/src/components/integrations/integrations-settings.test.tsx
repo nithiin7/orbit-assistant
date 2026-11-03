@@ -59,7 +59,7 @@ describe("Integrations overview", () => {
     expect(link).toHaveAttribute("href", "/settings/integrations?connection=c1");
     expect(within(link).getByText("Needs reconnecting")).toBeInTheDocument();
     expect(within(link).getByText(/Google Calendar · Gmail · Google Drive/)).toBeInTheDocument();
-    expect(screen.getByText(/never reach this browser/)).toBeInTheDocument();
+    expect(screen.getByText(/Tokens stay encrypted on the server/)).toBeInTheDocument();
   });
 
   it("connects with only the chosen permissions and goes to the provider", async () => {

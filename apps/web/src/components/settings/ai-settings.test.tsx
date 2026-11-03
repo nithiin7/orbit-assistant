@@ -137,7 +137,7 @@ describe("AiSettingsPanel", () => {
     expect(await screen.findByText(/key stored/)).toBeInTheDocument();
     expect(document.body.textContent).not.toContain(SECRET);
     expect(
-      screen.getByText(/OpenAI, a cloud provider: your question and the records/),
+      screen.getByText(/OpenAI is a cloud provider. Questions and related records are sent/),
     ).toBeInTheDocument();
   });
 
@@ -201,9 +201,7 @@ describe("AiSettingsPanel", () => {
       "href",
       "/assistant",
     );
-    expect(
-      screen.getByText(/Answers come from OpenAI · gpt, a cloud provider/),
-    ).toBeInTheDocument();
-    expect(screen.queryByText("Get started in three steps")).not.toBeInTheDocument();
+    expect(screen.getByText(/OpenAI · gpt \(cloud\)/)).toBeInTheDocument();
+    expect(screen.queryByText("Get started")).not.toBeInTheDocument();
   });
 });

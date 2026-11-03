@@ -15,9 +15,6 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
           Settings
         </p>
         <SettingsMenu activeFallback="account" />
-        <p className="mt-6 text-xs text-pretty text-muted-foreground">
-          More settings will appear here as Orbit’s features are built.
-        </p>
       </aside>
       <div className="min-w-0">{children}</div>
     </div>

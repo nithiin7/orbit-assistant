@@ -48,14 +48,9 @@ export function ChangePassword() {
       aria-labelledby="change-password-heading"
       className="space-y-3 border-t pt-4 @5xl/panel:border-t-0 @5xl/panel:pt-0"
     >
-      <div className="space-y-1">
-        <h3 id="change-password-heading" className="text-sm font-medium">
-          Change password
-        </h3>
-        <p className="text-sm text-muted-foreground">
-          Other browsers and devices signed in to this account will be signed out.
-        </p>
-      </div>
+      <h3 id="change-password-heading" className="text-sm font-medium">
+        Change password
+      </h3>
       <FormField
         label="Current password"
         type="password"

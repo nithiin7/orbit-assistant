@@ -35,12 +35,7 @@ export function ExportSection({ modules }: { modules: ExportModuleInfo[] }) {
   }
 
   return (
-    <Section
-      id="backup-export"
-      icon={PackageOpen}
-      title="Export"
-      description="Take your data elsewhere. Exports are built for the download and not kept on the server."
-    >
+    <Section id="backup-export" icon={PackageOpen} title="Export" description="Download your data.">
       <div className="flex flex-wrap gap-2">
         <Button
           variant="soft"
@@ -61,9 +56,7 @@ export function ExportSection({ modules }: { modules: ExportModuleInfo[] }) {
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        The ZIP is a full backup you can restore. JSON exports can be imported into any workspace.
-        Neither is encrypted; to download an encrypted copy, create a backup with a password and
-        download it from the history.
+        Exports aren’t encrypted. For an encrypted copy, create a backup with a password.
       </p>
       <ErrorText message={error} />
       <ul className="divide-y overflow-hidden rounded-xl border">
@@ -88,10 +81,6 @@ export function ExportSection({ modules }: { modules: ExportModuleInfo[] }) {
           </li>
         ))}
       </ul>
-      <p className="text-xs text-muted-foreground">
-        Finance’s spreadsheet of transactions and the document vault’s original files have their own
-        exports in Finance and Documents.
-      </p>
     </Section>
   );
 }

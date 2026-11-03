@@ -93,17 +93,9 @@ function Overview() {
     <div className="grid items-start gap-6 @5xl/panel:grid-cols-[minmax(0,1fr)_20rem] @min-[110rem]/panel:grid-cols-[minmax(0,1fr)_24rem] @min-[110rem]/panel:gap-8">
       <div className="min-w-0 space-y-6">
         <ConflictList />
-        <Section
-          id="connected"
-          icon={Link2}
-          title="Connected accounts"
-          description="Calendars, mail, and files from other services, brought into Orbit on your terms."
-        >
+        <Section id="connected" icon={Link2} title="Connected accounts">
           {list.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No accounts connected yet. Connect one below; nothing is synchronized until you choose
-              what.
-            </p>
+            <p className="text-sm text-muted-foreground">No accounts connected yet.</p>
           ) : (
             <ul className="divide-y overflow-hidden rounded-xl border">
               {list.map((connection) => (
@@ -114,7 +106,7 @@ function Overview() {
         </Section>
         <ConnectAccount providers={providers.data.providers} />
       </div>
-      <PrivacyNote pushes={providers.data.webhooks} />
+      <PrivacyNote />
     </div>
   );
 }
@@ -179,9 +171,7 @@ export function ConnectAccount({
       icon={Plug}
       title={reconnect ? "Reconnect or add permissions" : "Connect an account"}
       description={
-        reconnect
-          ? "Renew Orbit’s access, or allow more. You’ll confirm with the provider."
-          : "Pick a service, choose what Orbit may access, then sign in with that provider to confirm."
+        reconnect ? "Renew access or allow more." : "Choose what Orbit may access, then sign in."
       }
     >
       {/* Providers sit side by side once there's room, as equal-height cards. */}
@@ -346,7 +336,7 @@ function ProviderChoice({
   );
 }
 
-function PrivacyNote({ pushes }: { pushes: boolean }) {
+function PrivacyNote() {
   return (
     <aside
       aria-label="Privacy"
@@ -354,16 +344,10 @@ function PrivacyNote({ pushes }: { pushes: boolean }) {
     >
       <ShieldCheck className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden="true" />
       <div className="space-y-1 text-pretty text-muted-foreground">
-        <p className="font-medium text-foreground">How Orbit handles your accounts</p>
+        <p className="font-medium text-foreground">Private by default</p>
         <p>
-          Sign-in tokens stay on the Orbit server, encrypted, and never reach this browser. Orbit
-          reads only the calendars, labels, and files you choose; mail is shown when you open it and
-          isn’t copied into Orbit.
-        </p>
-        <p>
-          {pushes
-            ? "Providers tell Orbit about calendar changes as they happen."
-            : "Calendars are checked on the schedule you set for each one."}
+          Tokens stay encrypted on the server. Orbit reads only what you choose, and mail isn’t
+          copied.
         </p>
       </div>
     </aside>
