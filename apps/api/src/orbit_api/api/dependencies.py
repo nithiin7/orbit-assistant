@@ -63,6 +63,7 @@ from orbit_api.services.habits.service import HabitService
 from orbit_api.services.investments.assets import AssetService
 from orbit_api.services.investments.service import InvestmentService
 from orbit_api.services.local_auth.service import LocalAuthService, PasswordHasher
+from orbit_api.services.local_auth.throttle import SignInThrottle
 from orbit_api.services.networth.service import NetWorthService
 from orbit_api.services.notes.attachments import AttachmentService
 from orbit_api.services.notes.service import NoteService
@@ -129,6 +130,13 @@ def get_local_auth_service(
 
 
 LocalAuthServiceDep = Annotated[LocalAuthService, Depends(get_local_auth_service)]
+
+
+def get_sign_in_throttle(request: Request) -> SignInThrottle:
+    return request.app.state.sign_in_throttle
+
+
+SignInThrottleDep = Annotated[SignInThrottle, Depends(get_sign_in_throttle)]
 
 
 def get_workspace_service(session: SessionDep) -> WorkspaceService:

@@ -273,3 +273,118 @@ def test_local_endpoints_are_unavailable_in_cloud_mode(tmp_path: Path) -> None:
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Local accounts are not available in cloud mode."}
+
+
+PASSWORD_CHANGE = "/api/v1/auth/local/password"
+
+
+def _sign_in(client: TestClient, password: str, email: str = "ada@example.com") -> int:
+    response = client.post(SIGN_IN, json={"email": email, "password": password})
+    return response.status_code
+
+
+def test_changing_the_password_ends_every_other_session(client: TestClient) -> None:
+    current = sign_up(client)
+    other = client.post(SIGN_IN, json={"email": "ada@example.com", "password": PASSWORD}).json()
+
+    response = client.post(
+        PASSWORD_CHANGE,
+        json={"current_password": PASSWORD, "new_password": "a brand new secret"},
+        headers=bearer(current),
+    )
+
+    assert response.status_code == 204
+    assert client.get("/api/v1/me", headers=bearer(current)).status_code == 200
+    assert client.get("/api/v1/me", headers=bearer(other["access_token"])).status_code == 401
+    assert _sign_in(client, PASSWORD) == 401
+    assert _sign_in(client, "a brand new secret") == 200
+
+
+def test_changing_the_password_needs_the_current_one(client: TestClient) -> None:
+    token = sign_up(client)
+
+    response = client.post(
+        PASSWORD_CHANGE,
+        json={"current_password": "not my password", "new_password": "a brand new secret"},
+        headers=bearer(token),
+    )
+
+    # 403 keeps the web app signed in; 401 would mean the session itself is invalid.
+    assert response.status_code == 403
+    assert _sign_in(client, PASSWORD) == 200
+
+
+def test_a_new_password_must_meet_the_length_rule(client: TestClient) -> None:
+    token = sign_up(client)
+
+    response = client.post(
+        PASSWORD_CHANGE,
+        json={"current_password": PASSWORD, "new_password": "short"},
+        headers=bearer(token),
+    )
+
+    assert response.status_code == 422
+    assert _sign_in(client, PASSWORD) == 200
+
+
+def test_changing_the_password_requires_a_session(client: TestClient) -> None:
+    response = client.post(
+        PASSWORD_CHANGE, json={"current_password": PASSWORD, "new_password": "whatever123"}
+    )
+
+    assert response.status_code == 401
+
+
+def test_repeated_failed_sign_ins_are_refused_for_a_while(client: TestClient) -> None:
+    sign_up(client)
+
+    statuses = [_sign_in(client, f"guess {attempt}") for attempt in range(10)]
+    blocked = client.post(SIGN_IN, json={"email": "ada@example.com", "password": PASSWORD})
+
+    assert statuses == [401] * 10
+    # Even the right password waits: otherwise the limit would confirm a correct guess.
+    assert blocked.status_code == 429
+    assert int(blocked.headers["retry-after"]) > 0
+    # Other accounts are unaffected.
+    sign_up(client, "grace@example.com", display_name="Grace")
+    assert _sign_in(client, PASSWORD, "grace@example.com") == 200
+
+
+def test_a_successful_sign_in_resets_the_failure_count(client: TestClient) -> None:
+    sign_up(client)
+
+    for attempt in range(9):
+        _sign_in(client, f"guess {attempt}")
+    assert _sign_in(client, PASSWORD) == 200
+
+    assert [_sign_in(client, f"again {attempt}") for attempt in range(9)] == [401] * 9
+
+
+def test_failed_password_changes_count_towards_the_limit(client: TestClient) -> None:
+    token = sign_up(client)
+
+    for attempt in range(10):
+        client.post(
+            PASSWORD_CHANGE,
+            json={"current_password": f"guess {attempt}", "new_password": "a brand new secret"},
+            headers=bearer(token),
+        )
+    response = client.post(
+        PASSWORD_CHANGE,
+        json={"current_password": PASSWORD, "new_password": "a brand new secret"},
+        headers=bearer(token),
+    )
+
+    assert response.status_code == 429
+
+
+def test_sign_ups_from_one_address_are_limited(client: TestClient) -> None:
+    for number in range(10):
+        sign_up(client, f"person{number}@example.com", display_name=f"Person {number}")
+
+    response = client.post(
+        "/api/v1/auth/local/sign-up",
+        json={"email": "one-more@example.com", "password": PASSWORD, "display_name": "More"},
+    )
+
+    assert response.status_code == 429

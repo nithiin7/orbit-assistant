@@ -15,6 +15,7 @@ export type LocalAuthConfig = Schemas["LocalAuthConfig"];
 export type SupabaseAuthConfig = Schemas["SupabaseAuthConfig"];
 export type LocalSignUpRequest = Schemas["LocalSignUpRequest"];
 export type LocalSignInRequest = Schemas["LocalSignInRequest"];
+export type ChangePasswordRequest = Schemas["ChangePasswordRequest"];
 export type LocalSessionResponse = Schemas["LocalSessionResponse"];
 export type UserProfile = Schemas["UserProfile"];
 export type UpdateProfileRequest = Schemas["UpdateProfileRequest"];

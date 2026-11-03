@@ -42,6 +42,8 @@ class PasswordHasher(Protocol):
 class LocalAuthRepository(Protocol):
     async def find_credential(self, email: str) -> LocalCredential | None: ...
 
+    async def get_credential(self, user_id: uuid.UUID) -> LocalCredential | None: ...
+
     async def add_credential(self, user_id: uuid.UUID, email: str, password_hash: str) -> None: ...
 
     async def update_password_hash(self, user_id: uuid.UUID, password_hash: str) -> None: ...
@@ -57,6 +59,8 @@ class LocalAuthRepository(Protocol):
     async def delete_session(self, token_hash: str) -> None: ...
 
     async def delete_expired_sessions(self, user_id: uuid.UUID, now: datetime) -> None: ...
+
+    async def delete_other_sessions(self, user_id: uuid.UUID, keep_token_hash: str) -> None: ...
 
 
 def hash_session_token(token: str) -> str:
@@ -133,6 +137,24 @@ class LocalAuthService:
         return await self._credentials.find_session_user(
             hash_session_token(token), datetime.now(UTC)
         )
+
+    async def change_password(
+        self, *, user: User, token: str, current_password: str, new_password: str
+    ) -> None:
+        """Replace the password after checking the current one, and end every other session:
+        a password change is how someone locks out a device or person that shouldn't be in."""
+        credential = await self._credentials.get_credential(user.id)
+        if credential is None:
+            await to_thread.run_sync(self._hasher.verify_dummy, current_password)
+            raise InvalidCredentialsError
+        if not await to_thread.run_sync(
+            self._hasher.verify, credential.password_hash, current_password
+        ):
+            raise InvalidCredentialsError
+        new_hash = await to_thread.run_sync(self._hasher.hash, new_password)
+        await self._credentials.update_password_hash(user.id, new_hash)
+        await self._credentials.delete_other_sessions(user.id, hash_session_token(token))
+        await self._transaction.commit()
 
     async def sign_out(self, token: str) -> None:
         await self._credentials.delete_session(hash_session_token(token))

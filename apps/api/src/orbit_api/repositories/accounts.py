@@ -94,6 +94,12 @@ class SqlLocalAuthRepository:
             return None
         return LocalCredential(user_id=model.user_id, password_hash=model.password_hash)
 
+    async def get_credential(self, user_id: uuid.UUID) -> LocalCredential | None:
+        model = await self._session.get(LocalCredentialModel, user_id)
+        if model is None:
+            return None
+        return LocalCredential(user_id=model.user_id, password_hash=model.password_hash)
+
     async def add_credential(self, user_id: uuid.UUID, email: str, password_hash: str) -> None:
         self._session.add(
             LocalCredentialModel(user_id=user_id, email=email, password_hash=password_hash)
@@ -140,5 +146,13 @@ class SqlLocalAuthRepository:
         await self._session.execute(
             delete(LocalSessionModel).where(
                 LocalSessionModel.user_id == user_id, LocalSessionModel.expires_at <= now
+            )
+        )
+
+    async def delete_other_sessions(self, user_id: uuid.UUID, keep_token_hash: str) -> None:
+        await self._session.execute(
+            delete(LocalSessionModel).where(
+                LocalSessionModel.user_id == user_id,
+                LocalSessionModel.token_hash != keep_token_hash,
             )
         )
