@@ -16,14 +16,8 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { type NoteAutosave, type SaveStatus, useNoteAutosave } from "@/hooks/use-note-autosave";
-import {
-  asJsonContent,
-  looksLikeMarkdown,
-  noteExtensions,
-  noteHref,
-  noteIdFromHref,
-  toNoteContent,
-} from "@/lib/note-content";
+import { asJsonContent, noteExtensions, toNoteContent } from "@/lib/note-content";
+import { looksLikeMarkdown, noteHref, noteIdFromHref } from "@/lib/note-links";
 import { noteDisplayTitle } from "@/lib/notes";
 import { cn } from "@/utils/common";
 

@@ -16,7 +16,7 @@ import { useFitnessAction, useLinkCandidates, usePhotoFile } from "@/hooks/use-f
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { documentsHref } from "@/lib/documents";
 import { EXERCISE_CATEGORIES, labelOf } from "@/lib/fitness";
-import { noteHref } from "@/lib/note-content";
+import { noteHref } from "@/lib/note-links";
 import { cn } from "@/utils/common";
 import { formatCalendarDate } from "@/utils/dates";
 

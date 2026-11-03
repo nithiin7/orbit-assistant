@@ -2,6 +2,8 @@ import { fileURLToPath } from "node:url";
 
 import type { NextConfig } from "next";
 
+import { securityHeaders } from "./src/lib/security-headers";
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
@@ -10,6 +12,9 @@ const nextConfig: NextConfig = {
   // links dependencies from there.
   output: "standalone",
   outputFileTracingRoot: fileURLToPath(new URL("../..", import.meta.url)),
+  headers() {
+    return Promise.resolve([{ source: "/:path*", headers: [...securityHeaders] }]);
+  },
 };
 
 export default nextConfig;

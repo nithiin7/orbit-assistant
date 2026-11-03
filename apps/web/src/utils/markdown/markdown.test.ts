@@ -37,6 +37,9 @@ describe("parseMarkdown", () => {
     expect(parseInline("[x](https://example.com)")[0]).toMatchObject({ type: "link" });
     expect(isSafeLink("/tasks")).toBe(true);
     expect(isSafeLink("//evil.com")).toBe(false);
+    expect(isSafeLink("/\\evil.com")).toBe(false);
+    expect(isSafeLink("/\t/evil.com")).toBe(false);
+    expect(isSafeLink("/notes?note=1#top")).toBe(true);
     expect(isSafeLink("data:text/html,x")).toBe(false);
   });
 

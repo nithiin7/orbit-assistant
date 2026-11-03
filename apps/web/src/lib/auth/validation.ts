@@ -57,6 +57,10 @@ export const passwordResetSchema = object({
     ),
 });
 
+export const changePasswordSchema = passwordResetSchema.shape({
+  currentPassword: string().required("Enter your current password."),
+});
+
 export const displayNameSchema = object({ displayName: nameField("your name") });
 
 export const workspaceNameSchema = object({ name: nameField("a workspace name") });

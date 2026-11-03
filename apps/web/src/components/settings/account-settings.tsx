@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { displayNameSchema } from "@/lib/auth/validation";
 import { useAuth, useCurrentUser } from "@/providers/auth";
 
+import { ChangePassword } from "./change-password";
 import { ProfilePhoto } from "./profile-photo";
 import { TimeZonePreference } from "./time-zone-preference";
 
@@ -86,6 +87,8 @@ export function AccountSettings() {
       </form>
 
       <TimeZonePreference />
+
+      {user.auth_provider === "local" ? <ChangePassword /> : null}
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
         <p className="text-sm text-muted-foreground">

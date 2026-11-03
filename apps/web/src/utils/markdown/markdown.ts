@@ -21,10 +21,15 @@ export type Block =
   | { type: "code"; language: string; text: string }
   | { type: "rule" };
 
-const SAFE_LINK = /^(https?:\/\/|mailto:|\/(?!\/))/i;
+const SAFE_LINK = /^(https?:\/\/|mailto:|\/)/i;
+// Browsers read `/\host` as `//host` and drop tabs and newlines inside URLs, so a relative link
+// with either could leave the app. Real in-app paths have neither.
+const UNSAFE_IN_PATH = /[\\\s\p{Cc}]/u;
 
 export function isSafeLink(href: string): boolean {
-  return SAFE_LINK.test(href.trim());
+  const link = href.trim();
+  if (!SAFE_LINK.test(link)) return false;
+  return !link.startsWith("/") || (!link.startsWith("//") && !UNSAFE_IN_PATH.test(link));
 }
 
 export function parseMarkdown(source: string): Block[] {
