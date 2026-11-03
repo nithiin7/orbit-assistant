@@ -23,7 +23,7 @@ from orbit_api.config import Settings, get_settings
 from orbit_api.db.database import open_database
 from orbit_api.providers.ai.registry import HttpProviderFactory
 from orbit_api.providers.integrations.registry import HttpConnectorRegistry
-from orbit_api.scheduler.worker import AiIndexing, IntegrationSync, ReminderWorker
+from orbit_api.scheduler.worker import AiIndexing, BackupJobs, IntegrationSync, ReminderWorker
 from orbit_api.system.attachment_store import FileAttachmentStore
 from orbit_api.system.file_manager import SystemFileRevealer
 
@@ -64,6 +64,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     files=FileAttachmentStore(settings.attachments_dir),
                     ai=AiIndexing(settings, providers),
                     integrations=IntegrationSync(settings, connectors),
+                    backups=BackupJobs(settings),
                 ).run(stop, settings.scheduler_poll_seconds)
             )
         try:

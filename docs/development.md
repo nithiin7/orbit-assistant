@@ -78,6 +78,14 @@ Note attachments, documents, and progress photos (see
 | `ORBIT_ATTACHMENT_MAX_BYTES` | `10485760` (10 MB)                    | Largest note attachment or progress photo accepted (1 KB to 100 MB)  |
 | `ORBIT_DOCUMENT_MAX_BYTES`   | `26214400` (25 MB)                    | Largest document file accepted (1 KB to 200 MB)                      |
 
+Backups (see [Backups](#backups) and [backups.md](backups.md)):
+
+| Variable                           | Default                           | Purpose                                                                  |
+| ---------------------------------- | --------------------------------- | ------------------------------------------------------------------------ |
+| `ORBIT_BACKUPS_PATH`               | `backups/` beside the SQLite file | Folder for stored backups and staged uploads (cloud: `apps/api/.data/…`) |
+| `ORBIT_BACKUP_UPLOAD_MAX_BYTES`    | `2147483648` (2 GB)               | Largest backup or export that can be uploaded to restore or import       |
+| `ORBIT_BACKUP_MAX_EXTRACTED_BYTES` | `21474836480` (20 GB)             | Most an uploaded archive may expand to (guards against ZIP bombs)        |
+
 Reminders (see [Reminder worker](#reminder-worker)):
 
 | Variable                       | Default | Purpose                                                                  |
@@ -148,9 +156,17 @@ pnpm dev:api        # logs "Storage mode: local. Using the SQLite database at �
 
 #### Backups
 
-SQLite runs in WAL mode, so recent writes may sit in `orbit.sqlite3-wal` rather than the main
-file. Copying only `orbit.sqlite3` while the API runs can produce an incomplete backup. Use
-either approach:
+The simplest way to back up a workspace is **Settings → Backup & restore**: a backup is a
+checksummed ZIP of the workspace's records and files, read from one consistent snapshot while
+the API keeps running, optionally password-encrypted, and restorable into this or another Orbit
+installation (local or cloud). Automatic daily, weekly, or monthly backups can run too. See
+[backups.md](backups.md). Stored backups live in `ORBIT_BACKUPS_PATH`; download copies to keep
+them on another disk.
+
+To back up a whole installation (every account and workspace) instead, copy the database and
+the files together. SQLite runs in WAL mode, so recent writes may sit in `orbit.sqlite3-wal`
+rather than the main file. Copying only `orbit.sqlite3` while the API runs can produce an
+incomplete backup. Use either approach:
 
 - Stop the API, then copy `orbit.sqlite3` (and any `-wal`/`-shm` files) together.
 - Or, while it runs: `sqlite3 path/to/orbit.sqlite3 ".backup 'orbit-backup.sqlite3'"`.
@@ -161,12 +177,11 @@ the database, taken at the same time. The database maps each document version to
 ID; a database without the folder (or the reverse) can't be restored on its own.
 
 For a portable copy of your documents that doesn't need Orbit to read, use **Export** in
-Documents (a folder, a category, or selected documents): a ZIP of the original files under
-their folders, with `metadata.json` describing every document, version, and checksum. It
-includes document numbers, since it's your own backup; keep it as safe as the originals. An
-export is not a restore format: Orbit can't import it yet.
+Documents: a ZIP of the original files under their folders, with `metadata.json`. It is not a
+restore format; workspace backups are.
 
-Backups contain all of your data unencrypted. Store them with the same care as the original.
+Unencrypted backups contain all of your data in the clear. Store them with the same care as the
+original, or encrypt workspace backups with a password.
 
 **Connected accounts' tokens** are in the database only encrypted, with a key kept outside it
 (`integrations-secret.key` beside the database, or `ORBIT_INTEGRATIONS_SECRET_KEY`). Leave that

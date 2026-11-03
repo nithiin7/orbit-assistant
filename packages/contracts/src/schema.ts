@@ -296,13 +296,237 @@ export interface paths {
         post?: never;
         /**
          * Delete a workspace
-         * @description Permanently delete a workspace and everything in it, including note attachment files.
+         * @description Permanently delete a workspace and everything in it, including note attachment files
+         *     and the workspace's stored backups.
          */
         delete: operations["delete_workspace_api_v1_workspaces__workspace_id__delete"];
         options?: never;
         head?: never;
         /** Rename a workspace */
         patch: operations["update_workspace_api_v1_workspaces__workspace_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/backups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Backups, automatic backup settings, and recent uploads */
+        get: operations["backup_overview_api_v1_workspaces__workspace_id__backups_get"];
+        put?: never;
+        /**
+         * Create a backup
+         * @description Back up every module's records and, optionally, the workspace's files. The archive is
+         *     kept on the server until it's deleted; download it to keep a copy elsewhere.
+         */
+        post: operations["create_backup_api_v1_workspaces__workspace_id__backups_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/backups/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change automatic backups
+         * @description Frequency, how many automatic backups to keep, whether they include files, and whether
+         *     they're encrypted with the backup password (set or change it with `password`).
+         */
+        put: operations["update_backup_settings_api_v1_workspaces__workspace_id__backups_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/backups/{backup_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A backup */
+        get: operations["get_backup_api_v1_workspaces__workspace_id__backups__backup_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete a backup */
+        delete: operations["delete_backup_api_v1_workspaces__workspace_id__backups__backup_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/backups/{backup_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a backup */
+        get: operations["download_backup_api_v1_workspaces__workspace_id__backups__backup_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/backups/{backup_id}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check a backup's integrity
+         * @description Compare the archive with the checksum recorded when it was made, then (for unencrypted
+         *     backups, or with the password) every record and file with the manifest's checksums.
+         */
+        post: operations["verify_backup_api_v1_workspaces__workspace_id__backups__backup_id__verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/exports/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download a backup archive without keeping it
+         * @description The same archive as a backup, built for this download and deleted from the server once
+         *     it's sent. With a password, it's encrypted.
+         */
+        post: operations["export_archive_api_v1_workspaces__workspace_id__exports_archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export a module, or the whole workspace as JSON
+         * @description JSON for any module (or every module), CSV for tables, iCalendar for the calendar, and
+         *     Markdown for notes. JSON exports can be imported back into a workspace.
+         */
+        post: operations["export_module_api_v1_workspaces__workspace_id__exports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/backup-uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recent uploads, restores, and imports */
+        get: operations["list_uploads_api_v1_workspaces__workspace_id__backup_uploads_get"];
+        put?: never;
+        /**
+         * Upload a backup or export to restore or import
+         * @description The body is the file. It's staged on the server for 24 hours; nothing is restored until
+         *     it's inspected and a restore is confirmed.
+         */
+        post: operations["upload_backup_api_v1_workspaces__workspace_id__backup_uploads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/backup-uploads/{upload_id}/inspect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Inspect an upload before restoring
+         * @description Validate the archive's structure, checksums, and compatibility, list what it contains,
+         *     and dry-run the restore or import (nothing is changed).
+         */
+        post: operations["inspect_upload_api_v1_workspaces__workspace_id__backup_uploads__upload_id__inspect_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/backup-uploads/{upload_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore a backup or import an export
+         * @description Backups restore into a new workspace, into this workspace if it's empty, or replace this
+         *     workspace's data (after a pre-restore backup; type the workspace's name to confirm). Exports
+         *     are added to this workspace. With `dry_run`, nothing is changed.
+         */
+        post: operations["restore_upload_api_v1_workspaces__workspace_id__backup_uploads__upload_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/backup-uploads/{upload_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Discard an upload */
+        delete: operations["discard_upload_api_v1_workspaces__workspace_id__backup_uploads__upload_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/workspaces/{workspace_id}/tasks": {
@@ -6266,10 +6490,48 @@ export interface components {
             /** Near Limit */
             near_limit: boolean;
         };
+        /** ArchivePasswordRequest */
+        ArchivePasswordRequest: {
+            /** Password */
+            password?: string | null;
+        };
         /** ArchiveRequest */
         ArchiveRequest: {
             /** Archived */
             archived: boolean;
+        };
+        /** ArchiveSummaryResponse */
+        ArchiveSummaryResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "backup" | "export";
+            /** Format Version */
+            format_version: number;
+            /** App Version */
+            app_version: string;
+            /** Schema Revision */
+            schema_revision: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Source Workspace Name */
+            source_workspace_name: string;
+            /** Include Files */
+            include_files: boolean;
+            /** Module Counts */
+            module_counts: {
+                [key: string]: number;
+            };
+            /** File Count */
+            file_count: number;
+            /** File Bytes */
+            file_bytes: number;
+            /** Missing Files */
+            missing_files: number;
         };
         /** AssetListResponse */
         AssetListResponse: {
@@ -6446,6 +6708,141 @@ export interface components {
         AuthorizeIntegrationResponse: {
             /** Authorization Url */
             authorization_url: string;
+        };
+        /** BackupOverviewResponse */
+        BackupOverviewResponse: {
+            settings: components["schemas"]["BackupSettingsResponse"];
+            /** Backups */
+            backups: components["schemas"]["BackupResponse"][];
+            /** Uploads */
+            uploads: components["schemas"]["BackupUploadResponse"][];
+            /** Total Bytes */
+            total_bytes: number;
+            /** Last Success At */
+            last_success_at: string | null;
+            /** Running */
+            running: boolean;
+            /** Modules */
+            modules: components["schemas"]["ExportModuleInfo"][];
+        };
+        /** BackupResponse */
+        BackupResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "manual" | "scheduled" | "pre_restore";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "succeeded" | "failed";
+            /** Include Files */
+            include_files: boolean;
+            /** Encrypted */
+            encrypted: boolean;
+            /** Size Bytes */
+            size_bytes: number | null;
+            /** Sha256 */
+            sha256: string | null;
+            /** Record Count */
+            record_count: number;
+            /** File Count */
+            file_count: number;
+            /** Modules */
+            modules: string[];
+            /** Record Counts */
+            record_counts: {
+                [key: string]: number;
+            };
+            /** Warnings */
+            warnings: string[];
+            /** Error */
+            error: string | null;
+            /** Format Version */
+            format_version: number;
+            /** Schema Revision */
+            schema_revision: string;
+            /** App Version */
+            app_version: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Finished At */
+            finished_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** BackupSettingsResponse */
+        BackupSettingsResponse: {
+            /**
+             * Frequency
+             * @enum {string}
+             */
+            frequency: "manual" | "daily" | "weekly" | "monthly";
+            /** Retention Count */
+            retention_count: number;
+            /** Include Files */
+            include_files: boolean;
+            /** Encrypt */
+            encrypt: boolean;
+            /** Has Backup Password */
+            has_backup_password: boolean;
+            /** Backup Password Set At */
+            backup_password_set_at: string | null;
+            /** Next Run At */
+            next_run_at: string | null;
+            /** Last Run At */
+            last_run_at: string | null;
+        };
+        /** BackupUploadResponse */
+        BackupUploadResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "backup" | "export";
+            /** Encrypted */
+            encrypted: boolean;
+            /** Filename */
+            filename: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "uploaded" | "restoring" | "completed" | "failed" | "expired" | "discarded";
+            /** Error */
+            error: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Finished At */
+            finished_at: string | null;
+            result: components["schemas"]["RestoreReportResponse"] | null;
         };
         /** BalanceTotalsResponse */
         BalanceTotalsResponse: {
@@ -7222,6 +7619,22 @@ export interface components {
              * @default
              */
             notes: string;
+        };
+        /** CreateBackupRequest */
+        CreateBackupRequest: {
+            /**
+             * Include Files
+             * @default true
+             */
+            include_files: boolean;
+            /**
+             * Encryption
+             * @default none
+             * @enum {string}
+             */
+            encryption: "none" | "password" | "backup_key";
+            /** Password */
+            password?: string | null;
         };
         /**
          * CreateBudgetRequest
@@ -9243,6 +9656,16 @@ export interface components {
              */
             updated_at: string;
         };
+        /** ExportArchiveRequest */
+        ExportArchiveRequest: {
+            /**
+             * Include Files
+             * @default true
+             */
+            include_files: boolean;
+            /** Password */
+            password?: string | null;
+        };
         /**
          * ExportDocumentsRequest
          * @description Choose documents, a folder (with its subfolders), or a category; with none of them,
@@ -9269,6 +9692,28 @@ export interface components {
              * Format: uuid
              */
             event_id: string;
+        };
+        /** ExportModuleInfo */
+        ExportModuleInfo: {
+            /**
+             * Module
+             * @enum {string}
+             */
+            module: "tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search";
+            /** Label */
+            label: string;
+            /** Formats */
+            formats: ("json" | "csv" | "ics" | "markdown")[];
+        };
+        /** ExportModuleRequest */
+        ExportModuleRequest: {
+            /** Module */
+            module: ("tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search") | null;
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "json" | "csv" | "ics" | "markdown";
         };
         /** FitnessGoalListResponse */
         FitnessGoalListResponse: {
@@ -10473,6 +10918,18 @@ export interface components {
             /** Title */
             title: string;
             link: components["schemas"]["IntegrationLinkResponse"];
+        };
+        /** InspectionResponse */
+        InspectionResponse: {
+            summary: components["schemas"]["ArchiveSummaryResponse"];
+            /** Compatible */
+            compatible: boolean;
+            /** Issues */
+            issues: string[];
+            /** Warnings */
+            warnings: string[];
+            target: components["schemas"]["RestoreTargetResponse"];
+            dry_run: components["schemas"]["RestoreReportResponse"] | null;
         };
         /** InstallmentResponse */
         InstallmentResponse: {
@@ -13411,6 +13868,74 @@ export interface components {
             /** @description `null` when the link no longer exists (deleted, or kept only in Orbit). */
             link: components["schemas"]["IntegrationLinkResponse"] | null;
         };
+        /** RestoreReportResponse */
+        RestoreReportResponse: {
+            /** Dry Run */
+            dry_run: boolean;
+            /** Strategy */
+            strategy: ("new_workspace" | "into_empty" | "replace") | "merge";
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Workspace Name */
+            workspace_name: string;
+            /** Remapped */
+            remapped: number;
+            totals: components["schemas"]["RestoreTotalsResponse"];
+            /** Tables */
+            tables: components["schemas"]["TableResultResponse"][];
+            /** Files Restored */
+            files_restored: number;
+            /** Files Reused */
+            files_reused: number;
+            /** Files Missing */
+            files_missing: number;
+            /** Warnings */
+            warnings: string[];
+            /** Pre Restore Backup Id */
+            pre_restore_backup_id: string | null;
+        };
+        /** RestoreTargetResponse */
+        RestoreTargetResponse: {
+            /** Record Count */
+            record_count: number;
+            /** Has Integrations */
+            has_integrations: boolean;
+        };
+        /** RestoreTotalsResponse */
+        RestoreTotalsResponse: {
+            /** Added */
+            added: number;
+            /** Duplicates */
+            duplicates: number;
+            /** Matched */
+            matched: number;
+            /** Skipped */
+            skipped: number;
+        };
+        /** RestoreUploadRequest */
+        RestoreUploadRequest: {
+            /** Strategy */
+            strategy?: ("new_workspace" | "into_empty" | "replace") | null;
+            /** Password */
+            password?: string | null;
+            /** Workspace Name */
+            workspace_name?: string | null;
+            /** Confirm Name */
+            confirm_name?: string | null;
+            /**
+             * Allow Repeat
+             * @default false
+             */
+            allow_repeat: boolean;
+            /**
+             * Dry Run
+             * @default false
+             */
+            dry_run: boolean;
+        };
         /** RoutineDetailResponse */
         RoutineDetailResponse: {
             /**
@@ -14505,6 +15030,21 @@ export interface components {
             /** Supabase Publishable Key */
             supabase_publishable_key: string;
         };
+        /** TableResultResponse */
+        TableResultResponse: {
+            /** Table */
+            table: string;
+            /** Module */
+            module: string;
+            /** Added */
+            added: number;
+            /** Duplicates */
+            duplicates: number;
+            /** Matched */
+            matched: number;
+            /** Skipped */
+            skipped: number;
+        };
         /** TagListResponse */
         TagListResponse: {
             /** Tags */
@@ -15126,6 +15666,22 @@ export interface components {
             notes?: string | null;
             /** Archived */
             archived?: boolean | null;
+        };
+        /** UpdateBackupSettingsRequest */
+        UpdateBackupSettingsRequest: {
+            /**
+             * Frequency
+             * @enum {string}
+             */
+            frequency: "manual" | "daily" | "weekly" | "monthly";
+            /** Retention Count */
+            retention_count: number;
+            /** Include Files */
+            include_files: boolean;
+            /** Encrypt */
+            encrypt: boolean;
+            /** Password */
+            password?: string | null;
         };
         /**
          * UpdateBudgetRequest
@@ -15799,6 +16355,18 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** VerificationResponse */
+        VerificationResponse: {
+            /** Ok */
+            ok: boolean;
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "checksum" | "full";
+            /** Message */
+            message: string;
         };
         /** WaterDayResponse */
         WaterDayResponse: {
@@ -16746,6 +17314,708 @@ export interface operations {
                 content?: never;
             };
             /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    backup_overview_api_v1_workspaces__workspace_id__backups_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupOverviewResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, backup, or upload does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_backup_api_v1_workspaces__workspace_id__backups_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBackupRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, backup, or upload does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A backup of this workspace is already running. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The backup failed; the failure is recorded in the history. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_backup_settings_api_v1_workspaces__workspace_id__backups_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBackupSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupSettingsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, backup, or upload does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_backup_api_v1_workspaces__workspace_id__backups__backup_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The backup's ID. */
+                backup_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, backup, or upload does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_backup_api_v1_workspaces__workspace_id__backups__backup_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The backup's ID. */
+                backup_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, backup, or upload does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_backup_api_v1_workspaces__workspace_id__backups__backup_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The backup's ID. */
+                backup_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": unknown;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, backup, or upload does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_backup_api_v1_workspaces__workspace_id__backups__backup_id__verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The backup's ID. */
+                backup_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArchivePasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, backup, or upload does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_archive_api_v1_workspaces__workspace_id__exports_archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportArchiveRequest"];
+            };
+        };
+        responses: {
+            /** @description The file. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": unknown;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, backup, or upload does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_module_api_v1_workspaces__workspace_id__exports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportModuleRequest"];
+            };
+        };
+        responses: {
+            /** @description The file. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": unknown;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, backup, or upload does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_uploads_api_v1_workspaces__workspace_id__backup_uploads_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupUploadResponse"][];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, backup, or upload does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_backup_api_v1_workspaces__workspace_id__backup_uploads_post: {
+        parameters: {
+            query?: {
+                filename?: string;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupUploadResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, backup, or upload does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The file is larger than the server accepts. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    inspect_upload_api_v1_workspaces__workspace_id__backup_uploads__upload_id__inspect_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The upload's ID. */
+                upload_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArchivePasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InspectionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, backup, or upload does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_upload_api_v1_workspaces__workspace_id__backup_uploads__upload_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The upload's ID. */
+                upload_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RestoreUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestoreReportResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, backup, or upload does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The restore can't go ahead as asked, or failed; nothing changed. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    discard_upload_api_v1_workspaces__workspace_id__backup_uploads__upload_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The upload's ID. */
+                upload_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, backup, or upload does not exist or is not accessible. */
             404: {
                 headers: {
                     [name: string]: unknown;

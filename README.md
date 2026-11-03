@@ -132,6 +132,12 @@ control.
   rather than overwritten, and optionally two-way), turn Gmail or Outlook messages into tasks,
   notes, and reminders without copying the mailbox, and import Google Drive or OneDrive files
   into Documents. Tokens stay encrypted on the server. Setup: [docs/integrations.md](docs/integrations.md).
+- Backup & restore (Settings → Backup & restore): checksummed backups of a workspace's records
+  and files, optionally password-encrypted, made by hand or automatically (daily, weekly, or
+  monthly, with retention); restores that are inspected and dry-run first, into a new
+  workspace, an empty one, or replacing the current one after a safety backup; exports as JSON,
+  CSV, iCalendar, and Markdown; and JSON imports without duplicates. Guide:
+  [docs/backups.md](docs/backups.md).
 - Shared tooling for linting, formatting, type checking, testing, commit conventions, and CI.
 
 ### 🚫 Explicit non-goals for now
@@ -139,7 +145,7 @@ control.
 - AI habit recommendations or gamification (points, badges, leaderboards).
 - AI health recommendations, medical diagnosis or treatment, and health or food-database
   integrations (Apple Health, Google Fit, wearables, barcode lookups).
-- CalDAV or iCal calendars, sending email, or AI scheduling; a knowledge graph
+- CalDAV or importing iCal calendars (the calendar exports `.ics`), sending email, or AI scheduling; a knowledge graph
   in notes; automatically created transactions, live market prices, or bank integrations in
   finance.
 - Shared workspaces, invitations, password recovery for local accounts, and account linking

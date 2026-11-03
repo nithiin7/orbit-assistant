@@ -12,6 +12,7 @@ from orbit_api.db.database import Database
 from orbit_api.repositories.accounts import SqlAccountRepository, SqlLocalAuthRepository
 from orbit_api.repositories.ai_services import AiServices, build_ai
 from orbit_api.repositories.avatars import SqlAvatarRepository
+from orbit_api.repositories.backup import build_backup_service
 from orbit_api.repositories.budgets import build_budget_service
 from orbit_api.repositories.calendar import (
     build_calendar_preference_service,
@@ -46,6 +47,7 @@ from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.repositories.workspaces import SqlWorkspaceRepository
 from orbit_api.services.accounts.service import AccountService
 from orbit_api.services.avatars.service import AvatarService
+from orbit_api.services.backup.service import BackupService
 from orbit_api.services.budgets.service import BudgetService
 from orbit_api.services.calendar.service import CalendarPreferenceService, CalendarService
 from orbit_api.services.commitments.service import CommitmentService
@@ -73,6 +75,7 @@ from orbit_api.services.shopping.service import ShoppingService
 from orbit_api.services.tasks.service import TaskService
 from orbit_api.services.workspaces.service import WorkspaceService
 from orbit_api.system.attachment_store import FileAttachmentStore
+from orbit_api.system.backup_store import FileArchiveStore
 
 
 async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
@@ -258,6 +261,20 @@ def get_attachment_store(settings: SettingsDep) -> FileAttachmentStore:
 
 
 AttachmentStoreDep = Annotated[FileAttachmentStore, Depends(get_attachment_store)]
+
+
+def get_archive_store(settings: SettingsDep) -> FileArchiveStore:
+    return FileArchiveStore(settings.backups_dir)
+
+
+ArchiveStoreDep = Annotated[FileArchiveStore, Depends(get_archive_store)]
+
+
+def get_backup_service(session: SessionDep, settings: SettingsDep) -> BackupService:
+    return build_backup_service(session, settings)
+
+
+BackupServiceDep = Annotated[BackupService, Depends(get_backup_service)]
 
 
 def get_attachment_service(session: SessionDep, store: AttachmentStoreDep) -> AttachmentService:

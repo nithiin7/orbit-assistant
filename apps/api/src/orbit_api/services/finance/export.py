@@ -12,6 +12,7 @@ from collections.abc import Iterable
 
 from orbit_api.services.finance.models import Account, Category, Transaction
 from orbit_api.services.finance.money import to_decimal_string
+from orbit_api.utils.spreadsheet import safe_cell
 
 CSV_HEADER = (
     "Date",
@@ -26,14 +27,8 @@ CSV_HEADER = (
     "ID",
 )
 
-# A spreadsheet treats a cell starting with one of these as a formula, which can run commands or
-# send data elsewhere when the file is opened. Such text is prefixed with an apostrophe, which
-# spreadsheets show as text (OWASP's guidance for CSV injection).
-_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
-
-
-def _text(value: str) -> str:
-    return f"'{value}" if value.startswith(_FORMULA_PREFIXES) else value
+# Text cells are guarded against spreadsheet formula injection.
+_text = safe_cell
 
 
 def transactions_csv(

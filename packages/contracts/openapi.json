@@ -895,7 +895,7 @@
           "workspaces"
         ],
         "summary": "Delete a workspace",
-        "description": "Permanently delete a workspace and everything in it, including note attachment files.",
+        "description": "Permanently delete a workspace and everything in it, including note attachment files\nand the workspace's stored backups.",
         "operationId": "delete_workspace_api_v1_workspaces__workspace_id__delete",
         "security": [
           {
@@ -926,6 +926,930 @@
           },
           "409": {
             "description": "The personal workspace cannot be deleted."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/backups": {
+      "get": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Backups, automatic backup settings, and recent uploads",
+        "operationId": "backup_overview_api_v1_workspaces__workspace_id__backups_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupOverviewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, backup, or upload does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Create a backup",
+        "description": "Back up every module's records and, optionally, the workspace's files. The archive is\nkept on the server until it's deleted; download it to keep a copy elsewhere.",
+        "operationId": "create_backup_api_v1_workspaces__workspace_id__backups_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBackupRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, backup, or upload does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A backup of this workspace is already running."
+          },
+          "500": {
+            "description": "The backup failed; the failure is recorded in the history."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/backups/settings": {
+      "put": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Change automatic backups",
+        "description": "Frequency, how many automatic backups to keep, whether they include files, and whether\nthey're encrypted with the backup password (set or change it with `password`).",
+        "operationId": "update_backup_settings_api_v1_workspaces__workspace_id__backups_settings_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBackupSettingsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupSettingsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, backup, or upload does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/backups/{backup_id}": {
+      "get": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "A backup",
+        "operationId": "get_backup_api_v1_workspaces__workspace_id__backups__backup_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "backup_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The backup's ID.",
+              "title": "Backup Id"
+            },
+            "description": "The backup's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, backup, or upload does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Delete a backup",
+        "operationId": "delete_backup_api_v1_workspaces__workspace_id__backups__backup_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "backup_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The backup's ID.",
+              "title": "Backup Id"
+            },
+            "description": "The backup's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, backup, or upload does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/backups/{backup_id}/download": {
+      "get": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Download a backup",
+        "operationId": "download_backup_api_v1_workspaces__workspace_id__backups__backup_id__download_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "backup_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The backup's ID.",
+              "title": "Backup Id"
+            },
+            "description": "The backup's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The file.",
+            "content": {
+              "application/octet-stream": {}
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, backup, or upload does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/backups/{backup_id}/verify": {
+      "post": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Check a backup's integrity",
+        "description": "Compare the archive with the checksum recorded when it was made, then (for unencrypted\nbackups, or with the password) every record and file with the manifest's checksums.",
+        "operationId": "verify_backup_api_v1_workspaces__workspace_id__backups__backup_id__verify_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "backup_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The backup's ID.",
+              "title": "Backup Id"
+            },
+            "description": "The backup's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchivePasswordRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, backup, or upload does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/exports/archive": {
+      "post": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Download a backup archive without keeping it",
+        "description": "The same archive as a backup, built for this download and deleted from the server once\nit's sent. With a password, it's encrypted.",
+        "operationId": "export_archive_api_v1_workspaces__workspace_id__exports_archive_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportArchiveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The file.",
+            "content": {
+              "application/octet-stream": {}
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, backup, or upload does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/exports": {
+      "post": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Export a module, or the whole workspace as JSON",
+        "description": "JSON for any module (or every module), CSV for tables, iCalendar for the calendar, and\nMarkdown for notes. JSON exports can be imported back into a workspace.",
+        "operationId": "export_module_api_v1_workspaces__workspace_id__exports_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportModuleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The file.",
+            "content": {
+              "application/octet-stream": {}
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, backup, or upload does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/backup-uploads": {
+      "post": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Upload a backup or export to restore or import",
+        "description": "The body is the file. It's staged on the server for 24 hours; nothing is restored until\nit's inspected and a restore is confirmed.",
+        "operationId": "upload_backup_api_v1_workspaces__workspace_id__backup_uploads_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "filename",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "default": "upload",
+              "title": "Filename"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupUploadResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, backup, or upload does not exist or is not accessible."
+          },
+          "413": {
+            "description": "The file is larger than the server accepts."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Recent uploads, restores, and imports",
+        "operationId": "list_uploads_api_v1_workspaces__workspace_id__backup_uploads_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BackupUploadResponse"
+                  },
+                  "title": "Response List Uploads Api V1 Workspaces  Workspace Id  Backup Uploads Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, backup, or upload does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/backup-uploads/{upload_id}/inspect": {
+      "post": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Inspect an upload before restoring",
+        "description": "Validate the archive's structure, checksums, and compatibility, list what it contains,\nand dry-run the restore or import (nothing is changed).",
+        "operationId": "inspect_upload_api_v1_workspaces__workspace_id__backup_uploads__upload_id__inspect_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The upload's ID.",
+              "title": "Upload Id"
+            },
+            "description": "The upload's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchivePasswordRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InspectionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, backup, or upload does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/backup-uploads/{upload_id}/restore": {
+      "post": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Restore a backup or import an export",
+        "description": "Backups restore into a new workspace, into this workspace if it's empty, or replace this\nworkspace's data (after a pre-restore backup; type the workspace's name to confirm). Exports\nare added to this workspace. With `dry_run`, nothing is changed.",
+        "operationId": "restore_upload_api_v1_workspaces__workspace_id__backup_uploads__upload_id__restore_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The upload's ID.",
+              "title": "Upload Id"
+            },
+            "description": "The upload's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestoreReportResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, backup, or upload does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The restore can't go ahead as asked, or failed; nothing changed."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/backup-uploads/{upload_id}": {
+      "delete": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Discard an upload",
+        "operationId": "discard_upload_api_v1_workspaces__workspace_id__backup_uploads__upload_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The upload's ID.",
+              "title": "Upload Id"
+            },
+            "description": "The upload's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, backup, or upload does not exist or is not accessible."
           },
           "422": {
             "description": "Validation Error",
@@ -32262,6 +33186,28 @@
         ],
         "title": "AiUsageResponse"
       },
+      "ArchivePasswordRequest": {
+        "properties": {
+          "password": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1024,
+                "minLength": 1,
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ArchivePasswordRequest"
+      },
       "ArchiveRequest": {
         "properties": {
           "archived": {
@@ -32275,6 +33221,77 @@
           "archived"
         ],
         "title": "ArchiveRequest"
+      },
+      "ArchiveSummaryResponse": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "backup",
+              "export"
+            ],
+            "title": "Kind"
+          },
+          "format_version": {
+            "type": "integer",
+            "title": "Format Version"
+          },
+          "app_version": {
+            "type": "string",
+            "title": "App Version"
+          },
+          "schema_revision": {
+            "type": "string",
+            "title": "Schema Revision"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "source_workspace_name": {
+            "type": "string",
+            "title": "Source Workspace Name"
+          },
+          "include_files": {
+            "type": "boolean",
+            "title": "Include Files"
+          },
+          "module_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Module Counts"
+          },
+          "file_count": {
+            "type": "integer",
+            "title": "File Count"
+          },
+          "file_bytes": {
+            "type": "integer",
+            "title": "File Bytes"
+          },
+          "missing_files": {
+            "type": "integer",
+            "title": "Missing Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "format_version",
+          "app_version",
+          "schema_revision",
+          "created_at",
+          "source_workspace_name",
+          "include_files",
+          "module_counts",
+          "file_count",
+          "file_bytes",
+          "missing_files"
+        ],
+        "title": "ArchiveSummaryResponse"
       },
       "AssetListResponse": {
         "properties": {
@@ -32666,6 +33683,396 @@
           "authorization_url"
         ],
         "title": "AuthorizeIntegrationResponse"
+      },
+      "BackupOverviewResponse": {
+        "properties": {
+          "settings": {
+            "$ref": "#/components/schemas/BackupSettingsResponse"
+          },
+          "backups": {
+            "items": {
+              "$ref": "#/components/schemas/BackupResponse"
+            },
+            "type": "array",
+            "title": "Backups"
+          },
+          "uploads": {
+            "items": {
+              "$ref": "#/components/schemas/BackupUploadResponse"
+            },
+            "type": "array",
+            "title": "Uploads"
+          },
+          "total_bytes": {
+            "type": "integer",
+            "title": "Total Bytes"
+          },
+          "last_success_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Success At"
+          },
+          "running": {
+            "type": "boolean",
+            "title": "Running"
+          },
+          "modules": {
+            "items": {
+              "$ref": "#/components/schemas/ExportModuleInfo"
+            },
+            "type": "array",
+            "title": "Modules"
+          }
+        },
+        "type": "object",
+        "required": [
+          "settings",
+          "backups",
+          "uploads",
+          "total_bytes",
+          "last_success_at",
+          "running",
+          "modules"
+        ],
+        "title": "BackupOverviewResponse"
+      },
+      "BackupResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "scheduled",
+              "pre_restore"
+            ],
+            "title": "Kind"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "include_files": {
+            "type": "boolean",
+            "title": "Include Files"
+          },
+          "encrypted": {
+            "type": "boolean",
+            "title": "Encrypted"
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Bytes"
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256"
+          },
+          "record_count": {
+            "type": "integer",
+            "title": "Record Count"
+          },
+          "file_count": {
+            "type": "integer",
+            "title": "File Count"
+          },
+          "modules": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Modules"
+          },
+          "record_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Record Counts"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "format_version": {
+            "type": "integer",
+            "title": "Format Version"
+          },
+          "schema_revision": {
+            "type": "string",
+            "title": "Schema Revision"
+          },
+          "app_version": {
+            "type": "string",
+            "title": "App Version"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "include_files",
+          "encrypted",
+          "size_bytes",
+          "sha256",
+          "record_count",
+          "file_count",
+          "modules",
+          "record_counts",
+          "warnings",
+          "error",
+          "format_version",
+          "schema_revision",
+          "app_version",
+          "started_at",
+          "finished_at",
+          "created_at"
+        ],
+        "title": "BackupResponse"
+      },
+      "BackupSettingsResponse": {
+        "properties": {
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "daily",
+              "weekly",
+              "monthly"
+            ],
+            "title": "Frequency"
+          },
+          "retention_count": {
+            "type": "integer",
+            "title": "Retention Count"
+          },
+          "include_files": {
+            "type": "boolean",
+            "title": "Include Files"
+          },
+          "encrypt": {
+            "type": "boolean",
+            "title": "Encrypt"
+          },
+          "has_backup_password": {
+            "type": "boolean",
+            "title": "Has Backup Password"
+          },
+          "backup_password_set_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backup Password Set At"
+          },
+          "next_run_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Run At"
+          },
+          "last_run_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Run At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "frequency",
+          "retention_count",
+          "include_files",
+          "encrypt",
+          "has_backup_password",
+          "backup_password_set_at",
+          "next_run_at",
+          "last_run_at"
+        ],
+        "title": "BackupSettingsResponse"
+      },
+      "BackupUploadResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "backup",
+              "export"
+            ],
+            "title": "Kind"
+          },
+          "encrypted": {
+            "type": "boolean",
+            "title": "Encrypted"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "uploaded",
+              "restoring",
+              "completed",
+              "failed",
+              "expired",
+              "discarded"
+            ],
+            "title": "Status"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RestoreReportResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "encrypted",
+          "filename",
+          "size_bytes",
+          "status",
+          "error",
+          "created_at",
+          "expires_at",
+          "finished_at",
+          "result"
+        ],
+        "title": "BackupUploadResponse"
       },
       "BalanceTotalsResponse": {
         "properties": {
@@ -34308,6 +35715,43 @@
         ],
         "title": "CreateAssetRequest",
         "description": "Track an asset valued by hand. `current_value` records its first valuation (on\n`valued_on`, default today). Names are unique per workspace."
+      },
+      "CreateBackupRequest": {
+        "properties": {
+          "include_files": {
+            "type": "boolean",
+            "title": "Include Files",
+            "default": true
+          },
+          "encryption": {
+            "type": "string",
+            "enum": [
+              "none",
+              "password",
+              "backup_key"
+            ],
+            "title": "Encryption",
+            "default": "none"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1024,
+                "minLength": 10,
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CreateBackupRequest"
       },
       "CreateBudgetRequest": {
         "properties": {
@@ -39276,6 +40720,33 @@
         ],
         "title": "ExerciseResponse"
       },
+      "ExportArchiveRequest": {
+        "properties": {
+          "include_files": {
+            "type": "boolean",
+            "title": "Include Files",
+            "default": true
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1024,
+                "minLength": 10,
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ExportArchiveRequest"
+      },
       "ExportDocumentsRequest": {
         "properties": {
           "document_ids": {
@@ -39337,6 +40808,96 @@
           "event_id"
         ],
         "title": "ExportEventRequest"
+      },
+      "ExportModuleInfo": {
+        "properties": {
+          "module": {
+            "type": "string",
+            "enum": [
+              "tasks",
+              "shopping",
+              "reminders",
+              "finance",
+              "notes",
+              "calendar",
+              "habits",
+              "documents",
+              "fitness",
+              "assistant",
+              "search"
+            ],
+            "title": "Module"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "formats": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "ics",
+                "markdown"
+              ]
+            },
+            "type": "array",
+            "title": "Formats"
+          }
+        },
+        "type": "object",
+        "required": [
+          "module",
+          "label",
+          "formats"
+        ],
+        "title": "ExportModuleInfo"
+      },
+      "ExportModuleRequest": {
+        "properties": {
+          "module": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "tasks",
+                  "shopping",
+                  "reminders",
+                  "finance",
+                  "notes",
+                  "calendar",
+                  "habits",
+                  "documents",
+                  "fitness",
+                  "assistant",
+                  "search"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "json",
+              "csv",
+              "ics",
+              "markdown"
+            ],
+            "title": "Format"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "module",
+          "format"
+        ],
+        "title": "ExportModuleRequest"
       },
       "FitnessGoalListResponse": {
         "properties": {
@@ -42294,6 +43855,54 @@
           "link"
         ],
         "title": "ImportedFileResponse"
+      },
+      "InspectionResponse": {
+        "properties": {
+          "summary": {
+            "$ref": "#/components/schemas/ArchiveSummaryResponse"
+          },
+          "compatible": {
+            "type": "boolean",
+            "title": "Compatible"
+          },
+          "issues": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Issues"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "target": {
+            "$ref": "#/components/schemas/RestoreTargetResponse"
+          },
+          "dry_run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RestoreReportResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary",
+          "compatible",
+          "issues",
+          "warnings",
+          "target",
+          "dry_run"
+        ],
+        "title": "InspectionResponse"
       },
       "InstallmentResponse": {
         "properties": {
@@ -49102,6 +50711,220 @@
         ],
         "title": "ResolveIntegrationConflictResponse"
       },
+      "RestoreReportResponse": {
+        "properties": {
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run"
+          },
+          "strategy": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "new_workspace",
+                  "into_empty",
+                  "replace"
+                ]
+              },
+              {
+                "type": "string",
+                "const": "merge"
+              }
+            ],
+            "title": "Strategy"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "workspace_name": {
+            "type": "string",
+            "title": "Workspace Name"
+          },
+          "remapped": {
+            "type": "integer",
+            "title": "Remapped"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/RestoreTotalsResponse"
+          },
+          "tables": {
+            "items": {
+              "$ref": "#/components/schemas/TableResultResponse"
+            },
+            "type": "array",
+            "title": "Tables"
+          },
+          "files_restored": {
+            "type": "integer",
+            "title": "Files Restored"
+          },
+          "files_reused": {
+            "type": "integer",
+            "title": "Files Reused"
+          },
+          "files_missing": {
+            "type": "integer",
+            "title": "Files Missing"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "pre_restore_backup_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pre Restore Backup Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dry_run",
+          "strategy",
+          "workspace_id",
+          "workspace_name",
+          "remapped",
+          "totals",
+          "tables",
+          "files_restored",
+          "files_reused",
+          "files_missing",
+          "warnings",
+          "pre_restore_backup_id"
+        ],
+        "title": "RestoreReportResponse"
+      },
+      "RestoreTargetResponse": {
+        "properties": {
+          "record_count": {
+            "type": "integer",
+            "title": "Record Count"
+          },
+          "has_integrations": {
+            "type": "boolean",
+            "title": "Has Integrations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "record_count",
+          "has_integrations"
+        ],
+        "title": "RestoreTargetResponse"
+      },
+      "RestoreTotalsResponse": {
+        "properties": {
+          "added": {
+            "type": "integer",
+            "title": "Added"
+          },
+          "duplicates": {
+            "type": "integer",
+            "title": "Duplicates"
+          },
+          "matched": {
+            "type": "integer",
+            "title": "Matched"
+          },
+          "skipped": {
+            "type": "integer",
+            "title": "Skipped"
+          }
+        },
+        "type": "object",
+        "required": [
+          "added",
+          "duplicates",
+          "matched",
+          "skipped"
+        ],
+        "title": "RestoreTotalsResponse"
+      },
+      "RestoreUploadRequest": {
+        "properties": {
+          "strategy": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "new_workspace",
+                  "into_empty",
+                  "replace"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strategy"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1024,
+                "minLength": 1,
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          },
+          "workspace_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Name"
+          },
+          "confirm_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirm Name"
+          },
+          "allow_repeat": {
+            "type": "boolean",
+            "title": "Allow Repeat",
+            "default": false
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "RestoreUploadRequest"
+      },
       "RoutineDetailResponse": {
         "properties": {
           "id": {
@@ -51918,6 +53741,44 @@
         "title": "SupabaseAuthConfig",
         "description": "Public Supabase settings the web app needs to sign users in. Contains no secrets."
       },
+      "TableResultResponse": {
+        "properties": {
+          "table": {
+            "type": "string",
+            "title": "Table"
+          },
+          "module": {
+            "type": "string",
+            "title": "Module"
+          },
+          "added": {
+            "type": "integer",
+            "title": "Added"
+          },
+          "duplicates": {
+            "type": "integer",
+            "title": "Duplicates"
+          },
+          "matched": {
+            "type": "integer",
+            "title": "Matched"
+          },
+          "skipped": {
+            "type": "integer",
+            "title": "Skipped"
+          }
+        },
+        "type": "object",
+        "required": [
+          "table",
+          "module",
+          "added",
+          "duplicates",
+          "matched",
+          "skipped"
+        ],
+        "title": "TableResultResponse"
+      },
       "TagListResponse": {
         "properties": {
           "tags": {
@@ -53717,6 +55578,58 @@
         "type": "object",
         "title": "UpdateAssetRequest",
         "description": "`null` clears the purchase details or the linked account. `archived: true` records it as\nsold or disposed of; it stays as history but isn't counted."
+      },
+      "UpdateBackupSettingsRequest": {
+        "properties": {
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "daily",
+              "weekly",
+              "monthly"
+            ],
+            "title": "Frequency"
+          },
+          "retention_count": {
+            "type": "integer",
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Retention Count"
+          },
+          "include_files": {
+            "type": "boolean",
+            "title": "Include Files"
+          },
+          "encrypt": {
+            "type": "boolean",
+            "title": "Encrypt"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1024,
+                "minLength": 10,
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "frequency",
+          "retention_count",
+          "include_files",
+          "encrypt"
+        ],
+        "title": "UpdateBackupSettingsRequest"
       },
       "UpdateBudgetRequest": {
         "properties": {
@@ -56802,6 +58715,33 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VerificationResponse": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "checksum",
+              "full"
+            ],
+            "title": "Level"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "level",
+          "message"
+        ],
+        "title": "VerificationResponse"
       },
       "WaterDayResponse": {
         "properties": {

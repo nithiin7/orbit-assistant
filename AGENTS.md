@@ -72,12 +72,22 @@ checkpoints, leases, retries, duplicate prevention, recurring series and their e
 conflicts recorded rather than overwritten, optionally two-way for single events; Gmail and
 Outlook mail read on demand from chosen labels to create linked tasks, notes, and reminders;
 Google Drive and OneDrive files imported one by one into Documents with change and deletion
-checks; verified push notifications when a public HTTPS URL is configured, polling otherwise).
+checks; verified push notifications when a public HTTPS URL is configured, polling otherwise),
+and **backup, restore, and data portability** (versioned, checksummed ZIP backups of a workspace's
+records and files read from one consistent snapshot on SQLite or PostgreSQL, kept in a server-side
+backup store with history, download, integrity checks, and deletion; optional password encryption
+with Argon2id, X25519 key wrapping, and chunked AES-256-GCM, so automatic backups are encrypted
+without storing the password; automatic daily, weekly, or monthly backups with retention, run by
+the existing worker; uploads inspected and dry-run before restoring into a new workspace, an
+empty one, or replacing the current one after a pre-restore backup, with IDs kept or remapped
+consistently; module exports as JSON, CSV, iCalendar, and Markdown; and JSON imports with
+duplicate detection and natural-key matching).
 There are no other product features, no
 OCR (scanned PDFs and images yield no text), no encryption at rest by Orbit (documents rely
 on the OS's disk encryption), no bulk document import, no AI health recommendations, medical
 features, or external health or food-database integrations, no AI habit recommendations or
-gamification, no CalDAV or iCal import or export, no email sending, no AI
+gamification, no CalDAV and no iCal import (the calendar exports `.ics` only), no CSV, Markdown, or
+`.ics` import (imports take Orbit JSON exports and backups), no cloud-storage backup targets, no email sending, no AI
 scheduling (time suggestions are text only), no knowledge graph, no AI briefings, no recurring
 tasks, no automatically created transactions, no live market prices or bank integrations, no push,
 email, or mobile notifications, no autonomous AI agents or AI actions without approval, no

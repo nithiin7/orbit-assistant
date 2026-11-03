@@ -9,13 +9,15 @@ so a crash never leaves a half-written attachment under its real name.
 Blocking file I/O runs in a worker thread, so it never stalls the event loop.
 """
 
+import hashlib
 import logging
 import os
 import shutil
 import uuid
-from collections.abc import Collection, Sequence
+from collections.abc import Callable, Collection, Sequence
 from datetime import datetime
 from pathlib import Path
+from typing import IO
 
 import anyio.to_thread
 
@@ -46,6 +48,53 @@ class FileAttachmentStore:
             file.flush()
             os.fsync(file.fileno())
         partial.replace(target)
+
+    async def write_stream(
+        self,
+        workspace_id: uuid.UUID,
+        blob_id: uuid.UUID,
+        copy: Callable[[Callable[[IO[bytes]], str]], str],
+    ) -> str:
+        """Write a file streamed from elsewhere (a backup being restored) without holding it in
+        memory: `copy` hands the source stream to the writer it's given. Returns the SHA-256 of
+        what was written, for the caller to check."""
+        return await anyio.to_thread.run_sync(
+            lambda: copy(lambda source: self._write_from(workspace_id, blob_id, source))
+        )
+
+    def _write_from(self, workspace_id: uuid.UUID, blob_id: uuid.UUID, source: IO[bytes]) -> str:
+        directory = self._directory(workspace_id)
+        directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+        target = self._path(workspace_id, blob_id)
+        partial = target.with_name(f"{blob_id}.partial")
+        digest = hashlib.sha256()
+        descriptor = os.open(partial, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        try:
+            with os.fdopen(descriptor, "wb") as file:
+                while chunk := source.read(1024 * 1024):
+                    digest.update(chunk)
+                    file.write(chunk)
+                file.flush()
+                os.fsync(file.fileno())
+            partial.replace(target)
+        except BaseException:
+            partial.unlink(missing_ok=True)
+            raise
+        return digest.hexdigest()
+
+    async def checksum(self, workspace_id: uuid.UUID, blob_id: uuid.UUID) -> str | None:
+        """The SHA-256 of a stored file, or `None` if there's none."""
+        return await anyio.to_thread.run_sync(self._checksum, workspace_id, blob_id)
+
+    def _checksum(self, workspace_id: uuid.UUID, blob_id: uuid.UUID) -> str | None:
+        digest = hashlib.sha256()
+        try:
+            with self._path(workspace_id, blob_id).open("rb") as file:
+                while chunk := file.read(1024 * 1024):
+                    digest.update(chunk)
+        except FileNotFoundError:
+            return None
+        return digest.hexdigest()
 
     async def locate(self, workspace_id: uuid.UUID, attachment_id: uuid.UUID) -> Path | None:
         path = self._path(workspace_id, attachment_id)
