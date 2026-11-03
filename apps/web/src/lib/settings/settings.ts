@@ -37,7 +37,7 @@ export const settingsPanels: readonly SettingsPanel[] = [
   {
     slug: "appearance",
     title: "Appearance",
-    description: "Theme for this browser.",
+    description: "Mode, colors, and font for this browser.",
     icon: Palette,
     group: "general",
   },

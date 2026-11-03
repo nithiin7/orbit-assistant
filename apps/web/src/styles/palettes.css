@@ -1,0 +1,124 @@
+/*
+ * Optional color themes and UI fonts, chosen in Settings → Appearance and set on <html> as
+ * `data-palette` and `data-font` (see lib/appearance-preference). The defaults, Clay and Geist,
+ * set no attribute, so tokens.css applies unchanged.
+ *
+ * Each palette only sets a few parameters: the hue of its neutrals, the hue and chroma of its
+ * brand color, and the hue of the gradient-only second color. The shared blocks below derive the
+ * surface and brand tokens from them with the same lightness steps as Clay, so contrast matches
+ * the default theme. Status, chart, and calendar colors carry meaning and never change.
+ */
+
+/* UI font. Geist by default; the variables come from fonts.ts. */
+:root {
+  --font-ui: var(--font-geist-sans);
+}
+:root[data-font="inter"] {
+  --font-ui: var(--font-inter);
+}
+:root[data-font="serif"] {
+  --font-ui: var(--font-source-serif);
+}
+:root[data-font="legible"] {
+  --font-ui: var(--font-atkinson);
+}
+:root[data-font="system"] {
+  --font-ui: system-ui;
+}
+
+:root[data-palette="sage"] {
+  --palette-neutral-hue: 145;
+  --palette-brand-hue: 155;
+  --palette-brand-chroma: 0.11;
+  --palette-brand-chroma-dark: 0.11;
+  --palette-glow-hue: 115;
+  --shadow-color: 140 15% 22%;
+}
+:root[data-palette="ocean"] {
+  --palette-neutral-hue: 235;
+  --palette-brand-hue: 250;
+  --palette-brand-chroma: 0.15;
+  --palette-brand-chroma-dark: 0.12;
+  --palette-glow-hue: 195;
+  --shadow-color: 220 25% 25%;
+}
+:root[data-palette="plum"] {
+  --palette-neutral-hue: 320;
+  --palette-brand-hue: 335;
+  --palette-brand-chroma: 0.15;
+  --palette-brand-chroma-dark: 0.13;
+  --palette-glow-hue: 15;
+  --shadow-color: 320 15% 25%;
+}
+:root[data-palette="slate"] {
+  --palette-neutral-hue: 255;
+  --palette-brand-hue: 275;
+  --palette-brand-chroma: 0.17;
+  --palette-brand-chroma-dark: 0.14;
+  --palette-glow-hue: 300;
+  --shadow-color: 230 15% 25%;
+}
+
+/* Light mode. `:root[...]:not(...)` outranks both `:root` and `.dark` in tokens.css. */
+:root[data-palette]:not([data-palette="clay"]) {
+  --background: oklch(0.985 0.006 var(--palette-neutral-hue));
+  --foreground: oklch(0.22 0.012 var(--palette-neutral-hue));
+  --card: oklch(0.998 0.002 var(--palette-neutral-hue));
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.998 0.002 var(--palette-neutral-hue));
+  --popover-foreground: var(--foreground);
+
+  --primary: oklch(0.54 var(--palette-brand-chroma) var(--palette-brand-hue));
+  --primary-foreground: oklch(0.99 0.005 var(--palette-neutral-hue));
+  --secondary: oklch(0.955 0.008 var(--palette-neutral-hue));
+  --secondary-foreground: oklch(0.24 0.012 var(--palette-neutral-hue));
+  --muted: oklch(0.955 0.008 var(--palette-neutral-hue));
+  --muted-foreground: oklch(0.5 0.015 var(--palette-neutral-hue));
+  --accent: oklch(0.945 0.012 var(--palette-neutral-hue));
+  --accent-foreground: oklch(0.24 0.012 var(--palette-neutral-hue));
+  --brand: var(--primary);
+  --brand-foreground: var(--primary-foreground);
+  --brand-subtle: oklch(0.955 0.028 var(--palette-brand-hue));
+  --brand-2: oklch(0.8 0.13 var(--palette-glow-hue));
+
+  --border: oklch(0.91 0.008 var(--palette-neutral-hue));
+  --input: oklch(0.88 0.01 var(--palette-neutral-hue));
+  --ring: oklch(0.6 var(--palette-brand-chroma) var(--palette-brand-hue));
+
+  --sidebar: oklch(0.97 0.008 var(--palette-neutral-hue));
+  --sidebar-foreground: var(--foreground);
+  --sidebar-accent: oklch(0.935 0.014 var(--palette-neutral-hue));
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: oklch(0.905 0.01 var(--palette-neutral-hue));
+}
+
+/* Dark mode. Lines and shadows keep the default dark values. */
+:root.dark[data-palette]:not([data-palette="clay"]) {
+  --background: oklch(0.17 0.008 var(--palette-neutral-hue));
+  --foreground: oklch(0.95 0.008 var(--palette-neutral-hue));
+  --card: oklch(0.205 0.009 var(--palette-neutral-hue));
+  --popover: oklch(0.225 0.01 var(--palette-neutral-hue));
+
+  --primary: oklch(0.72 var(--palette-brand-chroma-dark) var(--palette-brand-hue));
+  --primary-foreground: oklch(0.2 0.02 var(--palette-brand-hue));
+  --secondary: oklch(0.26 0.01 var(--palette-neutral-hue));
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.255 0.01 var(--palette-neutral-hue));
+  --muted-foreground: oklch(0.72 0.015 var(--palette-neutral-hue));
+  --accent: oklch(0.27 0.012 var(--palette-neutral-hue));
+  --accent-foreground: var(--foreground);
+  --brand: oklch(0.75 var(--palette-brand-chroma-dark) var(--palette-brand-hue));
+  --brand-foreground: var(--primary-foreground);
+  --brand-subtle: oklch(0.3 0.05 var(--palette-brand-hue));
+  --brand-2: oklch(0.78 0.12 var(--palette-glow-hue));
+
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.72 var(--palette-brand-chroma-dark) var(--palette-brand-hue));
+
+  --sidebar: oklch(0.185 0.008 var(--palette-neutral-hue));
+  --sidebar-accent: oklch(0.27 0.025 var(--palette-brand-hue));
+  --sidebar-border: oklch(1 0 0 / 8%);
+
+  --shadow-color: 30 30% 3%;
+}
