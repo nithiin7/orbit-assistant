@@ -19,6 +19,6 @@ Extends the core rule and `AGENTS.md`.
   isolated app with `create_app(Settings(...))`. Warnings are errors.
 - `tests/test_openapi.py` guards the shared contract. If it fails, run
   `pnpm contracts:generate`.
-- No E2E framework yet. Don't add one unless asked.
+- Browser journeys: Playwright in `apps/web/e2e/` (`pnpm test:e2e`). Critical paths only.
 - Narrowest first: `pnpm --filter @orbit/web exec vitest run <file>`,
   `cd apps/api && uv run pytest <file>`. Then `pnpm check`.

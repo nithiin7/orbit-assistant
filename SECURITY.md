@@ -38,11 +38,24 @@ Details are in [docs/architecture.md](docs/architecture.md#identity-and-authoriz
 
 Known limitations (reports about them are still welcome):
 
-- Sign-in has no rate limiting or lockout. Local mode relies on the API being bound to
-  `127.0.0.1`; cloud mode relies on Supabase's limits.
-- Sessions are stored in the browser's `localStorage`, readable by any script on the page.
+- Local sign-in is rate limited in the API process's memory: 10 failures per account and 50 per
+  client address in 15 minutes, and 10 sign-ups per address an hour. Counts reset when the API
+  restarts and aren't shared between API processes. Behind a reverse proxy, set
+  `ORBIT_FORWARDED_ALLOW_IPS` so limits apply per client rather than to the proxy. A person who
+  knows someone's email can delay that person's sign-in for up to 15 minutes. Cloud mode relies
+  on Supabase's limits.
+- Sessions are stored in the browser's `localStorage`, readable by any script on the page. The
+  web app sends a partial Content-Security-Policy (no framing, plugins, or `<base>` changes);
+  scripts aren't restricted by CSP.
 - A Supabase access token remains valid until it expires (one hour by default) after sign-out.
-- Local accounts have no password recovery.
+- Local accounts can change their password (which signs out their other sessions) but have no
+  password recovery: a forgotten password needs someone with access to the database.
+- Accounts can't be deleted from the app yet. Deleting a workspace removes its records, files,
+  and stored backups; removing an account entirely means removing its rows from the database.
+- In cloud mode, AI provider endpoints are checked against private and loopback addresses when
+  they are saved and before each call, but not at connection time, so DNS that changes between
+  the check and the connection (DNS rebinding) isn't prevented.
+- An independent security audit has not been done.
 
 ## Handling secrets in this repository
 

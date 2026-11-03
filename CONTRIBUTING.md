@@ -23,11 +23,18 @@ Thanks for your interest in Orbit! This guide explains how to propose changes.
 5. **Run the checks** before pushing:
 
    ```bash
-   pnpm check   # lint, format check, type check, tests
-   pnpm build   # if you changed the web app
+   pnpm check      # lint, format check, type check, tests
+   pnpm build      # if you changed the web app
+   pnpm test:e2e   # if you changed a critical journey (sign-in, tasks, notes, search)
    ```
 
-6. **Open a pull request** against `main` and fill in the template. CI must pass before merge.
+   CI also runs the API tests against PostgreSQL, a dependency audit, and a container smoke
+   test. To run the PostgreSQL tests locally, see
+   [Database and auth tests](docs/development.md#database-and-auth-tests).
+
+6. **Add a changelog entry** under Unreleased in [CHANGELOG.md](CHANGELOG.md) for anything
+   someone running Orbit would notice (see [docs/release.md](docs/release.md#changelog)).
+7. **Open a pull request** against `main` and fill in the template. CI must pass before merge.
 
 ## Commit messages
 

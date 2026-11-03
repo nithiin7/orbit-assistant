@@ -80,6 +80,30 @@ If you already run a reverse proxy, skip the profile and route `/api/*` to port 
 everything else to port 3000 the same way. Don't buffer `text/event-stream` responses; the
 assistant streams its answers.
 
+Behind any proxy, set `ORBIT_FORWARDED_ALLOW_IPS` in `.env` to the proxy's address (or `*` when
+the API is reachable only through the proxy and `127.0.0.1`). Sign-in limits count attempts per
+client address; without it, every visitor appears to be the proxy and shares one limit. A
+proxy's `X-Request-ID` header is kept, so its logs and the API's can be matched.
+
+## Monitoring and logs
+
+| Endpoint                      | Meaning                                                                                                              | Use for                   |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| `GET /api/v1/health/live`     | The API process answers (also `GET /api/v1/health`).                                                                 | Liveness, restarts        |
+| `GET /api/v1/health/ready`    | The database answers and its schema matches this version (503 with `database: unavailable` or `outdated` otherwise). | Readiness, load balancers |
+| `GET /api/v1/health/database` | The database answers a query; reports the storage mode.                                                              | Diagnostics               |
+
+None needs a session or reveals paths, versions of dependencies, or connection details. The API
+image's Docker health check uses `/health/ready`, so Compose starts the web app only once the
+database is migrated and reachable.
+
+Every API response carries an `X-Request-ID` header, and every API log line includes it, so a
+failure someone reports can be found in `docker compose logs api`. Logs record each request's
+method, path, status, and duration, never query strings (they hold search terms) or bodies.
+Successful health probes aren't logged. Set `ORBIT_LOG_FORMAT=json` for one JSON object per line.
+Worker activity (reminders, indexing, integration sync, backups, agent runs) is logged by the
+same process; `docker compose exec api orbit-worker status` counts reminder deliveries by status.
+
 ## Integrations
 
 To offer Google or Microsoft accounts, create OAuth apps as in [integrations.md](integrations.md)
@@ -174,7 +198,9 @@ docker compose up -d --build     # or: docker compose pull && docker compose up 
 ```
 
 The `migrate` service applies new migrations before the API starts. Back up first: migrations
-are not reversed automatically.
+are not reversed automatically. If the API is started against a database that hasn't been
+migrated, it refuses to start and says which revision it expects; `/health/ready` reports
+`outdated` if the schema changes underneath a running API.
 
 ## Security checklist
 
@@ -182,6 +208,7 @@ are not reversed automatically.
 - Expose Orbit to the internet only through HTTPS (the `proxy` profile or your own proxy).
 - Leave `ORBIT_LOCAL_OPEN_REGISTRATION` unset unless you mean to let anyone who can reach the
   server create an account.
+- Behind a proxy, set `ORBIT_FORWARDED_ALLOW_IPS` (see above) so sign-in limits work per client.
 - Orbit doesn't encrypt files at rest; use an encrypted disk for the Docker data directory.
 - OAuth client secrets and `ORBIT_INTEGRATIONS_SECRET_KEY` are server-only: never put them in
   `PUBLIC_*` values, which reach browsers.

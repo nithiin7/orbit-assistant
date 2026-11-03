@@ -31,7 +31,8 @@ account**; that first account owns the installation (see [Accounts](#accounts)).
 
 Useful API URLs in development:
 
-- Health: <http://localhost:8000/api/v1/health>
+- Liveness: <http://localhost:8000/api/v1/health/live> (also `/api/v1/health`)
+- Readiness (database reachable and migrated): <http://localhost:8000/api/v1/health/ready>
 - Database connectivity: <http://localhost:8000/api/v1/health/database>
 - OpenAPI docs: <http://localhost:8000/docs>
 
@@ -49,13 +50,15 @@ server code.
 
 ### API (`apps/api/.env`)
 
-| Variable             | Default                                             | Purpose                                |
-| -------------------- | --------------------------------------------------- | -------------------------------------- |
-| `ORBIT_ENV`          | `development`                                       | `development`, `test`, or `production` |
-| `ORBIT_API_HOST`     | `127.0.0.1`                                         | Bind address                           |
-| `ORBIT_API_PORT`     | `8000`                                              | Bind port                              |
-| `ORBIT_LOG_LEVEL`    | `info`                                              | Uvicorn log level                      |
-| `ORBIT_CORS_ORIGINS` | `["http://localhost:3000","http://127.0.0.1:3000"]` | Allowed browser origins (JSON list)    |
+| Variable                    | Default                                             | Purpose                                                                                              |
+| --------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `ORBIT_ENV`                 | `development`                                       | `development`, `test`, or `production`                                                               |
+| `ORBIT_API_HOST`            | `127.0.0.1`                                         | Bind address                                                                                         |
+| `ORBIT_API_PORT`            | `8000`                                              | Bind port                                                                                            |
+| `ORBIT_LOG_LEVEL`           | `info`                                              | Uvicorn log level                                                                                    |
+| `ORBIT_LOG_FORMAT`          | `text`                                              | `text`, or `json` (one object a line)                                                                |
+| `ORBIT_CORS_ORIGINS`        | `["http://localhost:3000","http://127.0.0.1:3000"]` | Allowed browser origins (JSON list)                                                                  |
+| `ORBIT_FORWARDED_ALLOW_IPS` | unset (trusts `127.0.0.1`)                          | Proxies whose `X-Forwarded-For` is trusted (comma-separated or `*`); sign-in limits count per client |
 
 Storage (see [Database](#database)):
 
@@ -242,6 +245,11 @@ Which sign-in Orbit uses follows the storage mode; the web app asks the API
   only the first account can register unless `ORBIT_LOCAL_OPEN_REGISTRATION=true`, because a
   reachable server shouldn't accept strangers by default. Set it to `false` to close sign-up
   anywhere.
+- **Changing the password:** Settings → Account → Change password. It needs the current
+  password and signs out the account's other sessions.
+- **Sign-in limits:** 10 failed sign-ins for one account, or 50 from one address, within 15
+  minutes pause sign-in for that account or address (429 with `Retry-After`). Limits live in the
+  API process's memory and reset when it restarts.
 - **Forgotten password:** there is no email-based recovery in local mode (Orbit doesn't send
   email); `/forgot-password` says so instead of offering a reset. This is a known gap; until a
   recovery design exists, the only way back in is to reset the database, which deletes its data.
@@ -296,8 +304,9 @@ uv run alembic downgrade -1           # revert the latest revision
 
 ### Database and auth tests
 
-- `pnpm test:api` (or `uv run pytest`) uses a temporary SQLite database per test. It needs no
-  database server or credentials, and never touches your real database.
+- `pnpm test:api` (or `uv run pytest`) uses a temporary SQLite database per test, copied from
+  one migrated at the start of the run. It needs no database server or credentials, and never
+  touches your real database.
 - Supabase Auth is never contacted by tests: `tests/test_supabase_auth.py` signs tokens with a key
   generated in the test and hands the verifier that key in place of the project's JWKS. No
   Supabase credentials are needed.
@@ -313,7 +322,26 @@ uv run alembic downgrade -1           # revert the latest revision
   ORBIT_TEST_DATABASE_URL=postgresql://localhost/orbit_test uv run pytest -m postgres
   ```
 
-### Why there is no sync yet
+  CI runs these against a `postgres:17` service on every pull request.
+
+### Browser journeys (end-to-end)
+
+`pnpm test:e2e` runs Playwright journeys in `apps/web/e2e/` in Chromium. It migrates a new
+SQLite database in a temporary directory, starts the API on port 8100 and the web app on port
+3100, and stops both afterwards. No account, provider, or credential is needed, and your
+development database isn't touched. Install the browser once:
+
+```bash
+pnpm --filter @orbit/web exec playwright install chromium
+pnpm test:e2e
+```
+
+Journeys cover sign-up, the signed-out redirect, adding and completing a task, quick capture
+found by universal search, and changing a password. Keep them to critical paths: they are slower
+than component tests and less precise about what broke. A failed journey keeps a trace in
+`apps/web/test-results/` (`pnpm --filter @orbit/web exec playwright show-trace <file>`).
+
+### Why there is no sync
 
 External calendars are synchronized (see [Integrations](#integrations)); Orbit's own data is
 not. Synchronization between local and cloud storage, and migrating data from one mode to the
@@ -428,6 +456,8 @@ hand; each workspace gets its default categories the first time they're read.
 | Format check | `pnpm format:check` | `pnpm exec prettier --check .`       | `uv run ruff format --check .` |
 | Type check   | `pnpm typecheck`    | `pnpm --filter @orbit/web typecheck` | `uv run pyright`               |
 | Test         | `pnpm test`         | `pnpm test:web`                      | `uv run pytest`                |
+| PostgreSQL   |                     |                                      | `uv run pytest -m postgres`    |
+| Browser E2E  | `pnpm test:e2e`     | `pnpm test:e2e`                      |                                |
 | Migrate DB   | `pnpm db:migrate`   |                                      | `uv run alembic upgrade head`  |
 | All gates    | `pnpm check`        |                                      |                                |
 | Build        | `pnpm build`        |                                      |                                |

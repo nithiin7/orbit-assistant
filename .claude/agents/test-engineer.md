@@ -20,8 +20,9 @@ not already in your context.
   explicitly includes it.
 - Never weaken, skip, or delete tests, loosen assertions, or relax security or authorization
   checks to get green results.
-- No E2E framework is installed. Don't add one or any other test dependency unless the task
-  asks.
+- Browser journeys use Playwright in `apps/web/e2e/` (`pnpm test:e2e`), against a real API on
+  a throwaway database. Add a journey only for a critical path; cover details in Vitest or
+  Pytest. Don't add other test dependencies unless the task asks.
 
 ## How you work
 

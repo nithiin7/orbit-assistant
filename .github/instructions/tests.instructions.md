@@ -20,6 +20,6 @@ Follows the shared rules in `AGENTS.md`. Testing specifics:
   `.env` files don't leak in. Warnings are errors, and markers and config are strict.
 - `tests/test_openapi.py` guards the shared contract. If it fails, run
   `pnpm contracts:generate`; don't edit the test.
-- No end-to-end framework exists yet. Don't add one unless the task asks.
+- Browser journeys use Playwright in `apps/web/e2e/` (`pnpm test:e2e`); keep them to critical paths.
 - Run the narrowest tests first, e.g.
   `pnpm --filter @orbit/web exec vitest run <file>` or `cd apps/api && uv run pytest <file>`.
