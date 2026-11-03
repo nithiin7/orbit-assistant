@@ -1,61 +1,36 @@
 # Orbit: Copilot instructions
 
-Orbit is a privacy-first, local-first personal assistant in early development. Full shared rules
-are in `AGENTS.md` (canonical) and architecture in `docs/architecture.md`; read them for
-non-trivial work. The essentials are repeated here because Copilot may not load those files.
+`AGENTS.md` at the repository root is canonical; read it for non-trivial work, including what is
+built, what is not, and the known gotchas. Essentials:
 
 ## Architecture
 
 - pnpm + uv monorepo. `apps/web`: Next.js 16 App Router, React 19, strict TypeScript, Tailwind
-  CSS v4. `apps/api`: FastAPI on Python 3.12 (`src/orbit_api`).
-- Web and API talk only over HTTP. The only shared types are in `@orbit/contracts`
-  (`packages/contracts`), generated from the API's Pydantic models. Never hand-edit
-  `openapi.json` or `src/schema.ts` there; change the models and run
-  `pnpm contracts:generate`.
-- The API owns all data access through SQLAlchemy (SQLite in `local` mode, PostgreSQL in
-  `cloud` mode) with Alembic migrations. The web app never touches a database. Identity
-  exists (profiles, local or Supabase auth, workspaces; dependencies in `api/auth.py`). The
-  product features are tasks, shopping lists, reminders with in-app notifications
-  (delivered by the worker in `scheduler/`), and finance (accounts, transactions, categories,
-  monthly reports, CSV export, loans and EMIs, subscriptions, recurring bills, upcoming
-  payments, investments with hand-entered prices, deposits, other assets, net worth, budgets,
-  savings goals, monthly plans), notes (folders, tags, links, journal, attachments), and a
-  calendar (events, recurring series, task scheduling, event alerts as managed reminders), and
-  habits and routines (versioned schedules, a daily log, streaks, analytics, routine sessions,
-  reminder times as managed reminders, calendar entries), and documents (a vault sharing the
-  attachment file store: versions, folders, categories, tags, expiry reminders as managed
-  reminders, links to other modules, ZIP export; no OCR or encryption at rest by Orbit), and
-  health and fitness (exercises, templates, workouts and sets, records, measurements, photos,
-  nutrition, water, activity, goals; private per person, canonical integer units, opt-in habit
-  contributions, workouts scheduled as calendar events); no other features or AI integration
-  exist yet.
-  Don't build on them unless the task asks.
+  CSS v4, TanStack Query. `apps/api`: FastAPI on Python 3.12 (`src/orbit_api`), SQLAlchemy and
+  Alembic over SQLite (`local`) or PostgreSQL (`cloud`).
+- Web and API talk only over HTTP. Shared types come only from `@orbit/contracts`, generated from
+  the API's Pydantic models by `pnpm contracts:generate`; never hand-edit them.
+- API layers: thin routes in `api/v1/`, Pydantic `schemas/`, framework-free `services/`,
+  SQLAlchemy `repositories/`, and `db/`. Every workspace route uses `WorkspaceDep` and filters
+  by workspace.
 
 ## Rules
 
-- Do only the requested task. No unrelated refactors, features, or new dependencies.
-- TypeScript: no `any`, unsafe `as`, or unexplained suppressions. Server Components by
-  default; `"use client"` only when needed. Accessible, keyboard-operable UI with visible
-  focus. Only `NEXT_PUBLIC_*` reaches the browser, so never put secrets there.
-- Python: full type hints (Pyright strict). Pydantic at API and config boundaries. Config only
-  via `orbit_api/config.py` (`ORBIT_*`). No swallowed exceptions or hardcoded secrets.
-- Security: validate untrusted input, enforce authorization server-side, never trust
-  client-supplied user or workspace IDs, never log secrets or personal data.
-- Tests accompany behavior changes. Never weaken or delete tests to make checks pass.
-- Formatting and linting are owned by Prettier/ESLint (web) and Ruff (API). Follow them.
+- Do only the requested task; mirror the closest existing feature. No unneeded dependencies.
+- TypeScript: no `any`, unsafe `as`, or unexplained suppressions. Server Components by default.
+  Accessible, keyboard-operable UI. Only `NEXT_PUBLIC_*` reaches the browser.
+- Python: full type hints (Pyright strict), Pydantic at boundaries, config only via
+  `get_settings()`. No swallowed exceptions.
+- Security: validate input, authorize on the server, never trust client-supplied IDs, never log
+  secrets or personal data.
+- Tests accompany behavior changes. Never weaken tests to make checks pass.
 
-## Commands (from the repo root)
+## Commands (repo root)
 
-- `pnpm check`: lint, format check, type check, and tests for everything.
-- `pnpm test:web` (Vitest), `pnpm test:api` (Pytest), `pnpm build` (web production build).
-- `pnpm contracts:check` after changing API routes or models.
-
-## Git
-
-Conventional Commits with a header of 72 characters or fewer (`feat(web): add task list`).
-Keep changes focused. Never claim checks passed without running them.
+`pnpm check` (all gates), `pnpm test:web`, `pnpm test:api`, `pnpm build`, and
+`pnpm contracts:check` after API changes. Conventional Commits, header ≤ 72 chars.
 
 ## Reviews
 
-Prioritize correctness, security and authorization, data integrity, missing tests, and
-accessibility over style. The linters and formatters already enforce style.
+Prioritize correctness, authorization and isolation, data integrity, missing tests, and
+accessibility over style; the linters own style.
