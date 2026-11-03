@@ -392,8 +392,9 @@ function DocumentDetailView({
 
       <div
         className={cn(
-          "grid items-start gap-6",
-          settingsOpen && "@4xl/pane:grid-cols-[minmax(0,1fr)_minmax(22rem,26rem)]",
+          // The panel's column (wide) or row (narrow) grows from nothing, so it slides in.
+          "grid items-start transition-[grid-template-columns,gap] duration-300 ease-out motion-reduce:transition-none @4xl/pane:grid-cols-[minmax(0,1fr)_0rem]",
+          settingsOpen ? "gap-6 @4xl/pane:grid-cols-[minmax(0,1fr)_24rem]" : "gap-0",
         )}
       >
         <div className="min-w-0">
@@ -419,114 +420,130 @@ function DocumentDetailView({
           )}
         </div>
 
-        {/* Kept mounted while hidden, so closing the panel doesn't drop unsaved edits. */}
-        <aside
-          id={settingsId}
-          aria-label="Document details"
-          hidden={!settingsOpen}
-          className="order-first flex min-w-0 flex-col overflow-hidden rounded-xl border bg-card shadow-elevation-1 @4xl/pane:sticky @4xl/pane:top-6 @4xl/pane:order-none @4xl/pane:max-h-[calc(100dvh-3rem)]"
+        {/* Kept mounted while closed, so closing the panel doesn't drop unsaved edits. */}
+        <div
+          inert={!settingsOpen}
+          aria-hidden={settingsOpen ? undefined : true}
+          className={cn(
+            "order-first grid min-w-0 overflow-hidden transition-[grid-template-rows,opacity,visibility] duration-300 ease-out motion-reduce:transition-none @4xl/pane:sticky @4xl/pane:top-6 @4xl/pane:order-none @4xl/pane:grid-rows-[1fr]",
+            settingsOpen
+              ? "visible grid-rows-[1fr] opacity-100"
+              : "invisible grid-rows-[0fr] opacity-0",
+          )}
         >
-          <div className="flex items-center gap-2 border-b py-1.5 pr-1.5 pl-2">
-            <SettingsTabs tab={tab} idPrefix={settingsId} onChange={setTab} />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="ml-auto size-8 shrink-0"
-              aria-label="Close details"
-              onClick={() => setSettingsOpen(false)}
-            >
-              <X aria-hidden="true" />
-            </Button>
-          </div>
-          <div
-            role="tabpanel"
-            id={`${settingsId}-panel`}
-            aria-labelledby={`${settingsId}-${tab}`}
-            className="flex min-h-0 flex-1 flex-col"
+          <aside
+            id={settingsId}
+            aria-label="Document details"
+            className={cn(
+              "flex min-h-0 w-full min-w-0 flex-col justify-self-end overflow-hidden rounded-xl border bg-card transition-transform duration-300 ease-out motion-reduce:transition-none @4xl/pane:max-h-[calc(100dvh-3rem)] @4xl/pane:w-[24rem]",
+              settingsOpen ? "translate-x-0" : "@4xl/pane:translate-x-6",
+            )}
           >
-            {tab === "details" ? (
-              <div className="border-b p-4">
-                <Organize
-                  document={document}
-                  folders={folders}
-                  categories={categories}
-                  readOnly={trashed}
-                  onChange={(changes, done) => void change(changes, done)}
-                />
-              </div>
-            ) : null}
-            <DetailsForm
-              key={document.id}
-              document={document}
-              readOnly={trashed}
-              tab={tab}
-              nextReminderAt={detail.next_reminder_at}
-              onSave={async (values) => {
-                const saved = await mutations.update.mutateAsync({
-                  documentId: document.id,
-                  changes: toUpdateRequest(values),
-                });
-                onAnnounce("Saved.");
-                return saved.document;
-              }}
-            />
-            {tab === "links" ? (
-              <div className="scrollbar-thin overflow-y-auto p-4">
-                <Links
-                  detail={detail}
-                  readOnly={trashed}
-                  onLink={() => setLinking(true)}
-                  onUnlink={(kind, id, title) =>
-                    void run(
-                      mutations.unlink.mutateAsync({ documentId: document.id, kind, id }),
-                      `Unlinked “${title}”.`,
-                      "Couldn’t unlink it.",
-                    )
-                  }
-                />
-              </div>
-            ) : null}
-            {tab === "history" ? (
-              <div className="scrollbar-thin space-y-6 overflow-y-auto p-4">
-                {detail.versions.length === 0 && detail.renewals.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Earlier versions of the file and recorded renewals show up here.
-                  </p>
-                ) : null}
-                <Versions
-                  detail={detail}
-                  readOnly={trashed}
-                  onDownload={(versionId) => onDownload(document, versionId)}
-                  onRestore={(versionId, number) =>
-                    void run(
-                      mutations.restoreVersion.mutateAsync({
-                        documentId: document.id,
-                        versionId,
-                      }),
-                      `Restored version ${number} as the current file.`,
-                      "Couldn’t restore that version.",
-                    )
-                  }
-                  onDelete={(versionId, number) => {
-                    void onConfirm(
-                      `Delete version ${number}?`,
-                      "The current file isn’t affected. This can’t be undone.",
-                      "Delete version",
-                    ).then((confirmed) => {
-                      if (!confirmed) return;
+            <div className="flex items-center gap-2 border-b py-1.5 pr-1.5 pl-2">
+              <SettingsTabs tab={tab} idPrefix={settingsId} onChange={setTab} />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="ml-auto size-8 shrink-0"
+                aria-label="Close details"
+                onClick={() => setSettingsOpen(false)}
+              >
+                <X aria-hidden="true" />
+              </Button>
+            </div>
+            <div
+              role="tabpanel"
+              id={`${settingsId}-panel`}
+              aria-labelledby={`${settingsId}-${tab}`}
+              className="flex min-h-0 flex-1 flex-col"
+            >
+              {tab === "details" ? (
+                <div className="border-b p-4">
+                  <Organize
+                    document={document}
+                    folders={folders}
+                    categories={categories}
+                    readOnly={trashed}
+                    onChange={(changes, done) => void change(changes, done)}
+                  />
+                </div>
+              ) : null}
+              <DetailsForm
+                key={document.id}
+                document={document}
+                readOnly={trashed}
+                tab={tab}
+                nextReminderAt={detail.next_reminder_at}
+                onSave={async (values) => {
+                  const saved = await mutations.update.mutateAsync({
+                    documentId: document.id,
+                    changes: toUpdateRequest(values),
+                  });
+                  onAnnounce("Saved.");
+                  return saved.document;
+                }}
+              />
+              {tab === "links" ? (
+                <div className="scrollbar-thin overflow-y-auto p-4">
+                  <Links
+                    detail={detail}
+                    readOnly={trashed}
+                    onLink={() => setLinking(true)}
+                    onUnlink={(kind, id, title) =>
                       void run(
-                        mutations.deleteVersion.mutateAsync({ documentId: document.id, versionId }),
-                        `Deleted version ${number}.`,
-                        "Couldn’t delete that version.",
-                      );
-                    });
-                  }}
-                />
-                <Renewals detail={detail} />
-              </div>
-            ) : null}
-          </div>
-        </aside>
+                        mutations.unlink.mutateAsync({ documentId: document.id, kind, id }),
+                        `Unlinked “${title}”.`,
+                        "Couldn’t unlink it.",
+                      )
+                    }
+                  />
+                </div>
+              ) : null}
+              {tab === "history" ? (
+                <div className="scrollbar-thin space-y-6 overflow-y-auto p-4">
+                  {detail.versions.length === 0 && detail.renewals.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Earlier versions of the file and recorded renewals show up here.
+                    </p>
+                  ) : null}
+                  <Versions
+                    detail={detail}
+                    readOnly={trashed}
+                    onDownload={(versionId) => onDownload(document, versionId)}
+                    onRestore={(versionId, number) =>
+                      void run(
+                        mutations.restoreVersion.mutateAsync({
+                          documentId: document.id,
+                          versionId,
+                        }),
+                        `Restored version ${number} as the current file.`,
+                        "Couldn’t restore that version.",
+                      )
+                    }
+                    onDelete={(versionId, number) => {
+                      void onConfirm(
+                        `Delete version ${number}?`,
+                        "The current file isn’t affected. This can’t be undone.",
+                        "Delete version",
+                      ).then((confirmed) => {
+                        if (!confirmed) return;
+                        void run(
+                          mutations.deleteVersion.mutateAsync({
+                            documentId: document.id,
+                            versionId,
+                          }),
+                          `Deleted version ${number}.`,
+                          "Couldn’t delete that version.",
+                        );
+                      });
+                    }}
+                  />
+                  <Renewals detail={detail} />
+                </div>
+              ) : null}
+            </div>
+          </aside>
+        </div>
       </div>
 
       {renewing ? (
