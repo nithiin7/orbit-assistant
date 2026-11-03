@@ -378,6 +378,24 @@ describe("FinancePanel", () => {
     });
   });
 
+  it("opens the transaction a link names, from search", async () => {
+    window.history.replaceState(null, "", "/finance?view=transactions&transaction=t-rent");
+    mockApi({
+      ...session,
+      ...finance(),
+      [`GET ${FINANCE}/transactions/t-rent`]: json(
+        transaction({ id: "t-rent", description: "February rent", category_id: rent.id }),
+      ),
+    });
+
+    await renderSignedIn(<FinancePanel />);
+
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByDisplayValue("February rent")).toBeInTheDocument();
+    expect(new URLSearchParams(window.location.search).get("transaction")).toBeNull();
+    window.history.replaceState(null, "", "/");
+  });
+
   it("filters and searches the transaction history", async () => {
     const user = userEvent.setup();
     const api = mockApi({

@@ -14,6 +14,7 @@ import type {
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Landmark, Plus, Undo2 } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
+import { getFinanceTransaction } from "@/api/finance";
 import { AssistMenu } from "@/components/ai/assist-menu";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
@@ -23,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useBudgetMonth } from "@/hooks/use-budgets";
 import { useCommitmentSummary } from "@/hooks/use-commitments";
 import { useFinanceSetup } from "@/hooks/use-finance";
+import { useLinkedRecord } from "@/hooks/use-linked-record";
 import { ASSIST_ACTIONS } from "@/lib/ai";
 import { accountCurrencies, DEFAULT_CURRENCY } from "@/lib/finance";
 import {
@@ -190,6 +192,13 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
     (transaction: FinanceTransaction) =>
       setDialog({ kind: "transaction", type: transaction.type, transaction }),
     [],
+  );
+  // A link to one transaction (from search) opens it in the transaction dialog.
+  useLinkedRecord(
+    "transaction",
+    workspaceId,
+    (token, workspace, id, signal) => getFinanceTransaction(token, workspace, id, { signal }),
+    editTransaction,
   );
 
   if (accounts.status === "error" || categories.status === "error") {

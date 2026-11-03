@@ -5,11 +5,13 @@ import { AlarmClock, BellOff, CheckCheck, Plus } from "lucide-react";
 import { useCallback, useId, useMemo, useRef, useState } from "react";
 
 import { describeApiError } from "@/api/client";
+import { getReminder } from "@/api/reminders";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Resource } from "@/hooks/query-resource";
+import { useLinkedRecord } from "@/hooks/use-linked-record";
 import { useReminderList, useReminderMutations } from "@/hooks/use-reminders";
 import { useTaskList } from "@/hooks/use-tasks";
 import {
@@ -62,6 +64,13 @@ function RemindersView({ workspaceId }: { workspaceId: string }) {
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [actionError, setActionError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
+  // A link to one reminder (from search) opens it in the reminder dialog.
+  useLinkedRecord(
+    "reminder",
+    workspaceId,
+    (token, workspace, id, signal) => getReminder(token, workspace, id, { signal }),
+    setDialog,
+  );
   const listRef = useRef<HTMLDivElement>(null);
   const groupIdPrefix = useId();
   const viewerTimeZone = browserTimeZone();

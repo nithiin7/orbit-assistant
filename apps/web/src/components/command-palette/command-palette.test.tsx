@@ -1,4 +1,4 @@
-import type { NoteSummary, SearchHit, SearchModule, SearchResults } from "@orbit/contracts";
+import type { NoteSummary, UniversalSearchHit, UniversalSearchResults } from "@orbit/contracts";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -26,28 +26,53 @@ vi.mock("next-themes", () => ({
 const NOTES = `/api/v1/workspaces/${personal.id}/notes`;
 const SEARCH = `/api/v1/workspaces/${personal.id}/search`;
 
-const MODULES: readonly SearchModule[] = [
+const MODULES = [
   "tasks",
   "notes",
-  "events",
-  "documents",
+  "calendar",
+  "reminders",
+  "finance",
   "habits",
-  "transactions",
-];
+  "documents",
+  "health",
+] as const;
 
-function hit(overrides: Partial<SearchHit> & Pick<SearchHit, "id" | "title">): SearchHit {
-  return { detail: "", status: "", day: null, starts_at: null, all_day: false, ...overrides };
+function hit(
+  overrides: Partial<UniversalSearchHit> &
+    Pick<UniversalSearchHit, "id" | "title" | "module" | "entity_type">,
+): UniversalSearchHit {
+  return {
+    snippet: "",
+    matched_fields: ["title"],
+    match: "title_phrase",
+    score: 600,
+    active: true,
+    status: "",
+    details: [],
+    day: null,
+    starts_at: null,
+    all_day: false,
+    parent_id: null,
+    updated_at: "2030-01-01T00:00:00Z",
+    ...overrides,
+  };
 }
 
-function results(hits: Partial<Record<SearchModule, SearchHit[]>>): SearchResults {
+function results(hits: UniversalSearchHit[]): UniversalSearchResults {
   return {
     query: "",
-    groups: MODULES.map((module) => ({
+    sort: "relevance",
+    offset: 0,
+    limit: 8,
+    total: hits.length,
+    has_more: false,
+    hits,
+    facets: MODULES.map((module) => ({
       module,
-      hits: hits[module] ?? [],
-      total: hits[module]?.length ?? 0,
+      total: hits.filter((h) => h.module === module).length,
       unavailable: false,
     })),
+    unavailable: [],
   };
 }
 
@@ -106,7 +131,9 @@ function routes(
       items: [{ kind: "event", start_at: "2030-01-14T09:00:00Z", occurrence: standup, task: null }],
       next_cursor: null,
     }),
-    [`GET ${SEARCH}`]: json(results({})),
+    [`GET ${SEARCH}/results`]: json(results([])),
+    [`GET ${SEARCH}/recent`]: json({ searches: [] }),
+    [`POST ${SEARCH}/recent`]: json({ id: "r1", query: "", used_at: "2030-01-01T00:00:00Z" }, 201),
     ...extra,
   };
 }
@@ -239,8 +266,9 @@ describe("CommandPalette", () => {
     await user.click(screen.getByRole("button", { name: "Search" }));
 
     await user.keyboard("zzz");
-    // Only the offers to search notes and documents for it, and to ask the assistant.
-    expect(screen.getAllByRole("option")).toHaveLength(3);
+    // Only the offers to see all results, search notes and documents for it, and ask.
+    expect(screen.getAllByRole("option")).toHaveLength(4);
+    expect(screen.getByRole("option", { name: /See all results for “zzz”/ })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /Search notes for “zzz”/ })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /Search documents for “zzz”/ })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /Ask Orbit: “zzz”/ })).toBeInTheDocument();
@@ -273,18 +301,32 @@ describe("CommandPalette", () => {
   it("searches every module at once and groups matches by module", async () => {
     const user = userEvent.setup();
     const { api } = await renderPalette({
-      [`GET ${SEARCH}`]: json(
-        results({
-          notes: [
-            hit({ id: matchingNote.id, title: "Garden ideas", detail: "Tomatoes by the fence" }),
-          ],
-          tasks: [
-            hit({ id: "task-1", title: "Water the garden", status: "open", day: "2030-05-01" }),
-          ],
-          transactions: [
-            hit({ id: "tx-1", title: "Garden centre", status: "expense", day: "2030-04-01" }),
-          ],
-        }),
+      [`GET ${SEARCH}/results`]: json(
+        results([
+          hit({
+            id: matchingNote.id,
+            module: "notes",
+            entity_type: "note",
+            title: "Garden ideas",
+            snippet: "Tomatoes by the fence",
+          }),
+          hit({
+            id: "task-1",
+            module: "tasks",
+            entity_type: "task",
+            title: "Water the garden",
+            status: "open",
+            day: "2030-05-01",
+          }),
+          hit({
+            id: "tx-1",
+            module: "finance",
+            entity_type: "transaction",
+            title: "Garden centre",
+            status: "expense",
+            day: "2030-04-01",
+          }),
+        ]),
       ),
     });
     await user.click(screen.getByRole("button", { name: "Search" }));
@@ -295,7 +337,7 @@ describe("CommandPalette", () => {
     expect(screen.getByRole("group", { name: "Matching tasks" })).toHaveTextContent(
       "Water the garden",
     );
-    expect(screen.getByRole("group", { name: "Matching transactions" })).toHaveTextContent(
+    expect(screen.getByRole("group", { name: "Matching finance records" })).toHaveTextContent(
       "Expense",
     );
     // Results come grouped, tasks first, in the order the groups are listed.
@@ -304,16 +346,57 @@ describe("CommandPalette", () => {
 
     await user.click(note);
     expect(push).toHaveBeenCalledWith(`/notes?note=${matchingNote.id}`);
+    // Opening a result remembers the search.
+    await waitFor(() =>
+      expect(
+        api.mock.calls.some(
+          ([url, init]) => String(url).endsWith("/search/recent") && init?.method === "POST",
+        ),
+      ).toBe(true),
+    );
     // One search request covers every module; no module is searched separately.
-    const searches = api.mock.calls.filter(([url]) => String(url).includes("/search"));
+    const searches = api.mock.calls.filter(([url]) => String(url).includes("/search/results"));
     expect(searches.length).toBeGreaterThan(0);
     expect(api.mock.calls.some(([url]) => /\/notes\?.*q=/.test(String(url)))).toBe(false);
     expect(String(searches.at(-1)?.[0])).toContain("q=garden");
   });
 
+  it("offers recent searches, and every result on the search page", async () => {
+    const user = userEvent.setup();
+    const { api } = await renderPalette({
+      [`GET ${SEARCH}/recent`]: json({
+        searches: [{ id: "r1", query: "passport", used_at: "2030-01-01T00:00:00Z" }],
+      }),
+    });
+    await user.click(screen.getByRole("button", { name: "Search" }));
+
+    const recent = await screen.findByRole("group", { name: "Recent searches" });
+    expect(recent).toHaveTextContent("passport");
+    await user.keyboard("garden");
+    await user.click(await screen.findByRole("option", { name: /See all results for “garden”/ }));
+
+    expect(push).toHaveBeenCalledWith("/search?q=garden");
+    await waitFor(() =>
+      expect(
+        api.mock.calls.some(
+          ([url, init]) => String(url).endsWith("/search/recent") && init?.method === "POST",
+        ),
+      ).toBe(true),
+    );
+  });
+
+  it("opens the search page with Ctrl+Shift+F", async () => {
+    const user = userEvent.setup();
+    await renderPalette();
+
+    await user.keyboard("{Control>}{Shift>}F{/Shift}{/Control}");
+
+    expect(push).toHaveBeenCalledWith("/search");
+  });
+
   it("keeps pages and actions working when search fails", async () => {
     const user = userEvent.setup();
-    await renderPalette({ [`GET ${SEARCH}`]: status(500) });
+    await renderPalette({ [`GET ${SEARCH}/results`]: status(500) });
     await user.click(screen.getByRole("button", { name: "Search" }));
     await user.keyboard("calendar");
 
@@ -366,18 +449,18 @@ describe("CommandPalette", () => {
     const eventsPath = `/api/v1/workspaces/${personal.id}/calendar/events`;
     const notePath = `${eventsPath}/${standup.event_id}/notes`;
     const { api } = await renderPalette({
-      [`GET ${SEARCH}`]: json(
-        results({
-          events: [
-            hit({
-              id: standup.event_id,
-              title: "Standup",
-              status: "confirmed",
-              day: "2030-02-01",
-              starts_at: "2030-02-01T10:00:00",
-            }),
-          ],
-        }),
+      [`GET ${SEARCH}/results`]: json(
+        results([
+          hit({
+            id: standup.event_id,
+            module: "calendar",
+            entity_type: "event",
+            title: "Standup",
+            status: "confirmed",
+            day: "2030-02-01",
+            starts_at: "2030-02-01T10:00:00",
+          }),
+        ]),
       ),
       [`POST ${notePath}`]: json(
         {

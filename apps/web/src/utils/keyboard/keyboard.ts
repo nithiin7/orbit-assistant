@@ -23,3 +23,14 @@ export function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   return target.isContentEditable || target.matches("input, textarea, select");
 }
+
+/** True for a platform "mod" + Shift shortcut: Cmd+Shift+key on macOS, Ctrl+Shift+key elsewhere. */
+export function matchesModShiftShortcut(
+  event: KeyboardEvent,
+  key: string,
+  isMac: boolean,
+): boolean {
+  if (event.key.toLowerCase() !== key.toLowerCase() || event.altKey || !event.shiftKey)
+    return false;
+  return isMac ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey;
+}

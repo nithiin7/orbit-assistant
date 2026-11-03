@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   isEditableTarget,
   isMacPlatform,
+  matchesModShiftShortcut,
   matchesModShortcut,
   modKeyLabel,
   modKeyShortcut,
@@ -60,5 +61,22 @@ describe("isEditableTarget", () => {
     expect(isEditableTarget(document.createElement("textarea"))).toBe(true);
     expect(isEditableTarget(document.createElement("button"))).toBe(false);
     expect(isEditableTarget(null)).toBe(false);
+  });
+});
+
+describe("matchesModShiftShortcut", () => {
+  const press = (init: KeyboardEventInit) => new KeyboardEvent("keydown", init);
+
+  it("needs Shift with the platform modifier", () => {
+    expect(
+      matchesModShiftShortcut(press({ key: "F", metaKey: true, shiftKey: true }), "f", true),
+    ).toBe(true);
+    expect(
+      matchesModShiftShortcut(press({ key: "f", ctrlKey: true, shiftKey: true }), "f", false),
+    ).toBe(true);
+    expect(matchesModShiftShortcut(press({ key: "f", metaKey: true }), "f", true)).toBe(false);
+    expect(
+      matchesModShiftShortcut(press({ key: "f", ctrlKey: true, shiftKey: true }), "f", true),
+    ).toBe(false);
   });
 });

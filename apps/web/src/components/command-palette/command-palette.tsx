@@ -1,6 +1,6 @@
 "use client";
 
-import type { SearchModule } from "@orbit/contracts";
+import type { UniversalSearchModule } from "@orbit/contracts";
 import {
   AlarmClock,
   BookOpen,
@@ -11,12 +11,15 @@ import {
   CalendarPlus,
   CalendarRange,
   Check,
+  CheckSquare,
+  Clock,
   CornerDownLeft,
   Droplets,
   Dumbbell,
   FileText,
   FileUp,
   Folder,
+  HeartPulse,
   Hourglass,
   ListTodo,
   type LucideIcon,
@@ -25,9 +28,10 @@ import {
   NotebookPen,
   Play,
   Receipt,
+  Repeat2,
   Search,
-  Sparkles,
   Sun,
+  Wallet,
   Zap,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
@@ -52,20 +56,27 @@ import { useCalendarCommands } from "@/hooks/use-calendar-commands";
 import { useDocumentCommands } from "@/hooks/use-document-commands";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useNoteFolders, useNoteList, useNoteMutations } from "@/hooks/use-notes";
-import { useWorkspaceSearch } from "@/hooks/use-workspace-search";
 import {
-  describeSearchHit,
-  filterCommands,
-  SEARCH_GROUP_LABELS,
-  searchHitHref,
-} from "@/lib/command-search";
+  useRecentSearches,
+  useSearchHistoryMutations,
+  useUniversalSearch,
+} from "@/hooks/use-universal-search";
+import { filterCommands, SEARCH_GROUP_LABELS } from "@/lib/command-search";
 import { habitsHref } from "@/lib/habits";
 import { isActivePath, navItems } from "@/lib/navigation";
 import { journalToday, noteDisplayTitle, notesHref } from "@/lib/notes";
+import {
+  describeHit,
+  EMPTY_SEARCH,
+  hitTitle,
+  SEARCH_PATH,
+  searchHref,
+  searchResultHref,
+} from "@/lib/search";
 import { useCurrentUser } from "@/providers/auth";
 import { useWorkspaces } from "@/providers/workspace";
 import { cn } from "@/utils/common";
-import { isMacPlatform, matchesModShortcut } from "@/utils/keyboard";
+import { isMacPlatform, matchesModShiftShortcut, matchesModShortcut } from "@/utils/keyboard";
 
 type CommandGroup =
   | "Create"
@@ -78,7 +89,8 @@ type CommandGroup =
   | "Go to"
   | "Theme"
   | "Search"
-  | (typeof SEARCH_GROUP_LABELS)[SearchModule];
+  | "Recent searches"
+  | (typeof SEARCH_GROUP_LABELS)[UniversalSearchModule];
 
 type Command = {
   id: string;
@@ -96,6 +108,7 @@ type Command = {
 
 const GROUPS: readonly CommandGroup[] = [
   ...Object.values(SEARCH_GROUP_LABELS),
+  "Recent searches",
   "Create",
   "Notes",
   "Go to",
@@ -255,40 +268,83 @@ function useDocumentPaletteCommands(open: boolean, query: string): Command[] {
   }));
 }
 
-const SEARCH_ICONS: Record<SearchModule, LucideIcon> = {
-  tasks: ListTodo,
+const SEARCH_ICONS: Record<UniversalSearchModule, LucideIcon> = {
+  tasks: CheckSquare,
   notes: FileText,
-  events: CalendarDays,
+  calendar: CalendarDays,
+  reminders: AlarmClock,
+  finance: Wallet,
+  habits: Repeat2,
   documents: FileText,
-  habits: Sparkles,
-  transactions: Receipt,
+  health: HeartPulse,
 };
 
+/** The best matches the palette shows; "See all results" opens the search page for more. */
+const PALETTE_SEARCH_LIMIT = 8;
+
 /**
- * Records matching the query across modules, from one workspace search once typing pauses,
- * grouped by module. Each opens the record in its own module.
+ * Records matching the query across every module, from one universal search once typing
+ * pauses, grouped by module in ranked order. Each opens the record in its own module. With no
+ * query, the person's recent searches are offered instead.
  */
 function useSearchPaletteCommands(
   open: boolean,
   query: string,
 ): { commands: Command[]; searching: boolean; failed: boolean } {
   const router = useRouter();
-  const search = useWorkspaceSearch(query, open);
+  const search = useUniversalSearch(
+    { ...EMPTY_SEARCH, q: query },
+    { enabled: open, limit: PALETTE_SEARCH_LIMIT },
+  );
+  const recent = useRecentSearches(open);
+  const { remember } = useSearchHistoryMutations();
+  const text = query.trim();
   const commands: Command[] = [];
   // Hits for an older query are hidden once the text no longer matches it.
-  const current = search.query !== "" && query.trim().startsWith(search.query);
-  for (const group of current ? (search.results?.groups ?? []) : []) {
-    for (const hit of group.hits) {
+  const current = search.query !== "" && text.startsWith(search.query);
+  for (const hit of current ? search.hits : []) {
+    commands.push({
+      id: `search-${hit.entity_type}-${hit.id}`,
+      group: SEARCH_GROUP_LABELS[hit.module],
+      label: hitTitle(hit),
+      description: hit.snippet || describeHit(hit).join(" · "),
+      keywords: [],
+      icon: SEARCH_ICONS[hit.module],
+      current: false,
+      matched: true,
+      run: () => {
+        remember(text);
+        router.push(searchResultHref(hit));
+      },
+    });
+  }
+  if (text.length >= 2) {
+    commands.push({
+      id: "search-all",
+      group: "Search",
+      label: `See all results for “${text}”`,
+      description: "Filter by module, date, and more.",
+      keywords: [],
+      icon: Search,
+      current: false,
+      matched: true,
+      run: () => {
+        remember(text);
+        router.push(searchHref({ q: text }));
+      },
+    });
+  }
+  if (!text) {
+    for (const item of recent.searches.slice(0, 5)) {
       commands.push({
-        id: `search-${group.module}-${hit.id}`,
-        group: SEARCH_GROUP_LABELS[group.module],
-        label: hit.title || "Untitled",
-        description: describeSearchHit(group.module, hit),
+        id: `recent-search-${item.id}`,
+        group: "Recent searches",
+        label: item.query,
         keywords: [],
-        icon: SEARCH_ICONS[group.module],
+        icon: Clock,
         current: false,
         matched: true,
-        run: () => router.push(searchHitHref(group.module, hit)),
+        run: () => router.push(searchHref({ q: item.query })),
       });
     }
   }
@@ -387,6 +443,13 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const isMac = isMacPlatform(navigator.userAgent);
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (matchesModShiftShortcut(event, "f", isMac)) {
+        // The full search page, from anywhere.
+        event.preventDefault();
+        close();
+        router.push(SEARCH_PATH);
+        return;
+      }
       if (!matchesModShortcut(event, "k", isMac)) return;
       event.preventDefault();
       if (dialogRef.current?.open) close();
@@ -394,7 +457,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, close]);
+  }, [open, close, router]);
 
   const noteCommands = useNoteCommands(isOpen, query);
   const calendarCommands = useCalendarPaletteCommands(isOpen);
@@ -414,6 +477,16 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
         current: isActivePath(pathname, item.href),
         run: () => router.push(item.href),
       })),
+      {
+        id: "nav-search",
+        group: "Go to" as const,
+        label: "Search everything",
+        description: "Find records in every module, with filters and saved searches.",
+        keywords: ["search", "find", "filter", "saved", "recent"],
+        icon: Search,
+        current: isActivePath(pathname, SEARCH_PATH),
+        run: () => router.push(SEARCH_PATH),
+      },
       ...THEMES.map(({ value, label, icon }) => ({
         id: `theme-${value}`,
         group: "Theme" as const,
@@ -525,7 +598,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
             aria-activedescendant={activeOptionId}
             autoComplete="off"
             spellCheck={false}
-            placeholder="Search tasks, notes, events, documents, and actions…"
+            placeholder="Search everything, or run an action…"
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);

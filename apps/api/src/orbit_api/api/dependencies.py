@@ -38,6 +38,8 @@ from orbit_api.repositories.notes import build_attachment_service, build_note_se
 from orbit_api.repositories.notifications import SqlNotificationRepository
 from orbit_api.repositories.planning import build_planning_service
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
+from orbit_api.repositories.search.history import build_search_history
+from orbit_api.repositories.search.providers import build_universal_search
 from orbit_api.repositories.shopping import SqlShoppingItemRepository, SqlShoppingListRepository
 from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import SqlTransaction
@@ -64,7 +66,9 @@ from orbit_api.services.notes.service import NoteService
 from orbit_api.services.notifications.service import NotificationService
 from orbit_api.services.planning.service import PlanningService
 from orbit_api.services.reminders.service import ReminderService
+from orbit_api.services.search.history import SearchHistoryService
 from orbit_api.services.search.service import SearchService
+from orbit_api.services.search.universal import UniversalSearchService
 from orbit_api.services.shopping.service import ShoppingService
 from orbit_api.services.tasks.service import TaskService
 from orbit_api.services.workspaces.service import WorkspaceService
@@ -353,6 +357,22 @@ def get_search_service(
 
 
 SearchServiceDep = Annotated[SearchService, Depends(get_search_service)]
+
+
+def get_universal_search(session: SessionDep) -> UniversalSearchService:
+    """Universal search reads the modules' tables through its own declarative sources
+    (`repositories/search/catalog.py`); there is no index."""
+    return build_universal_search(session)
+
+
+UniversalSearchDep = Annotated[UniversalSearchService, Depends(get_universal_search)]
+
+
+def get_search_history(session: SessionDep) -> SearchHistoryService:
+    return build_search_history(session)
+
+
+SearchHistoryDep = Annotated[SearchHistoryService, Depends(get_search_history)]
 
 
 def get_ai_services(request: Request, session: SessionDep, settings: SettingsDep) -> AiServices:

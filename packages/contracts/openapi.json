@@ -25844,7 +25844,7 @@
           "search"
         ],
         "summary": "Search tasks, notes, events, documents, habits, and transactions",
-        "description": "Each module's own substring search, grouped by module. Hits carry titles and an\nidentifying line only: no amounts, document metadata, or document contents. Health\nrecords are not searched.",
+        "description": "Each module's own substring search, grouped by module. Hits carry titles and an\nidentifying line only: no amounts, document metadata, or document contents. Health\nrecords are not searched. Universal search (`/search/results`) covers every module.",
         "operationId": "search_api_v1_workspaces__workspace_id__search_get",
         "security": [
           {
@@ -25922,6 +25922,864 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/search/results": {
+      "get": {
+        "tags": [
+          "search"
+        ],
+        "summary": "Search every module, ranked, filtered, and paged",
+        "description": "One ranked list across tasks, notes, calendar, reminders, finance, habits, documents,\nand the signed-in person's own health records, with per-module counts. A module that fails\nis listed in `unavailable`; the rest still answer. Hits carry no amounts, balances,\nmeasurement values, or sensitive document metadata.",
+        "operationId": "universal_search_api_v1_workspaces__workspace_id__search_results_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "module",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "tasks",
+                  "notes",
+                  "calendar",
+                  "reminders",
+                  "finance",
+                  "habits",
+                  "documents",
+                  "health"
+                ],
+                "type": "string"
+              },
+              "description": "Repeat to search only some modules.",
+              "title": "Module"
+            },
+            "description": "Repeat to search only some modules."
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "task",
+                  "note",
+                  "event",
+                  "reminder",
+                  "account",
+                  "transaction",
+                  "loan",
+                  "subscription",
+                  "bill",
+                  "holding",
+                  "deposit",
+                  "asset",
+                  "budget",
+                  "savings_goal",
+                  "habit",
+                  "routine",
+                  "document",
+                  "exercise",
+                  "workout",
+                  "workout_template",
+                  "fitness_goal",
+                  "measurement"
+                ],
+                "type": "string"
+              },
+              "description": "Repeat to search only some record types.",
+              "title": "Type"
+            },
+            "description": "Repeat to search only some record types."
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The record's own date: due date, event, transaction, …",
+              "title": "Date From"
+            },
+            "description": "The record's own date: due date, event, transaction, …"
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "name": "updated_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "UTC day.",
+              "title": "Updated From"
+            },
+            "description": "UTC day."
+          },
+          {
+            "name": "updated_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Updated To"
+            }
+          },
+          {
+            "name": "created_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "UTC day.",
+              "title": "Created From"
+            },
+            "description": "UTC day."
+          },
+          {
+            "name": "created_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Created To"
+            }
+          },
+          {
+            "name": "task_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "open",
+                    "completed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Task Status"
+            }
+          },
+          {
+            "name": "task_priority",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "none",
+                  "low",
+                  "medium",
+                  "high"
+                ],
+                "type": "string"
+              },
+              "title": "Task Priority"
+            }
+          },
+          {
+            "name": "document_category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Document Category"
+            }
+          },
+          {
+            "name": "transaction_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "income",
+                  "expense",
+                  "refund",
+                  "transfer"
+                ],
+                "type": "string"
+              },
+              "title": "Transaction Type"
+            }
+          },
+          {
+            "name": "habit_kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "boolean",
+                  "numeric",
+                  "duration"
+                ],
+                "type": "string"
+              },
+              "title": "Habit Kind"
+            }
+          },
+          {
+            "name": "include_archived",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Also search archived records. Trashed ones never are.",
+              "default": false,
+              "title": "Include Archived"
+            },
+            "description": "Also search archived records. Trashed ones never are."
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "relevance",
+                "recent"
+              ],
+              "type": "string",
+              "description": "Best match first, or most recently updated first.",
+              "default": "relevance",
+              "title": "Sort"
+            },
+            "description": "Best match first, or most recently updated first."
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 200,
+              "description": "Text to find; at least 2 characters.",
+              "title": "Q"
+            },
+            "description": "Text to find; at least 2 characters."
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UniversalSearchResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/search/recent": {
+      "get": {
+        "tags": [
+          "search"
+        ],
+        "summary": "List my recent searches",
+        "description": "The signed-in person's last searches in this workspace, most recent first.",
+        "operationId": "recent_searches_api_v1_workspaces__workspace_id__search_recent_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecentSearchListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "search"
+        ],
+        "summary": "Remember a search",
+        "description": "Called when the person commits to a search (not as they type). An equal search moves to\nthe top; only the last few are kept.",
+        "operationId": "record_recent_search_api_v1_workspaces__workspace_id__search_recent_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecentSearchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecentSearchResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "search"
+        ],
+        "summary": "Clear my recent searches",
+        "operationId": "clear_recent_searches_api_v1_workspaces__workspace_id__search_recent_delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/search/recent/{search_id}": {
+      "delete": {
+        "tags": [
+          "search"
+        ],
+        "summary": "Forget one recent search",
+        "description": "Idempotent: a search that is already gone is not an error.",
+        "operationId": "forget_recent_search_api_v1_workspaces__workspace_id__search_recent__search_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "search_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "A recent search's ID.",
+              "title": "Search Id"
+            },
+            "description": "A recent search's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/search/saved": {
+      "get": {
+        "tags": [
+          "search"
+        ],
+        "summary": "List my saved searches",
+        "operationId": "saved_searches_api_v1_workspaces__workspace_id__search_saved_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSearchListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "search"
+        ],
+        "summary": "Save a search",
+        "operationId": "save_search_api_v1_workspaces__workspace_id__search_saved_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavedSearchCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSearchResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace does not exist or is not accessible."
+          },
+          "409": {
+            "description": "A saved search has this name, or there are too many."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/search/saved/{search_id}": {
+      "patch": {
+        "tags": [
+          "search"
+        ],
+        "summary": "Rename or change a saved search",
+        "operationId": "update_saved_search_api_v1_workspaces__workspace_id__search_saved__search_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "search_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "A saved search's ID.",
+              "title": "Search Id"
+            },
+            "description": "A saved search's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavedSearchUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSearchResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Another saved search has this name."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "search"
+        ],
+        "summary": "Delete a saved search",
+        "operationId": "delete_saved_search_api_v1_workspaces__workspace_id__search_saved__search_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "search_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "A saved search's ID.",
+              "title": "Search Id"
+            },
+            "description": "A saved search's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           },
           "401": {
             "description": "Not signed in."
@@ -46837,6 +47695,64 @@
         ],
         "title": "QualityResponse"
       },
+      "RecentSearchListResponse": {
+        "properties": {
+          "searches": {
+            "items": {
+              "$ref": "#/components/schemas/RecentSearchResponse"
+            },
+            "type": "array",
+            "title": "Searches",
+            "description": "Most recent first."
+          }
+        },
+        "type": "object",
+        "required": [
+          "searches"
+        ],
+        "title": "RecentSearchListResponse"
+      },
+      "RecentSearchRequest": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 2,
+            "title": "Query"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "title": "RecentSearchRequest"
+      },
+      "RecentSearchResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "used_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Used At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "query",
+          "used_at"
+        ],
+        "title": "RecentSearchResponse"
+      },
       "RecordInvestmentTransactionRequest": {
         "properties": {
           "type": {
@@ -48742,6 +49658,347 @@
         ],
         "title": "RoutineStepResponse"
       },
+      "SavedSearchCreateRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "query": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 2,
+            "title": "Query"
+          },
+          "filters": {
+            "$ref": "#/components/schemas/SavedSearchFilters"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "query",
+          "filters"
+        ],
+        "title": "SavedSearchCreateRequest"
+      },
+      "SavedSearchFilters": {
+        "properties": {
+          "module": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "tasks",
+                "notes",
+                "calendar",
+                "reminders",
+                "finance",
+                "habits",
+                "documents",
+                "health"
+              ]
+            },
+            "type": "array",
+            "title": "Module",
+            "description": "Repeat to search only some modules."
+          },
+          "type": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "task",
+                "note",
+                "event",
+                "reminder",
+                "account",
+                "transaction",
+                "loan",
+                "subscription",
+                "bill",
+                "holding",
+                "deposit",
+                "asset",
+                "budget",
+                "savings_goal",
+                "habit",
+                "routine",
+                "document",
+                "exercise",
+                "workout",
+                "workout_template",
+                "fitness_goal",
+                "measurement"
+              ]
+            },
+            "type": "array",
+            "title": "Type",
+            "description": "Repeat to search only some record types."
+          },
+          "date_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date From",
+            "description": "The record's own date: due date, event, transaction, …"
+          },
+          "date_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date To"
+          },
+          "updated_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated From",
+            "description": "UTC day."
+          },
+          "updated_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated To"
+          },
+          "created_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created From",
+            "description": "UTC day."
+          },
+          "created_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created To"
+          },
+          "task_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "completed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Status"
+          },
+          "task_priority": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "none",
+                "low",
+                "medium",
+                "high"
+              ]
+            },
+            "type": "array",
+            "title": "Task Priority"
+          },
+          "document_category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Category"
+          },
+          "transaction_type": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "income",
+                "expense",
+                "refund",
+                "transfer"
+              ]
+            },
+            "type": "array",
+            "title": "Transaction Type"
+          },
+          "habit_kind": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "boolean",
+                "numeric",
+                "duration"
+              ]
+            },
+            "type": "array",
+            "title": "Habit Kind"
+          },
+          "include_archived": {
+            "type": "boolean",
+            "title": "Include Archived",
+            "description": "Also search archived records. Trashed ones never are.",
+            "default": false
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "relevance",
+              "recent"
+            ],
+            "title": "Sort",
+            "description": "Best match first, or most recently updated first.",
+            "default": "relevance"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "SavedSearchFilters",
+        "description": "A saved search's filters: the same as the search's own."
+      },
+      "SavedSearchListResponse": {
+        "properties": {
+          "searches": {
+            "items": {
+              "$ref": "#/components/schemas/SavedSearchResponse"
+            },
+            "type": "array",
+            "title": "Searches",
+            "description": "By name."
+          }
+        },
+        "type": "object",
+        "required": [
+          "searches"
+        ],
+        "title": "SavedSearchListResponse"
+      },
+      "SavedSearchResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "filters": {
+            "$ref": "#/components/schemas/SavedSearchFilters"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "query",
+          "filters",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "SavedSearchResponse"
+      },
+      "SavedSearchUpdateRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query"
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SavedSearchFilters"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "SavedSearchUpdateRequest"
+      },
       "ScheduleWorkoutRequest": {
         "properties": {
           "template_id": {
@@ -48907,6 +50164,59 @@
           "session_ids"
         ],
         "title": "ScheduledWorkoutResponse"
+      },
+      "SearchDetailResponse": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key",
+            "description": "What the value is: status, folder, category, location, …"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "value"
+        ],
+        "title": "SearchDetailResponse"
+      },
+      "SearchFacetResponse": {
+        "properties": {
+          "module": {
+            "type": "string",
+            "enum": [
+              "tasks",
+              "notes",
+              "calendar",
+              "reminders",
+              "finance",
+              "habits",
+              "documents",
+              "health"
+            ],
+            "title": "Module"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Matches under every filter except the module filter."
+          },
+          "unavailable": {
+            "type": "boolean",
+            "title": "Unavailable"
+          }
+        },
+        "type": "object",
+        "required": [
+          "module",
+          "total",
+          "unavailable"
+        ],
+        "title": "SearchFacetResponse"
       },
       "SearchGroupResponse": {
         "properties": {
@@ -51726,6 +53036,257 @@
           "months"
         ],
         "title": "TrendResponse"
+      },
+      "UniversalSearchHitResponse": {
+        "properties": {
+          "module": {
+            "type": "string",
+            "enum": [
+              "tasks",
+              "notes",
+              "calendar",
+              "reminders",
+              "finance",
+              "habits",
+              "documents",
+              "health"
+            ],
+            "title": "Module"
+          },
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "task",
+              "note",
+              "event",
+              "reminder",
+              "account",
+              "transaction",
+              "loan",
+              "subscription",
+              "bill",
+              "holding",
+              "deposit",
+              "asset",
+              "budget",
+              "savings_goal",
+              "habit",
+              "routine",
+              "document",
+              "exercise",
+              "workout",
+              "workout_template",
+              "fitness_goal",
+              "measurement"
+            ],
+            "title": "Entity Type"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "May be empty (an untitled note, a measurement)."
+          },
+          "snippet": {
+            "type": "string",
+            "title": "Snippet",
+            "description": "Text around the match; may be empty."
+          },
+          "matched_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Matched Fields",
+            "description": "Fields that matched a word of the query."
+          },
+          "match": {
+            "type": "string",
+            "enum": [
+              "exact_title",
+              "title_prefix",
+              "title_phrase",
+              "title_words",
+              "metadata",
+              "description",
+              "content",
+              "spread"
+            ],
+            "title": "Match",
+            "description": "The ranking tier the record matched in."
+          },
+          "score": {
+            "type": "integer",
+            "title": "Score"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active",
+            "description": "Not completed, archived, cancelled, or disabled."
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "details": {
+            "items": {
+              "$ref": "#/components/schemas/SearchDetailResponse"
+            },
+            "type": "array",
+            "title": "Details"
+          },
+          "day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day",
+            "description": "The record's own date; a recurring event's next occurrence."
+          },
+          "starts_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Starts At",
+            "description": "A timed event's local wall-clock start."
+          },
+          "all_day": {
+            "type": "boolean",
+            "title": "All Day"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id",
+            "description": "A parent record, such as a holding's account."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "module",
+          "entity_type",
+          "id",
+          "title",
+          "snippet",
+          "matched_fields",
+          "match",
+          "score",
+          "active",
+          "status",
+          "details",
+          "day",
+          "starts_at",
+          "all_day",
+          "parent_id",
+          "updated_at"
+        ],
+        "title": "UniversalSearchHitResponse"
+      },
+      "UniversalSearchResponse": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "relevance",
+              "recent"
+            ],
+            "title": "Sort"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Matches in the chosen modules."
+          },
+          "has_more": {
+            "type": "boolean",
+            "title": "Has More"
+          },
+          "hits": {
+            "items": {
+              "$ref": "#/components/schemas/UniversalSearchHitResponse"
+            },
+            "type": "array",
+            "title": "Hits"
+          },
+          "facets": {
+            "items": {
+              "$ref": "#/components/schemas/SearchFacetResponse"
+            },
+            "type": "array",
+            "title": "Facets",
+            "description": "Every module, in a fixed order."
+          },
+          "unavailable": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "tasks",
+                "notes",
+                "calendar",
+                "reminders",
+                "finance",
+                "habits",
+                "documents",
+                "health"
+              ]
+            },
+            "type": "array",
+            "title": "Unavailable",
+            "description": "Modules that couldn't be searched."
+          }
+        },
+        "type": "object",
+        "required": [
+          "query",
+          "sort",
+          "offset",
+          "limit",
+          "total",
+          "has_more",
+          "hits",
+          "facets",
+          "unavailable"
+        ],
+        "title": "UniversalSearchResponse"
       },
       "UnreadCountResponse": {
         "properties": {
