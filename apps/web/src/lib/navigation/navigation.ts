@@ -12,6 +12,7 @@ import {
   Settings,
   ShoppingCart,
   Wallet,
+  Workflow,
 } from "lucide-react";
 
 export type NavItem = {
@@ -103,6 +104,13 @@ export const navItems: readonly NavItem[] = [
     group: "workspace",
   },
   {
+    title: "Automation",
+    href: "/automation",
+    icon: Workflow,
+    description: "Your personal agent, workflows, and approvals.",
+    group: "workspace",
+  },
+  {
     title: "Settings",
     href: "/settings",
     icon: Settings,
@@ -124,6 +132,7 @@ const dedicatedRoutes: ReadonlySet<string> = new Set([
   "/notes",
   "/documents",
   "/assistant",
+  "/automation",
   "/settings",
 ]);
 

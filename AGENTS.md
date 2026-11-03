@@ -81,7 +81,18 @@ without storing the password; automatic daily, weekly, or monthly backups with r
 the existing worker; uploads inspected and dry-run before restoring into a new workspace, an
 empty one, or replacing the current one after a pre-restore backup, with IDs kept or remapped
 consistently; module exports as JSON, CSV, iCalendar, and Markdown; and JSON imports with
-duplicate detection and natural-key matching).
+duplicate detection and natural-key matching), and a **personal agent and workflow automation**
+(off by default, per person and workspace: a typed, permission-checked tool registry over the
+modules' services, with finance, mail, habits, and health read only and no delete, payment,
+sending, sharing, or settings tools; autonomy levels from read only to suggest, approve, and
+limited autonomy for allowlisted low-risk actions within quotas; approvals bound to the exact
+action by a fingerprint, revalidated before running, with expiry; workflows with schedule,
+event, condition, and manual triggers, ordered tool, condition, delay, approval, and AI-writing
+steps, run by the existing worker with leases, checkpoints committed together with each write,
+unique trigger keys, bounded retries, and recovery after restarts; a bounded planning loop over
+the AI layer's providers; reviewable preferences and workflow memory with retention;
+deterministic monitoring with deduplicated in-app notifications; and redacted execution
+history).
 There are no other product features, no
 OCR (scanned PDFs and images yield no text), no encryption at rest by Orbit (documents rely
 on the OS's disk encryption), no bulk document import, no AI health recommendations, medical
@@ -90,7 +101,9 @@ gamification, no CalDAV and no iCal import (the calendar exports `.ics` only), n
 `.ics` import (imports take Orbit JSON exports and backups), no cloud-storage backup targets, no email sending, no AI
 scheduling (time suggestions are text only), no knowledge graph, no AI briefings, no recurring
 tasks, no automatically created transactions, no live market prices or bank integrations, no push,
-email, or mobile notifications, no autonomous AI agents or AI actions without approval, no
+email, or mobile notifications, no unrestricted agent autonomy (actions run without approval only
+at the opt-in limited level, for low-risk tools the person allowed), no agent tools that delete,
+pay, send, share, or change permissions, no event bus (event triggers check the modules' rows), no
 pgvector or external vector database, and no multi-device sync. Do not
 describe or build on capabilities that do not exist.
 
@@ -123,7 +136,9 @@ Not present yet (planned; see `docs/architecture.md`): object storage for files,
 shared workspaces, end-to-end tests, and a `scripts/` directory. AI provider adapters live in
 `apps/api/src/orbit_api/providers/ai/`, behind the interface in `services/ai/providers.py`;
 Google and Microsoft adapters live in `providers/integrations/`, behind the connector contract in
-`services/integrations/connectors.py`.
+`services/integrations/connectors.py`. The agent's concrete tools live in `api/agent_tools.py`
+(beside `api/ai_actions.py`, since both use the modules' request schemas), behind the registry
+contract in `services/agent/tools.py`; every call goes through `services/agent/policy.py`.
 
 ### Boundaries
 

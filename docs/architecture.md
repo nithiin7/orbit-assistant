@@ -27,8 +27,9 @@ Browser ──► apps/web (Next.js, :3000) ──HTTP/JSON──► apps/api (F
   brought together by the [daily dashboard and command center](#daily-dashboard-and-command-center)
   and [universal search](#universal-search), with an optional [AI layer](#ai-intelligence-layer) on top (off until each person turns it on),
   and [external integrations](#external-integrations) that bring Google and Microsoft calendars,
-  mail, and files into those modules, and [backup, restore, and data
-  portability](#backup-restore-and-data-portability) for every workspace.
+  mail, and files into those modules, [backup, restore, and data
+  portability](#backup-restore-and-data-portability) for every workspace, and a [personal agent
+  and workflow automation](#personal-agent-and-automation) (off until each person turns it on).
 
 The two apps communicate only over HTTP and share no runtime code. They share one thing: the
 API contract in `packages/contracts`, described below.
@@ -3657,8 +3658,9 @@ assistant's start page and create no notifications.
    module's own service; the result (or the module's safe refusal) is recorded. **Reject**
    changes nothing.
 
-There is no generic query or update action, no deletion, no financial action, and no
-multi-step agent.
+There is no generic query or update action, no deletion, and no financial action. Multi-step
+work is the [personal agent](#personal-agent-and-automation)'s, which reuses this validator and
+executor.
 
 ### Prompt injection and untrusted content
 
@@ -3736,7 +3738,7 @@ The stream's event payloads are described in `packages/contracts/src/index.ts` (
 - The model can still misstate a provided figure; sources let the person check.
 - Rewrites save as a new note; there's no in-place AI edit of note content.
 - Token counts depend on the provider; OpenAI-compatible servers may report none.
-- No agents, schedules, or automation (reserved for a later phase); no multi-device sync.
+- Agents, schedules, and automation are in [Personal agent and automation](#personal-agent-and-automation); there is no multi-device sync.
 - Stopping a stream is covered by design but not by an automated test (TestClient can't
   disconnect mid-stream).
 
@@ -4238,6 +4240,289 @@ expires uploads after 24 hours, and deletes temporary files left by a crash.
 - Monthly schedules started on the 29th to 31st run on the 28th after the first short month.
 - Importing CSV, Markdown, or `.ics` isn't supported.
 
+## Personal agent and automation
+
+A personal agent and workflow engine built on the AI layer, the modules' own services, and the
+existing worker. People configure what it may do; workflows run steps that Orbit's code orders and
+checks; the agent plans one tool call at a time; and anything that changes a record either needs
+an approval bound to that exact action or is a low-risk action the person explicitly allowed. It
+is off by default, per person and workspace, and deterministic workflows and monitoring work
+without any AI provider.
+
+### What existed, and what was reused
+
+- **Reused:** the AI layer's provider resolution and policy (`AiConfigService`: on/off, cloud
+  consent, monthly token limit, `MeteredProvider` usage records), its structured module sources
+  (`ContextBuilder`, so figures are Orbit's), `AssistService` (note and document summaries and
+  extraction), the record fencing in `prompts.py`, and the proposal validator and executor in
+  `api/ai_actions.py` (writes are validated by the target module's request schema and run by its
+  service); the reminder worker as the only scheduler (leases, conditional claims, periodic jobs);
+  `FlushTransaction` from integrations; in-app notifications; `WorkspaceDep` authorization.
+- **Not present, so not built on:** an event bus (modules publish no events), an audit log, and
+  multi-device sync. Event triggers are found by checking the modules' own rows; the execution
+  history is the agent's audit trail; concurrency between API processes and `orbit-worker`
+  processes on one database is handled by leases, which is the only "multiple devices" case Orbit
+  has.
+
+### Layout
+
+```text
+services/agent/          framework-free
+├── models.py            agent, workflow, trigger, execution, step, approval, memory, finding types
+├── tools.py             ToolSpec, ToolHandler, ToolRegistry, call fingerprints, mail contract
+├── policy.py            decide(): permissions and autonomy for one call
+├── triggers.py          schedules (DST-safe), conditions, templates, workflow validation
+├── planner.py           the planner's rules, reading its replies, fencing tool results
+├── engine.py            the execution engine and state machine
+├── service.py           what the person does: settings, workflows, runs, history, approvals, memory
+├── signals.py           event and condition signals from the modules' data
+├── monitoring.py        deterministic monitoring findings
+├── automation.py        the worker's jobs: schedules, triggers, expiry, monitoring, claims, recovery
+└── safety.py            redaction and size limits for history
+api/agent_tools.py       the concrete tools (module request schemas and services)
+repositories/agent.py    SQL for the seven agent tables, the change feed, the AI gateway
+repositories/agent_services.py  builds it all on one session
+api/v1/agent.py          routes
+```
+
+### Agent model
+
+`agents` holds one primary agent per person and workspace (a partial unique index; the table
+allows more for later specialized agents): name, description, enabled, standing instructions,
+an optional model override on the AI layer's chat provider, autonomy level, allowed modules,
+per-tool modes, allowed action types (`create`, `update`; reading is always allowed), triggers
+whose runs may act automatically, limits, memory, notification, and monitoring settings. It is
+created turned off the first time it is asked for. Only `PATCH …/agent` changes it.
+
+### Tool registry
+
+Every tool declares a name, description, input schema (a Pydantic model with `extra="forbid"`),
+output schema (one envelope: `text`, `records`, `data` with `count`), module, access (`read`,
+`create`, `update`), risk, idempotency, whether it always asks, whether it sends record content
+to the AI provider, and whether workflows may use it. `GET …/agent/tools` lists them with what the
+agent would do with each right now.
+
+| Module              | Read                                                                                                             | Write (risk)                                                                 |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Tasks               | `search_tasks`                                                                                                   | `create_task` (low), `complete_task` (low), `update_task` (medium)           |
+| Reminders           | `get_reminders`                                                                                                  | `create_reminder` (low), `send_notification` (low, in-app to the owner only) |
+| Calendar            | `search_calendar` (overlaps found by Orbit)                                                                      | `create_event` (medium)                                                      |
+| Notes               | `search_notes`, `summarize_note` (AI)                                                                            | `create_note` (low), `append_to_note` (medium), `add_note_tags` (low)        |
+| Documents           | `search_documents`, `get_document` (no reference numbers), `summarize_document`, `extract_document_details` (AI) | `update_document_details` (medium; descriptive fields only)                  |
+| Finance (read only) | `get_accounts`, `get_transactions`, `get_finance_summary`, `get_budgets`, `get_upcoming_payments`                | none                                                                         |
+| Habits, health      | `get_habit_progress`, `get_workout_history`, `get_health_summary` (owner only)                                   | none                                                                         |
+| Mail (read only)    | `search_email` (the labels chosen for Orbit, through the integrations' mail service)                             | none                                                                         |
+| The agent's own     |                                                                                                                  | `remember_preference`, `run_workflow` (agent runs only; both always ask)     |
+
+There is no tool that deletes, pays, transfers, invests, sends email or messages, shares
+documents, changes connected accounts, or changes settings or permissions, and none that runs
+code, SQL, shell commands, or HTTP requests. Every call is prepared (arguments validated by the
+tool's model, then by the module's request schema for writes, and the target looked up) before
+it can run or be proposed, and prepared again when an approval is acted on.
+
+### Permission and autonomy model
+
+`policy.decide` runs in code for every call, from the agent's stored settings, the tool's spec,
+and what started the run. Nothing a model writes is an input to it.
+
+1. Agent off → deny. Tool set to `off` → deny. Tool's module not allowed → deny.
+2. When a model will see the result (agent runs) or the tool summarizes with AI, the AI layer must
+   also allow the module (mail and the agent's own records excepted).
+3. Reads → allow. Writes need their action type allowed, then:
+
+| Level         | Writes                                                                                                                                |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| 0 `read_only` | Refused                                                                                                                               |
+| 1 `suggest`   | Recorded as a suggestion; never run                                                                                                   |
+| 2 `approval`  | Run only after the person approves that exact call                                                                                    |
+| 3 `limited`   | Runs on its own only if low risk, set to `auto`, from an allowed trigger, within the daily quota of automatic actions; otherwise asks |
+
+High-risk and `always_confirm` tools ask at every level that can write. A permission revoked
+after an approval was requested makes the approval fail when acted on.
+
+### Workflows
+
+A workflow has a name, description, trigger, conditions (checked against the trigger's values
+before a run is created), up to 20 ordered steps, a daily run limit, and an on/off switch. Steps:
+
+| Kind        | What Orbit does                                                                                                                                                        |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tool`      | Renders `{{trigger.x}}` / `{{steps.id.x}}` placeholders as plain text, then calls the tool through the policy; optional `continue_on_error`                            |
+| `condition` | Compares a named value with a constant (`eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `contains`, `not_contains`, `exists`); when false, jumps forward to a later step or ends |
+| `delay`     | Waits 1 minute to 7 days (the execution sleeps as `waiting`)                                                                                                           |
+| `approval`  | A checkpoint the person approves before the rest runs                                                                                                                  |
+| `ai`        | Writes text with the AI provider from earlier outputs, fenced as data; no tools                                                                                        |
+
+Definitions are validated on save: known tools workflows may use, unique step IDs, forward-only
+jumps (no loops), placeholders that name earlier steps, and a complete trigger. Workflows can't
+start other workflows.
+
+### Triggers
+
+| Trigger   | How it is detected                                                                                                                                                                                                                                                      |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Schedule  | Daily, weekly (days), monthly (day, clamped to the month), or once, at a wall-clock time in a time zone; `next_run_at` stored and claimed                                                                                                                               |
+| Event     | Task created or completed, reminder delivered, imported calendar event changed, budget alert sent: rows changed since the workflow's cursor. Event approaching (lead time), document expiring (days ahead), habit missed yesterday: a window from the modules' services |
+| Condition | A metric (overdue tasks, tasks or payments due soon, highest budget use, documents expiring, unread notifications) checked every N minutes; fires when it becomes true, not while it stays true                                                                         |
+| Manual    | `POST …/workflows/{id}/run`, or the agent's `run_workflow` tool after approval                                                                                                                                                                                          |
+
+Each signal has a stable key (a record with its date or time), and an execution's
+`trigger_key` is unique per agent, so a slot, an event, or a manual run's idempotency key
+starts at most one execution however many workers see it. Event triggers check every minute;
+"new email received" isn't a trigger, because mail is read on demand and never synchronized.
+
+### Execution engine and state machine
+
+```text
+queued ──claim──▶ running ──▶ succeeded | failed | cancelled
+   ▲                 │
+   ├── approved ◀── waiting_approval
+   └── resume_at ◀─ waiting (delay, retry backoff)
+```
+
+- **Agent runs** (`POST …/agent/runs`) send the planner the rules, the tools it may use, the
+  person's standing instructions, saved preferences, recent runs, and the request; it replies
+  with one JSON step at a time. Unknown tools, unpermitted tools, and invalid arguments are
+  refused and the reason is given back; unreadable replies are retried twice, then fail the run.
+- **Bounds:** steps, tool calls, time per active stretch (waiting for a delay, a retry, or a
+  person doesn't count), tokens per run (and the AI layer's monthly limit), runs per day per agent
+  and per workflow, automatic actions per day. Read and model failures retry with backoff (30 s,
+  doubling) up to the retry limit; writes are never retried automatically.
+- **Checkpoints:** after every step, the cursor and state (step outputs, the planner's
+  transcript, retry counts) are saved with the step's record in one transaction. Write tools run
+  on module services with a flush-only transaction, so a write commits together with its step:
+  a crash before the commit leaves neither, so resuming can't duplicate it.
+- **Cancellation** is checked before every step; cancelling a waiting run ends it at once and
+  cancels its approvals.
+- **Retry** (`POST …/executions/{id}/retry`) resumes a failed run from the failed step, which by
+  construction changed nothing.
+
+### Approval lifecycle
+
+An approval stores the exact normalized call, a SHA-256 fingerprint of it (`arguments_hash`), a
+summary, the reason, the run it belongs to, the target record, the expected effect, risk,
+whether it followed untrusted content, and an expiry (24 hours by default).
+
+`pending` → `executing` → `executed` | `failed`; or `rejected`, `expired`, `cancelled`.
+
+- Approving requires the `arguments_hash` the person was shown; a different one is 409.
+- Before running: the agent must be on, the policy must still allow the call, the call is
+  prepared again (the record must still exist and the module's rules still pass), and its
+  fingerprint must still match. If preparing it again gives a different call, the approval is
+  cancelled and a new one is requested for the action as it is now.
+- `pending` → `executing` is a conditional update, so a double click or a second tab runs
+  nothing twice (409).
+- The action runs in the request, its step and the approval are recorded, and the run is queued
+  to continue. Rejecting a workflow's step cancels the run; rejecting an agent's proposal tells
+  the planner, which continues.
+- Expired approvals cancel their run; the worker and the approvals list both expire them.
+
+### Memory
+
+- **Working memory:** the execution's state (step outputs, transcript), deleted with it.
+- **Conversation memory:** the agent's last five runs (request and outcome), for the planner.
+- **Saved preferences:** written by the person, or proposed by the agent with
+  `remember_preference`, which always asks; listed, edited, and deleted under Settings.
+- **Workflow memory:** each workflow's last five outcomes, available to its `ai` steps as
+  `{{workflow.last_outcome}}`.
+
+Each category can be turned off. Finished executions and workflow memory older than the retention
+period (90 days by default) are purged hourly. Retrieved records, documents, and emails are never
+stored as memory.
+
+### Monitoring
+
+Off by default. Chosen categories (overdue tasks, upcoming deadlines, calendar conflicts,
+upcoming events, bills, budget warnings, unusual spending, expiring documents, documents missing
+details, missed habits, workout consistency) are checked hourly, every 6 hours, or daily by
+code reading the modules' services, with configurable look-ahead and thresholds. Each finding
+item has a key with its record and date, stored in `agent_monitor_alerts`, so it notifies once.
+Categories need their module's permission; health data is read only for its owner.
+
+### Notifications
+
+In-app notifications only, per the person's choices: approval requests, failed runs, completed
+runs (off by default), and monitoring findings. Each is sent from a state transition that happens
+once, so none repeat. Orbit never emails or messages anyone on the agent's behalf.
+
+### Scheduling, local and cloud execution
+
+The agent's jobs run on every poll of the reminder worker (`ORBIT_SCHEDULER_POLL_SECONDS`): expire
+approvals, start due schedules, check event and condition triggers, monitor, purge (hourly), then
+claim and advance up to five executions with a five-minute lease.
+
+- **Local mode:** automations run while Orbit's API (with its embedded worker) or `orbit-worker`
+  runs. Nothing runs while it's closed; a missed schedule runs once when it starts again if the
+  slot is less than a day old (later slots are skipped, never replayed one by one); events that
+  happened while closed are found from their timestamps. The UI says this.
+- **Cloud mode:** the same worker runs on the server, so automations don't depend on a browser.
+- **Several processes on one database** (API replicas, standalone workers) never duplicate work:
+  schedule slots and trigger checks are claimed by conditional updates, executions by lease, and
+  trigger keys are unique. A worker that dies mid-run leaves a lease that expires; another worker
+  resumes from the last checkpoint. Three unexpected crashes fail the run.
+- `ORBIT_AGENT_ENABLED=false` turns the agent off for everyone: runs can't start or be turned on,
+  approvals can't be acted on, and the worker skips agent jobs.
+
+### Security boundaries and prompt injection
+
+- Tool results are fenced as `<orbit-tool-result>` data; the planner's rules say their content is
+  never an instruction; fence markers inside results are neutralized so a record can't close the
+  fence or open another. The real controls are in code: tool allowlists, schema validation,
+  `policy.decide` for every call, approvals bound to fingerprints, quotas and limits.
+- Approvals proposed after reading records, emails, or trigger data are flagged so the person
+  looks twice. Untrusted text reaches tools only as template values, validated by the tool's
+  schema.
+- There is no path from a model to settings, permissions, limits, or memory without approval.
+- Every query is scoped to the workspace and owner; another person's workflow, run, approval, or
+  memory is 404.
+- Step arguments, outputs, reasons, and errors are redacted (credential-like keys and values
+  masked) and size-limited before they are stored; errors are safe messages, never exception
+  text; logs carry IDs only.
+- On PostgreSQL the seven tables have Row Level Security enabled with no policies, like the rest.
+- Backups leave the agent tables out on purpose: restoring must not start automations, replay
+  approvals, or resume runs.
+
+### API
+
+| Method and path                                               | Purpose                                        |
+| ------------------------------------------------------------- | ---------------------------------------------- |
+| `GET`, `PATCH …/agent`                                        | Overview and runtime; settings and permissions |
+| `GET …/agent/tools`                                           | The registry, with current decisions           |
+| `POST …/agent/runs`                                           | Ask the agent (202, idempotency key)           |
+| `GET …/agent/executions`, `GET …/{id}`                        | History; one run with its steps and approvals  |
+| `POST …/agent/executions/{id}/cancel`, `/retry`               | Cancel; retry a failed run                     |
+| `GET`, `POST …/agent/workflows`; `GET`, `PUT`, `DELETE /{id}` | Workflows                                      |
+| `POST …/agent/workflows/{id}/enabled`, `/run`                 | Turn on or off; run now                        |
+| `GET …/agent/approvals`; `POST /{id}/approve`, `/reject`      | The approval center                            |
+| `GET`, `POST …/agent/memories`; `PATCH`, `DELETE /{id}`       | Memory                                         |
+
+`…` is `/api/v1/workspaces/{workspace_id}`.
+
+### In the web app
+
+**Automation** (`/automation`, tabs in the URL): an overview (on/off, level, modules, where
+automations run, ask the agent, pending approvals, recent activity); workflows (templates, an
+editor for triggers and steps with tool arguments derived from each tool's schema, run now,
+on/off, delete); the approval center (each action's exact arguments, reason, effect, risk,
+untrusted-content warning, expiry); activity (filters, each run's steps with reasons, details,
+outputs, linked records, failures, cancel and retry); and settings (autonomy, modules, action
+types, per-action modes, instructions, limits, memory and the memory list, monitoring,
+notifications). Views with runs in progress refresh every five seconds.
+
+### Known limitations
+
+- Event triggers are detected by polling the modules' timestamps every minute, not pushed.
+- "New email received" isn't a trigger: mail is read on demand and never synchronized.
+- No tool writes to external calendars or files; imported events change only through sync.
+- Agent planning uses JSON replies rather than native function calling, so small local models may
+  produce invalid steps (refused and retried, then the run fails).
+- A run in a single worker isn't interrupted mid-model-call by cancellation; it stops before its
+  next step.
+- Model calls are recorded in AI usage as `assist`.
+- Agent configuration, workflows, and memory are not in backups; set them up again after a restore.
+- Tested on SQLite; the PostgreSQL path is covered by the shared migration and RLS conventions but
+  not by agent-specific PostgreSQL tests.
+
 ## Configuration
 
 | App | Source                                                    | Validation                                    | Visibility  |
@@ -4297,7 +4582,8 @@ The database foundation is implemented (see [Storage](#storage)). Still planned:
 
 The provider interface, retrieval, and the assistant are implemented; see
 [AI intelligence layer](#ai-intelligence-layer). Still planned: a pgvector adapter behind the
-same chunk store for large cloud indexes, and agents or automation (reserved for a later phase).
+same chunk store for large cloud indexes. The agent and workflows are implemented; see
+[Personal agent and automation](#personal-agent-and-automation).
 
 ### Evolution
 

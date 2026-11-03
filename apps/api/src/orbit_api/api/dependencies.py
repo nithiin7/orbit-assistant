@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from orbit_api.config import Settings
 from orbit_api.db.database import Database
 from orbit_api.repositories.accounts import SqlAccountRepository, SqlLocalAuthRepository
+from orbit_api.repositories.agent_services import AgentServices, build_agent
 from orbit_api.repositories.ai_services import AiServices, build_ai
 from orbit_api.repositories.avatars import SqlAvatarRepository
 from orbit_api.repositories.backup import build_backup_service
@@ -428,3 +429,26 @@ def get_integrations(request: Request, session: SessionDep, settings: SettingsDe
 
 
 IntegrationsDep = Annotated[Integrations, Depends(get_integrations)]
+
+
+def get_agent_services(request: Request, session: SessionDep) -> AgentServices:
+    """The agent's services on the request's session. Tools run through the modules' own
+    request schemas and services (`api/agent_tools.py`)."""
+    return build_agent_for(session, request.app.state)
+
+
+def build_agent_for(session: AsyncSession, state: object) -> AgentServices:
+    # Imported here for the same reason as `build_ai_for`: `agent_tools` uses route schemas.
+    from orbit_api.api.agent_tools import tool_factory
+
+    app_settings: Settings = getattr(state, "settings")  # noqa: B009 - Starlette's State is untyped
+    return build_agent(
+        session,
+        app_settings,
+        getattr(state, "ai_providers"),  # noqa: B009
+        tool_factory,
+        connectors=getattr(state, "integration_connectors"),  # noqa: B009
+    )
+
+
+AgentServicesDep = Annotated[AgentServices, Depends(get_agent_services)]

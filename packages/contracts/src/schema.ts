@@ -4969,6 +4969,311 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/agent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Agent overview
+         * @description The person's agent here (created, turned off, the first time), recent activity, pending
+         *     approvals, and where automations run.
+         */
+        get: operations["overview_api_v1_workspaces__workspace_id__agent_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update the agent's settings and permissions */
+        patch: operations["update_agent_api_v1_workspaces__workspace_id__agent_patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/agent/tools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The tool registry, with what the agent may do with each */
+        get: operations["list_tools_api_v1_workspaces__workspace_id__agent_tools_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/agent/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask the agent to do something
+         * @description Queues an agent run; the worker plans and runs it, asking for approval where needed.
+         *     Needs AI to be set up. The same `idempotency_key` returns the same run.
+         */
+        post: operations["start_run_api_v1_workspaces__workspace_id__agent_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/agent/executions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Execution history */
+        get: operations["list_executions_api_v1_workspaces__workspace_id__agent_executions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/agent/executions/{execution_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One execution with its steps */
+        get: operations["get_execution_api_v1_workspaces__workspace_id__agent_executions__execution_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/agent/executions/{execution_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel a run
+         * @description A queued or waiting run stops now (its pending approvals are cancelled); a running one
+         *     stops before its next step.
+         */
+        post: operations["cancel_execution_api_v1_workspaces__workspace_id__agent_executions__execution_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/agent/executions/{execution_id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retry a failed run
+         * @description Resumes from the step that failed. That step's change, if any, was never saved, so
+         *     nothing is done twice.
+         */
+        post: operations["retry_execution_api_v1_workspaces__workspace_id__agent_executions__execution_id__retry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/agent/workflows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List workflows */
+        get: operations["list_workflows_api_v1_workspaces__workspace_id__agent_workflows_get"];
+        put?: never;
+        /** Create a workflow */
+        post: operations["create_workflow_api_v1_workspaces__workspace_id__agent_workflows_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/agent/workflows/{workflow_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a workflow */
+        get: operations["get_workflow_api_v1_workspaces__workspace_id__agent_workflows__workflow_id__get"];
+        /** Replace a workflow's definition */
+        put: operations["update_workflow_api_v1_workspaces__workspace_id__agent_workflows__workflow_id__put"];
+        post?: never;
+        /**
+         * Delete a workflow
+         * @description Its waiting runs are cancelled; its history stays.
+         */
+        delete: operations["delete_workflow_api_v1_workspaces__workspace_id__agent_workflows__workflow_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/agent/workflows/{workflow_id}/enabled": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Turn a workflow on or off */
+        post: operations["set_workflow_enabled_api_v1_workspaces__workspace_id__agent_workflows__workflow_id__enabled_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/agent/workflows/{workflow_id}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run a workflow now */
+        post: operations["run_workflow_api_v1_workspaces__workspace_id__agent_workflows__workflow_id__run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/agent/approvals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Approval requests
+         * @description Approvals past their expiry are expired as they are listed.
+         */
+        get: operations["list_approvals_api_v1_workspaces__workspace_id__agent_approvals_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/agent/approvals/{approval_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve and run an exact action
+         * @description `arguments_hash` must be the one shown with the approval: a decision only ever runs the
+         *     action that was reviewed. Permissions and the target record are checked again first; a
+         *     second approval is 409.
+         */
+        post: operations["approve_api_v1_workspaces__workspace_id__agent_approvals__approval_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/agent/approvals/{approval_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject an action */
+        post: operations["reject_api_v1_workspaces__workspace_id__agent_approvals__approval_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/agent/memories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What the agent remembers */
+        get: operations["list_memories_api_v1_workspaces__workspace_id__agent_memories_get"];
+        put?: never;
+        /** Save a preference */
+        post: operations["add_memory_api_v1_workspaces__workspace_id__agent_memories_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/agent/memories/{memory_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Forget a memory */
+        delete: operations["delete_memory_api_v1_workspaces__workspace_id__agent_memories__memory_id__delete"];
+        options?: never;
+        head?: never;
+        /** Edit a memory */
+        patch: operations["update_memory_api_v1_workspaces__workspace_id__agent_memories__memory_id__patch"];
+        trace?: never;
+    };
     "/api/v1/me/ai/settings": {
         parameters: {
             query?: never;
@@ -6011,6 +6316,703 @@ export interface components {
              */
             next_cursor: string | null;
         };
+        /** AgentApprovalListResponse */
+        AgentApprovalListResponse: {
+            /** Approvals */
+            approvals: components["schemas"]["AgentApprovalResponse"][];
+        };
+        /** AgentApprovalResponse */
+        AgentApprovalResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Execution Id
+             * Format: uuid
+             */
+            execution_id: string;
+            /**
+             * Context
+             * @description The run it belongs to.
+             */
+            context: string;
+            /** Tool */
+            tool: string;
+            /**
+             * Arguments
+             * @description Exactly what will run if approved.
+             */
+            arguments: {
+                [key: string]: unknown;
+            };
+            /**
+             * Arguments Hash
+             * @description Send it back to approve this exact action.
+             */
+            arguments_hash: string;
+            /** Summary */
+            summary: string;
+            /** Reason */
+            reason: string;
+            target: components["schemas"]["AiRecordRef"] | null;
+            /** Effect */
+            effect: string;
+            /**
+             * Risk
+             * @enum {string}
+             */
+            risk: "low" | "medium" | "high";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "executing" | "executed" | "rejected" | "expired" | "cancelled" | "failed";
+            /**
+             * From Untrusted Context
+             * @description Proposed after reading records or imported content, which may contain injected instructions.
+             */
+            from_untrusted_context: boolean;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decided At */
+            decided_at: string | null;
+            result: components["schemas"]["AiRecordRef"] | null;
+            /** Error */
+            error: string | null;
+        };
+        /** AgentConditionSchema */
+        AgentConditionSchema: {
+            /**
+             * Left
+             * @description trigger.<field> or steps.<id>.<field>
+             */
+            left: string;
+            /**
+             * Op
+             * @enum {string}
+             */
+            op: "eq" | "ne" | "gt" | "gte" | "lt" | "lte" | "contains" | "not_contains" | "exists";
+            /** Right */
+            right?: string | number | boolean | null;
+        };
+        /** AgentConditionTriggerSchema */
+        AgentConditionTriggerSchema: {
+            /**
+             * Metric
+             * @enum {string}
+             */
+            metric: "overdue_tasks" | "tasks_due_soon" | "upcoming_payments" | "budget_used_percent" | "documents_expiring" | "unread_notifications";
+            /**
+             * Op
+             * @enum {string}
+             */
+            op: "gt" | "gte" | "lt" | "lte" | "eq" | "ne";
+            /** Value */
+            value: number;
+            /**
+             * Check Minutes
+             * @default 60
+             */
+            check_minutes: number;
+            /**
+             * Days Ahead
+             * @default 7
+             */
+            days_ahead: number;
+        };
+        /** AgentEventTriggerSchema */
+        AgentEventTriggerSchema: {
+            /**
+             * Event
+             * @enum {string}
+             */
+            event: "task_created" | "task_completed" | "reminder_triggered" | "event_approaching" | "document_expiring" | "budget_threshold" | "habit_missed" | "external_event_changed";
+            /**
+             * Lead Minutes
+             * @default 60
+             */
+            lead_minutes: number;
+            /**
+             * Days Ahead
+             * @default 30
+             */
+            days_ahead: number;
+        };
+        /** AgentExecutionDetailResponse */
+        AgentExecutionDetailResponse: {
+            execution: components["schemas"]["AgentExecutionResponse"];
+            /** Steps */
+            steps: components["schemas"]["AgentExecutionStepResponse"][];
+            /** Approvals */
+            approvals: components["schemas"]["AgentApprovalResponse"][];
+        };
+        /** AgentExecutionListResponse */
+        AgentExecutionListResponse: {
+            /** Executions */
+            executions: components["schemas"]["AgentExecutionResponse"][];
+        };
+        /** AgentExecutionResponse */
+        AgentExecutionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Workflow Id */
+            workflow_id: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Trigger Kind
+             * @enum {string}
+             */
+            trigger_kind: "manual" | "schedule" | "event" | "condition" | "agent";
+            /** Trigger Data */
+            trigger_data: {
+                [key: string]: string | number | boolean | null;
+            };
+            /** Goal */
+            goal: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "running" | "waiting" | "waiting_approval" | "succeeded" | "failed" | "cancelled";
+            /** Summary */
+            summary: string | null;
+            /** Error */
+            error: string | null;
+            /** Steps Taken */
+            steps_taken: number;
+            /** Tool Calls */
+            tool_calls: number;
+            /** Attempts */
+            attempts: number;
+            /** Input Tokens */
+            input_tokens: number;
+            /** Output Tokens */
+            output_tokens: number;
+            /** Cancel Requested */
+            cancel_requested: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Started At */
+            started_at: string | null;
+            /** Finished At */
+            finished_at: string | null;
+            /** Resume At */
+            resume_at: string | null;
+        };
+        /** AgentExecutionStepResponse */
+        AgentExecutionStepResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Position */
+            position: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "tool" | "condition" | "delay" | "approval" | "ai" | "plan" | "final";
+            /** Title */
+            title: string;
+            /** Tool */
+            tool: string | null;
+            /** Reason */
+            reason: string;
+            /** Arguments */
+            arguments: {
+                [key: string]: unknown;
+            };
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "succeeded" | "failed" | "skipped" | "waiting" | "rejected" | "suggested" | "denied";
+            /** Output */
+            output: string;
+            /** Records */
+            records: components["schemas"]["AiRecordRef"][];
+            /** Error */
+            error: string | null;
+            /** Approval Id */
+            approval_id: string | null;
+            /** Autonomous */
+            autonomous: boolean;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Finished At */
+            finished_at: string | null;
+        };
+        /** AgentLimitsSchema */
+        AgentLimitsSchema: {
+            /**
+             * Max Steps
+             * @default 8
+             */
+            max_steps: number;
+            /**
+             * Max Tool Calls
+             * @default 12
+             */
+            max_tool_calls: number;
+            /**
+             * Timeout Seconds
+             * @default 300
+             */
+            timeout_seconds: number;
+            /**
+             * Max Tokens Per Run
+             * @default 20000
+             */
+            max_tokens_per_run: number;
+            /**
+             * Max Runs Per Day
+             * @default 50
+             */
+            max_runs_per_day: number;
+            /**
+             * Max Autonomous Actions Per Day
+             * @default 10
+             */
+            max_autonomous_actions_per_day: number;
+            /**
+             * Approval Ttl Hours
+             * @default 24
+             */
+            approval_ttl_hours: number;
+            /**
+             * Max Retries
+             * @default 2
+             */
+            max_retries: number;
+        };
+        /** AgentMemoryListResponse */
+        AgentMemoryListResponse: {
+            /** Memories */
+            memories: components["schemas"]["AgentMemoryResponse"][];
+        };
+        /** AgentMemoryRequest */
+        AgentMemoryRequest: {
+            /** Content */
+            content: string;
+        };
+        /** AgentMemoryResponse */
+        AgentMemoryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "preference" | "workflow";
+            /** Workflow Id */
+            workflow_id: string | null;
+            /** Content */
+            content: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "user" | "agent";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AgentMemorySettingsSchema */
+        AgentMemorySettingsSchema: {
+            /**
+             * Preferences
+             * @default true
+             */
+            preferences: boolean;
+            /**
+             * Conversation
+             * @default true
+             */
+            conversation: boolean;
+            /**
+             * Workflow
+             * @default true
+             */
+            workflow: boolean;
+            /**
+             * Retention Days
+             * @default 90
+             */
+            retention_days: number;
+        };
+        /** AgentMonitorSettingsSchema */
+        AgentMonitorSettingsSchema: {
+            /**
+             * Enabled
+             * @default false
+             */
+            enabled: boolean;
+            /** Categories */
+            categories?: ("overdue_tasks" | "upcoming_deadlines" | "calendar_conflicts" | "upcoming_events" | "upcoming_bills" | "budget_warnings" | "unusual_spending" | "expiring_documents" | "missing_document_details" | "missed_habits" | "workout_consistency")[];
+            /**
+             * Frequency
+             * @default daily
+             * @enum {string}
+             */
+            frequency: "hourly" | "every_6_hours" | "daily";
+            /**
+             * Days Ahead
+             * @default 3
+             */
+            days_ahead: number;
+            /**
+             * Document Days
+             * @default 30
+             */
+            document_days: number;
+            /**
+             * Budget Percent
+             * @default 80
+             */
+            budget_percent: number;
+        };
+        /** AgentNotificationSettingsSchema */
+        AgentNotificationSettingsSchema: {
+            /**
+             * Approvals
+             * @default true
+             */
+            approvals: boolean;
+            /**
+             * Completed
+             * @default false
+             */
+            completed: boolean;
+            /**
+             * Failed
+             * @default true
+             */
+            failed: boolean;
+            /**
+             * Insights
+             * @default true
+             */
+            insights: boolean;
+        };
+        /** AgentOverviewResponse */
+        AgentOverviewResponse: {
+            agent: components["schemas"]["AgentResponse"];
+            runtime: components["schemas"]["AgentRuntimeResponse"];
+            /** Pending Approvals */
+            pending_approvals: number;
+            /** Workflows */
+            workflows: number;
+            /** Enabled Workflows */
+            enabled_workflows: number;
+            /** Recent */
+            recent: components["schemas"]["AgentExecutionResponse"][];
+        };
+        /** AgentResponse */
+        AgentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Enabled */
+            enabled: boolean;
+            /** Instructions */
+            instructions: string;
+            /**
+             * Chat Model
+             * @description Null uses the AI layer's chosen chat model.
+             */
+            chat_model: string | null;
+            /**
+             * Autonomy
+             * @enum {string}
+             */
+            autonomy: "read_only" | "suggest" | "approval" | "limited";
+            /** Modules */
+            modules: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail")[];
+            /** Tool Modes */
+            tool_modes: {
+                [key: string]: "off" | "ask" | "auto";
+            };
+            /** Action Types */
+            action_types: ("read" | "create" | "update")[];
+            /** Autonomous Triggers */
+            autonomous_triggers: ("manual" | "schedule" | "event" | "condition" | "agent")[];
+            limits: components["schemas"]["AgentLimitsSchema"];
+            memory: components["schemas"]["AgentMemorySettingsSchema"];
+            notifications: components["schemas"]["AgentNotificationSettingsSchema"];
+            monitoring: components["schemas"]["AgentMonitorSettingsSchema"];
+            /** Monitored At */
+            monitored_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * AgentRuntimeResponse
+         * @description Where automations run, so the person knows what has to be running for them.
+         */
+        AgentRuntimeResponse: {
+            /**
+             * Server Enabled
+             * @description Whether automation is allowed on this server.
+             */
+            server_enabled: boolean;
+            /**
+             * Storage Mode
+             * @enum {string}
+             */
+            storage_mode: "local" | "cloud";
+            /**
+             * Worker Embedded
+             * @description Whether this API process runs the worker. When false, a separate `orbit-worker` must be running for workflows and runs to progress.
+             */
+            worker_embedded: boolean;
+            /** Poll Seconds */
+            poll_seconds: number;
+        };
+        /** AgentScheduleSchema */
+        AgentScheduleSchema: {
+            /**
+             * Frequency
+             * @enum {string}
+             */
+            frequency: "daily" | "weekly" | "monthly" | "once";
+            /**
+             * Time
+             * @description HH:MM in `timezone`.
+             */
+            time: string;
+            /** Timezone */
+            timezone: string;
+            /**
+             * Weekdays
+             * @description Monday is 0. Weekly only.
+             */
+            weekdays?: number[];
+            /** Day Of Month */
+            day_of_month?: number | null;
+            /** On Date */
+            on_date?: string | null;
+        };
+        /** AgentToolListResponse */
+        AgentToolListResponse: {
+            /** Tools */
+            tools: components["schemas"]["AgentToolResponse"][];
+        };
+        /** AgentToolResponse */
+        AgentToolResponse: {
+            /** Name */
+            name: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Module */
+            module: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail") | null;
+            /**
+             * Access
+             * @enum {string}
+             */
+            access: "read" | "create" | "update";
+            /**
+             * Risk
+             * @enum {string}
+             */
+            risk: "low" | "medium" | "high";
+            /** Idempotent */
+            idempotent: boolean;
+            /**
+             * Approval
+             * @enum {string}
+             */
+            approval: "never" | "configurable" | "always";
+            /** Uses Ai */
+            uses_ai: boolean;
+            /** In Workflows */
+            in_workflows: boolean;
+            /** Input Schema */
+            input_schema: {
+                [key: string]: unknown;
+            };
+            /** Output Schema */
+            output_schema: {
+                [key: string]: unknown;
+            };
+            /**
+             * Mode
+             * @description The person's setting for this tool, if any.
+             */
+            mode: ("off" | "ask" | "auto") | null;
+            /**
+             * Outcome
+             * @description What a manual run would do with it now.
+             * @enum {string}
+             */
+            outcome: "allow" | "approval" | "suggest" | "deny";
+            /** Reason */
+            reason: string;
+        };
+        /** AgentTriggerSchema */
+        AgentTriggerSchema: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "manual" | "schedule" | "event" | "condition";
+            schedule?: components["schemas"]["AgentScheduleSchema"] | null;
+            event?: components["schemas"]["AgentEventTriggerSchema"] | null;
+            condition?: components["schemas"]["AgentConditionTriggerSchema"] | null;
+        };
+        /** AgentWorkflowListResponse */
+        AgentWorkflowListResponse: {
+            /** Workflows */
+            workflows: components["schemas"]["AgentWorkflowResponse"][];
+        };
+        /** AgentWorkflowRequest */
+        AgentWorkflowRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            trigger: components["schemas"]["AgentTriggerSchema"];
+            /** Conditions */
+            conditions?: components["schemas"]["AgentConditionSchema"][];
+            /** Steps */
+            steps: components["schemas"]["AgentWorkflowStepSchema"][];
+            /**
+             * Max Runs Per Day
+             * @default 24
+             */
+            max_runs_per_day: number;
+        };
+        /** AgentWorkflowResponse */
+        AgentWorkflowResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Enabled */
+            enabled: boolean;
+            trigger: components["schemas"]["AgentTriggerSchema"];
+            /** Conditions */
+            conditions: components["schemas"]["AgentConditionSchema"][];
+            /** Steps */
+            steps: components["schemas"]["AgentWorkflowStepSchema"][];
+            /** Max Runs Per Day */
+            max_runs_per_day: number;
+            /** Next Run At */
+            next_run_at: string | null;
+            /** Last Run At */
+            last_run_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AgentWorkflowStepSchema */
+        AgentWorkflowStepSchema: {
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "tool" | "condition" | "delay" | "approval" | "ai";
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+            /** Tool */
+            tool?: string | null;
+            /** Arguments */
+            arguments?: {
+                [key: string]: string | number | boolean | null;
+            };
+            /**
+             * Continue On Error
+             * @default false
+             */
+            continue_on_error: boolean;
+            condition?: components["schemas"]["AgentConditionSchema"] | null;
+            /**
+             * On False
+             * @default end
+             */
+            on_false: string;
+            /**
+             * Minutes
+             * @default 0
+             */
+            minutes: number;
+            /**
+             * Prompt
+             * @default
+             */
+            prompt: string;
+        };
         /** AiAssistItemResponse */
         AiAssistItemResponse: {
             /** Label */
@@ -6489,6 +7491,11 @@ export interface components {
             monthly_token_limit: number | null;
             /** Near Limit */
             near_limit: boolean;
+        };
+        /** ApproveAgentActionRequest */
+        ApproveAgentActionRequest: {
+            /** Arguments Hash */
+            arguments_hash: string;
         };
         /** ArchivePasswordRequest */
         ArchivePasswordRequest: {
@@ -14117,6 +15124,14 @@ export interface components {
             /** Note Id */
             note_id: string | null;
         };
+        /** RunAgentWorkflowRequest */
+        RunAgentWorkflowRequest: {
+            /**
+             * Idempotency Key
+             * @description Retrying with the same key returns the same run instead of a second one.
+             */
+            idempotency_key?: string | null;
+        };
         /** SavedSearchCreateRequest */
         SavedSearchCreateRequest: {
             /** Name */
@@ -14526,6 +15541,11 @@ export interface components {
             set_count: number;
             /** Volume G */
             volume_g: number;
+        };
+        /** SetAgentWorkflowEnabledRequest */
+        SetAgentWorkflowEnabledRequest: {
+            /** Enabled */
+            enabled: boolean;
         };
         /** SetHabitRemindersRequest */
         SetHabitRemindersRequest: {
@@ -14959,6 +15979,16 @@ export interface components {
              * @description Largest net spending first. Categories whose refunds cancel their spending are left out.
              */
             categories: components["schemas"]["CategorySpendingResponse"][];
+        };
+        /** StartAgentRunRequest */
+        StartAgentRunRequest: {
+            /**
+             * Goal
+             * @description What the agent should do.
+             */
+            goal: string;
+            /** Idempotency Key */
+            idempotency_key?: string | null;
         };
         /** StartRoutineSessionRequest */
         StartRoutineSessionRequest: {
@@ -15597,6 +16627,38 @@ export interface components {
             opening_balance?: number | null;
             /** Notes */
             notes?: string | null;
+        };
+        /**
+         * UpdateAgentRequest
+         * @description Fields left out stay as they are; `chat_model: null` returns to the default model.
+         */
+        UpdateAgentRequest: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Enabled */
+            enabled?: boolean | null;
+            /** Instructions */
+            instructions?: string | null;
+            /** Chat Model */
+            chat_model?: string | null;
+            /** Autonomy */
+            autonomy?: ("read_only" | "suggest" | "approval" | "limited") | null;
+            /** Modules */
+            modules?: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail")[] | null;
+            /** Tool Modes */
+            tool_modes?: {
+                [key: string]: "off" | "ask" | "auto";
+            } | null;
+            /** Action Types */
+            action_types?: ("read" | "create" | "update")[] | null;
+            /** Autonomous Triggers */
+            autonomous_triggers?: ("manual" | "schedule" | "event" | "condition" | "agent")[] | null;
+            limits?: components["schemas"]["AgentLimitsSchema"] | null;
+            memory?: components["schemas"]["AgentMemorySettingsSchema"] | null;
+            notifications?: components["schemas"]["AgentNotificationSettingsSchema"] | null;
+            monitoring?: components["schemas"]["AgentMonitorSettingsSchema"] | null;
         };
         /**
          * UpdateAiProviderRequest
@@ -35306,6 +36368,1049 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    overview_api_v1_workspaces__workspace_id__agent_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentOverviewResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_agent_api_v1_workspaces__workspace_id__agent_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAgentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_tools_api_v1_workspaces__workspace_id__agent_tools_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentToolListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_run_api_v1_workspaces__workspace_id__agent_runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartAgentRunRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentExecutionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_executions_api_v1_workspaces__workspace_id__agent_executions_get: {
+        parameters: {
+            query?: {
+                status?: ("queued" | "running" | "waiting" | "waiting_approval" | "succeeded" | "failed" | "cancelled")[];
+                workflow_id?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentExecutionListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_execution_api_v1_workspaces__workspace_id__agent_executions__execution_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                execution_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentExecutionDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_execution_api_v1_workspaces__workspace_id__agent_executions__execution_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                execution_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentExecutionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retry_execution_api_v1_workspaces__workspace_id__agent_executions__execution_id__retry_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                execution_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentExecutionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_workflows_api_v1_workspaces__workspace_id__agent_workflows_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentWorkflowListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_workflow_api_v1_workspaces__workspace_id__agent_workflows_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentWorkflowRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentWorkflowResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_workflow_api_v1_workspaces__workspace_id__agent_workflows__workflow_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workflow_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentWorkflowResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_workflow_api_v1_workspaces__workspace_id__agent_workflows__workflow_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workflow_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentWorkflowRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentWorkflowResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_workflow_api_v1_workspaces__workspace_id__agent_workflows__workflow_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workflow_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_workflow_enabled_api_v1_workspaces__workspace_id__agent_workflows__workflow_id__enabled_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workflow_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetAgentWorkflowEnabledRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentWorkflowResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_workflow_api_v1_workspaces__workspace_id__agent_workflows__workflow_id__run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workflow_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunAgentWorkflowRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentExecutionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_approvals_api_v1_workspaces__workspace_id__agent_approvals_get: {
+        parameters: {
+            query?: {
+                status?: ("pending" | "executing" | "executed" | "rejected" | "expired" | "cancelled" | "failed")[];
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentApprovalListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_api_v1_workspaces__workspace_id__agent_approvals__approval_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                approval_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApproveAgentActionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentApprovalResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_api_v1_workspaces__workspace_id__agent_approvals__approval_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                approval_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentApprovalResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_memories_api_v1_workspaces__workspace_id__agent_memories_get: {
+        parameters: {
+            query?: {
+                category?: ("preference" | "workflow") | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentMemoryListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_memory_api_v1_workspaces__workspace_id__agent_memories_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentMemoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentMemoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_memory_api_v1_workspaces__workspace_id__agent_memories__memory_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                memory_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_memory_api_v1_workspaces__workspace_id__agent_memories__memory_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                memory_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentMemoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentMemoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
