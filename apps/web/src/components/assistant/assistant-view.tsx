@@ -25,15 +25,24 @@ import {
 
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   type PendingTurn,
   useAiSettings,
   useAssistantChat,
+  useChatModelCatalog,
   useConversation,
   useConversations,
+  useUpdateAiSettings,
 } from "@/hooks/use-ai";
-import { processingLabel, suggestedQuestions } from "@/lib/ai";
+import {
+  chatModelOptions,
+  chatModelValue,
+  parseChatModelValue,
+  processingLabel,
+  suggestedQuestions,
+} from "@/lib/ai";
 import { settingsHref } from "@/lib/settings";
 
 import { Answer, Sources } from "./answer";
@@ -68,8 +77,8 @@ function SetupNotice({ settings }: { settings: AiSettings }) {
     return (
       <EmptyState
         icon={Bot}
-        title="AI is turned off on this server"
-        description="The person who runs this Orbit server has disabled AI. Everything else works as usual."
+        title="AI is off on this server"
+        description="Everything else works as usual."
       />
     );
   }
@@ -77,7 +86,7 @@ function SetupNotice({ settings }: { settings: AiSettings }) {
     <EmptyState
       icon={Bot}
       title={settings.enabled ? "Choose a model to start" : "AI is off"}
-      description="Turn on AI and choose a provider in Settings. You decide which modules it may read, and whether anything leaves this device."
+      description="Turn it on and pick a model in Settings."
     >
       <Link
         href={settingsHref("ai")}
@@ -113,9 +122,9 @@ function Assistant({ settings }: { settings: AiSettings }) {
   };
 
   const title =
-    (conversations.status === "success"
+    conversations.status === "success"
       ? conversations.data.conversations.find((c) => c.id === conversationId)?.title
-      : undefined) ?? (conversationId ? "" : "New chat");
+      : undefined;
 
   return (
     <div className="@container/assistant">
@@ -204,7 +213,7 @@ function Chat({
   const empty = conversationId === null && chat.pending === null;
   const composer = (
     <Composer
-      model={settings.chat_model}
+      settings={settings}
       streaming={chat.streaming}
       onSend={(text) => void chat.send(text)}
       onStop={chat.stop}
@@ -271,11 +280,11 @@ function visibleMessages(messages: AiMessage[], pending: PendingTurn | null): Ai
 function Disclaimer() {
   return (
     <p className="text-center text-xs text-pretty text-muted-foreground">
-      Answers use only the modules you allow in{" "}
+      Reads only what you allow in{" "}
       <Link href={settingsHref("ai")} className="text-brand hover:underline">
         AI settings
       </Link>
-      , and nothing changes without your approval. Check important details against the sources.
+      . Check important details.
     </p>
   );
 }
@@ -294,20 +303,14 @@ function Welcome({
   const questions = suggestedQuestions(settings.modules);
   return (
     <section
-      aria-label="New chat"
+      aria-label="Start a chat"
       className="mx-auto flex min-h-[70dvh] w-full max-w-3xl flex-col justify-center gap-8 py-10"
     >
       <div className="space-y-3 text-center">
         <span className="mx-auto flex size-11 items-center justify-center rounded-2xl bg-brand-subtle text-brand">
           <Sparkles className="size-5" aria-hidden="true" />
         </span>
-        <h2 className="text-2xl font-semibold tracking-tight text-balance">
-          What would you like to know?
-        </h2>
-        <p className="mx-auto max-w-prose text-sm text-pretty text-muted-foreground">
-          Ask about your tasks, schedule, notes, and anything else you’ve allowed. Orbit answers
-          from your own records and shows where each fact came from.
-        </p>
+        <h2 className="text-2xl font-semibold tracking-tight text-balance">How can I help?</h2>
       </div>
       <div className="space-y-3">
         {children}
@@ -328,7 +331,6 @@ function Welcome({
         ) : null}
       </div>
       <InsightsPanel />
-      <Disclaimer />
     </section>
   );
 }
@@ -453,12 +455,12 @@ function ProviderLine({
 }
 
 function Composer({
-  model,
+  settings,
   streaming,
   onSend,
   onStop,
 }: {
-  model: string | null;
+  settings: AiSettings;
   streaming: boolean;
   onSend: (text: string) => void;
   onStop: () => void;
@@ -499,16 +501,13 @@ function Composer({
         value={text}
         onChange={(event) => setText(event.target.value)}
         onKeyDown={onKeyDown}
-        placeholder="Ask about your tasks, schedule, notes…"
+        placeholder="Ask anything"
         rows={1}
         maxLength={4000}
         className="block field-sizing-content max-h-60 min-h-11 w-full resize-none bg-transparent px-3 pt-2 text-base outline-none placeholder:text-muted-foreground sm:text-sm"
       />
-      <div className="flex items-center justify-between gap-2 pl-3">
-        <span className="truncate text-xs text-muted-foreground">
-          {model ?? ""}
-          <span className="hidden sm:inline"> · Shift+Enter for a new line</span>
-        </span>
+      <div className="flex items-center justify-between gap-2">
+        <ModelPicker settings={settings} disabled={streaming} />
         {streaming ? (
           <Button
             type="button"
@@ -533,5 +532,32 @@ function Composer({
         )}
       </div>
     </form>
+  );
+}
+
+/** Switches the chat model; the choice is saved as the answers model in AI settings. */
+function ModelPicker({ settings, disabled }: { settings: AiSettings; disabled: boolean }) {
+  const catalog = useChatModelCatalog();
+  const update = useUpdateAiSettings();
+  const current =
+    settings.chat_provider_id && settings.chat_model
+      ? { providerId: settings.chat_provider_id, model: settings.chat_model }
+      : null;
+  const options = chatModelOptions(catalog.status === "success" ? catalog.data : [], current);
+  return (
+    <Select
+      variant="ghost"
+      aria-label="Model"
+      className="max-w-60"
+      value={current ? chatModelValue(current) : ""}
+      placeholder={settings.chat_model ?? "Model"}
+      options={options}
+      disabled={disabled || update.isPending}
+      onValueChange={(value) => {
+        const choice = parseChatModelValue(value);
+        if (choice)
+          update.mutate({ chat_provider_id: choice.providerId, chat_model: choice.model });
+      }}
+    />
   );
 }

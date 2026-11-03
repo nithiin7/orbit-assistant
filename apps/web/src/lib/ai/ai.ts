@@ -1,5 +1,6 @@
 import type {
   AiAssistKind,
+  AiModel,
   AiModule,
   AiProcessing,
   AiProviderKind,
@@ -14,6 +15,7 @@ import { financeViewHref } from "@/lib/finance-views";
 import { fitnessHref } from "@/lib/fitness";
 import { habitsHref } from "@/lib/habits";
 import { notesHref } from "@/lib/notes";
+import type { Option } from "@/utils/common";
 import { singleLineText, tooLongMessage } from "@/utils/validation";
 
 export const AI_MODULES: readonly { value: AiModule; label: string; sensitive: boolean }[] = [
@@ -161,6 +163,42 @@ export function suggestedQuestions(modules: readonly AiModule[]): string[] {
     .filter(([module]) => allowed.has(module))
     .map(([, question]) => question)
     .slice(0, 4);
+}
+
+/** A chat model to pick in the composer: which provider serves it, and the model's name. */
+export type ChatModelChoice = { providerId: string; model: string };
+
+/** The picker value for a choice. Provider IDs are UUIDs, so the first "|" splits it again. */
+export function chatModelValue(choice: ChatModelChoice): string {
+  return `${choice.providerId}|${choice.model}`;
+}
+
+export function parseChatModelValue(value: string): ChatModelChoice | null {
+  const split = value.indexOf("|");
+  if (split <= 0 || split === value.length - 1) return null;
+  return { providerId: value.slice(0, split), model: value.slice(split + 1) };
+}
+
+/**
+ * Picker options: each provider's chat models (grouped by provider when there are several), with
+ * the current model kept even when its provider can't list models.
+ */
+export function chatModelOptions(
+  providers: readonly { id: string; name: string; models: readonly AiModel[] }[],
+  current: ChatModelChoice | null,
+): (Option<string> | { label: string; options: Option<string>[] })[] {
+  const groups = providers
+    .map((provider) => {
+      const names = provider.models.filter((m) => m.chat).map((m) => m.id);
+      if (current?.providerId === provider.id) names.unshift(current.model);
+      const options = [...new Set(names)].map((model) => ({
+        value: chatModelValue({ providerId: provider.id, model }),
+        label: model,
+      }));
+      return { label: provider.name, options };
+    })
+    .filter((group) => group.options.length > 0);
+  return groups.length === 1 ? (groups[0]?.options ?? []) : groups;
 }
 
 export type AssistAction = { kind: AiAssistKind; label: string; description: string };

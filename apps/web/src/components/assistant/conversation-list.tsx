@@ -45,9 +45,7 @@ export function ConversationList({ activeId, onOpen }: ConversationListProps) {
             {conversations.message}
           </p>
         ) : conversations.data.conversations.length === 0 ? (
-          <p className="px-2.5 text-xs text-muted-foreground">
-            No conversations yet. Questions you ask are kept here.
-          </p>
+          <p className="px-2.5 text-xs text-muted-foreground">No chats yet.</p>
         ) : (
           <ul className="space-y-0.5">
             {conversations.data.conversations.map((conversation) => {

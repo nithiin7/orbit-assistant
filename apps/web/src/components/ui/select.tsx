@@ -20,6 +20,8 @@ export type SelectProps<T extends string> = {
   /** Shown when `value` matches no option. */
   placeholder?: string;
   disabled?: boolean;
+  /** `ghost` is a compact, borderless trigger for toolbars. */
+  variant?: "default" | "ghost";
   /** Sizes the control, like a native select's wrapper. */
   className?: string;
   onBlur?: () => void;
@@ -46,6 +48,12 @@ export const triggerClassName = cn(
   "disabled:cursor-not-allowed disabled:opacity-50",
 );
 
+const ghostTriggerClassName = cn(
+  "group flex h-8 w-full min-w-0 items-center gap-1 rounded-full px-2.5 text-left text-xs text-muted-foreground outline-none",
+  "hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring aria-expanded:bg-accent",
+  "disabled:cursor-not-allowed disabled:opacity-50",
+);
+
 /** The floating panel both popups use; it sits in the top layer via the Popover API. */
 export const popupClassName =
   "fixed inset-auto m-0 animate-popover-in rounded-lg border bg-popover p-1 text-popover-foreground shadow-elevation-3";
@@ -64,6 +72,7 @@ export function Select<T extends string>({
   ref,
   placeholder = "Select…",
   disabled,
+  variant = "default",
   className,
   onBlur,
   ...aria
@@ -226,7 +235,7 @@ export function Select<T extends string>({
           setOpen(false);
           onBlur?.();
         }}
-        className={triggerClassName}
+        className={variant === "ghost" ? ghostTriggerClassName : triggerClassName}
         {...aria}
       >
         <span className={cn("truncate", !selected && "text-muted-foreground")}>
