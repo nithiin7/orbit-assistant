@@ -108,6 +108,22 @@ describe("RemindersPanel", () => {
     expect(new URLSearchParams(query).get("status")).toBe("scheduled");
   });
 
+  it("opens the reminder a link names, then forgets the link", async () => {
+    window.history.replaceState(null, "", "/reminders?reminder=r-dentist");
+    mockApi({
+      ...session,
+      [`GET ${REMINDERS}`]: json({ reminders: [], total: 0 }),
+      [`GET ${REMINDERS}/r-dentist`]: json(dentist),
+    });
+
+    await renderSignedIn(<RemindersPanel />);
+
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByRole("textbox", { name: "Title" })).toHaveValue("Call the dentist");
+    expect(window.location.search).toBe("");
+    window.history.replaceState(null, "", "/");
+  });
+
   it("filters by status", async () => {
     const api = mockApi({ ...session, [`GET ${REMINDERS}`]: json({ reminders: [], total: 0 }) });
     const user = userEvent.setup();

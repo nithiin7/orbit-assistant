@@ -74,6 +74,24 @@ export type SearchModule = SearchGroup["module"];
 export type SearchQuery = NonNullable<
   paths["/api/v1/workspaces/{workspace_id}/search"]["get"]["parameters"]["query"]
 >;
+export type UniversalSearchResults = Schemas["UniversalSearchResponse"];
+export type UniversalSearchHit = Schemas["UniversalSearchHitResponse"];
+export type UniversalSearchFacet = Schemas["SearchFacetResponse"];
+export type UniversalSearchDetail = Schemas["SearchDetailResponse"];
+export type UniversalSearchModule = UniversalSearchHit["module"];
+export type SearchEntityType = UniversalSearchHit["entity_type"];
+export type SearchMatchKind = UniversalSearchHit["match"];
+export type UniversalSearchQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/search/results"]["get"]["parameters"]["query"]
+>;
+export type SearchFilters = Schemas["SavedSearchFilters"];
+export type SearchSort = SearchFilters["sort"];
+export type RecentSearch = Schemas["RecentSearchResponse"];
+export type RecentSearchList = Schemas["RecentSearchListResponse"];
+export type SavedSearch = Schemas["SavedSearchResponse"];
+export type SavedSearchList = Schemas["SavedSearchListResponse"];
+export type SavedSearchCreate = Schemas["SavedSearchCreateRequest"];
+export type SavedSearchUpdate = Schemas["SavedSearchUpdateRequest"];
 export type Reminder = Schemas["ReminderResponse"];
 export type ReminderStatus = Reminder["status"];
 export type ReminderList = Schemas["ReminderListResponse"];

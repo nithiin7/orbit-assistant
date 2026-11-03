@@ -4591,7 +4591,7 @@ export interface paths {
          * Search tasks, notes, events, documents, habits, and transactions
          * @description Each module's own substring search, grouped by module. Hits carry titles and an
          *     identifying line only: no amounts, document metadata, or document contents. Health
-         *     records are not searched.
+         *     records are not searched. Universal search (`/search/results`) covers every module.
          */
         get: operations["search_api_v1_workspaces__workspace_id__search_get"];
         put?: never;
@@ -4600,6 +4600,111 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/search/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search every module, ranked, filtered, and paged
+         * @description One ranked list across tasks, notes, calendar, reminders, finance, habits, documents,
+         *     and the signed-in person's own health records, with per-module counts. A module that fails
+         *     is listed in `unavailable`; the rest still answer. Hits carry no amounts, balances,
+         *     measurement values, or sensitive document metadata.
+         */
+        get: operations["universal_search_api_v1_workspaces__workspace_id__search_results_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/search/recent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List my recent searches
+         * @description The signed-in person's last searches in this workspace, most recent first.
+         */
+        get: operations["recent_searches_api_v1_workspaces__workspace_id__search_recent_get"];
+        put?: never;
+        /**
+         * Remember a search
+         * @description Called when the person commits to a search (not as they type). An equal search moves to
+         *     the top; only the last few are kept.
+         */
+        post: operations["record_recent_search_api_v1_workspaces__workspace_id__search_recent_post"];
+        /** Clear my recent searches */
+        delete: operations["clear_recent_searches_api_v1_workspaces__workspace_id__search_recent_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/search/recent/{search_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Forget one recent search
+         * @description Idempotent: a search that is already gone is not an error.
+         */
+        delete: operations["forget_recent_search_api_v1_workspaces__workspace_id__search_recent__search_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/search/saved": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List my saved searches */
+        get: operations["saved_searches_api_v1_workspaces__workspace_id__search_saved_get"];
+        put?: never;
+        /** Save a search */
+        post: operations["save_search_api_v1_workspaces__workspace_id__search_saved_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/search/saved/{search_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a saved search */
+        delete: operations["delete_saved_search_api_v1_workspaces__workspace_id__search_saved__search_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename or change a saved search */
+        patch: operations["update_saved_search_api_v1_workspaces__workspace_id__search_saved__search_id__patch"];
         trace?: never;
     };
     "/api/v1/storage": {
@@ -12702,6 +12807,34 @@ export interface components {
             /** Missing */
             missing: number;
         };
+        /** RecentSearchListResponse */
+        RecentSearchListResponse: {
+            /**
+             * Searches
+             * @description Most recent first.
+             */
+            searches: components["schemas"]["RecentSearchResponse"][];
+        };
+        /** RecentSearchRequest */
+        RecentSearchRequest: {
+            /** Query */
+            query: string;
+        };
+        /** RecentSearchResponse */
+        RecentSearchResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Query */
+            query: string;
+            /**
+             * Used At
+             * Format: date-time
+             */
+            used_at: string;
+        };
         /**
          * RecordInvestmentTransactionRequest
          * @description Record a buy, sale, dividend, interest, fee, or deposit flow.
@@ -13459,6 +13592,113 @@ export interface components {
             /** Note Id */
             note_id: string | null;
         };
+        /** SavedSearchCreateRequest */
+        SavedSearchCreateRequest: {
+            /** Name */
+            name: string;
+            /** Query */
+            query: string;
+            filters: components["schemas"]["SavedSearchFilters"];
+        };
+        /**
+         * SavedSearchFilters
+         * @description A saved search's filters: the same as the search's own.
+         */
+        SavedSearchFilters: {
+            /**
+             * Module
+             * @description Repeat to search only some modules.
+             */
+            module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health")[];
+            /**
+             * Type
+             * @description Repeat to search only some record types.
+             */
+            type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement")[];
+            /**
+             * Date From
+             * @description The record's own date: due date, event, transaction, …
+             */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Updated From
+             * @description UTC day.
+             */
+            updated_from?: string | null;
+            /** Updated To */
+            updated_to?: string | null;
+            /**
+             * Created From
+             * @description UTC day.
+             */
+            created_from?: string | null;
+            /** Created To */
+            created_to?: string | null;
+            /** Task Status */
+            task_status?: ("open" | "completed") | null;
+            /** Task Priority */
+            task_priority?: ("none" | "low" | "medium" | "high")[];
+            /** Document Category */
+            document_category?: string | null;
+            /** Transaction Type */
+            transaction_type?: ("income" | "expense" | "refund" | "transfer")[];
+            /** Habit Kind */
+            habit_kind?: ("boolean" | "numeric" | "duration")[];
+            /**
+             * Include Archived
+             * @description Also search archived records. Trashed ones never are.
+             * @default false
+             */
+            include_archived: boolean;
+            /**
+             * Sort
+             * @description Best match first, or most recently updated first.
+             * @default relevance
+             * @enum {string}
+             */
+            sort: "relevance" | "recent";
+        };
+        /** SavedSearchListResponse */
+        SavedSearchListResponse: {
+            /**
+             * Searches
+             * @description By name.
+             */
+            searches: components["schemas"]["SavedSearchResponse"][];
+        };
+        /** SavedSearchResponse */
+        SavedSearchResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Query */
+            query: string;
+            filters: components["schemas"]["SavedSearchFilters"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** SavedSearchUpdateRequest */
+        SavedSearchUpdateRequest: {
+            /** Name */
+            name?: string | null;
+            /** Query */
+            query?: string | null;
+            filters?: components["schemas"]["SavedSearchFilters"] | null;
+        };
         /**
          * ScheduleWorkoutRequest
          * @description Creates an ordinary calendar event for the workout and links it.
@@ -13513,6 +13753,31 @@ export interface components {
              * @description Workouts started from this event.
              */
             session_ids: string[];
+        };
+        /** SearchDetailResponse */
+        SearchDetailResponse: {
+            /**
+             * Key
+             * @description What the value is: status, folder, category, location, …
+             */
+            key: string;
+            /** Value */
+            value: string;
+        };
+        /** SearchFacetResponse */
+        SearchFacetResponse: {
+            /**
+             * Module
+             * @enum {string}
+             */
+            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health";
+            /**
+             * Total
+             * @description Matches under every filter except the module filter.
+             */
+            total: number;
+            /** Unavailable */
+            unavailable: boolean;
         };
         /** SearchGroupResponse */
         SearchGroupResponse: {
@@ -14664,6 +14929,111 @@ export interface components {
              * @description Oldest first, one per month, including months without transactions.
              */
             months: components["schemas"]["MonthCashFlowResponse"][];
+        };
+        /** UniversalSearchHitResponse */
+        UniversalSearchHitResponse: {
+            /**
+             * Module
+             * @enum {string}
+             */
+            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health";
+            /**
+             * Entity Type
+             * @enum {string}
+             */
+            entity_type: "task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Title
+             * @description May be empty (an untitled note, a measurement).
+             */
+            title: string;
+            /**
+             * Snippet
+             * @description Text around the match; may be empty.
+             */
+            snippet: string;
+            /**
+             * Matched Fields
+             * @description Fields that matched a word of the query.
+             */
+            matched_fields: string[];
+            /**
+             * Match
+             * @description The ranking tier the record matched in.
+             * @enum {string}
+             */
+            match: "exact_title" | "title_prefix" | "title_phrase" | "title_words" | "metadata" | "description" | "content" | "spread";
+            /** Score */
+            score: number;
+            /**
+             * Active
+             * @description Not completed, archived, cancelled, or disabled.
+             */
+            active: boolean;
+            /** Status */
+            status: string;
+            /** Details */
+            details: components["schemas"]["SearchDetailResponse"][];
+            /**
+             * Day
+             * @description The record's own date; a recurring event's next occurrence.
+             */
+            day: string | null;
+            /**
+             * Starts At
+             * @description A timed event's local wall-clock start.
+             */
+            starts_at: string | null;
+            /** All Day */
+            all_day: boolean;
+            /**
+             * Parent Id
+             * @description A parent record, such as a holding's account.
+             */
+            parent_id: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** UniversalSearchResponse */
+        UniversalSearchResponse: {
+            /** Query */
+            query: string;
+            /**
+             * Sort
+             * @enum {string}
+             */
+            sort: "relevance" | "recent";
+            /** Offset */
+            offset: number;
+            /** Limit */
+            limit: number;
+            /**
+             * Total
+             * @description Matches in the chosen modules.
+             */
+            total: number;
+            /** Has More */
+            has_more: boolean;
+            /** Hits */
+            hits: components["schemas"]["UniversalSearchHitResponse"][];
+            /**
+             * Facets
+             * @description Every module, in a fixed order.
+             */
+            facets: components["schemas"]["SearchFacetResponse"][];
+            /**
+             * Unavailable
+             * @description Modules that couldn't be searched.
+             */
+            unavailable: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health")[];
         };
         /** UnreadCountResponse */
         UnreadCountResponse: {
@@ -33129,6 +33499,464 @@ export interface operations {
             };
             /** @description The workspace does not exist or is not accessible. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    universal_search_api_v1_workspaces__workspace_id__search_results_get: {
+        parameters: {
+            query: {
+                /** @description Repeat to search only some modules. */
+                module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health")[];
+                /** @description Repeat to search only some record types. */
+                type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement")[];
+                /** @description The record's own date: due date, event, transaction, … */
+                date_from?: string | null;
+                date_to?: string | null;
+                /** @description UTC day. */
+                updated_from?: string | null;
+                updated_to?: string | null;
+                /** @description UTC day. */
+                created_from?: string | null;
+                created_to?: string | null;
+                task_status?: ("open" | "completed") | null;
+                task_priority?: ("none" | "low" | "medium" | "high")[];
+                document_category?: string | null;
+                transaction_type?: ("income" | "expense" | "refund" | "transfer")[];
+                habit_kind?: ("boolean" | "numeric" | "duration")[];
+                /** @description Also search archived records. Trashed ones never are. */
+                include_archived?: boolean;
+                /** @description Best match first, or most recently updated first. */
+                sort?: "relevance" | "recent";
+                /** @description Text to find; at least 2 characters. */
+                q: string;
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UniversalSearchResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recent_searches_api_v1_workspaces__workspace_id__search_recent_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecentSearchListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_recent_search_api_v1_workspaces__workspace_id__search_recent_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecentSearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecentSearchResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clear_recent_searches_api_v1_workspaces__workspace_id__search_recent_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    forget_recent_search_api_v1_workspaces__workspace_id__search_recent__search_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A recent search's ID. */
+                search_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    saved_searches_api_v1_workspaces__workspace_id__search_saved_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedSearchListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_search_api_v1_workspaces__workspace_id__search_saved_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedSearchCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedSearchResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A saved search has this name, or there are too many. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_saved_search_api_v1_workspaces__workspace_id__search_saved__search_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A saved search's ID. */
+                search_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_saved_search_api_v1_workspaces__workspace_id__search_saved__search_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A saved search's ID. */
+                search_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedSearchUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedSearchResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Another saved search has this name. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

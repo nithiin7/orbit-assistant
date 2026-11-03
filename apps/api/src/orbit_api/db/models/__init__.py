@@ -118,6 +118,7 @@ from orbit_api.db.models.reminders import (
     ReminderModel,
     ReminderOccurrenceModel,
 )
+from orbit_api.db.models.search import RecentSearchModel, SavedSearchModel
 from orbit_api.db.models.shopping import ShoppingItemModel, ShoppingListModel
 from orbit_api.db.models.tasks import TaskModel
 from orbit_api.db.models.users import LocalCredentialModel, LocalSessionModel, UserModel
@@ -213,12 +214,14 @@ __all__ = [
     "NoteTagModel",
     "NoteTaskLinkModel",
     "NotificationModel",
+    "RecentSearchModel",
     "ReminderModel",
     "ReminderOccurrenceModel",
     "RoutineModel",
     "RoutineSessionModel",
     "RoutineSessionStepModel",
     "RoutineStepModel",
+    "SavedSearchModel",
     "ShoppingItemModel",
     "ShoppingListModel",
     "TaskModel",

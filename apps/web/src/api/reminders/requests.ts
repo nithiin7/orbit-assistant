@@ -51,6 +51,16 @@ export function createReminder(
   return request<Reminder>(remindersPath(workspaceId), { method: "POST", body, token });
 }
 
+/** One reminder, for links that open it (such as a search result). */
+export function getReminder(
+  token: string,
+  workspaceId: string,
+  reminderId: string,
+  { signal }: Signal = {},
+): Promise<Reminder> {
+  return request<Reminder>(reminderPath(workspaceId, reminderId), { token, signal });
+}
+
 /** Also enables and disables a reminder (`enabled`). */
 export function updateReminder(
   token: string,

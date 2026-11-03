@@ -23,6 +23,8 @@ from orbit_api.repositories.calendar import build_calendar_service
 from orbit_api.repositories.documents import build_document_service
 from orbit_api.repositories.fitness import build_fitness
 from orbit_api.repositories.habits import build_habit_service, build_routine_service
+from orbit_api.repositories.search.history import build_search_history
+from orbit_api.repositories.search.providers import build_universal_search
 from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.services.calendar.models import DateWindow, EventDraft, OccurrenceChanges
@@ -65,6 +67,8 @@ from orbit_api.services.habits.models import (
     StepDraft,
 )
 from orbit_api.services.habits.schedule import HabitSchedule
+from orbit_api.services.search.history import DuplicateSavedSearchError
+from orbit_api.services.search.universal_models import SearchScope, UniversalQuery
 from orbit_api.services.tasks.models import TaskDraft
 from orbit_api.services.tasks.service import TaskService
 from orbit_api.system.attachment_store import FileAttachmentStore
@@ -686,5 +690,78 @@ async def test_ai_layer_on_postgres(cloud_settings: Settings, tmp_path: Path) ->
             await ai.config.delete_provider(user_id, provider.id)
             after = await ai.config.settings(user_id)
             assert after.chat_provider_id is None and after.embedding_model is None
+    finally:
+        await database.dispose()
+
+
+@pytest.mark.anyio
+async def test_universal_search_on_postgres(cloud_settings: Settings) -> None:
+    """Universal search's SQL on PostgreSQL: ILIKE, CASE ranking, COUNT(*) OVER (), outer joins,
+    correlated EXISTS, JSON rules, every source, and the history tables' constraints."""
+    database = await open_database(cloud_settings)
+    user_id, workspace_id = uuid.uuid4(), uuid.uuid4()
+    try:
+        async with database.session() as session:
+            await session.execute(
+                text(
+                    "INSERT INTO users (id, auth_provider, auth_subject, email, display_name,"
+                    " created_at, updated_at) VALUES (:id, 'local', :subject, 's@example.com', 'S',"
+                    " now(), now())"
+                ),
+                {"id": user_id, "subject": str(user_id)},
+            )
+            await session.execute(
+                text(
+                    "INSERT INTO workspaces (id, owner_id, name, is_personal, created_at,"
+                    " updated_at) VALUES (:id, :owner, 'Personal', true, now(), now())"
+                ),
+                {"id": workspace_id, "owner": user_id},
+            )
+            for title in ("Kiln Fire", "Big kiln fire log", "100% kiln"):
+                await session.execute(
+                    text(
+                        "INSERT INTO tasks (id, workspace_id, title, description, status,"
+                        " priority, created_at, updated_at) VALUES (:id, :ws, :title, '', 'open',"
+                        " 0, now(), now())"
+                    ),
+                    {"id": uuid.uuid4(), "ws": workspace_id, "title": title},
+                )
+            await session.commit()
+            calendar = build_calendar_service(session)
+            await calendar.create_event(
+                workspace_id,
+                EventDraft(
+                    title="Kiln firing",
+                    start=datetime(2020, 1, 6, 7, 0),
+                    end=datetime(2020, 1, 6, 8, 0),
+                    timezone="UTC",
+                    recurrence=EventRecurrence("weekly", weekdays=frozenset({"mon"})),
+                ),
+                default_timezone=None,
+            )
+
+            search = build_universal_search(session)
+            scope = SearchScope(workspace_id=workspace_id, user_id=user_id)
+            results = await search.search(scope, UniversalQuery(text="kiln fire", limit=10))
+            assert [(hit.title, hit.match) for hit in results.hits] == [
+                ("Kiln Fire", "exact_title"),
+                ("Big kiln fire log", "title_phrase"),
+            ]
+            assert results.unavailable == []
+            everywhere = await search.search(scope, UniversalQuery(text="kiln", limit=10))
+            assert {f.module: f.total for f in everywhere.facets}["calendar"] == 1
+            assert everywhere.total == 4
+            literal = await search.search(scope, UniversalQuery(text="0%"))
+            assert [hit.title for hit in literal.hits] == ["100% kiln"]
+            event = await search.search(scope, UniversalQuery(text="firing"))
+            assert event.hits[0].day is not None and event.hits[0].day.weekday() == 0
+
+            history = build_search_history(session)
+            await history.record(user_id, workspace_id, "Kiln")
+            await history.record(user_id, workspace_id, "kiln ")
+            assert [r.query for r in await history.recent(user_id, workspace_id)] == ["kiln"]
+            await history.save(user_id, workspace_id, name="Studio", query="kiln", filters={})
+            with pytest.raises(DuplicateSavedSearchError):
+                await history.save(user_id, workspace_id, name="studio", query="x", filters={})
     finally:
         await database.dispose()

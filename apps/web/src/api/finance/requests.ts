@@ -150,6 +150,19 @@ export function createFinanceTransaction(
   });
 }
 
+/** One transaction, for links that open it (such as a search result). */
+export function getFinanceTransaction(
+  token: string,
+  workspaceId: string,
+  transactionId: string,
+  { signal }: Signal = {},
+): Promise<FinanceTransaction> {
+  return request<FinanceTransaction>(itemPath(workspaceId, "transactions", transactionId), {
+    token,
+    signal,
+  });
+}
+
 export function updateFinanceTransaction(
   token: string,
   workspaceId: string,

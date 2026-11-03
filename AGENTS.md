@@ -52,8 +52,11 @@ records them, in canonical integer units, with opt-in habit contributions, worko
 calendar events, and links to notes and documents), brought together by a **daily dashboard and
 command center** (a per-user customizable dashboard with a daily overview aggregated from the
 modules' own services, widgets that act through each module's own APIs, quick actions that
-reuse each module's dialogs, opt-in health widgets, hidden amounts, and cross-module search in
-the command palette composed from each module's substring search), and an **AI layer** (off by
+reuse each module's dialogs, opt-in health widgets, and hidden amounts), **universal search**
+(a `/search` page and the command palette searching every module through declarative per-entity
+SQL sources with documented tier ranking, module tabs with counts, filters that fit the module,
+offset paging, URL state, per-person recent and saved searches, and the person's own health
+records only; no search index, FTS, or semantic matching), and an **AI layer** (off by
 default and per person: provider adapters for OpenAI, Anthropic, Gemini, Ollama, and
 OpenAI-compatible servers behind one interface with encrypted keys and explicit cloud consent;
 module-level read permissions; a retrieval index of notes, documents, tasks, events, and habits

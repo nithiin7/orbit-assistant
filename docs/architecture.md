@@ -24,8 +24,8 @@ Browser ──► apps/web (Next.js, :3000) ──HTTP/JSON──► apps/api (F
   [finance](#finance), [notes](#notes-and-knowledge-management), the
   [calendar](#calendar-and-events), [habits and routines](#habits-and-routines),
   [documents](#documents-and-the-personal-vault), and [health and fitness](#health-and-fitness),
-  brought together by the [daily dashboard and command center](#daily-dashboard-and-command-center),
-  with an optional [AI layer](#ai-intelligence-layer) on top (off until each person turns it on),
+  brought together by the [daily dashboard and command center](#daily-dashboard-and-command-center)
+  and [universal search](#universal-search), with an optional [AI layer](#ai-intelligence-layer) on top (off until each person turns it on),
   and [external integrations](#external-integrations) that bring Google and Microsoft calendars,
   mail, and files into those modules.
 
@@ -230,7 +230,7 @@ apps/api/src/orbit_api/
 │       ├── calendar.py  # Categories, events and occurrences, range, agenda, links, preferences
 │       ├── documents.py # Documents, uploads, versions, files, renewals, links, folders, export
 │       ├── dashboard.py # The daily overview: today across modules, section by section
-│       ├── search.py    # Search across tasks, notes, events, documents, habits, transactions
+│       ├── search.py    # Grouped search; universal search (/search/results); recent and saved searches
 │       ├── ai.py        # AI: settings, providers, usage (/me/ai); assistant, assist, search, insights, index
 │       ├── integrations.py # Connections, OAuth, calendars, sync runs, conflicts, mail, files, webhooks
 │       └── notifications.py # The signed-in user's notifications: list, unread count, read state
@@ -3191,12 +3191,14 @@ The command palette (Cmd/Ctrl+K, `components/command-palette/`) now covers:
 - **Creation:** Create task, Create reminder, Record expense, Log workout, Record water, and
   Start a routine (the "Create" group, through quick actions), alongside the existing New note,
   Quick note, today's journal, Create event, meeting notes, and Upload document commands.
-- **Search:** as you type, after a 200 ms pause, one request to the workspace search; results
-  are grouped as Matching tasks, notes, events, documents, habits, and transactions, each opening
-  the record in its module. While a search runs the palette says "Searching…"; a failed search
-  shows a notice and leaves pages and actions working. Arrow keys, Enter, and Escape work as
-  before. The previous per-module palette searches (notes, events, documents) were replaced by
-  this single request.
+- **Search:** as you type, after a 200 ms pause, one request to
+  [universal search](#universal-search) (8 best hits); results are grouped by module (Matching
+  tasks, notes, events, reminders, finance records, habits and routines, documents, health
+  records), each opening the record in its module, plus "See all results" for the search page.
+  With an empty field the palette offers recent searches. While a search runs the palette says
+  "Searching…"; a failed search shows a notice and leaves pages and actions working. Arrow keys,
+  Enter, and Escape work as before. (Phase 10's grouped `…/search` endpoint is kept for the AI
+  layer's keyword retrieval; the palette no longer calls it.)
 
 **Quick actions** (`components/quick-actions/quick-actions.tsx`, mounted in the app shell)
 are the one way both the dashboard and the palette create things: the Tasks quick-entry bar in a
@@ -3246,6 +3248,164 @@ titles, descriptions, file names, issuers, providers, notes, tags, categories, a
 - The old `TaskOverview` component (`components/tasks/task-overview.tsx`) is no longer used by
   the dashboard; it is left in place for removal in a follow-up.
 - No end-to-end tests yet; widgets are covered by component tests with a mocked API.
+
+## Universal search
+
+One search across every module: the command palette's results and a dedicated `/search` page
+with module tabs, filters, paging, and recent and saved searches. It extends Phase 10's search
+rather than replacing it: the grouped `GET …/search` endpoint and `SearchService` stay as they
+were, because the AI layer's keyword retrieval depends on their shape.
+
+### Provider architecture
+
+- **Sources** (`repositories/search/catalog.py`): one declarative `EntitySource` per record type
+  (22 types). A source names its table, joins, scope (the workspace; for health also the owner),
+  title, searched fields and their role (`metadata`, `description`, `content`), which fields may
+  be previewed, its own date, when a record is active or archived, the type-specific filters it
+  supports, and extra columns for the facts shown with a hit. Adding a type is one declaration.
+- **Query builder** (`repositories/search/sources.py`, `search_source`): turns a source and a query
+  into a single SQL statement: every word must appear in some field; tier and score are `CASE`
+  expressions; rows are sorted and limited in the database; `COUNT(*) OVER ()` gives the total in
+  the same statement. Snippets are cut in Python from the few rows returned (reusing the notes
+  `excerpt`).
+- **Module providers** (`repositories/search/providers.py`): one per module, running its sources
+  in turn and merging them.
+- **Service** (`services/search/universal.py`, framework-free): asks every provider for its first
+  `offset + limit` hits, merges by the ranking strategy, pages, and builds per-module facets. Each
+  provider runs inside a deliberate boundary: a failing module is logged (module name only, never
+  the query), the session is rolled back, and the module is reported in `unavailable`.
+
+| Module    | Types (searched fields)                                                                                                                                                                                                                                                          |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tasks     | task (title, description; filters: status, priority; date: due)                                                                                                                                                                                                                  |
+| Notes     | note (title, tags, folder, plain text; date: journal day); trashed never                                                                                                                                                                                                         |
+| Calendar  | event series (title, place, category, description, changed occurrences' title/description/place; date: range overlap)                                                                                                                                                            |
+| Reminders | reminder (title, description, its task's title, its event's title; date: start)                                                                                                                                                                                                  |
+| Finance   | account, transaction (description, category, account, notes; filter: type; date), loan (lender), subscription and bill (provider), holding (symbol, ISIN, issuer, category, account), deposit (institution; date: maturity), asset, budget, savings goal (category, description) |
+| Habits    | habit (description, category; filter: kind), routine (description, steps)                                                                                                                                                                                                        |
+| Documents | document (category, folder, tags, file name, issuer, provider, description, notes; filter: category; date: expiry); trashed never                                                                                                                                                |
+| Health    | exercise, workout (notes, exercise names), workout template, fitness goal, body measurement (note only); all scoped to the signed-in person                                                                                                                                      |
+
+### Database strategy
+
+The same escaped, case-insensitive `LIKE` the modules already use (`ILIKE` on PostgreSQL), so it
+runs unchanged on SQLite and PostgreSQL. Evaluated and not used in this phase:
+
+- **SQLite FTS5 / PostgreSQL `tsvector`:** token-based, so partial words and codes ("INV-20",
+  "0%") stop matching, the two engines tokenize and rank differently, and each needs a derived
+  index kept in step with 25 tables by triggers or application hooks in two dialects. At personal
+  scale the scan is fast, and substring matching is what every module's own search already does.
+- **`pg_trgm` indexes:** would speed `ILIKE` on PostgreSQL only, and only if every OR-ed field were
+  indexed; not worth an extension dependency yet.
+
+Every scan is bounded by a workspace-leading index the tables already had (and the owner for
+health); correlated `EXISTS` lookups (tags, steps, changed occurrences, workout exercises) use
+existing indexes. One query per record type, never per record: about 22 small queries per search,
+counts included. Offsets are capped at 500 and pages at 50.
+
+### Index lifecycle
+
+There is no search index, so there is nothing to build, update, rebuild, or let go stale: each
+search reads the live tables in the request's transaction. Edits, deletes, trash and restore,
+archive, integration imports, and workspace deletion show up in the next search; tests cover it
+(`TestFreshness`). No rebuild or maintenance endpoint is needed.
+
+### Ranking strategy
+
+`services/search/ranking.py`. Each hit gets the first tier that applies: exact title (1000),
+title prefix (800), title contains the phrase (600), title contains every word (500), a metadata
+field contains the phrase (400), a description field (300), content (200), else words spread
+across fields (100). Inactive records (completed, archived, cancelled, disabled) lose 50, less
+than a tier gap. Ties break by most recently updated, then ID, so recency only orders hits within
+a tier. `sort=recent` orders by update time instead. The weights live in a `RankingStrategy` that
+the SQL `CASE` is built from, so another strategy changes weights in one place and per-source
+limits stay exact.
+
+### API
+
+All under `/api/v1/workspaces/{workspace_id}/search`, behind `WorkspaceDep` and `CurrentUserDep`.
+
+| Method                 | Path           | Purpose                                                       |
+| ---------------------- | -------------- | ------------------------------------------------------------- |
+| `GET`                  | `/results`     | Universal search: ranked hits, total, `has_more`, facets      |
+| `GET`, `POST`,`DELETE` | `/recent`      | List (10, newest first), remember one, clear all              |
+| `DELETE`               | `/recent/{id}` | Forget one (idempotent)                                       |
+| `GET`, `POST`          | `/saved`       | List by name, save (name, query, filters; 409 on a duplicate) |
+| `PATCH`, `DELETE`      | `/saved/{id}`  | Rename or change, delete                                      |
+
+`/results` takes `q` (2 to 200 characters), `module` and `type` (repeatable), `date_from`/
+`date_to` (the record's own date), `updated_from`/`updated_to`, `created_from`/`created_to` (UTC
+days), `task_status`, `task_priority`, `document_category`, `transaction_type`, `habit_kind`,
+`include_archived`, `sort`, `offset`, `limit`. Unknown parameters, bad values, and reversed
+ranges are 422. A type-specific filter limits results to the types that support it (a priority
+filter returns only tasks). Facets ignore the module filter, so tabs show what each module would
+add. A hit carries module, entity type, ID, title, snippet, matched fields, tier, score, active,
+status, labelled details, its date (a series' next occurrence), parent ID, and update time; the
+web derives the destination from type, ID, and date (`lib/search`, `searchResultHref`). No
+separate autocomplete endpoint: the palette calls `/results` with a small limit.
+
+### Recent and saved searches
+
+Migration `0020_create_search_history`: `recent_searches` and `saved_searches`, each row owned by
+one user in one workspace (both foreign keys cascade), with RLS enabled on PostgreSQL. Recent
+searches keep only the text, only when the person commits to a search (Enter, opening a result,
+"See all results"; never per keystroke), deduplicated case-insensitively, the last 10 kept.
+Saved searches hold a name (unique per person and workspace, case-insensitively), the query, and
+the validated filters (at most 50). Every query filters by both user and workspace, so nobody
+else, including another member of a shared workspace, can see them.
+
+### Authorization and privacy
+
+- Workspace scoping in every source's `scope`; health sources also filter by the owner, like the
+  health repository, so health records never appear in another person's results, counts, or
+  facets (tested by searching the same workspace as someone else).
+- Hits never carry amounts, balances, prices, or measurement values. Finance notes, document
+  notes, issuers, providers, and file names can match but are never previewed; document reference
+  numbers, custom fields, and file contents are not searched. Trashed notes and documents never
+  match; archived records only with `include_archived`.
+- Responses and history lists are `Cache-Control: private, no-store`; the web caches per
+  workspace under `["workspaces", id, "search", …]`, cleared on user change. Queries are never
+  logged.
+
+### Web
+
+- `/search` (`components/search/`): the field (combobox with `aria-activedescendant`; arrow keys,
+  Enter opens, Escape clears), module tabs with counts, a Filters panel showing only what the
+  tab supports (status and priority on Tasks, type on Finance, kind on Habits, category on
+  Documents; dates, last update, archived, and sort everywhere), results with highlighted titles
+  and snippets (text split in React, never injected HTML), "Matched in …", last-updated dates,
+  "Load more", and loading, empty, error-with-retry, and partly-unavailable states. Query, tab, and
+  filters live in the URL (`parseSearchState` drops values the tab doesn't support). Before typing
+  it lists recent searches (forget, clear) and saved searches (open, rename, delete).
+- Data: `useUniversalSearch` (`hooks/use-universal-search.ts`) debounces 200 ms and pages with an
+  infinite query; requests carry abort signals and results are keyed by query, so stale responses
+  never replace newer ones.
+- Entry points: the palette, Cmd/Ctrl+Shift+F from anywhere, and "Search everything" in the
+  palette. Module pages keep their own search fields; no new search bars were added.
+- Navigation reuses each module's pages and dialogs. New deep links `?transaction=` (Finance) and
+  `?reminder=` (Reminders) open the existing edit dialogs through `useLinkedRecord`; a record that
+  is gone opens nothing.
+
+### Search limitations
+
+- Substring matching only: no stemming, typo tolerance, or Unicode case folding on SQLite (its
+  `LIKE` folds ASCII only).
+- Every source scans its workspace's rows; fine at personal scale (tested with hundreds of
+  records), but not tuned for very large workspaces. Deep pages cost more, hence the offset cap.
+- Date filters use UTC days; event date filters use series bounds, and a series' shown date is its
+  next occurrence without considering skipped occurrences.
+- Built-in exercises appear only once used (they are created on first use).
+- Accounts, loans, subscriptions, bills, holdings, deposits, assets, budgets, goals, workout
+  templates, and measurements open their view, not the record itself.
+- The web's `useWorkspaceSearch` hook and `searchOptions` for the grouped endpoint are no longer
+  used by the palette and can be removed in a follow-up.
+
+### Future semantic search extension points
+
+The AI layer's hybrid search (`…/ai/search`) stays separate. A later phase could add an
+`EntitySource` field matcher backed by FTS or embeddings, a `RankingStrategy` that blends a
+semantic score into tiers, or a provider that merges AI retrieval hits into the same
+`UniversalHit` shape, without changing the API or the web.
 
 ## AI intelligence layer
 
@@ -3865,16 +4025,16 @@ connection's owner. Another person's connection is a 404.
 
 ## Testing strategy
 
-| Layer                    | Tool                                            | Location                                                                                                                        | Current coverage                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                                                                                      | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth, budgets, goals, plans, notes (views, autosave, Markdown, palette), calendar (views, dialogs, drag, scopes, palette), documents (views, uploads, details, links), health (units, forms, overview, workout logging, water, event workouts), dashboard (widgets, preferences, partial failures, quick actions, palette search), AI (assistant streaming and sources, proposals, settings, contextual menu, Markdown, stream parsing), integrations (connecting, calendars, conflicts, mail, files, callback, origins)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                                                                                               | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, budgets, goals, plans, notes, calendar, documents (uploads, validation, versions, export, sweep), health and fitness (library, templates, workouts and sets, records, measurements, photos, nutrition, goals, habit, calendar, note, and document integrations, per-person privacy), daily overview (time zones, sections, partial failures), cross-module search, dashboard preferences, AI (settings, encrypted keys, cloud consent, grounded streaming answers and citations, permissions, proposals and single approval, prompt injection, isolation, indexing and semantic search, assist, insights, usage and limits; provider adapters over mocked HTTP; chunking, extraction, routing, prompts), integrations (OAuth state and PKCE, encrypted tokens, refresh and revocation, calendar import, recurrence, duplicates, pagination and checkpoints, rate limits, conflicts, two-way, webhooks, mail scope, file import and changes; Google and Graph adapters over mocked HTTP), cross-user isolation |
-| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_calendar_recurrence.py`, `tests/test_reminder_worker.py`, `tests/test_budget_alerts.py` | Recurrence, DST, month ends, leap years, exceptions; delivery, concurrency, leases, retries, restarts; event alerts; budget alerts and period closing                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                                                                                              | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                                                                                         | Startup checks, sessions, migrations, constraints, 503 errors                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                                                                                               | Migrations, connectivity, RLS, feature SQL (including the AI layer); skipped by default                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                                                                                       | Generated contract matches the API                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| End-to-end               | Not set up (**planned**)                        | —                                                                                                                               | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Layer                    | Tool                                            | Location                                                                                                                        | Current coverage                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                                                                                      | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth, budgets, goals, plans, notes (views, autosave, Markdown, palette), calendar (views, dialogs, drag, scopes, palette), documents (views, uploads, details, links), health (units, forms, overview, workout logging, water, event workouts), dashboard (widgets, preferences, partial failures, quick actions, palette search), universal search (page, keyboard, tabs, filters, paging, history, deep links), AI (assistant streaming and sources, proposals, settings, contextual menu, Markdown, stream parsing), integrations (connecting, calendars, conflicts, mail, files, callback, origins)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                                                                                               | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, budgets, goals, plans, notes, calendar, documents (uploads, validation, versions, export, sweep), health and fitness (library, templates, workouts and sets, records, measurements, photos, nutrition, goals, habit, calendar, note, and document integrations, per-person privacy), daily overview (time zones, sections, partial failures), cross-module search, universal search (every type, tiers, filters, paging, freshness, health owner scoping, partial failures, recent and saved searches, PostgreSQL), dashboard preferences, AI (settings, encrypted keys, cloud consent, grounded streaming answers and citations, permissions, proposals and single approval, prompt injection, isolation, indexing and semantic search, assist, insights, usage and limits; provider adapters over mocked HTTP; chunking, extraction, routing, prompts), integrations (OAuth state and PKCE, encrypted tokens, refresh and revocation, calendar import, recurrence, duplicates, pagination and checkpoints, rate limits, conflicts, two-way, webhooks, mail scope, file import and changes; Google and Graph adapters over mocked HTTP), cross-user isolation |
+| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_calendar_recurrence.py`, `tests/test_reminder_worker.py`, `tests/test_budget_alerts.py` | Recurrence, DST, month ends, leap years, exceptions; delivery, concurrency, leases, retries, restarts; event alerts; budget alerts and period closing                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                                                                                              | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                                                                                         | Startup checks, sessions, migrations, constraints, 503 errors                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                                                                                               | Migrations, connectivity, RLS, feature SQL (including the AI layer); skipped by default                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                                                                                       | Generated contract matches the API                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| End-to-end               | Not set up (**planned**)                        | —                                                                                                                               | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 Unit tests cover logic, route tests cover HTTP behavior and validation, and E2E tests will cover
 critical user journeys once real features exist. CI runs every layer on each pull request.

@@ -115,8 +115,13 @@ control.
   reminder, expense, workout, water, routine, upload) that open each module's own dialog, and
   widgets for the agenda, tasks, habits and routines, notes, documents, finance, and opt-in
   health. Widgets can be added, removed, reordered, and resized, with a compact density and a
-  setting to hide money amounts, saved to your account. The command palette searches tasks,
-  notes, events, documents, habits, and transactions at once, grouped by module.
+  setting to hide money amounts, saved to your account.
+- Universal search: one search across tasks, notes, calendar, reminders, finance, habits,
+  documents, and your own health records, from the command palette or the Search page
+  (Cmd/Ctrl+Shift+F). Results are ranked (titles first, then tags and details, then descriptions
+  and text), grouped by module with counts, filterable by date, status, priority, category,
+  transaction type, and habit type, kept in the URL, and open in their own module. Recent and
+  saved searches are private to you.
 - An optional AI layer, off by default: local models (Ollama, OpenAI-compatible servers) or
   cloud providers (OpenAI, Anthropic, Gemini) with explicit consent and encrypted keys; per-module
   read permissions; a streaming assistant whose answers cite the Orbit records they came from;
