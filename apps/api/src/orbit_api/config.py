@@ -118,6 +118,9 @@ class Settings(BaseSettings):
     integrations_webhook_url: AnyHttpUrl | None = None
     # How often the worker looks for due synchronization work.
     integrations_poll_seconds: float = Field(default=30, ge=5, le=3600)
+    # The personal agent and workflow automation (per person, off until each turns it on).
+    # `false` turns it off for everyone: no runs start and the worker skips agent jobs.
+    agent_enabled: bool = True
 
     @property
     def attachments_dir(self) -> Path:

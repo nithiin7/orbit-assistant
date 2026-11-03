@@ -117,6 +117,15 @@ Integrations (see [Integrations](#integrations) and [integrations.md](integratio
 | `ORBIT_INTEGRATIONS_WEBHOOK_URL`  | unset                                         | Public `https` address of `/api/v1/integrations/webhooks` for push notifications; unset polls                                   |
 | `ORBIT_INTEGRATIONS_POLL_SECONDS` | `30`                                          | How often the worker looks for due synchronization work (5 to 3600)                                                             |
 
+Automation (see [architecture.md](architecture.md#personal-agent-and-automation)):
+
+| Variable              | Default | Purpose                                                                                                   |
+| --------------------- | ------- | --------------------------------------------------------------------------------------------------------- |
+| `ORBIT_AGENT_ENABLED` | `true`  | Server-wide switch; `false` turns the agent and workflows off for everyone (each person also turns it on) |
+
+The agent's jobs run on every worker poll (`ORBIT_SCHEDULER_POLL_SECONDS`). In local mode,
+automations run only while the API or `orbit-worker` runs; missed schedules catch up once.
+
 Accounts (see [Accounts](#accounts)):
 
 | Variable                         | Default | Purpose                                                                 |

@@ -2,9 +2,10 @@
 takes each workspace's month-end net worth snapshots (at most hourly), checks budgets (every
 few minutes: closing finished periods and sending threshold alerts), and sweeps the attachment
 store for files no metadata references (every few hours), and keeps AI retrieval indexes up to
-date for people who turned indexing on (every `ORBIT_AI_INDEX_INTERVAL_SECONDS`), and runs
-external integrations' synchronization (every `ORBIT_INTEGRATIONS_POLL_SECONDS`), so Orbit has
-one scheduler rather than several.
+date for people who turned indexing on (every `ORBIT_AI_INDEX_INTERVAL_SECONDS`), runs
+external integrations' synchronization (every `ORBIT_INTEGRATIONS_POLL_SECONDS`), and runs the
+personal agent's workflows, triggers, monitoring, and executions (every poll), so Orbit has one
+scheduler rather than several.
 
 It holds no schedule in memory. Each poll reads due work from the database, so a restart loses
 nothing, and any number of workers (the one embedded in each API process, plus standalone
@@ -16,16 +17,18 @@ import asyncio
 import contextlib
 import logging
 from collections import Counter
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from orbit_api.api.agent_tools import tool_factory
 from orbit_api.config import Settings
 from orbit_api.db.columns import utc_now
 from orbit_api.db.database import Database
+from orbit_api.repositories.agent_services import build_agent
 from orbit_api.repositories.ai import SqlAiSettingsRepository
 from orbit_api.repositories.ai_services import build_ai
 from orbit_api.repositories.backup import SqlBackupRecords, build_backup_service
@@ -40,6 +43,8 @@ from orbit_api.repositories.investments import SqlSnapshotRepository, build_net_
 from orbit_api.repositories.notifications import SqlNotificationRepository
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.transaction import SqlTransaction
+from orbit_api.services.agent.automation import AutomationService
+from orbit_api.services.agent.engine import LEASE
 from orbit_api.services.ai.indexing import IndexRun, permitted_types
 from orbit_api.services.ai.providers import ProviderFactory
 from orbit_api.services.integrations.connectors import ConnectorRegistry
@@ -76,6 +81,9 @@ DEFAULT_FILE_CHECK_INTERVAL = timedelta(hours=6)
 # and restores (interrupted runs, expired uploads, temporary files).
 DEFAULT_BACKUP_INTERVAL = timedelta(minutes=1)
 BACKUP_HOUSEKEEPING_INTERVAL = timedelta(hours=1)
+# Agent executions advanced per poll, and how often old agent history is purged.
+AGENT_BATCH = 5
+AGENT_PURGE_INTERVAL = timedelta(hours=1)
 
 
 class ManagedFollowUp:
@@ -137,6 +145,17 @@ class BackupJobs:
 
 
 @dataclass(frozen=True, slots=True)
+class AgentJobs:
+    """What the worker needs to run the personal agent: the settings, the AI providers it
+    reasons with, and the connectors its email tool reads through."""
+
+    settings: Settings
+    providers: ProviderFactory
+    connectors: ConnectorRegistry | None = None
+    batch_size: int = AGENT_BATCH
+
+
+@dataclass(frozen=True, slots=True)
 class WorkerReport:
     """What one poll did."""
 
@@ -160,8 +179,11 @@ class ReminderWorker:
         ai: AiIndexing | None = None,
         integrations: IntegrationSync | None = None,
         backups: BackupJobs | None = None,
+        agents: AgentJobs | None = None,
     ) -> None:
         self._database = database
+        self._agents = agents
+        self._agents_purged_at: datetime | None = None
         self._backups = backups
         self._backups_checked_at: datetime | None = None
         self._backups_tidied_at: datetime | None = None
@@ -469,6 +491,76 @@ class ReminderWorker:
             # Deliberate boundary: backups must never stop reminder delivery.
             logger.exception("Checking automatic backups failed; retrying later.")
 
+    def _automation(self, session: AsyncSession, config: AgentJobs) -> AutomationService:
+        return build_agent(
+            session,
+            config.settings,
+            config.providers,
+            tool_factory,
+            connectors=config.connectors,
+            clock=self._clock,
+        ).automation
+
+    async def run_agents(self) -> int:
+        """The agent's jobs: expire approvals, start due schedules and triggered workflows,
+        monitor, purge old history, then advance a batch of executions, each in its own
+        session so one failure never stops another; return how many were advanced."""
+        config = self._agents
+        if config is None or not config.settings.agent_enabled:
+            return 0
+        jobs: list[tuple[str, Callable[[AutomationService], Awaitable[int]]]] = [
+            ("expiring approvals", lambda a: a.expire_approvals()),
+            ("starting scheduled workflows", lambda a: a.run_schedules()),
+            ("checking workflow triggers", lambda a: a.check_triggers()),
+            ("monitoring", lambda a: a.monitor()),
+        ]
+        now = self._clock()
+        if self._agents_purged_at is None or now - self._agents_purged_at >= AGENT_PURGE_INTERVAL:
+            self._agents_purged_at = now
+            jobs.append(("purging agent history", lambda a: a.purge()))
+        for name, job in jobs:
+            async with self._database.session() as session:
+                try:
+                    await job(self._automation(session, config))
+                except Exception:
+                    # Deliberate boundary: one agent job failing must not stop the others or
+                    # reminder delivery; each retries on the next poll. IDs only in logs.
+                    await session.rollback()
+                    logger.exception("Agent job failed: %s.", name)
+        async with self._database.session() as session:
+            claims = await self._automation(session, config).claim(LEASE, config.batch_size)
+        for execution in claims:
+            async with self._database.session() as session:
+                try:
+                    await self._automation(session, config).engine.advance(execution)
+                    continue
+                except Exception as exc:
+                    # Deliberate boundary: an unexpected failure is retried from the last
+                    # checkpoint (its uncommitted step is discarded), then fails the run.
+                    await session.rollback()
+                    error = type(exc).__name__
+                    logger.warning(
+                        "Agent execution %s failed: %s", execution.id, error, exc_info=exc
+                    )
+            async with self._database.session() as session:
+                try:
+                    await self._automation(session, config).record_crash(execution.id, error)
+                except Exception:
+                    # Deliberate boundary: the lease expires and the run is claimed again.
+                    logger.exception("Recording the failure of execution %s failed.", execution.id)
+        if claims:
+            logger.info("Advanced %d agent execution(s).", len(claims))
+        return len(claims)
+
+    async def _maybe_run_agents(self) -> None:
+        if self._agents is None:
+            return
+        try:
+            await self.run_agents()
+        except Exception:
+            # Deliberate boundary: the agent must never stop reminder delivery.
+            logger.exception("Running agent jobs failed; retrying later.")
+
     async def run(self, stop: asyncio.Event, poll_interval: float) -> None:
         """Poll until `stop` is set. A poll in progress finishes first, so shutdown never
         abandons a claimed occurrence mid-transaction."""
@@ -489,6 +581,7 @@ class ReminderWorker:
             await self._maybe_index_ai()
             await self._maybe_sync_integrations()
             await self._maybe_run_backups()
+            await self._maybe_run_agents()
             # Sleep until the next poll, waking early when asked to stop.
             with contextlib.suppress(TimeoutError):
                 await asyncio.wait_for(stop.wait(), timeout=poll_interval)

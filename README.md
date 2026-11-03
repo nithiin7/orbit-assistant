@@ -138,6 +138,13 @@ control.
   workspace, an empty one, or replacing the current one after a safety backup; exports as JSON,
   CSV, iCalendar, and Markdown; and JSON imports without duplicates. Guide:
   [docs/backups.md](docs/backups.md).
+- Automation (off by default): a personal agent that uses only the tools you allow, asks before
+  changing anything unless you choose limited autonomy for low-risk actions, and shows every
+  step it took and why; workflows on a schedule, when something happens (a task is created, a
+  document is about to expire, a budget alert), when a condition becomes true, or on demand; an
+  approval center where you approve exact actions; monitoring of deadlines, conflicts, bills,
+  and expiring documents as in-app notifications; and memory you can review and edit. Finance,
+  email, and health stay read only, and it never deletes, pays, sends, or shares anything.
 - Shared tooling for linting, formatting, type checking, testing, commit conventions, and CI.
 
 ### 🚫 Explicit non-goals for now
@@ -151,7 +158,7 @@ control.
 - Shared workspaces, invitations, password recovery for local accounts, and account linking
   between local and cloud.
 - Synchronization or data migration between local and cloud storage.
-- Autonomous AI agents, automation, or AI actions without your approval; OCR.
+- Unrestricted AI autonomy, or agent actions that delete, pay, send email, or share; OCR.
 - Push, email, SMS, or mobile notifications (reminders notify in the app only).
 - Managed hosting, Kubernetes manifests, or scaling beyond one API container in local mode.
 

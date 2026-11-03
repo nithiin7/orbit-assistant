@@ -17,6 +17,9 @@ open. Each workspace is backed up on its own.
 A backup never contains passwords, sign-in sessions, AI provider keys, or connected accounts'
 tokens. After restoring, reconnect integrations and AI providers if you use them. Per-person
 preferences (dashboard layout, calendar view settings) aren't part of a workspace backup.
+Neither is Automation: the agent's settings, workflows, memory, run history, and approvals are
+left out on purpose, so a restore never starts automations, replays approvals, or resumes runs.
+Set up the agent and its workflows again after restoring.
 
 ## Creating a backup
 
