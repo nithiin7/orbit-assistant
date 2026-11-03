@@ -4512,10 +4512,13 @@ claim and advance up to five executions with a five-minute lease.
 
 ### In the web app
 
-**Automation** (`/automation`, tabs in the URL): an overview (on/off, level, modules, where
-automations run, ask the agent, pending approvals, recent activity); workflows (templates, an
-editor for triggers and steps with tool arguments derived from each tool's schema, run now,
-on/off, delete); the approval center (each action's exact arguments, reason, effect, risk,
+**Automation** (`/automation`, sections in a side rail, as chips when narrow, and in the URL):
+an overview (on/off, level, modules, where automations run, ask the agent, pending approvals,
+ideas to try before any workflow exists, recent activity); workflows (an editor for triggers and
+steps with tool arguments derived from each tool's schema, run now, on/off, delete); templates
+(a gallery grouped by category showing each one's trigger, steps, and the modules the agent must
+be allowed; using one opens the editor filled in, and `?template=<id>` opens it from a link);
+the approval center (each action's exact arguments, reason, effect, risk,
 untrusted-content warning, expiry); activity (filters, each run's steps with reasons, details,
 outputs, linked records, failures, cancel and retry); and settings (autonomy, modules, action
 types, per-action modes, instructions, limits, memory and the memory list, monitoring,

@@ -1,15 +1,16 @@
 "use client";
 
 import type { AgentTool, AgentWorkflow } from "@orbit/contracts";
-import { Pencil, Play, Plus, Sparkles, Trash2, Workflow } from "lucide-react";
+import { LayoutTemplate, Pencil, Play, Plus, Trash2, Workflow } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import { useConfirm } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -23,7 +24,6 @@ import {
   automationHref,
   describeTrigger,
   formatWhen,
-  WORKFLOW_TEMPLATES,
   type WorkflowFormValues,
   workflowFormValues,
   workflowRequest,
@@ -35,6 +35,7 @@ import { WorkflowEditor } from "./workflow-editor";
 type Editing = { id: string | null; title: string; initial: WorkflowFormValues };
 
 export function WorkflowsView({ enabled }: { enabled: boolean }) {
+  const router = useRouter();
   const timeZone = useViewerTimeZone();
   const workflows = useAgentWorkflows();
   const tools = useAgentTools();
@@ -42,12 +43,8 @@ export function WorkflowsView({ enabled }: { enabled: boolean }) {
   const [editing, setEditing] = useState<Editing | null>(null);
   const toolList: readonly AgentTool[] = tools.status === "success" ? tools.data.tools : [];
 
-  const start = (template: (typeof WORKFLOW_TEMPLATES)[number] | null) =>
-    setEditing({
-      id: null,
-      title: template ? template.title : "New workflow",
-      initial: workflowFormValues(template ? template.workflow(timeZone) : null, timeZone),
-    });
+  const start = () =>
+    setEditing({ id: null, title: "New workflow", initial: workflowFormValues(null, timeZone) });
 
   return (
     <div className="space-y-4">
@@ -58,15 +55,14 @@ export function WorkflowsView({ enabled }: { enabled: boolean }) {
           <Menu
             align="end"
             items={[
-              { id: "blank", label: "Blank workflow", icon: Plus, onSelect: () => start(null) },
-              ...WORKFLOW_TEMPLATES.map((template) => ({
-                id: template.id,
-                label: template.title,
-                description: template.description,
-                icon: Sparkles,
-                group: "Start from a template",
-                onSelect: () => start(template),
-              })),
+              { id: "blank", label: "Blank workflow", icon: Plus, onSelect: start },
+              {
+                id: "templates",
+                label: "From a template",
+                description: "Briefings, budget watch, renewals, and more",
+                icon: LayoutTemplate,
+                onSelect: () => router.push(automationHref("templates")),
+              },
             ]}
           >
             <Plus aria-hidden="true" />
@@ -87,12 +83,12 @@ export function WorkflowsView({ enabled }: { enabled: boolean }) {
         <EmptyState
           icon={Workflow}
           title="No workflows yet"
-          description="Start from a template, like a morning briefing or renewal reminders, or build your own."
+          description="Start from a template, like a morning briefing or a budget watch, or build your own."
         >
-          <Button variant="soft" onClick={() => start(WORKFLOW_TEMPLATES[0] ?? null)}>
-            <Sparkles aria-hidden="true" />
-            Try the morning briefing
-          </Button>
+          <Link href={automationHref("templates")} className={buttonVariants({ variant: "soft" })}>
+            <LayoutTemplate aria-hidden="true" />
+            Browse templates
+          </Link>
         </EmptyState>
       ) : (
         <ul className="space-y-2">

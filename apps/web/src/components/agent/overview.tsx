@@ -2,7 +2,7 @@
 
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { AgentOverview } from "@orbit/contracts";
-import { Bot, Send } from "lucide-react";
+import { ArrowRight, Bot, Send } from "lucide-react";
 import Link from "next/link";
 import { useId, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -15,7 +15,14 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useAgentApprovals, useStartAgentRun, useUpdateAgent } from "@/hooks/use-agent";
-import { automationHref, AUTONOMY_LEVELS, goalSchema, MODULE_LABELS } from "@/lib/agent";
+import {
+  automationHref,
+  AUTONOMY_LEVELS,
+  findTemplate,
+  goalSchema,
+  MODULE_LABELS,
+  type WorkflowTemplate,
+} from "@/lib/agent";
 
 import { ExecutionRow } from "./activity";
 import { ApprovalCard } from "./approvals";
@@ -85,6 +92,8 @@ export function OverviewView({ overview }: { overview: AgentOverview }) {
         <PendingPreview count={overview.pending_approvals} />
       ) : null}
 
+      {overview.workflows === 0 ? <IdeasToTry /> : null}
+
       <section className="space-y-3">
         <SectionHeading
           title="Recent activity"
@@ -112,6 +121,49 @@ export function OverviewView({ overview }: { overview: AgentOverview }) {
         </p>
       </section>
     </div>
+  );
+}
+
+/** Templates that show the range of what workflows can do, using modules allowed by default. */
+const FEATURED = ["briefing", "week", "busy"]
+  .map(findTemplate)
+  .filter((template): template is WorkflowTemplate => template !== undefined);
+
+function IdeasToTry() {
+  return (
+    <section className="space-y-3">
+      <SectionHeading
+        title="Ideas to try"
+        description="Workflows run on their own: on a schedule, when something happens, or when a number crosses a line."
+        actions={
+          <Link
+            href={automationHref("templates")}
+            className="text-sm font-medium text-brand hover:underline"
+          >
+            All templates
+          </Link>
+        }
+      />
+      <ul className="grid gap-3 @3xl:grid-cols-3">
+        {FEATURED.map((template) => (
+          <li key={template.id}>
+            <Link
+              href={automationHref("templates", { template: template.id })}
+              className="group flex h-full flex-col gap-1 rounded-xl border bg-card p-4 transition-colors duration-150 outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <span className="flex items-center justify-between gap-2 font-medium">
+                {template.title}
+                <ArrowRight
+                  className="size-4 text-muted-foreground transition-transform duration-150 group-hover:translate-x-0.5"
+                  aria-hidden="true"
+                />
+              </span>
+              <span className="text-sm text-muted-foreground">{template.description}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

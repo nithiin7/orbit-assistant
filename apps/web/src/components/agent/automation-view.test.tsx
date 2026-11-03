@@ -9,9 +9,10 @@ import { renderSignedIn } from "@/test/session";
 import { AutomationView } from "./automation-view";
 
 const search = { params: new URLSearchParams() };
+const router = { replace: vi.fn(), push: vi.fn() };
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+  useRouter: () => router,
   usePathname: () => "/automation",
   useSearchParams: () => search.params,
 }));
@@ -50,6 +51,8 @@ function at(tab: string, extra: Record<string, string> = {}) {
 
 beforeEach(() => {
   search.params = new URLSearchParams();
+  router.replace.mockReset();
+  router.push.mockReset();
 });
 
 afterEach(() => {
@@ -75,6 +78,27 @@ describe("Automation overview", () => {
     expect(screen.queryByRole("heading", { name: "Ask the agent" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("switch", { name: "Agent on" }));
     await waitFor(() => expect(patched).toEqual([{ enabled: true }]));
+  });
+
+  it("marks the current section and suggests templates before any workflow exists", async () => {
+    mockApi({
+      ...session,
+      [`GET ${AGENT}`]: json(overview({ pending_approvals: 2 })),
+    });
+    await renderSignedIn(<AutomationView />);
+    expect(await screen.findByRole("heading", { name: "Ideas to try" })).toBeInTheDocument();
+    const nav = screen.getByRole("navigation", { name: "Automation sections" });
+    expect(within(nav).getByRole("link", { name: "Overview" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    const approvals = within(nav).getByRole("link", { name: /^Approvals/ });
+    expect(approvals).toHaveAttribute("href", "/automation?tab=approvals");
+    expect(approvals).toHaveTextContent("2 waiting");
+    expect(screen.getByRole("link", { name: /Plan the week/ })).toHaveAttribute(
+      "href",
+      "/automation?tab=templates&template=week",
+    );
   });
 
   it("starts a run for the person's request", async () => {
@@ -148,23 +172,64 @@ describe("Approval center", () => {
 });
 
 describe("Workflows", () => {
-  it("creates a workflow from a template", async () => {
+  it("points to the templates when there are no workflows", async () => {
     at("workflows");
+    mockApi({
+      ...session,
+      [`GET ${AGENT}`]: json(overview()),
+      [`GET ${AGENT}/tools`]: json({ tools: TOOLS }),
+      [`GET ${AGENT}/workflows`]: json({ workflows: [] }),
+    });
+    await renderSignedIn(<AutomationView />);
+    expect(await screen.findByText("No workflows yet")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Browse templates" })).toHaveAttribute(
+      "href",
+      "/automation?tab=templates",
+    );
+  });
+
+  it("refuses a workflow without steps before saving", async () => {
+    at("workflows");
+    const user = userEvent.setup();
+    mockApi({
+      ...session,
+      [`GET ${AGENT}`]: json(overview()),
+      [`GET ${AGENT}/tools`]: json({ tools: TOOLS }),
+      [`GET ${AGENT}/workflows`]: json({ workflows: [] }),
+    });
+    await renderSignedIn(<AutomationView />);
+    await user.click(await screen.findByRole("button", { name: "New workflow" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Blank workflow" }));
+    const dialog = await screen.findByRole("dialog", { name: "New workflow" });
+    await user.type(within(dialog).getByRole("textbox", { name: "Name" }), "Empty");
+    await user.click(within(dialog).getByRole("button", { name: "Save workflow" }));
+    expect(await within(dialog).findByText("Add at least one step.")).toBeInTheDocument();
+  });
+});
+
+describe("Templates", () => {
+  it("creates a workflow from a template and shows it among the workflows", async () => {
+    at("templates");
     const user = userEvent.setup();
     const created: unknown[] = [];
     mockApi({
       ...session,
       [`GET ${AGENT}`]: json(overview()),
       [`GET ${AGENT}/tools`]: json({ tools: TOOLS }),
-      [`GET ${AGENT}/workflows`]: json({ workflows: [] }),
       [`POST ${AGENT}/workflows`]: (request: MockRequest) => {
         created.push(request.body);
         return Response.json({}, { status: 201 });
       },
     });
     await renderSignedIn(<AutomationView />);
-    expect(await screen.findByText("No workflows yet")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Try the morning briefing" }));
+    const card = (await screen.findByRole("heading", { name: "Morning briefing" })).closest("li");
+    if (!card) throw new Error("No template card");
+    expect(within(card).getByText("Every day at 08:00")).toBeInTheDocument();
+    expect(
+      within(within(card).getByRole("list", { name: "Steps" })).getAllByRole("listitem"),
+    ).toHaveLength(4);
+    expect(within(card).getByText("Writes with AI")).toBeInTheDocument();
+    await user.click(within(card).getByRole("button", { name: "Use template: Morning briefing" }));
     const dialog = await screen.findByRole("dialog", { name: "Morning briefing" });
     expect(within(dialog).getByRole("textbox", { name: "Name" })).toHaveValue("Morning briefing");
     expect(within(dialog).getByText("steps.brief")).toBeInTheDocument();
@@ -185,24 +250,43 @@ describe("Workflows", () => {
         { id: "tell", kind: "tool", tool: "send_notification", arguments: { title: "Your day" } },
       ],
     });
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith("/automation?tab=workflows"));
   });
 
-  it("refuses a workflow without steps before saving", async () => {
-    at("workflows");
+  it("says which modules a template needs the agent to be allowed", async () => {
+    at("templates");
+    mockApi({
+      ...session,
+      [`GET ${AGENT}`]: json(overview()),
+      [`GET ${AGENT}/tools`]: json({ tools: TOOLS }),
+    });
+    await renderSignedIn(<AutomationView />);
+    const budget = (await screen.findByRole("heading", { name: "Budget watch" })).closest("li");
+    if (!budget) throw new Error("No template card");
+    expect(within(budget).getByText(/Needs access to Finance \(read only\)/)).toBeInTheDocument();
+    expect(within(budget).getByRole("link", { name: "Allow it in Settings" })).toHaveAttribute(
+      "href",
+      "/automation?tab=settings",
+    );
+    const briefing = screen.getByRole("heading", { name: "Morning briefing" }).closest("li");
+    if (!briefing) throw new Error("No template card");
+    expect(within(briefing).queryByText(/Needs access/)).not.toBeInTheDocument();
+  });
+
+  it("opens a template from a link, and forgets it when closed without saving", async () => {
+    at("templates", { template: "week" });
     const user = userEvent.setup();
     mockApi({
       ...session,
       [`GET ${AGENT}`]: json(overview()),
       [`GET ${AGENT}/tools`]: json({ tools: TOOLS }),
-      [`GET ${AGENT}/workflows`]: json({ workflows: [] }),
     });
     await renderSignedIn(<AutomationView />);
-    await user.click(await screen.findByRole("button", { name: "New workflow" }));
-    await user.click(await screen.findByRole("menuitem", { name: "Blank workflow" }));
-    const dialog = await screen.findByRole("dialog", { name: "New workflow" });
-    await user.type(within(dialog).getByRole("textbox", { name: "Name" }), "Empty");
-    await user.click(within(dialog).getByRole("button", { name: "Save workflow" }));
-    expect(await within(dialog).findByText("Add at least one step.")).toBeInTheDocument();
+    const dialog = await screen.findByRole("dialog", { name: "Plan the week" });
+    expect(within(dialog).getByRole("textbox", { name: "Name" })).toHaveValue("Plan the week");
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/automation?tab=templates"));
+    expect(router.push).not.toHaveBeenCalled();
   });
 });
 
