@@ -42,7 +42,8 @@ export function SettingsPanelView({ panel }: { panel: SettingsPanel }) {
         Settings
       </Link>
       <PageHeader title={panel.title} description={panel.description} />
-      <div className="max-w-3xl">{panelContent[panel.slug]}</div>
+      {/* Panels lay their sections out against this container's width, not the viewport's. */}
+      <div className="@container/panel">{panelContent[panel.slug]}</div>
     </div>
   );
 }

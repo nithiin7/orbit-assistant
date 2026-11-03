@@ -1,10 +1,11 @@
 import { StorageStatusCard } from "@/components/storage/storage-indicator";
+import { settingsSectionsClassName } from "@/lib/settings";
 
 import { DatabaseLocation } from "./database-location";
 
 export function StorageSettings() {
   return (
-    <div className="space-y-4">
+    <div className={settingsSectionsClassName}>
       <StorageStatusCard />
       <DatabaseLocation />
       <div className="space-y-2 text-sm text-muted-foreground">

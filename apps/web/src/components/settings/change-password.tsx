@@ -46,7 +46,7 @@ export function ChangePassword() {
       noValidate
       onSubmit={onSubmit}
       aria-labelledby="change-password-heading"
-      className="space-y-3 border-t pt-4"
+      className="space-y-3 border-t pt-4 @5xl/panel:border-t-0 @5xl/panel:pt-0"
     >
       <div className="space-y-1">
         <h3 id="change-password-heading" className="text-sm font-medium">

@@ -29,6 +29,7 @@ import {
 } from "@/hooks/use-backups";
 import { describeContents, formatWhen, kindLabel, scheduleSummary } from "@/lib/backups";
 import { formatFileSize } from "@/lib/documents";
+import { settingsSectionsClassName } from "@/lib/settings";
 import { cn } from "@/utils/common";
 
 import { AutomaticBackups } from "./automatic-backups";
@@ -52,7 +53,7 @@ export function BackupSettings() {
   if (overview.status === "error") return <ErrorText message={overview.message} />;
   const data = overview.data;
   return (
-    <div className="space-y-6">
+    <div className={settingsSectionsClassName}>
       <Overview overview={data} />
       <BackupHistory backups={data.backups} />
       <RestoreSection uploads={data.uploads} />

@@ -10,6 +10,7 @@ import { updateMe } from "@/api/profile";
 import { FormAlert, FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { displayNameSchema } from "@/lib/auth/validation";
+import { settingsSectionsClassName } from "@/lib/settings";
 import { useAuth, useCurrentUser } from "@/providers/auth";
 
 import { ChangePassword } from "./change-password";
@@ -54,7 +55,7 @@ export function AccountSettings() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className={settingsSectionsClassName}>
       <ProfilePhoto />
 
       <dl className="grid gap-4 rounded-xl border bg-card p-4 text-sm sm:grid-cols-2">
@@ -90,7 +91,7 @@ export function AccountSettings() {
 
       {user.auth_provider === "local" ? <ChangePassword /> : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4 [column-span:all]">
         <p className="text-sm text-muted-foreground">
           Signing out removes your session from this browser.
         </p>

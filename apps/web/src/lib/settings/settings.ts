@@ -81,3 +81,11 @@ export function settingsHref(slug: string): string {
 export function findSettingsPanel(slug: string): SettingsPanel | undefined {
   return settingsPanels.find((panel) => panel.slug === slug);
 }
+
+/**
+ * A panel's stack of sections. Narrow panels stack them; as the panel's container widens they
+ * flow into balanced columns, so wide screens are filled without stretching any one form.
+ * Mark a section `[column-span:all]` to keep it full width.
+ */
+export const settingsSectionsClassName =
+  "space-y-6 *:break-inside-avoid @5xl/panel:columns-2 @5xl/panel:gap-6 @min-[110rem]/panel:columns-3 @min-[110rem]/panel:gap-8";

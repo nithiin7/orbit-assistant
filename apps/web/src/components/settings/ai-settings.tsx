@@ -39,6 +39,7 @@ import {
   useUpdateAiSettings,
 } from "@/hooks/use-ai";
 import { AI_MODULES, processingLabel, PROVIDER_KINDS, RESPONSE_STYLES } from "@/lib/ai";
+import { settingsSectionsClassName } from "@/lib/settings";
 import { cn } from "@/utils/common";
 
 import { ProviderForm } from "./ai-provider-form";
@@ -106,11 +107,11 @@ export function AiSettingsPanel() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className={settingsSectionsClassName}>
       {error ? (
         <p
           role="alert"
-          className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive"
+          className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive [column-span:all]"
         >
           {error}
         </p>

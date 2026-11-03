@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkspaceAvatar } from "@/components/workspace/workspace-switcher";
 import { workspaceNameSchema } from "@/lib/auth/validation";
+import { settingsSectionsClassName } from "@/lib/settings";
 import { useWorkspaces } from "@/providers/workspace";
 
 export function WorkspaceSettings() {
@@ -40,7 +41,7 @@ export function WorkspaceSettings() {
 
   const { workspaces, active } = state;
   return (
-    <div className="space-y-8">
+    <div className={settingsSectionsClassName}>
       {/* Keyed so the form resets when another workspace becomes active. */}
       <RenameWorkspaceForm key={`rename-${active.id}`} workspace={active} />
 
@@ -158,7 +159,11 @@ function CreateWorkspaceForm() {
   });
 
   return (
-    <form noValidate onSubmit={onSubmit} className="space-y-3 border-t pt-6">
+    <form
+      noValidate
+      onSubmit={onSubmit}
+      className="space-y-3 border-t pt-6 @5xl/panel:border-t-0 @5xl/panel:pt-0"
+    >
       <FormField
         label="New workspace"
         autoComplete="off"
