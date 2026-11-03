@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, ChevronsUpDown, LogOut, RotateCw } from "lucide-react";
+import { Check, ChevronsUpDown, Layers, LogOut, RotateCw, Settings } from "lucide-react";
+import Link from "next/link";
 import {
   type CSSProperties,
   type KeyboardEvent,
@@ -30,8 +31,9 @@ type WorkspaceSwitcherProps = {
 };
 
 /**
- * Shows the user's photo and the active workspace, and opens a menu to switch workspaces or sign out. It sits at the
- * foot of the sidebar, so the menu opens upward. Follows the ARIA menu pattern: arrow keys,
+ * Shows the user's photo and the active workspace, and opens the personal menu: switch or manage
+ * workspaces, open settings, or sign out. It sits at the foot of the sidebar, so the menu opens
+ * upward. Follows the ARIA menu pattern: arrow keys,
  * Home/End, and Escape. The menu uses fixed positioning so the collapsed sidebar's overflow
  * can't clip it.
  */
@@ -153,6 +155,11 @@ export function WorkspaceSwitcher({ collapsible = false, onNavigate }: Workspace
     onNavigate?.();
   };
 
+  const follow = () => {
+    close(false);
+    onNavigate?.();
+  };
+
   return (
     <>
       <Tooltip label={`Workspace: ${active.name}`} disabled={!collapsible}>
@@ -199,7 +206,7 @@ export function WorkspaceSwitcher({ collapsible = false, onNavigate }: Workspace
           ref={menuRef}
           id={menuId}
           role="menu"
-          aria-label="Workspaces"
+          aria-label="Account and workspaces"
           onKeyDown={onMenuKeyDown}
           style={{ position: "fixed", ...position }}
           className="z-50 max-w-72 animate-tooltip-in rounded-lg border bg-popover p-1 text-popover-foreground shadow-elevation-3"
@@ -230,7 +237,27 @@ export function WorkspaceSwitcher({ collapsible = false, onNavigate }: Workspace
               );
             })}
           </div>
+          <Link
+            href="/settings/workspaces"
+            role="menuitem"
+            tabIndex={-1}
+            onClick={follow}
+            className={itemClassName}
+          >
+            <Layers className="size-4 text-muted-foreground" aria-hidden="true" />
+            Manage workspaces
+          </Link>
           <div role="separator" className="-mx-1 my-1 h-px bg-border" />
+          <Link
+            href="/settings"
+            role="menuitem"
+            tabIndex={-1}
+            onClick={follow}
+            className={itemClassName}
+          >
+            <Settings className="size-4 text-muted-foreground" aria-hidden="true" />
+            Settings
+          </Link>
           <button
             type="button"
             role="menuitem"

@@ -76,7 +76,7 @@ describe("WorkspaceSwitcher", () => {
     trigger.focus();
     await user.keyboard("{ArrowDown}");
 
-    const menu = screen.getByRole("menu", { name: "Workspaces" });
+    const menu = screen.getByRole("menu", { name: "Account and workspaces" });
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(within(menu).getByRole("menuitemradio", { name: "Personal" })).toHaveFocus();
     expect(within(menu).getByRole("menuitemradio", { name: "Personal" })).toBeChecked();
@@ -118,6 +118,25 @@ describe("WorkspaceSwitcher", () => {
     await renderSignedIn(<WorkspaceSwitcher />);
 
     expect(await screen.findByRole("button", { name: /Workspace: Personal/ })).toBeInTheDocument();
+  });
+
+  it("opens settings and workspace management from the menu", async () => {
+    const user = userEvent.setup();
+    const onNavigate = vi.fn();
+    mockApi({ ...session, "GET /api/v1/workspaces": json({ workspaces: [personal] }) });
+    await renderSignedIn(<WorkspaceSwitcher onNavigate={onNavigate} />);
+
+    await user.click(await screen.findByRole("button", { name: /Workspace: Personal/ }));
+    expect(screen.getByRole("menuitem", { name: "Manage workspaces" })).toHaveAttribute(
+      "href",
+      "/settings/workspaces",
+    );
+    const settings = screen.getByRole("menuitem", { name: "Settings" });
+    expect(settings).toHaveAttribute("href", "/settings");
+
+    await user.click(settings);
+    expect(onNavigate).toHaveBeenCalled();
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
   });
 
   it("signs out from the menu", async () => {
