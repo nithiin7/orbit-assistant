@@ -4036,8 +4036,7 @@ connection's owner. Another person's connection is a 404.
 
 ## Backup, restore, and data portability
 
-Workspace backups, restores, exports, and imports, for both storage modes. User guide:
-[backups.md](backups.md).
+Workspace backups, restores, exports, and imports, for both storage modes.
 
 ### What existed, and what was reused
 

@@ -2,7 +2,7 @@
 
 All notable changes to Orbit are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Orbit uses
-[Semantic Versioning](https://semver.org/) (see [docs/release.md](docs/release.md)).
+[Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
@@ -58,6 +58,6 @@ Orbit has not had a tagged release yet. This section is the draft of the first o
 
 ### Known limitations
 
-See [SECURITY.md](SECURITY.md#security-model) and [docs/assessment.md](docs/assessment.md).
+See [SECURITY.md](SECURITY.md#security-model).
 There is no voice interface, no offline multi-device sync, no shared workspaces, no account
 deletion in the app, and no password recovery for local accounts.

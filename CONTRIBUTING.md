@@ -33,7 +33,7 @@ Thanks for your interest in Orbit! This guide explains how to propose changes.
    [Database and auth tests](docs/development.md#database-and-auth-tests).
 
 6. **Add a changelog entry** under Unreleased in [CHANGELOG.md](CHANGELOG.md) for anything
-   someone running Orbit would notice (see [docs/release.md](docs/release.md#changelog)).
+   someone running Orbit would notice.
 7. **Open a pull request** against `main` and fill in the template. CI must pass before merge.
 
 ## Commit messages
