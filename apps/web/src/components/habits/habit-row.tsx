@@ -38,6 +38,8 @@ export function HabitRow({ item, onLog }: HabitRowProps) {
   const [amount, setAmount] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Set by a tap that checks the habit off, so only that check pops, not ones already done.
+  const [popped, setPopped] = useState(false);
   const done = state === "completed" || state === "bonus";
   const measured = habit.kind !== "boolean";
   const target = describeTarget(habit);
@@ -87,13 +89,18 @@ export function HabitRow({ item, onLog }: HabitRowProps) {
           disabled={busy || state === "paused"}
           aria-pressed={done}
           aria-label={done ? `Undo ${habit.name}` : `Mark ${habit.name} done`}
-          onClick={() =>
-            void run(done ? null : { status: "completed", value: null, note: log?.note ?? "" })
-          }
+          onClick={() => {
+            setPopped(!done);
+            void run(done ? null : { status: "completed", value: null, note: log?.note ?? "" });
+          }}
           className={cn(
             "flex size-8 shrink-0 items-center justify-center rounded-full border-2 transition-[background-color,border-color,scale] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95 disabled:opacity-50",
             done
-              ? cn("border-transparent text-white", COLOR_STYLES[habit.color].fill)
+              ? cn(
+                  "border-transparent text-white",
+                  COLOR_STYLES[habit.color].fill,
+                  popped && "animate-check-pop",
+                )
               : "border-input hover:border-brand/60",
           )}
         >

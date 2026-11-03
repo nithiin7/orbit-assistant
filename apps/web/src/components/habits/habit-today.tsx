@@ -1,19 +1,29 @@
 "use client";
 
 import type { HabitProgress, HabitToday, LogHabitRequest, Routine } from "@orbit/contracts";
-import { CalendarCheck, Play, Sparkles } from "lucide-react";
+import { CalendarCheck, LayoutTemplate, Play, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/empty-state";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Resource } from "@/hooks/query-resource";
-import { habitsHref, heatLevel, isRemaining, routineMinutes } from "@/lib/habits";
+import {
+  cheerFor,
+  HABIT_TEMPLATES,
+  habitsHref,
+  type HabitTemplate,
+  heatLevel,
+  isRemaining,
+  routineMinutes,
+  STARTER_TEMPLATE_IDS,
+} from "@/lib/habits";
 import { WEEKDAYS } from "@/lib/reminders";
 import { cn } from "@/utils/common";
 import { dayOfWeek, formatCalendarDate } from "@/utils/dates";
 
-import { HabitTile, ProgressBar } from "./habit-icon";
+import { useCelebration } from "./celebration";
+import { COLOR_STYLES, HABIT_ICON_COMPONENTS, HabitTile, ProgressBar } from "./habit-icon";
 import { HabitRow } from "./habit-row";
 import { ViewError } from "./view-error";
 
@@ -29,17 +39,23 @@ type HabitTodayViewProps = {
   state: Resource<HabitToday>;
   routines: readonly Routine[];
   onReload: () => void;
-  onLog: (item: HabitProgress, body: LogHabitRequest | null) => Promise<unknown>;
+  /** Resolves with the habit's updated day. */
+  onLog: (item: HabitProgress, body: LogHabitRequest | null) => Promise<HabitProgress>;
   onCreate: () => void;
+  onUseTemplate: (template: HabitTemplate) => void;
   onStartRoutine: (routine: Routine) => void;
 };
+
+function isDone(item: Pick<HabitProgress, "state">): boolean {
+  return item.state === "completed" || item.state === "bonus";
+}
 
 function groups(habits: readonly HabitProgress[]) {
   const remaining: HabitProgress[] = [];
   const done: HabitProgress[] = [];
   const other: HabitProgress[] = [];
   for (const item of habits) {
-    if (item.state === "completed" || item.state === "bonus") done.push(item);
+    if (isDone(item)) done.push(item);
     else if (isRemaining(item)) remaining.push(item);
     else other.push(item);
   }
@@ -61,8 +77,11 @@ export function HabitTodayView({
   onReload,
   onLog,
   onCreate,
+  onUseTemplate,
   onStartRoutine,
 }: HabitTodayViewProps) {
+  const { celebrate, celebration } = useCelebration();
+
   if (state.status === "loading") {
     return (
       <div className="space-y-3" aria-busy="true" aria-label="Loading today’s habits">
@@ -80,15 +99,54 @@ export function HabitTodayView({
       <EmptyState
         icon={Sparkles}
         title="Start with one small habit"
-        description="Habits you track show up here each day, with a one-tap check. Begin with something easy, like a glass of water in the morning."
+        description="Habits you track show up here each day, with a one-tap check. Begin with something easy, or pick a ready-made one."
       >
-        <Button onClick={onCreate}>New habit</Button>
+        <div className="flex w-full flex-col items-center gap-4">
+          <ul aria-label="Starter habits" className="flex flex-wrap justify-center gap-2">
+            {starters.map((template) => {
+              const Icon = HABIT_ICON_COMPONENTS[template.fields.icon];
+              return (
+                <li key={template.id}>
+                  <Button variant="outline" onClick={() => onUseTemplate(template)}>
+                    <Icon className={COLOR_STYLES[template.fields.color].text} aria-hidden="true" />
+                    {template.fields.name}
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button onClick={onCreate}>New habit</Button>
+            <Link
+              href={habitsHref({ kind: "view", view: "templates" })}
+              className={buttonVariants({ variant: "ghost" })}
+            >
+              <LayoutTemplate aria-hidden="true" />
+              Browse templates
+            </Link>
+          </div>
+        </div>
       </EmptyState>
     );
   }
 
   const { remaining, done, other } = groups(today.habits);
+
+  /** Log the day, and cheer when that met the target. */
+  async function log(item: HabitProgress, body: LogHabitRequest | null) {
+    const result = await onLog(item, body);
+    if (isDone(item) || !isDone(result)) return;
+    const othersLeft = remaining.some((other) => other.habit.id !== item.habit.id);
+    celebrate(
+      cheerFor(result, {
+        allDone: isRemaining(item) && !othersLeft,
+        doneToday: done.length,
+      }),
+    );
+  }
+
   const due = remaining.length + done.length;
+  const finished = due > 0 && done.length >= due;
   const weekday = WEEKDAYS[(dayOfWeek(today.day) + 6) % 7]?.value;
   const todaysRoutines = routines.filter(
     (routine) =>
@@ -99,7 +157,13 @@ export function HabitTodayView({
   return (
     <div className="grid gap-6 @4xl:grid-cols-[minmax(0,1fr)_18rem]">
       <div className="min-w-0 space-y-6">
-        <section aria-labelledby="today-summary" className="rounded-xl border bg-card p-4">
+        <section
+          aria-labelledby="today-summary"
+          className={cn(
+            "rounded-xl border bg-card p-4 transition-colors duration-300",
+            finished && "border-success/40 bg-success/5",
+          )}
+        >
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 id="today-summary" className="text-sm font-semibold">
               {formatCalendarDate(today.day)}
@@ -115,16 +179,23 @@ export function HabitTodayView({
             color="green"
             label="Today’s progress"
           />
-          <p className="mt-2 text-sm text-muted-foreground">{encouragement(done.length, due)}</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {finished ? (
+              <span aria-hidden="true" className="mr-1.5 inline-block animate-check-pop">
+                🎉
+              </span>
+            ) : null}
+            {encouragement(done.length, due)}
+          </p>
         </section>
 
-        <HabitGroup title="To do" items={remaining} onLog={onLog} />
-        <HabitGroup title="Done" items={done} onLog={onLog} />
+        <HabitGroup title="To do" items={remaining} onLog={log} />
+        <HabitGroup title="Done" items={done} onLog={log} />
         <HabitGroup
           title="Other habits"
           description="Skipped, resting today, paused, or this week’s target already met."
           items={other}
-          onLog={onLog}
+          onLog={log}
         />
       </div>
 
@@ -230,9 +301,12 @@ export function HabitTodayView({
           </p>
         </section>
       </aside>
+      {celebration}
     </div>
   );
 }
+
+const starters = HABIT_TEMPLATES.filter((template) => STARTER_TEMPLATE_IDS.includes(template.id));
 
 function HabitGroup({
   title,
@@ -243,7 +317,7 @@ function HabitGroup({
   title: string;
   description?: string;
   items: readonly HabitProgress[];
-  onLog: HabitTodayViewProps["onLog"];
+  onLog: (item: HabitProgress, body: LogHabitRequest | null) => Promise<unknown>;
 }) {
   if (items.length === 0) return null;
   return (

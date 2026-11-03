@@ -31,15 +31,23 @@ export const MAX_STEPS = 30;
 
 // Views
 
-export type HabitView = "today" | "all" | "routines" | "analytics" | "archived";
+export type HabitView = "today" | "all" | "routines" | "analytics" | "templates" | "archived";
 
 export const HABIT_VIEWS: readonly Option<HabitView>[] = [
   { value: "today", label: "Today" },
   { value: "all", label: "All habits" },
   { value: "routines", label: "Routines" },
   { value: "analytics", label: "Analytics" },
+  { value: "templates", label: "Templates" },
   { value: "archived", label: "Archived" },
 ];
+
+/** The rail section a location belongs to: detail pages sit under their list. */
+export function habitSection(location: HabitLocation): HabitView {
+  if (location.kind === "habit") return "all";
+  if (location.kind === "routine") return "routines";
+  return location.view;
+}
 
 /** Where the page is: a view, or a habit's or routine's detail page. */
 export type HabitLocation =
@@ -219,6 +227,62 @@ export function heatLevel(day: HabitHeatmapDay): 0 | 1 | 2 | 3 | 4 {
   if (share < 0.67) return 2;
   if (share < 1) return 3;
   return 4;
+}
+
+// Celebrations
+
+/** What to say when a habit's day is done: louder for milestones and a finished day. */
+export type Cheer = { emoji: string; title: string; message: string; big: boolean };
+
+const FIRST_CHEER = { emoji: "🎉", title: "Yay, target met!" };
+
+const CHEERS: readonly { emoji: string; title: string }[] = [
+  FIRST_CHEER,
+  { emoji: "✨", title: "Nailed it!" },
+  { emoji: "💪", title: "Way to show up!" },
+  { emoji: "🌟", title: "Another one done!" },
+  { emoji: "👏", title: "Done and dusted!" },
+];
+
+/** Streak lengths worth a bigger cheer. */
+export const STREAK_MILESTONES: ReadonlySet<number> = new Set([
+  3, 7, 14, 21, 30, 50, 75, 100, 150, 200, 365,
+]);
+
+/**
+ * The cheer for a habit that was just completed. `doneToday` is how many were already done
+ * before it, so consecutive check-offs vary; `allDone` means nothing else is left today.
+ */
+export function cheerFor(
+  result: Pick<HabitProgress, "habit" | "current_streak" | "streak_unit">,
+  { allDone, doneToday }: { allDone: boolean; doneToday: number },
+): Cheer {
+  const { habit, current_streak: streak, streak_unit: unit } = result;
+  if (allDone) {
+    return {
+      emoji: "🏆",
+      title: "All done for today!",
+      message: "Every habit for today is checked off. See you tomorrow.",
+      big: true,
+    };
+  }
+  if (STREAK_MILESTONES.has(streak)) {
+    return {
+      emoji: "🔥",
+      title: `${streak}-${unit} streak!`,
+      message: `${habit.name}, ${describeStreak(streak, unit)} running. Keep it alive.`,
+      big: true,
+    };
+  }
+  const cheer = CHEERS[doneToday % CHEERS.length] ?? FIRST_CHEER;
+  return {
+    ...cheer,
+    message:
+      streak > 1
+        ? `${habit.name} is done. That’s a ${streak}-${unit} streak.`
+        : `${habit.name} is done for today.`,
+    big: false,
+  };
 }
 
 export function routineMinutes(routine: Pick<Routine, "estimated_minutes">): string | null {

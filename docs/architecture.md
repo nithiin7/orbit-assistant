@@ -2472,9 +2472,14 @@ fields.
 
 ### Habits in the web app
 
-- `/habits`, with views in the URL: Today (`/habits`), All habits, Routines, Analytics, and
-  Archived (`?view=`), and detail pages (`?habit=`, `?routine=`). One primary action, a New menu
-  for a habit or a routine.
+- `/habits`, with views in the URL: Today (`/habits`), All habits, Routines, Analytics,
+  Templates, and Archived (`?view=`), and detail pages (`?habit=`, `?routine=`). The views sit in
+  a sticky side rail when the page is wide (`@5xl/habits`) and a row of chips below that, like
+  Automation. One primary action, a New menu for a habit, a routine, or a template.
+- Templates (`src/lib/habits/templates.ts`): ready-made habits by theme (health, mind, learning,
+  home and money) and routines with their steps. Choosing one opens the New habit or New routine
+  form filled in; nothing is saved until it's created. Templates whose name is already in use say
+  so. Today's empty state offers three starters.
 - Today groups habits into To do, Done, and others (skipped, resting, paused, or a weekly target
   already met), with one-tap check-offs that show at once and roll back on failure, inline
   progress for amounts and durations, skip and clear in a row menu, this week's dots, today's
@@ -2488,6 +2493,10 @@ fields.
   and a table of every habit.
 - Wording stays encouraging: missed days are "Not done", streaks are shown quietly, and there
   are no points or badges.
+- Checking a habit off on Today pops its check, and a short toast with confetti cheers when the
+  API reports the target met (`cheerFor`): a varied everyday cheer, a bigger one on streak
+  milestones (3, 7, 14, 21, 30… days), and the biggest when the last habit of the day is done.
+  Undoing or partial progress stays quiet. Reduced-motion settings drop the movement.
 - Code: `src/api/habits`, `src/hooks/use-habits.ts`, `src/lib/habits`, `src/components/habits`.
   Query keys start `["workspaces", id, "habits", …]`; changes refetch habits, reminders, and the
   calendar.
