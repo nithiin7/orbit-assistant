@@ -1,21 +1,12 @@
-import {
-  Hand,
-  History,
-  LayoutDashboard,
-  LayoutTemplate,
-  type LucideIcon,
-  Settings2,
-  Workflow,
-} from "lucide-react";
+import { Hand, History, House, type LucideIcon, Settings2, Workflow } from "lucide-react";
 import Link from "next/link";
 
 import { AGENT_TABS, type AgentTab, automationHref } from "@/lib/agent";
 import { cn } from "@/utils/common";
 
 const TAB_ICONS: Record<AgentTab, LucideIcon> = {
-  overview: LayoutDashboard,
+  overview: House,
   workflows: Workflow,
-  templates: LayoutTemplate,
   approvals: Hand,
   activity: History,
   settings: Settings2,

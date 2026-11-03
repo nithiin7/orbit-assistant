@@ -11,7 +11,6 @@ import { ApprovalCenter } from "./approvals";
 import { AutomationNav } from "./automation-nav";
 import { OverviewView } from "./overview";
 import { ErrorNote, LoadingRows } from "./shared";
-import { TemplatesView } from "./templates";
 import { WorkflowsView } from "./workflows";
 
 /** The Automation area: the tab (and an open run or template) live in the URL. */
@@ -37,15 +36,13 @@ export function AutomationView() {
           ) : tab === "overview" ? (
             <OverviewView overview={overview.data} />
           ) : tab === "workflows" ? (
-            <WorkflowsView enabled={overview.data.agent.enabled} />
-          ) : tab === "templates" ? (
-            <TemplatesView agent={overview.data.agent} templateId={params.get("template")} />
+            <WorkflowsView agent={overview.data.agent} templateId={params.get("template")} />
           ) : tab === "approvals" ? (
             <ApprovalCenter />
           ) : tab === "activity" ? (
             <ActivityView runId={params.get("run")} filter={params.get("status") ?? "all"} />
           ) : (
-            <AgentSettings agent={overview.data.agent} />
+            <AgentSettings agent={overview.data.agent} runtime={overview.data.runtime} />
           )}
         </div>
       </div>

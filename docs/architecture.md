@@ -4512,17 +4512,17 @@ claim and advance up to five executions with a five-minute lease.
 
 ### In the web app
 
-**Automation** (`/automation`, sections in a side rail, as chips when narrow, and in the URL):
-an overview (on/off, level, modules, where automations run, ask the agent, pending approvals,
-ideas to try before any workflow exists, recent activity); workflows (an editor for triggers and
-steps with tool arguments derived from each tool's schema, run now, on/off, delete); templates
-(a gallery grouped by category showing each one's trigger, steps, and the modules the agent must
-be allowed; using one opens the editor filled in, and `?template=<id>` opens it from a link);
-the approval center (each action's exact arguments, reason, effect, risk,
-untrusted-content warning, expiry); activity (filters, each run's steps with reasons, details,
-outputs, linked records, failures, cancel and retry); and settings (autonomy, modules, action
-types, per-action modes, instructions, limits, memory and the memory list, monitoring,
-notifications). Views with runs in progress refresh every five seconds.
+**Automation** (`/automation`, five sections in a side rail, as chips when narrow, and in the
+URL): Home (on/off and level, ask the agent, approvals waiting, templates to try before any
+workflow exists, recent runs); Workflows (each with its trigger, next run, on/off, and a menu to
+run, edit, or delete; below them a template gallery filtered by category that notes modules the
+agent isn't allowed yet; a template opens the editor filled in, and `?template=<id>` opens it
+from a link; the old `?tab=templates` lands here); Approvals (each action's effect, reason,
+risk when not low, untrusted-content warning, arguments under Details, expiry; earlier decisions
+as a short list); History (all, running, or failed runs; each run's steps with reasons, details,
+outputs, linked records, failures, cancel and retry); and Settings (autonomy, modules, record
+types, instructions, notifications, monitoring, the memory list, and where automations run;
+per-action modes, limits, memory settings, and the model sit under Advanced). Views with runs in progress refresh every five seconds.
 
 ### Known limitations
 

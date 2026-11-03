@@ -38,17 +38,18 @@ import { multiLineText, singleLineText } from "@/utils/validation";
 // Where things live
 
 export const AGENT_TABS = [
-  { value: "overview", label: "Overview" },
+  { value: "overview", label: "Home" },
   { value: "workflows", label: "Workflows" },
-  { value: "templates", label: "Templates" },
   { value: "approvals", label: "Approvals" },
-  { value: "activity", label: "Activity" },
+  { value: "activity", label: "History" },
   { value: "settings", label: "Settings" },
 ] as const;
 
 export type AgentTab = (typeof AGENT_TABS)[number]["value"];
 
 export function parseAgentTab(value: string | null): AgentTab {
+  // Templates used to have their own section; they now live with the workflows.
+  if (value === "templates") return "workflows";
   return AGENT_TABS.find((tab) => tab.value === value)?.value ?? "overview";
 }
 
@@ -68,23 +69,22 @@ export const AUTONOMY_LEVELS: readonly {
   {
     value: "read_only",
     label: "Read only",
-    description: "Looks things up and answers. Never changes anything.",
+    description: "Looks things up. Never changes anything.",
   },
   {
     value: "suggest",
     label: "Suggest",
-    description: "Prepares actions for you to do yourself. Never runs them.",
+    description: "Prepares changes for you to make yourself.",
   },
   {
     value: "approval",
     label: "Ask first",
-    description: "Runs an action only after you approve that exact action.",
+    description: "Asks you before every change.",
   },
   {
     value: "limited",
     label: "Limited autonomy",
-    description:
-      "Runs low-risk actions you allow on their own, within a daily limit. Everything else asks.",
+    description: "Makes small changes you allow on its own. Asks for the rest.",
   },
 ];
 
@@ -171,17 +171,17 @@ export const APPROVAL_STATUS_LABELS: Record<AgentApprovalStatus, string> = {
 
 export const STEP_KINDS: readonly AgentStepKind[] = [
   "tool",
-  "condition",
-  "delay",
-  "approval",
   "ai",
+  "condition",
+  "approval",
+  "delay",
 ];
 
 export const STEP_KIND_LABELS: Record<AgentStepKind, string> = {
-  tool: "Use a tool",
-  condition: "Check a condition",
+  tool: "Action",
+  condition: "Only continue if",
   delay: "Wait",
-  approval: "Ask for approval",
+  approval: "Ask me first",
   ai: "Write with AI",
 };
 
@@ -756,7 +756,7 @@ export const WORKFLOW_TEMPLATES: readonly WorkflowTemplate[] = [
   {
     id: "briefing",
     title: "Morning briefing",
-    description: "Every morning, today’s tasks and events summarized into a notification.",
+    description: "Today’s tasks and events, summarized for you.",
     category: "planning",
     modules: ["tasks", "calendar", "reminders"],
     workflow: (timeZone) => ({
@@ -811,7 +811,7 @@ export const WORKFLOW_TEMPLATES: readonly WorkflowTemplate[] = [
   {
     id: "renewal",
     title: "Renewal reminders",
-    description: "When a document is 30 days from expiring, propose a task to renew it.",
+    description: "A renewal task 30 days before a document expires.",
     category: "documents",
     modules: ["documents", "tasks"],
     workflow: () => ({
@@ -842,7 +842,7 @@ export const WORKFLOW_TEMPLATES: readonly WorkflowTemplate[] = [
   {
     id: "overdue",
     title: "Overdue nudge",
-    description: "When three or more tasks are overdue, send a notification listing them.",
+    description: "A nudge when three or more tasks are overdue.",
     category: "tasks",
     modules: ["tasks", "reminders"],
     workflow: () => ({
@@ -885,7 +885,7 @@ export const WORKFLOW_TEMPLATES: readonly WorkflowTemplate[] = [
   {
     id: "prep",
     title: "Meeting heads-up",
-    description: "An hour before each timed event, a notification with its details.",
+    description: "A heads-up an hour before each event.",
     category: "planning",
     modules: ["calendar", "reminders"],
     workflow: () => ({
@@ -915,8 +915,7 @@ export const WORKFLOW_TEMPLATES: readonly WorkflowTemplate[] = [
   {
     id: "week",
     title: "Plan the week",
-    description:
-      "Sunday evening, the week’s tasks, events, and reminders turned into a plan saved to Notes.",
+    description: "The week’s tasks, events, and reminders, planned into a note.",
     category: "planning",
     modules: ["tasks", "calendar", "reminders", "notes"],
     workflow: (timeZone) => ({
@@ -968,8 +967,7 @@ export const WORKFLOW_TEMPLATES: readonly WorkflowTemplate[] = [
   {
     id: "busy",
     title: "Busy-day triage",
-    description:
-      "When five or more tasks are due by tomorrow, AI suggests what to do first and what can wait.",
+    description: "What to do first when too much is due.",
     category: "tasks",
     modules: ["tasks", "reminders"],
     workflow: () => ({
@@ -1016,8 +1014,7 @@ export const WORKFLOW_TEMPLATES: readonly WorkflowTemplate[] = [
   {
     id: "follow-up",
     title: "Interview follow-up",
-    description:
-      "When you complete a task with “interview” in its title, add a task to send a thank-you note.",
+    description: "A thank-you task after each completed interview.",
     category: "tasks",
     modules: ["tasks"],
     workflow: () => ({
@@ -1054,8 +1051,7 @@ export const WORKFLOW_TEMPLATES: readonly WorkflowTemplate[] = [
   {
     id: "budget",
     title: "Budget watch",
-    description:
-      "When a budget crosses an alert threshold, AI explains what’s driving the spending.",
+    description: "What’s driving the spending when a budget runs high.",
     category: "money",
     modules: ["finance", "reminders"],
     workflow: () => ({
@@ -1099,7 +1095,7 @@ export const WORKFLOW_TEMPLATES: readonly WorkflowTemplate[] = [
   {
     id: "bills",
     title: "Bills due this week",
-    description: "Monday morning, a list of the loans, subscriptions, and bills due in the week.",
+    description: "The loans, subscriptions, and bills due this week.",
     category: "money",
     modules: ["finance", "reminders"],
     workflow: (timeZone) => ({
@@ -1140,8 +1136,7 @@ export const WORKFLOW_TEMPLATES: readonly WorkflowTemplate[] = [
   {
     id: "month",
     title: "Monthly spending review",
-    description:
-      "On the 1st, AI reviews last month’s spending and, once you approve, saves it to Notes.",
+    description: "Last month’s spending reviewed, then saved to Notes once you agree.",
     category: "money",
     modules: ["finance", "notes"],
     workflow: (timeZone) => ({
@@ -1195,7 +1190,7 @@ export const WORKFLOW_TEMPLATES: readonly WorkflowTemplate[] = [
   {
     id: "expiring",
     title: "Expiring documents digest",
-    description: "On the 1st, a list of documents that expire in the next 60 days, if any.",
+    description: "Documents expiring in the next 60 days.",
     category: "documents",
     modules: ["documents", "reminders"],
     workflow: (timeZone) => ({
@@ -1246,7 +1241,7 @@ export const WORKFLOW_TEMPLATES: readonly WorkflowTemplate[] = [
   {
     id: "habit",
     title: "Back on track",
-    description: "When you miss a habit, a kind nudge with one small step for today.",
+    description: "A kind nudge and one small step after a missed habit.",
     category: "wellbeing",
     modules: ["habits", "reminders"],
     workflow: () => ({
@@ -1286,7 +1281,7 @@ export const WORKFLOW_TEMPLATES: readonly WorkflowTemplate[] = [
   {
     id: "fitness",
     title: "Weekly fitness recap",
-    description: "Sunday evening, your workouts and health summary turned into a short recap.",
+    description: "The week’s workouts and health, in a short recap.",
     category: "wellbeing",
     modules: ["health", "reminders"],
     workflow: (timeZone) => ({

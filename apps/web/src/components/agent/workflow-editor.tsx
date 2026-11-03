@@ -5,11 +5,11 @@ import type { AgentStepKind, AgentTool } from "@orbit/contracts";
 import {
   ArrowDown,
   ArrowUp,
-  Bot,
   Clock,
   GitBranch,
   Hand,
   Plus,
+  Sparkles,
   Trash2,
   Wrench,
 } from "lucide-react";
@@ -24,7 +24,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
 import { Select } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   argumentFields,
@@ -54,7 +53,7 @@ const TRIGGER_OPTIONS = [
   { value: "manual", label: "When I run it" },
   { value: "schedule", label: "On a schedule" },
   { value: "event", label: "When something happens" },
-  { value: "condition", label: "When a condition becomes true" },
+  { value: "condition", label: "When a number crosses a limit" },
 ];
 
 const STEP_ICONS: Record<AgentStepKind, typeof Wrench> = {
@@ -62,7 +61,7 @@ const STEP_ICONS: Record<AgentStepKind, typeof Wrench> = {
   condition: GitBranch,
   delay: Clock,
   approval: Hand,
-  ai: Bot,
+  ai: Sparkles,
 };
 
 function options(labels: Record<string, string>) {
@@ -111,7 +110,7 @@ export function WorkflowEditor({ title, initial, tools, onSave, onClose }: Workf
   return (
     <DialogShell
       title={title}
-      description="Orbit runs the steps in order. Actions that change things follow the agent’s approval settings."
+      description="Choose when it starts, then what it does."
       busy={saving}
       onClose={onClose}
       onSubmit={(formEvent, close) => void handleSubmit((values) => save(values, close))(formEvent)}
@@ -126,34 +125,13 @@ export function WorkflowEditor({ title, initial, tools, onSave, onClose }: Workf
         {...register("name")}
         error={errors.name?.message}
       />
-      <FormField
-        label="Description"
-        hint="Optional."
-        autoComplete="off"
-        {...register("description")}
-        error={errors.description?.message}
-      />
-      <Controller
-        control={control}
-        name="enabled"
-        render={({ field }) => (
-          <label className="flex items-center justify-between gap-3 text-sm font-medium">
-            On
-            <Switch
-              checked={field.value}
-              onCheckedChange={field.onChange}
-              aria-label="Workflow on"
-            />
-          </label>
-        )}
-      />
 
       <fieldset className="space-y-3 rounded-lg border p-3">
-        <legend className="px-1 text-sm font-medium">Starts</legend>
+        <legend className="px-1 text-sm font-medium">When</legend>
         <SelectField
           control={control}
           name="triggerKind"
-          label="Trigger"
+          label="Starts"
           options={TRIGGER_OPTIONS}
         />
         {triggerKind === "schedule" ? (
@@ -288,16 +266,11 @@ export function WorkflowEditor({ title, initial, tools, onSave, onClose }: Workf
             />
           </div>
         ) : null}
-        {triggerKind === "event" || triggerKind === "condition" ? (
-          <p className="text-xs text-muted-foreground">
-            Values from the trigger are available to steps as {"{{trigger.title}}"}, and so on.
-          </p>
-        ) : null}
       </fieldset>
 
       <fieldset className="space-y-3">
         <div className="flex items-center justify-between gap-2">
-          <legend className="text-sm font-medium">Steps</legend>
+          <legend className="text-sm font-medium">Then</legend>
           <Menu
             size="sm"
             variant="soft"
@@ -320,6 +293,10 @@ export function WorkflowEditor({ title, initial, tools, onSave, onClose }: Workf
         </div>
         {errors.steps?.message ? (
           <p className="text-xs text-destructive">{errors.steps.message}</p>
+        ) : fields.length > 1 ? (
+          <p className="text-xs text-muted-foreground">
+            Pass results along with {"{{steps.<id>.text}}"} or {"{{trigger.title}}"}.
+          </p>
         ) : null}
         <ol className="space-y-3">
           {fields.map((field, index) => {
@@ -335,7 +312,10 @@ export function WorkflowEditor({ title, initial, tools, onSave, onClose }: Workf
                   <p className="flex items-center gap-2 text-sm font-medium">
                     <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
                     {index + 1}. {STEP_KIND_LABELS[step.kind]}
-                    <span className="font-mono text-xs font-normal text-muted-foreground">
+                    <span
+                      className="rounded bg-muted px-1.5 font-mono text-xs font-normal text-muted-foreground"
+                      title={`Later steps can use {{steps.${step.id}.text}}`}
+                    >
                       steps.{step.id}
                     </span>
                   </p>
@@ -372,8 +352,8 @@ export function WorkflowEditor({ title, initial, tools, onSave, onClose }: Workf
                   </div>
                 </div>
                 <FormField
-                  label="Label"
-                  hint="Optional."
+                  label="Step name"
+                  placeholder={STEP_KIND_LABELS[step.kind]}
                   autoComplete="off"
                   {...register(`steps.${index}.title`)}
                 />
@@ -390,7 +370,7 @@ export function WorkflowEditor({ title, initial, tools, onSave, onClose }: Workf
                   <div className="grid gap-3 sm:grid-cols-3">
                     <FormField
                       label="Value"
-                      placeholder="steps.find.count"
+                      placeholder="steps.find.count or trigger.title"
                       {...register(`steps.${index}.conditionLeft`)}
                       error={errors.steps?.[index]?.conditionLeft?.message}
                     />
@@ -445,11 +425,6 @@ export function WorkflowEditor({ title, initial, tools, onSave, onClose }: Workf
                       <p className="text-xs text-destructive">
                         {errors.steps[index].prompt.message}
                       </p>
-                    ) : step.kind === "ai" ? (
-                      <p className="text-xs text-muted-foreground">
-                        Uses your AI provider. Earlier steps’ results go to it only for modules AI
-                        may read.
-                      </p>
                     ) : null}
                   </div>
                 ) : null}
@@ -483,11 +458,11 @@ function ToolStep({
       <SelectField
         control={control}
         name={`steps.${index}.tool`}
-        label="Tool"
-        placeholder="Choose a tool"
+        label="Action"
+        placeholder="Choose an action"
         options={tools.map((t) => ({
           value: t.name,
-          label: t.access === "read" ? t.title : `${t.title} (changes records)`,
+          label: t.access === "read" ? t.title : `${t.title} (makes a change)`,
         }))}
       />
       {selected ? <p className="text-xs text-muted-foreground">{selected.description}</p> : null}
@@ -547,10 +522,6 @@ function ToolStep({
           )}
         />
       ) : null}
-      <p className="text-xs text-muted-foreground">
-        Use values from the trigger or earlier steps, like {"{{trigger.title}}"} or{" "}
-        {"{{steps.find.text}}"}.
-      </p>
     </div>
   );
 }

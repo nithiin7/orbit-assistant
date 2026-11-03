@@ -28,11 +28,12 @@ import { ErrorNote, ExecutionStatusBadge, LoadingRows, SectionHeading } from "./
 
 const FILTERS: readonly { value: string; label: string; status: AgentExecutionStatus[] }[] = [
   { value: "all", label: "All", status: [] },
-  { value: "active", label: "In progress", status: ["queued", "running", "waiting"] },
-  { value: "approval", label: "Needs approval", status: ["waiting_approval"] },
-  { value: "succeeded", label: "Completed", status: ["succeeded"] },
+  {
+    value: "active",
+    label: "Running",
+    status: ["queued", "running", "waiting", "waiting_approval"],
+  },
   { value: "failed", label: "Failed", status: ["failed"] },
-  { value: "cancelled", label: "Cancelled", status: ["cancelled"] },
 ];
 
 export function ExecutionRow({ execution }: { execution: AgentExecution }) {
@@ -66,10 +67,7 @@ function ExecutionList({ filter, status }: { filter: string; status: AgentExecut
   const executions = useAgentExecutions({ status, limit: 100 });
   return (
     <div className="space-y-4">
-      <SectionHeading
-        title="Activity"
-        description="What the agent and your workflows did, why, and what changed."
-      />
+      <SectionHeading title="History" />
       <nav aria-label="Filter runs" className="-mx-1 overflow-x-auto px-1">
         <ul className="flex gap-1">
           {FILTERS.map((option) => (
@@ -81,9 +79,9 @@ function ExecutionList({ filter, status }: { filter: string; status: AgentExecut
                 )}
                 aria-current={option.value === filter ? "page" : undefined}
                 className={cn(
-                  "inline-flex h-7 items-center rounded-full px-3 text-xs font-medium whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "inline-flex h-8 items-center rounded-full px-3 text-sm font-medium whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   option.value === filter
-                    ? "bg-secondary text-secondary-foreground"
+                    ? "bg-brand-subtle text-brand"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
               >
@@ -101,7 +99,7 @@ function ExecutionList({ filter, status }: { filter: string; status: AgentExecut
         <EmptyState
           icon={History}
           title="Nothing here yet"
-          description="Runs appear here as soon as they start, with every step they take."
+          description="Every run shows up here, step by step."
         />
       ) : (
         <ul className="divide-y rounded-xl border bg-card">
@@ -200,7 +198,7 @@ export function ExecutionDetail({ executionId }: { executionId: string }) {
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="size-4" aria-hidden="true" />
-        All activity
+        History
       </Link>
       {detail.status === "loading" ? (
         <LoadingRows label="Loading the run" />

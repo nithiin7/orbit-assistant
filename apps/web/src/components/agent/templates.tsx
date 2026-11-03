@@ -1,56 +1,21 @@
 "use client";
 
-import type { Agent, AgentStepKind, AgentTool, AgentTrigger } from "@orbit/contracts";
-import {
-  CalendarDays,
-  Clock,
-  FileText,
-  Gauge,
-  GitBranch,
-  Hand,
-  HeartPulse,
-  ListChecks,
-  type LucideIcon,
-  Play,
-  Sparkles,
-  Timer,
-  Wallet,
-  Wrench,
-  Zap,
-} from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useId, useRef, useState } from "react";
+import type { AgentModule, AgentTrigger } from "@orbit/contracts";
+import { Clock, Gauge, type LucideIcon, Play, Zap } from "lucide-react";
+import { useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { useAgentTools, useSaveWorkflow } from "@/hooks/use-agent";
-import { useViewerTimeZone } from "@/hooks/use-calendar";
 import {
-  automationHref,
   describeTrigger,
-  findTemplate,
   missingModules,
   MODULE_LABELS,
-  STEP_KIND_LABELS,
   TEMPLATE_CATEGORIES,
   type TemplateCategory,
   WORKFLOW_TEMPLATES,
-  workflowFormValues,
-  workflowRequest,
   type WorkflowTemplate,
 } from "@/lib/agent";
+import { cn } from "@/utils/common";
 
 import { SectionHeading } from "./shared";
-import { WorkflowEditor } from "./workflow-editor";
-
-const CATEGORY_ICONS: Record<TemplateCategory, LucideIcon> = {
-  planning: CalendarDays,
-  tasks: ListChecks,
-  money: Wallet,
-  documents: FileText,
-  wellbeing: HeartPulse,
-};
 
 const TRIGGER_ICONS: Record<AgentTrigger["kind"], LucideIcon> = {
   manual: Play,
@@ -59,108 +24,61 @@ const TRIGGER_ICONS: Record<AgentTrigger["kind"], LucideIcon> = {
   condition: Gauge,
 };
 
-const STEP_ICONS: Record<AgentStepKind, LucideIcon> = {
-  tool: Wrench,
-  ai: Sparkles,
-  condition: GitBranch,
-  approval: Hand,
-  delay: Timer,
-};
+const FILTERS: readonly { id: TemplateCategory | "all"; label: string }[] = [
+  { id: "all", label: "All" },
+  ...TEMPLATE_CATEGORIES,
+];
 
-/**
- * Ready-made workflows that show what the agent can do. Using one opens the workflow editor with
- * it filled in; nothing is saved until the person saves it. `templateId` (from the URL) opens one
- * straight away.
- */
-export function TemplatesView({ agent, templateId }: { agent: Agent; templateId: string | null }) {
-  const router = useRouter();
-  const timeZone = useViewerTimeZone();
-  const tools = useAgentTools();
-  const save = useSaveWorkflow();
-  const [using, setUsing] = useState<WorkflowTemplate | null>(
-    () => findTemplate(templateId) ?? null,
-  );
-  const saved = useRef(false);
-  const toolList: readonly AgentTool[] = tools.status === "success" ? tools.data.tools : [];
-
-  return (
-    <div className="space-y-8">
-      <SectionHeading
-        title="Templates"
-        description="Ready-made workflows that show what the agent can do. Pick one, change anything you like, and save it as your own."
-      />
-      {!agent.enabled ? (
-        <p className="rounded-lg bg-warning/10 p-3 text-sm">
-          The agent is off, so saved workflows won’t run until you turn it on in the Overview.
-        </p>
-      ) : null}
-      {TEMPLATE_CATEGORIES.map((category) => (
-        <TemplateSection
-          key={category.id}
-          category={category.id}
-          label={category.label}
-          templates={WORKFLOW_TEMPLATES.filter((template) => template.category === category.id)}
-          agent={agent}
-          timeZone={timeZone}
-          onUse={setUsing}
-        />
-      ))}
-      {using ? (
-        <WorkflowEditor
-          title={using.title}
-          initial={workflowFormValues(using.workflow(timeZone), timeZone)}
-          tools={toolList}
-          onSave={async (values) => {
-            await save.mutateAsync({ id: null, body: workflowRequest(values, toolList) });
-            saved.current = true;
-          }}
-          onClose={() => {
-            setUsing(null);
-            // Once saved, show it among the person's workflows; otherwise drop the template
-            // from the URL so a reload doesn't open it again.
-            if (saved.current) router.push(automationHref("workflows"));
-            else if (templateId) router.replace(automationHref("templates"));
-            saved.current = false;
-          }}
-        />
-      ) : null}
-    </div>
-  );
-}
-
-function TemplateSection({
-  category,
-  label,
-  templates,
-  agent,
+/** Ready-made workflows. Choosing one opens it in the editor; nothing is saved until then. */
+export function TemplateGallery({
+  allowed,
   timeZone,
   onUse,
 }: {
-  category: TemplateCategory;
-  label: string;
-  templates: readonly WorkflowTemplate[];
-  agent: Agent;
+  allowed: readonly AgentModule[];
   timeZone: string;
   onUse: (template: WorkflowTemplate) => void;
 }) {
-  const headingId = useId();
-  const Icon = CATEGORY_ICONS[category];
-  if (templates.length === 0) return null;
+  const [filter, setFilter] = useState<TemplateCategory | "all">("all");
+  const shown = WORKFLOW_TEMPLATES.filter(
+    (template) => filter === "all" || template.category === filter,
+  );
+
   return (
-    <section aria-labelledby={headingId} className="space-y-3">
-      <h3 id={headingId} className="flex items-center gap-2 text-sm font-semibold">
-        <Icon className="size-4 text-brand" aria-hidden="true" />
-        {label}
-      </h3>
+    <section className="space-y-4">
+      <SectionHeading title="Templates" />
+      <div
+        role="group"
+        aria-label="Template categories"
+        className="-mx-1 scrollbar-none flex gap-1 overflow-x-auto px-1"
+      >
+        {FILTERS.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            aria-pressed={filter === option.id}
+            onClick={() => setFilter(option.id)}
+            className={cn(
+              "h-8 shrink-0 rounded-full px-3 text-sm font-medium whitespace-nowrap transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              filter === option.id
+                ? "bg-brand-subtle text-brand"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground",
+            )}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
       <ul className="grid gap-3 @3xl:grid-cols-2 @6xl:grid-cols-3">
-        {templates.map((template) => (
-          <TemplateCard
-            key={template.id}
-            template={template}
-            agent={agent}
-            timeZone={timeZone}
-            onUse={() => onUse(template)}
-          />
+        {shown.map((template) => (
+          <li key={template.id}>
+            <TemplateCard
+              template={template}
+              missing={missingModules(template, allowed)}
+              timeZone={timeZone}
+              onUse={() => onUse(template)}
+            />
+          </li>
         ))}
       </ul>
     </section>
@@ -169,77 +87,36 @@ function TemplateSection({
 
 function TemplateCard({
   template,
-  agent,
+  missing,
   timeZone,
   onUse,
 }: {
   template: WorkflowTemplate;
-  agent: Agent;
+  missing: readonly AgentModule[];
   timeZone: string;
   onUse: () => void;
 }) {
-  const titleId = useId();
-  const workflow = template.workflow(timeZone);
-  const TriggerIcon = TRIGGER_ICONS[workflow.trigger.kind];
-  const missing = missingModules(template, agent.modules);
-  const kinds = new Set(workflow.steps.map((step) => step.kind));
-
+  const trigger = template.workflow(timeZone).trigger;
+  const TriggerIcon = TRIGGER_ICONS[trigger.kind];
   return (
-    <li
-      aria-labelledby={titleId}
-      className="flex flex-col gap-4 rounded-xl border bg-card p-4 shadow-elevation-1"
+    <button
+      type="button"
+      onClick={onUse}
+      className="flex h-full w-full flex-col gap-2 rounded-xl border bg-card p-4 text-left transition-colors duration-150 outline-none hover:border-brand/40 hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <div className="space-y-1">
-        <h4 id={titleId} className="font-medium">
-          {template.title}
-        </h4>
-        <p className="text-sm text-muted-foreground">{template.description}</p>
-      </div>
-
-      <p className="flex items-center gap-2 text-xs font-medium">
-        <TriggerIcon className="size-3.5 text-brand" aria-hidden="true" />
-        {describeTrigger(workflow.trigger)}
-      </p>
-
-      <ol aria-label="Steps" className="space-y-1.5 border-l pl-3">
-        {workflow.steps.map((step) => {
-          const StepIcon = STEP_ICONS[step.kind];
-          return (
-            <li key={step.id} className="flex items-center gap-2 text-sm">
-              <StepIcon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-              <span className="min-w-0 truncate">{step.title || STEP_KIND_LABELS[step.kind]}</span>
-            </li>
-          );
-        })}
-      </ol>
-
-      <div className="mt-auto space-y-3">
-        <div className="flex flex-wrap gap-1.5">
-          {kinds.has("ai") ? <Badge variant="brand">Writes with AI</Badge> : null}
-          {kinds.has("condition") ? <Badge>Decides for itself</Badge> : null}
-          {kinds.has("approval") ? <Badge>Asks you first</Badge> : null}
-          {template.modules.map((module) => (
-            <Badge key={module} variant="outline">
-              {MODULE_LABELS[module]}
-            </Badge>
-          ))}
-        </div>
+      <span className="font-medium">{template.title}</span>
+      <span className="text-sm text-muted-foreground">{template.description}</span>
+      <span className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 text-xs">
+        <span className="flex items-center gap-1.5 font-medium text-brand">
+          <TriggerIcon className="size-3.5" aria-hidden="true" />
+          {describeTrigger(trigger)}
+        </span>
         {missing.length > 0 ? (
-          <p className="text-xs text-muted-foreground">
-            Needs access to {missing.map((module) => MODULE_LABELS[module]).join(", ")}.{" "}
-            <Link
-              href={automationHref("settings")}
-              className="font-medium text-brand hover:underline"
-            >
-              Allow it in Settings
-            </Link>
-          </p>
+          <span className="text-muted-foreground">
+            Needs {missing.map((module) => MODULE_LABELS[module]).join(", ")}
+          </span>
         ) : null}
-        <Button variant="soft" size="sm" onClick={onUse}>
-          Use template
-          <span className="sr-only">: {template.title}</span>
-        </Button>
-      </div>
-    </li>
+      </span>
+    </button>
   );
 }
