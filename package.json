@@ -23,6 +23,7 @@
     "test": "pnpm -r test",
     "test:web": "pnpm --filter @orbit/web test",
     "test:api": "pnpm --filter @orbit/api test",
+    "test:e2e": "pnpm --filter @orbit/web test:e2e",
     "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test",
     "build": "pnpm --filter @orbit/web build",
     "contracts:generate": "pnpm --filter @orbit/contracts generate",
