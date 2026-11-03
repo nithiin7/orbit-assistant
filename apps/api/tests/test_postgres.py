@@ -19,6 +19,7 @@ from orbit_api.db.database import open_database
 from orbit_api.db.engine import create_engine
 from orbit_api.db.migrate import downgrade, upgrade
 from orbit_api.main import create_app
+from orbit_api.repositories.backup import build_backup_service
 from orbit_api.repositories.calendar import build_calendar_service
 from orbit_api.repositories.documents import build_document_service
 from orbit_api.repositories.fitness import build_fitness
@@ -27,6 +28,8 @@ from orbit_api.repositories.search.history import build_search_history
 from orbit_api.repositories.search.providers import build_universal_search
 from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import SqlTransaction
+from orbit_api.repositories.workspaces import SqlWorkspaceRepository
+from orbit_api.services.backup.service import ApplyRequest
 from orbit_api.services.calendar.models import DateWindow, EventDraft, OccurrenceChanges
 from orbit_api.services.calendar.recurrence import EventRecurrence
 from orbit_api.services.documents.models import (
@@ -168,6 +171,9 @@ PROTECTED_TABLES = (
     "ai_action_proposals",
     "ai_usage",
     "ai_insight_dismissals",
+    "backups",
+    "backup_settings",
+    "backup_uploads",
 )
 
 
@@ -763,5 +769,88 @@ async def test_universal_search_on_postgres(cloud_settings: Settings) -> None:
             await history.save(user_id, workspace_id, name="Studio", query="kiln", filters={})
             with pytest.raises(DuplicateSavedSearchError):
                 await history.save(user_id, workspace_id, name="studio", query="x", filters={})
+    finally:
+        await database.dispose()
+
+
+@pytest.mark.anyio
+async def test_backup_and_restore_on_postgres(cloud_settings: Settings, tmp_path: Path) -> None:
+    """A backup read from one REPEATABLE READ snapshot, and restored next to the original with
+    new IDs, on PostgreSQL. Driven through the service, since cloud mode's API needs Supabase
+    tokens."""
+    settings = cloud_settings.model_copy(
+        update={"attachments_path": tmp_path / "files", "backups_path": tmp_path / "backups"}
+    )
+    database = await open_database(settings)
+    user_id, workspace_id = uuid.uuid4(), uuid.uuid4()
+    try:
+        async with database.session() as session:
+            await session.execute(
+                text(
+                    "INSERT INTO users (id, auth_provider, auth_subject, email, display_name,"
+                    " created_at, updated_at) VALUES (:id, 'local', :subject, 'b@example.com', 'B',"
+                    " now(), now())"
+                ),
+                {"id": user_id, "subject": str(user_id)},
+            )
+            await session.execute(
+                text(
+                    "INSERT INTO workspaces (id, owner_id, name, is_personal, created_at,"
+                    " updated_at) VALUES (:id, :owner, 'Personal', true, now(), now())"
+                ),
+                {"id": workspace_id, "owner": user_id},
+            )
+            await session.commit()
+            tasks = TaskService(SqlTaskRepository(session), SqlTransaction(session))
+            await tasks.create(workspace_id, TaskDraft(title="On Postgres"))
+            calendar = build_calendar_service(session)
+            await calendar.create_event(
+                workspace_id,
+                EventDraft(
+                    title="Weekly",
+                    start=datetime(2030, 3, 29, 9, 0),
+                    end=datetime(2030, 3, 29, 9, 30),
+                    timezone="Europe/Paris",
+                    recurrence=EventRecurrence("daily", count=3),
+                ),
+                default_timezone="UTC",
+            )
+            documents = build_document_service(
+                session, FileAttachmentStore(settings.attachments_dir)
+            )
+            await documents.upload(
+                workspace_id,
+                "notes.txt",
+                b"plain text",
+                DocumentDraft(title="Notes"),
+                default_timezone="UTC",
+            )
+            workspace = await SqlWorkspaceRepository(session).get_owned(user_id, workspace_id)
+            assert workspace is not None
+
+            backups = build_backup_service(session, settings)
+            backup = await backups.create_backup(
+                workspace, user_id, kind="manual", include_files=True, encryption_mode="none"
+            )
+            assert backup.status == "succeeded" and backup.file_count == 1
+            _, path = await backups.open_backup(workspace_id, backup.id)
+            staged_path = tmp_path / "upload.zip"
+            staged_path.write_bytes(path.read_bytes())
+            upload = await backups.receive_upload(workspace_id, user_id, staged_path, "b.zip")
+            inspection = await backups.inspect(workspace, user_id, upload.id, None)
+            assert inspection.compatible, inspection.issues
+            report = await backups.apply(
+                workspace, user_id, upload.id, ApplyRequest(strategy="new_workspace")
+            )
+            assert report.remapped > 0 and report.files_restored == 1
+            copied = await session.scalar(
+                text("SELECT count(*) FROM tasks WHERE workspace_id = :id"),
+                {"id": report.workspace_id},
+            )
+            series = await session.scalar(
+                text("SELECT recurrence FROM calendar_events WHERE workspace_id = :id"),
+                {"id": report.workspace_id},
+            )
+            assert copied == 1 and series["count"] == 3
     finally:
         await database.dispose()

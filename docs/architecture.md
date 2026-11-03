@@ -27,7 +27,8 @@ Browser ──► apps/web (Next.js, :3000) ──HTTP/JSON──► apps/api (F
   brought together by the [daily dashboard and command center](#daily-dashboard-and-command-center)
   and [universal search](#universal-search), with an optional [AI layer](#ai-intelligence-layer) on top (off until each person turns it on),
   and [external integrations](#external-integrations) that bring Google and Microsoft calendars,
-  mail, and files into those modules.
+  mail, and files into those modules, and [backup, restore, and data
+  portability](#backup-restore-and-data-portability) for every workspace.
 
 The two apps communicate only over HTTP and share no runtime code. They share one thing: the
 API contract in `packages/contracts`, described below.
@@ -233,6 +234,7 @@ apps/api/src/orbit_api/
 │       ├── search.py    # Grouped search; universal search (/search/results); recent and saved searches
 │       ├── ai.py        # AI: settings, providers, usage (/me/ai); assistant, assist, search, insights, index
 │       ├── integrations.py # Connections, OAuth, calendars, sync runs, conflicts, mail, files, webhooks
+│       ├── backups.py   # Backups, settings, downloads, verification, exports, uploads, inspect, restore
 │       └── notifications.py # The signed-in user's notifications: list, unread count, read state
 ├── auth/                # Adapters: Argon2 password hashing, Supabase JWT verification
 ├── providers/ai/        # Adapters: OpenAI (and compatible), Anthropic, Gemini, Ollama over HTTP
@@ -252,7 +254,7 @@ apps/api/src/orbit_api/
     ├── database.py      # `open_database()`: connect, verify schema, sessions, dispose
     ├── migrate.py       # Programmatic Alembic: upgrade, downgrade, head revision
     └── migrations/      # Alembic environment and versioned revisions
-        └── versions/    # 0001_baseline … 0019_create_integrations
+        └── versions/    # 0001_baseline … 0021_create_backups
 ```
 
 Design decisions:
@@ -395,6 +397,11 @@ written once. SQLite is embedded in the API process; local mode needs no databas
 - `0019_create_integrations` creates `integration_connections`, `integration_resources`,
   `integration_oauth_states`, `integration_links`, and `integration_sync_runs` with RLS (see
   [External integrations](#external-integrations)).
+- `0020_create_search_history` creates `recent_searches` and `saved_searches` with RLS (see
+  [Universal search](#universal-search)).
+- `0021_create_backups` creates `backups` (with a partial unique index for one running backup per
+  workspace), `backup_settings`, and `backup_uploads` with RLS (see
+  [Backup, restore, and data portability](#backup-restore-and-data-portability)).
 - Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
   Startup only checks that the database is at the head revision. For a shared cloud database,
   schema changes should be deliberate and reviewable.
@@ -451,7 +458,8 @@ structure.
   are not reachable from other devices. Binding to `0.0.0.0` exposes the API, including local
   sign-in, to the network over plain HTTP and without rate limiting. Don't do it outside a
   trusted, isolated environment.
-- Backups: see [development.md](development.md#backups).
+- Backups: see [Backup, restore, and data portability](#backup-restore-and-data-portability)
+  and [development.md](development.md#backups).
 
 ### Cloud security and Supabase
 
@@ -478,7 +486,8 @@ structure.
      `0011` for the six budget, goal, and plan tables; `0012` for the seven note tables; `0013`
      for the seven calendar tables; `0014` for the twelve habit and routine tables; `0015` for
      the seven document tables; `0016` for the twenty fitness tables; `0018` for the nine AI
-     tables; `0019` for the five integration tables.
+     tables; `0019` for the five integration tables; `0020` for the two search tables; `0021` for
+     the three backup tables.
   2. **No policies exist**, deliberately: the browser never queries tables directly, so the
      Data API's `anon` and `authenticated` roles get no rows. Add `authenticated` policies
      (for example `owner_id = auth.uid()`) only if a client is ever allowed direct access.
@@ -2703,7 +2712,8 @@ Original file names are kept; collisions in one folder get " (2)", and path segm
 so they can't escape the archive. Metadata-only documents appear in `metadata.json` only. The
 export includes document numbers, since it's the owner's backup. Backups of a whole
 installation copy the database and the attachments folder together
-([development.md](development.md#backups)). There is no import yet.
+([development.md](development.md#backups)), or use a workspace backup, which includes the files
+and can be restored (see [Backup, restore, and data portability](#backup-restore-and-data-portability)).
 
 ### Documents API
 
@@ -3745,8 +3755,8 @@ Setup, scopes, and operator guidance: [integrations.md](integrations.md).
   validation, versions, the file store), the task, note, and reminder services, in-app
   notifications, and search (imported records are found by the existing substring search and
   indexed by the AI layer like any other record).
-- **Not present, and still not built:** multi-device sync of Orbit's own data and any backup
-  or restore beyond copying the database and the Documents export. There was no sync engine to
+- **Not present, and still not built:** multi-device sync of Orbit's own data. (Backup and
+  restore came later; see [Backup, restore, and data portability](#backup-restore-and-data-portability).) There was no sync engine to
   plug into, so integrations have their own synchronization runs inside the existing worker,
   scoped to external accounts. They don't synchronize Orbit between devices.
 
@@ -4009,6 +4019,225 @@ connection's owner. Another person's connection is a 404.
 - The opt-in PostgreSQL suite checks RLS on the new tables; integration HTTP tests run on SQLite
   against an in-memory provider and mocked HTTP, not real accounts.
 
+## Backup, restore, and data portability
+
+Workspace backups, restores, exports, and imports, for both storage modes. User guide:
+[backups.md](backups.md).
+
+### What existed, and what was reused
+
+- **Reused:** workspace authorization (`WorkspaceDep`), the attachment store (two streaming
+  methods added: `write_stream` and `checksum`), the ORM metadata (the backup engine is driven by
+  it rather than by per-module code), the reminder worker (scheduled backups and housekeeping,
+  no second scheduler), `argon2-cffi` and `cryptography` (already dependencies), the calendar's
+  recurrence rules, the shared CSV-injection guard (moved to `utils/spreadsheet.py` and used by
+  the finance CSV too), and the workspace-deletion route (which now also deletes the workspace's
+  backups).
+- **Not present before:** any restore or import. Backups were the deployment guide's file copies
+  and the Documents export.
+
+### Layout
+
+```text
+services/backup/
+├── catalog.py     # every table: in a module, or excluded with the reason; file columns; match keys
+├── rows.py        # records ↔ portable JSON; ID remapping (columns, text, JSON); parents first
+├── archive.py     # the ZIP format: writer, manifest, and a reader that treats archives as hostile
+├── sources.py     # where restored rows come from: a backup archive or a JSON export
+├── encryption.py  # password-protected archives (Argon2id, X25519, HKDF, AES-256-GCM STREAM)
+├── writer.py      # snapshot dump into an archive, or into JSON tables
+├── restore.py     # restore and import: ID plan, conflicts, inserts, files, verification
+├── formats.py     # module exports (CSV, Markdown ZIP, .ics); ics.py and markdown.py
+├── schedule.py    # next runs, retries, and the stale-run cutoff
+├── ports.py       # protocols for data, records, the archive store, and the file store
+└── service.py     # BackupService: what routes and the worker call
+repositories/backup.py   # SqlBackupData (generic, metadata-driven) and SqlBackupRecords
+system/backup_store.py   # FileArchiveStore: archives and staged uploads on disk
+api/v1/backups.py        # routes
+```
+
+### Data model
+
+`0021_create_backups` adds, with RLS on PostgreSQL:
+
+- `backups`: a workspace's backup history: kind (`manual`, `scheduled`, `pre_restore`), status
+  (`running`, `succeeded`, `failed`), whether files and encryption were used, size and SHA-256 of
+  the stored archive, record and file counts per module, warnings, a safe error message, and the
+  format, schema, and app versions. A partial unique index on `workspace_id WHERE status =
+'running'` allows one running backup per workspace across every API process and worker.
+- `backup_settings`: frequency, retention count (1 to 50), files, encryption, the backup key
+  (public key and password-sealed private key, never the password), and the next and last run.
+- `backup_uploads`: uploaded archives staged for inspection, with status (`uploaded`,
+  `restoring`, `completed`, `failed`, `expired`, `discarded`), checksum, and the restore report.
+
+### Backup format and versioning
+
+A backup is a ZIP (`orbit-backup/manifest.json`, `README.txt`, `database/<table>.jsonl`,
+`files/<id>`). The manifest records `format: "orbit-backup"`, `format_version` (1), the Orbit
+version, the Alembic `schema_revision`, the creation time, the workspace's ID and name, the
+owner's ID, the modules, every table's row count, size, and SHA-256, every file's size and
+SHA-256, and files that were already missing from storage.
+
+Records are one JSON object per line, every column included: canonical UUID strings (so IDs and
+relationships survive), UTC timestamps with `+00:00`, calendar wall-clock times without an offset
+(beside the event's IANA zone), dates and times in ISO 8601, money as JSON integers in minor
+units with the currency in its own column (never floats), floats as Python's round-tripping
+repr, and JSON columns (recurrence rules, note content) nested as stored.
+
+**Included:** every table of every module (`catalog.py`). **Excluded, with reasons in code:**
+users, credentials and sessions, avatars, per-person preferences, AI provider keys and settings,
+the AI retrieval index (rebuilt by the worker), pending AI action proposals, AI usage, recent
+searches, all integration tables (tokens and sync state; accounts are reconnected), and the
+backup tables. A test fails if a new table is in neither list, if a column named `blob_id` isn't
+declared as a file column, or if a column type isn't supported.
+
+A JSON export (`format: "orbit-export"`) is the same records in one document,
+`{"tables": {"tasks": [...]}}`, for one module or all, without files.
+
+### Database provider strategy
+
+One application-level engine serves both databases; there is no database dump, because a dump
+can't be scoped to one workspace, would carry other users' rows and secrets, and isn't portable
+between SQLite and PostgreSQL. `SqlBackupData` reads every table generically from the ORM
+metadata, filtered by `workspace_id` (reminder occurrences through their reminder), and, for
+tables with an owner column (health records, notifications), by the person.
+
+- **SQLite:** Python's driver begins a transaction only before a write, so the dump issues an
+  explicit `BEGIN`. In WAL mode that read transaction sees one snapshot of every table and
+  doesn't block writers (tested by writing from another connection between two tables' reads).
+  The live database file is never copied.
+- **PostgreSQL / Supabase:** `SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY`, so all
+  tables come from one snapshot. Nothing needs filesystem access to the database server, and no
+  Supabase credential is involved.
+
+The snapshot ends before files are copied. Stored files never change (a new version is a new
+file), so the files a snapshot names are the ones it meant; one deleted in between is recorded as
+missing. Because the format is application-level, a backup made in local mode restores in cloud
+mode and the reverse: this is the supported way to move a workspace between installations.
+
+### Restore strategy
+
+`POST …/backup-uploads` streams the file to disk with a size limit (`ORBIT_BACKUP_UPLOAD_MAX_BYTES`)
+and checks its structure. `…/inspect` (with the password, for encrypted ones) verifies every
+checksum, checks compatibility, and runs a **dry run**: the full restore in a transaction that's
+rolled back. `…/restore` runs it with an explicit strategy:
+
+| Strategy        | Target                                        | Guard                                                                                        |
+| --------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `new_workspace` | A new workspace (name chosen or "(restored)") | None; nothing existing changes                                                               |
+| `into_empty`    | This workspace                                | Refused unless it has no records                                                             |
+| `replace`       | This workspace, after deleting its data       | Typed workspace name; refused while integrations are connected; a `pre_restore` backup first |
+
+- **IDs:** kept when none exists anywhere in the database (a fresh installation, a deleted
+  workspace, or the workspace being replaced); otherwise **every** ID and file name in the backup
+  is replaced, consistently, so a copy beside its original never shares a record. Remapping
+  rewrites ID columns and UUIDs inside text and JSON (note links, `series_id`,
+  `current_version_id`). The workspace and owner IDs map to the target workspace and the person
+  restoring, so a backup can be restored by another account or installation.
+- **Atomicity:** all inserts run in one transaction (savepoints nest in it). Files are written
+  into the attachment store just before commit, each checked against the manifest's checksum, and
+  deleted again on any failure. After inserting, the restore verifies that every table has
+  exactly the manifest's row count. Constraints enforce every relationship.
+- **Interruption:** if the process dies, the transaction never commits, the upload stays
+  `restoring` until its deadline and is then marked failed ("interrupted; nothing was changed"),
+  and the orphan sweep removes the unreferenced files. A failed restore can be retried.
+- **Replace** deletes the workspace's rows table by table (children first), keeping the workspace
+  row, its backup history, settings, the upload, and usage records. Files the replaced data used
+  are removed by the existing orphan sweep (within six hours); the pre-restore backup holds them.
+
+### Import architecture
+
+Imports take Orbit JSON exports (from any module, or all) and merge into the current workspace
+with the same engine in lenient mode:
+
+- A record whose ID is already in this workspace is a **duplicate** and skipped: importing the
+  same file twice adds nothing. A completed upload with the same SHA-256 is also reported, and a
+  second use needs `allow_repeat`.
+- A record whose ID exists in another workspace gets a new ID, with references updated.
+- Categories, tags, built-in exercises, and the default shopping list are **matched** to
+  existing ones by natural key (`MATCH_KEYS`) instead of duplicated.
+- Records that break a rule or refer to records in neither the file nor the workspace are
+  **skipped** (each failing batch is retried row by row in savepoints) and counted per table.
+  Nothing is overwritten.
+
+CSV, Markdown, and `.ics` files are export formats only; importing them would need per-format
+mapping and is not implemented.
+
+### Export architecture
+
+`POST …/exports` builds a module export from one snapshot into a temporary file, streams it,
+and deletes it: JSON for every module; CSV (one table, or a ZIP of one CSV per table) for tasks,
+shopping, reminders, habits, and health; Markdown (a ZIP of `.md` files with YAML front matter in
+their folders, archived and trashed notes in `Archive/` and `Trash/`) for notes; and iCalendar
+for the calendar (`TZID` times with generated `VTIMEZONE`s, Orbit's month-end and leap-day rules
+as `BYMONTHDAY…;BYSETPOS=-1`, `EXDATE`s for skipped occurrences, `RECURRENCE-ID` overrides,
+`VALARM`s, folded lines). `POST …/exports/archive` builds a full backup archive for download
+without keeping it. Finance's transaction CSV and the documents ZIP keep their own endpoints.
+
+### Encryption approach
+
+Optional, per backup (`encryption.py`), from standard primitives only: Argon2id (64 MiB, three
+passes, four lanes, random 16-byte salt) derives a key from the password; it seals an X25519
+private key with AES-256-GCM. Each archive gets a random 256-bit file key, wrapped for that key
+pair (ephemeral X25519, HKDF-SHA256, AES-256-GCM), and the archive is encrypted in 64 KiB
+AES-256-GCM chunks with the STREAM nonce construction and the header as associated data, so
+chunks can't be reordered, truncated, or swapped. The sealed private key travels in each archive,
+so it opens with its password alone, anywhere. Automatic backups use the workspace's stored
+public key, so the server encrypts them without the password; the password is never stored,
+logged, or put in a URL. A wrong password fails on the sealed key; tampering fails on the first
+bad chunk; a header can't demand more than 1 GiB of Argon2 memory. Encryption protects backup
+files only: Orbit's live data still relies on disk encryption.
+
+### Scheduling behavior
+
+The reminder worker checks for due automatic backups every minute and tidies up hourly. A run
+is claimed by moving `next_run_at` with a conditional update, so concurrent workers never run
+the same backup, and the running-backup index prevents overlap with a manual one. The next run is
+the previous scheduled time plus the interval, moved past now: a server that was off runs one
+backup on start, not one per missed interval. A failure is recorded on the backup (status and a
+safe message) and retried an hour later. After a success, successful automatic backups beyond
+the retention count are deleted (manual and pre-restore backups are kept until deleted).
+Housekeeping fails backups running for more than six hours and restores past their deadline,
+expires uploads after 24 hours, and deletes temporary files left by a crash.
+
+### Security
+
+- Every route is workspace-scoped through `WorkspaceDep`; another person's backup or upload IDs
+  are 404s. Archives are downloaded only through authorized routes with `private, no-store`
+  headers; there are no public or signed URLs. Archive files are `0600` in `0700` folders.
+- Uploaded archives are untrusted: only exact entry names are accepted (no `..`, absolute paths,
+  or extra entries), names are never used as paths, encrypted ZIP entries and unusual compression
+  are refused, the total declared size is bounded (`ORBIT_BACKUP_MAX_EXTRACTED_BYTES`) before
+  anything is decompressed, each entry's compression ratio is capped, every entry must match the
+  manifest's size, lines are length-limited, and content must match the checksums. JSON exports
+  are capped at 256 MB. Errors never echo archive contents or passwords; logs carry IDs and error
+  types only.
+
+### Migration and compatibility rules
+
+- `format_version` changes only when the archive layout changes; a newer one is refused.
+- `schema_revision` must be one this version knows (newer: "update Orbit"). An older revision is
+  accepted and checked record by record: a column this version lacks is refused (its data would
+  be lost), a column the backup lacks is filled from its default, or refused if it has none.
+- When a migration changes the meaning of existing data (a rename, a unit change), add an
+  upgrade step for older backups keyed by revision, alongside the migration. Adding a table means
+  classifying it in `catalog.py` (the test fails otherwise).
+
+### Limitations
+
+- Backups are stored on the API's machine (`ORBIT_BACKUPS_PATH`); there are no cloud-storage
+  targets. Download copies to keep them elsewhere.
+- Restores and imports run within the request; very large backups take as long as their files
+  take to copy. JSON exports are parsed whole (up to 256 MB).
+- A dry run inserts and rolls back every record, so inspecting a large backup takes a while and
+  holds SQLite's write lock meanwhile.
+- Per-person preferences, AI settings, and integrations aren't backed up; a restored workspace
+  is reindexed for AI by the worker.
+- Replacing a workspace with connected integrations is refused; restoring as a new workspace
+  isn't.
+- Monthly schedules started on the 29th to 31st run on the 28th after the first short month.
+- Importing CSV, Markdown, or `.ics` isn't supported.
+
 ## Configuration
 
 | App | Source                                                    | Validation                                    | Visibility  |
@@ -4025,16 +4254,16 @@ connection's owner. Another person's connection is a 404.
 
 ## Testing strategy
 
-| Layer                    | Tool                                            | Location                                                                                                                        | Current coverage                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                                                                                      | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth, budgets, goals, plans, notes (views, autosave, Markdown, palette), calendar (views, dialogs, drag, scopes, palette), documents (views, uploads, details, links), health (units, forms, overview, workout logging, water, event workouts), dashboard (widgets, preferences, partial failures, quick actions, palette search), universal search (page, keyboard, tabs, filters, paging, history, deep links), AI (assistant streaming and sources, proposals, settings, contextual menu, Markdown, stream parsing), integrations (connecting, calendars, conflicts, mail, files, callback, origins)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                                                                                               | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, budgets, goals, plans, notes, calendar, documents (uploads, validation, versions, export, sweep), health and fitness (library, templates, workouts and sets, records, measurements, photos, nutrition, goals, habit, calendar, note, and document integrations, per-person privacy), daily overview (time zones, sections, partial failures), cross-module search, universal search (every type, tiers, filters, paging, freshness, health owner scoping, partial failures, recent and saved searches, PostgreSQL), dashboard preferences, AI (settings, encrypted keys, cloud consent, grounded streaming answers and citations, permissions, proposals and single approval, prompt injection, isolation, indexing and semantic search, assist, insights, usage and limits; provider adapters over mocked HTTP; chunking, extraction, routing, prompts), integrations (OAuth state and PKCE, encrypted tokens, refresh and revocation, calendar import, recurrence, duplicates, pagination and checkpoints, rate limits, conflicts, two-way, webhooks, mail scope, file import and changes; Google and Graph adapters over mocked HTTP), cross-user isolation |
-| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_calendar_recurrence.py`, `tests/test_reminder_worker.py`, `tests/test_budget_alerts.py` | Recurrence, DST, month ends, leap years, exceptions; delivery, concurrency, leases, retries, restarts; event alerts; budget alerts and period closing                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                                                                                              | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                                                                                         | Startup checks, sessions, migrations, constraints, 503 errors                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                                                                                               | Migrations, connectivity, RLS, feature SQL (including the AI layer); skipped by default                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                                                                                       | Generated contract matches the API                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| End-to-end               | Not set up (**planned**)                        | —                                                                                                                               | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Layer                    | Tool                                            | Location                                                                                                                        | Current coverage                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web units and components | Vitest, Testing Library, jsdom                  | `apps/web/src/**/*.test.ts(x)`, co-located                                                                                      | Shell, API client, auth flows, route guard, workspace switching and stale data, tasks, reminders, notifications, finance, investments, net worth, budgets, goals, plans, notes (views, autosave, Markdown, palette), calendar (views, dialogs, drag, scopes, palette), documents (views, uploads, details, links), health (units, forms, overview, workout logging, water, event workouts), dashboard (widgets, preferences, partial failures, quick actions, palette search), universal search (page, keyboard, tabs, filters, paging, history, deep links), AI (assistant streaming and sources, proposals, settings, contextual menu, Markdown, stream parsing), integrations (connecting, calendars, conflicts, mail, files, callback, origins), backup and restore (overview, history, encrypted backups, deletion, restore strategies and confirmation, passwords, imports, incompatible files, schedule, exports)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| API routes and config    | Pytest, FastAPI `TestClient`                    | `apps/api/tests/`                                                                                                               | Health, CORS, settings, local auth, Supabase tokens (mocked keys), workspaces, tasks, reminders, notifications, finance, budgets, goals, plans, notes, calendar, documents (uploads, validation, versions, export, sweep), health and fitness (library, templates, workouts and sets, records, measurements, photos, nutrition, goals, habit, calendar, note, and document integrations, per-person privacy), daily overview (time zones, sections, partial failures), cross-module search, universal search (every type, tiers, filters, paging, freshness, health owner scoping, partial failures, recent and saved searches, PostgreSQL), dashboard preferences, AI (settings, encrypted keys, cloud consent, grounded streaming answers and citations, permissions, proposals and single approval, prompt injection, isolation, indexing and semantic search, assist, insights, usage and limits; provider adapters over mocked HTTP; chunking, extraction, routing, prompts), integrations (OAuth state and PKCE, encrypted tokens, refresh and revocation, calendar import, recurrence, duplicates, pagination and checkpoints, rate limits, conflicts, two-way, webhooks, mail scope, file import and changes; Google and Graph adapters over mocked HTTP), backups (round trips across every module, restore strategies, ID remapping, encryption and wrong passwords, tampered, truncated, traversing, and oversized archives, incompatible schemas, interrupted restores and rollback, imports with duplicates and matching, exports, scheduling, retention, snapshot consistency; catalog, encryption, ICS, and Markdown units), cross-user isolation |
+| Scheduling               | Pytest, pure functions and a controllable clock | `tests/test_recurrence.py`, `tests/test_calendar_recurrence.py`, `tests/test_reminder_worker.py`, `tests/test_budget_alerts.py` | Recurrence, DST, month ends, leap years, exceptions; delivery, concurrency, leases, retries, restarts; event alerts; budget alerts and period closing                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Services                 | Pytest, in-memory fake repositories             | `apps/api/tests/test_*_service.py`                                                                                              | Onboarding, concurrent provisioning, ownership checks, task completion rules                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Database (SQLite)        | Pytest, temporary SQLite files                  | `apps/api/tests/test_database.py`, etc.                                                                                         | Startup checks, sessions, migrations, constraints, 503 errors                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Database (PostgreSQL)    | Pytest, opt-in (`-m postgres`)                  | `apps/api/tests/test_postgres.py`                                                                                               | Migrations, connectivity, RLS, feature SQL (including the AI layer and a backup and restore round trip); skipped by default                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Contract freshness       | Pytest + `openapi-typescript --check`           | `tests/test_openapi.py`, contracts `lint`                                                                                       | Generated contract matches the API                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| End-to-end               | Not set up (**planned**)                        | —                                                                                                                               | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 
 Unit tests cover logic, route tests cover HTTP behavior and validation, and E2E tests will cover
 critical user journeys once real features exist. CI runs every layer on each pull request.
@@ -4079,7 +4308,8 @@ database-backed worker), and four phases of [finance](#finance) (ledger, commitm
 [notes](#notes-and-knowledge-management), the [calendar](#calendar-and-events), [habits](#habits-and-routines), [documents](#documents-and-the-personal-vault), [health](#health-and-fitness), and the
 [daily dashboard and command center](#daily-dashboard-and-command-center), the
 [AI intelligence layer](#ai-intelligence-layer), and
-[external integrations](#external-integrations) are in place.
+[external integrations](#external-integrations), and
+[backup, restore, and data portability](#backup-restore-and-data-portability) are in place.
 Next: more modules on the same pattern, then optional sync and extension points.
 Each step should leave the boundaries above intact.
 

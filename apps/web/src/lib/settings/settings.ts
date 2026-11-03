@@ -1,4 +1,13 @@
-import { Bot, Database, Layers, type LucideIcon, Palette, Plug, UserRound } from "lucide-react";
+import {
+  Archive,
+  Bot,
+  Database,
+  Layers,
+  type LucideIcon,
+  Palette,
+  Plug,
+  UserRound,
+} from "lucide-react";
 
 export type SettingsPanel = {
   slug: string;
@@ -46,6 +55,14 @@ export const settingsPanels: readonly SettingsPanel[] = [
     description:
       "Connect Google or Microsoft calendars, mail, and files. Nothing is synchronized until you choose.",
     icon: Plug,
+    group: "general",
+  },
+  {
+    slug: "backup",
+    title: "Backup & restore",
+    description:
+      "Back up this workspace with its files, restore or import backups, and export your data.",
+    icon: Archive,
     group: "general",
   },
   {

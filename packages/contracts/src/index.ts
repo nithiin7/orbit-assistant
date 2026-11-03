@@ -636,3 +636,27 @@ export type RemoteFile = Schemas["RemoteFileResponse"];
 export type RemoteFileList = Schemas["RemoteFileListResponse"];
 export type ImportFileRequest = Schemas["ImportFileRequest"];
 export type ImportedFile = Schemas["ImportedFileResponse"];
+
+// Backups, restores, imports, and exports
+export type BackupOverview = Schemas["BackupOverviewResponse"];
+export type Backup = Schemas["BackupResponse"];
+export type BackupKind = Backup["kind"];
+export type BackupStatus = Backup["status"];
+export type BackupSettings = Schemas["BackupSettingsResponse"];
+export type BackupFrequency = BackupSettings["frequency"];
+export type BackupUpload = Schemas["BackupUploadResponse"];
+export type BackupUploadStatus = BackupUpload["status"];
+export type CreateBackupRequest = Schemas["CreateBackupRequest"];
+export type BackupEncryption = NonNullable<CreateBackupRequest["encryption"]>;
+export type UpdateBackupSettingsRequest = Schemas["UpdateBackupSettingsRequest"];
+export type ExportArchiveRequest = Schemas["ExportArchiveRequest"];
+export type ExportModuleRequest = Schemas["ExportModuleRequest"];
+export type ExportModuleInfo = Schemas["ExportModuleInfo"];
+export type BackupModule = ExportModuleInfo["module"];
+export type ExportFormat = ExportModuleInfo["formats"][number];
+export type ArchivePasswordRequest = Schemas["ArchivePasswordRequest"];
+export type RestoreUploadRequest = Schemas["RestoreUploadRequest"];
+export type RestoreStrategy = NonNullable<RestoreUploadRequest["strategy"]>;
+export type RestoreReport = Schemas["RestoreReportResponse"];
+export type BackupInspection = Schemas["InspectionResponse"];
+export type BackupVerification = Schemas["VerificationResponse"];

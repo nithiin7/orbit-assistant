@@ -25,6 +25,12 @@ def head_revision() -> str | None:
     return ScriptDirectory.from_config(alembic_config()).get_current_head()
 
 
+def known_revisions() -> tuple[str, ...]:
+    """Every migration revision, oldest first (the history is linear)."""
+    script = ScriptDirectory.from_config(alembic_config())
+    return tuple(reversed([revision.revision for revision in script.walk_revisions()]))
+
+
 def upgrade(settings: Settings, revision: str = "head") -> None:
     """Apply migrations up to `revision`. Must not be called from a running event loop."""
     command.upgrade(alembic_config(settings), revision)

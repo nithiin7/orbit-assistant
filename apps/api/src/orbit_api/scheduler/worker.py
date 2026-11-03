@@ -28,6 +28,7 @@ from orbit_api.db.columns import utc_now
 from orbit_api.db.database import Database
 from orbit_api.repositories.ai import SqlAiSettingsRepository
 from orbit_api.repositories.ai_services import build_ai
+from orbit_api.repositories.backup import SqlBackupRecords, build_backup_service
 from orbit_api.repositories.budgets import build_budget_service
 from orbit_api.repositories.calendar import build_calendar_service
 from orbit_api.repositories.commitments import build_commitment_service
@@ -50,6 +51,7 @@ from orbit_api.services.reminders.delivery import (
 )
 from orbit_api.services.reminders.models import ClaimedOccurrence, OccurrenceStatus, Reminder
 from orbit_api.system.attachment_store import FileAttachmentStore
+from orbit_api.system.backup_store import FileArchiveStore
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +72,10 @@ SWEEP_MIN_AGE = timedelta(hours=1)
 # Synchronization runs taken per check, and how often imported files are checked for changes.
 INTEGRATION_BATCH = 10
 DEFAULT_FILE_CHECK_INTERVAL = timedelta(hours=6)
+# How often the worker looks for automatic backups that are due, and tidies up after backups
+# and restores (interrupted runs, expired uploads, temporary files).
+DEFAULT_BACKUP_INTERVAL = timedelta(minutes=1)
+BACKUP_HOUSEKEEPING_INTERVAL = timedelta(hours=1)
 
 
 class ManagedFollowUp:
@@ -122,6 +128,15 @@ class IntegrationSync:
 
 
 @dataclass(frozen=True, slots=True)
+class BackupJobs:
+    """What the worker needs to run automatic backups: the settings (backup and attachment
+    folders, limits)."""
+
+    settings: Settings
+    interval: timedelta = DEFAULT_BACKUP_INTERVAL
+
+
+@dataclass(frozen=True, slots=True)
 class WorkerReport:
     """What one poll did."""
 
@@ -144,8 +159,12 @@ class ReminderWorker:
         sweep_interval: timedelta = DEFAULT_SWEEP_INTERVAL,
         ai: AiIndexing | None = None,
         integrations: IntegrationSync | None = None,
+        backups: BackupJobs | None = None,
     ) -> None:
         self._database = database
+        self._backups = backups
+        self._backups_checked_at: datetime | None = None
+        self._backups_tidied_at: datetime | None = None
         self._ai = ai
         self._integrations = integrations
         self._integrations_checked_at: datetime | None = None
@@ -390,6 +409,66 @@ class ReminderWorker:
             # Deliberate boundary: integrations must never stop reminder delivery.
             logger.exception("Integration synchronization failed; retrying later.")
 
+    async def run_backups(self) -> int:
+        """Run every automatic backup that's due, each in its own session, so one workspace's
+        failure never stops another's; return how many ran. A backup another worker already
+        claimed is skipped."""
+        config = self._backups
+        if config is None:
+            return 0
+        async with self._database.session() as session:
+            due = await SqlBackupRecords(session).due_settings(self._clock())
+        ran = 0
+        for settings, workspace in due:
+            async with self._database.session() as session:
+                try:
+                    service = build_backup_service(session, config.settings, self._clock)
+                    if await service.run_scheduled(settings, workspace) is not None:
+                        ran += 1
+                except Exception:
+                    # Deliberate boundary: a failure is recorded on the backup and retried; it
+                    # must not stop other workspaces' backups. IDs only.
+                    await session.rollback()
+                    logger.exception("Automatic backup for workspace %s failed.", workspace.id)
+        if ran:
+            logger.info("Ran %d automatic backup(s).", ran)
+        return ran
+
+    async def tidy_backups(self) -> None:
+        """Fail interrupted backups and restores, expire unused uploads, and remove temporary
+        files left by a crash."""
+        config = self._backups
+        if config is None:
+            return
+        async with self._database.session() as session:
+            await build_backup_service(session, config.settings, self._clock).housekeeping()
+        await FileArchiveStore(config.settings.backups_dir).sweep_temporary(
+            BACKUP_HOUSEKEEPING_INTERVAL.total_seconds() * 6
+        )
+
+    async def _maybe_run_backups(self) -> None:
+        config = self._backups
+        if config is None:
+            return
+        now = self._clock()
+        last = self._backups_tidied_at
+        if last is None or now - last >= BACKUP_HOUSEKEEPING_INTERVAL:
+            self._backups_tidied_at = now
+            try:
+                await self.tidy_backups()
+            except Exception:
+                # Deliberate boundary: housekeeping must never stop reminder delivery.
+                logger.exception("Backup housekeeping failed; retrying later.")
+        last = self._backups_checked_at
+        if last is not None and now - last < config.interval:
+            return
+        self._backups_checked_at = now
+        try:
+            await self.run_backups()
+        except Exception:
+            # Deliberate boundary: backups must never stop reminder delivery.
+            logger.exception("Checking automatic backups failed; retrying later.")
+
     async def run(self, stop: asyncio.Event, poll_interval: float) -> None:
         """Poll until `stop` is set. A poll in progress finishes first, so shutdown never
         abandons a claimed occurrence mid-transaction."""
@@ -409,6 +488,7 @@ class ReminderWorker:
             await self._maybe_sweep_files()
             await self._maybe_index_ai()
             await self._maybe_sync_integrations()
+            await self._maybe_run_backups()
             # Sleep until the next poll, waking early when asked to stop.
             with contextlib.suppress(TimeoutError):
                 await asyncio.wait_for(stop.wait(), timeout=poll_interval)

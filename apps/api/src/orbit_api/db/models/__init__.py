@@ -12,6 +12,7 @@ from orbit_api.db.models.ai import (
     AiUsageModel,
 )
 from orbit_api.db.models.avatars import UserAvatarModel
+from orbit_api.db.models.backup import BackupModel, BackupSettingsModel, BackupUploadModel
 from orbit_api.db.models.budgets import (
     FinanceBudgetAlertModel,
     FinanceBudgetModel,
@@ -134,6 +135,9 @@ __all__ = [
     "AiProviderModel",
     "AiSettingsModel",
     "AiUsageModel",
+    "BackupModel",
+    "BackupSettingsModel",
+    "BackupUploadModel",
     "CalendarCategoryModel",
     "CalendarEventAlertModel",
     "CalendarEventExceptionModel",

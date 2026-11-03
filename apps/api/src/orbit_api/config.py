@@ -75,6 +75,14 @@ class Settings(BaseSettings):
     # Documents use the same store and folder; their files may be larger.
     document_max_bytes: int = Field(default=25 * 1024 * 1024, ge=1024, le=200 * 1024 * 1024)
 
+    # Backups are archives on the API's machine, outside the database and the attachments
+    # folder. Unset keeps them in a `backups` folder beside the attachments folder's default.
+    backups_path: Path | None = None
+    # The largest backup or export that can be uploaded to restore or import, and the most an
+    # uploaded archive may expand to (guarding against ZIP bombs).
+    backup_upload_max_bytes: int = Field(default=2 * 1024**3, ge=1024 * 1024, le=100 * 1024**3)
+    backup_max_extracted_bytes: int = Field(default=20 * 1024**3, ge=1024 * 1024, le=500 * 1024**3)
+
     # AI. Each person turns AI on in Settings; this turns it off for everyone on the server.
     ai_enabled: bool = True
     # A Fernet key (32 url-safe base64 bytes) that encrypts stored provider API keys. Unset in
@@ -117,6 +125,13 @@ class Settings(BaseSettings):
             return self.attachments_path
         base = self.sqlite_path.parent if self.storage_mode == "local" else DEFAULT_DATA_DIR
         return base / "attachments"
+
+    @property
+    def backups_dir(self) -> Path:
+        if self.backups_path is not None:
+            return self.backups_path
+        base = self.sqlite_path.parent if self.storage_mode == "local" else DEFAULT_DATA_DIR
+        return base / "backups"
 
     @property
     def ai_key_file(self) -> Path | None:
@@ -177,7 +192,7 @@ class Settings(BaseSettings):
     def _resolve_sqlite_path(cls, path: Path) -> Path:
         return path.expanduser().resolve()
 
-    @field_validator("attachments_path")
+    @field_validator("attachments_path", "backups_path")
     @classmethod
     def _resolve_attachments_path(cls, path: Path | None) -> Path | None:
         return path.expanduser().resolve() if path is not None else None
