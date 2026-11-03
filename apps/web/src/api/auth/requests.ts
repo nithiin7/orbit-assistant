@@ -1,5 +1,6 @@
 import type {
   AuthConfig,
+  ChangePasswordRequest,
   LocalSessionResponse,
   LocalSignInRequest,
   LocalSignUpRequest,
@@ -22,4 +23,9 @@ export function localSignIn(body: LocalSignInRequest): Promise<LocalSessionRespo
 
 export function localSignOut(token: string): Promise<void> {
   return request<void>("/api/v1/auth/local/sign-out", { method: "POST", token });
+}
+
+/** Change a local account's password. Every other session of the account is signed out. */
+export function changeLocalPassword(token: string, body: ChangePasswordRequest): Promise<void> {
+  return request<void>("/api/v1/auth/local/password", { method: "POST", token, body });
 }

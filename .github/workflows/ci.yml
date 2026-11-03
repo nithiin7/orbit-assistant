@@ -55,7 +55,7 @@ jobs:
   api:
     name: API (lint, format, types, tests)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: apps/api
@@ -81,6 +81,111 @@ jobs:
 
       - name: Test
         run: uv run pytest
+
+  e2e:
+    name: End-to-end journeys (browser)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version-file: .python-version
+          enable-cache: true
+
+      - name: Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          uv sync --all-packages
+
+      - name: Install the browser
+        run: pnpm --filter @orbit/web exec playwright install --with-deps chromium
+
+      # Starts the API on a throwaway SQLite database and the web app; nothing external is
+      # called (apps/web/playwright.config.ts).
+      - name: Run journeys
+        run: pnpm test:e2e
+
+      - name: Keep traces of failed journeys
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: apps/web/test-results/
+          retention-days: 7
+
+  postgres:
+    name: API on PostgreSQL (migrations, RLS, cloud mode)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/api
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: orbit
+          POSTGRES_PASSWORD: orbit
+          POSTGRES_DB: orbit_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U orbit" --health-interval 5s --health-timeout 5s
+          --health-retries 10
+    env:
+      # A disposable database: the tests migrate it up and back down to an empty schema.
+      ORBIT_TEST_DATABASE_URL: postgresql://orbit:orbit@localhost:5432/orbit_test
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version-file: .python-version
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --all-packages
+
+      - name: Test against PostgreSQL
+        run: uv run pytest -m postgres
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version-file: .python-version
+
+      # Known vulnerabilities in what ships: the web app's production dependencies and the
+      # API's runtime dependencies. Development tools are left to Dependabot.
+      - name: Audit web dependencies
+        run: pnpm audit --prod --audit-level high
+
+      - name: Audit API dependencies
+        run: |
+          uv export --package orbit-api --no-dev --no-hashes --no-emit-workspace --frozen \
+            > "$RUNNER_TEMP/requirements.txt"
+          uvx pip-audit --requirement "$RUNNER_TEMP/requirements.txt" --disable-pip --no-deps
 
   commits:
     name: Commit messages

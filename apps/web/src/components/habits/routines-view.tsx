@@ -33,7 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import type { Resource } from "@/hooks/query-resource";
 import { describeWeekdays, formatMinutes, habitsHref, routineMinutes } from "@/lib/habits";
-import { noteHref } from "@/lib/note-content";
+import { noteHref } from "@/lib/note-links";
 import { cn } from "@/utils/common";
 import { formatCalendarDate } from "@/utils/dates";
 

@@ -15,6 +15,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import text
 
 from orbit_api.config import Settings
+from orbit_api.db.base import Base
 from orbit_api.db.database import open_database
 from orbit_api.db.engine import create_engine
 from orbit_api.db.migrate import downgrade, upgrade
@@ -99,98 +100,30 @@ def cloud_settings() -> Iterator[Settings]:
     downgrade(settings, "base")
 
 
-PROTECTED_TABLES = (
-    "users",
-    "local_credentials",
-    "local_sessions",
-    "workspaces",
-    "user_avatars",
-    "tasks",
-    "shopping_lists",
-    "shopping_items",
-    "dashboard_layouts",
-    "reminders",
-    "reminder_occurrences",
-    "notifications",
-    "finance_accounts",
-    "finance_categories",
-    "finance_transactions",
-    "finance_loans",
-    "finance_loan_installments",
-    "finance_recurring_payments",
-    "finance_recurring_occurrences",
-    "finance_investment_accounts",
-    "finance_holdings",
-    "finance_holding_prices",
-    "finance_sip_plans",
-    "finance_deposits",
-    "finance_investment_transactions",
-    "finance_assets",
-    "finance_asset_valuations",
-    "finance_net_worth_snapshots",
-    "calendar_categories",
-    "calendar_events",
-    "calendar_event_exceptions",
-    "calendar_event_alerts",
-    "calendar_event_notes",
-    "calendar_event_tasks",
-    "calendar_preferences",
-    "document_folders",
-    "document_categories",
-    "documents",
-    "document_versions",
-    "document_tags",
-    "document_renewals",
-    "document_links",
-    "fitness_profiles",
-    "fitness_exercises",
-    "fitness_templates",
-    "fitness_template_exercises",
-    "fitness_sessions",
-    "fitness_session_exercises",
-    "fitness_sets",
-    "fitness_measurements",
-    "fitness_photos",
-    "fitness_foods",
-    "fitness_meals",
-    "fitness_meal_items",
-    "fitness_food_entries",
-    "fitness_water_entries",
-    "fitness_activities",
-    "fitness_goals",
-    "fitness_goal_progress",
-    "fitness_habit_links",
-    "fitness_workout_events",
-    "fitness_links",
-    "ai_providers",
-    "ai_settings",
-    "ai_index_sources",
-    "ai_chunks",
-    "ai_conversations",
-    "ai_messages",
-    "ai_action_proposals",
-    "ai_usage",
-    "ai_insight_dismissals",
-    "backups",
-    "backup_settings",
-    "backup_uploads",
-)
+# Tables that hold no personal data and need no protection from Supabase's Data API.
+UNPROTECTED_TABLES = {"alembic_version"}
 
 
 @pytest.mark.anyio
 async def test_every_table_enables_row_level_security(cloud_settings: Settings) -> None:
+    """Every table in the schema, so a new migration that forgets RLS fails here."""
     engine = create_engine(cloud_settings)
     try:
         async with engine.connect() as connection:
             result = await connection.execute(
-                text("SELECT relname, relrowsecurity FROM pg_class WHERE relname = ANY(:names)"),
-                {"names": list(PROTECTED_TABLES)},
+                text(
+                    "SELECT c.relname, c.relrowsecurity FROM pg_class c"
+                    " JOIN pg_namespace n ON n.oid = c.relnamespace"
+                    " WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p')"
+                )
             )
             rows: dict[str, bool] = dict(result.all())
     finally:
         await engine.dispose()
 
-    assert rows == dict.fromkeys(PROTECTED_TABLES, True)
+    protected = {name: enabled for name, enabled in rows.items() if name not in UNPROTECTED_TABLES}
+    assert set(protected) == set(Base.metadata.tables)
+    assert [name for name, enabled in protected.items() if not enabled] == []
 
 
 @pytest.mark.anyio

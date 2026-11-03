@@ -53,8 +53,8 @@ control.
   Alembic migrations.
 - Accounts and workspaces: local accounts (several per machine in local mode) or Supabase Auth
   (cloud mode), profile photos, a default Personal workspace per user, creating, switching, and
-  deleting workspaces, server-side authorization, and password reset by email for cloud
-  accounts.
+  deleting workspaces, server-side authorization, password changes for local accounts (which
+  sign out other sessions), sign-in rate limits, and password reset by email for cloud accounts.
 - Tasks, shopping lists, and reminders: one-time or recurring (daily, chosen weekdays, monthly),
   time-zone aware, optionally about a task, and delivered as in-app notifications by a
   database-backed worker.
@@ -155,9 +155,11 @@ control.
 - CalDAV or importing iCal calendars (the calendar exports `.ics`), sending email, or AI scheduling; a knowledge graph
   in notes; automatically created transactions, live market prices, or bank integrations in
   finance.
-- Shared workspaces, invitations, password recovery for local accounts, and account linking
-  between local and cloud.
-- Synchronization or data migration between local and cloud storage.
+- Shared workspaces, invitations, password recovery for local accounts, deleting an account
+  from the app, and account linking between local and cloud.
+- Synchronization or data migration between local and cloud storage. Several devices can use
+  one Orbit server through the browser; there is no offline copy that syncs.
+- A voice interface (speech input or spoken answers).
 - Unrestricted AI autonomy, or agent actions that delete, pay, send email, or share; OCR.
 - Push, email, SMS, or mobile notifications (reminders notify in the app only).
 - Managed hosting, Kubernetes manifests, or scaling beyond one API container in local mode.
@@ -226,8 +228,8 @@ pnpm dev                  # web on http://localhost:3000, API on http://localhos
 ```
 
 > [!TIP]
-> Check the API with `curl http://localhost:8000/api/v1/health`. Interactive API docs are
-> served at <http://localhost:8000/docs> outside production.
+> Check the API with `curl http://localhost:8000/api/v1/health/ready` (database reachable and
+> migrated). Interactive API docs are served at <http://localhost:8000/docs> outside production.
 
 ## Self-hosting with Docker
 
@@ -278,6 +280,7 @@ Run everything from the repository root.
 | `pnpm test`               | Vitest (web) and Pytest (API)                                |
 | `pnpm test:web`           | Vitest only                                                  |
 | `pnpm test:api`           | Pytest only                                                  |
+| `pnpm test:e2e`           | Browser journeys (Playwright) against a throwaway database   |
 | `pnpm check`              | All quality gates: lint, format check, type check, tests     |
 | `pnpm build`              | Production build of the web app                              |
 | `pnpm contracts:generate` | Regenerate the shared API contract after changing API models |
@@ -303,17 +306,35 @@ commit message. CI runs the full suite. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Development status
 
-| Area                    | Status         |
-| ----------------------- | -------------- |
-| Monorepo and tooling    | ✅ In place    |
-| Web application shell   | ✅ In place    |
-| API foundation          | ✅ In place    |
-| Database (local/cloud)  | ✅ In place    |
-| Accounts and workspaces | ✅ In place    |
-| CI                      | ✅ In place    |
-| Containers and deploy   | ✅ In place    |
-| Product features        | ⏳ Not started |
-| AI integration          | ✅ In place    |
+Orbit is pre-1.0: usable, tested, and not yet released. Expect breaking changes between minor
+versions until 1.0 (see [docs/release.md](docs/release.md)).
+
+| Area                                                     | Status                     |
+| -------------------------------------------------------- | -------------------------- |
+| Monorepo, tooling, CI, containers                        | ✅ In place                |
+| Accounts, workspaces, authorization                      | ✅ In place                |
+| Tasks, shopping, reminders, finance, notes, calendar     | ✅ In place                |
+| Habits, documents, health and fitness, dashboard, search | ✅ In place                |
+| AI layer, integrations, backups, agent and automation    | ✅ In place                |
+| Browser end-to-end tests                                 | ✅ A few critical journeys |
+| Voice, multi-device offline sync, shared workspaces      | ❌ Not built               |
+| Independent security audit, first tagged release         | ⏳ Not yet                 |
+
+The engineering assessment, with known risks and what was verified, is in
+[docs/assessment.md](docs/assessment.md). Changes are recorded in [CHANGELOG.md](CHANGELOG.md).
+
+## Documentation
+
+| Guide                                | For                                                          |
+| ------------------------------------ | ------------------------------------------------------------ |
+| [User guide](docs/user-guide.md)     | Using each module, backups, AI, automation, and integrations |
+| [Deployment](docs/deployment.md)     | Self-hosting with Docker, HTTPS, monitoring, upgrades        |
+| [Development](docs/development.md)   | Local setup, settings, tests, and workflow                   |
+| [Architecture](docs/architecture.md) | How the web app, API, storage, AI, and agent fit together    |
+| [Backups](docs/backups.md)           | Backup format, encryption, and restore                       |
+| [Integrations](docs/integrations.md) | Setting up Google and Microsoft                              |
+| [Assessment](docs/assessment.md)     | Engineering and security review, known risks                 |
+| [Releasing](docs/release.md)         | Versioning, changelog, and the release checklist             |
 
 ## Contributing and security
 

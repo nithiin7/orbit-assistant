@@ -36,7 +36,7 @@ import {
   habitsHref,
   STATE_LABELS,
 } from "@/lib/habits";
-import { noteHref } from "@/lib/note-content";
+import { noteHref } from "@/lib/note-links";
 import { cn } from "@/utils/common";
 import { addDays, formatCalendarDate } from "@/utils/dates";
 

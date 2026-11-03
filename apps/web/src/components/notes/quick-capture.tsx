@@ -21,7 +21,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useNoteMutations } from "@/hooks/use-notes";
-import { looksLikeMarkdown, markdownToDocument } from "@/lib/note-content";
+import { looksLikeMarkdown } from "@/lib/note-links";
 import { notesHref } from "@/lib/notes";
 import { useWorkspaces } from "@/providers/workspace";
 
@@ -194,7 +194,10 @@ function CaptureForm({
     onError(null);
     try {
       // Markdown typed or pasted here keeps its formatting; anything else is plain paragraphs.
-      const body = looksLikeMarkdown(text) ? { content: markdownToDocument(text) } : { text };
+      // The converter loads the editor, so it's fetched only when it's needed.
+      const body = looksLikeMarkdown(text)
+        ? { content: (await import("@/lib/note-content")).markdownToDocument(text) }
+        : { text };
       const note = await create.mutateAsync({ title: title.trim(), note_type: "quick", ...body });
       onSaved(note);
     } catch (reason) {

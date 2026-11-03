@@ -66,8 +66,10 @@ USER orbit
 VOLUME ["/data"]
 EXPOSE 8000
 
+# Ready means the database answers and its schema is current; Compose starts the web app only
+# then. `/api/v1/health/live` checks the process alone.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD ["python", "-c", "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:' + os.environ.get('ORBIT_API_PORT', '8000') + '/api/v1/health', timeout=4)"]
+    CMD ["python", "-c", "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:' + os.environ.get('ORBIT_API_PORT', '8000') + '/api/v1/health/ready', timeout=4)"]
 
 ENTRYPOINT ["orbit-entrypoint"]
 CMD ["api"]

@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { useNoteList } from "@/hooks/use-notes";
 import { useTaskList } from "@/hooks/use-tasks";
-import { isAllowedHref } from "@/lib/note-content";
+import { isAllowedHref } from "@/lib/note-links";
 import { noteDisplayTitle } from "@/lib/notes";
 import { cn } from "@/utils/common";
 

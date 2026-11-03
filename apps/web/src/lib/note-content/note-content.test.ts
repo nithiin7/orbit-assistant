@@ -1,14 +1,12 @@
 import type { NoteContent } from "@orbit/contracts";
 import { describe, expect, it } from "vitest";
 
+import { noteHref } from "@/lib/note-links";
+
 import {
   documentText,
   documentToMarkdown,
-  isAllowedHref,
-  looksLikeMarkdown,
   markdownToDocument,
-  noteHref,
-  noteIdFromHref,
   titleFromMarkdown,
   withoutTitleHeading,
 } from "./note-content";
@@ -113,22 +111,6 @@ describe("Markdown conversion", () => {
   });
 });
 
-describe("note links", () => {
-  it("round-trips a note's ID through its link", () => {
-    expect(noteIdFromHref(noteHref(NOTE_ID))).toBe(NOTE_ID);
-    expect(noteIdFromHref("https://example.com/notes?note=" + NOTE_ID)).toBeNull();
-    expect(noteIdFromHref("/notes?note=nope")).toBeNull();
-  });
-
-  it("allows only web, email, and note links", () => {
-    expect(isAllowedHref("https://example.com")).toBe(true);
-    expect(isAllowedHref("mailto:ada@example.com")).toBe(true);
-    expect(isAllowedHref(noteHref(NOTE_ID))).toBe(true);
-    expect(isAllowedHref("javascript:alert(1)")).toBe(false);
-    expect(isAllowedHref("/settings")).toBe(false);
-  });
-});
-
 describe("helpers", () => {
   it("suggests a title from the first heading or line", () => {
     expect(titleFromMarkdown("\n# Groceries\nmilk")).toBe("Groceries");
@@ -136,13 +118,6 @@ describe("helpers", () => {
     expect(titleFromMarkdown("", "Imported")).toBe("Imported");
     expect(withoutTitleHeading("# Groceries\nmilk")).toBe("milk");
     expect(withoutTitleHeading("## Sub\nmilk")).toBe("## Sub\nmilk");
-  });
-
-  it("recognizes Markdown worth converting on paste", () => {
-    expect(looksLikeMarkdown("# Heading")).toBe(true);
-    expect(looksLikeMarkdown("- item\n- item")).toBe(true);
-    expect(looksLikeMarkdown("see [x](https://a.b)")).toBe(true);
-    expect(looksLikeMarkdown("Just a sentence, nothing more.")).toBe(false);
   });
 
   it("reads a document's text one block per line", () => {

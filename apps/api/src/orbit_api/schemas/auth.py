@@ -48,6 +48,17 @@ class LocalSignInRequest(BaseModel):
     password: Annotated[str, StringConstraints(min_length=1, max_length=PASSWORD_MAX_LENGTH)]
 
 
+class ChangePasswordRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    current_password: Annotated[
+        str, StringConstraints(min_length=1, max_length=PASSWORD_MAX_LENGTH)
+    ]
+    new_password: Annotated[
+        str, StringConstraints(min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)
+    ]
+
+
 class LocalSessionResponse(BaseModel):
     access_token: str = Field(description="Send as `Authorization: Bearer <token>`.")
     token_type: Literal["bearer"]

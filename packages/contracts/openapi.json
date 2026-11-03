@@ -27,6 +27,59 @@
         }
       }
     },
+    "/api/v1/health/live": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Check that the API process is alive",
+        "description": "The same as `/health`: succeeds whenever the process can answer at all.",
+        "operationId": "liveness_api_v1_health_live_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health/ready": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Check that the API is ready to serve requests",
+        "operationId": "readiness_api_v1_health_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A dependency is not ready.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/health/database": {
       "get": {
         "tags": [
@@ -124,6 +177,9 @@
           "409": {
             "description": "An account with this email already exists."
           },
+          "429": {
+            "description": "Too many attempts. Wait for `Retry-After` seconds."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -143,6 +199,7 @@
           "auth"
         ],
         "summary": "Sign in to a local account",
+        "description": "Repeated failures for one account, or from one address, are refused for a while.",
         "operationId": "sign_in_api_v1_auth_local_sign_in_post",
         "requestBody": {
           "content": {
@@ -168,6 +225,9 @@
           "401": {
             "description": "The email or password is incorrect."
           },
+          "429": {
+            "description": "Too many attempts. Wait for `Retry-After` seconds."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -179,6 +239,55 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/auth/local/password": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Change the local account's password",
+        "description": "Every other session of this account is signed out; this one stays signed in.",
+        "operationId": "change_password_api_v1_auth_local_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "403": {
+            "description": "The current password is incorrect."
+          },
+          "429": {
+            "description": "Too many attempts. Wait for `Retry-After` seconds."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/auth/local/sign-out": {
@@ -38324,6 +38433,29 @@
         ],
         "title": "CategorySpendingResponse"
       },
+      "ChangePasswordRequest": {
+        "properties": {
+          "current_password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Current Password"
+          },
+          "new_password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "New Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "current_password",
+          "new_password"
+        ],
+        "title": "ChangePasswordRequest"
+      },
       "CheckInRequest": {
         "properties": {
           "day": {
@@ -52539,6 +52671,35 @@
           "missing"
         ],
         "title": "QualityResponse"
+      },
+      "ReadinessResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable"
+            ],
+            "title": "Status"
+          },
+          "database": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable",
+              "outdated"
+            ],
+            "title": "Database",
+            "description": "`ok`, `unavailable` (no answer), or `outdated` (needs `pnpm db:migrate`)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "database"
+        ],
+        "title": "ReadinessResponse",
+        "description": "Whether the API can serve requests that need its dependencies."
       },
       "RecentSearchListResponse": {
         "properties": {

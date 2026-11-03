@@ -133,7 +133,7 @@ describe or build on capabilities that do not exist.
 | `.husky/`, `.lintstagedrc.mjs`                 | Git hooks: staged-file lint/format and commitlint                                |
 
 Not present yet (planned; see `docs/architecture.md`): object storage for files, price providers,
-shared workspaces, end-to-end tests, and a `scripts/` directory. AI provider adapters live in
+shared workspaces, and a `scripts/` directory. AI provider adapters live in
 `apps/api/src/orbit_api/providers/ai/`, behind the interface in `services/ai/providers.py`;
 Google and Microsoft adapters live in `providers/integrations/`, behind the connector contract in
 `services/integrations/connectors.py`. The agent's concrete tools live in `api/agent_tools.py`
@@ -165,6 +165,7 @@ Run from the repository root. Setup: `pnpm install` (also installs Git hooks) an
 | Format / check format   | `pnpm format`, `pnpm format:check`                                |
 | Type check              | `pnpm typecheck` (tsc for web and contracts, Pyright for API)     |
 | Test                    | `pnpm test`, `pnpm test:web` (Vitest), `pnpm test:api` (Pytest)   |
+| Browser journeys        | `pnpm test:e2e` (Playwright; starts both apps on spare ports)     |
 | Production web build    | `pnpm build`                                                      |
 | Regenerate API contract | `pnpm contracts:generate`; verify with `pnpm contracts:check`     |
 | Apply DB migrations     | `pnpm db:migrate` (Alembic, against the configured database)      |
@@ -291,15 +292,21 @@ and `packages/*/package.json`. Check them rather than guessing.
   - Unit-test domain logic and calculations.
   - Test API routes, validation failures, and error responses.
   - Test storage adapters and authorization boundaries when they exist.
-  - Critical user journeys will need end-to-end tests. No E2E framework is installed yet; do
-    not add one without the task asking for it.
+  - Critical user journeys have browser tests: Playwright in `apps/web/e2e/`, run by
+    `pnpm test:e2e` against a real API on a throwaway SQLite database, with no external
+    services. Keep them to critical paths; detail belongs in Vitest and Pytest.
+  - Every operation in the OpenAPI schema is checked for authentication and workspace
+    isolation by `tests/test_authorization_matrix.py`. A new public route must be added to its
+    allowlist with a reason.
 - Web: Vitest + Testing Library + jsdom. Tests live next to the code as `*.test.ts(x)` under
   `apps/web/src/`. Query by role and accessible name. Mock `next/navigation` and network calls.
   Render signed-in views with `renderSignedIn` (`src/test/session.tsx`) and standalone
   components that query data with `renderWithQueries` (`src/test/query.tsx`); both give each
   test a fresh query cache that doesn't retry. Mock the API with `mockApi` (`src/test/api-mock.ts`).
 - API: Pytest in `apps/api/tests/`. Use the `client` fixture from `conftest.py`, which builds an
-  isolated app via `create_app(Settings(...))`. Pytest treats warnings as errors.
+  isolated app via `create_app(Settings(...))` on its own copy of a database migrated once per
+  run. Pytest treats warnings as errors. PostgreSQL tests (`-m postgres`) run when
+  `ORBIT_TEST_DATABASE_URL` points at a disposable database; CI runs them.
 - Test behavior, not implementation details. Mock external services, not the code under test.
 - **Never weaken, skip, or delete tests to make checks pass.** Fix the code, or explain why the
   test is wrong.

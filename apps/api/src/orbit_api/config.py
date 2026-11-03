@@ -13,6 +13,7 @@ from sqlalchemy.exc import ArgumentError
 
 Environment = Literal["development", "test", "production"]
 LogLevel = Literal["critical", "error", "warning", "info", "debug"]
+LogFormat = Literal["text", "json"]
 StorageMode = Literal["local", "cloud"]
 
 LOCAL_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
@@ -42,6 +43,13 @@ class Settings(BaseSettings):
     api_host: str = "127.0.0.1"
     api_port: int = 8000
     log_level: LogLevel = "info"
+    # `json` writes one JSON object per log line, for log collectors.
+    log_format: LogFormat = "text"
+    # Addresses of reverse proxies whose `X-Forwarded-For` header names the real client, as
+    # Uvicorn's `forwarded_allow_ips` (comma-separated, or `*`). Sign-in limits count attempts
+    # per client address, so set this when Orbit runs behind a proxy. Unset trusts only
+    # 127.0.0.1.
+    forwarded_allow_ips: str | None = None
     cors_origins: list[str] = LOCAL_ORIGINS
 
     storage_mode: StorageMode = "local"
