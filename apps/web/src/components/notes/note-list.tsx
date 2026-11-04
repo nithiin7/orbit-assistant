@@ -1,14 +1,24 @@
 "use client";
 
 import type { NoteFolder, NoteSummary } from "@orbit/contracts";
-import { Archive, BookOpen, Folder, MoreHorizontal, Pin, Star, Zap } from "lucide-react";
+import {
+  Archive,
+  BookOpen,
+  Folder,
+  Lock,
+  LockOpen,
+  MoreHorizontal,
+  Pin,
+  Star,
+  Zap,
+} from "lucide-react";
 
 import { Menu, type MenuItem } from "@/components/ui/menu";
 import { folderPath, highlightParts, noteDisplayTitle } from "@/lib/notes";
 import { cn } from "@/utils/common";
 
 export type NoteListAction =
-  "pin" | "favorite" | "move" | "duplicate" | "archive" | "trash" | "restore" | "delete";
+  "pin" | "favorite" | "lock" | "move" | "duplicate" | "archive" | "trash" | "restore" | "delete";
 
 export type NoteLayout = "list" | "grid";
 
@@ -63,6 +73,12 @@ function noteActions(note: NoteSummary, onAction: (action: NoteListAction) => vo
       label: note.is_favorite ? "Remove from favorites" : "Add to favorites",
       icon: Star,
       onSelect: () => onAction("favorite"),
+    },
+    {
+      id: "lock",
+      label: note.is_locked ? "Unlock note" : "Lock note",
+      icon: note.is_locked ? LockOpen : Lock,
+      onSelect: () => onAction("lock"),
     },
   ];
   if (note.note_type !== "journal") {
@@ -170,6 +186,9 @@ export function NoteList({
                 >
                   <Highlighted text={title} search={search} />
                 </span>
+                {note.is_locked ? (
+                  <Lock className="size-3.5 shrink-0 text-muted-foreground" aria-label="Locked" />
+                ) : null}
                 {note.is_favorite ? (
                   <Star
                     className="size-3.5 shrink-0 fill-current text-warning"

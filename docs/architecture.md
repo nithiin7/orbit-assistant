@@ -1874,6 +1874,7 @@ refuses a folder, tag, link, task link, or attachment that crosses workspaces. M
 | `folder_id`                    | `NULL` is the Inbox                                                                   |
 | `journal_date`                 | Set exactly for journal entries (CHECK); `unique(workspace_id, journal_date)`         |
 | `is_pinned`, `is_favorite`     | Pinned notes sort first in lists                                                      |
+| `is_locked`                    | Locked notes show only their title in lists, search, and previews (not encryption)    |
 | `archived_at`, `trashed_at`    | Archive and trash are timestamps; archived and trashed notes are read-only            |
 | `revision`                     | Starts at 1 and counts title or content changes (optimistic concurrency)              |
 | `updated_at`, `last_opened_at` | `updated_at` changes only with the title or content; opening sets `last_opened_at`    |
@@ -1983,6 +1984,9 @@ index, and lookups by target for backlinks, by tag, and by task.
   changing the service or API.
 - Results carry an `excerpt`: the start of the text, or the text around the first match. The web
   app highlights matching words with `<mark>` (text split in React, never injected HTML).
+- A locked note's `excerpt` is empty everywhere (notes list, dashboard, AI context summaries,
+  agent tools), and its text is never matched by notes search or universal search; its title,
+  tags, and folder still are. Opening it returns its content as usual.
 - Filters: state (`active`, `archived`, `trashed`), folder or Inbox, tag, type, task, favorite,
   pinned; sorts: last edited, created, title, recent (last opened or edited), journal date;
   `pinned_first`; `limit` (≤ 100) and `offset`. The web app pages by 50.
@@ -2047,7 +2051,11 @@ Request models forbid unknown fields, so `workspace_id`, `revision`, `plain_text
 - Two layouts. Browsing (no note open): the rail beside a list that uses the rest of the page
   (the rail behind **Browse** on narrower screens). Editing (a note open): the note takes the whole
   page, the list opens as a drawer from the left (**Show note list** or `/`), and the details panel
-  can be hidden, a choice kept in `localStorage`.
+  can be hidden, a choice kept in `localStorage`. The drawer and the details panel stay mounted
+  while closed so both slide in and out (no motion with reduced motion).
+- **Locking** (pane header or a list item's menu) hides a note's text in lists and the dashboard;
+  opening a locked note shows a cover with **Show content** until revealed for that visit. It is a
+  privacy screen, not access control or encryption.
 - Keyboard: `N` creates a note, `/` focuses search (opening the list drawer when a note is open),
   Escape clears it; the editor supports
   standard shortcuts (Mod+B/I/U, Mod+Shift+S, Mod+E, Mod+Alt+1–3, Mod+Shift+7/8/9, Mod+Shift+B)

@@ -84,6 +84,7 @@ function note(overrides: Partial<NoteSummary> & Pick<NoteSummary, "id" | "title"
     journal_date: null,
     is_pinned: false,
     is_favorite: false,
+    is_locked: false,
     archived_at: null,
     trashed_at: null,
     revision: 1,
