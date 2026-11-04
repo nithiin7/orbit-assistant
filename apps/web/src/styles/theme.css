@@ -1,9 +1,9 @@
 /* Maps the design tokens onto Tailwind's theme, so utilities like `bg-card` and `font-sans` exist. */
 @theme inline {
-  /* Geist (see fonts.ts), falling back to the system font until it loads. */
+  /* The chosen UI font (`--font-ui`, Geist by default), falling back to the system font. */
   --font-sans:
-    var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+    var(--font-ui), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

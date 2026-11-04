@@ -10,6 +10,7 @@ import { updateMe } from "@/api/profile";
 import { FormAlert, FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { displayNameSchema } from "@/lib/auth/validation";
+import { settingsSectionsClassName } from "@/lib/settings";
 import { useAuth, useCurrentUser } from "@/providers/auth";
 
 import { ChangePassword } from "./change-password";
@@ -17,8 +18,8 @@ import { ProfilePhoto } from "./profile-photo";
 import { TimeZonePreference } from "./time-zone-preference";
 
 const providerLabels = {
-  local: "Local account, stored in this installation’s database",
-  supabase: "Supabase account (Orbit cloud)",
+  local: "Local account",
+  supabase: "Orbit cloud",
 } as const;
 
 export function AccountSettings() {
@@ -54,7 +55,7 @@ export function AccountSettings() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className={settingsSectionsClassName}>
       <ProfilePhoto />
 
       <dl className="grid gap-4 rounded-xl border bg-card p-4 text-sm sm:grid-cols-2">
@@ -90,10 +91,7 @@ export function AccountSettings() {
 
       {user.auth_provider === "local" ? <ChangePassword /> : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
-        <p className="text-sm text-muted-foreground">
-          Signing out removes your session from this browser.
-        </p>
+      <div className="border-t pt-4 [column-span:all]">
         <Button
           variant="outline"
           size="sm"

@@ -205,6 +205,7 @@ function routes(overrides: Record<string, ReturnType<typeof json>> = {}) {
     [`GET ${FINANCE}/sip-plans`]: json({ plans: [] }),
     [`GET ${FINANCE}/portfolio`]: json(portfolio),
     [`GET ${FINANCE}/investment-transactions`]: json({ transactions: [], total: 0 }),
+    [`GET ${FINANCE}/market-data`]: json({ available: true, enabled: false }),
     ...overrides,
   };
 }
@@ -313,7 +314,7 @@ describe("Investments", () => {
       "Investment accountA broker, fund platform, or bank",
     ]);
     await userEvent.click(within(menu).getByRole("menuitem", { name: "Stock" }));
-    const dialog = await screen.findByRole("dialog", { name: "Add a holding" });
+    const dialog = await screen.findByRole("dialog", { name: "Add an investment" });
     // The holding starts as the kind chosen, and its tab opens behind the dialog.
     expect(within(dialog).getByRole("combobox", { name: "Type" })).toHaveTextContent("Stock");
     expect(screen.getByRole("tab", { name: /^Stocks/, hidden: true })).toHaveAttribute(

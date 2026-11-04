@@ -92,10 +92,7 @@ export function CreateBackupDialog({
           <Checkbox {...register("includeFiles")} className="mt-0.5" />
           <span className="space-y-0.5">
             <span className="block font-medium">Include files</span>
-            <span className="block text-muted-foreground">
-              Documents, note attachments, and progress photos. Without them the backup is smaller,
-              but restored records show their files as missing.
-            </span>
+            <span className="block text-muted-foreground">Documents, attachments, and photos.</span>
           </span>
         </label>
 
@@ -106,10 +103,10 @@ export function CreateBackupDialog({
           options={choices}
           hint={
             encryption === "none"
-              ? "Anyone with the file can read it. Store it as carefully as the data itself."
+              ? "Anyone with the file can read it."
               : encryption === "backup_key"
-                ? "Opens with the backup password from the automatic backup settings."
-                : "Orbit never stores this password. Without it the backup can’t be opened."
+                ? "Uses your automatic backup password."
+                : "Not stored. Without it the backup can’t be opened."
           }
         />
 

@@ -715,6 +715,37 @@ def test_search_results_carry_an_excerpt_around_the_match(
     assert "content" not in note
 
 
+def test_locked_notes_show_only_their_title(client: TestClient, ws: str, ada: Headers) -> None:
+    note = create(client, ws, ada, title="Diary", content=doc("secret plans"))
+    assert note["is_locked"] is False
+    locked = patch(client, ws, ada, note, is_locked=True)
+    assert locked["is_locked"] is True
+    assert locked["revision"] == note["revision"]
+
+    listed = client.get(f"{ws}/notes", headers=ada).json()["notes"][0]
+    assert listed["is_locked"] is True
+    assert listed["excerpt"] == ""
+    # Hidden text is never matched; the title still is.
+    assert titles(client, ws, ada, q="secret") == []
+    assert titles(client, ws, ada, q="diary") == ["Diary"]
+    found = client.get(f"{ws}/search", params={"q": "secret"}, headers=ada).json()
+    assert all(group["hits"] == [] for group in found["groups"])
+    by_title = client.get(f"{ws}/search", params={"q": "diary"}, headers=ada).json()
+    note_hits = next(g["hits"] for g in by_title["groups"] if g["module"] == "notes")
+    assert note_hits[0]["detail"] == ""
+    # Opening the note itself still returns its content.
+    opened = client.get(f"{ws}/notes/{note['id']}", headers=ada).json()
+    assert opened["content"] == doc("secret plans")
+
+    unlocked = patch(client, ws, ada, note, is_locked=False)
+    assert unlocked["is_locked"] is False
+    assert titles(client, ws, ada, q="secret") == ["Diary"]
+    assert (
+        client.patch(f"{ws}/notes/{note['id']}", json={"is_locked": None}, headers=ada).status_code
+        == 422
+    )
+
+
 def test_filters_and_sorting(client: TestClient, ws: str, ada: Headers) -> None:
     banana = create(client, ws, ada, title="banana")
     apple = create(client, ws, ada, title="Apple", note_type="quick")

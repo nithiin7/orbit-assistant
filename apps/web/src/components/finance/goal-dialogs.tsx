@@ -137,7 +137,7 @@ export function GoalDialog({
   return (
     <DialogShell
       title={goal ? `Edit “${goal.name}”` : "Add a savings goal"}
-      description="A goal earmarks money; it’s never spending, and it doesn’t change your balances or net worth."
+      description="Saving isn’t spending."
       busy={saving}
       onClose={onClose}
       submitLabel={goal ? "Save changes" : "Add goal"}
@@ -182,7 +182,7 @@ export function GoalDialog({
           name="accountId"
           label="Kept in"
           options={accountOptions}
-          hint="Link the account the savings sit in to record transfers into it."
+          hint="Where the savings sit."
         />
       </div>
 
@@ -302,11 +302,7 @@ export function ContributionDialog({
           )}
         />
       ) : (
-        <p className="text-xs text-muted-foreground">
-          This goal isn’t linked to an account, so the money is{" "}
-          {withdrawal ? "released" : "set aside"} without moving. Link an account to record
-          transfers.
-        </p>
+        <p className="text-xs text-muted-foreground">No linked account, so no money moves.</p>
       )}
 
       {mode === "link" ? (

@@ -1330,8 +1330,8 @@ finance_net_worth_snapshots   (unique workspace, currency, month)
 | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `finance_investment_accounts`     | The profile of an `investment` finance account: `kind` (mutual_fund, brokerage, deposit, other), `provider`, optional `linked_account_id`                             |
 | `finance_holdings`                | A mutual fund, stock, or ETF: name, symbol or scheme code, exchange, ISIN, AMC, category, folio, and a normalized `identity`, unique per account                      |
-| `finance_holding_prices`          | One price per holding and date (scaled), with `source` (`manual` today; `import`, `provider` reserved)                                                                |
-| `finance_sip_plans`               | A scheduled SIP: amount, frequency, anchor date, optional end and funding account, state                                                                              |
+| `finance_holding_prices`          | One price per holding and date (scaled), with `source` (`manual`, or `provider` from market data; `import` reserved)                                                  |
+| `finance_sip_plans`               | A scheduled SIP: amount, frequency, anchor date, optional end and funding account, `auto_debit` (needs the funding account), state                                    |
 | `finance_deposits`                | A fixed or recurring deposit: rate (bps), compounding, start and maturity, RD installment, the bank's stated maturity amount, status, manual value, maturity reminder |
 | `finance_investment_transactions` | buy, sell, dividend, interest, fee, deposit, withdrawal: date, amount, units, charges, settlement, SIP due date, and the ledger rows it recorded                      |
 | `finance_assets`                  | Gold, property, vehicles, cash, other: purchase date and cost, optional linked account, `include_in_net_worth`, archived                                              |
@@ -1382,6 +1382,19 @@ currency)`, and from transactions to their holding's `(id, workspace_id, currenc
   recorded installment (possibly overdue); recording one creates a buy with `plan = sip` and the
   `sip_due_date` it settles, unique per plan, so an installment can't be recorded twice. Pausing
   stops the schedule; resuming restarts from the next date on or after today.
+- **Units from the NAV.** A mutual fund buy (or SIP installment, or a new holding's `opening`
+  position) may leave `quantity` out: the units are the amount ÷ the first price dated on or
+  within 7 days after the buy (funds allot at the NAV of the day the money arrives, or the next
+  business day), fetched from the feed when none is stored, else the latest one in the 7 days
+  before. They are rounded half up to 3 decimals, as registrars allot; stamp duty isn't
+  deducted. Without a price, the request is a 422 asking for the units. Stocks and ETFs always
+  need units.
+- **Auto-debit SIPs** (mutual funds with a funding account only) are recorded by the worker
+  (every 15 minutes, on the owner's local date): each unrecorded due date in the last 7 days
+  whose NAV (on or after it) is known becomes a buy transferred from the funding account, with
+  units from that NAV, plus an in-app notification, each in its own commit. A date whose NAV
+  isn't published yet is retried on the next run; older missed dates are left overdue for the
+  person, so turning auto-debit on never back-fills a SIP's history.
 
 ### Cost basis, precision, and rounding
 
@@ -1478,12 +1491,24 @@ currency)`, and from transactions to their holding's `(id, workspace_id, currenc
 
 ### Valuation strategy
 
-Prices and valuations are **entered by hand** in this phase. Orbit calls no market data, NAV, or
-bank APIs. Every price and valuation stores its date and `source`, and
-`services/investments/valuation.py` defines the seam for later: a `PriceFeed` returns `Quote`s,
-and `InvestmentService.record_prices` stores them (one per holding and date, ignoring holdings
-outside the workspace) with the feed's `source`. A NAV provider, market data provider, or
-statement import can be added behind that protocol without schema changes.
+Prices are **entered by hand** unless a workspace opts in under **Settings → Finance** and the
+server allows market data (`ORBIT_MARKET_DATA_ENABLED`, on by default; set it to `false` to disable
+live prices globally). Then `providers/prices/feed.py` implements the `PriceFeed` in
+`services/investments/valuation.py` with two public, keyless services: mutual
+fund NAVs from **mfapi.in** (AMFI's published history, by numeric scheme code) and stock and ETF
+closing prices from **Yahoo Finance**'s chart endpoint (an unofficial API that may change or
+rate-limit; `price_key` maps `INFY` on `NSE` to `INFY.NS`, `BSE` to `.BO`). Both also back
+instrument search. Prices are stored like manual ones, one per holding and date, with `source =
+provider`; a price in another currency than the holding's is ignored.
+
+- **What leaves the server**: a scheme code or ticker and a date range, or a search phrase;
+  never units, amounts, or names of people. Nothing about holdings is logged.
+- **When**: the worker refreshes the last 7 days' prices of every holding with a symbol in
+  workspaces that opted in, every `ORBIT_MARKET_DATA_REFRESH_HOURS` (6); adding a holding fetches
+  its prices; `POST
+…/market-data/refresh` does it on demand; a buy without units fetches the NAV it needs.
+- Feed failures never fail a refresh (counted as `failed`) or a buy with units; they only mean
+  a buy without units asks for them. Bank and broker statements are not imported.
 
 ### Investments API
 
@@ -1501,6 +1526,9 @@ workspace's account, holding, deposit, or transaction is a 404; referencing one 
 | `DELETE`                 | `/holdings/{id}/prices/{price_id}`              | Delete a price                                                            |
 | `GET`, `POST`            | `/investment-transactions`                      | Activity (filters, paging); record with its ledger rows                   |
 | `GET`, `DELETE`          | `/investment-transactions/{id}`                 | One; delete (`delete_ledger`)                                             |
+| `GET`, `PUT`             | `/market-data`                                  | Whether live prices are available and enabled for this workspace; toggle  |
+| `GET`                    | `/market-data/search`                           | Find a fund, stock, or ETF (`kind`, `q`; 409 when off, 503 unreachable)   |
+| `POST`                   | `/market-data/refresh`                          | Fetch recent prices of every holding with a symbol (409 when off)         |
 | `GET`, `POST`            | `/sip-plans`                                    | List with next due date; schedule                                         |
 | `PATCH`                  | `/sip-plans/{id}`                               | Change, pause, cancel, resume                                             |
 | `POST`                   | `/sip-plans/{id}/installments`                  | Record an installment (409 if that date is recorded)                      |
@@ -1530,6 +1558,11 @@ must be JSON integers. Routes log nothing about holdings or values.
   worth" markers, history, update value, archive with confirmation), and **Net worth** (totals,
   a quality notice, changes, a monthly trend from snapshots plus today, asset and liability
   breakdowns, and every item with its source and date, including those not counted).
+- **Adding an investment** is one dialog (`add-investment-dialog.tsx`): find the fund or stock
+  by name (with market data on; otherwise type its details), choose or name the account it sits
+  in (a new one is created first), and enter what is held, sent as the holding's `opening`.
+  With market data on, the view offers **Refresh prices**; SIP dialogs offer **Auto-debit** for
+  funds.
 - Dialogs use React Hook Form with Yup schemas in `lib/investments`, which parses units and
   prices as strings (`parseUnits`) and never uses floats for money. Queries live under
   `["workspaces", id, "finance", "investments", …]`, so any finance change refetches them;
@@ -1540,8 +1573,10 @@ must be JSON integers. Routes log nothing about holdings or values.
 
 ### Investment limitations
 
-- **No live prices** or bank, broker, or registrar connections; values are only as current as
-  the prices entered, and stale ones are marked.
+- **Live prices are opt-in per workspace** and come from mfapi.in and Yahoo Finance only; the
+  server can disable them globally. With market data off, values are only as current as the prices
+  entered, and stale ones are marked. There are no bank, broker, or registrar connections, and no
+  statement (CAS) import.
 - **Corporate actions** (splits, bonuses, mergers, dividend reinvestment as units) aren't
   modelled; record them as a sale and buy, or adjust by hand. FIFO is the only cost method;
   there is no tax lot selection, capital gains tax, or grandfathering.
@@ -1832,9 +1867,9 @@ budgets, goals, or amounts.
 
 ## Finance limitations and extension points (planned, not implemented)
 
-- **Price providers** (mutual fund NAVs, market prices, statement imports) would implement
-  `PriceFeed` (see [Valuation strategy](#valuation-strategy)); none is integrated.
-- Commitments don't create transactions automatically (no auto-debit); each payment is recorded
+- **Statement imports** (CAS, broker contract notes) would implement `PriceFeed` or record
+  buys (see [Valuation strategy](#valuation-strategy)); none is integrated.
+- Commitments don't create transactions automatically (only auto-debit SIPs do); each payment is recorded
   or linked. Overdue occurrences of a subscription or bill are listed up to the 60 most recent.
 - A loan's earlier history (before it was added) isn't reconstructed, floating rates are
   modelled by rescheduling, and interest is per installment period (no daily-balance interest,
@@ -1874,6 +1909,7 @@ refuses a folder, tag, link, task link, or attachment that crosses workspaces. M
 | `folder_id`                    | `NULL` is the Inbox                                                                   |
 | `journal_date`                 | Set exactly for journal entries (CHECK); `unique(workspace_id, journal_date)`         |
 | `is_pinned`, `is_favorite`     | Pinned notes sort first in lists                                                      |
+| `is_locked`                    | Locked notes show only their title in lists, search, and previews (not encryption)    |
 | `archived_at`, `trashed_at`    | Archive and trash are timestamps; archived and trashed notes are read-only            |
 | `revision`                     | Starts at 1 and counts title or content changes (optimistic concurrency)              |
 | `updated_at`, `last_opened_at` | `updated_at` changes only with the title or content; opening sets `last_opened_at`    |
@@ -1983,6 +2019,9 @@ index, and lookups by target for backlinks, by tag, and by task.
   changing the service or API.
 - Results carry an `excerpt`: the start of the text, or the text around the first match. The web
   app highlights matching words with `<mark>` (text split in React, never injected HTML).
+- A locked note's `excerpt` is empty everywhere (notes list, dashboard, AI context summaries,
+  agent tools), and its text is never matched by notes search or universal search; its title,
+  tags, and folder still are. Opening it returns its content as usual.
 - Filters: state (`active`, `archived`, `trashed`), folder or Inbox, tag, type, task, favorite,
   pinned; sorts: last edited, created, title, recent (last opened or edited), journal date;
   `pinned_first`; `limit` (≤ 100) and `offset`. The web app pages by 50.
@@ -2047,7 +2086,11 @@ Request models forbid unknown fields, so `workspace_id`, `revision`, `plain_text
 - Two layouts. Browsing (no note open): the rail beside a list that uses the rest of the page
   (the rail behind **Browse** on narrower screens). Editing (a note open): the note takes the whole
   page, the list opens as a drawer from the left (**Show note list** or `/`), and the details panel
-  can be hidden, a choice kept in `localStorage`.
+  can be hidden, a choice kept in `localStorage`. The drawer and the details panel stay mounted
+  while closed so both slide in and out (no motion with reduced motion).
+- **Locking** (pane header or a list item's menu) hides a note's text in lists and the dashboard;
+  opening a locked note shows a cover with **Show content** until revealed for that visit. It is a
+  privacy screen, not access control or encryption.
 - Keyboard: `N` creates a note, `/` focuses search (opening the list drawer when a note is open),
   Escape clears it; the editor supports
   standard shortcuts (Mod+B/I/U, Mod+Shift+S, Mod+E, Mod+Alt+1–3, Mod+Shift+7/8/9, Mod+Shift+B)
@@ -2472,9 +2515,14 @@ fields.
 
 ### Habits in the web app
 
-- `/habits`, with views in the URL: Today (`/habits`), All habits, Routines, Analytics, and
-  Archived (`?view=`), and detail pages (`?habit=`, `?routine=`). One primary action, a New menu
-  for a habit or a routine.
+- `/habits`, with views in the URL: Today (`/habits`), All habits, Routines, Analytics,
+  Templates, and Archived (`?view=`), and detail pages (`?habit=`, `?routine=`). The views sit in
+  a sticky side rail when the page is wide (`@5xl/habits`) and a row of chips below that, like
+  Automation. One primary action, a New menu for a habit, a routine, or a template.
+- Templates (`src/lib/habits/templates.ts`): ready-made habits by theme (health, mind, learning,
+  home and money) and routines with their steps. Choosing one opens the New habit or New routine
+  form filled in; nothing is saved until it's created. Templates whose name is already in use say
+  so. Today's empty state offers three starters.
 - Today groups habits into To do, Done, and others (skipped, resting, paused, or a weekly target
   already met), with one-tap check-offs that show at once and roll back on failure, inline
   progress for amounts and durations, skip and clear in a row menu, this week's dots, today's
@@ -2488,6 +2536,10 @@ fields.
   and a table of every habit.
 - Wording stays encouraging: missed days are "Not done", streaks are shown quietly, and there
   are no points or badges.
+- Checking a habit off on Today pops its check, and a short toast with confetti cheers when the
+  API reports the target met (`cheerFor`): a varied everyday cheer, a bigger one on streak
+  milestones (3, 7, 14, 21, 30… days), and the biggest when the last habit of the day is done.
+  Undoing or partial progress stays quiet. Reduced-motion settings drop the movement.
 - Code: `src/api/habits`, `src/hooks/use-habits.ts`, `src/lib/habits`, `src/components/habits`.
   Query keys start `["workspaces", id, "habits", …]`; changes refetch habits, reminders, and the
   calendar.
@@ -3028,20 +3080,32 @@ The OpenAPI document is the reference for fields.
 
 - `/health` (`components/fitness/`), with views in the URL (`?view=` overview, workouts,
   exercises, templates, body, nutrition, water, activity, goals, progress, settings) and detail
-  pages (`?workout=`, `?exercise=`, `?goal=`). One primary **Log** menu: start a workout (the
-  first template), a past workout, food, water, measurements, or activity.
-- **Overview**: today's workout (in progress, scheduled, or done), nutrition and water against
-  targets (water quick-add), weight trend, active goals, recent workouts and activity, and the
-  latest records. Sections can be hidden in Settings.
-- **Workout logger** (mobile-first): a sticky header with the elapsed clock, Finish, Pause or
-  Resume, and a rest countdown; each exercise shows last time's sets, then one row per set with
-  large inputs in the person's units (saved when a field loses focus) and a check to mark it done;
-  add a set (copying the last), set types, rest time, reorder, remove, add exercises from a
-  searchable picker, notes, training notes, and linked documents.
+  pages (`?workout=`, `?exercise=`, `?goal=`). Like Habits, a sticky side rail from `@5xl/health`
+  (chips below that) groups the views: Today; Train (Workouts, Templates, Exercises); Track daily
+  (Food, Water, Body, Activity, each marked optional); Review (Goals, Progress); and Settings.
+  Each view opens with a one-line hint of what it's for (`FITNESS_VIEW_HINTS`).
+- **Today** (overview): a three-step getting-started card until the first workout; today's
+  workout (in progress, scheduled, or done, with one-tap starts for up to four templates); food
+  and water against targets (water quick-add); weight trend; active goals; recent workouts and
+  activity; and the latest records. Its **Log** menu starts a workout (the first template) or logs
+  a past workout, food, water, measurements, or activity. Sections can be hidden in Settings.
+- **Workouts**: a start card per template plus an empty workout (or a link to the starter
+  templates when there are none), hidden while a workout is in progress; history by month.
+- **Workout logger** (mobile-first): a header that sticks below the mobile app bar, with the
+  elapsed clock, sets done, Finish, Pause or Resume, a rest countdown, and a menu to stop early or
+  delete; each exercise shows last time's sets, then one row per set with large inputs in the
+  person's units (saved when a field loses focus), last time's matching set (tap to copy it, on
+  wider screens), and a check to mark it done; add a set (copying the last), set types, rest time,
+  reorder, remove, add exercises from a searchable picker, notes, training notes, and linked
+  documents.
+- **Starter templates** (`src/lib/fitness/starter-templates.ts`): nine ready-made plans (full
+  body, home bodyweight, push/pull/legs, upper/lower, cardio, mobility) listed by built-in
+  exercise key. Adding one saves an ordinary template with the person's copies of those
+  exercises, matched by the exercise response's `builtin_key` (archived ones are skipped).
 - **Exercises** (search, category and equipment filters, archived, custom exercises, and each
   exercise's records, estimated 1RM chart, and history), **Templates** (ordered editor, start,
   duplicate, archive, schedule on the calendar with a reminder), **Body** (measurements, weight
-  trend, BMI with its caveat, progress photos with side-by-side comparison), **Nutrition** (a day
+  trend, BMI with its caveat, progress photos with side-by-side comparison), **Food** (a day
   by meal, totals and targets, saved foods and meals, 14-day history), **Water**, **Activity**,
   **Goals** (progress, pace, milestones, check-ins, related habit, notes and documents),
   **Progress** (analytics and records), and **Settings** (units, height, targets, quick amounts,
@@ -4512,14 +4576,17 @@ claim and advance up to five executions with a five-minute lease.
 
 ### In the web app
 
-**Automation** (`/automation`, tabs in the URL): an overview (on/off, level, modules, where
-automations run, ask the agent, pending approvals, recent activity); workflows (templates, an
-editor for triggers and steps with tool arguments derived from each tool's schema, run now,
-on/off, delete); the approval center (each action's exact arguments, reason, effect, risk,
-untrusted-content warning, expiry); activity (filters, each run's steps with reasons, details,
-outputs, linked records, failures, cancel and retry); and settings (autonomy, modules, action
-types, per-action modes, instructions, limits, memory and the memory list, monitoring,
-notifications). Views with runs in progress refresh every five seconds.
+**Automation** (`/automation`, five sections in a side rail, as chips when narrow, and in the
+URL): Home (on/off and level, ask the agent, approvals waiting, templates to try before any
+workflow exists, recent runs); Workflows (each with its trigger, next run, on/off, and a menu to
+run, edit, or delete; below them a template gallery filtered by category that notes modules the
+agent isn't allowed yet; a template opens the editor filled in, and `?template=<id>` opens it
+from a link; the old `?tab=templates` lands here); Approvals (each action's effect, reason,
+risk when not low, untrusted-content warning, arguments under Details, expiry; earlier decisions
+as a short list); History (all, running, or failed runs; each run's steps with reasons, details,
+outputs, linked records, failures, cancel and retry); and Settings (autonomy, modules, record
+types, instructions, notifications, monitoring, the memory list, and where automations run;
+per-action modes, limits, memory settings, and the model sit under Advanced). Views with runs in progress refresh every five seconds.
 
 ### Known limitations
 

@@ -190,7 +190,6 @@ export function AccountsView({
     <div className="space-y-6">
       <ViewHeader
         title="Accounts"
-        description="Where your money sits. Each balance is its opening balance plus everything recorded."
         controls={
           loanCount > 0 ? (
             <label
@@ -246,7 +245,7 @@ export function AccountsView({
 
       {active.length === 0 ? (
         <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">
-          No active accounts. Add a bank account, cash, a card, or a wallet to start recording.
+          No active accounts.
         </p>
       ) : (
         <section aria-label="Active accounts" className="space-y-6">

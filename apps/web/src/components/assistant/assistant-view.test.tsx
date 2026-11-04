@@ -1,4 +1,4 @@
-import type { AiConversationDetail, AiProposal, AiSettings } from "@orbit/contracts";
+import type { AiConversationDetail, AiProposal, AiProvider, AiSettings } from "@orbit/contracts";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -265,6 +265,56 @@ describe("AssistantView", () => {
       "Rename",
       "Delete",
     ]);
+  });
+
+  it("switches the chat model from the composer", async () => {
+    const user = userEvent.setup();
+    const provider = (id: string, name: string): AiProvider => ({
+      id,
+      name,
+      kind: "openai_compatible",
+      base_url: null,
+      effective_base_url: null,
+      has_api_key: false,
+      processing: "local",
+      capabilities: {
+        chat: true,
+        streaming: true,
+        structured_output: false,
+        embeddings: false,
+        model_listing: true,
+        usage_reporting: false,
+      },
+      input_price: null,
+      output_price: null,
+      created_at: "2026-11-02T10:00:00Z",
+    });
+    const model = (id: string) => ({ id, chat: true, embeddings: false });
+    const fetchMock = mockApi({
+      ...session,
+      "GET /api/v1/me/ai/settings": json(enabled),
+      "GET /api/v1/me/ai/providers": json({
+        providers: [provider("p1", "Ollama"), provider("p2", "LM Studio")],
+      }),
+      "GET /api/v1/me/ai/providers/p1/models": json({
+        models: [model("llama3"), model("mistral")],
+      }),
+      "GET /api/v1/me/ai/providers/p2/models": json({ models: [model("qwen")] }),
+      "PATCH /api/v1/me/ai/settings": (request) =>
+        Response.json({ ...enabled, ...(request.body as Partial<AiSettings>) }),
+    });
+    await renderSignedIn(<AssistantView />);
+
+    const picker = await screen.findByRole("combobox", { name: "Model" });
+    await waitFor(() => expect(picker).toHaveTextContent("llama3"));
+    await user.click(picker);
+    await user.click(await screen.findByRole("option", { name: "qwen" }));
+
+    await waitFor(() => expect(picker).toHaveTextContent("qwen"));
+    const patches = fetchMock.mock.calls
+      .filter(([, init]) => init?.method === "PATCH")
+      .map(([, init]) => JSON.parse(String(init?.body)) as object);
+    expect(patches).toEqual([{ chat_provider_id: "p2", chat_model: "qwen" }]);
   });
 
   it("opens a conversation from the drawer on narrow screens", async () => {

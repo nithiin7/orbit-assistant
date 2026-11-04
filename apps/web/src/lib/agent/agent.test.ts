@@ -10,7 +10,9 @@ import {
   argumentValue,
   automationHref,
   describeTrigger,
+  findTemplate,
   hasActive,
+  missingModules,
   newStep,
   parseAgentTab,
   WORKFLOW_TEMPLATES,
@@ -113,9 +115,30 @@ describe("the workflow form", () => {
     const tools = [
       tool("search_tasks", {
         type: "object",
-        properties: { due_within_days: { type: "integer" }, overdue_only: { type: "boolean" } },
+        properties: {
+          due_within_days: { type: "integer" },
+          overdue_only: { type: "boolean" },
+          limit: { type: "integer" },
+        },
       }),
       tool("search_calendar", { type: "object", properties: { days_ahead: { type: "integer" } } }),
+      tool("get_reminders", { type: "object", properties: { days_ahead: { type: "integer" } } }),
+      tool("get_upcoming_payments", {
+        type: "object",
+        properties: { days_ahead: { type: "integer" } },
+      }),
+      tool("get_transactions", {
+        type: "object",
+        properties: { days_back: { type: "integer" }, limit: { type: "integer" } },
+      }),
+      tool("get_workout_history", {
+        type: "object",
+        properties: { days_back: { type: "integer" } },
+      }),
+      tool("search_documents", {
+        type: "object",
+        properties: { expiring_within_days: { type: "integer" }, limit: { type: "integer" } },
+      }),
       tool("send_notification", {
         type: "object",
         properties: { title: { type: "string" }, body: { type: "string" } },
@@ -134,6 +157,18 @@ describe("the workflow form", () => {
       const again = workflowRequest(workflowFormValues(original, "UTC"), tools);
       expect(again).toEqual(original);
     }
+  });
+
+  it("finds templates and the modules they still need", () => {
+    const ids = WORKFLOW_TEMPLATES.map((template) => template.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    const budget = findTemplate("budget");
+    expect(budget?.title).toBe("Budget watch");
+    expect(findTemplate(null)).toBeUndefined();
+    expect(findTemplate("nope")).toBeUndefined();
+    if (!budget) throw new Error("No budget template");
+    expect(missingModules(budget, ["tasks", "reminders"])).toEqual(["finance"]);
+    expect(missingModules(budget, ["finance", "reminders"])).toEqual([]);
   });
 
   it("gives new steps unique ids", () => {

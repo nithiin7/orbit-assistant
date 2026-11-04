@@ -23,7 +23,7 @@ export function TimeZonePreference() {
   const detected = browserTimeZone();
   const zoneOptions = useMemo(
     () => [
-      { value: "", label: `Not set: use this device’s (${timeZoneLabel(detected)})` },
+      { value: "", label: `This device (${timeZoneLabel(detected)})` },
       ...timeZoneNames(detected, user.timezone).map((zone) => ({
         value: zone,
         label: timeZoneLabel(zone),
@@ -66,7 +66,7 @@ export function TimeZonePreference() {
         label="Time zone"
         options={zoneOptions}
         onValueChange={() => setSaved(false)}
-        hint="New reminders start in this time zone. Each reminder keeps its own, so changing this doesn’t move existing reminders."
+        hint="Used for new reminders."
       />
       <FormAlert message={errors.root?.server?.message ?? null} />
       <div className="flex items-center gap-3">

@@ -100,6 +100,7 @@ class NoteModel(Base):
     journal_date: Mapped[date | None] = mapped_column(Date)
     is_pinned: Mapped[bool] = mapped_column(Boolean)
     is_favorite: Mapped[bool] = mapped_column(Boolean)
+    is_locked: Mapped[bool] = mapped_column(Boolean)
     archived_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     trashed_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     revision: Mapped[int] = mapped_column(Integer)

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkspaceAvatar } from "@/components/workspace/workspace-switcher";
 import { workspaceNameSchema } from "@/lib/auth/validation";
+import { settingsSectionsClassName } from "@/lib/settings";
 import { useWorkspaces } from "@/providers/workspace";
 
 export function WorkspaceSettings() {
@@ -40,7 +41,7 @@ export function WorkspaceSettings() {
 
   const { workspaces, active } = state;
   return (
-    <div className="space-y-8">
+    <div className={settingsSectionsClassName}>
       {/* Keyed so the form resets when another workspace becomes active. */}
       <RenameWorkspaceForm key={`rename-${active.id}`} workspace={active} />
 
@@ -115,7 +116,7 @@ function RenameWorkspaceForm({ workspace }: { workspace: Workspace }) {
   return (
     <form noValidate onSubmit={onSubmit} className="space-y-3">
       <FormField
-        label="Current workspace name"
+        label="Workspace name"
         autoComplete="off"
         {...register("name", { onChange: () => setSaved(false) })}
         error={errors.name?.message}
@@ -158,12 +159,15 @@ function CreateWorkspaceForm() {
   });
 
   return (
-    <form noValidate onSubmit={onSubmit} className="space-y-3 border-t pt-6">
+    <form
+      noValidate
+      onSubmit={onSubmit}
+      className="space-y-3 border-t pt-6 @5xl/panel:border-t-0 @5xl/panel:pt-0"
+    >
       <FormField
         label="New workspace"
         autoComplete="off"
         placeholder="For example, Side project"
-        hint="Workspaces are private to you. Sharing isn’t available yet."
         {...register("name")}
         error={errors.name?.message}
       />
@@ -213,8 +217,7 @@ function DeleteWorkspaceSection({ workspace }: { workspace: Workspace }) {
           Delete this workspace
         </h3>
         <p className="text-sm text-pretty text-muted-foreground">
-          Permanently deletes {workspace.name} and everything in it. This can’t be undone. Your
-          personal workspace becomes active.
+          Deletes {workspace.name} and everything in it. This can’t be undone.
         </p>
       </div>
       {confirming ? (

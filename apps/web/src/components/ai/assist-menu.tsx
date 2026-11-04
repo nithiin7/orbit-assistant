@@ -22,6 +22,8 @@ type AssistMenuProps = {
   start?: string;
   end?: string;
   variant?: ButtonProps["variant"];
+  /** Match the buttons beside it; small by default, for toolbars. */
+  size?: ButtonProps["size"];
 };
 
 /**
@@ -35,6 +37,7 @@ export function AssistMenu({
   start,
   end,
   variant = "ghost",
+  size = "sm",
 }: AssistMenuProps) {
   const settings = useAiSettings();
   const [running, setRunning] = useState<AssistAction | null>(null);
@@ -49,7 +52,7 @@ export function AssistMenu({
     <>
       <Menu
         variant={variant}
-        size="sm"
+        size={size}
         aria-label="AI actions"
         items={actions.map((action) => ({
           id: action.kind,

@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useId } from "react";
 
 import { Tooltip } from "@/components/ui/tooltip";
-import { isActivePath, type NavItem, navItems } from "@/lib/navigation";
+import { isActivePath, type NavItem, sidebarSections } from "@/lib/navigation";
 import { cn } from "@/utils/common";
 
 import { useSidebarCollapsed } from "./sidebar-state";
@@ -15,12 +16,11 @@ type NavLinksProps = {
   collapsible?: boolean;
 };
 
-const workspaceItems = navItems.filter((item) => item.group === "workspace");
-const systemItems = navItems.filter((item) => item.group === "system");
-
 export function NavLinks({ onNavigate, collapsible = false }: NavLinksProps) {
   const pathname = usePathname();
   const collapsed = useSidebarCollapsed() && collapsible;
+  // The sidebar and the mobile drawer can both be mounted, so heading ids must be unique.
+  const headingId = useId();
 
   const renderItems = (items: readonly NavItem[]) =>
     items.map(({ title, href, icon: Icon }) => {
@@ -63,9 +63,39 @@ export function NavLinks({ onNavigate, collapsible = false }: NavLinksProps) {
     });
 
   return (
-    <nav aria-label="Primary" className="flex h-full flex-col gap-4">
-      <ul className="flex flex-col gap-0.5">{renderItems(workspaceItems)}</ul>
-      <ul className="mt-auto flex flex-col gap-0.5">{renderItems(systemItems)}</ul>
+    <nav aria-label="Primary" className="flex flex-col gap-4">
+      {sidebarSections.map(({ id, label, items }) => (
+        <div key={id} className="space-y-0.5">
+          {label ? (
+            // Collapsed, the heading gives way to a divider so the icons still read as groups.
+            <p
+              id={`${headingId}-${id}`}
+              className="relative flex h-6 items-center px-3 text-xs font-medium tracking-wide text-muted-foreground/80 uppercase"
+            >
+              <span
+                className={cn(
+                  "truncate transition-opacity duration-200",
+                  collapsible && "sidebar-collapsed:opacity-0",
+                )}
+              >
+                {label}
+              </span>
+              {collapsible ? (
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-x-3 top-1/2 h-px bg-sidebar-border opacity-0 transition-opacity duration-200 sidebar-collapsed:opacity-100"
+                />
+              ) : null}
+            </p>
+          ) : null}
+          <ul
+            aria-labelledby={label ? `${headingId}-${id}` : undefined}
+            className="flex flex-col gap-0.5"
+          >
+            {renderItems(items)}
+          </ul>
+        </div>
+      ))}
     </nav>
   );
 }

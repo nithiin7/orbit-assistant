@@ -6,13 +6,13 @@ import { PageHeader } from "@/components/page-header";
 
 export const metadata: Metadata = { title: "Automation" };
 
-/** The tab and any open run live in the URL, read on the client. */
+/** The section, an open run, or an opened template live in the URL, read on the client. */
 export default function AutomationPage() {
   return (
     <div className="space-y-8">
       <PageHeader
         title="Automation"
-        description="Your personal agent and workflows. It uses only the tools you allow, and asks before changing anything unless you’ve said otherwise."
+        description="Workflows that run for you, and an agent that asks before it changes anything."
       />
       <Suspense>
         <AutomationView />

@@ -1,8 +1,16 @@
 "use client";
 
-import type { DocumentOverview, DocumentSummary } from "@orbit/contracts";
-import { ArrowRight } from "lucide-react";
-import type { ReactNode } from "react";
+import type { DocumentCategory, DocumentOverview, DocumentSummary } from "@orbit/contracts";
+import {
+  ArrowRight,
+  CalendarClock,
+  CircleCheck,
+  Files,
+  Hourglass,
+  type LucideIcon,
+  RefreshCcw,
+} from "lucide-react";
+import { type ReactNode, useId } from "react";
 
 import { Button } from "@/components/ui/button";
 import { type DocumentsLocation, formatFileSize } from "@/lib/documents";
@@ -17,236 +25,298 @@ type OverviewProps = {
   onNavigate: (location: Partial<DocumentsLocation>) => void;
 };
 
-/** What needs attention first (expired and expiring), then recent and favorite documents. */
+/**
+ * The library at a glance: a few counts, one list of what needs attention (expired first, then
+ * expiring), what changed lately, favorites, and a way in by category.
+ */
 export function DocumentsOverview({ overview, today, onOpen, onNavigate }: OverviewProps) {
   const { counts } = overview;
+  const categoryNames = new Map(
+    overview.categories.map((category) => [category.id, category.name]),
+  );
+  const attention = [...overview.expired, ...overview.expiring];
+  const hiddenAttention =
+    counts.expired + counts.expiring_90 - overview.expired.length - overview.expiring.length;
   const used = overview.categories.filter((category) => category.document_count > 0);
-  const largest = Math.max(1, ...used.map((category) => category.document_count));
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 @2xl/list:grid-cols-4">
-        <Stat label="Documents" value={counts.all} detail={formatFileSize(counts.total_bytes)} />
         <Stat
+          icon={Files}
+          label="Documents"
+          value={counts.all}
+          detail={formatFileSize(counts.total_bytes)}
+          onClick={() => onNavigate({ view: "all" })}
+        />
+        <Stat
+          icon={Hourglass}
           label="Expiring in 30 days"
           value={counts.expiring_30}
           tone={counts.expiring_30 > 0 ? "warning" : undefined}
           onClick={() => onNavigate({ view: "expiring", window: 30 })}
         />
         <Stat
+          icon={CalendarClock}
           label="Expired"
           value={counts.expired}
           tone={counts.expired > 0 ? "danger" : undefined}
           onClick={() => onNavigate({ view: "expired" })}
         />
         <Stat
+          icon={RefreshCcw}
           label="Renewals in 90 days"
           value={counts.renewals}
           onClick={() => onNavigate({ view: "renewals" })}
         />
       </div>
 
-      <div className="grid gap-6 @4xl/list:grid-cols-2">
-        <Panel
-          title="Expiring soon"
-          empty="Nothing expires in the next 90 days."
-          documents={overview.expiring}
-          today={today}
-          onOpen={onOpen}
-          more={
-            counts.expiring_90 > overview.expiring.length
-              ? () => onNavigate({ view: "expiring", window: 90 })
-              : undefined
-          }
-        />
-        <Panel
-          title="Expired"
-          empty="No expired documents."
-          documents={overview.expired}
-          today={today}
-          onOpen={onOpen}
-          more={
-            counts.expired > overview.expired.length
-              ? () => onNavigate({ view: "expired" })
-              : undefined
-          }
-        />
-        <Panel
-          title="Recently added"
-          empty="Upload a document to get started."
-          documents={overview.recently_added}
-          today={today}
-          onOpen={onOpen}
-          more={() => onNavigate({ view: "all" })}
-        />
-        <Panel
-          title="Recently modified"
-          empty="No documents yet."
-          documents={overview.recently_updated}
-          today={today}
-          onOpen={onOpen}
-          more={() => onNavigate({ view: "recent" })}
-        />
-        {overview.favorites.length > 0 ? (
+      <div className="grid items-start gap-6 @4xl/list:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <div className="min-w-0 space-y-6">
           <Panel
-            title="Favorites"
-            empty=""
-            documents={overview.favorites}
-            today={today}
-            onOpen={onOpen}
-            more={
-              counts.favorites > overview.favorites.length
-                ? () => onNavigate({ view: "favorites" })
-                : undefined
+            title="Needs attention"
+            action={
+              hiddenAttention > 0 ? (
+                <SeeAll
+                  onClick={() =>
+                    onNavigate(
+                      counts.expired > overview.expired.length
+                        ? { view: "expired" }
+                        : { view: "expiring", window: 90 },
+                    )
+                  }
+                />
+              ) : null
             }
-          />
-        ) : null}
-        <section
-          aria-labelledby="documents-by-category"
-          className="rounded-xl border bg-card p-4 shadow-elevation-1"
-        >
-          <h3 id="documents-by-category" className="mb-3 text-sm font-semibold">
-            By category
-          </h3>
-          {used.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Give documents a category to see them grouped here.
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {used.map((category) => {
-                const Icon = CATEGORY_ICONS[category.icon];
-                return (
+          >
+            {attention.length === 0 ? (
+              <p className="flex items-center gap-3 px-4 py-5 text-sm text-muted-foreground">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-success/10 text-success">
+                  <CircleCheck className="size-4" aria-hidden="true" />
+                </span>
+                All clear. Nothing is expired or expires in the next 90 days.
+              </p>
+            ) : (
+              <DocumentRows
+                documents={attention}
+                categoryNames={categoryNames}
+                today={today}
+                onOpen={onOpen}
+              />
+            )}
+          </Panel>
+
+          <Panel
+            title="Recently updated"
+            action={
+              overview.recently_updated.length > 0 ? (
+                <SeeAll onClick={() => onNavigate({ view: "recent" })} />
+              ) : null
+            }
+          >
+            {overview.recently_updated.length === 0 ? (
+              <p className="px-4 py-5 text-sm text-muted-foreground">
+                Upload a document to get started.
+              </p>
+            ) : (
+              <DocumentRows
+                documents={overview.recently_updated}
+                categoryNames={categoryNames}
+                today={today}
+                onOpen={onOpen}
+              />
+            )}
+          </Panel>
+        </div>
+
+        <div className="min-w-0 space-y-6">
+          {overview.favorites.length > 0 ? (
+            <Panel
+              title="Favorites"
+              action={
+                counts.favorites > overview.favorites.length ? (
+                  <SeeAll onClick={() => onNavigate({ view: "favorites" })} />
+                ) : null
+              }
+            >
+              <DocumentRows
+                documents={overview.favorites}
+                categoryNames={categoryNames}
+                today={today}
+                onOpen={onOpen}
+              />
+            </Panel>
+          ) : null}
+
+          <Panel title="Browse by category">
+            {used.length === 0 ? (
+              <p className="px-4 py-5 text-sm text-muted-foreground">
+                Give documents a category to see them grouped here.
+              </p>
+            ) : (
+              <ul className="grid grid-cols-2 gap-2 p-3">
+                {used.map((category) => (
                   <li key={category.id}>
-                    <button
-                      type="button"
+                    <CategoryTile
+                      category={category}
                       onClick={() => onNavigate({ categoryId: category.id })}
-                      className="w-full rounded-md text-left text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <span className="flex items-center gap-2">
-                        <Icon
-                          className="size-4 shrink-0 text-muted-foreground"
-                          aria-hidden="true"
-                        />
-                        <span className="min-w-0 flex-1 truncate">{category.name}</span>
-                        <span className="text-xs text-muted-foreground tabular-nums">
-                          {category.document_count}
-                        </span>
-                      </span>
-                      <span aria-hidden="true" className="mt-1 block h-1.5 rounded-full bg-muted">
-                        <span
-                          className="block h-full rounded-full bg-brand/60"
-                          style={{ width: `${(category.document_count / largest) * 100}%` }}
-                        />
-                      </span>
-                    </button>
+                    />
                   </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
+                ))}
+              </ul>
+            )}
+          </Panel>
+        </div>
       </div>
     </div>
   );
 }
 
 function Stat({
+  icon: Icon,
   label,
   value,
   detail,
   tone,
   onClick,
 }: {
+  icon: LucideIcon;
   label: string;
   value: number;
   detail?: string;
   tone?: "warning" | "danger";
-  onClick?: () => void;
+  onClick: () => void;
 }) {
-  const body: ReactNode = (
-    <>
-      <span className="block text-xs text-muted-foreground">{label}</span>
-      <span
-        className={cn(
-          "block text-2xl font-semibold tabular-nums",
-          tone === "warning" && "text-warning",
-          tone === "danger" && "text-destructive",
-        )}
-      >
-        {value}
-        {detail ? (
-          <span className="ml-2 text-xs font-normal text-muted-foreground">{detail}</span>
-        ) : null}
-      </span>
-    </>
-  );
-  const className = "rounded-xl border bg-card p-4 text-left shadow-elevation-1";
-  return onClick ? (
+  return (
     <button
       type="button"
       onClick={onClick}
-      className={cn(
-        className,
-        "transition-colors outline-none hover:border-brand/30 focus-visible:ring-2 focus-visible:ring-ring",
-      )}
+      className="group flex items-start gap-3 rounded-xl border bg-card p-4 text-left shadow-elevation-1 transition-colors outline-none hover:border-brand/30 focus-visible:ring-2 focus-visible:ring-ring"
     >
-      {body}
+      <span
+        className={cn(
+          "flex size-9 shrink-0 items-center justify-center rounded-lg",
+          tone === "warning"
+            ? "bg-warning/10 text-warning"
+            : tone === "danger"
+              ? "bg-destructive/10 text-destructive"
+              : "bg-muted text-muted-foreground",
+        )}
+      >
+        <Icon className="size-4.5" aria-hidden="true" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-xs text-muted-foreground">{label}</span>
+        <span
+          className={cn(
+            "block text-2xl leading-tight font-semibold tabular-nums",
+            tone === "warning" && "text-warning",
+            tone === "danger" && "text-destructive",
+          )}
+        >
+          {value}
+        </span>
+        {detail ? <span className="block text-xs text-muted-foreground">{detail}</span> : null}
+      </span>
     </button>
-  ) : (
-    <div className={className}>{body}</div>
   );
 }
 
 function Panel({
   title,
-  empty,
-  documents,
-  today,
-  onOpen,
-  more,
+  action,
+  children,
 }: {
   title: string;
-  empty: string;
-  documents: readonly DocumentSummary[];
-  today: string;
-  onOpen: (documentId: string) => void;
-  more?: () => void;
+  action?: ReactNode;
+  children: ReactNode;
 }) {
-  const id = `documents-${title.toLowerCase().replaceAll(" ", "-")}`;
+  const id = useId();
   return (
-    <section aria-labelledby={id} className="rounded-xl border bg-card shadow-elevation-1">
-      <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-1">
+    <section
+      aria-labelledby={id}
+      className="overflow-hidden rounded-xl border bg-card shadow-elevation-1"
+    >
+      <div className="flex min-h-12 items-center justify-between gap-2 border-b px-4 py-2">
         <h3 id={id} className="text-sm font-semibold">
           {title}
         </h3>
-        {more && documents.length > 0 ? (
-          <Button variant="ghost" size="sm" onClick={more}>
-            See all
-            <ArrowRight aria-hidden="true" />
-          </Button>
-        ) : null}
+        {action}
       </div>
-      {documents.length === 0 ? (
-        <p className="px-4 pt-1 pb-4 text-sm text-muted-foreground">{empty}</p>
-      ) : (
-        <ul className="pb-2">
-          {documents.map((document) => (
-            <li key={document.id}>
-              <button
-                type="button"
-                onClick={() => onOpen(document.id)}
-                className="flex w-full items-center gap-3 px-4 py-2 text-left outline-none hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-              >
-                <FileIcon file={document.file} className="size-8" />
-                <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                  {document.title}
-                </span>
-                <ExpiryChip document={document} today={today} />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      {children}
     </section>
+  );
+}
+
+function SeeAll({ onClick }: { onClick: () => void }) {
+  return (
+    <Button variant="ghost" size="sm" onClick={onClick}>
+      See all
+      <ArrowRight aria-hidden="true" />
+    </Button>
+  );
+}
+
+function DocumentRows({
+  documents,
+  categoryNames,
+  today,
+  onOpen,
+}: {
+  documents: readonly DocumentSummary[];
+  categoryNames: ReadonlyMap<string, string>;
+  today: string;
+  onOpen: (documentId: string) => void;
+}) {
+  return (
+    <ul className="divide-y">
+      {documents.map((document) => {
+        const detail = [
+          document.category_id ? categoryNames.get(document.category_id) : undefined,
+          document.provider ?? document.issuing_authority ?? undefined,
+        ]
+          .filter(Boolean)
+          .join(" · ");
+        return (
+          <li key={document.id}>
+            <button
+              type="button"
+              onClick={() => onOpen(document.id)}
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors outline-none hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+            >
+              <FileIcon file={document.file} className="size-8" />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium">{document.title}</span>
+                {detail ? (
+                  <span className="block truncate text-xs text-muted-foreground">{detail}</span>
+                ) : null}
+              </span>
+              <ExpiryChip document={document} today={today} />
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function CategoryTile({ category, onClick }: { category: DocumentCategory; onClick: () => void }) {
+  const Icon = CATEGORY_ICONS[category.icon];
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center gap-2.5 rounded-lg border bg-background/60 px-3 py-2.5 text-left text-sm transition-colors outline-none hover:border-brand/30 hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-brand-subtle text-brand">
+        <Icon className="size-4" aria-hidden="true" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate font-medium">{category.name}</span>
+        <span className="block text-xs text-muted-foreground tabular-nums">
+          {category.document_count === 1 ? "1 document" : `${category.document_count} documents`}
+        </span>
+      </span>
+    </button>
   );
 }

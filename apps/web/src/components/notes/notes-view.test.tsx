@@ -62,6 +62,7 @@ function summary(overrides: Partial<NoteSummary> & Pick<NoteSummary, "id" | "tit
     journal_date: null,
     is_pinned: false,
     is_favorite: false,
+    is_locked: false,
     archived_at: null,
     trashed_at: null,
     revision: 1,
@@ -288,6 +289,65 @@ describe("NotesPanel", () => {
     await renderNotes(`?note=${groceries.id}`);
     expect(await screen.findByRole("button", { name: "Show details" })).toBeInTheDocument();
     expect(screen.queryByRole("complementary", { name: "Details" })).not.toBeInTheDocument();
+  });
+
+  it("covers a locked note until asked, and shows only its title in the list", async () => {
+    const user = userEvent.setup();
+    const diary = summary({
+      id: "aaaaaaaa-0000-4000-8000-00000000000c",
+      title: "Diary",
+      is_locked: true,
+    });
+    mockApi(
+      routes({
+        [`GET ${NOTES}`]: json({ notes: [groceries, diary], total: 2 }),
+        [`GET ${NOTES}/${diary.id}`]: json(detail(diary, "Secret plans")),
+        [`GET ${NOTES}/${diary.id}/links`]: json({ outgoing: [], backlinks: [] }),
+        [`GET ${NOTES}/${diary.id}/tasks`]: json({ tasks: [], total: 0 }),
+        [`GET ${NOTES}/${diary.id}/attachments`]: json({ attachments: [], max_bytes: 1024 }),
+      }),
+    );
+    await renderNotes();
+    const list = await screen.findByRole("list", { name: "Notes" });
+    expect(within(list).getByLabelText("Locked")).toBeInTheDocument();
+
+    cleanup();
+    await renderNotes(`?note=${diary.id}`);
+    expect(await screen.findByText(/This note is locked/)).toBeInTheDocument();
+    expect(screen.queryByText("Secret plans")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Unlock note" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Show content" }));
+    expect(await screen.findByText("Secret plans")).toBeInTheDocument();
+  });
+
+  it("locks the open note and keeps it shown", async () => {
+    const user = userEvent.setup();
+    const api = mockApi(
+      routes({
+        [`GET ${NOTES}/${groceries.id}`]: json(detail(groceries, "Buy basil")),
+        [`PATCH ${NOTES}/${groceries.id}`]: json({
+          ...detail(groceries, "Buy basil"),
+          is_locked: true,
+        }),
+        [`GET ${NOTES}/${groceries.id}/links`]: json({ outgoing: [], backlinks: [] }),
+        [`GET ${NOTES}/${groceries.id}/tasks`]: json({ tasks: [], total: 0 }),
+        [`GET ${NOTES}/${groceries.id}/attachments`]: json({ attachments: [], max_bytes: 1024 }),
+      }),
+    );
+    await renderNotes(`?note=${groceries.id}`);
+    expect(await screen.findByText("Buy basil")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Lock note" }));
+    await waitFor(() => {
+      const patch = api.mock.calls.find(([, init]) => init?.method === "PATCH");
+      expect(JSON.parse(String(patch?.[1]?.body))).toEqual({ is_locked: true });
+    });
+    expect(screen.getByText("Buy basil")).toBeInTheDocument();
+    expect(screen.queryByText(/This note is locked/)).not.toBeInTheDocument();
   });
 
   it("creates a note with N and opens it", async () => {

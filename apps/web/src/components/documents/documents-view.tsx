@@ -404,8 +404,8 @@ function DocumentsView({ workspaceId }: { workspaceId: string }) {
           onConfirm={(heading, description, label) => confirmAction(heading, description, label)}
         />
       ) : (
-        <div className="grid gap-6 @5xl/documents:grid-cols-[14rem_minmax(0,1fr)]">
-          <aside className="hidden min-w-0 @5xl/documents:sticky @5xl/documents:top-6 @5xl/documents:block @5xl/documents:max-h-[calc(100dvh-3rem)] @5xl/documents:self-start @5xl/documents:overflow-y-auto">
+        <div className="grid gap-6 @5xl/documents:grid-cols-[15rem_minmax(0,1fr)]">
+          <aside className="hidden min-w-0 @5xl/documents:sticky @5xl/documents:top-6 @5xl/documents:block @5xl/documents:max-h-[calc(100dvh-3rem)] @5xl/documents:scrollbar-thin @5xl/documents:self-start @5xl/documents:overflow-x-hidden @5xl/documents:overflow-y-auto @5xl/documents:overscroll-contain @5xl/documents:py-0.5 @5xl/documents:pr-2 @5xl/documents:pl-0.5">
             {rail}
           </aside>
 

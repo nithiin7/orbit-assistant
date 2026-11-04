@@ -80,7 +80,7 @@ export function RestoreSection({ uploads }: { uploads: BackupUpload[] }) {
       id="backup-restore"
       icon={FileUp}
       title="Restore and import"
-      description="Restore an Orbit backup, or import records from an Orbit JSON export. You’ll see what the file holds and what would change before anything does."
+      description="You’ll preview changes before anything is applied."
       action={
         step.kind === "idle" ? (
           <Button variant="outline" onClick={() => inputRef.current?.click()} disabled={busy}>
@@ -461,11 +461,7 @@ function Done({ report, onClose }: { report: RestoreReport; onClose: () => void 
 function RecentUploads({ uploads }: { uploads: BackupUpload[] }) {
   const recent = uploads.filter((upload) => upload.status !== "discarded").slice(0, 5);
   if (recent.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        Choose a backup (.zip or .orbit-backup) or a JSON export to begin.
-      </p>
-    );
+    return <p className="text-sm text-muted-foreground">Choose a backup or JSON export.</p>;
   }
   return (
     <div className="space-y-2">

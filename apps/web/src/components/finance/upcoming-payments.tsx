@@ -160,7 +160,7 @@ export function UpcomingPayments({
   const header = (
     <ViewHeader
       title="Upcoming payments"
-      description={`Loan EMIs, subscriptions, and bills from ${formatCalendarDate(bounds.from)} to ${formatCalendarDate(bounds.to)}. They aren’t spending until you record them.`}
+      description={`${formatCalendarDate(bounds.from)} to ${formatCalendarDate(bounds.to)}`}
       controls={filters}
     />
   );
@@ -238,7 +238,7 @@ export function UpcomingPayments({
         <EmptyState
           icon={CalendarCheck}
           title="Nothing due"
-          description="No loan EMIs, subscriptions, or bills fall in these dates. Add them from their views to see what’s coming up."
+          description="Nothing due in these dates."
         />
       ) : (
         <div

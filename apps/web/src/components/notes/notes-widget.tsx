@@ -1,7 +1,7 @@
 "use client";
 
 import type { NoteListQuery } from "@orbit/contracts";
-import { BookOpen, NotebookPen, Pin, Star, Zap } from "lucide-react";
+import { BookOpen, Lock, NotebookPen, Pin, Star, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -108,6 +108,12 @@ export function NotesWidget() {
                           <Pin
                             className="size-3 shrink-0 text-muted-foreground"
                             aria-label="Pinned"
+                          />
+                        ) : null}
+                        {note.is_locked ? (
+                          <Lock
+                            className="size-3 shrink-0 text-muted-foreground"
+                            aria-label="Locked"
                           />
                         ) : null}
                         {note.is_favorite ? (

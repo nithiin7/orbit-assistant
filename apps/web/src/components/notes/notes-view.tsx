@@ -7,9 +7,12 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  Eye,
   FileUp,
   LayoutGrid,
   List,
+  Lock,
+  LockOpen,
   type LucideIcon,
   MoreHorizontal,
   NotebookPen,
@@ -45,7 +48,6 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Menu, type MenuItem } from "@/components/ui/menu";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useModalDialog } from "@/hooks/use-modal-dialog";
 import {
   useNote,
   useNoteCounts,
@@ -327,6 +329,17 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
                 : `Added “${title}” to favorites.`,
             );
             break;
+          case "lock":
+            await mutations.update.mutateAsync({
+              noteId: note.id,
+              changes: { is_locked: !note.is_locked },
+            });
+            setAnnouncement(
+              note.is_locked
+                ? `Unlocked “${title}”. Its content shows in lists again.`
+                : `Locked “${title}”. Only its title shows in lists.`,
+            );
+            break;
           case "archive": {
             const archiving = note.archived_at === null;
             if (archiving && note.id === location.noteId) await editorRef.current?.flush();
@@ -376,7 +389,7 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
       if (event.key === "/") {
         event.preventDefault();
         // With a note open, the search lives in the list panel, which focuses it as it opens.
-        if (searchRef.current) searchRef.current.focus();
+        if (searchRef.current && !searchRef.current.closest("dialog")) searchRef.current.focus();
         else setListOpen(true);
       } else if (event.key.toLowerCase() === "n") {
         event.preventDefault();
@@ -504,8 +517,6 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
             aria-label="Search notes"
             aria-keyshortcuts="/"
             placeholder="Search notes…"
-            // The panel opens to find another note, so it starts in the search.
-            autoFocus={inPanel}
             onChange={(event) => setSearch(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Escape" && search) {
@@ -672,9 +683,9 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
             onAction={(note, action) => void act(note, action)}
             onAnnounce={setAnnouncement}
           />
-          {listOpen ? (
-            <NoteListPanel onClose={() => setListOpen(false)}>{listContent(true)}</NoteListPanel>
-          ) : null}
+          <NoteListPanel open={listOpen} focusRef={searchRef} onClose={() => setListOpen(false)}>
+            {listContent(true)}
+          </NoteListPanel>
         </section>
       ) : (
         // Browsing: the rail beside a list that uses the rest of the page.
@@ -714,12 +725,49 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
   );
 }
 
-/** The note list as a drawer from the left edge, over the open note. */
-function NoteListPanel({ onClose, children }: { onClose: () => void; children: ReactNode }) {
-  const { dialogProps } = useModalDialog({ onClose });
+/**
+ * The note list as a drawer from the left edge, over the open note. It stays mounted while
+ * closed so it can slide out as well as in.
+ */
+function NoteListPanel({
+  open,
+  focusRef,
+  onClose,
+  children,
+}: {
+  open: boolean;
+  /** Focused as the panel opens: it opens to find another note. */
+  focusRef: RefObject<HTMLElement | null>;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const dialog = ref.current;
+    if (!dialog || dialog.open === open) return;
+    if (open) {
+      returnFocusRef.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      dialog.showModal();
+      focusRef.current?.focus();
+    } else {
+      dialog.close();
+    }
+  }, [open, focusRef]);
+
   return (
     <dialog
-      {...dialogProps}
+      ref={ref}
+      onClose={() => {
+        returnFocusRef.current?.focus();
+        onClose();
+      }}
+      onClick={(event) => {
+        // A click on the dialog element itself (not its content) is a backdrop click.
+        if (event.target === event.currentTarget) ref.current?.close();
+      }}
       aria-labelledby="note-list-heading"
       className="dialog-motion dialog-drawer m-0 h-dvh max-h-none w-[28rem] max-w-[calc(100%-3rem)] border-r bg-background p-0 text-foreground shadow-elevation-3"
     >
@@ -930,6 +978,10 @@ function NotePane({
   const [showDetails, setShowDetails] = useState(
     () => typeof window === "undefined" || window.localStorage.getItem(DETAILS_KEY) !== "hidden",
   );
+  // The panel clips its content only while sliding, so the tag suggestions can overflow it.
+  const [detailsSettled, setDetailsSettled] = useState(true);
+  // A locked note opens covered, so a glance at the screen doesn't show it.
+  const [revealed, setRevealed] = useState(false);
 
   if (state.status === "loading") {
     return (
@@ -1058,6 +1110,24 @@ function NotePane({
                 aria-hidden="true"
               />
             </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8"
+              aria-label={note.is_locked ? "Unlock note" : "Lock note"}
+              aria-pressed={note.is_locked}
+              onClick={() => {
+                // Locking the note being read keeps it shown until it's next opened.
+                if (!note.is_locked) setRevealed(true);
+                onAction(note, "lock");
+              }}
+            >
+              {note.is_locked ? (
+                <Lock className="text-brand" aria-hidden="true" />
+              ) : (
+                <LockOpen aria-hidden="true" />
+              )}
+            </Button>
           </>
         )}
         {readOnly ? null : (
@@ -1072,6 +1142,7 @@ function NotePane({
           onClick={() => {
             const next = !showDetails;
             setShowDetails(next);
+            setDetailsSettled(false);
             window.localStorage.setItem(DETAILS_KEY, next ? "shown" : "hidden");
           }}
         >
@@ -1108,26 +1179,63 @@ function NotePane({
 
       <div
         className={cn(
-          "@container/editor grid gap-8",
-          showDetails &&
-            "@3xl/pane:grid-cols-[minmax(0,1fr)_16rem] @6xl/pane:grid-cols-[minmax(0,1fr)_18rem]",
+          // The details column (wide) or row (narrow) grows from nothing, so it slides in.
+          "@container/editor grid transition-[grid-template-columns,gap] duration-300 ease-out motion-reduce:transition-none @3xl/pane:grid-cols-[minmax(0,1fr)_0rem]",
+          showDetails
+            ? "gap-8 @3xl/pane:grid-cols-[minmax(0,1fr)_16rem] @6xl/pane:grid-cols-[minmax(0,1fr)_18rem]"
+            : "gap-0",
         )}
       >
         <div className="mx-auto w-full max-w-4xl min-w-0">
-          <NoteEditor
-            // A fresh editor when the note's state changes between editable and read-only.
-            key={`${note.id}-${readOnly ? "read" : "edit"}`}
-            workspaceId={workspaceId}
-            note={note}
-            readOnly={readOnly}
-            handleRef={handleRef}
-            onOpenNote={onOpenNote}
-          />
+          {note.is_locked && !revealed ? (
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card/40 px-6 py-16 text-center">
+              <Lock className="size-8 text-muted-foreground" aria-hidden="true" />
+              <div className="space-y-1">
+                <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+                <p className="text-sm text-muted-foreground">
+                  This note is locked. Its content is hidden in lists, search, and previews.
+                </p>
+              </div>
+              <Button variant="soft" size="sm" onClick={() => setRevealed(true)}>
+                <Eye aria-hidden="true" />
+                Show content
+              </Button>
+            </div>
+          ) : (
+            <NoteEditor
+              // A fresh editor when the note's state changes between editable and read-only.
+              key={`${note.id}-${readOnly ? "read" : "edit"}`}
+              workspaceId={workspaceId}
+              note={note}
+              readOnly={readOnly}
+              handleRef={handleRef}
+              onOpenNote={onOpenNote}
+            />
+          )}
         </div>
-        {showDetails ? (
+        {/* Kept mounted while closed, so it can slide out as well as in. */}
+        <div
+          inert={!showDetails}
+          aria-hidden={showDetails ? undefined : true}
+          onTransitionEnd={(event) => {
+            if (event.target === event.currentTarget && event.propertyName === "opacity") {
+              setDetailsSettled(true);
+            }
+          }}
+          className={cn(
+            "grid min-w-0 transition-[grid-template-rows,opacity,visibility] duration-300 ease-out motion-reduce:transition-none @3xl/pane:grid-rows-[1fr]",
+            showDetails
+              ? "visible grid-rows-[1fr] opacity-100 motion-reduce:overflow-visible"
+              : "invisible grid-rows-[0fr] opacity-0",
+            showDetails && detailsSettled ? "overflow-visible" : "overflow-hidden",
+          )}
+        >
           <aside
             aria-label="Details"
-            className="min-w-0 border-t pt-6 @3xl/pane:border-t-0 @3xl/pane:border-l @3xl/pane:pt-0 @3xl/pane:pl-6"
+            className={cn(
+              "min-h-0 min-w-0 justify-self-end border-t pt-6 transition-transform duration-300 ease-out motion-reduce:transition-none @3xl/pane:w-[16rem] @3xl/pane:border-t-0 @3xl/pane:border-l @3xl/pane:pt-0 @3xl/pane:pl-6 @6xl/pane:w-[18rem]",
+              showDetails ? "translate-x-0" : "@3xl/pane:translate-x-6",
+            )}
           >
             <NoteDetails
               workspaceId={workspaceId}
@@ -1138,7 +1246,7 @@ function NotePane({
               onOpenNote={onOpenNote}
             />
           </aside>
-        ) : null}
+        </div>
       </div>
     </article>
   );

@@ -8,6 +8,7 @@ import type {
   Holding,
   HoldingKind,
   InvestmentAccount,
+  InvestmentTransaction,
   InvestmentTransactionType,
   Settlement,
   SipPlan,
@@ -25,6 +26,7 @@ import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
 import { AmountField, DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useInvestmentMutations } from "@/hooks/use-investments";
 import { formatRate, FREQUENCIES, toReminderRequest } from "@/lib/commitments";
@@ -41,6 +43,7 @@ import {
   COMPOUNDING,
   DEPOSIT_KINDS,
   depositSchema,
+  formatUnits,
   HOLDING_KINDS,
   holdingSchema,
   INVESTMENT_ACCOUNT_KINDS,
@@ -137,8 +140,8 @@ function SettlementFields<F extends FieldValues>({
       ) : (
         <p className="self-end pb-2 text-xs text-muted-foreground">
           {settlement === "none"
-            ? "No money moves in your accounts; the units are added as already owned."
-            : "Uses money already moved into the investment account."}
+            ? "No money moves; the units are added as owned."
+            : "Uses the investment account’s cash."}
         </p>
       )}
     </div>
@@ -251,7 +254,7 @@ export function InvestmentAccountDialog({
   return (
     <DialogShell
       title={account ? "Edit investment account" : "Add an investment account"}
-      description="A mutual fund platform, a broker, or where your deposits are. Its balance is the cash in it; holdings are tracked separately."
+      description="A fund platform, broker, or bank."
       busy={saving}
       onClose={onClose}
       submitLabel={account ? "Save changes" : "Add account"}
@@ -406,7 +409,7 @@ export function HoldingDialog({
   return (
     <DialogShell
       title={holding ? "Edit holding" : "Add a holding"}
-      description="Units and cost come from the buys and sales you record, never typed in directly."
+      description="Units come from the buys and sales you record."
       busy={saving}
       onClose={onClose}
       submitLabel={holding ? "Save changes" : "Add holding"}
@@ -538,6 +541,7 @@ export function TradeDialog({
       currency,
       tradeDate: sip?.next_due_date ?? localDateString(),
       amount: sip ? toDecimalString(sip.amount, currency) : "",
+      fund: holding.kind === "mutual_fund",
       quantity: "",
       fees: "",
       plan: sip ? "sip" : "lump_sum",
@@ -549,21 +553,23 @@ export function TradeDialog({
   const type = useWatch({ control, name: "type" });
   const settlement = useWatch({ control, name: "settlement" });
   const trade = type === "buy" || type === "sell";
+  const unitsOptional = type === "buy" && holding.kind === "mutual_fund";
   const usable = cashAccounts(accounts, currency, holding.account_id);
 
   async function save(values: TradeValues, close: () => void) {
     const amount = parseAmount(values.amount, currency);
     const fees = values.fees ? parseAmount(values.fees, currency) : 0;
     if (amount === null || fees === null) return;
-    const quantity = trade ? parseUnits(values.quantity) : null;
+    const quantity = trade && values.quantity ? parseUnits(values.quantity) : null;
     const cash = values.settlement === "account" ? values.cashAccountId : null;
     try {
+      let entry: InvestmentTransaction;
       if (sip) {
-        await recordSip.mutateAsync({
+        entry = await recordSip.mutateAsync({
           id: sip.id,
           body: {
             trade_date: values.tradeDate,
-            quantity: quantity ?? "",
+            quantity,
             amount,
             due_date: sip.next_due_date,
             settlement: values.settlement,
@@ -573,7 +579,7 @@ export function TradeDialog({
           },
         });
       } else {
-        await recordTransaction.mutateAsync({
+        entry = await recordTransaction.mutateAsync({
           type: values.type as InvestmentTransactionType,
           holding_id: holding.id,
           trade_date: values.tradeDate,
@@ -586,7 +592,11 @@ export function TradeDialog({
           notes: values.notes,
         });
       }
-      onSaved(`Recorded ${formatMoney(amount, currency)} for “${holding.name}”.`);
+      const worked =
+        quantity === null && entry.quantity
+          ? ` at the NAV: ${formatUnits(entry.quantity)} units`
+          : "";
+      onSaved(`Recorded ${formatMoney(amount, currency)} for “${holding.name}”${worked}.`);
       close();
     } catch (reason) {
       setError("root.server", {
@@ -626,10 +636,12 @@ export function TradeDialog({
         {trade ? (
           <>
             <FormField
-              label="Units"
+              label={unitsOptional ? "Units (optional)" : "Units"}
               inputMode="decimal"
               autoComplete="off"
-              hint="Up to 6 decimals, as on your statement."
+              hint={
+                unitsOptional ? "Blank uses the NAV." : "Up to 6 decimals, as on your statement."
+              }
               {...register("quantity")}
               error={errors.quantity?.message}
             />
@@ -638,7 +650,7 @@ export function TradeDialog({
               name="fees"
               currency={currency}
               label={`Charges (${currency}, optional)`}
-              hint="Brokerage, stamp duty… Recorded as an expense."
+              hint="Recorded as an expense."
             />
             {type === "buy" && !sip ? (
               <SelectField
@@ -705,7 +717,7 @@ export function PriceDialog({
   return (
     <DialogShell
       title={holding.kind === "mutual_fund" ? "Update NAV" : "Update price"}
-      description={`${holding.name}. Orbit doesn’t fetch prices; enter them from your statement or app.`}
+      description={holding.name}
       busy={saving}
       onClose={onClose}
       submitLabel="Save price"
@@ -739,8 +751,10 @@ export function SipDialog({
   onClose,
 }: Common & { holding: Holding; plan?: SipPlan; accounts: readonly FinanceAccount[] }) {
   const { createSip, updateSip } = useInvestmentMutations(workspaceId);
+  const fund = holding.kind === "mutual_fund";
   const {
     control,
+    register,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting: saving },
@@ -753,8 +767,10 @@ export function SipDialog({
       nextDueDate: plan?.next_due_date ?? localDateString(),
       endDate: plan?.end_date ?? "",
       fundingAccountId: plan?.funding_account_id ?? "",
+      autoDebit: plan?.auto_debit ?? false,
     },
   });
+  const autoDebit = useWatch({ control, name: "autoDebit" });
 
   async function save(values: SipValues, close: () => void) {
     const amount = parseAmount(values.amount, holding.currency);
@@ -769,6 +785,7 @@ export function SipDialog({
             next_due_date: values.nextDueDate,
             end_date: values.endDate || null,
             funding_account_id: values.fundingAccountId || null,
+            auto_debit: fund && values.autoDebit,
           },
         });
       } else {
@@ -779,6 +796,7 @@ export function SipDialog({
           next_due_date: values.nextDueDate,
           end_date: values.endDate || null,
           funding_account_id: values.fundingAccountId || null,
+          auto_debit: fund && values.autoDebit,
           notes: "",
         });
       }
@@ -792,7 +810,11 @@ export function SipDialog({
   return (
     <DialogShell
       title={plan ? "Edit SIP" : "Schedule a SIP"}
-      description={`${holding.name}. A scheduled SIP is only a plan: nothing is invested until you record an installment.`}
+      description={
+        autoDebit
+          ? `${holding.name}. Recorded for you on each date.`
+          : `${holding.name}. Nothing is invested until you record it.`
+      }
       busy={saving}
       onClose={onClose}
       submitLabel={plan ? "Save changes" : "Schedule SIP"}
@@ -812,7 +834,7 @@ export function SipDialog({
         <SelectField
           control={control}
           name="fundingAccountId"
-          label="Debited from (optional)"
+          label={autoDebit ? "Debited from" : "Debited from (optional)"}
           options={[
             { value: "", label: "The investment account’s cash" },
             ...cashAccounts(accounts, holding.currency, holding.account_id).map((account) => ({
@@ -822,6 +844,17 @@ export function SipDialog({
           ]}
         />
       </div>
+      {fund ? (
+        <label className="flex items-start gap-3 rounded-lg border bg-muted/30 p-3 text-sm">
+          <Checkbox className="mt-0.5" {...register("autoDebit")} />
+          <span className="space-y-0.5">
+            <span className="block font-medium">Auto-debit</span>
+            <span className="block text-xs text-muted-foreground">
+              Records each installment on its date, at that day’s NAV.
+            </span>
+          </span>
+        </label>
+      ) : null}
       <FormAlert message={errors.root?.server?.message ?? null} />
     </DialogShell>
   );
@@ -938,7 +971,7 @@ export function DepositDialog({
   return (
     <DialogShell
       title={deposit ? "Edit deposit" : "Open a deposit"}
-      description="Interest and maturity amounts are estimates from the rate and compounding; your bank’s figures may differ."
+      description="Interest is an estimate; your bank’s figures may differ."
       busy={saving}
       onClose={onClose}
       submitLabel={deposit ? "Save changes" : "Open deposit"}

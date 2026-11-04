@@ -7,9 +7,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useHydrated } from "@/hooks/use-hydrated";
 
 const OPTIONS = [
-  { value: "light", label: "Light", description: "Always use the light theme.", icon: Sun },
-  { value: "dark", label: "Dark", description: "Always use the dark theme.", icon: Moon },
-  { value: "system", label: "System", description: "Match your device setting.", icon: Monitor },
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: Moon },
+  { value: "system", label: "System", icon: Monitor },
 ] as const;
 
 /** Light, dark, or system theme, as a radio group. The choice is saved in this browser. */
@@ -23,7 +23,7 @@ export function ThemeSelector() {
       <div aria-busy="true" className="grid gap-3 sm:grid-cols-3">
         <span className="sr-only">Loading theme options…</span>
         {OPTIONS.map(({ value }) => (
-          <Skeleton key={value} className="h-[6.5rem] rounded-lg" />
+          <Skeleton key={value} className="h-[5.25rem] rounded-lg" />
         ))}
       </div>
     );
@@ -33,7 +33,7 @@ export function ThemeSelector() {
     <fieldset>
       <legend className="sr-only">Theme</legend>
       <div className="grid gap-3 sm:grid-cols-3">
-        {OPTIONS.map(({ value, label, description, icon: Icon }) => (
+        {OPTIONS.map(({ value, label, icon: Icon }) => (
           <label
             key={value}
             className="group relative flex cursor-pointer flex-col gap-3 rounded-lg border bg-card p-4 shadow-elevation-1 transition-[border-color,box-shadow] duration-150 select-none hover:border-foreground/20 has-checked:border-brand has-checked:ring-1 has-checked:ring-brand has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-background"
@@ -55,10 +55,7 @@ export function ThemeSelector() {
                 aria-hidden="true"
               />
             </span>
-            <span className="space-y-0.5">
-              <span className="block text-sm font-medium">{label}</span>
-              <span className="block text-xs text-muted-foreground">{description}</span>
-            </span>
+            <span className="text-sm font-medium">{label}</span>
           </label>
         ))}
       </div>

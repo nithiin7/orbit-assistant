@@ -271,7 +271,9 @@ class NoteService:
         terms = search_terms(query.search)
         items = [
             NoteSummary(
-                note=note, tags=tags.get(note.id, []), excerpt=excerpt(note.plain_text, terms)
+                note=note,
+                tags=tags.get(note.id, []),
+                excerpt="" if note.is_locked else excerpt(note.plain_text, terms),
             )
             for note in notes
         ]
@@ -317,6 +319,8 @@ class NoteService:
             updated = replace(updated, is_pinned=changes.is_pinned)
         if changes.is_favorite is not UNSET:
             updated = replace(updated, is_favorite=changes.is_favorite)
+        if changes.is_locked is not UNSET:
+            updated = replace(updated, is_locked=changes.is_locked)
         if changes.archived is not UNSET and changes.archived != (note.archived_at is not None):
             updated = replace(updated, archived_at=now if changes.archived else None)
 
@@ -609,6 +613,7 @@ class NoteService:
             journal_date=None,
             is_pinned=False,
             is_favorite=False,
+            is_locked=False,
             archived_at=None,
             trashed_at=None,
             revision=1,

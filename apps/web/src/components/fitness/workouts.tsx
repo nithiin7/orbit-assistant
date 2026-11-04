@@ -2,7 +2,7 @@
 
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { WorkoutStatus, WorkoutSummary, WorkoutTemplate } from "@orbit/contracts";
-import { Dumbbell, History, Play, Plus } from "lucide-react";
+import { ChevronRight, Dumbbell, History, LayoutTemplate, Play, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -105,11 +105,17 @@ export function WorkoutRow({ workout, units }: { workout: WorkoutSummary; units:
     <li>
       <Link
         href={fitnessHref({ kind: "workout", id: workout.id })}
-        className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+        className="group/row flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors duration-150 outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <div className="min-w-0">
+        <span
+          aria-hidden="true"
+          className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground"
+        >
+          <Dumbbell className="size-4" />
+        </span>
+        <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{workout.name}</p>
-          <p className="text-xs text-muted-foreground">
+          <p className="truncate text-xs text-muted-foreground">
             {shortDate(workout.day)}
             {workout.duration_s !== null ? ` · ${formatDuration(workout.duration_s)}` : ""}
             {` · ${workout.exercise_count} exercises · ${workout.set_count} sets`}
@@ -117,11 +123,15 @@ export function WorkoutRow({ workout, units }: { workout: WorkoutSummary; units:
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {workout.volume_g > 0 ? (
-            <span className="text-xs text-muted-foreground tabular-nums">
+            <span className="hidden text-xs text-muted-foreground tabular-nums @md:inline">
               {formatVolume(workout.volume_g, units.weight_unit)}
             </span>
           ) : null}
           <StatusBadge status={workout.status} />
+          <ChevronRight
+            aria-hidden="true"
+            className="size-4 text-muted-foreground/60 transition-transform duration-150 group-hover/row:translate-x-0.5"
+          />
         </div>
       </Link>
     </li>
@@ -140,23 +150,64 @@ export function ActiveWorkoutBanner({ workspaceId }: { workspaceId: string }) {
   const { state } = useActiveWorkout(workspaceId);
   if (state.status !== "success" || state.data.session === null) return null;
   const session = state.data.session;
+  const paused = session.status === "paused";
   return (
     <Link
       href={fitnessHref({ kind: "workout", id: session.id })}
-      className="flex items-center justify-between gap-3 rounded-xl border border-brand/30 bg-brand-subtle px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="group/banner flex items-center gap-3 rounded-xl border border-brand/30 bg-brand-subtle px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <div>
-        <p className="text-sm font-semibold text-brand">
-          {session.status === "paused" ? "Paused" : "Workout in progress"}: {session.name}
+      <span aria-hidden="true" className="relative flex size-2.5 shrink-0">
+        {paused ? null : (
+          <span className="absolute inline-flex size-full animate-ping rounded-full bg-brand opacity-60 motion-reduce:animate-none" />
+        )}
+        <span className="relative inline-flex size-2.5 rounded-full bg-brand" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-brand">
+          {paused ? "Paused" : "Workout in progress"}: {session.name}
         </p>
         <p className="text-xs text-muted-foreground">
           Started {new Date(session.started_at).toLocaleTimeString([], { timeStyle: "short" })}.
           Everything you log is saved as you go.
         </p>
       </div>
-      <span className="text-sm font-medium text-brand">Continue</span>
+      <span className="flex shrink-0 items-center gap-1 text-sm font-medium text-brand">
+        Continue
+        <ChevronRight
+          aria-hidden="true"
+          className="size-4 transition-transform duration-150 group-hover/banner:translate-x-0.5"
+        />
+      </span>
     </Link>
   );
+}
+
+const HISTORY_FILTERS = [
+  { value: "all", label: "All" },
+  { value: "completed", label: "Completed" },
+  { value: "abandoned", label: "Stopped early" },
+] as const;
+
+/** `2030-01` → "January 2030", for grouping history by month. */
+function monthLabel(day: string): string {
+  const [year, month] = day.split("-").map(Number);
+  return new Date(year ?? 1970, (month ?? 1) - 1, 1).toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function byMonth(
+  sessions: readonly WorkoutSummary[],
+): { month: string; items: WorkoutSummary[] }[] {
+  const groups: { month: string; items: WorkoutSummary[] }[] = [];
+  for (const workout of sessions) {
+    const month = workout.day.slice(0, 7);
+    const last = groups[groups.length - 1];
+    if (last && last.month === month) last.items.push(workout);
+    else groups.push({ month, items: [workout] });
+  }
+  return groups;
 }
 
 export function WorkoutsView({
@@ -175,8 +226,14 @@ export function WorkoutsView({
   const [status, setStatus] = useState<"all" | "completed" | "abandoned">("all");
   const workouts = useWorkouts(workspaceId, { status, limit, offset: 0 });
   const templates = useTemplates(workspaceId);
+  const active = useActiveWorkout(workspaceId);
   const start = useStartWorkout(workspaceId, today, timeZone);
   const [error, setError] = useState<string | null>(null);
+  const running = active.state.status === "success" && active.state.data.session !== null;
+  const ready =
+    templates.state.status === "success"
+      ? templates.state.data.templates.filter((t) => !t.archived)
+      : [];
 
   const begin = (templateId: string | null) => {
     setError(null);
@@ -188,32 +245,87 @@ export function WorkoutsView({
   return (
     <div className="space-y-4">
       <ActiveWorkoutBanner workspaceId={workspaceId} />
-      <div className="flex flex-wrap items-center gap-2">
-        <StartWorkoutMenu
-          workspaceId={workspaceId}
-          templates={templates.state.status === "success" ? templates.state.data.templates : []}
-          onStart={begin}
-        />
-        <Button variant="soft" onClick={onLogPast}>
-          <History aria-hidden="true" />
-          Log a past workout
-        </Button>
-      </div>
       <FormAlert message={error} />
+      {running ? null : (
+        <Section
+          title="Start a workout"
+          description="Pick a template, or start empty and add exercises as you go."
+          action={
+            <Button variant="ghost" size="sm" onClick={onLogPast}>
+              <History aria-hidden="true" />
+              Log a past workout
+            </Button>
+          }
+        >
+          <ul className="grid gap-3 @xl:grid-cols-2 @4xl:grid-cols-3 @7xl:grid-cols-4">
+            {ready.map((template) => (
+              <li key={template.id}>
+                <StartCard template={template} onStart={() => begin(template.id)} />
+              </li>
+            ))}
+            <li>
+              <button
+                type="button"
+                onClick={() => begin(null)}
+                className="flex h-full min-h-24 w-full items-center gap-3 rounded-lg border border-dashed p-3 text-left transition-colors duration-150 outline-none hover:border-brand/40 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <span
+                  aria-hidden="true"
+                  className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground"
+                >
+                  <Plus className="size-4" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium">Empty workout</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Add exercises as you go.
+                  </span>
+                </span>
+              </button>
+            </li>
+            {templates.state.status === "success" && ready.length === 0 ? (
+              <li>
+                <Link
+                  href={fitnessHref({ kind: "view", view: "templates" })}
+                  className="flex h-full min-h-24 items-center gap-3 rounded-lg border border-dashed p-3 transition-colors duration-150 outline-none hover:border-brand/40 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-subtle text-brand"
+                  >
+                    <LayoutTemplate className="size-4" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium">Browse starter templates</span>
+                    <span className="block text-xs text-muted-foreground">
+                      Full body, push/pull/legs, home workouts, and more.
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            ) : null}
+          </ul>
+        </Section>
+      )}
       <Section
         title="History"
         action={
           <div role="group" aria-label="Show" className="flex gap-1">
-            {(["all", "completed", "abandoned"] as const).map((value) => (
-              <Button
-                key={value}
-                size="sm"
-                variant={status === value ? "soft" : "ghost"}
-                aria-pressed={status === value}
-                onClick={() => setStatus(value)}
+            {HISTORY_FILTERS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={status === option.value}
+                onClick={() => setStatus(option.value)}
+                className={cn(
+                  "h-7 rounded-full px-2.5 text-xs font-medium whitespace-nowrap transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  status === option.value
+                    ? "bg-brand-subtle text-brand"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                )}
               >
-                {value === "all" ? "All" : value === "completed" ? "Completed" : "Stopped early"}
-              </Button>
+                {option.label}
+              </button>
             ))}
           </div>
         }
@@ -223,26 +335,65 @@ export function WorkoutsView({
             sessions.length === 0 ? (
               <EmptyState
                 icon={Dumbbell}
-                title="No workouts yet"
-                description="Start one from a template or an empty workout, or log one you’ve already done."
+                title={status === "all" ? "No workouts yet" : "Nothing here"}
+                description={
+                  status === "all"
+                    ? "Workouts you start or log show up here, newest first."
+                    : "No workouts match this filter."
+                }
               />
             ) : (
-              <>
-                <ul className="-mx-3 divide-y">
-                  {sessions.map((workout) => (
-                    <WorkoutRow key={workout.id} workout={workout} units={units} />
-                  ))}
-                </ul>
+              <div className="space-y-4">
+                {byMonth(sessions).map((group) => (
+                  <div key={group.month} className="space-y-1">
+                    <h3 className="text-xs font-medium text-muted-foreground">
+                      {monthLabel(group.month)}
+                    </h3>
+                    <ul className="-mx-3">
+                      {group.items.map((workout) => (
+                        <WorkoutRow key={workout.id} workout={workout} units={units} />
+                      ))}
+                    </ul>
+                  </div>
+                ))}
                 {sessions.length >= limit ? (
                   <Button variant="ghost" size="sm" onClick={() => setLimit(limit + PAGE)}>
                     Show more
                   </Button>
                 ) : null}
-              </>
+              </div>
             )
           }
         </Loaded>
       </Section>
+    </div>
+  );
+}
+
+/** A template ready to start, with the first few exercises so it's recognisable. */
+function StartCard({ template, onStart }: { template: WorkoutTemplate; onStart: () => void }) {
+  const names = template.exercises.map((item) => item.exercise_name);
+  const preview = names.slice(0, 3).join(", ");
+  return (
+    <div className="flex h-full min-h-24 flex-col gap-2 rounded-lg border bg-card p-3">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium">{template.name}</p>
+        <p className="line-clamp-2 text-xs text-muted-foreground">
+          {names.length === 0
+            ? "No exercises yet"
+            : `${preview}${names.length > 3 ? ` +${names.length - 3} more` : ""}`}
+        </p>
+      </div>
+      <Button
+        size="sm"
+        variant="soft"
+        className="mt-auto self-start"
+        aria-label={`Start ${template.name}`}
+        onClick={onStart}
+      >
+        <Play aria-hidden="true" />
+        Start
+      </Button>
     </div>
   );
 }

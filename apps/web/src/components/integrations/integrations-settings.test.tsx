@@ -59,7 +59,7 @@ describe("Integrations overview", () => {
     expect(link).toHaveAttribute("href", "/settings/integrations?connection=c1");
     expect(within(link).getByText("Needs reconnecting")).toBeInTheDocument();
     expect(within(link).getByText(/Google Calendar · Gmail · Google Drive/)).toBeInTheDocument();
-    expect(screen.getByText(/never reach this browser/)).toBeInTheDocument();
+    expect(screen.getByText(/Tokens stay encrypted on the server/)).toBeInTheDocument();
   });
 
   it("connects with only the chosen permissions and goes to the provider", async () => {
@@ -96,6 +96,22 @@ describe("Integrations overview", () => {
     // An unconfigured provider says so instead of offering to connect.
     expect(screen.getByText(/Not set up on this Orbit server/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Continue to Microsoft" })).not.toBeInTheDocument();
+  });
+
+  it("guides the choice and marks unconfigured providers as unavailable", async () => {
+    const user = userEvent.setup();
+    mockApi({ ...session, [`GET ${INTEGRATIONS}/connections`]: json({ connections: [] }) });
+    await renderSignedIn(<IntegrationsSettings />);
+    const google = await screen.findByRole("group", { name: "Google: what Orbit may access" });
+    expect(within(google).getByText(/Google will ask you to sign in/)).toBeInTheDocument();
+
+    // With nothing chosen, there's nothing to continue with, and the card says why.
+    await user.click(within(google).getByRole("checkbox", { name: "Google Calendar" }));
+    expect(within(google).getByRole("button", { name: "Continue to Google" })).toBeDisabled();
+    expect(within(google).getByText("Choose at least one thing Orbit may access.")).toBeVisible();
+
+    expect(screen.getByText("Unavailable")).toBeInTheDocument();
+    expect(screen.getByText("Outlook Calendar · Outlook Mail · OneDrive")).toBeInTheDocument();
   });
 
   it("shows server errors when connecting can't start", async () => {

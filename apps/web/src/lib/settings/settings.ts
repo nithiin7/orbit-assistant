@@ -3,6 +3,7 @@ import {
   Bot,
   Database,
   Layers,
+  LineChart,
   type LucideIcon,
   Palette,
   Plug,
@@ -23,52 +24,56 @@ export const settingsPanels: readonly SettingsPanel[] = [
   {
     slug: "account",
     title: "Account",
-    description: "Your profile and how you sign in to Orbit.",
+    description: "Profile, sign-in, and time zone.",
     icon: UserRound,
     group: "account",
   },
   {
     slug: "workspaces",
     title: "Workspaces",
-    description: "Each workspace keeps its data separate. Rename, switch, or create one.",
+    description: "Switch, rename, or create workspaces.",
     icon: Layers,
     group: "general",
   },
   {
     slug: "appearance",
     title: "Appearance",
-    description: "Choose how Orbit looks. Saved in this browser.",
+    description: "Mode, colors, and font for this browser.",
     icon: Palette,
+    group: "general",
+  },
+  {
+    slug: "finance",
+    title: "Finance",
+    description: "Live prices for your investments.",
+    icon: LineChart,
     group: "general",
   },
   {
     slug: "ai",
     title: "AI",
-    description:
-      "Providers, models, and what AI may read. Off until you turn it on; local models keep everything on your machine.",
+    description: "Providers, models, and privacy.",
     icon: Bot,
     group: "general",
   },
   {
     slug: "integrations",
     title: "Integrations",
-    description:
-      "Connect Google or Microsoft calendars, mail, and files. Nothing is synchronized until you choose.",
+    description: "Google and Microsoft calendars, mail, and files.",
     icon: Plug,
     group: "general",
   },
   {
     slug: "backup",
     title: "Backup & restore",
-    description:
-      "Back up this workspace with its files, restore or import backups, and export your data.",
+    description: "Back up, restore, and export your data.",
     icon: Archive,
     group: "general",
   },
   {
     slug: "storage",
     title: "Storage",
-    description: "Where the Orbit API keeps your data. Set by the server, not this browser.",
+    description: "Where your data is stored.",
     icon: Database,
     group: "general",
   },
@@ -81,3 +86,11 @@ export function settingsHref(slug: string): string {
 export function findSettingsPanel(slug: string): SettingsPanel | undefined {
   return settingsPanels.find((panel) => panel.slug === slug);
 }
+
+/**
+ * A panel's stack of sections. Narrow panels stack them; as the panel's container widens they
+ * flow into balanced columns, so wide screens are filled without stretching any one form.
+ * Mark a section `[column-span:all]` to keep it full width.
+ */
+export const settingsSectionsClassName =
+  "space-y-6 *:break-inside-avoid @5xl/panel:columns-2 @5xl/panel:gap-6 @min-[110rem]/panel:columns-3 @min-[110rem]/panel:gap-8";

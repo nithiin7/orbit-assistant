@@ -4,8 +4,9 @@ few minutes: closing finished periods and sending threshold alerts), and sweeps 
 store for files no metadata references (every few hours), and keeps AI retrieval indexes up to
 date for people who turned indexing on (every `ORBIT_AI_INDEX_INTERVAL_SECONDS`), runs
 external integrations' synchronization (every `ORBIT_INTEGRATIONS_POLL_SECONDS`), and runs the
-personal agent's workflows, triggers, monitoring, and executions (every poll), so Orbit has one
-scheduler rather than several.
+personal agent's workflows, triggers, monitoring, and executions (every poll), records due
+auto-debit SIP installments (every few minutes), and refreshes market prices while market data
+is on (every `ORBIT_MARKET_DATA_REFRESH_HOURS`), so Orbit has one scheduler rather than several.
 
 It holds no schedule in memory. Each poll reads due work from the database, so a restart loses
 nothing, and any number of workers (the one embedded in each API process, plus standalone
@@ -39,7 +40,12 @@ from orbit_api.repositories.documents import build_document_reminders, reference
 from orbit_api.repositories.fitness import referenced_photo_blob_ids
 from orbit_api.repositories.habits import build_habit_service
 from orbit_api.repositories.integrations import build_integrations
-from orbit_api.repositories.investments import SqlSnapshotRepository, build_net_worth_service
+from orbit_api.repositories.investments import (
+    SqlSnapshotRepository,
+    build_investment_service,
+    build_net_worth_service,
+    workspaces_with_holdings,
+)
 from orbit_api.repositories.notifications import SqlNotificationRepository
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.transaction import SqlTransaction
@@ -48,6 +54,7 @@ from orbit_api.services.agent.engine import LEASE
 from orbit_api.services.ai.indexing import IndexRun, permitted_types
 from orbit_api.services.ai.providers import ProviderFactory
 from orbit_api.services.integrations.connectors import ConnectorRegistry
+from orbit_api.services.investments.valuation import PriceFeed
 from orbit_api.services.reminders.delivery import (
     DEFAULT_MAX_ATTEMPTS,
     DeliveryResult,
@@ -81,6 +88,9 @@ DEFAULT_FILE_CHECK_INTERVAL = timedelta(hours=6)
 # and restores (interrupted runs, expired uploads, temporary files).
 DEFAULT_BACKUP_INTERVAL = timedelta(minutes=1)
 BACKUP_HOUSEKEEPING_INTERVAL = timedelta(hours=1)
+# How often the worker looks for auto-debit SIP installments that are due. A NAV is published
+# the evening of its date, so an installment is recorded within this long of it appearing.
+DEFAULT_SIP_INTERVAL = timedelta(minutes=15)
 # Agent executions advanced per poll, and how often old agent history is purged.
 AGENT_BATCH = 5
 AGENT_PURGE_INTERVAL = timedelta(hours=1)
@@ -156,6 +166,16 @@ class AgentJobs:
 
 
 @dataclass(frozen=True, slots=True)
+class MarketData:
+    """What the worker needs for market data: the settings (whether it's on, how often to
+    refresh) and the feed."""
+
+    settings: Settings
+    feed: PriceFeed
+    interval: timedelta | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class WorkerReport:
     """What one poll did."""
 
@@ -180,8 +200,14 @@ class ReminderWorker:
         integrations: IntegrationSync | None = None,
         backups: BackupJobs | None = None,
         agents: AgentJobs | None = None,
+        market: MarketData | None = None,
+        sip_interval: timedelta = DEFAULT_SIP_INTERVAL,
     ) -> None:
         self._database = database
+        self._market = market
+        self._prices_refreshed_at: datetime | None = None
+        self._sip_interval = sip_interval
+        self._sips_checked_at: datetime | None = None
         self._agents = agents
         self._agents_purged_at: datetime | None = None
         self._backups = backups
@@ -561,6 +587,91 @@ class ReminderWorker:
             # Deliberate boundary: the agent must never stop reminder delivery.
             logger.exception("Running agent jobs failed; retrying later.")
 
+    def _feed(self) -> PriceFeed | None:
+        market = self._market
+        return market.feed if market is not None and market.settings.market_data_enabled else None
+
+    async def record_sips(self) -> int:
+        """Record due auto-debit SIP installments in every workspace that has such a SIP, on
+        the owner's local date, each workspace in its own session; return how many."""
+        async with self._database.session() as session:
+            owners = await build_investment_service(session, self._clock).auto_debit_owners()
+        feed = self._feed()
+        recorded = failed = 0
+        now = self._clock()
+        for owner in owners:
+            today = now.astimezone(ZoneInfo(owner.timezone or "UTC")).date()
+            async with self._database.session() as session:
+                try:
+                    service = build_investment_service(session, self._clock)
+                    run = await service.record_due_sips(
+                        owner, today, feed if owner.market_data else None
+                    )
+                    recorded += run.recorded
+                    failed += run.failed
+                except Exception:
+                    # Deliberate boundary: one workspace's failure must not stop the others;
+                    # the next check retries it. IDs only: amounts are personal data.
+                    await session.rollback()
+                    logger.exception("Recording auto-debit SIPs for %s failed.", owner.workspace_id)
+        if recorded or failed:
+            logger.info("Recorded %d auto-debit SIP installment(s); %d failed.", recorded, failed)
+        return recorded
+
+    async def _maybe_record_sips(self) -> None:
+        now = self._clock()
+        last = self._sips_checked_at
+        if last is not None and now - last < self._sip_interval:
+            return
+        self._sips_checked_at = now
+        try:
+            await self.record_sips()
+        except Exception:
+            # Deliberate boundary: SIPs must never stop reminder delivery.
+            logger.exception("Recording auto-debit SIPs failed; retrying later.")
+
+    async def refresh_prices(self) -> int:
+        """Fetch recent prices for every workspace's holdings while market data is on, each
+        workspace in its own session; return how many holdings were updated."""
+        feed = self._feed()
+        if feed is None:
+            return 0
+        async with self._database.session() as session:
+            workspaces = await workspaces_with_holdings(session)
+        today = self._clock().date()
+        updated = failed = 0
+        for workspace_id in workspaces:
+            async with self._database.session() as session:
+                try:
+                    service = build_investment_service(session, self._clock)
+                    result = await service.refresh_prices(workspace_id, feed, today)
+                    updated += result.updated
+                    failed += result.failed
+                except Exception:
+                    # Deliberate boundary: one workspace's failure must not stop the others.
+                    await session.rollback()
+                    logger.exception("Refreshing prices for %s failed.", workspace_id)
+        if updated or failed:
+            logger.info(
+                "Refreshed prices of %d holding(s); %d couldn't be fetched.", updated, failed
+            )
+        return updated
+
+    async def _maybe_refresh_prices(self) -> None:
+        market = self._market
+        if market is None or not market.settings.market_data_enabled:
+            return
+        now = self._clock()
+        interval = market.interval or timedelta(hours=market.settings.market_data_refresh_hours)
+        if self._prices_refreshed_at is not None and now - self._prices_refreshed_at < interval:
+            return
+        self._prices_refreshed_at = now
+        try:
+            await self.refresh_prices()
+        except Exception:
+            # Deliberate boundary: prices must never stop reminder delivery.
+            logger.exception("Refreshing prices failed; retrying later.")
+
     async def run(self, stop: asyncio.Event, poll_interval: float) -> None:
         """Poll until `stop` is set. A poll in progress finishes first, so shutdown never
         abandons a claimed occurrence mid-transaction."""
@@ -582,6 +693,8 @@ class ReminderWorker:
             await self._maybe_sync_integrations()
             await self._maybe_run_backups()
             await self._maybe_run_agents()
+            await self._maybe_refresh_prices()
+            await self._maybe_record_sips()
             # Sleep until the next poll, waking early when asked to stop.
             with contextlib.suppress(TimeoutError):
                 await asyncio.wait_for(stop.wait(), timeout=poll_interval)

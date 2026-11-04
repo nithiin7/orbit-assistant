@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, ForeignKey, Index, String, text
+from sqlalchemy import CheckConstraint, ForeignKey, Index, String, false, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from orbit_api.db.base import Base
@@ -35,5 +35,7 @@ class WorkspaceModel(Base):
     )
     name: Mapped[str] = mapped_column(String(100))
     is_personal: Mapped[bool]
+    # Whether this workspace fetches market prices (Settings → Finance); off until turned on.
+    market_data_enabled: Mapped[bool] = mapped_column(default=False, server_default=false())
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now, onupdate=utc_now)

@@ -3,6 +3,7 @@ import "@/styles/globals.css";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
+import { appearancePreferenceScript } from "@/lib/appearance-preference";
 import { sidebarPreferenceScript } from "@/lib/sidebar-preference";
 import { AuthProvider } from "@/providers/auth";
 import { QueryProvider } from "@/providers/query";
@@ -25,8 +26,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={fontVariables} suppressHydrationWarning>
       <head>
-        {/* Static, first-party script: restores the sidebar preference before first paint. */}
+        {/* Static, first-party scripts: restore the sidebar and appearance preferences before first paint. */}
         <script dangerouslySetInnerHTML={{ __html: sidebarPreferenceScript }} />
+        <script dangerouslySetInnerHTML={{ __html: appearancePreferenceScript }} />
       </head>
       <body>
         <ThemeProvider

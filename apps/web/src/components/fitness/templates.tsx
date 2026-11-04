@@ -8,6 +8,7 @@ import {
   ArrowDown,
   ArrowUp,
   CalendarPlus,
+  Check,
   Copy,
   LayoutList,
   MoreHorizontal,
@@ -32,18 +33,24 @@ import { useConfirm } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { DialogShell } from "@/components/finance/dialog-shell";
 import { DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
 import { Textarea } from "@/components/ui/textarea";
 import { useExercises, useFitnessAction, useTemplates, useUnits } from "@/hooks/use-fitness";
 import {
+  builtinsByKey,
+  describeStarterExercise,
   labelOf,
   localEnd,
   newTemplateExercise,
   newTemplateValues,
   type ScheduleFormValues,
   scheduleSchema,
+  STARTER_TEMPLATES,
+  type StarterTemplate,
+  starterTemplateRequest,
   TEMPLATE_CATEGORIES,
   type TemplateFormValues,
   templateSchema,
@@ -65,6 +72,7 @@ export function TemplatesView({
   timeZone: string;
 }) {
   const templates = useTemplates(workspaceId);
+  const exercises = useExercises(workspaceId);
   const units = useUnits(workspaceId);
   const run = useFitnessAction(workspaceId);
   const start = useStartWorkout(workspaceId, today, timeZone);
@@ -91,8 +99,16 @@ export function TemplatesView({
     if (ok) act((token) => deleteTemplate(token, workspaceId, template.id));
   }
 
+  const library =
+    exercises.state.status === "success" ? builtinsByKey(exercises.state.data.exercises) : null;
+  const names = new Set(
+    templates.state.status === "success"
+      ? templates.state.data.templates.map((t) => t.name.toLocaleLowerCase())
+      : [],
+  );
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2">
         <Button onClick={() => setEditing("new")}>
           <Plus aria-hidden="true" />
@@ -111,18 +127,25 @@ export function TemplatesView({
         {(data) => {
           const shown = data.templates.filter((t) => t.archived === showArchived);
           if (shown.length === 0) {
-            return (
+            return showArchived ? (
               <EmptyState
                 icon={LayoutList}
-                title={showArchived ? "No archived templates" : "No templates yet"}
-                description="Save a workout you do often, like Push day or Leg day, and start it in one tap."
+                title="No archived templates"
+                description="Templates you archive are kept here, out of the way."
               />
+            ) : (
+              <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
+                No templates of your own yet. Add a starter below, or build one with New template.
+              </p>
             );
           }
           return (
-            <ul className="grid gap-3 @3xl:grid-cols-2">
+            <ul
+              aria-label={showArchived ? "Archived templates" : "Your templates"}
+              className="grid gap-3 @3xl:grid-cols-2 @6xl:grid-cols-3"
+            >
               {shown.map((template) => (
-                <li key={template.id} className="space-y-3 rounded-xl border bg-card p-4">
+                <li key={template.id} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <h3 className="truncate text-sm font-semibold">{template.name}</h3>
@@ -192,6 +215,8 @@ export function TemplatesView({
                     <Button
                       variant="soft"
                       size="sm"
+                      className="mt-auto self-start"
+                      aria-label={`Start ${template.name}`}
                       onClick={() =>
                         start(template.id).catch((reason: unknown) =>
                           setError(describeApiError(reason, "Couldn’t start the workout.")),
@@ -208,6 +233,21 @@ export function TemplatesView({
           );
         }}
       </Loaded>
+      {showArchived ? null : (
+        <StarterTemplates
+          library={library}
+          existingNames={names}
+          onAdd={(template) => {
+            if (!library) return;
+            const request = starterTemplateRequest(template, library);
+            if (request === null) {
+              setError("The exercises in this template are archived. Restore them first.");
+              return;
+            }
+            act((token) => saveTemplate(token, workspaceId, null, request));
+          }}
+        />
+      )}
       {editing ? (
         <TemplateDialog
           workspaceId={workspaceId}
@@ -228,6 +268,91 @@ export function TemplatesView({
       {confirmDialog}
     </div>
   );
+}
+
+/** Ready-made plans, added to the person's templates in one tap. */
+function StarterTemplates({
+  library,
+  existingNames,
+  onAdd,
+}: {
+  /** The person's built-in exercises by key; `null` while loading. */
+  library: ReadonlyMap<string, Exercise> | null;
+  /** Template names already in use, lowercased, so added starters say so. */
+  existingNames: ReadonlySet<string>;
+  onAdd: (template: StarterTemplate) => void;
+}) {
+  return (
+    <section aria-labelledby="starter-templates-heading" className="space-y-3">
+      <div className="space-y-0.5">
+        <h3 id="starter-templates-heading" className="text-sm font-semibold">
+          Starter templates
+        </h3>
+        <p className="text-xs text-muted-foreground">
+          Ready-made plans from the exercise library. Add one, then change anything you like.
+        </p>
+      </div>
+      <ul className="grid gap-3 @2xl:grid-cols-2 @5xl:grid-cols-3 @[96rem]:grid-cols-4">
+        {STARTER_TEMPLATES.map((template) => {
+          const added = existingNames.has(template.name.toLocaleLowerCase());
+          return (
+            <li
+              key={template.id}
+              className="flex flex-col gap-3 rounded-xl border bg-card p-4 transition-colors duration-150 hover:border-brand/40"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <h4 className="truncate text-sm font-semibold">{template.name}</h4>
+                  <p className="text-xs text-muted-foreground">
+                    {template.exercises.length} exercises
+                  </p>
+                </div>
+                <Badge variant="outline">{template.tag}</Badge>
+              </div>
+              <p className="text-sm text-pretty text-muted-foreground">{template.blurb}</p>
+              <ol className="space-y-0.5 text-sm">
+                {template.exercises.map((item) => (
+                  <li key={item.key} className="flex justify-between gap-2">
+                    <span className="truncate">
+                      {library?.get(item.key)?.name ?? starterExerciseName(item.key)}
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                      {describeStarterExercise(item)}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+              <div className="mt-auto pt-1">
+                {added ? (
+                  <p className="flex items-center gap-1 text-xs font-medium text-success">
+                    <Check className="size-3.5" aria-hidden="true" />
+                    In your templates
+                  </p>
+                ) : (
+                  <Button
+                    variant="soft"
+                    size="sm"
+                    disabled={library === null}
+                    aria-label={`Add ${template.name} to my templates`}
+                    onClick={() => onAdd(template)}
+                  >
+                    <Plus aria-hidden="true" />
+                    Add to my templates
+                  </Button>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+/** `barbell_bench_press` → "Barbell bench press", until the library has loaded. */
+function starterExerciseName(key: string): string {
+  const words = key.replaceAll("_", " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 function describePlan(item: WorkoutTemplate["exercises"][number], units: Units): string {

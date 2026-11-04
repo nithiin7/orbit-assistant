@@ -12,17 +12,22 @@ import {
   ArrowLeft,
   BellRing,
   Download,
+  FileText,
+  Folder,
   History,
   Link2,
+  type LucideIcon,
   MoreHorizontal,
   Plus,
+  SlidersHorizontal,
   Star,
+  Tag,
   Trash2,
   Upload,
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { type ReactNode, useId, useRef, useState } from "react";
+import { type KeyboardEvent, type ReactNode, useId, useRef, useState } from "react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 
 import { describeApiError } from "@/api/client";
@@ -51,6 +56,7 @@ import {
 import { CURRENCY_OPTIONS } from "@/lib/finance";
 import { cn } from "@/utils/common";
 import { formatCalendarDate } from "@/utils/dates";
+import { folderPath } from "@/utils/folders";
 
 import {
   categoryChoices,
@@ -60,7 +66,7 @@ import {
   RenewDialog,
   toChoice,
 } from "./document-dialogs";
-import { ExpiryChip, FileIcon, LINK_ICONS } from "./document-meta";
+import { CATEGORY_ICONS, ExpiryChip, FileIcon, LINK_ICONS } from "./document-meta";
 import { DocumentPreview } from "./document-preview";
 import { precheck } from "./upload";
 
@@ -77,7 +83,19 @@ type DocumentPaneProps = {
   onConfirm: (title: string, description: string, confirmLabel: string) => Promise<boolean>;
 };
 
-/** One document: its preview, details, history, reminders, and links. */
+type SettingsTab = "details" | "reminders" | "links" | "history";
+
+const SETTINGS_TABS: readonly { id: SettingsTab; label: string; icon: LucideIcon }[] = [
+  { id: "details", label: "Details", icon: FileText },
+  { id: "reminders", label: "Reminders", icon: BellRing },
+  { id: "links", label: "Links", icon: Link2 },
+  { id: "history", label: "History", icon: History },
+];
+
+/**
+ * One document. Its file fills the page; details, reminders, links, and history open in a
+ * settings panel beside it (above it on narrow screens) only when asked for.
+ */
 export function DocumentPane(props: DocumentPaneProps) {
   const { state, reload } = useDocument(props.workspaceId, props.documentId);
   if (state.status === "loading") {
@@ -125,7 +143,16 @@ function DocumentDetailView({
   const [error, setError] = useState<string | null>(null);
   const [renewing, setRenewing] = useState(false);
   const [linking, setLinking] = useState(false);
+  // A record without a file has nothing to show but its details, so those start open.
+  const [settingsOpen, setSettingsOpen] = useState(!document.file);
+  const [tab, setTab] = useState<SettingsTab>("details");
+  const settingsId = useId();
   const trashed = document.state === "trashed";
+  const category = categories.find((item) => item.id === document.category_id);
+  const CategoryIcon = category ? CATEGORY_ICONS[category.icon] : null;
+  const folderName = document.folder_id
+    ? folderPath(folders, document.folder_id).join(" / ")
+    : null;
 
   const run = (promise: Promise<unknown>, done: string, failure: string) =>
     promise.then(
@@ -274,6 +301,24 @@ function DocumentDetailView({
                 {document.state === "trashed" ? "In the Trash" : "Archived"}
               </span>
             ) : null}
+            {category && CategoryIcon ? (
+              <span className="inline-flex items-center gap-1">
+                <CategoryIcon className="size-3.5" aria-hidden="true" />
+                {category.name}
+              </span>
+            ) : null}
+            {folderName ? (
+              <span className="inline-flex min-w-0 items-center gap-1">
+                <Folder className="size-3.5 shrink-0" aria-hidden="true" />
+                <span className="truncate">{folderName}</span>
+              </span>
+            ) : null}
+            {document.tags.length > 0 ? (
+              <span className="inline-flex items-center gap-1">
+                <Tag className="size-3.5" aria-hidden="true" />
+                {document.tags.map((name) => `#${name}`).join(" ")}
+              </span>
+            ) : null}
           </p>
           <div className="mt-1.5">
             <ExternalOrigin entityType="document" entityId={document.id} />
@@ -313,6 +358,18 @@ function DocumentDetailView({
             <span className="hidden @md/pane:inline">Download</span>
           </Button>
         ) : null}
+        <Button
+          variant={settingsOpen ? "soft" : "outline"}
+          size="sm"
+          className="shrink-0"
+          aria-expanded={settingsOpen}
+          aria-controls={settingsId}
+          aria-label={settingsOpen ? "Hide details" : "Show details"}
+          onClick={() => setSettingsOpen((open) => !open)}
+        >
+          <SlidersHorizontal aria-hidden="true" />
+          <span className="hidden @md/pane:inline">Details</span>
+        </Button>
         <Menu
           aria-label={`More actions for “${document.title}”`}
           variant="ghost"
@@ -333,8 +390,14 @@ function DocumentDetailView({
       ) : null}
       <FormAlert message={error} />
 
-      <div className="grid gap-6 @4xl/pane:grid-cols-[minmax(0,3fr)_minmax(20rem,2fr)]">
-        <div className="min-w-0 space-y-6">
+      <div
+        className={cn(
+          // The panel's column (wide) or row (narrow) grows from nothing, so it slides in.
+          "grid items-start transition-[grid-template-columns,gap] duration-300 ease-out motion-reduce:transition-none @4xl/pane:grid-cols-[minmax(0,1fr)_0rem]",
+          settingsOpen ? "gap-6 @4xl/pane:grid-cols-[minmax(0,1fr)_24rem]" : "gap-0",
+        )}
+      >
+        <div className="min-w-0">
           {document.file ? (
             <DocumentPreview
               workspaceId={workspaceId}
@@ -344,7 +407,8 @@ function DocumentDetailView({
               onDownload={() => onDownload(document)}
             />
           ) : (
-            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card/40 px-6 py-12 text-center">
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card/40 px-6 py-16 text-center">
+              <FileText className="size-8 text-muted-foreground" aria-hidden="true" />
               <p className="text-sm text-muted-foreground">This record has no file yet.</p>
               {!trashed ? (
                 <Button variant="soft" size="sm" onClick={() => replaceRef.current?.click()}>
@@ -354,69 +418,131 @@ function DocumentDetailView({
               ) : null}
             </div>
           )}
-          <Versions
-            detail={detail}
-            readOnly={trashed}
-            onDownload={(versionId) => onDownload(document, versionId)}
-            onRestore={(versionId, number) =>
-              void run(
-                mutations.restoreVersion.mutateAsync({ documentId: document.id, versionId }),
-                `Restored version ${number} as the current file.`,
-                "Couldn’t restore that version.",
-              )
-            }
-            onDelete={(versionId, number) => {
-              void onConfirm(
-                `Delete version ${number}?`,
-                "The current file isn’t affected. This can’t be undone.",
-                "Delete version",
-              ).then((confirmed) => {
-                if (!confirmed) return;
-                void run(
-                  mutations.deleteVersion.mutateAsync({ documentId: document.id, versionId }),
-                  `Deleted version ${number}.`,
-                  "Couldn’t delete that version.",
-                );
-              });
-            }}
-          />
         </div>
 
-        <div className="min-w-0 space-y-6">
-          <Organize
-            document={document}
-            folders={folders}
-            categories={categories}
-            readOnly={trashed}
-            onChange={(changes, done) => void change(changes, done)}
-          />
-          <DetailsForm
-            key={document.id}
-            document={document}
-            readOnly={trashed}
-            nextReminderAt={detail.next_reminder_at}
-            onSave={async (values) => {
-              const saved = await mutations.update.mutateAsync({
-                documentId: document.id,
-                changes: toUpdateRequest(values),
-              });
-              onAnnounce("Saved.");
-              return saved.document;
-            }}
-          />
-          <Links
-            detail={detail}
-            readOnly={trashed}
-            onLink={() => setLinking(true)}
-            onUnlink={(kind, id, title) =>
-              void run(
-                mutations.unlink.mutateAsync({ documentId: document.id, kind, id }),
-                `Unlinked “${title}”.`,
-                "Couldn’t unlink it.",
-              )
-            }
-          />
-          <Renewals detail={detail} />
+        {/* Kept mounted while closed, so closing the panel doesn't drop unsaved edits. */}
+        <div
+          inert={!settingsOpen}
+          aria-hidden={settingsOpen ? undefined : true}
+          className={cn(
+            "order-first grid min-w-0 overflow-hidden transition-[grid-template-rows,opacity,visibility] duration-300 ease-out motion-reduce:transition-none @4xl/pane:sticky @4xl/pane:top-6 @4xl/pane:order-none @4xl/pane:grid-rows-[1fr]",
+            settingsOpen
+              ? "visible grid-rows-[1fr] opacity-100"
+              : "invisible grid-rows-[0fr] opacity-0",
+          )}
+        >
+          <aside
+            id={settingsId}
+            aria-label="Document details"
+            className={cn(
+              "flex min-h-0 w-full min-w-0 flex-col justify-self-end overflow-hidden rounded-xl border bg-card transition-transform duration-300 ease-out motion-reduce:transition-none @4xl/pane:max-h-[calc(100dvh-3rem)] @4xl/pane:w-[24rem]",
+              settingsOpen ? "translate-x-0" : "@4xl/pane:translate-x-6",
+            )}
+          >
+            <div className="flex items-center gap-2 border-b py-1.5 pr-1.5 pl-2">
+              <SettingsTabs tab={tab} idPrefix={settingsId} onChange={setTab} />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="ml-auto size-8 shrink-0"
+                aria-label="Close details"
+                onClick={() => setSettingsOpen(false)}
+              >
+                <X aria-hidden="true" />
+              </Button>
+            </div>
+            <div
+              role="tabpanel"
+              id={`${settingsId}-panel`}
+              aria-labelledby={`${settingsId}-${tab}`}
+              className="flex min-h-0 flex-1 flex-col"
+            >
+              {tab === "details" ? (
+                <div className="border-b p-4">
+                  <Organize
+                    document={document}
+                    folders={folders}
+                    categories={categories}
+                    readOnly={trashed}
+                    onChange={(changes, done) => void change(changes, done)}
+                  />
+                </div>
+              ) : null}
+              <DetailsForm
+                key={document.id}
+                document={document}
+                readOnly={trashed}
+                tab={tab}
+                nextReminderAt={detail.next_reminder_at}
+                onSave={async (values) => {
+                  const saved = await mutations.update.mutateAsync({
+                    documentId: document.id,
+                    changes: toUpdateRequest(values),
+                  });
+                  onAnnounce("Saved.");
+                  return saved.document;
+                }}
+              />
+              {tab === "links" ? (
+                <div className="scrollbar-thin overflow-y-auto p-4">
+                  <Links
+                    detail={detail}
+                    readOnly={trashed}
+                    onLink={() => setLinking(true)}
+                    onUnlink={(kind, id, title) =>
+                      void run(
+                        mutations.unlink.mutateAsync({ documentId: document.id, kind, id }),
+                        `Unlinked “${title}”.`,
+                        "Couldn’t unlink it.",
+                      )
+                    }
+                  />
+                </div>
+              ) : null}
+              {tab === "history" ? (
+                <div className="scrollbar-thin space-y-6 overflow-y-auto p-4">
+                  {detail.versions.length === 0 && detail.renewals.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Earlier versions of the file and recorded renewals show up here.
+                    </p>
+                  ) : null}
+                  <Versions
+                    detail={detail}
+                    readOnly={trashed}
+                    onDownload={(versionId) => onDownload(document, versionId)}
+                    onRestore={(versionId, number) =>
+                      void run(
+                        mutations.restoreVersion.mutateAsync({
+                          documentId: document.id,
+                          versionId,
+                        }),
+                        `Restored version ${number} as the current file.`,
+                        "Couldn’t restore that version.",
+                      )
+                    }
+                    onDelete={(versionId, number) => {
+                      void onConfirm(
+                        `Delete version ${number}?`,
+                        "The current file isn’t affected. This can’t be undone.",
+                        "Delete version",
+                      ).then((confirmed) => {
+                        if (!confirmed) return;
+                        void run(
+                          mutations.deleteVersion.mutateAsync({
+                            documentId: document.id,
+                            versionId,
+                          }),
+                          `Deleted version ${number}.`,
+                          "Couldn’t delete that version.",
+                        );
+                      });
+                    }}
+                  />
+                  <Renewals detail={detail} />
+                </div>
+              ) : null}
+            </div>
+          </aside>
         </div>
       </div>
 
@@ -447,6 +573,76 @@ function DocumentDetailView({
         />
       ) : null}
     </article>
+  );
+}
+
+function SettingsTabs({
+  tab,
+  idPrefix,
+  onChange,
+}: {
+  tab: SettingsTab;
+  idPrefix: string;
+  onChange: (tab: SettingsTab) => void;
+}) {
+  const tabs = useRef<(HTMLButtonElement | null)[]>([]);
+  const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const last = SETTINGS_TABS.length - 1;
+    const next =
+      event.key === "ArrowRight"
+        ? index === last
+          ? 0
+          : index + 1
+        : event.key === "ArrowLeft"
+          ? index === 0
+            ? last
+            : index - 1
+          : event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? last
+              : null;
+    const target = next === null ? undefined : SETTINGS_TABS[next];
+    if (next === null || !target) return;
+    event.preventDefault();
+    onChange(target.id);
+    tabs.current[next]?.focus();
+  };
+  return (
+    <div
+      role="tablist"
+      aria-label="Document details"
+      className="scrollbar-none flex min-w-0 gap-0.5 overflow-x-auto"
+    >
+      {SETTINGS_TABS.map(({ id, label, icon: Icon }, index) => {
+        const selected = id === tab;
+        return (
+          <button
+            key={id}
+            ref={(element) => {
+              tabs.current[index] = element;
+            }}
+            type="button"
+            role="tab"
+            id={`${idPrefix}-${id}`}
+            aria-selected={selected}
+            aria-controls={`${idPrefix}-panel`}
+            tabIndex={selected ? 0 : -1}
+            onClick={() => onChange(id)}
+            onKeyDown={(event) => onKeyDown(event, index)}
+            className={cn(
+              "flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              selected
+                ? "bg-brand-subtle text-brand"
+                : "text-muted-foreground hover:bg-accent hover:text-foreground",
+            )}
+          >
+            <Icon className="size-4" aria-hidden="true" />
+            {label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -503,7 +699,7 @@ function Organize({
   };
   return (
     <Section title="Organize">
-      <div className="grid gap-3 @md/pane:grid-cols-2 @4xl/pane:grid-cols-1 @6xl/pane:grid-cols-2">
+      <div className="grid gap-3 @md/pane:grid-cols-2 @4xl/pane:grid-cols-1">
         <div className="space-y-1.5">
           <label htmlFor={categoryId} className="text-sm font-medium">
             Category
@@ -595,14 +791,20 @@ const dateTimeFormat = new Intl.DateTimeFormat(undefined, {
   timeStyle: "short",
 });
 
+/**
+ * The details and the reminder dates are one form, saved together; the tab picks which half
+ * shows. Both halves stay mounted, so edits in one survive a look at the other.
+ */
 function DetailsForm({
   document,
   readOnly,
+  tab,
   nextReminderAt,
   onSave,
 }: {
   document: DocumentRecord;
   readOnly: boolean;
+  tab: SettingsTab;
   nextReminderAt: string | null;
   /** Resolves with the saved document, which the form then shows as its new baseline. */
   onSave: (values: DocumentDetailsValues) => Promise<DocumentRecord>;
@@ -640,188 +842,207 @@ function DetailsForm({
   };
 
   return (
-    <form noValidate onSubmit={(event) => void handleSubmit(save)(event)} className="space-y-6">
-      <fieldset disabled={readOnly || isSubmitting} className="space-y-6">
-        <Section title="Details">
-          <FormField
-            label="Name"
-            autoComplete="off"
-            {...register("title")}
-            error={errors.title?.message}
-          />
-          <div className="space-y-1.5">
-            <label htmlFor={`${id}-description`} className="text-sm font-medium">
-              Description <span className="font-normal text-muted-foreground">(optional)</span>
-            </label>
-            <Textarea id={`${id}-description`} rows={2} {...register("description")} />
-          </div>
-          <div className="grid gap-3 @md/pane:grid-cols-2 @4xl/pane:grid-cols-1 @6xl/pane:grid-cols-2">
+    <form
+      noValidate
+      hidden={tab !== "details" && tab !== "reminders"}
+      onSubmit={(event) => void handleSubmit(save)(event)}
+      className="flex min-h-0 flex-1 flex-col"
+    >
+      <fieldset
+        disabled={readOnly || isSubmitting}
+        className="min-h-0 flex-1 scrollbar-thin overflow-y-auto p-4"
+      >
+        <div hidden={tab !== "details"} className="space-y-4">
+          <Section title="Details">
             <FormField
-              label="Document number"
-              hint="Kept off lists, search, and reminders."
+              label="Name"
               autoComplete="off"
-              {...register("reference_number")}
-              error={errors.reference_number?.message}
+              {...register("title")}
+              error={errors.title?.message}
             />
-            <FormField
-              label="Issued by"
-              autoComplete="off"
-              {...register("issuing_authority")}
-              error={errors.issuing_authority?.message}
-            />
-            <FormField
-              label="Provider or organization"
-              autoComplete="off"
-              {...register("provider")}
-              error={errors.provider?.message}
-            />
-            <DateField
-              control={control}
-              name="issue_date"
-              label="Issue date"
-              clearable
-              placeholder="None"
-            />
-            <DateField
-              control={control}
-              name="effective_date"
-              label="Effective date"
-              clearable
-              placeholder="None"
-            />
-            <SelectField
-              control={control}
-              name="currency"
-              label="Currency"
-              options={CURRENCY_OPTIONS}
-            />
-            <AmountField
-              control={control}
-              name="amount"
-              label="Amount"
-              currency={currency}
-              placeholder="None"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label htmlFor={`${id}-notes`} className="text-sm font-medium">
-              Notes <span className="font-normal text-muted-foreground">(optional)</span>
-            </label>
-            <Textarea id={`${id}-notes`} rows={3} {...register("notes")} />
-          </div>
-          <fieldset className="space-y-2">
-            <legend className="text-sm font-medium">More details</legend>
-            {extra.fields.length === 0 ? (
-              <p className="text-xs text-muted-foreground">
-                Add anything else worth keeping, like a policy type or a seat number.
-              </p>
-            ) : null}
-            {extra.fields.map((field, index) => (
-              <div key={field.id} className="flex items-start gap-2">
-                <Input
-                  aria-label={`Detail ${index + 1} name`}
-                  placeholder="Name"
-                  className="w-2/5"
-                  {...register(`custom_fields.${index}.label`)}
-                  aria-invalid={errors.custom_fields?.[index]?.label ? true : undefined}
-                />
-                <Input
-                  aria-label={`Detail ${index + 1} value`}
-                  placeholder="Value"
-                  {...register(`custom_fields.${index}.value`)}
-                />
+            <div className="space-y-1.5">
+              <label htmlFor={`${id}-description`} className="text-sm font-medium">
+                Description <span className="font-normal text-muted-foreground">(optional)</span>
+              </label>
+              <Textarea id={`${id}-description`} rows={2} {...register("description")} />
+            </div>
+            <div className="grid gap-3 @md/pane:grid-cols-2 @4xl/pane:grid-cols-1">
+              <FormField
+                label="Document number"
+                hint="Kept off lists, search, and reminders."
+                autoComplete="off"
+                {...register("reference_number")}
+                error={errors.reference_number?.message}
+              />
+              <FormField
+                label="Issued by"
+                autoComplete="off"
+                {...register("issuing_authority")}
+                error={errors.issuing_authority?.message}
+              />
+              <FormField
+                label="Provider or organization"
+                autoComplete="off"
+                {...register("provider")}
+                error={errors.provider?.message}
+              />
+              <DateField
+                control={control}
+                name="issue_date"
+                label="Issue date"
+                clearable
+                placeholder="None"
+              />
+              <DateField
+                control={control}
+                name="effective_date"
+                label="Effective date"
+                clearable
+                placeholder="None"
+              />
+              <SelectField
+                control={control}
+                name="currency"
+                label="Currency"
+                options={CURRENCY_OPTIONS}
+              />
+              <AmountField
+                control={control}
+                name="amount"
+                label="Amount"
+                currency={currency}
+                placeholder="None"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor={`${id}-notes`} className="text-sm font-medium">
+                Notes <span className="font-normal text-muted-foreground">(optional)</span>
+              </label>
+              <Textarea id={`${id}-notes`} rows={3} {...register("notes")} />
+            </div>
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">More details</legend>
+              {extra.fields.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  Add anything else worth keeping, like a policy type or a seat number.
+                </p>
+              ) : null}
+              {extra.fields.map((field, index) => (
+                <div key={field.id} className="flex items-start gap-2">
+                  <Input
+                    aria-label={`Detail ${index + 1} name`}
+                    placeholder="Name"
+                    className="w-2/5"
+                    {...register(`custom_fields.${index}.label`)}
+                    aria-invalid={errors.custom_fields?.[index]?.label ? true : undefined}
+                  />
+                  <Input
+                    aria-label={`Detail ${index + 1} value`}
+                    placeholder="Value"
+                    {...register(`custom_fields.${index}.value`)}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0"
+                    aria-label={`Remove detail ${index + 1}`}
+                    onClick={() => extra.remove(index)}
+                  >
+                    <X aria-hidden="true" />
+                  </Button>
+                </div>
+              ))}
+              {extra.fields.length < 20 ? (
                 <Button
                   variant="ghost"
-                  size="icon"
-                  className="shrink-0"
-                  aria-label={`Remove detail ${index + 1}`}
-                  onClick={() => extra.remove(index)}
+                  size="sm"
+                  onClick={() => extra.append({ label: "", value: "" })}
                 >
-                  <X aria-hidden="true" />
+                  <Plus aria-hidden="true" />
+                  Add a detail
                 </Button>
-              </div>
-            ))}
-            {extra.fields.length < 20 ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => extra.append({ label: "", value: "" })}
-              >
-                <Plus aria-hidden="true" />
-                Add a detail
-              </Button>
-            ) : null}
-          </fieldset>
-        </Section>
-
-        <Section title="Expiry and reminders">
-          <div className="grid gap-3 @md/pane:grid-cols-2 @4xl/pane:grid-cols-1 @6xl/pane:grid-cols-2">
-            <DateField
-              control={control}
-              name="expiry_date"
-              label="Expiry date"
-              clearable
-              placeholder="Doesn’t expire"
-            />
-            <DateField
-              control={control}
-              name="renewal_date"
-              label="Renewal date"
-              clearable
-              placeholder="None"
-            />
-            <DateField
-              control={control}
-              name="review_date"
-              label="Review date"
-              hint="For documents to look over now and then."
-              clearable
-              placeholder="None"
-            />
-          </div>
-          <fieldset className="space-y-2">
-            <legend className="text-sm font-medium">Remind me</legend>
-            <div className="flex flex-wrap gap-1.5">
-              {REMINDER_DAY_CHOICES.map((day) => {
-                const on = reminderDays.includes(day);
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    aria-pressed={on}
-                    disabled={!on && reminderDays.length >= 6}
-                    onClick={() => toggleDay(day)}
-                    className={cn(
-                      "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
-                      on ? "border-brand/40 bg-brand-subtle text-brand" : "hover:bg-accent",
-                    )}
-                  >
-                    {reminderDayLabel(day)}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <BellRing className="size-3.5 shrink-0" aria-hidden="true" />
-              {reminderDays.length === 0
-                ? "No reminders."
-                : nextReminderAt
-                  ? `Next reminder ${dateTimeFormat.format(new Date(nextReminderAt))}, in Reminders and notifications.`
-                  : document.state !== "active"
-                    ? "Reminders are paused while it’s archived or in the Trash."
-                    : "No reminder is coming up for these dates."}
-            </p>
-          </fieldset>
-        </Section>
-      </fieldset>
-      <FormAlert message={errors.root?.server?.message ?? null} />
-      {!readOnly ? (
-        <div className="flex justify-end">
-          <Button type="submit" disabled={!isDirty || isSubmitting}>
-            {isSubmitting ? "Saving…" : "Save details"}
-          </Button>
+              ) : null}
+            </fieldset>
+          </Section>
         </div>
-      ) : null}
+
+        <div hidden={tab !== "reminders"} className="space-y-4">
+          <Section title="Expiry and reminders">
+            <div className="grid gap-3 @md/pane:grid-cols-2 @4xl/pane:grid-cols-1">
+              <DateField
+                control={control}
+                name="expiry_date"
+                label="Expiry date"
+                clearable
+                placeholder="Doesn’t expire"
+              />
+              <DateField
+                control={control}
+                name="renewal_date"
+                label="Renewal date"
+                clearable
+                placeholder="None"
+              />
+              <DateField
+                control={control}
+                name="review_date"
+                label="Review date"
+                hint="For documents to look over now and then."
+                clearable
+                placeholder="None"
+              />
+            </div>
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">Remind me</legend>
+              <div className="flex flex-wrap gap-1.5">
+                {REMINDER_DAY_CHOICES.map((day) => {
+                  const on = reminderDays.includes(day);
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      aria-pressed={on}
+                      disabled={!on && reminderDays.length >= 6}
+                      onClick={() => toggleDay(day)}
+                      className={cn(
+                        "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
+                        on ? "border-brand/40 bg-brand-subtle text-brand" : "hover:bg-accent",
+                      )}
+                    >
+                      {reminderDayLabel(day)}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <BellRing className="size-3.5 shrink-0" aria-hidden="true" />
+                {reminderDays.length === 0
+                  ? "No reminders."
+                  : nextReminderAt
+                    ? `Next reminder ${dateTimeFormat.format(new Date(nextReminderAt))}, in Reminders and notifications.`
+                    : document.state !== "active"
+                      ? "Reminders are paused while it’s archived or in the Trash."
+                      : "No reminder is coming up for these dates."}
+              </p>
+            </fieldset>
+          </Section>
+        </div>
+      </fieldset>
+      {!readOnly ? (
+        <div className="space-y-3 border-t bg-card px-4 py-3">
+          <FormAlert message={errors.root?.server?.message ?? null} />
+          <div className="flex items-center justify-end gap-3">
+            {isDirty ? (
+              <span className="text-xs text-muted-foreground">Unsaved changes</span>
+            ) : null}
+            <Button type="submit" disabled={!isDirty || isSubmitting}>
+              {isSubmitting ? "Saving…" : "Save details"}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <FormAlert message={errors.root?.server?.message ?? null} />
+      )}
     </form>
   );
 }

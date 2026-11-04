@@ -21,6 +21,8 @@ from orbit_api.db.models import (
     FinanceInvestmentTransactionModel,
     FinanceNetWorthSnapshotModel,
     FinanceSipPlanModel,
+    UserModel,
+    WorkspaceModel,
 )
 from orbit_api.repositories.commitments import reminder_columns, reminder_of
 from orbit_api.repositories.finance import (
@@ -28,6 +30,7 @@ from orbit_api.repositories.finance import (
     SqlFinanceCategoryRepository,
     SqlFinanceTransactionRepository,
 )
+from orbit_api.repositories.notifications import SqlNotificationRepository
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.transaction import SqlTransaction, flush
 from orbit_api.services.commitments.schedule import Frequency
@@ -57,6 +60,7 @@ from orbit_api.services.investments.models import (
     Settlement,
     SipPlan,
     SipState,
+    WorkspaceOwner,
 )
 from orbit_api.services.investments.service import InvestmentService
 from orbit_api.services.networth.calculation import GROUPS, GroupTotal, NetWorthGroup
@@ -177,6 +181,7 @@ def _to_sip(model: FinanceSipPlanModel) -> SipPlan:
         notes=model.notes,
         created_at=model.created_at,
         updated_at=model.updated_at,
+        auto_debit=model.auto_debit,
     )
 
 
@@ -187,6 +192,7 @@ def _sip_fields(plan: SipPlan) -> dict[str, Any]:
         "anchor_date": plan.anchor_date,
         "end_date": plan.end_date,
         "funding_account_id": plan.funding_account_id,
+        "auto_debit": plan.auto_debit,
         "state": plan.state,
         "notes": plan.notes,
         "updated_at": plan.updated_at,
@@ -617,6 +623,32 @@ class SqlSipPlanRepository:
             setattr(model, name, value)
         await flush(self._session)
 
+    async def auto_debit_owners(self) -> Sequence[WorkspaceOwner]:
+        rows = await self._session.execute(
+            select(
+                WorkspaceModel.id,
+                WorkspaceModel.owner_id,
+                UserModel.timezone,
+                WorkspaceModel.market_data_enabled,
+            )
+            .join(UserModel, UserModel.id == WorkspaceModel.owner_id)
+            .where(
+                WorkspaceModel.id.in_(
+                    select(_Sip.workspace_id).where(_Sip.state == "active", _Sip.auto_debit)
+                )
+            )
+            .order_by(WorkspaceModel.id)
+        )
+        return [
+            WorkspaceOwner(
+                workspace_id=workspace_id,
+                user_id=user_id,
+                timezone=timezone,
+                market_data=market_data,
+            )
+            for workspace_id, user_id, timezone, market_data in rows
+        ]
+
     async def _model(
         self, workspace_id: uuid.UUID, plan_id: uuid.UUID
     ) -> FinanceSipPlanModel | None:
@@ -846,6 +878,36 @@ def _finance(session: AsyncSession, timing: dict[str, Any]) -> FinanceService:
     )
 
 
+async def workspaces_with_holdings(session: AsyncSession) -> list[uuid.UUID]:
+    """Every workspace with market data on and a holding whose price a feed could fetch (it
+    has a symbol)."""
+    rows = await session.scalars(
+        select(FinanceHoldingModel.workspace_id)
+        .join(WorkspaceModel, WorkspaceModel.id == FinanceHoldingModel.workspace_id)
+        .where(FinanceHoldingModel.symbol != "", WorkspaceModel.market_data_enabled)
+        .distinct()
+        .order_by(FinanceHoldingModel.workspace_id)
+    )
+    return list(rows)
+
+
+class SqlMarketDataStore:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def enabled(self, workspace_id: uuid.UUID) -> bool:
+        value = await self._session.scalar(
+            select(WorkspaceModel.market_data_enabled).where(WorkspaceModel.id == workspace_id)
+        )
+        return bool(value)
+
+    async def set_enabled(self, workspace_id: uuid.UUID, enabled: bool) -> None:
+        model = await self._session.get(WorkspaceModel, workspace_id)
+        if model is not None:
+            model.market_data_enabled = enabled
+            await flush(self._session)
+
+
 def build_investment_service(
     session: AsyncSession, clock: Callable[[], datetime] | None = None
 ) -> InvestmentService:
@@ -863,6 +925,8 @@ def build_investment_service(
         SqlReminderRepository(session),
         SqlOccurrenceRepository(session),
         SqlTransaction(session),
+        notifications=SqlNotificationRepository(session),
+        market_data=SqlMarketDataStore(session),
         **timing,
     )
 

@@ -43,10 +43,12 @@ vi.mock("next/navigation", () => ({
 const WS = `/api/v1/workspaces/${personal.id}`;
 const DOCS = `${WS}/documents`;
 
+/** A local calendar date, as the page counts days in the viewer's time zone (not UTC). */
 function daysFromToday(days: number): string {
   const date = new Date();
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
+  date.setDate(date.getDate() + days);
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
 const insurance: DocumentCategory = {
@@ -242,7 +244,7 @@ describe("DocumentsPanel", () => {
     mockApi(routes());
     await renderDocuments();
 
-    const soon = await screen.findByRole("region", { name: "Expiring soon" });
+    const soon = await screen.findByRole("region", { name: "Needs attention" });
     expect(within(soon).getByRole("button", { name: /Car insurance/ })).toHaveTextContent(
       "Expires in 5 days",
     );
@@ -345,22 +347,32 @@ describe("DocumentsPanel", () => {
     const pane = await screen.findByRole("article", { name: "Car insurance" });
     // Office files can't be previewed; they offer a download instead.
     expect(within(pane).getByText("No preview for DOCX files")).toBeInTheDocument();
+    // The file fills the page; its details open only when asked for.
+    expect(within(pane).queryByRole("tablist")).not.toBeInTheDocument();
+    await user.click(within(pane).getByRole("button", { name: "Show details" }));
+    const tab = (name: string) => user.click(within(pane).getByRole("tab", { name }));
+
+    await tab("History");
     expect(within(pane).getByRole("region", { name: "Version history" })).toHaveTextContent(
       "policy.docx",
     );
+    await tab("Links");
     expect(within(pane).getByRole("link", { name: /Renew insurance/ })).toHaveAttribute(
       "href",
       "/tasks?task=eeeeeeee-0000-4000-8000-000000000001",
     );
+    await tab("Reminders");
     expect(within(pane).getByRole("button", { name: "30 days before" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
     expect(within(pane).getByText(/Next reminder/)).toBeInTheDocument();
+    await user.click(within(pane).getByRole("button", { name: "15 days before" }));
 
+    // Edits on one tab survive switching to another before saving.
+    await tab("Details");
     const provider = within(pane).getByRole("textbox", { name: "Provider or organization" });
     await user.type(provider, "Shield Co");
-    await user.click(within(pane).getByRole("button", { name: "15 days before" }));
     await user.click(within(pane).getByRole("button", { name: "Save details" }));
 
     await waitFor(() => expect(calls(api, "PATCH", `${DOCS}/${policy.id}`)).toHaveLength(1));

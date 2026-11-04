@@ -218,7 +218,7 @@ describe("FinancePanel", () => {
     expect(net).toHaveTextContent("Saved 72% of income");
 
     const balances = screen.getByRole("region", { name: "Account balances" });
-    expect(balances).toHaveTextContent(/Not net worth/);
+    expect(balances).toHaveTextContent(/Excludes investments and assets/);
     expect(within(balances).getByText("Owed on cards and loans").nextSibling).toHaveTextContent(
       "₹3,000.00",
     );

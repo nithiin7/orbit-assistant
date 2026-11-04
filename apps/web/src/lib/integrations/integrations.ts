@@ -41,6 +41,9 @@ export function capabilityName(
   return CAPABILITY_NAMES[provider][capability];
 }
 
+/** The services a provider brings, for summaries; editing events is part of the calendar. */
+export const SERVICE_CAPABILITIES: readonly IntegrationCapability[] = ["calendar", "mail", "files"];
+
 /** The capabilities offered when connecting, with sensible defaults (read-only calendars). */
 export const DEFAULT_CAPABILITIES: readonly IntegrationCapability[] = ["calendar"];
 

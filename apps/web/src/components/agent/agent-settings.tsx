@@ -5,10 +5,11 @@ import type {
   Agent,
   AgentMemory,
   AgentModule,
+  AgentRuntime,
   AgentTool,
   AgentTriggerKind,
 } from "@orbit/contracts";
-import { Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { type Control, Controller, type FieldPath, useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
@@ -46,7 +47,7 @@ import {
 } from "@/lib/agent";
 import { cn } from "@/utils/common";
 
-import { ErrorNote, LoadingRows, SectionHeading } from "./shared";
+import { ErrorNote, LoadingRows, RuntimeNote, SectionHeading } from "./shared";
 
 const AUTO_TRIGGERS: readonly AgentTriggerKind[] = ["manual", "schedule", "event", "condition"];
 const MODE_OPTIONS = [
@@ -56,22 +57,20 @@ const MODE_OPTIONS = [
   { value: "off", label: "Off" },
 ];
 
-function Group({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: ReactNode;
-}) {
+function Group({ title, children }: { title: string; children: ReactNode }) {
   return (
     <fieldset className="space-y-3 rounded-xl border bg-card p-5">
       <legend className="sr-only">{title}</legend>
-      <div className="space-y-0.5">
-        <h3 className="text-sm font-semibold">{title}</h3>
-        {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
-      </div>
+      <h3 className="text-sm font-semibold">{title}</h3>
+      {children}
+    </fieldset>
+  );
+}
+
+function Subgroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <fieldset className="space-y-3">
+      <legend className="text-sm font-medium text-muted-foreground">{title}</legend>
       {children}
     </fieldset>
   );
@@ -147,7 +146,7 @@ function Checklist<T extends string>({
 }
 
 /** Everything the agent may do, set only by you. */
-export function AgentSettings({ agent }: { agent: Agent }) {
+export function AgentSettings({ agent, runtime }: { agent: Agent; runtime: AgentRuntime }) {
   const tools = useAgentTools();
   return (
     <div className="space-y-8">
@@ -157,6 +156,7 @@ export function AgentSettings({ agent }: { agent: Agent }) {
         tools={tools.status === "success" ? tools.data.tools : []}
       />
       <MemorySection />
+      <RuntimeNote runtime={runtime} />
     </div>
   );
 }
@@ -177,6 +177,7 @@ function SettingsForm({ agent, tools }: { agent: Agent; tools: readonly AgentToo
   });
   const modules = useWatch({ control, name: "modules" });
   const autonomy = useWatch({ control, name: "autonomy" });
+  const monitoring = useWatch({ control, name: "monitoring.enabled" });
 
   async function save(values: AgentSettingsValues) {
     setSaved(false);
@@ -192,11 +193,8 @@ function SettingsForm({ agent, tools }: { agent: Agent; tools: readonly AgentToo
 
   return (
     <form noValidate onSubmit={(event) => void handleSubmit(save)(event)} className="space-y-4">
-      <SectionHeading
-        title="Settings"
-        description="Only you can change these. Nothing the agent reads or writes can."
-      />
-      <Group title="Autonomy" description="How much the agent may do on its own.">
+      <SectionHeading title="Settings" />
+      <Group title="How much it can do">
         <Controller
           control={control}
           name="autonomy"
@@ -206,7 +204,7 @@ function SettingsForm({ agent, tools }: { agent: Agent; tools: readonly AgentToo
               aria-label="Autonomy level"
               className="grid gap-2 @2xl:grid-cols-2"
             >
-              {AUTONOMY_LEVELS.map((level, index) => (
+              {AUTONOMY_LEVELS.map((level) => (
                 <label
                   key={level.value}
                   className={cn(
@@ -223,9 +221,7 @@ function SettingsForm({ agent, tools }: { agent: Agent; tools: readonly AgentToo
                     className="mt-1 accent-brand"
                   />
                   <span>
-                    <span className="font-medium">
-                      Level {index} · {level.label}
-                    </span>
+                    <span className="font-medium">{level.label}</span>
                     <span className="block text-xs text-muted-foreground">{level.description}</span>
                   </span>
                 </label>
@@ -238,10 +234,10 @@ function SettingsForm({ agent, tools }: { agent: Agent; tools: readonly AgentToo
             control={control}
             name="autonomousTriggers"
             render={({ field }) => (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Runs that may act automatically</p>
+              <div className="space-y-2 border-t pt-3">
+                <p className="text-sm font-medium">Acts on its own in</p>
                 <Checklist
-                  label="Runs that may act automatically"
+                  label="Acts on its own in"
                   values={field.value}
                   onChange={field.onChange}
                   options={AUTO_TRIGGERS.map((trigger) => ({
@@ -249,17 +245,13 @@ function SettingsForm({ agent, tools }: { agent: Agent; tools: readonly AgentToo
                     label: TRIGGER_LABELS[trigger],
                   }))}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Only low-risk tools set to “Allow automatically” below run without asking, up to
-                  the daily limit. Saving memories and starting workflows always ask.
-                </p>
               </div>
             )}
           />
         ) : null}
       </Group>
 
-      <Group title="What it can use" description="Sensitive modules are off until you choose them.">
+      <Group title="What it can use">
         <Controller
           control={control}
           name="modules"
@@ -277,71 +269,15 @@ function SettingsForm({ agent, tools }: { agent: Agent; tools: readonly AgentToo
           )}
         />
         <div className="space-y-2 border-t pt-3">
-          <Toggle
-            control={control}
-            name="canCreate"
-            label="Create records"
-            hint="Tasks, notes, reminders, events, notifications."
-          />
-          <Toggle
-            control={control}
-            name="canUpdate"
-            label="Change records"
-            hint="Complete or edit tasks, add to notes, fill in document details."
-          />
+          <Toggle control={control} name="canCreate" label="Create records" />
+          <Toggle control={control} name="canUpdate" label="Change records" />
           <p className="text-xs text-muted-foreground">
-            There are no tools to delete anything, move money, send email, or share documents.
+            It can never delete, pay, send, or share anything.
           </p>
         </div>
       </Group>
 
-      <Group
-        title="Actions"
-        description="Per action: off, always ask, or allowed automatically at limited autonomy."
-      >
-        <Controller
-          control={control}
-          name="toolModes"
-          render={({ field }) => (
-            <ul className="divide-y">
-              {writes.map((tool) => (
-                <li
-                  key={tool.name}
-                  className="flex flex-wrap items-center justify-between gap-2 py-2"
-                >
-                  <span className="min-w-0 text-sm">
-                    <span className="font-medium">{tool.title}</span>{" "}
-                    <Badge variant={tool.risk === "low" ? "default" : "outline"}>
-                      {tool.risk} risk
-                    </Badge>
-                    {tool.module && !modules.includes(tool.module) ? (
-                      <span className="block text-xs text-muted-foreground">
-                        Needs {MODULE_LABELS[tool.module]}
-                      </span>
-                    ) : null}
-                  </span>
-                  <Select
-                    className="w-52"
-                    aria-label={`${tool.title} setting`}
-                    value={field.value[tool.name] ?? ""}
-                    onValueChange={(mode) => field.onChange({ ...field.value, [tool.name]: mode })}
-                    options={
-                      tool.approval === "always" || tool.risk !== "low"
-                        ? MODE_OPTIONS.filter((option) => option.value !== "auto")
-                        : MODE_OPTIONS
-                    }
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        />
-      </Group>
-
-      <Group
-        title="Instructions"
-        description="Standing guidance for the agent, like tone or priorities."
-      >
+      <Group title="Instructions">
         <FormField
           label="Name"
           autoComplete="off"
@@ -355,137 +291,178 @@ function SettingsForm({ agent, tools }: { agent: Agent; tools: readonly AgentToo
           <Textarea
             id={`${id}-instructions`}
             rows={3}
-            placeholder="Keep summaries short. Work tasks come before personal ones on weekdays."
+            placeholder="Keep summaries short. Work tasks come first on weekdays."
             {...register("instructions")}
           />
           {errors.instructions ? (
             <p className="text-xs text-destructive">{errors.instructions.message}</p>
           ) : null}
         </div>
-        <FormField
-          label="Model"
-          hint="Optional. A different model on your AI provider; leave empty to use the one in Settings → AI."
-          autoComplete="off"
-          {...register("chatModel")}
-          error={errors.chatModel?.message}
-        />
       </Group>
 
-      <Group title="Limits" description="Hard bounds on every run, whatever the AI suggests.">
-        <div className="grid gap-3 @2xl:grid-cols-2">
-          {(
-            [
-              ["max_steps", "Steps per run"],
-              ["max_tool_calls", "Tool calls per run"],
-              ["timeout_seconds", "Time per run (seconds)"],
-              ["max_tokens_per_run", "AI tokens per run"],
-              ["max_runs_per_day", "Runs per day"],
-              ["max_autonomous_actions_per_day", "Automatic actions per day"],
-              ["approval_ttl_hours", "Approvals expire after (hours)"],
-              ["max_retries", "Retries of a failing step"],
-            ] as const
-          ).map(([name, label]) => (
-            <FormField
-              key={name}
-              label={label}
-              type="number"
-              {...register(`limits.${name}`, { valueAsNumber: true })}
-              error={errors.limits?.[name]?.message}
-            />
-          ))}
-        </div>
-      </Group>
-
-      <Group title="Memory" description="What the agent may carry from one run to the next.">
-        <Toggle
-          control={control}
-          name="memory.preferences"
-          label="Saved preferences"
-          hint="Ones you write or approve. Listed below."
-        />
-        <Toggle
-          control={control}
-          name="memory.conversation"
-          label="Recent runs"
-          hint="What you asked recently and how it went."
-        />
-        <Toggle
-          control={control}
-          name="memory.workflow"
-          label="Workflow outcomes"
-          hint="A workflow’s last results, for its AI steps."
-        />
-        <FormField
-          label="Keep history for (days)"
-          type="number"
-          {...register("memory.retention_days", { valueAsNumber: true })}
-          error={errors.memory?.retention_days?.message}
-        />
-      </Group>
-
-      <Group
-        title="Monitoring"
-        description="Checks Orbit runs for you, without AI. New findings arrive as notifications."
-      >
-        <Toggle control={control} name="monitoring.enabled" label="Monitor for me" />
-        <Controller
-          control={control}
-          name="monitoring.categories"
-          render={({ field }) => (
-            <Checklist
-              label="What to watch"
-              values={field.value}
-              onChange={field.onChange}
-              options={MONITOR_CATEGORIES.map((category) => ({
-                value: category,
-                label: MONITOR_LABELS[category],
-                note: modules.includes(MONITOR_MODULE[category])
-                  ? undefined
-                  : `needs ${MODULE_LABELS[MONITOR_MODULE[category]]}`,
-              }))}
-            />
-          )}
-        />
-        <div className="grid gap-3 @2xl:grid-cols-2">
-          <SelectField
-            control={control}
-            name="monitoring.frequency"
-            label="How often"
-            options={Object.entries(MONITOR_FREQUENCY_LABELS).map(([value, label]) => ({
-              value,
-              label,
-            }))}
-          />
-          <FormField
-            label="Look ahead (days)"
-            type="number"
-            {...register("monitoring.days_ahead", { valueAsNumber: true })}
-            error={errors.monitoring?.days_ahead?.message}
-          />
-          <FormField
-            label="Documents expiring within (days)"
-            type="number"
-            {...register("monitoring.document_days", { valueAsNumber: true })}
-            error={errors.monitoring?.document_days?.message}
-          />
-          <FormField
-            label="Budget warning at (%)"
-            type="number"
-            {...register("monitoring.budget_percent", { valueAsNumber: true })}
-            error={errors.monitoring?.budget_percent?.message}
-          />
-        </div>
-      </Group>
-
-      <Group
-        title="Notifications"
-        description="In-app notifications only. The agent never emails or messages anyone."
-      >
+      <Group title="Notify me about">
         <Toggle control={control} name="notifications.approvals" label="Approval requests" />
         <Toggle control={control} name="notifications.failed" label="Failed runs" />
         <Toggle control={control} name="notifications.completed" label="Completed runs" />
         <Toggle control={control} name="notifications.insights" label="Monitoring findings" />
       </Group>
+
+      <Group title="Monitoring">
+        <Toggle
+          control={control}
+          name="monitoring.enabled"
+          label="Watch for things that need attention"
+          hint="Regular checks without AI. Findings arrive as notifications."
+        />
+        {monitoring ? (
+          <div className="space-y-3 border-t pt-3">
+            <Controller
+              control={control}
+              name="monitoring.categories"
+              render={({ field }) => (
+                <Checklist
+                  label="What to watch"
+                  values={field.value}
+                  onChange={field.onChange}
+                  options={MONITOR_CATEGORIES.map((category) => ({
+                    value: category,
+                    label: MONITOR_LABELS[category],
+                    note: modules.includes(MONITOR_MODULE[category])
+                      ? undefined
+                      : `needs ${MODULE_LABELS[MONITOR_MODULE[category]]}`,
+                  }))}
+                />
+              )}
+            />
+            <div className="grid gap-3 @2xl:grid-cols-2">
+              <SelectField
+                control={control}
+                name="monitoring.frequency"
+                label="How often"
+                options={Object.entries(MONITOR_FREQUENCY_LABELS).map(([value, label]) => ({
+                  value,
+                  label,
+                }))}
+              />
+              <FormField
+                label="Look ahead (days)"
+                type="number"
+                {...register("monitoring.days_ahead", { valueAsNumber: true })}
+                error={errors.monitoring?.days_ahead?.message}
+              />
+              <FormField
+                label="Documents expiring within (days)"
+                type="number"
+                {...register("monitoring.document_days", { valueAsNumber: true })}
+                error={errors.monitoring?.document_days?.message}
+              />
+              <FormField
+                label="Budget warning at (%)"
+                type="number"
+                {...register("monitoring.budget_percent", { valueAsNumber: true })}
+                error={errors.monitoring?.budget_percent?.message}
+              />
+            </div>
+          </div>
+        ) : null}
+      </Group>
+
+      <details className="group rounded-xl border bg-card">
+        <summary className="flex cursor-pointer items-center justify-between gap-2 rounded-xl px-5 py-4 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+          Advanced
+          <ChevronDown
+            className="size-4 text-muted-foreground transition-transform duration-150 group-open:rotate-180"
+            aria-hidden="true"
+          />
+        </summary>
+        <div className="space-y-6 border-t px-5 py-5">
+          <Subgroup title="Each action">
+            <Controller
+              control={control}
+              name="toolModes"
+              render={({ field }) => (
+                <ul className="divide-y">
+                  {writes.map((tool) => (
+                    <li
+                      key={tool.name}
+                      className="flex flex-wrap items-center justify-between gap-2 py-2"
+                    >
+                      <span className="min-w-0 text-sm">
+                        <span className="font-medium">{tool.title}</span>
+                        {tool.module && !modules.includes(tool.module) ? (
+                          <span className="block text-xs text-muted-foreground">
+                            Needs {MODULE_LABELS[tool.module]}
+                          </span>
+                        ) : null}
+                      </span>
+                      <Select
+                        className="w-52"
+                        aria-label={`${tool.title} setting`}
+                        value={field.value[tool.name] ?? ""}
+                        onValueChange={(mode) =>
+                          field.onChange({ ...field.value, [tool.name]: mode })
+                        }
+                        options={
+                          tool.approval === "always" || tool.risk !== "low"
+                            ? MODE_OPTIONS.filter((option) => option.value !== "auto")
+                            : MODE_OPTIONS
+                        }
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            />
+          </Subgroup>
+
+          <Subgroup title="Limits">
+            <div className="grid gap-3 @2xl:grid-cols-2">
+              {(
+                [
+                  ["max_steps", "Steps per run"],
+                  ["max_tool_calls", "Tool calls per run"],
+                  ["timeout_seconds", "Time per run (seconds)"],
+                  ["max_tokens_per_run", "AI tokens per run"],
+                  ["max_runs_per_day", "Runs per day"],
+                  ["max_autonomous_actions_per_day", "Automatic actions per day"],
+                  ["approval_ttl_hours", "Approvals expire after (hours)"],
+                  ["max_retries", "Retries of a failing step"],
+                ] as const
+              ).map(([name, label]) => (
+                <FormField
+                  key={name}
+                  label={label}
+                  type="number"
+                  {...register(`limits.${name}`, { valueAsNumber: true })}
+                  error={errors.limits?.[name]?.message}
+                />
+              ))}
+            </div>
+          </Subgroup>
+
+          <Subgroup title="Memory">
+            <Toggle control={control} name="memory.preferences" label="Saved preferences" />
+            <Toggle control={control} name="memory.conversation" label="Recent runs" />
+            <Toggle control={control} name="memory.workflow" label="Workflow results" />
+            <FormField
+              label="Keep history for (days)"
+              type="number"
+              {...register("memory.retention_days", { valueAsNumber: true })}
+              error={errors.memory?.retention_days?.message}
+            />
+          </Subgroup>
+
+          <Subgroup title="AI model">
+            <FormField
+              label="Model"
+              hint="Leave empty to use the one in Settings → AI."
+              autoComplete="off"
+              {...register("chatModel")}
+              error={errors.chatModel?.message}
+            />
+          </Subgroup>
+        </div>
+      </details>
 
       <FormAlert message={errors.root?.server?.message ?? null} />
       <div className="sticky bottom-4 flex items-center gap-3">
@@ -525,10 +502,7 @@ function MemorySection() {
 
   return (
     <section className="space-y-3">
-      <SectionHeading
-        title="What the agent remembers"
-        description="Preferences you wrote or approved, and workflow outcomes. Edit or delete any of them."
-      />
+      <SectionHeading title="What it remembers" />
       <form
         noValidate
         onSubmit={(event) => void handleSubmit(submit)(event)}

@@ -1473,6 +1473,69 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/finance/market-data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether market data is on */
+        get: operations["market_data_api_v1_workspaces__workspace_id__finance_market_data_get"];
+        /**
+         * Turn market data on or off
+         * @description Turning it on lets this workspace send its holdings' scheme codes and tickers to the
+         *     price services (mfapi.in, Yahoo Finance).
+         */
+        put: operations["update_market_data_api_v1_workspaces__workspace_id__finance_market_data_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/market-data/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find a mutual fund, stock, or ETF
+         * @description Searches the price service (mfapi.in for funds, Yahoo Finance otherwise): only the
+         *     search phrase leaves the server.
+         */
+        get: operations["search_instruments_api_v1_workspaces__workspace_id__finance_market_data_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/market-data/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fetch the latest prices
+         * @description Fetches the last few days' prices of every holding with a scheme code or ticker.
+         */
+        post: operations["refresh_prices_api_v1_workspaces__workspace_id__finance_market_data_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/finance/portfolio": {
         parameters: {
             query?: never;
@@ -1546,7 +1609,11 @@ export interface paths {
          */
         get: operations["list_holdings_api_v1_workspaces__workspace_id__finance_holdings_get"];
         put?: never;
-        /** Add a holding */
+        /**
+         * Add a holding
+         * @description With `opening`, the units already owned are recorded in the same step. With market data
+         *     on, the holding's latest prices are fetched too.
+         */
         post: operations["create_holding_api_v1_workspaces__workspace_id__finance_holdings_post"];
         delete?: never;
         options?: never;
@@ -1624,7 +1691,7 @@ export interface paths {
         /**
          * Record an investment transaction
          * @description Records the transaction and its ledger rows (a transfer, income, or expenses) in one
-         *     step.
+         *     step. A mutual fund buy without `quantity` gets its units from the NAV on its date.
          */
         post: operations["record_investment_transaction_api_v1_workspaces__workspace_id__finance_investment_transactions_post"];
         delete?: never;
@@ -9202,7 +9269,8 @@ export interface components {
         /**
          * CreateHoldingRequest
          * @description Add a mutual fund, stock, or ETF to an investment account. Units come from its buys; one
-         *     bought before Orbit is recorded as a buy with settlement `none`.
+         *     bought before Orbit is recorded as a buy with settlement `none`, or with `opening` in the
+         *     same request.
          */
         CreateHoldingRequest: {
             /**
@@ -9252,6 +9320,7 @@ export interface components {
              * @default
              */
             notes: string;
+            opening?: components["schemas"]["OpeningPositionRequest"] | null;
         };
         /**
          * CreateInvestmentAccountRequest
@@ -9601,6 +9670,12 @@ export interface components {
             end_date?: string | null;
             /** Funding Account Id */
             funding_account_id?: string | null;
+            /**
+             * Auto Debit
+             * @description Mutual funds with a funding account only: record each installment automatically on its due date.
+             * @default false
+             */
+            auto_debit: boolean;
             /**
              * Notes
              * @default
@@ -10722,6 +10797,8 @@ export interface components {
             secondary_muscles: ("chest" | "upper_back" | "lats" | "lower_back" | "traps" | "shoulders" | "biceps" | "triceps" | "forearms" | "abs" | "obliques" | "glutes" | "quadriceps" | "hamstrings" | "calves" | "hip_flexors" | "adductors" | "full_body")[];
             /** Is Custom */
             is_custom: boolean;
+            /** Builtin Key */
+            builtin_key: string | null;
             /** Archived */
             archived: boolean;
             /**
@@ -12075,6 +12152,36 @@ export interface components {
              */
             updated_at: string;
         };
+        /** InstrumentListResponse */
+        InstrumentListResponse: {
+            /** Instruments */
+            instruments: components["schemas"]["InstrumentResponse"][];
+        };
+        /** InstrumentResponse */
+        InstrumentResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "mutual_fund" | "stock" | "etf";
+            /** Name */
+            name: string;
+            /**
+             * Symbol
+             * @description The scheme code for mutual funds, the ticker otherwise.
+             */
+            symbol: string;
+            /** Exchange */
+            exchange: string;
+            /** Isin */
+            isin: string;
+            /** Issuer */
+            issuer: string;
+            /** Category */
+            category: string;
+            /** Currency */
+            currency: ("INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY") | null;
+        };
         /** IntegrationCalendarListResponse */
         IntegrationCalendarListResponse: {
             /** Resources */
@@ -12939,6 +13046,24 @@ export interface components {
              */
             count: number;
         };
+        /** MarketDataResponse */
+        MarketDataResponse: {
+            /**
+             * Available
+             * @description Whether the server allows market data (`ORBIT_MARKET_DATA_ENABLED`).
+             */
+            available: boolean;
+            /**
+             * Enabled
+             * @description Whether this workspace fetches prices and offers instrument search.
+             */
+            enabled: boolean;
+        };
+        /** MarketDataUpdateRequest */
+        MarketDataUpdateRequest: {
+            /** Enabled */
+            enabled: boolean;
+        };
         /** MealListResponse */
         MealListResponse: {
             /** Meals */
@@ -13365,6 +13490,11 @@ export interface components {
             is_pinned: boolean;
             /** Is Favorite */
             is_favorite: boolean;
+            /**
+             * Is Locked
+             * @description Locked notes show only their title in lists and search; `excerpt` is empty.
+             */
+            is_locked: boolean;
             /** Archived At */
             archived_at: string | null;
             /** Trashed At */
@@ -13443,6 +13573,11 @@ export interface components {
             is_pinned: boolean;
             /** Is Favorite */
             is_favorite: boolean;
+            /**
+             * Is Locked
+             * @description Locked notes show only their title in lists and search; `excerpt` is empty.
+             */
+            is_locked: boolean;
             /** Archived At */
             archived_at: string | null;
             /** Trashed At */
@@ -13653,6 +13788,25 @@ export interface components {
              * @description Changed by a single-occurrence edit.
              */
             modified: boolean;
+        };
+        /**
+         * OpeningPositionRequest
+         * @description Units already owned, recorded as a buy from outside Orbit (settlement `none`). Leave out a
+         *     mutual fund's `quantity` to work it out from the NAV on `trade_date`.
+         */
+        OpeningPositionRequest: {
+            /**
+             * Trade Date
+             * Format: date
+             */
+            trade_date: string;
+            /**
+             * Amount
+             * @description What was invested in total.
+             */
+            amount: number;
+            /** Quantity */
+            quantity?: string | null;
         };
         /**
          * OverviewDocumentResponse
@@ -14192,6 +14346,19 @@ export interface components {
              */
             prices: components["schemas"]["PriceResponse"][];
         };
+        /** PriceRefreshResponse */
+        PriceRefreshResponse: {
+            /**
+             * Updated
+             * @description Holdings given a fresh price.
+             */
+            updated: number;
+            /**
+             * Failed
+             * @description Holdings the price service couldn't price just now.
+             */
+            failed: number;
+        };
         /** PriceResponse */
         PriceResponse: {
             /**
@@ -14514,7 +14681,7 @@ export interface components {
         /**
          * RecordSipInstallmentRequest
          * @description Record one SIP installment as a buy. Amount defaults to the SIP's; the funding account,
-         *     when the SIP has one, settles it.
+         *     when the SIP has one, settles it. A mutual fund's units, left out, come from the NAV.
          */
         RecordSipInstallmentRequest: {
             /**
@@ -14522,11 +14689,8 @@ export interface components {
              * Format: date
              */
             trade_date: string;
-            /**
-             * Quantity
-             * @description Units as a decimal string with up to 6 decimals, such as `12.345`.
-             */
-            quantity: string;
+            /** Quantity */
+            quantity?: string | null;
             /** Amount */
             amount?: number | null;
             /**
@@ -15936,6 +16100,11 @@ export interface components {
             /** Funding Account Id */
             funding_account_id: string | null;
             /**
+             * Auto Debit
+             * @description Orbit records each installment itself on its due date, from the funding account, at that day's NAV.
+             */
+            auto_debit: boolean;
+            /**
              * State
              * @enum {string}
              */
@@ -17202,6 +17371,8 @@ export interface components {
             is_pinned?: boolean | null;
             /** Is Favorite */
             is_favorite?: boolean | null;
+            /** Is Locked */
+            is_locked?: boolean | null;
             /** Archived */
             archived?: boolean | null;
         };
@@ -17401,6 +17572,8 @@ export interface components {
             end_date?: string | null;
             /** Funding Account Id */
             funding_account_id?: string | null;
+            /** Auto Debit */
+            auto_debit?: boolean | null;
             /** State */
             state?: ("active" | "paused" | "cancelled") | null;
             /** Notes */
@@ -22688,6 +22861,228 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    market_data_api_v1_workspaces__workspace_id__finance_market_data_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketDataResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_market_data_api_v1_workspaces__workspace_id__finance_market_data_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarketDataUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketDataResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Market data is off on this server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_instruments_api_v1_workspaces__workspace_id__finance_market_data_search_get: {
+        parameters: {
+            query: {
+                kind: "mutual_fund" | "stock" | "etf";
+                q: string;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstrumentListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Market data is off for this workspace or server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The price service couldn't be reached. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    refresh_prices_api_v1_workspaces__workspace_id__finance_market_data_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceRefreshResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Market data is off for this workspace or server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The price service couldn't be reached. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

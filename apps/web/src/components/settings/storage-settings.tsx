@@ -1,15 +1,18 @@
 import { StorageStatusCard } from "@/components/storage/storage-indicator";
+import { settingsSectionsClassName } from "@/lib/settings";
 
 import { DatabaseLocation } from "./database-location";
 
 export function StorageSettings() {
   return (
-    <div className="space-y-4">
+    <div className={settingsSectionsClassName}>
       <StorageStatusCard />
       <DatabaseLocation />
-      <div className="space-y-2 text-sm text-muted-foreground">
-        <h2 className="font-medium text-foreground">Switching storage</h2>
-        <ol className="list-decimal space-y-1 pl-5 marker:text-muted-foreground">
+      <details className="space-y-2 text-sm text-muted-foreground">
+        <summary className="cursor-pointer rounded-md font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          How to switch storage
+        </summary>
+        <ol className="mt-2 list-decimal space-y-1 pl-5 marker:text-muted-foreground">
           <li>
             In <code className="font-mono text-xs">apps/api/.env</code>, set{" "}
             <code className="font-mono text-xs">ORBIT_STORAGE_MODE</code> to{" "}
@@ -23,11 +26,9 @@ export function StorageSettings() {
           </li>
         </ol>
         <p className="text-pretty">
-          Switching doesn’t move data or accounts. The other database starts empty, so you create a
-          new account there; your current data stays where it is. Database credentials are never
-          entered or shown in the browser.
+          Data isn’t moved. The other database starts empty, so you sign up again there.
         </p>
-      </div>
+      </details>
     </div>
   );
 }

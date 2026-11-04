@@ -124,6 +124,48 @@ describe("HabitsPanel: Today", () => {
     expect(JSON.parse(String(put?.[1]?.body))).toMatchObject({ status: "completed" });
   });
 
+  it("cheers when a check-off meets the target", async () => {
+    const user = userEvent.setup();
+    mockApi({
+      ...session,
+      [`GET ${WS}/habits/today`]: json(today([progress(read), progress(water)])),
+      [`PUT ${WS}/habits/h-read/log/${DAY}`]: json(
+        progress(read, { state: "completed", current_streak: 4 }),
+      ),
+    });
+    await renderSignedIn(<HabitsPanel />);
+    await user.click(await screen.findByRole("button", { name: "Mark Read done" }));
+    const cheer = await screen.findByText("Yay, target met!");
+    expect(screen.getByRole("status")).toHaveTextContent("Read is done. That’s a 4-day streak.");
+    await user.click(screen.getByRole("button", { name: "Dismiss" }));
+    expect(cheer).not.toBeInTheDocument();
+  });
+
+  it("celebrates finishing the day, and stays quiet on undo", async () => {
+    const user = userEvent.setup();
+    let current = progress(read);
+    mockApi({
+      ...session,
+      [`GET ${WS}/habits/today`]: () => Response.json(today([current])),
+      [`PUT ${WS}/habits/h-read/log/${DAY}`]: () => {
+        current = progress(read, { state: "completed" });
+        return Response.json(current);
+      },
+      [`DELETE ${WS}/habits/h-read/log/${DAY}`]: () => {
+        current = progress(read);
+        return Response.json(current);
+      },
+    });
+    await renderSignedIn(<HabitsPanel />);
+    await user.click(await screen.findByRole("button", { name: "Mark Read done" }));
+    expect(await screen.findByText("All done for today!")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Dismiss" }));
+
+    await user.click(await screen.findByRole("button", { name: "Undo Read" }));
+    await screen.findByRole("button", { name: "Mark Read done" });
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+  });
+
   it("records partial progress toward an amount", async () => {
     const user = userEvent.setup();
     const api = mockApi({
@@ -178,6 +220,65 @@ describe("HabitsPanel: creating a habit", () => {
       timezone: "UTC",
       reminders: [{ time: "08:00", weekdays: [] }],
     });
+  });
+});
+
+describe("HabitsPanel: templates", () => {
+  it("opens the New habit form filled from a template", async () => {
+    const user = userEvent.setup();
+    navigation.params = new URLSearchParams("view=templates");
+    const created = { ...progress(water), reminders: [], tasks: [], notes: [] };
+    const api = mockApi({
+      ...session,
+      [`GET ${WS}/habits`]: json({ habits: [progress(read)] }),
+      [`POST ${WS}/habits`]: json(created, 201),
+    });
+    await renderSignedIn(<HabitsPanel />);
+    const nav = await screen.findByRole("navigation", { name: "Habit views" });
+    expect(within(nav).getByRole("link", { name: "Templates" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(
+      await screen.findByRole("button", { name: "Use the “Read” template, already tracking" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Use the “Drink water” template" }));
+    const dialog = await screen.findByRole("dialog", { name: "New habit" });
+    expect(within(dialog).getByLabelText("Name")).toHaveValue("Drink water");
+    await user.click(within(dialog).getByRole("button", { name: "Create habit" }));
+
+    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith("/habits?habit=h-water"));
+    const post = api.mock.calls.find(([, init]) => init?.method === "POST");
+    expect(JSON.parse(String(post?.[1]?.body))).toMatchObject({
+      name: "Drink water",
+      kind: "numeric",
+      target: 8,
+      unit: "glasses",
+    });
+  });
+
+  it("filters to routines and fills the New routine form", async () => {
+    const user = userEvent.setup();
+    navigation.params = new URLSearchParams("view=templates");
+    mockApi({ ...session, [`GET ${WS}/habits`]: json({ habits: [] }) });
+    await renderSignedIn(<HabitsPanel />);
+    await user.click(await screen.findByRole("button", { name: "Routines" }));
+    expect(screen.queryByRole("region", { name: "Habits" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Use the “Morning routine” template" }));
+    const dialog = await screen.findByRole("dialog", { name: "New routine" });
+    expect(within(dialog).getByLabelText("Name")).toHaveValue("Morning routine");
+    expect(within(dialog).getByDisplayValue("Make the bed")).toBeInTheDocument();
+  });
+
+  it("offers starter habits when there are none", async () => {
+    const user = userEvent.setup();
+    mockApi({ ...session, [`GET ${WS}/habits/today`]: json(today([])) });
+    await renderSignedIn(<HabitsPanel />);
+    const starters = await screen.findByRole("list", { name: "Starter habits" });
+    await user.click(within(starters).getByRole("button", { name: "Meditate" }));
+    const dialog = await screen.findByRole("dialog", { name: "New habit" });
+    expect(within(dialog).getByLabelText("Name")).toHaveValue("Meditate");
   });
 });
 

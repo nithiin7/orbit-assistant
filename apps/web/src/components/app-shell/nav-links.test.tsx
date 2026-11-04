@@ -1,8 +1,8 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { navItems } from "@/lib/navigation";
+import { sidebarSections } from "@/lib/navigation";
 
 import { NavLinks } from "./nav-links";
 
@@ -17,13 +17,27 @@ afterEach(() => {
 });
 
 describe("NavLinks", () => {
-  it("renders a link for every navigation item", () => {
+  it("renders a link for every sidebar item, leaving settings to the profile menu", () => {
     render(<NavLinks />);
     const nav = screen.getByRole("navigation", { name: "Primary" });
     expect(nav).toBeInTheDocument();
-    for (const item of navItems) {
+    for (const item of sidebarSections.flatMap((section) => section.items)) {
       expect(screen.getByRole("link", { name: item.title })).toHaveAttribute("href", item.href);
     }
+    expect(screen.queryByRole("link", { name: "Settings" })).not.toBeInTheDocument();
+  });
+
+  it("groups links under labelled sections", () => {
+    render(<NavLinks />);
+    const plan = screen.getByRole("list", { name: "Plan" });
+    expect(
+      within(plan)
+        .getAllByRole("link")
+        .map((link) => link.textContent),
+    ).toEqual(["Tasks", "Calendar", "Reminders", "Shopping"]);
+    expect(
+      within(screen.getByRole("list", { name: "AI" })).getByRole("link", { name: "Assistant" }),
+    ).toBeInTheDocument();
   });
 
   it("marks only the current page as active", () => {

@@ -100,6 +100,9 @@ class _NoteFields(BaseModel):
     journal_date: date | None = Field(description="The entry's day, for journal entries only.")
     is_pinned: bool
     is_favorite: bool
+    is_locked: bool = Field(
+        description="Locked notes show only their title in lists and search; `excerpt` is empty."
+    )
     archived_at: datetime | None
     trashed_at: datetime | None
     revision: int = Field(
@@ -121,6 +124,7 @@ class _NoteFields(BaseModel):
             "journal_date": note.journal_date,
             "is_pinned": note.is_pinned,
             "is_favorite": note.is_favorite,
+            "is_locked": note.is_locked,
             "archived_at": note.archived_at,
             "trashed_at": note.trashed_at,
             "revision": note.revision,
@@ -298,6 +302,7 @@ class UpdateNoteRequest(BaseModel):
     note_type: Literal["note", "quick"] | None = None
     is_pinned: bool | None = None
     is_favorite: bool | None = None
+    is_locked: bool | None = None
     archived: bool | None = None
 
     _document: NoteDocument | None = PrivateAttr(default=None)
@@ -324,6 +329,7 @@ class UpdateNoteRequest(BaseModel):
             note_type=self.note_type if self.note_type is not None else UNSET,
             is_pinned=self.is_pinned if self.is_pinned is not None else UNSET,
             is_favorite=self.is_favorite if self.is_favorite is not None else UNSET,
+            is_locked=self.is_locked if self.is_locked is not None else UNSET,
             archived=self.archived if self.archived is not None else UNSET,
         )
 

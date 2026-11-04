@@ -118,7 +118,6 @@ export function TransactionHistory({
     <div className="space-y-5">
       <ViewHeader
         title="Transactions"
-        description="Everything recorded, newest first. Choose one to change it."
         controls={
           <>
             <Button variant="outline" onClick={onManageCategories}>
@@ -283,7 +282,7 @@ export function TransactionHistory({
             <EmptyState
               icon={SearchX}
               title="No matching transactions"
-              description="Nothing matches these filters. Try other words or dates, or clear the filters."
+              description="Nothing matches. Try clearing the filters."
             >
               <Button
                 variant="outline"
@@ -300,7 +299,7 @@ export function TransactionHistory({
             <EmptyState
               icon={Receipt}
               title="No transactions yet"
-              description="Record income, an expense, or a transfer from the Record menu. Balances and reports update as you go."
+              description="Use Record to add your first one."
             />
           )
         ) : (

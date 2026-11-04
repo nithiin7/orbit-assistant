@@ -92,7 +92,7 @@ export function AssetsView({ workspaceId, accounts, onAnnounce, currency }: Fina
   const header = (
     <ViewHeader
       title="Other assets"
-      description="Gold, property, vehicles, and cash outside your accounts, valued by hand. A valuation over a year old is marked stale; one without any counts at its purchase cost."
+      description="Gold, property, vehicles, and more."
       action={addButton}
     />
   );
@@ -122,7 +122,7 @@ export function AssetsView({ workspaceId, accounts, onAnnounce, currency }: Fina
         <EmptyState
           icon={Gem}
           title="Track other assets"
-          description="Gold, property, a vehicle, or cash kept outside your accounts. Enter what each is worth now and then; Orbit keeps the history."
+          description="Track gold, property, or vehicles outside your accounts."
         >
           {addButton}
         </EmptyState>
@@ -452,7 +452,7 @@ function AssetDialog({
   return (
     <DialogShell
       title={asset ? "Edit asset" : "Add an asset"}
-      description="Something you own that isn’t an account balance or an investment holding."
+      description="Something you own outside your accounts."
       busy={saving}
       onClose={onClose}
       submitLabel={asset ? "Save changes" : "Add asset"}
@@ -511,8 +511,8 @@ function AssetDialog({
         />
       </div>
       <p className="text-xs text-muted-foreground">
-        Linking a bank, cash, or investment account means this asset is already counted in that
-        balance, so net worth leaves it out. Linking a loan (for a financed vehicle) keeps it in.
+        Linked to a bank, cash, or investment account? It’s already counted there, so net worth
+        leaves it out.
       </p>
       <label className="flex items-center gap-2 text-sm">
         <Checkbox {...register("includeInNetWorth")} />
@@ -575,7 +575,7 @@ function ValuationDialog({
   return (
     <DialogShell
       title="Update value"
-      description={`${asset.name}. Earlier values stay in its history.`}
+      description={asset.name}
       busy={saving}
       onClose={onClose}
       submitLabel="Save value"

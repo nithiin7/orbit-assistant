@@ -18,6 +18,7 @@ from typing import Any
 from sqlalchemy import (
     JSON,
     BigInteger,
+    Boolean,
     CheckConstraint,
     ForeignKey,
     ForeignKeyConstraint,
@@ -176,6 +177,9 @@ class FinanceSipPlanModel(Base):
         ),
         CheckConstraint("end_date IS NULL OR end_date >= anchor_date", name="end_after_anchor"),
         CheckConstraint("state IN ('active', 'paused', 'cancelled')", name="state"),
+        CheckConstraint(
+            "NOT auto_debit OR funding_account_id IS NOT NULL", name="auto_debit_funding"
+        ),
         CheckConstraint("length(notes) <= 2000", name="notes_length"),
         CheckConstraint(_CURRENCY, name="currency"),
         ForeignKeyConstraint(
@@ -202,6 +206,8 @@ class FinanceSipPlanModel(Base):
     anchor_date: Mapped[date]
     end_date: Mapped[date | None]
     funding_account_id: Mapped[uuid.UUID | None]
+    # Recorded by the worker on each due date, from the funding account.
+    auto_debit: Mapped[bool] = mapped_column(Boolean, default=False)
     state: Mapped[str] = mapped_column(String(16))
     notes: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)

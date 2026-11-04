@@ -1,8 +1,7 @@
 "use client";
 
 import type { HabitDetail, HabitProgress, LogHabitRequest, Routine } from "@orbit/contracts";
-import { ListChecks, Plus, Sparkles } from "lucide-react";
-import Link from "next/link";
+import { LayoutTemplate, ListChecks, Plus, Sparkles } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
@@ -26,12 +25,16 @@ import { todayIn } from "@/lib/calendar";
 import {
   HABIT_VIEWS,
   type HabitFormValues,
+  habitSection,
   habitsHref,
+  type HabitTemplate,
+  habitTemplateValues,
   type HabitView,
   newHabitValues,
   newRoutineValues,
   parseHabitLocation,
   type RoutineFormValues,
+  routineTemplateValues,
   toCreateHabitRequest,
   toHabitFormValues,
   toRoutineFormValues,
@@ -39,20 +42,22 @@ import {
   toUpdateHabitRequest,
 } from "@/lib/habits";
 import { noteHref } from "@/lib/note-links";
-import { cn } from "@/utils/common";
 import { addDays } from "@/utils/dates";
 
 import { type AnalyticsRange, HabitAnalyticsView } from "./habit-analytics";
 import { HabitDetailView, HEATMAP_DAYS } from "./habit-detail";
 import { HabitDialog } from "./habit-dialog";
 import { HabitListView } from "./habit-list";
+import { HabitTemplatesView } from "./habit-templates";
 import { HabitTodayView } from "./habit-today";
+import { HabitsNav, VIEW_ICONS } from "./habits-nav";
 import { RoutineDialog } from "./routine-dialog";
 import { RoutineDetailView, RoutineListView } from "./routines-view";
 
+/** A dialog to open; `initial` fills a new habit or routine, as a template does. */
 type Dialog =
-  | { kind: "habit"; editing: HabitDetail | null }
-  | { kind: "routine"; editing: Routine | null }
+  | { kind: "habit"; editing: HabitDetail | null; initial?: HabitFormValues }
+  | { kind: "routine"; editing: Routine | null; initial?: RoutineFormValues }
   | null;
 
 /** The Habits page: the view or detail page named in the URL, and the dialogs it opens. */
@@ -61,71 +66,79 @@ export function HabitsPanel() {
   const location = parseHabitLocation(params);
   const workspaceId = useActiveWorkspaceId();
   const timeZone = useViewerTimeZone();
+  const router = useRouter();
   const [dialog, setDialog] = useState<Dialog>(null);
   const { confirm, confirmDialog } = useConfirm();
 
   if (workspaceId === null) return null;
   const view = location.kind === "view" ? location.view : null;
+  const ViewIcon = view ? VIEW_ICONS[view] : null;
 
   return (
-    <div className="@container space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <nav aria-label="Habit views" className="-mx-1 overflow-x-auto px-1">
-          <ul className="flex gap-1">
-            {HABIT_VIEWS.map((option) => (
-              <li key={option.value}>
-                <Link
-                  href={habitsHref({ kind: "view", view: option.value })}
-                  aria-current={view === option.value ? "page" : undefined}
-                  className={cn(
-                    "inline-flex h-8 items-center rounded-full px-3 text-sm font-medium whitespace-nowrap transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                    view === option.value
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                  )}
-                >
-                  {option.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <Menu
-          items={[
-            {
-              id: "habit",
-              label: "Habit",
-              description: "Something to do on a schedule.",
-              icon: Sparkles,
-              onSelect: () => setDialog({ kind: "habit", editing: null }),
-            },
-            {
-              id: "routine",
-              label: "Routine",
-              description: "A sequence of steps to run through.",
-              icon: ListChecks,
-              onSelect: () => setDialog({ kind: "routine", editing: null }),
-            },
-          ]}
-        >
-          <Plus aria-hidden="true" />
-          New
-        </Menu>
-      </div>
+    // Layout follows the space the page gets (which depends on the app sidebar), not the screen.
+    <div className="@container/habits">
+      <div className="grid gap-6 @5xl/habits:grid-cols-[13rem_minmax(0,1fr)] @5xl/habits:gap-8 @7xl/habits:grid-cols-[15rem_minmax(0,1fr)] @7xl/habits:gap-12">
+        <aside className="min-w-0 @5xl/habits:sticky @5xl/habits:top-6 @5xl/habits:self-start">
+          <HabitsNav section={habitSection(location)} />
+        </aside>
 
-      <Content
-        location={location}
-        workspaceId={workspaceId}
-        timeZone={timeZone}
-        onDialog={setDialog}
-        confirm={confirm}
-      />
+        <div
+          key={location.kind === "view" ? location.view : location.id}
+          className="@container min-w-0 animate-page-in space-y-6"
+        >
+          {view && ViewIcon ? (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+                <ViewIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+                {HABIT_VIEWS.find((option) => option.value === view)?.label}
+              </h2>
+              <Menu
+                items={[
+                  {
+                    id: "habit",
+                    label: "Habit",
+                    description: "Something to do on a schedule.",
+                    icon: Sparkles,
+                    onSelect: () => setDialog({ kind: "habit", editing: null }),
+                  },
+                  {
+                    id: "routine",
+                    label: "Routine",
+                    description: "A sequence of steps to run through.",
+                    icon: ListChecks,
+                    onSelect: () => setDialog({ kind: "routine", editing: null }),
+                  },
+                  {
+                    id: "template",
+                    label: "From a template",
+                    description: "Start from a ready-made habit or routine.",
+                    icon: LayoutTemplate,
+                    onSelect: () => router.push(habitsHref({ kind: "view", view: "templates" })),
+                  },
+                ]}
+              >
+                <Plus aria-hidden="true" />
+                New
+              </Menu>
+            </div>
+          ) : null}
+
+          <Content
+            location={location}
+            workspaceId={workspaceId}
+            timeZone={timeZone}
+            onDialog={setDialog}
+            confirm={confirm}
+          />
+        </div>
+      </div>
 
       {dialog?.kind === "habit" ? (
         <HabitDialogContainer
           workspaceId={workspaceId}
           timeZone={timeZone}
           editing={dialog.editing}
+          initial={dialog.initial}
           onClose={() => setDialog(null)}
         />
       ) : null}
@@ -134,6 +147,7 @@ export function HabitsPanel() {
           workspaceId={workspaceId}
           timeZone={timeZone}
           editing={dialog.editing}
+          initial={dialog.initial}
           onClose={() => setDialog(null)}
         />
       ) : null}
@@ -170,6 +184,8 @@ function ViewPage({ view, workspaceId, timeZone, onDialog }: ContentProps & { vi
       return <RoutinesPage workspaceId={workspaceId} onDialog={onDialog} />;
     case "analytics":
       return <AnalyticsPage workspaceId={workspaceId} timeZone={timeZone} />;
+    case "templates":
+      return <TemplatesPage workspaceId={workspaceId} timeZone={timeZone} onDialog={onDialog} />;
   }
 }
 
@@ -197,6 +213,13 @@ function TodayPage({
         log.mutateAsync({ habit: item.habit, day, body })
       }
       onCreate={() => onDialog({ kind: "habit", editing: null })}
+      onUseTemplate={(template: HabitTemplate) =>
+        onDialog({
+          kind: "habit",
+          editing: null,
+          initial: habitTemplateValues(template, day, timeZone),
+        })
+      }
       onStartRoutine={(routine) =>
         void start
           .mutateAsync(routine.id)
@@ -255,6 +278,46 @@ function RoutinesPage({
         void start
           .mutateAsync(routine.id)
           .finally(() => router.push(habitsHref({ kind: "routine", id: routine.id })))
+      }
+    />
+  );
+}
+
+function TemplatesPage({
+  workspaceId,
+  timeZone,
+  onDialog,
+}: {
+  workspaceId: string;
+  timeZone: string;
+  onDialog: (dialog: Dialog) => void;
+}) {
+  const habits = useHabitList(workspaceId, "all");
+  const routines = useRoutineList(workspaceId, "all");
+  const existingNames = new Set([
+    ...(habits.state.status === "success" ? habits.state.data.habits : []).map((item) =>
+      item.habit.name.toLocaleLowerCase(),
+    ),
+    ...(routines.state.status === "success" ? routines.state.data.routines : []).map((routine) =>
+      routine.name.toLocaleLowerCase(),
+    ),
+  ]);
+  return (
+    <HabitTemplatesView
+      existingNames={existingNames}
+      onUseHabit={(template) =>
+        onDialog({
+          kind: "habit",
+          editing: null,
+          initial: habitTemplateValues(template, todayIn(timeZone), timeZone),
+        })
+      }
+      onUseRoutine={(template) =>
+        onDialog({
+          kind: "routine",
+          editing: null,
+          initial: routineTemplateValues(template, timeZone),
+        })
       }
     />
   );
@@ -390,19 +453,21 @@ function HabitDialogContainer({
   workspaceId,
   timeZone,
   editing,
+  initial,
   onClose,
 }: {
   workspaceId: string;
   timeZone: string;
   editing: HabitDetail | null;
+  initial?: HabitFormValues;
   onClose: () => void;
 }) {
   const router = useRouter();
   const categories = useHabitCategories(workspaceId);
   const { create, update } = useHabitMutations(workspaceId);
-  const initial = editing
+  const values = editing
     ? toHabitFormValues(editing.habit, editing.reminders)
-    : newHabitValues(todayIn(timeZone), timeZone);
+    : (initial ?? newHabitValues(todayIn(timeZone), timeZone));
 
   async function save(values: HabitFormValues) {
     if (editing) {
@@ -417,7 +482,7 @@ function HabitDialogContainer({
   return (
     <HabitDialog
       editing={editing !== null}
-      initial={initial}
+      initial={values}
       categories={categories}
       onSave={save}
       onClose={onClose}
@@ -429,17 +494,19 @@ function RoutineDialogContainer({
   workspaceId,
   timeZone,
   editing,
+  initial,
   onClose,
 }: {
   workspaceId: string;
   timeZone: string;
   editing: Routine | null;
+  initial?: RoutineFormValues;
   onClose: () => void;
 }) {
   const router = useRouter();
   const habits = useHabitList(workspaceId, "active");
   const { create, update } = useRoutineMutations(workspaceId);
-  const initial = editing ? toRoutineFormValues(editing) : newRoutineValues(timeZone);
+  const values = editing ? toRoutineFormValues(editing) : (initial ?? newRoutineValues(timeZone));
 
   async function save(values: RoutineFormValues) {
     const { reminders, ...fields } = toRoutineRequest(values, editing ?? undefined);
@@ -454,7 +521,7 @@ function RoutineDialogContainer({
   return (
     <RoutineDialog
       editing={editing !== null}
-      initial={initial}
+      initial={values}
       habits={
         habits.state.status === "success" ? habits.state.data.habits.map((item) => item.habit) : []
       }

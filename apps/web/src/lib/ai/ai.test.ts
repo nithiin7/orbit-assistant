@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { conversationTitleSchema, recordHref, splitCitations, suggestedQuestions } from "./ai";
+import {
+  chatModelOptions,
+  conversationTitleSchema,
+  parseChatModelValue,
+  recordHref,
+  splitCitations,
+  suggestedQuestions,
+} from "./ai";
 
 const ref = (kind: string, id: string | null = "1b6f6b2e-0000-4000-8000-000000000001") => ({
   kind,
@@ -48,5 +55,43 @@ describe("conversationTitleSchema", () => {
     await expect(conversationTitleSchema.validate({ title: "Plans" })).resolves.toEqual({
       title: "Plans",
     });
+  });
+});
+
+describe("chatModelOptions", () => {
+  const model = (id: string, chat = true) => ({ id, chat, embeddings: !chat });
+
+  it("lists one provider's chat models flat, keeping the current one first", () => {
+    const options = chatModelOptions(
+      [{ id: "p1", name: "Ollama", models: [model("llama3"), model("nomic-embed", false)] }],
+      { providerId: "p1", model: "custom" },
+    );
+    expect(options).toEqual([
+      { value: "p1|custom", label: "custom" },
+      { value: "p1|llama3", label: "llama3" },
+    ]);
+  });
+
+  it("groups several providers and skips ones with no models", () => {
+    const options = chatModelOptions(
+      [
+        { id: "p1", name: "Ollama", models: [model("llama3")] },
+        { id: "p2", name: "Empty", models: [] },
+        { id: "p3", name: "OpenAI", models: [model("gpt")] },
+      ],
+      null,
+    );
+    expect(options).toEqual([
+      { label: "Ollama", options: [{ value: "p1|llama3", label: "llama3" }] },
+      { label: "OpenAI", options: [{ value: "p3|gpt", label: "gpt" }] },
+    ]);
+  });
+
+  it("round-trips values whose model names contain the separator", () => {
+    expect(parseChatModelValue("p1|org/model|v2")).toEqual({
+      providerId: "p1",
+      model: "org/model|v2",
+    });
+    expect(parseChatModelValue("bad")).toBeNull();
   });
 });

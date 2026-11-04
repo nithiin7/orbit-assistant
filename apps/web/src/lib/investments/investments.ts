@@ -324,12 +324,15 @@ export const tradeSchema = object({
   currency: mixed<Currency>().defined(),
   tradeDate: string().required("Choose the date."),
   amount: amountField(true),
+  /** A mutual fund's buy may leave its units out: the API works them out from the NAV. */
+  fund: boolean().defined(),
   quantity: string()
     .trim()
     .defined()
     .test("units", "Enter the units, with up to 6 decimals.", (value, context) => {
-      const parent = context.parent as { type?: string };
+      const parent = context.parent as { type?: string; fund?: boolean };
       if (parent.type !== "buy" && parent.type !== "sell") return true;
+      if (parent.type === "buy" && parent.fund && value === "") return true;
       return Boolean(parseUnits(value));
     }),
   fees: amountField(false),
@@ -354,7 +357,63 @@ export const sipSchema = object({
       const parent = context.parent as { nextDueDate?: string };
       return value === "" || !parent.nextDueDate || value >= parent.nextDueDate;
     }),
-  fundingAccountId: string().defined(),
+  fundingAccountId: string()
+    .defined()
+    .test("auto-debit", "Choose the account it’s debited from.", (value, context) => {
+      const parent = context.parent as { autoDebit?: boolean };
+      return !parent.autoDebit || value !== "";
+    }),
+  autoDebit: boolean().defined(),
+});
+
+/** The choice of investment account that creates one with the holding. */
+export const NEW_ACCOUNT = "new";
+
+/**
+ * A fund, stock, or ETF added in one step: found by search (or typed in), the account it sits
+ * in (made if needed), and what is already owned. Fund units may be left out when the amount
+ * was one purchase; the API works them out from that day's NAV.
+ */
+export const addInvestmentSchema = object({
+  kind: mixed<HoldingKind>()
+    .oneOf(HOLDING_KINDS.map((option) => option.value))
+    .defined(),
+  accountId: string().required("Choose the investment account."),
+  accountName: string()
+    .trim()
+    .defined()
+    .test("name", "Name the new account.", (value, context) => {
+      const parent = context.parent as { accountId?: string };
+      return parent.accountId !== NEW_ACCOUNT || value !== "";
+    }),
+  name: singleLineText(200).required("Search for it, or enter its name."),
+  symbol: singleLineText(40),
+  exchange: singleLineText(20),
+  isin: string().trim().defined(),
+  issuer: SHORT,
+  category: SHORT,
+  folio: singleLineText(40),
+  currency: mixed<Currency>().defined(),
+  owned: boolean().defined(),
+  amount: amountField(false).test("amount", "Enter what you invested.", (value, context) => {
+    const parent = context.parent as { owned?: boolean };
+    return !parent.owned || value !== "";
+  }),
+  quantity: string()
+    .trim()
+    .defined()
+    .test("units", "Enter the units you hold, with up to 6 decimals.", (value, context) => {
+      const parent = context.parent as { owned?: boolean; kind?: HoldingKind };
+      if (!parent.owned) return true;
+      if (value === "") return parent.kind === "mutual_fund";
+      return Boolean(parseUnits(value));
+    }),
+  tradeDate: string()
+    .defined()
+    .test("date", "Choose the date.", (value, context) => {
+      const parent = context.parent as { owned?: boolean };
+      return !parent.owned || value !== "";
+    }),
 });
 
 export const depositSchema = object({

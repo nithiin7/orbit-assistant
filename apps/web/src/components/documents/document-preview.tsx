@@ -55,7 +55,7 @@ export function DocumentPreview({
 
   if (kind === null) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed bg-card/40 px-6 py-12 text-center">
+      <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed bg-card/40 px-6 py-16 text-center">
         <FileQuestion className="size-8 text-muted-foreground" aria-hidden="true" />
         <div className="space-y-1">
           <p className="text-sm font-medium">No preview for {file.extension.toUpperCase()} files</p>
@@ -83,7 +83,7 @@ export function DocumentPreview({
   if (!result.data) {
     return (
       <div aria-busy="true" aria-label="Loading preview">
-        <Skeleton className="h-[28rem] w-full rounded-xl" />
+        <Skeleton className="h-[max(28rem,calc(100dvh-12rem))] w-full rounded-xl" />
       </div>
     );
   }
@@ -92,7 +92,7 @@ export function DocumentPreview({
       <pre
         tabIndex={0}
         aria-label={`Contents of ${title}`}
-        className="max-h-[32rem] overflow-auto rounded-xl border bg-card p-4 font-mono text-xs whitespace-pre-wrap outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="max-h-[max(28rem,calc(100dvh-12rem))] overflow-auto rounded-xl border bg-card p-4 font-mono text-xs whitespace-pre-wrap outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {result.data.text}
       </pre>
@@ -115,10 +115,14 @@ function BlobView({ blob, kind, title }: { blob: Blob; kind: "pdf" | "image"; ti
 
   if (kind === "image") {
     return (
-      <div className="flex justify-center overflow-hidden rounded-xl border bg-muted/30 p-2">
+      <div className="flex min-h-[max(28rem,calc(100dvh-12rem))] items-center justify-center overflow-hidden rounded-xl border bg-muted/30 p-2">
         {/* An object URL can't go through the Next.js image loader. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img ref={image} alt={title} className="max-h-[36rem] max-w-full object-contain" />
+        <img
+          ref={image}
+          alt={title}
+          className="max-h-[max(28rem,calc(100dvh-13rem))] max-w-full object-contain"
+        />
       </div>
     );
   }
@@ -126,7 +130,7 @@ function BlobView({ blob, kind, title }: { blob: Blob; kind: "pdf" | "image"; ti
     <iframe
       ref={frame}
       title={`Preview of ${title}`}
-      className="h-[36rem] w-full rounded-xl border bg-card"
+      className="h-[max(28rem,calc(100dvh-12rem))] w-full rounded-xl border bg-card"
     />
   );
 }

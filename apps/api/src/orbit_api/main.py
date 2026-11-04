@@ -24,11 +24,13 @@ from orbit_api.db.database import open_database
 from orbit_api.observability import RequestContextMiddleware
 from orbit_api.providers.ai.registry import HttpProviderFactory
 from orbit_api.providers.integrations.registry import HttpConnectorRegistry
+from orbit_api.providers.prices.feed import HttpPriceFeed
 from orbit_api.scheduler.worker import (
     AgentJobs,
     AiIndexing,
     BackupJobs,
     IntegrationSync,
+    MarketData,
     ReminderWorker,
 )
 from orbit_api.services.local_auth.throttle import SignInThrottle
@@ -63,6 +65,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.database = database
         providers = app.state.ai_providers
         connectors = app.state.integration_connectors
+        prices = app.state.price_feed
         stop = asyncio.Event()
         worker = None
         if settings.scheduler_embedded:
@@ -74,6 +77,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     integrations=IntegrationSync(settings, connectors),
                     backups=BackupJobs(settings),
                     agents=AgentJobs(settings, providers, connectors),
+                    market=MarketData(settings, prices),
                 ).run(stop, settings.scheduler_poll_seconds)
             )
         try:
@@ -85,6 +89,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 await worker
             await providers.aclose()
             await connectors.aclose()
+            await prices.aclose()
             await database.dispose()
 
     app = FastAPI(
@@ -104,6 +109,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.ai_providers = HttpProviderFactory()
     # One HTTP client for every Google and Microsoft call; tests replace it with fakes.
     app.state.integration_connectors = HttpConnectorRegistry(settings)
+    # One HTTP client for market data; routes and workers gate it by server and workspace settings.
+    app.state.price_feed = HttpPriceFeed()
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

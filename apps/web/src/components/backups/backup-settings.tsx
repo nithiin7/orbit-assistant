@@ -29,6 +29,7 @@ import {
 } from "@/hooks/use-backups";
 import { describeContents, formatWhen, kindLabel, scheduleSummary } from "@/lib/backups";
 import { formatFileSize } from "@/lib/documents";
+import { settingsSectionsClassName } from "@/lib/settings";
 import { cn } from "@/utils/common";
 
 import { AutomaticBackups } from "./automatic-backups";
@@ -52,7 +53,7 @@ export function BackupSettings() {
   if (overview.status === "error") return <ErrorText message={overview.message} />;
   const data = overview.data;
   return (
-    <div className="space-y-6">
+    <div className={settingsSectionsClassName}>
       <Overview overview={data} />
       <BackupHistory backups={data.backups} />
       <RestoreSection uploads={data.uploads} />
@@ -71,7 +72,7 @@ function Overview({ overview }: { overview: BackupOverview }) {
       id="backup-overview"
       icon={Archive}
       title="Backups"
-      description="A backup holds this workspace’s records and files, checksummed so a damaged copy is caught before it’s restored."
+      description="This workspace’s records and files."
       action={
         <Button onClick={() => setCreating(true)} disabled={overview.running}>
           {overview.running ? "Backing up…" : "Create backup"}
@@ -105,8 +106,7 @@ function Overview({ overview }: { overview: BackupOverview }) {
         </p>
       ) : null}
       <p className="text-xs text-muted-foreground">
-        Backups are kept where the Orbit API runs (this computer in local mode). Download one to
-        keep a copy somewhere else: a backup on the same disk doesn’t survive that disk.
+        Download a copy to keep it safe somewhere else.
       </p>
       {creating ? (
         <CreateBackupDialog
@@ -120,16 +120,9 @@ function Overview({ overview }: { overview: BackupOverview }) {
 
 function BackupHistory({ backups }: { backups: Backup[] }) {
   return (
-    <Section
-      id="backup-history"
-      icon={History}
-      title="History"
-      description="Every backup of this workspace, newest first."
-    >
+    <Section id="backup-history" icon={History} title="History">
       {backups.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No backups yet. Create one above, or turn on automatic backups below.
-        </p>
+        <p className="text-sm text-muted-foreground">No backups yet.</p>
       ) : (
         <ul className="divide-y overflow-hidden rounded-xl border">
           {backups.map((backup) => (
@@ -284,7 +277,7 @@ function BackupRow({ backup }: { backup: Backup }) {
       {askingPassword ? (
         <PasswordDialog
           title="Check an encrypted backup"
-          description="Enter the backup’s password to check every record and file too. Without it, only the archive’s checksum is compared."
+          description="Enter the password to check every record and file, or skip to check the archive only."
           submitLabel="Check"
           optional
           onSubmit={async (password) => check(password)}

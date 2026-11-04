@@ -7196,6 +7196,273 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/finance/market-data": {
+      "get": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Whether market data is on",
+        "operationId": "market_data_api_v1_workspaces__workspace_id__finance_market_data_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketDataResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Turn market data on or off",
+        "description": "Turning it on lets this workspace send its holdings' scheme codes and tickers to the\nprice services (mfapi.in, Yahoo Finance).",
+        "operationId": "update_market_data_api_v1_workspaces__workspace_id__finance_market_data_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarketDataUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketDataResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Market data is off on this server."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/market-data/search": {
+      "get": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Find a mutual fund, stock, or ETF",
+        "description": "Searches the price service (mfapi.in for funds, Yahoo Finance otherwise): only the\nsearch phrase leaves the server.",
+        "operationId": "search_instruments_api_v1_workspaces__workspace_id__finance_market_data_search_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "enum": [
+                "mutual_fund",
+                "stock",
+                "etf"
+              ],
+              "type": "string",
+              "title": "Kind"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 80,
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstrumentListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Market data is off for this workspace or server."
+          },
+          "503": {
+            "description": "The price service couldn't be reached."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/market-data/refresh": {
+      "post": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Fetch the latest prices",
+        "description": "Fetches the last few days' prices of every holding with a scheme code or ticker.",
+        "operationId": "refresh_prices_api_v1_workspaces__workspace_id__finance_market_data_refresh_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceRefreshResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Market data is off for this workspace or server."
+          },
+          "503": {
+            "description": "The price service couldn't be reached."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/finance/portfolio": {
       "get": {
         "tags": [
@@ -7706,6 +7973,7 @@
           "finance investments"
         ],
         "summary": "Add a holding",
+        "description": "With `opening`, the units already owned are recorded in the same step. With market data\non, the holding's latest prices are fetched too.",
         "operationId": "create_holding_api_v1_workspaces__workspace_id__finance_holdings_post",
         "security": [
           {
@@ -8363,7 +8631,7 @@
           "finance investments"
         ],
         "summary": "Record an investment transaction",
-        "description": "Records the transaction and its ledger rows (a transfer, income, or expenses) in one\nstep.",
+        "description": "Records the transaction and its ledger rows (a transfer, income, or expenses) in one\nstep. A mutual fund buy without `quantity` gets its units from the NAV on its date.",
         "operationId": "record_investment_transaction_api_v1_workspaces__workspace_id__finance_investment_transactions_post",
         "security": [
           {
@@ -40431,6 +40699,16 @@
             "maxLength": 2000,
             "title": "Notes",
             "default": ""
+          },
+          "opening": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpeningPositionRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -40441,7 +40719,7 @@
           "name"
         ],
         "title": "CreateHoldingRequest",
-        "description": "Add a mutual fund, stock, or ETF to an investment account. Units come from its buys; one\nbought before Orbit is recorded as a buy with settlement `none`."
+        "description": "Add a mutual fund, stock, or ETF to an investment account. Units come from its buys; one\nbought before Orbit is recorded as a buy with settlement `none`, or with `opening` in the\nsame request."
       },
       "CreateInvestmentAccountRequest": {
         "properties": {
@@ -41278,6 +41556,12 @@
               }
             ],
             "title": "Funding Account Id"
+          },
+          "auto_debit": {
+            "type": "boolean",
+            "title": "Auto Debit",
+            "description": "Mutual funds with a funding account only: record each installment automatically on its due date.",
+            "default": false
           },
           "notes": {
             "type": "string",
@@ -44061,6 +44345,17 @@
             "type": "boolean",
             "title": "Is Custom"
           },
+          "builtin_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Builtin Key"
+          },
           "archived": {
             "type": "boolean",
             "title": "Archived"
@@ -44083,6 +44378,7 @@
           "primary_muscles",
           "secondary_muscles",
           "is_custom",
+          "builtin_key",
           "archived",
           "updated_at"
         ],
@@ -47402,6 +47698,95 @@
         ],
         "title": "InstallmentResponse"
       },
+      "InstrumentListResponse": {
+        "properties": {
+          "instruments": {
+            "items": {
+              "$ref": "#/components/schemas/InstrumentResponse"
+            },
+            "type": "array",
+            "title": "Instruments"
+          }
+        },
+        "type": "object",
+        "required": [
+          "instruments"
+        ],
+        "title": "InstrumentListResponse"
+      },
+      "InstrumentResponse": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "mutual_fund",
+              "stock",
+              "etf"
+            ],
+            "title": "Kind"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol",
+            "description": "The scheme code for mutual funds, the ticker otherwise."
+          },
+          "exchange": {
+            "type": "string",
+            "title": "Exchange"
+          },
+          "isin": {
+            "type": "string",
+            "title": "Isin"
+          },
+          "issuer": {
+            "type": "string",
+            "title": "Issuer"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "INR",
+                  "USD",
+                  "EUR",
+                  "GBP",
+                  "AED",
+                  "SGD",
+                  "AUD",
+                  "CAD",
+                  "CHF",
+                  "JPY"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "name",
+          "symbol",
+          "exchange",
+          "isin",
+          "issuer",
+          "category",
+          "currency"
+        ],
+        "title": "InstrumentResponse"
+      },
       "IntegrationCalendarListResponse": {
         "properties": {
           "resources": {
@@ -49445,6 +49830,40 @@
         ],
         "title": "MarkAllReadResponse"
       },
+      "MarketDataResponse": {
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "title": "Available",
+            "description": "Whether the server allows market data (`ORBIT_MARKET_DATA_ENABLED`)."
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "description": "Whether this workspace fetches prices and offers instrument search."
+          }
+        },
+        "type": "object",
+        "required": [
+          "available",
+          "enabled"
+        ],
+        "title": "MarketDataResponse"
+      },
+      "MarketDataUpdateRequest": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "title": "MarketDataUpdateRequest"
+      },
       "MealListResponse": {
         "properties": {
           "meals": {
@@ -50562,6 +50981,11 @@
             "type": "boolean",
             "title": "Is Favorite"
           },
+          "is_locked": {
+            "type": "boolean",
+            "title": "Is Locked",
+            "description": "Locked notes show only their title in lists and search; `excerpt` is empty."
+          },
           "archived_at": {
             "anyOf": [
               {
@@ -50654,6 +51078,7 @@
           "journal_date",
           "is_pinned",
           "is_favorite",
+          "is_locked",
           "archived_at",
           "trashed_at",
           "revision",
@@ -50726,6 +51151,11 @@
           "is_favorite": {
             "type": "boolean",
             "title": "Is Favorite"
+          },
+          "is_locked": {
+            "type": "boolean",
+            "title": "Is Locked",
+            "description": "Locked notes show only their title in lists and search; `excerpt` is empty."
           },
           "archived_at": {
             "anyOf": [
@@ -50802,6 +51232,7 @@
           "journal_date",
           "is_pinned",
           "is_favorite",
+          "is_locked",
           "archived_at",
           "trashed_at",
           "revision",
@@ -51158,6 +51589,43 @@
           "modified"
         ],
         "title": "OccurrenceResponse"
+      },
+      "OpeningPositionRequest": {
+        "properties": {
+          "trade_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Trade Date"
+          },
+          "amount": {
+            "type": "integer",
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "What was invested in total."
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 24,
+                "description": "Units as a decimal string with up to 6 decimals, such as `12.345`."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "trade_date",
+          "amount"
+        ],
+        "title": "OpeningPositionRequest",
+        "description": "Units already owned, recorded as a buy from outside Orbit (settlement `none`). Leave out a\nmutual fund's `quantity` to work it out from the NAV on `trade_date`."
       },
       "OverviewDocumentResponse": {
         "properties": {
@@ -52351,6 +52819,26 @@
         ],
         "title": "PriceListResponse"
       },
+      "PriceRefreshResponse": {
+        "properties": {
+          "updated": {
+            "type": "integer",
+            "title": "Updated",
+            "description": "Holdings given a fresh price."
+          },
+          "failed": {
+            "type": "integer",
+            "title": "Failed",
+            "description": "Holdings the price service couldn't price just now."
+          }
+        },
+        "type": "object",
+        "required": [
+          "updated",
+          "failed"
+        ],
+        "title": "PriceRefreshResponse"
+      },
       "PriceResponse": {
         "properties": {
           "id": {
@@ -53044,10 +53532,17 @@
             "title": "Trade Date"
           },
           "quantity": {
-            "type": "string",
-            "maxLength": 24,
-            "title": "Quantity",
-            "description": "Units as a decimal string with up to 6 decimals, such as `12.345`."
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 24,
+                "description": "Units as a decimal string with up to 6 decimals, such as `12.345`."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
           },
           "amount": {
             "anyOf": [
@@ -53123,11 +53618,10 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "trade_date",
-          "quantity"
+          "trade_date"
         ],
         "title": "RecordSipInstallmentRequest",
-        "description": "Record one SIP installment as a buy. Amount defaults to the SIP's; the funding account,\nwhen the SIP has one, settles it."
+        "description": "Record one SIP installment as a buy. Amount defaults to the SIP's; the funding account,\nwhen the SIP has one, settles it. A mutual fund's units, left out, come from the NAV."
       },
       "RecordValuationRequest": {
         "properties": {
@@ -56749,6 +57243,11 @@
             ],
             "title": "Funding Account Id"
           },
+          "auto_debit": {
+            "type": "boolean",
+            "title": "Auto Debit",
+            "description": "Orbit records each installment itself on its due date, from the funding account, at that day's NAV."
+          },
           "state": {
             "type": "string",
             "enum": [
@@ -56816,6 +57315,7 @@
           "frequency",
           "end_date",
           "funding_account_id",
+          "auto_debit",
           "state",
           "notes",
           "next_due_date",
@@ -61168,6 +61668,17 @@
             ],
             "title": "Is Favorite"
           },
+          "is_locked": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Locked"
+          },
           "archived": {
             "anyOf": [
               {
@@ -62047,6 +62558,17 @@
               }
             ],
             "title": "Funding Account Id"
+          },
+          "auto_debit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auto Debit"
           },
           "state": {
             "anyOf": [

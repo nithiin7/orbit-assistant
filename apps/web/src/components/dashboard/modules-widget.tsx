@@ -5,7 +5,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { sectionItems } from "@/lib/navigation";
 
 /** Sections that are still placeholders; built modules have widgets of their own. */
-const modules = sectionItems.filter((item) => item.group === "workspace");
+const modules = sectionItems.filter((item) => item.group !== "system");
 
 /** Links to the placeholder page of every planned module. */
 export function ModulesWidget() {

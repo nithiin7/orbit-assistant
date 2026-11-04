@@ -62,11 +62,9 @@ export function SectionHeading({
 export function RuntimeNote({ runtime }: { runtime: AgentRuntime }) {
   const where =
     runtime.storage_mode === "local"
-      ? "Automations run while Orbit is running on this device. Runs missed while it was closed catch up once when it starts again."
-      : "Automations run on your Orbit server, whether or not this page is open.";
-  const worker = runtime.worker_embedded
-    ? ""
-    : " This server runs them in a separate worker (orbit-worker), which must be running.";
+      ? "Automations run while Orbit is running on this device. Missed runs catch up when it starts."
+      : "Automations run on your Orbit server, even when this page is closed.";
+  const worker = runtime.worker_embedded ? "" : " The orbit-worker process must be running.";
   return (
     <p className="flex gap-2 rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground">
       <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />

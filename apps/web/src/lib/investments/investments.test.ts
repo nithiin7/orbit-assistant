@@ -66,6 +66,7 @@ describe("schemas", () => {
     currency: "INR" as const,
     tradeDate: "2025-01-02",
     amount: "15000",
+    fund: false,
     quantity: "10",
     fees: "",
     plan: "lump_sum" as const,
@@ -80,6 +81,12 @@ describe("schemas", () => {
     await expect(
       tradeSchema.validate({ ...trade, type: "dividend", quantity: "" }),
     ).resolves.toBeTruthy();
+  });
+
+  it("lets a fund buy leave its units to the NAV, but not a sale", async () => {
+    const fund = { ...trade, fund: true, quantity: "" };
+    await expect(tradeSchema.validate(fund)).resolves.toBeTruthy();
+    await expect(tradeSchema.validate({ ...fund, type: "sell" })).rejects.toThrow(/units/);
   });
 
   it("requires an account when money settles through one", async () => {

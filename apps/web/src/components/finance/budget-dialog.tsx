@@ -94,7 +94,7 @@ export function BudgetDialog({
   return (
     <DialogShell
       title={budget ? `Edit “${budget.name}”` : "Add a budget"}
-      description="A limit on net spending: expenses minus refunds. Transfers, investments, savings, and loan principal never count."
+      description="Expenses minus refunds. Transfers and savings don’t count."
       busy={saving}
       onClose={onClose}
       submitLabel={budget ? "Save changes" : "Add budget"}
@@ -170,7 +170,7 @@ export function BudgetDialog({
             name="rollover"
             label="At month end"
             options={ROLLOVER_MODES}
-            hint="Overspending carried forward never takes a month below zero."
+            hint="Never goes below zero."
           />
         </div>
       ) : (
@@ -196,7 +196,7 @@ export function BudgetDialog({
           inputMode="numeric"
           autoComplete="off"
           disabled={!alertsEnabled}
-          hint="Each sends one notification per period, the first time it’s reached."
+          hint="Sent once per period."
           {...register("thresholds")}
           error={errors.thresholds?.message}
         />

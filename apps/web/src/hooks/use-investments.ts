@@ -13,6 +13,7 @@ import type {
   DepositContributionRequest,
   DepositList,
   DepositValueRequest,
+  HoldingKind,
   HoldingList,
   InvestmentAccountList,
   InvestmentTransactionList,
@@ -50,14 +51,18 @@ import {
   deleteInvestmentTransaction,
   depositsOptions,
   holdingsOptions,
+  instrumentSearchOptions,
   investmentAccountsOptions,
   investmentTransactionsOptions,
+  marketDataKeys,
+  marketDataOptions,
   netWorthOptions,
   portfolioOptions,
   recordInvestmentTransaction,
   recordPrice,
   recordSipInstallment,
   recordValuation,
+  refreshPrices,
   reopenDeposit,
   sipPlansOptions,
   snapshotsOptions,
@@ -66,6 +71,7 @@ import {
   updateDeposit,
   updateHolding,
   updateInvestmentAccount,
+  updateMarketData,
   updateSipPlan,
   valuationsOptions,
   valueDeposit,
@@ -183,6 +189,44 @@ export function useSnapshots(
   );
 }
 
+/** Whether the workspace fetches prices; `false` while loading or if it can't be told. */
+export function useMarketDataEnabled(workspaceId: string): boolean {
+  return useMarketData(workspaceId).data?.enabled ?? false;
+}
+
+/** The workspace's live prices setting, and a way to change it. */
+export function useMarketData(workspaceId: string | null) {
+  const { withToken } = useAuth();
+  const queryClient = useQueryClient();
+  const query = useQuery(marketDataOptions(withToken, workspaceId));
+  const update = useMutation({
+    mutationFn: (enabled: boolean) => {
+      if (workspaceId === null) throw new Error("No workspace is open.");
+      return withToken((token) => updateMarketData(token, workspaceId, { enabled }));
+    },
+    onSuccess: (saved) => {
+      queryClient.setQueryData(marketDataKeys.status(workspaceId), saved);
+      void queryClient.invalidateQueries({ queryKey: financeKeys.all(workspaceId) });
+    },
+  });
+  return { data: query.data, isPending: query.isPending, isError: query.isError, update };
+}
+
+/** Search results for a phrase of at least two characters, kept while the next one loads. */
+export function useInstrumentSearch(
+  workspaceId: string,
+  kind: HoldingKind,
+  q: string,
+  enabled: boolean,
+) {
+  const { withToken } = useAuth();
+  return useQuery({
+    ...instrumentSearchOptions(withToken, workspaceId, kind, q),
+    enabled,
+    placeholderData: keepPreviousData,
+  });
+}
+
 type WithId<T> = { id: string; body: T };
 
 /**
@@ -293,6 +337,10 @@ export function useInvestmentMutations(workspaceId: string) {
     recordValuation: useMutation({
       mutationFn: ({ id, body }: WithId<RecordValuationRequest>) =>
         run((t) => recordValuation(t, workspaceId, id, body)),
+      onSuccess,
+    }),
+    refreshPrices: useMutation({
+      mutationFn: () => run((t) => refreshPrices(t, workspaceId)),
       onSuccess,
     }),
     takeSnapshot: useMutation({

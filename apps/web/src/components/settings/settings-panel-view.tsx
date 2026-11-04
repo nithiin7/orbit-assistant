@@ -9,14 +9,16 @@ import type { SettingsPanel } from "@/lib/settings";
 
 import { AccountSettings } from "./account-settings";
 import { AiSettingsPanel } from "./ai-settings";
+import { AppearanceSettings } from "./appearance-settings";
+import { FinanceSettings } from "./finance-settings";
 import { StorageSettings } from "./storage-settings";
-import { ThemeSelector } from "./theme-selector";
 import { WorkspaceSettings } from "./workspace-settings";
 
 const panelContent: Readonly<Record<string, ReactNode>> = {
   account: <AccountSettings />,
   workspaces: <WorkspaceSettings />,
-  appearance: <ThemeSelector />,
+  appearance: <AppearanceSettings />,
+  finance: <FinanceSettings />,
   ai: <AiSettingsPanel />,
   integrations: <IntegrationsSettings />,
   backup: <BackupSettings />,
@@ -42,7 +44,8 @@ export function SettingsPanelView({ panel }: { panel: SettingsPanel }) {
         Settings
       </Link>
       <PageHeader title={panel.title} description={panel.description} />
-      <div className="max-w-3xl">{panelContent[panel.slug]}</div>
+      {/* Panels lay their sections out against this container's width, not the viewport's. */}
+      <div className="@container/panel">{panelContent[panel.slug]}</div>
     </div>
   );
 }

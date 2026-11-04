@@ -29,7 +29,7 @@ export function SettingsMenu({ activeFallback }: SettingsMenuProps) {
     <nav aria-label="Settings" className="space-y-6">
       <ProfileLink active={activeSlug === "account"} />
       <ul className="divide-y overflow-hidden rounded-xl border bg-card">
-        {generalPanels.map(({ slug, title, description, icon: Icon }) => {
+        {generalPanels.map(({ slug, title, icon: Icon }) => {
           const active = activeSlug === slug;
           return (
             <li key={slug}>
@@ -37,7 +37,7 @@ export function SettingsMenu({ activeFallback }: SettingsMenuProps) {
                 href={settingsHref(slug)}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-3 transition-colors duration-150 outline-none hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+                  "flex items-center gap-3 px-4 py-2.5 transition-colors duration-150 outline-none hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
                   active && "bg-accent",
                 )}
               >
@@ -47,10 +47,7 @@ export function SettingsMenu({ activeFallback }: SettingsMenuProps) {
                 >
                   <Icon className="size-4" />
                 </span>
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="text-sm font-medium">{title}</span>
-                  <span className="truncate text-xs text-muted-foreground">{description}</span>
-                </span>
+                <span className="min-w-0 flex-1 truncate text-sm font-medium">{title}</span>
                 <ChevronRight
                   className={cn("size-4 shrink-0 text-muted-foreground", active && "text-brand")}
                   aria-hidden="true"

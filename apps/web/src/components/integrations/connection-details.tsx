@@ -96,7 +96,7 @@ function Details({ detail }: { detail: IntegrationConnectionDetail }) {
           id="mail"
           icon={Mail}
           title={capabilityName(connection.provider, "mail")}
-          description="Read on demand from the labels you choose; nothing is copied into Orbit or sent."
+          description="Read on demand. Nothing is copied."
         >
           <MailBrowser connection={connection} />
         </Section>
@@ -106,7 +106,7 @@ function Details({ detail }: { detail: IntegrationConnectionDetail }) {
           id="files"
           icon={FolderOpen}
           title={capabilityName(connection.provider, "files")}
-          description="Import the files you pick into Documents. Orbit checks them for changes and never edits them."
+          description="Import files into Documents. Orbit never edits them."
         >
           <FileBrowser connection={connection} />
         </Section>
@@ -204,7 +204,7 @@ function Calendars({ detail }: { detail: IntegrationConnectionDetail }) {
       id="calendars"
       icon={CalendarDays}
       title={capabilityName(connection.provider, "calendar")}
-      description="Choose calendars to show in Orbit’s calendar. Nothing is synchronized until you do."
+      description="Choose which calendars to show."
       action={
         <Button
           variant="ghost"
@@ -338,12 +338,7 @@ function SyncActivity({ detail }: { detail: IntegrationConnectionDetail }) {
   const names = new Map(detail.resources.map((r) => [r.id, r.name]));
   const runs = detail.runs.slice(0, 10);
   return (
-    <Section
-      id="activity"
-      icon={Activity}
-      title="Sync activity"
-      description="Recent synchronizations and what they changed."
-    >
+    <Section id="activity" icon={Activity} title="Sync activity">
       {runs.length === 0 ? (
         <p className="text-sm text-muted-foreground">Nothing has been synchronized yet.</p>
       ) : (
@@ -412,7 +407,7 @@ function Permissions({ connection }: { connection: IntegrationConnection }) {
         id="permissions"
         icon={KeyRound}
         title="What Orbit can access"
-        description="Granted when you connected. Orbit asks for the narrowest permission for each."
+        description="Granted when you connected."
       >
         <ul className="space-y-2">
           {connection.capabilities.map((capability) => (

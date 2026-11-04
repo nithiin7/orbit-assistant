@@ -73,13 +73,7 @@ export function GoalsView({ workspaceId, accounts, onAnnounce }: FinanceData) {
       Add goal
     </Button>
   );
-  const header = (
-    <ViewHeader
-      title="Savings goals"
-      description="What you’re saving for, how far along you are, and what to put aside each month. Saving isn’t spending."
-      action={addButton}
-    />
-  );
+  const header = <ViewHeader title="Savings goals" action={addButton} />;
 
   if (state.status === "error") {
     return (
@@ -105,7 +99,7 @@ export function GoalsView({ workspaceId, accounts, onAnnounce }: FinanceData) {
         <EmptyState
           icon={Target}
           title="No savings goals yet"
-          description="Save for an emergency fund, a car, a holiday, or a home. Orbit shows your progress and how much to put aside each month."
+          description="Save for an emergency fund, a trip, or a home."
         >
           {addButton}
         </EmptyState>
@@ -146,7 +140,7 @@ export function GoalsView({ workspaceId, accounts, onAnnounce }: FinanceData) {
       ))}
       {open.length === 0 ? (
         <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">
-          Nothing in progress. Completed and cancelled goals are below.
+          Nothing in progress.
         </p>
       ) : (
         <ul aria-label="Savings goals in progress" className={gridClassName}>

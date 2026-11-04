@@ -9,6 +9,7 @@ import type {
   AiConversationList,
   AiIndexStatus,
   AiInsight,
+  AiModel,
   AiModelList,
   AiProposal,
   AiProvider,
@@ -20,7 +21,7 @@ import type {
   UpdateAiProviderRequest,
   UpdateAiSettingsRequest,
 } from "@orbit/contracts";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
 
 import {
@@ -81,6 +82,27 @@ export function useAiProviders(): Resource<AiProviderList> {
 export function useAiModels(providerId: string | null): Resource<AiModelList> {
   const { withToken } = useAuth();
   return queryResource(useQuery(aiModelsOptions(withToken, providerId)), "Couldn’t list models.");
+}
+
+/** Every provider with the models it lists; a provider that can't list models comes back empty. */
+export function useChatModelCatalog(): Resource<{ id: string; name: string; models: AiModel[] }[]> {
+  const { withToken } = useAuth();
+  const providers = useAiProviders();
+  const list = providers.status === "success" ? providers.data.providers : [];
+  const models = useQueries({
+    queries: list.map((p) =>
+      aiModelsOptions(withToken, p.capabilities.model_listing ? p.id : null),
+    ),
+  });
+  if (providers.status !== "success") return providers;
+  return {
+    status: "success",
+    data: list.map((provider, index) => ({
+      id: provider.id,
+      name: provider.name,
+      models: models[index]?.data?.models ?? [],
+    })),
+  };
 }
 
 export function useAiUsage(): Resource<AiUsage> {

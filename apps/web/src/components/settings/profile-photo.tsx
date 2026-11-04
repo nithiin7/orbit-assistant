@@ -58,7 +58,7 @@ export function ProfilePhoto() {
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-4">
         <UserAvatar size="lg" />
-        <div className="space-y-2">
+        <div>
           <div className="flex flex-wrap items-center gap-2">
             {/* A styled label keeps the native file picker keyboard- and screen-reader-friendly. */}
             <label
@@ -89,9 +89,6 @@ export function ProfilePhoto() {
               </Button>
             ) : null}
           </div>
-          <p className="text-xs text-muted-foreground">
-            Cropped to a square and resized before upload. Stored in Orbit’s database.
-          </p>
         </div>
       </div>
       <FormAlert message={error} />
