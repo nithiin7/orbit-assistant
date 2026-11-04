@@ -93,6 +93,20 @@ def unit_price(amount: int, quantity: int, currency: Currency) -> int:
     return divide_half_up(amount * QUANTITY_SCALE * PRICE_SCALE, quantity * minor)
 
 
+# Registrars allot mutual fund units to 3 decimals.
+ALLOTTED_UNIT_DECIMALS: Final = 3
+
+
+def units_bought(amount: int, price: int, currency: Currency) -> int:
+    """The units (scaled) `amount` minor units buy at `price`, rounded half up to 3 decimals as
+    registrars allot them. Stamp duty and other charges aren't deducted."""
+    if price <= 0:
+        raise ValueError("price must be positive")
+    minor = 10 ** CURRENCY_EXPONENTS[currency]
+    step = 10 ** (QUANTITY_DECIMALS - ALLOTTED_UNIT_DECIMALS)
+    return divide_half_up(amount * QUANTITY_SCALE * PRICE_SCALE, price * minor * step) * step
+
+
 def percent(numerator: int, denominator: int) -> str | None:
     """`numerator / denominator` as a percentage with two decimals (`12.34`), rounded half up;
     `None` when the denominator isn't positive. For display only: never used in further sums."""

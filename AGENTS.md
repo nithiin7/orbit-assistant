@@ -11,14 +11,15 @@ FastAPI API that talk only over HTTP. Every record belongs to a workspace.
 
 **Built:** accounts and workspaces (local accounts or Supabase Auth), tasks, shopping, reminders
 and in-app notifications (database-backed worker), finance (ledger, commitments, investments,
-budgets, goals, plans), notes, calendar (RFC 5545 recurrence), habits and routines, documents
+budgets, goals, plans; opt-in mutual fund NAV and stock prices from mfapi.in and Yahoo
+Finance; auto-debit SIPs), notes, calendar (RFC 5545 recurrence), habits and routines, documents
 vault, health and fitness (private per person), dashboard, universal search (SQL, no index),
 AI layer (off by default; OpenAI, Anthropic, Gemini, Ollama, OpenAI-compatible), Google and
 Microsoft integrations, backup and restore, and a personal agent with approval-gated workflows.
 
 **Not built; never claim or build on these unless asked:** OCR, encryption at rest by Orbit,
-push/email/SMS notifications, email sending, bank or market-price feeds, auto-created
-transactions, recurring tasks, CalDAV or `.ics`/CSV/Markdown import, voice, multi-device sync,
+push/email/SMS notifications, email sending, bank or broker feeds, auto-created transactions
+(other than auto-debit SIP installments), recurring tasks, CalDAV or `.ics`/CSV/Markdown import, voice, multi-device sync,
 shared workspaces, an event bus, pgvector or any vector DB, agent tools that delete, pay, send,
 share, or change permissions. Design detail for any module: grep the headings in
 `docs/architecture.md` (4,700 lines; read only the section you need).

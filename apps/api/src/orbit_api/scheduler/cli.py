@@ -19,11 +19,13 @@ from orbit_api.config import get_settings
 from orbit_api.db.database import open_database
 from orbit_api.providers.ai.registry import HttpProviderFactory
 from orbit_api.providers.integrations.registry import HttpConnectorRegistry
+from orbit_api.providers.prices.feed import HttpPriceFeed
 from orbit_api.scheduler.worker import (
     AgentJobs,
     AiIndexing,
     BackupJobs,
     IntegrationSync,
+    MarketData,
     ReminderWorker,
 )
 from orbit_api.system.attachment_store import FileAttachmentStore
@@ -51,6 +53,7 @@ async def _run(command: str, *, once: bool, poll_interval: float) -> None:
     database = await open_database(settings)
     providers = HttpProviderFactory()
     connectors = HttpConnectorRegistry(settings)
+    prices = HttpPriceFeed()
     worker = ReminderWorker(
         database,
         files=FileAttachmentStore(settings.attachments_dir),
@@ -58,6 +61,7 @@ async def _run(command: str, *, once: bool, poll_interval: float) -> None:
         integrations=IntegrationSync(settings, connectors),
         backups=BackupJobs(settings),
         agents=AgentJobs(settings, providers, connectors),
+        market=MarketData(settings, prices),
     )
     try:
         match command:
@@ -83,6 +87,7 @@ async def _run(command: str, *, once: bool, poll_interval: float) -> None:
     finally:
         await providers.aclose()
         await connectors.aclose()
+        await prices.aclose()
         await database.dispose()
 
 

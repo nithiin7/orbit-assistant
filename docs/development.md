@@ -120,6 +120,13 @@ Integrations (see [Integrations](#integrations) and [integrations.md](integratio
 | `ORBIT_INTEGRATIONS_WEBHOOK_URL`  | unset                                         | Public `https` address of `/api/v1/integrations/webhooks` for push notifications; unset polls                                   |
 | `ORBIT_INTEGRATIONS_POLL_SECONDS` | `30`                                          | How often the worker looks for due synchronization work (5 to 3600)                                                             |
 
+Market data (see [architecture.md](architecture.md#valuation-strategy)):
+
+| Variable                          | Default | Purpose                                                                                                         |
+| --------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------- |
+| `ORBIT_MARKET_DATA_ENABLED`       | `false` | Fetch mutual fund NAVs (mfapi.in) and stock and ETF prices (Yahoo Finance); sends scheme codes and tickers only |
+| `ORBIT_MARKET_DATA_REFRESH_HOURS` | `6`     | How often the worker refreshes every holding's price while market data is on (1 to 168)                         |
+
 Automation (see [architecture.md](architecture.md#personal-agent-and-automation)):
 
 | Variable              | Default | Purpose                                                                                                   |

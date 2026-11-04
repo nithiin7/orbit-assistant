@@ -48,6 +48,7 @@ from orbit_api.services.investments.models import (
     InvestmentTransactionDraft,
     InvestmentTransactionQuery,
     InvestmentTransactionType,
+    OpeningPosition,
     PortfolioSummary,
     Price,
     PriceSource,
@@ -68,6 +69,7 @@ from orbit_api.services.investments.quantities import (
     parse_quantity,
     unit_price,
 )
+from orbit_api.services.investments.valuation import Instrument
 from orbit_api.utils.changes import UNSET
 
 PAGE_MAX_SIZE = 200
@@ -366,9 +368,28 @@ class HoldingListResponse(BaseModel):
     holdings: list[HoldingResponse] = Field(description="By name.")
 
 
+class OpeningPositionRequest(BaseModel):
+    """Units already owned, recorded as a buy from outside Orbit (settlement `none`). Leave out a
+    mutual fund's `quantity` to work it out from the NAV on `trade_date`."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    trade_date: TransactionDate
+    amount: Amount = Field(description="What was invested in total.")
+    quantity: Quantity | None = None
+
+    def to_opening(self) -> OpeningPosition:
+        return OpeningPosition(
+            trade_date=self.trade_date,
+            amount=self.amount,
+            quantity=parse_quantity(self.quantity) if self.quantity else None,
+        )
+
+
 class CreateHoldingRequest(BaseModel):
     """Add a mutual fund, stock, or ETF to an investment account. Units come from its buys; one
-    bought before Orbit is recorded as a buy with settlement `none`."""
+    bought before Orbit is recorded as a buy with settlement `none`, or with `opening` in the
+    same request."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -382,6 +403,7 @@ class CreateHoldingRequest(BaseModel):
     category: ShortText = ""
     folio: Code = ""
     notes: Notes = ""
+    opening: OpeningPositionRequest | None = None
 
     def to_draft(self) -> HoldingDraft:
         return HoldingDraft(
@@ -605,6 +627,10 @@ class SipPlanResponse(BaseModel):
     frequency: Frequency
     end_date: date | None
     funding_account_id: uuid.UUID | None
+    auto_debit: bool = Field(
+        description="Orbit records each installment itself on its due date, from the funding "
+        "account, at that day's NAV."
+    )
     state: SipState
     notes: str
     next_due_date: date | None = Field(
@@ -628,6 +654,7 @@ class SipPlanResponse(BaseModel):
             frequency=plan.frequency,
             end_date=plan.end_date,
             funding_account_id=plan.funding_account_id,
+            auto_debit=plan.auto_debit,
             state=plan.state,
             notes=plan.notes,
             next_due_date=view.next_due_date,
@@ -652,6 +679,11 @@ class CreateSipPlanRequest(BaseModel):
     next_due_date: TransactionDate
     end_date: TransactionDate | None = None
     funding_account_id: uuid.UUID | None = None
+    auto_debit: bool = Field(
+        default=False,
+        description="Mutual funds with a funding account only: record each installment "
+        "automatically on its due date.",
+    )
     notes: Notes = ""
 
     def to_draft(self) -> SipPlanDraft:
@@ -662,6 +694,7 @@ class CreateSipPlanRequest(BaseModel):
             next_due_date=self.next_due_date,
             end_date=self.end_date,
             funding_account_id=self.funding_account_id,
+            auto_debit=self.auto_debit,
             notes=self.notes,
         )
 
@@ -677,12 +710,15 @@ class UpdateSipPlanRequest(BaseModel):
     next_due_date: TransactionDate | None = None
     end_date: TransactionDate | None = None
     funding_account_id: uuid.UUID | None = None
+    auto_debit: bool | None = None
     state: SipState | None = None
     notes: Notes | None = None
 
     @model_validator(mode="after")
     def _check(self) -> Self:
-        _require_fields(self, ("amount", "frequency", "next_due_date", "state", "notes"))
+        _require_fields(
+            self, ("amount", "frequency", "next_due_date", "auto_debit", "state", "notes")
+        )
         return self
 
     def to_changes(self) -> SipPlanChanges:
@@ -691,12 +727,12 @@ class UpdateSipPlanRequest(BaseModel):
 
 class RecordSipInstallmentRequest(BaseModel):
     """Record one SIP installment as a buy. Amount defaults to the SIP's; the funding account,
-    when the SIP has one, settles it."""
+    when the SIP has one, settles it. A mutual fund's units, left out, come from the NAV."""
 
     model_config = ConfigDict(extra="forbid")
 
     trade_date: TransactionDate
-    quantity: Quantity
+    quantity: Quantity | None = None
     amount: Amount | None = None
     due_date: TransactionDate | None = Field(
         default=None, description="The SIP date it settles; defaults to the next unrecorded one."
@@ -1016,3 +1052,53 @@ class PortfolioParams(BaseModel):
         if self.date_from and self.date_to and self.date_from > self.date_to:
             raise ValueError("date_from must be on or before date_to")
         return self
+
+
+# Market data
+
+
+class MarketDataResponse(BaseModel):
+    enabled: bool = Field(
+        description="Whether this server fetches prices and offers instrument search "
+        "(`ORBIT_MARKET_DATA_ENABLED`)."
+    )
+
+
+class InstrumentSearchParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: HoldingKind
+    q: str = Field(min_length=2, max_length=80)
+
+
+class InstrumentResponse(BaseModel):
+    kind: HoldingKind
+    name: str
+    symbol: str = Field(description="The scheme code for mutual funds, the ticker otherwise.")
+    exchange: str
+    isin: str
+    issuer: str
+    category: str
+    currency: Currency | None
+
+    @classmethod
+    def of(cls, instrument: Instrument) -> "InstrumentResponse":
+        return cls(
+            kind=instrument.kind,
+            name=instrument.name,
+            symbol=instrument.symbol,
+            exchange=instrument.exchange,
+            isin=instrument.isin,
+            issuer=instrument.issuer,
+            category=instrument.category,
+            currency=instrument.currency,
+        )
+
+
+class InstrumentListResponse(BaseModel):
+    instruments: list[InstrumentResponse]
+
+
+class PriceRefreshResponse(BaseModel):
+    updated: int = Field(description="Holdings given a fresh price.")
+    failed: int = Field(description="Holdings the price service couldn't price just now.")

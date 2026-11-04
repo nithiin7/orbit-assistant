@@ -181,6 +181,16 @@ class HoldingDraft:
 
 
 @dataclass(frozen=True, slots=True)
+class OpeningPosition:
+    """Units already owned when a holding is added: recorded as a buy from outside Orbit. A
+    mutual fund's units may be left out and are then worked out from the NAV on `trade_date`."""
+
+    trade_date: date
+    amount: int
+    quantity: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class HoldingChanges:
     name: Change[str] = UNSET
     symbol: Change[str] = UNSET
@@ -328,6 +338,9 @@ class SipPlan:
     notes: str
     created_at: datetime
     updated_at: datetime
+    # Orbit records each installment itself on its due date, from the funding account, with
+    # units worked out from that day's NAV (see `InvestmentService.record_due_sips`).
+    auto_debit: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -349,6 +362,7 @@ class SipPlanDraft:
     next_due_date: date
     end_date: date | None = None
     funding_account_id: uuid.UUID | None = None
+    auto_debit: bool = False
     notes: str = ""
 
 
@@ -359,8 +373,18 @@ class SipPlanChanges:
     next_due_date: Change[date] = UNSET
     end_date: Change[date | None] = UNSET
     funding_account_id: Change[uuid.UUID | None] = UNSET
+    auto_debit: Change[bool] = UNSET
     state: Change[SipState] = UNSET
     notes: Change[str] = UNSET
+
+
+@dataclass(frozen=True, slots=True)
+class WorkspaceOwner:
+    """A workspace with auto-debit SIPs, and whose local date their due dates are counted in."""
+
+    workspace_id: uuid.UUID
+    user_id: uuid.UUID
+    timezone: str | None
 
 
 # Deposits

@@ -62,6 +62,7 @@ from orbit_api.services.habits.routines import RoutineService
 from orbit_api.services.habits.service import HabitService
 from orbit_api.services.investments.assets import AssetService
 from orbit_api.services.investments.service import InvestmentService
+from orbit_api.services.investments.valuation import PriceFeed
 from orbit_api.services.local_auth.service import LocalAuthService, PasswordHasher
 from orbit_api.services.local_auth.throttle import SignInThrottle
 from orbit_api.services.networth.service import NetWorthService
@@ -221,6 +222,17 @@ def get_investment_service(session: SessionDep) -> InvestmentService:
 
 
 InvestmentServiceDep = Annotated[InvestmentService, Depends(get_investment_service)]
+
+
+def get_price_feed(request: Request, settings: SettingsDep) -> PriceFeed | None:
+    """The market data feed, or `None` while the server has market data off."""
+    if not settings.market_data_enabled:
+        return None
+    feed: PriceFeed = getattr(request.app.state, "price_feed")  # noqa: B009 - untyped State
+    return feed
+
+
+PriceFeedDep = Annotated[PriceFeed | None, Depends(get_price_feed)]
 
 
 def get_asset_service(session: SessionDep) -> AssetService:

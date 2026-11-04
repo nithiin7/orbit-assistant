@@ -12,7 +12,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, HTTPException, Path, Query, Response, status
 
 from orbit_api.api.auth import CurrentUserDep, WorkspaceDep
-from orbit_api.api.dependencies import InvestmentServiceDep
+from orbit_api.api.dependencies import InvestmentServiceDep, PriceFeedDep
 from orbit_api.api.v1.commitments import local_today
 from orbit_api.schemas.commitments import TodayParams
 from orbit_api.schemas.investments import (
@@ -28,14 +28,19 @@ from orbit_api.schemas.investments import (
     DepositValueRequest,
     HoldingListResponse,
     HoldingResponse,
+    InstrumentListResponse,
+    InstrumentResponse,
+    InstrumentSearchParams,
     InvestmentAccountListResponse,
     InvestmentAccountResponse,
     InvestmentTransactionListResponse,
     InvestmentTransactionParams,
     InvestmentTransactionResponse,
+    MarketDataResponse,
     PortfolioParams,
     PortfolioResponse,
     PriceListResponse,
+    PriceRefreshResponse,
     PriceResponse,
     RecordInvestmentTransactionRequest,
     RecordPriceRequest,
@@ -60,6 +65,7 @@ from orbit_api.services.investments.models import (
     SipPlanNotFoundError,
 )
 from orbit_api.services.investments.quantities import parse_price, parse_quantity
+from orbit_api.services.investments.valuation import PriceFeed, PriceFeedError
 
 router = APIRouter(
     prefix="/workspaces/{workspace_id}/finance",
@@ -109,6 +115,57 @@ async def _call[T](call: Awaitable[T]) -> T:
         raise HTTPException(status.HTTP_409_CONFLICT, error.message) from None
     except tuple(_NOT_FOUND) as error:
         raise HTTPException(status.HTTP_404_NOT_FOUND, _NOT_FOUND[type(error)]) from None
+
+
+# Market data
+
+
+def _require_feed(feed: PriceFeed | None) -> PriceFeed:
+    if feed is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Market data is off on this server.")
+    return feed
+
+
+_FEED: dict[int | str, dict[str, Any]] = {
+    409: {"description": "Market data is off on this server."},
+    503: {"description": "The price service couldn't be reached."},
+}
+
+
+@router.get("/market-data", summary="Whether market data is on")
+async def market_data(workspace: WorkspaceDep, feed: PriceFeedDep) -> MarketDataResponse:
+    return MarketDataResponse(enabled=feed is not None)
+
+
+@router.get("/market-data/search", summary="Find a mutual fund, stock, or ETF", responses=_FEED)
+async def search_instruments(
+    params: Annotated[InstrumentSearchParams, Query()],
+    workspace: WorkspaceDep,
+    feed: PriceFeedDep,
+) -> InstrumentListResponse:
+    """Searches the price service (mfapi.in for funds, Yahoo Finance otherwise): only the
+    search phrase leaves the server."""
+    try:
+        found = await _require_feed(feed).search(params.kind, params.q)
+    except PriceFeedError:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, "The price service couldn't be reached."
+        ) from None
+    return InstrumentListResponse(instruments=[InstrumentResponse.of(item) for item in found])
+
+
+@router.post("/market-data/refresh", summary="Fetch the latest prices", responses=_FEED)
+async def refresh_prices(
+    workspace: WorkspaceDep,
+    user: CurrentUserDep,
+    investments: InvestmentServiceDep,
+    feed: PriceFeedDep,
+) -> PriceRefreshResponse:
+    """Fetches the last few days' prices of every holding with a scheme code or ticker."""
+    result = await investments.refresh_prices(
+        workspace.id, _require_feed(feed), local_today(user, None)
+    )
+    return PriceRefreshResponse(updated=result.updated, failed=result.failed)
 
 
 # Portfolio
@@ -226,9 +283,18 @@ async def create_holding(
     workspace: WorkspaceDep,
     user: CurrentUserDep,
     investments: InvestmentServiceDep,
+    feed: PriceFeedDep,
 ) -> HoldingResponse:
+    """With `opening`, the units already owned are recorded in the same step. With market data
+    on, the holding's latest prices are fetched too."""
     view = await _call(
-        investments.create_holding(workspace.id, body.to_draft(), local_today(user, None))
+        investments.create_holding(
+            workspace.id,
+            body.to_draft(),
+            local_today(user, None),
+            opening=body.opening.to_opening() if body.opening else None,
+            feed=feed,
+        )
     )
     return HoldingResponse.of(view)
 
@@ -339,10 +405,11 @@ async def record_investment_transaction(
     body: RecordInvestmentTransactionRequest,
     workspace: WorkspaceDep,
     investments: InvestmentServiceDep,
+    feed: PriceFeedDep,
 ) -> InvestmentTransactionResponse:
     """Records the transaction and its ledger rows (a transfer, income, or expenses) in one
-    step."""
-    entry = await _call(investments.record(workspace.id, body.to_draft()))
+    step. A mutual fund buy without `quantity` gets its units from the NAV on its date."""
+    entry = await _call(investments.record(workspace.id, body.to_draft(), feed=feed))
     return InvestmentTransactionResponse.of(entry)
 
 
@@ -433,6 +500,7 @@ async def record_sip_installment(
     body: RecordSipInstallmentRequest,
     workspace: WorkspaceDep,
     investments: InvestmentServiceDep,
+    feed: PriceFeedDep,
 ) -> InvestmentTransactionResponse:
     """Records a buy for the SIP's next unrecorded date (or `due_date`). Each date is recorded
     once (409 otherwise)."""
@@ -441,13 +509,14 @@ async def record_sip_installment(
             workspace.id,
             plan_id,
             trade_date=body.trade_date,
-            quantity=parse_quantity(body.quantity),
+            quantity=parse_quantity(body.quantity) if body.quantity else None,
             amount=body.amount,
             due_date=body.due_date,
             settlement=body.settlement,
             cash_account_id=body.cash_account_id,
             fees=body.fees,
             notes=body.notes,
+            feed=feed,
         )
     )
     return InvestmentTransactionResponse.of(entry)

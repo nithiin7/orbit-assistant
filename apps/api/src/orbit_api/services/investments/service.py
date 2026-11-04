@@ -22,7 +22,7 @@ filter by it, and referenced accounts, holdings, and deposits are looked up in i
 """
 
 import uuid
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta
 from itertools import islice
@@ -67,6 +67,7 @@ from orbit_api.services.investments.models import (
     InvestmentTransactionNotFoundError,
     InvestmentTransactionPage,
     InvestmentTransactionQuery,
+    OpeningPosition,
     PortfolioSummary,
     Price,
     PriceNotFoundError,
@@ -78,6 +79,7 @@ from orbit_api.services.investments.models import (
     SipPlanNotFoundError,
     SipPlanView,
     Slice,
+    WorkspaceOwner,
 )
 from orbit_api.services.investments.portfolio import (
     account_cash,
@@ -86,8 +88,14 @@ from orbit_api.services.investments.portfolio import (
     holding_view,
     position,
 )
-from orbit_api.services.investments.quantities import percent
-from orbit_api.services.investments.valuation import Quote
+from orbit_api.services.investments.quantities import (
+    format_price,
+    format_quantity,
+    percent,
+    units_bought,
+)
+from orbit_api.services.investments.valuation import PriceFeed, PriceFeedError, Quote, price_key
+from orbit_api.services.notifications.models import Notification
 from orbit_api.services.reminders.managed import ReminderStore, ReminderTarget, point_reminder
 from orbit_api.services.reminders.models import CommitmentLink
 from orbit_api.services.reminders.recurrence import Schedule, local_to_utc
@@ -103,6 +111,13 @@ FEES_KEY: Final = "fees_charges"
 # The longest a deposit may run, and how far a SIP schedule is searched for its next due date.
 MAX_DEPOSIT_YEARS: Final = 50
 _SIP_SEARCH_LIMIT: Final = 5000
+# How far from a buy's date its NAV is looked for (weekends, holidays, a late publication).
+NAV_WINDOW: Final = timedelta(days=7)
+# How many days of prices a refresh asks for, so a missed day still gets its price.
+REFRESH_DAYS: Final = timedelta(days=7)
+# How far back the worker records missed auto-debit installments; older ones are left overdue
+# for the person to record, so turning auto-debit on never back-fills a SIP's whole history.
+AUTO_DEBIT_LOOKBACK: Final = timedelta(days=7)
 
 KIND_LABELS: Final[dict[str, str]] = {
     "mutual_fund": "Mutual funds",
@@ -193,6 +208,28 @@ class SipPlanRepository(Protocol):
 
     async def save(self, plan: SipPlan) -> None: ...
 
+    async def auto_debit_owners(self) -> Sequence[WorkspaceOwner]:
+        """Every workspace with an active auto-debit SIP, across workspaces (for the worker)."""
+        ...
+
+
+class NotificationStore(Protocol):
+    async def add(self, notification: Notification) -> None: ...
+
+
+@dataclass(frozen=True, slots=True)
+class PriceRefresh:
+    """What a price refresh did: holdings given a price, and those the feed couldn't price."""
+
+    updated: int
+    failed: int
+
+
+@dataclass(frozen=True, slots=True)
+class AutoDebitRun:
+    recorded: int
+    failed: int
+
 
 class DepositRepository(Protocol):
     async def add(self, deposit: Deposit) -> None: ...
@@ -241,7 +278,9 @@ class InvestmentService:
         scheduler: OccurrenceScheduler,
         unit_of_work: UnitOfWork,
         clock: Callable[[], datetime] = utc_now,
+        notifications: NotificationStore | None = None,
     ) -> None:
+        self._notifications = notifications
         self._profiles = profiles
         self._holdings = holdings
         self._prices = prices
@@ -539,8 +578,16 @@ class InvestmentService:
         raise HoldingNotFoundError
 
     async def create_holding(
-        self, workspace_id: uuid.UUID, draft: HoldingDraft, today: date
+        self,
+        workspace_id: uuid.UUID,
+        draft: HoldingDraft,
+        today: date,
+        *,
+        opening: OpeningPosition | None = None,
+        feed: PriceFeed | None = None,
     ) -> HoldingView:
+        """Add a holding and, in the same commit, the units already owned (`opening`) and, with
+        a feed, its latest prices."""
         profile = await self._usable_profile(workspace_id, draft.account_id)
         now = self._clock()
         holding = Holding(
@@ -566,6 +613,22 @@ class InvestmentService:
         except ConflictError:
             await self._unit_of_work.rollback()
             raise _duplicate_holding() from None
+        if opening is not None:
+            await self._record(
+                workspace_id,
+                InvestmentTransactionDraft(
+                    type="buy",
+                    trade_date=opening.trade_date,
+                    amount=opening.amount,
+                    settlement="none",
+                    holding_id=holding.id,
+                    quantity=opening.quantity,
+                    plan="lump_sum",
+                ),
+                feed=feed,
+            )
+        if feed is not None:
+            await self._fetch_prices(holding, feed, today - REFRESH_DAYS, today)
         await self._commit()
         return await self.holding(workspace_id, holding.id, today)
 
@@ -666,6 +729,22 @@ class InvestmentService:
         await self._commit()
         return stored
 
+    async def refresh_prices(
+        self, workspace_id: uuid.UUID, feed: PriceFeed, today: date
+    ) -> PriceRefresh:
+        """Fetch the last few days' prices of every holding a feed can price, in one commit."""
+        updated = failed = 0
+        for holding in await self._holdings.list(workspace_id):
+            if price_key(holding) is None:
+                continue
+            stored = await self._fetch_prices(holding, feed, today - REFRESH_DAYS, today)
+            if stored is None:
+                failed += 1
+            elif stored:
+                updated += 1
+        await self._commit()
+        return PriceRefresh(updated=updated, failed=failed)
+
     async def delete_price(
         self, workspace_id: uuid.UUID, holding_id: uuid.UUID, price_id: uuid.UUID
     ) -> None:
@@ -690,10 +769,15 @@ class InvestmentService:
         return entry
 
     async def record(
-        self, workspace_id: uuid.UUID, draft: InvestmentTransactionDraft
+        self,
+        workspace_id: uuid.UUID,
+        draft: InvestmentTransactionDraft,
+        *,
+        feed: PriceFeed | None = None,
     ) -> InvestmentTransaction:
-        """Record an investment transaction and the ledger rows for its cash, atomically."""
-        entry = await self._record(workspace_id, draft)
+        """Record an investment transaction and the ledger rows for its cash, atomically. A
+        mutual fund buy without units gets them from the NAV on its date (see `_nav_for`)."""
+        entry = await self._record(workspace_id, draft, feed=feed)
         await self._commit()
         return entry
 
@@ -752,6 +836,8 @@ class InvestmentService:
             await self._cash_account(workspace_id, draft.funding_account_id, holding)
         if draft.end_date is not None and draft.end_date < draft.next_due_date:
             raise InvalidInvestmentError("The end date can't be before the next SIP date.")
+        if draft.auto_debit:
+            _check_auto_debit(holding, draft.funding_account_id)
         now = self._clock()
         plan = SipPlan(
             id=uuid.uuid4(),
@@ -767,6 +853,7 @@ class InvestmentService:
             notes=draft.notes,
             created_at=now,
             updated_at=now,
+            auto_debit=draft.auto_debit,
         )
         await self._sip_plans.add(plan)
         await self._commit()
@@ -795,11 +882,14 @@ class InvestmentService:
             funding_account_id=plan.funding_account_id
             if changes.funding_account_id is UNSET
             else changes.funding_account_id,
+            auto_debit=plan.auto_debit if changes.auto_debit is UNSET else changes.auto_debit,
             state=state,
             notes=plan.notes if changes.notes is UNSET else changes.notes,
         )
         if updated.end_date is not None and updated.end_date < updated.anchor_date:
             raise InvalidInvestmentError("The end date can't be before the next SIP date.")
+        if updated.auto_debit:
+            _check_auto_debit(holding, updated.funding_account_id)
         if updated != plan:
             await self._sip_plans.save(replace(updated, updated_at=self._clock()))
             await self._commit()
@@ -811,13 +901,14 @@ class InvestmentService:
         plan_id: uuid.UUID,
         *,
         trade_date: date,
-        quantity: int,
+        quantity: int | None = None,
         amount: int | None = None,
         due_date: date | None = None,
         settlement: Settlement | None = None,
         cash_account_id: uuid.UUID | None = None,
         fees: int = 0,
         notes: str = "",
+        feed: PriceFeed | None = None,
     ) -> InvestmentTransaction:
         """Record a SIP installment as a buy: the SIP's amount, from its funding account,
         settling its next unrecorded due date, unless told otherwise."""
@@ -841,6 +932,95 @@ class InvestmentService:
                 cash_account_id=cash_account_id if settlement == "account" else None,
                 notes=notes,
             ),
+            feed=feed,
+        )
+
+    async def auto_debit_owners(self) -> Sequence[WorkspaceOwner]:
+        return await self._sip_plans.auto_debit_owners()
+
+    async def record_due_sips(
+        self, owner: WorkspaceOwner, today: date, feed: PriceFeed | None
+    ) -> AutoDebitRun:
+        """Record every auto-debit installment due in the last `AUTO_DEBIT_LOOKBACK` days whose
+        NAV is known (fetched with `feed`), each in its own commit with a notification to the
+        owner. One whose NAV isn't out yet is left for the next run; one that can't be recorded
+        (an archived account, say) is counted as failed and retried next time."""
+        workspace_id = owner.workspace_id
+        recorded = failed = 0
+        for plan in await self._sip_plans.list(workspace_id):
+            if plan.state != "active" or not plan.auto_debit or plan.funding_account_id is None:
+                continue
+            transactions = await self._transactions.for_workspace(workspace_id)
+            done = {entry.sip_due_date for entry in transactions if entry.sip_plan_id == plan.id}
+            due_list = [
+                due
+                for due in islice(
+                    due_dates(
+                        plan.anchor_date,
+                        plan.frequency,
+                        start=today - AUTO_DEBIT_LOOKBACK,
+                        end=plan.end_date,
+                    ),
+                    _SIP_SEARCH_LIMIT,
+                )
+                if due <= today
+            ]
+            for due in (due for due in due_list if due not in done):
+                try:
+                    holding = await self._get_holding(workspace_id, plan.holding_id)
+                    nav = await self._nav_for(workspace_id, holding, due, feed, earlier=False)
+                    if nav is None:
+                        await self._commit()  # Keep any prices fetched; try again later.
+                        break
+                    entry = await self._record(
+                        workspace_id,
+                        InvestmentTransactionDraft(
+                            type="buy",
+                            trade_date=due,
+                            amount=plan.amount,
+                            settlement="account",
+                            holding_id=holding.id,
+                            sip_plan_id=plan.id,
+                            sip_due_date=due,
+                            quantity=units_bought(plan.amount, nav.price, holding.currency),
+                            plan="sip",
+                            cash_account_id=plan.funding_account_id,
+                            notes="Recorded automatically (auto-debit).",
+                        ),
+                    )
+                    await self._notify_auto_debit(owner, holding, entry, nav)
+                    await self._commit()
+                    recorded += 1
+                except (InvalidInvestmentError, InvestmentConflictError, ConflictError):
+                    await self._unit_of_work.rollback()
+                    failed += 1
+                    break
+        return AutoDebitRun(recorded=recorded, failed=failed)
+
+    async def _notify_auto_debit(
+        self, owner: WorkspaceOwner, holding: Holding, entry: InvestmentTransaction, nav: Price
+    ) -> None:
+        if self._notifications is None or entry.quantity is None:
+            return
+        now = self._clock()
+        await self._notifications.add(
+            Notification(
+                id=uuid.uuid4(),
+                user_id=owner.user_id,
+                workspace_id=owner.workspace_id,
+                reminder_id=None,
+                occurrence_id=None,
+                title=f"SIP recorded: {holding.name}"[:200],
+                body=(
+                    f"{to_decimal_string(entry.amount, entry.currency)} {entry.currency} "
+                    f"auto-debited on {_short_date(entry.trade_date)}: "
+                    f"{format_quantity(entry.quantity)} units at a NAV of "
+                    f"{_price_text(nav.price)} ({_short_date(nav.price_date)})."
+                ),
+                scheduled_for=now,
+                created_at=now,
+                read_at=None,
+            )
         )
 
     # Deposits
@@ -1070,6 +1250,7 @@ class InvestmentService:
         draft: InvestmentTransactionDraft,
         *,
         allow_closing: bool = False,
+        feed: PriceFeed | None = None,
     ) -> InvestmentTransaction:
         """Validate the transaction, create its ledger rows, and add it, without committing."""
         holding: Holding | None = None
@@ -1078,6 +1259,20 @@ class InvestmentService:
             holding = await self._get_holding(workspace_id, draft.holding_id, missing="invalid")
         if draft.deposit_id is not None:
             deposit = await self._get_deposit(workspace_id, draft.deposit_id, missing="invalid")
+        if (
+            draft.type == "buy"
+            and draft.quantity is None
+            and holding is not None
+            and holding.kind == "mutual_fund"
+        ):
+            nav = await self._nav_for(workspace_id, holding, draft.trade_date, feed, earlier=True)
+            if nav is None:
+                raise InvalidInvestmentError(
+                    "Enter the units: Orbit doesn't have this fund's NAV around that date."
+                )
+            draft = replace(
+                draft, quantity=units_bought(draft.amount, nav.price, holding.currency) or None
+            )
         _check_shape(draft, holding, deposit)
 
         if holding is not None:
@@ -1389,6 +1584,64 @@ class InvestmentService:
             raise DepositNotFoundError
         return deposit
 
+    async def _nav_for(
+        self,
+        workspace_id: uuid.UUID,
+        holding: Holding,
+        on: date,
+        feed: PriceFeed | None,
+        *,
+        earlier: bool,
+    ) -> Price | None:
+        """The price a buy on `on` is allotted at: the first one dated on or after it (within
+        `NAV_WINDOW`; funds allot at the NAV of the day the money arrives, or the next business
+        day), fetched with `feed` if none is stored. With `earlier`, the latest one before it
+        is the fallback, for a buy recorded before the day's NAV is out."""
+
+        def pick(prices: list[Price]) -> Price | None:
+            after = [price for price in prices if on <= price.price_date <= on + NAV_WINDOW]
+            if after:
+                return min(after, key=lambda price: price.price_date)
+            return None
+
+        stored = await self._prices.for_holding(workspace_id, holding.id)
+        found = pick(stored)
+        if found is None and feed is not None:
+            await self._fetch_prices(holding, feed, on - NAV_WINDOW, on + NAV_WINDOW)
+            stored = await self._prices.for_holding(workspace_id, holding.id)
+            found = pick(stored)
+        if found is None and earlier:
+            before = [price for price in stored if on - NAV_WINDOW <= price.price_date < on]
+            found = max(before, key=lambda price: price.price_date, default=None)
+        return found
+
+    async def _fetch_prices(
+        self, holding: Holding, feed: PriceFeed, start: date, end: date
+    ) -> int | None:
+        """Store the feed's prices for the holding between two dates, without committing;
+        return how many, or `None` when the feed failed."""
+        end = min(end, self._clock().date())
+        if price_key(holding) is None or start > end:
+            return 0
+        try:
+            quotes = await feed.quotes(holding, start, end)
+        except PriceFeedError:
+            return None
+        now = self._clock()
+        for quote in quotes:
+            await self._prices.put(
+                Price(
+                    id=uuid.uuid4(),
+                    workspace_id=holding.workspace_id,
+                    holding_id=holding.id,
+                    price_date=quote.price_date,
+                    price=quote.price,
+                    source=quote.source,
+                    created_at=now,
+                )
+            )
+        return len(quotes)
+
     async def _get_sip(
         self, workspace_id: uuid.UUID, plan_id: uuid.UUID, *, missing: str = "not_found"
     ) -> SipPlan:
@@ -1421,6 +1674,20 @@ def _duplicate_holding() -> InvestmentConflictError:
     return InvestmentConflictError(
         "This account already has that holding (same ISIN, symbol, or name, and folio)."
     )
+
+
+def _check_auto_debit(holding: Holding, funding_account_id: uuid.UUID | None) -> None:
+    if holding.kind != "mutual_fund":
+        raise InvalidInvestmentError("Auto-debit is for mutual fund SIPs.")
+    if funding_account_id is None:
+        raise InvalidInvestmentError("Choose the account the SIP is debited from.")
+
+
+def _price_text(price: int) -> str:
+    """A scaled price as a decimal with at least 2 and at most 4 places, such as `121.2734`."""
+    text = format_price(price)
+    whole, _, fraction = text.partition(".")
+    return f"{whole}.{fraction[:4].ljust(2, '0')}"
 
 
 def _check_term(start: date, maturity: date) -> None:

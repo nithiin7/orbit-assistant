@@ -1330,8 +1330,8 @@ finance_net_worth_snapshots   (unique workspace, currency, month)
 | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `finance_investment_accounts`     | The profile of an `investment` finance account: `kind` (mutual_fund, brokerage, deposit, other), `provider`, optional `linked_account_id`                             |
 | `finance_holdings`                | A mutual fund, stock, or ETF: name, symbol or scheme code, exchange, ISIN, AMC, category, folio, and a normalized `identity`, unique per account                      |
-| `finance_holding_prices`          | One price per holding and date (scaled), with `source` (`manual` today; `import`, `provider` reserved)                                                                |
-| `finance_sip_plans`               | A scheduled SIP: amount, frequency, anchor date, optional end and funding account, state                                                                              |
+| `finance_holding_prices`          | One price per holding and date (scaled), with `source` (`manual`, or `provider` from market data; `import` reserved)                                                  |
+| `finance_sip_plans`               | A scheduled SIP: amount, frequency, anchor date, optional end and funding account, `auto_debit` (needs the funding account), state                                    |
 | `finance_deposits`                | A fixed or recurring deposit: rate (bps), compounding, start and maturity, RD installment, the bank's stated maturity amount, status, manual value, maturity reminder |
 | `finance_investment_transactions` | buy, sell, dividend, interest, fee, deposit, withdrawal: date, amount, units, charges, settlement, SIP due date, and the ledger rows it recorded                      |
 | `finance_assets`                  | Gold, property, vehicles, cash, other: purchase date and cost, optional linked account, `include_in_net_worth`, archived                                              |
@@ -1382,6 +1382,19 @@ currency)`, and from transactions to their holding's `(id, workspace_id, currenc
   recorded installment (possibly overdue); recording one creates a buy with `plan = sip` and the
   `sip_due_date` it settles, unique per plan, so an installment can't be recorded twice. Pausing
   stops the schedule; resuming restarts from the next date on or after today.
+- **Units from the NAV.** A mutual fund buy (or SIP installment, or a new holding's `opening`
+  position) may leave `quantity` out: the units are the amount ÷ the first price dated on or
+  within 7 days after the buy (funds allot at the NAV of the day the money arrives, or the next
+  business day), fetched from the feed when none is stored, else the latest one in the 7 days
+  before. They are rounded half up to 3 decimals, as registrars allot; stamp duty isn't
+  deducted. Without a price, the request is a 422 asking for the units. Stocks and ETFs always
+  need units.
+- **Auto-debit SIPs** (mutual funds with a funding account only) are recorded by the worker
+  (every 15 minutes, on the owner's local date): each unrecorded due date in the last 7 days
+  whose NAV (on or after it) is known becomes a buy transferred from the funding account, with
+  units from that NAV, plus an in-app notification, each in its own commit. A date whose NAV
+  isn't published yet is retried on the next run; older missed dates are left overdue for the
+  person, so turning auto-debit on never back-fills a SIP's history.
 
 ### Cost basis, precision, and rounding
 
@@ -1478,12 +1491,22 @@ currency)`, and from transactions to their holding's `(id, workspace_id, currenc
 
 ### Valuation strategy
 
-Prices and valuations are **entered by hand** in this phase. Orbit calls no market data, NAV, or
-bank APIs. Every price and valuation stores its date and `source`, and
-`services/investments/valuation.py` defines the seam for later: a `PriceFeed` returns `Quote`s,
-and `InvestmentService.record_prices` stores them (one per holding and date, ignoring holdings
-outside the workspace) with the feed's `source`. A NAV provider, market data provider, or
-statement import can be added behind that protocol without schema changes.
+Prices are **entered by hand** unless the server turns market data on
+(`ORBIT_MARKET_DATA_ENABLED`, off by default). Then `providers/prices/feed.py` implements the
+`PriceFeed` in `services/investments/valuation.py` with two public, keyless services: mutual
+fund NAVs from **mfapi.in** (AMFI's published history, by numeric scheme code) and stock and ETF
+closing prices from **Yahoo Finance**'s chart endpoint (an unofficial API that may change or
+rate-limit; `price_key` maps `INFY` on `NSE` to `INFY.NS`, `BSE` to `.BO`). Both also back
+instrument search. Prices are stored like manual ones, one per holding and date, with `source =
+provider`; a price in another currency than the holding's is ignored.
+
+- **What leaves the server**: a scheme code or ticker and a date range, or a search phrase;
+  never units, amounts, or names of people. Nothing about holdings is logged.
+- **When**: the worker refreshes the last 7 days' prices of every holding with a symbol every
+  `ORBIT_MARKET_DATA_REFRESH_HOURS` (6); adding a holding fetches its prices; `POST
+…/market-data/refresh` does it on demand; a buy without units fetches the NAV it needs.
+- Feed failures never fail a refresh (counted as `failed`) or a buy with units; they only mean
+  a buy without units asks for them. Bank and broker statements are not imported.
 
 ### Investments API
 
@@ -1501,6 +1524,9 @@ workspace's account, holding, deposit, or transaction is a 404; referencing one 
 | `DELETE`                 | `/holdings/{id}/prices/{price_id}`              | Delete a price                                                            |
 | `GET`, `POST`            | `/investment-transactions`                      | Activity (filters, paging); record with its ledger rows                   |
 | `GET`, `DELETE`          | `/investment-transactions/{id}`                 | One; delete (`delete_ledger`)                                             |
+| `GET`                    | `/market-data`                                  | Whether market data is on                                                 |
+| `GET`                    | `/market-data/search`                           | Find a fund, stock, or ETF (`kind`, `q`; 409 when off, 503 unreachable)   |
+| `POST`                   | `/market-data/refresh`                          | Fetch recent prices of every holding with a symbol (409 when off)         |
 | `GET`, `POST`            | `/sip-plans`                                    | List with next due date; schedule                                         |
 | `PATCH`                  | `/sip-plans/{id}`                               | Change, pause, cancel, resume                                             |
 | `POST`                   | `/sip-plans/{id}/installments`                  | Record an installment (409 if that date is recorded)                      |
@@ -1530,6 +1556,11 @@ must be JSON integers. Routes log nothing about holdings or values.
   worth" markers, history, update value, archive with confirmation), and **Net worth** (totals,
   a quality notice, changes, a monthly trend from snapshots plus today, asset and liability
   breakdowns, and every item with its source and date, including those not counted).
+- **Adding an investment** is one dialog (`add-investment-dialog.tsx`): find the fund or stock
+  by name (with market data on; otherwise type its details), choose or name the account it sits
+  in (a new one is created first), and enter what is held, sent as the holding's `opening`.
+  With market data on, the view offers **Refresh prices**; SIP dialogs offer **Auto-debit** for
+  funds.
 - Dialogs use React Hook Form with Yup schemas in `lib/investments`, which parses units and
   prices as strings (`parseUnits`) and never uses floats for money. Queries live under
   `["workspaces", id, "finance", "investments", …]`, so any finance change refetches them;
@@ -1540,8 +1571,9 @@ must be JSON integers. Routes log nothing about holdings or values.
 
 ### Investment limitations
 
-- **No live prices** or bank, broker, or registrar connections; values are only as current as
-  the prices entered, and stale ones are marked.
+- **Live prices are opt-in** and come from mfapi.in and Yahoo Finance only; with market data
+  off, values are only as current as the prices entered, and stale ones are marked. There are
+  no bank, broker, or registrar connections, and no statement (CAS) import.
 - **Corporate actions** (splits, bonuses, mergers, dividend reinvestment as units) aren't
   modelled; record them as a sale and buy, or adjust by hand. FIFO is the only cost method;
   there is no tax lot selection, capital gains tax, or grandfathering.
@@ -1832,9 +1864,9 @@ budgets, goals, or amounts.
 
 ## Finance limitations and extension points (planned, not implemented)
 
-- **Price providers** (mutual fund NAVs, market prices, statement imports) would implement
-  `PriceFeed` (see [Valuation strategy](#valuation-strategy)); none is integrated.
-- Commitments don't create transactions automatically (no auto-debit); each payment is recorded
+- **Statement imports** (CAS, broker contract notes) would implement `PriceFeed` or record
+  buys (see [Valuation strategy](#valuation-strategy)); none is integrated.
+- Commitments don't create transactions automatically (only auto-debit SIPs do); each payment is recorded
   or linked. Overdue occurrences of a subscription or bill are listed up to the 60 most recent.
 - A loan's earlier history (before it was added) isn't reconstructed, floating rates are
   modelled by rescheduling, and interest is per installment period (no daily-balance interest,

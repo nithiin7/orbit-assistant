@@ -21,6 +21,8 @@ from orbit_api.db.models import (
     FinanceInvestmentTransactionModel,
     FinanceNetWorthSnapshotModel,
     FinanceSipPlanModel,
+    UserModel,
+    WorkspaceModel,
 )
 from orbit_api.repositories.commitments import reminder_columns, reminder_of
 from orbit_api.repositories.finance import (
@@ -28,6 +30,7 @@ from orbit_api.repositories.finance import (
     SqlFinanceCategoryRepository,
     SqlFinanceTransactionRepository,
 )
+from orbit_api.repositories.notifications import SqlNotificationRepository
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.transaction import SqlTransaction, flush
 from orbit_api.services.commitments.schedule import Frequency
@@ -57,6 +60,7 @@ from orbit_api.services.investments.models import (
     Settlement,
     SipPlan,
     SipState,
+    WorkspaceOwner,
 )
 from orbit_api.services.investments.service import InvestmentService
 from orbit_api.services.networth.calculation import GROUPS, GroupTotal, NetWorthGroup
@@ -177,6 +181,7 @@ def _to_sip(model: FinanceSipPlanModel) -> SipPlan:
         notes=model.notes,
         created_at=model.created_at,
         updated_at=model.updated_at,
+        auto_debit=model.auto_debit,
     )
 
 
@@ -187,6 +192,7 @@ def _sip_fields(plan: SipPlan) -> dict[str, Any]:
         "anchor_date": plan.anchor_date,
         "end_date": plan.end_date,
         "funding_account_id": plan.funding_account_id,
+        "auto_debit": plan.auto_debit,
         "state": plan.state,
         "notes": plan.notes,
         "updated_at": plan.updated_at,
@@ -617,6 +623,22 @@ class SqlSipPlanRepository:
             setattr(model, name, value)
         await flush(self._session)
 
+    async def auto_debit_owners(self) -> Sequence[WorkspaceOwner]:
+        rows = await self._session.execute(
+            select(WorkspaceModel.id, WorkspaceModel.owner_id, UserModel.timezone)
+            .join(UserModel, UserModel.id == WorkspaceModel.owner_id)
+            .where(
+                WorkspaceModel.id.in_(
+                    select(_Sip.workspace_id).where(_Sip.state == "active", _Sip.auto_debit)
+                )
+            )
+            .order_by(WorkspaceModel.id)
+        )
+        return [
+            WorkspaceOwner(workspace_id=workspace_id, user_id=user_id, timezone=timezone)
+            for workspace_id, user_id, timezone in rows
+        ]
+
     async def _model(
         self, workspace_id: uuid.UUID, plan_id: uuid.UUID
     ) -> FinanceSipPlanModel | None:
@@ -846,6 +868,17 @@ def _finance(session: AsyncSession, timing: dict[str, Any]) -> FinanceService:
     )
 
 
+async def workspaces_with_holdings(session: AsyncSession) -> list[uuid.UUID]:
+    """Every workspace with a holding whose price a feed could fetch (it has a symbol)."""
+    rows = await session.scalars(
+        select(FinanceHoldingModel.workspace_id)
+        .where(FinanceHoldingModel.symbol != "")
+        .distinct()
+        .order_by(FinanceHoldingModel.workspace_id)
+    )
+    return list(rows)
+
+
 def build_investment_service(
     session: AsyncSession, clock: Callable[[], datetime] | None = None
 ) -> InvestmentService:
@@ -863,6 +896,7 @@ def build_investment_service(
         SqlReminderRepository(session),
         SqlOccurrenceRepository(session),
         SqlTransaction(session),
+        notifications=SqlNotificationRepository(session),
         **timing,
     )
 
