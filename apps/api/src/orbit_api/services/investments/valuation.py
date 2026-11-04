@@ -1,7 +1,7 @@
-"""Where prices come from. Prices are entered by hand (`source = manual`) unless the server turns
-market data on (`ORBIT_MARKET_DATA_ENABLED`); then a `PriceFeed` (mutual fund NAVs and stock
-and ETF prices, `providers/prices/`) supplies them and they are stored with `source =
-provider`, one per holding and date, like manual prices.
+"""Where prices come from. Prices are entered by hand (`source = manual`) unless a workspace
+opts in under Settings → Finance and the server allows market data (`ORBIT_MARKET_DATA_ENABLED`);
+then a `PriceFeed` (mutual fund NAVs and stock and ETF prices, `providers/prices/`) supplies them
+and they are stored with `source = provider`, one per holding and date, like manual prices.
 
 A feed is asked only for a holding's identifier (a scheme code or a ticker, see `price_key`)
 and a date range: never for units, amounts, or anything else about the person.

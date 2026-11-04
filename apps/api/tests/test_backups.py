@@ -343,7 +343,7 @@ class TestBackupRoundTrip:
         archive = zipfile.ZipFile(io.BytesIO(data))
         manifest = json.loads(archive.read("orbit-backup/manifest.json"))
         assert manifest["format"] == "orbit-backup" and manifest["format_version"] == 1
-        assert manifest["schema_revision"] == "0024"
+        assert manifest["schema_revision"] == "0025"
         for name, entry in manifest["tables"].items():
             content = archive.read(f"orbit-backup/database/{name}.jsonl")
             assert hashlib.sha256(content).hexdigest() == entry["sha256"]

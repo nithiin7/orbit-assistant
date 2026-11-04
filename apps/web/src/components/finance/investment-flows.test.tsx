@@ -109,7 +109,7 @@ describe("Adding an investment you own", () => {
     const onSaved = vi.fn();
     mockApi({
       ...session,
-      [`GET ${FINANCE}/market-data`]: json({ enabled: true }),
+      [`GET ${FINANCE}/market-data`]: json({ available: true, enabled: true }),
       [`GET ${FINANCE}/market-data/search`]: json({
         instruments: [
           {
@@ -164,7 +164,7 @@ describe("Adding an investment you own", () => {
     const created = recorder({ ...fund, kind: "stock", name: "Infosys", quantity: "10" });
     mockApi({
       ...session,
-      [`GET ${FINANCE}/market-data`]: json({ enabled: false }),
+      [`GET ${FINANCE}/market-data`]: json({ available: true, enabled: false }),
       [`POST ${FINANCE}/investment-accounts`]: account.handler,
       [`POST ${FINANCE}/holdings`]: created.handler,
     });

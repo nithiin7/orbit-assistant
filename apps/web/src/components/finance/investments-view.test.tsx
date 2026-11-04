@@ -205,7 +205,7 @@ function routes(overrides: Record<string, ReturnType<typeof json>> = {}) {
     [`GET ${FINANCE}/sip-plans`]: json({ plans: [] }),
     [`GET ${FINANCE}/portfolio`]: json(portfolio),
     [`GET ${FINANCE}/investment-transactions`]: json({ transactions: [], total: 0 }),
-    [`GET ${FINANCE}/market-data`]: json({ enabled: false }),
+    [`GET ${FINANCE}/market-data`]: json({ available: true, enabled: false }),
     ...overrides,
   };
 }

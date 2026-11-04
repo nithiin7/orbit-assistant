@@ -385,6 +385,8 @@ class WorkspaceOwner:
     workspace_id: uuid.UUID
     user_id: uuid.UUID
     timezone: str | None
+    # Whether the workspace fetches prices (Settings → Finance).
+    market_data: bool = False
 
 
 # Deposits

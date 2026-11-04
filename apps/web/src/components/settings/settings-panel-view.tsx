@@ -10,6 +10,7 @@ import type { SettingsPanel } from "@/lib/settings";
 import { AccountSettings } from "./account-settings";
 import { AiSettingsPanel } from "./ai-settings";
 import { AppearanceSettings } from "./appearance-settings";
+import { FinanceSettings } from "./finance-settings";
 import { StorageSettings } from "./storage-settings";
 import { WorkspaceSettings } from "./workspace-settings";
 
@@ -17,6 +18,7 @@ const panelContent: Readonly<Record<string, ReactNode>> = {
   account: <AccountSettings />,
   workspaces: <WorkspaceSettings />,
   appearance: <AppearanceSettings />,
+  finance: <FinanceSettings />,
   ai: <AiSettingsPanel />,
   integrations: <IntegrationsSettings />,
   backup: <BackupSettings />,

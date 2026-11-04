@@ -213,6 +213,12 @@ class SipPlanRepository(Protocol):
         ...
 
 
+class MarketDataStore(Protocol):
+    async def enabled(self, workspace_id: uuid.UUID) -> bool: ...
+
+    async def set_enabled(self, workspace_id: uuid.UUID, enabled: bool) -> None: ...
+
+
 class NotificationStore(Protocol):
     async def add(self, notification: Notification) -> None: ...
 
@@ -279,8 +285,10 @@ class InvestmentService:
         unit_of_work: UnitOfWork,
         clock: Callable[[], datetime] = utc_now,
         notifications: NotificationStore | None = None,
+        market_data: MarketDataStore | None = None,
     ) -> None:
         self._notifications = notifications
+        self._market_data = market_data
         self._profiles = profiles
         self._holdings = holdings
         self._prices = prices
@@ -728,6 +736,16 @@ class InvestmentService:
             stored += 1
         await self._commit()
         return stored
+
+    async def market_data_enabled(self, workspace_id: uuid.UUID) -> bool:
+        """Whether the workspace fetches prices; off until turned on in Settings."""
+        return self._market_data is not None and await self._market_data.enabled(workspace_id)
+
+    async def set_market_data(self, workspace_id: uuid.UUID, enabled: bool) -> None:
+        if self._market_data is None:
+            raise InvalidInvestmentError("Market data can't be changed here.")
+        await self._market_data.set_enabled(workspace_id, enabled)
+        await self._commit()
 
     async def refresh_prices(
         self, workspace_id: uuid.UUID, feed: PriceFeed, today: date

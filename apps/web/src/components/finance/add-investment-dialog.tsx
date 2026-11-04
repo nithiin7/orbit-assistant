@@ -3,6 +3,7 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { HoldingKind, Instrument, InvestmentAccount } from "@orbit/contracts";
 import { Check, Search } from "lucide-react";
+import Link from "next/link";
 import { useId, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
@@ -15,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import {
   useInstrumentSearch,
   useInvestmentMutations,
-  useMarketDataEnabled,
+  useMarketData,
 } from "@/hooks/use-investments";
 import { useDebounced } from "@/hooks/use-universal-search";
 import { DEFAULT_CURRENCY, formatMoney, parseAmount } from "@/lib/finance";
@@ -26,6 +27,7 @@ import {
   NEW_ACCOUNT,
   parseUnits,
 } from "@/lib/investments";
+import { settingsHref } from "@/lib/settings";
 import { cn } from "@/utils/common";
 import { localDateString } from "@/utils/dates";
 
@@ -68,7 +70,8 @@ export function AddInvestmentDialog({
   onClose: () => void;
 }) {
   const { createAccount, createHolding } = useInvestmentMutations(workspaceId);
-  const marketData = useMarketDataEnabled(workspaceId);
+  const market = useMarketData(workspaceId).data;
+  const marketData = market?.enabled ?? false;
   const usable = investmentAccounts.filter((account) => !account.archived);
   // An account made by an earlier attempt whose holding then failed, so a retry reuses it.
   const [createdAccountId, setCreatedAccountId] = useState<string | null>(null);
@@ -267,6 +270,13 @@ export function AddInvestmentDialog({
               <Search aria-hidden="true" />
               Search instead
             </Button>
+          ) : market?.available ? (
+            <Link
+              href={settingsHref("finance")}
+              className="inline-flex rounded-md text-xs font-medium text-brand outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Turn on live prices to search by name
+            </Link>
           ) : null}
         </div>
       ) : (

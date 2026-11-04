@@ -1491,9 +1491,10 @@ currency)`, and from transactions to their holding's `(id, workspace_id, currenc
 
 ### Valuation strategy
 
-Prices are **entered by hand** unless the server turns market data on
-(`ORBIT_MARKET_DATA_ENABLED`, off by default). Then `providers/prices/feed.py` implements the
-`PriceFeed` in `services/investments/valuation.py` with two public, keyless services: mutual
+Prices are **entered by hand** unless a workspace opts in under **Settings → Finance** and the
+server allows market data (`ORBIT_MARKET_DATA_ENABLED`, on by default; set it to `false` to disable
+live prices globally). Then `providers/prices/feed.py` implements the `PriceFeed` in
+`services/investments/valuation.py` with two public, keyless services: mutual
 fund NAVs from **mfapi.in** (AMFI's published history, by numeric scheme code) and stock and ETF
 closing prices from **Yahoo Finance**'s chart endpoint (an unofficial API that may change or
 rate-limit; `price_key` maps `INFY` on `NSE` to `INFY.NS`, `BSE` to `.BO`). Both also back
@@ -1502,8 +1503,9 @@ provider`; a price in another currency than the holding's is ignored.
 
 - **What leaves the server**: a scheme code or ticker and a date range, or a search phrase;
   never units, amounts, or names of people. Nothing about holdings is logged.
-- **When**: the worker refreshes the last 7 days' prices of every holding with a symbol every
-  `ORBIT_MARKET_DATA_REFRESH_HOURS` (6); adding a holding fetches its prices; `POST
+- **When**: the worker refreshes the last 7 days' prices of every holding with a symbol in
+  workspaces that opted in, every `ORBIT_MARKET_DATA_REFRESH_HOURS` (6); adding a holding fetches
+  its prices; `POST
 …/market-data/refresh` does it on demand; a buy without units fetches the NAV it needs.
 - Feed failures never fail a refresh (counted as `failed`) or a buy with units; they only mean
   a buy without units asks for them. Bank and broker statements are not imported.
@@ -1524,7 +1526,7 @@ workspace's account, holding, deposit, or transaction is a 404; referencing one 
 | `DELETE`                 | `/holdings/{id}/prices/{price_id}`              | Delete a price                                                            |
 | `GET`, `POST`            | `/investment-transactions`                      | Activity (filters, paging); record with its ledger rows                   |
 | `GET`, `DELETE`          | `/investment-transactions/{id}`                 | One; delete (`delete_ledger`)                                             |
-| `GET`                    | `/market-data`                                  | Whether market data is on                                                 |
+| `GET`, `PUT`             | `/market-data`                                  | Whether live prices are available and enabled for this workspace; toggle  |
 | `GET`                    | `/market-data/search`                           | Find a fund, stock, or ETF (`kind`, `q`; 409 when off, 503 unreachable)   |
 | `POST`                   | `/market-data/refresh`                          | Fetch recent prices of every holding with a symbol (409 when off)         |
 | `GET`, `POST`            | `/sip-plans`                                    | List with next due date; schedule                                         |
@@ -1571,9 +1573,10 @@ must be JSON integers. Routes log nothing about holdings or values.
 
 ### Investment limitations
 
-- **Live prices are opt-in** and come from mfapi.in and Yahoo Finance only; with market data
-  off, values are only as current as the prices entered, and stale ones are marked. There are
-  no bank, broker, or registrar connections, and no statement (CAS) import.
+- **Live prices are opt-in per workspace** and come from mfapi.in and Yahoo Finance only; the
+  server can disable them globally. With market data off, values are only as current as the prices
+  entered, and stale ones are marked. There are no bank, broker, or registrar connections, and no
+  statement (CAS) import.
 - **Corporate actions** (splits, bonuses, mergers, dividend reinvestment as units) aren't
   modelled; record them as a sale and buy, or adjust by hand. FIFO is the only cost method;
   there is no tax lot selection, capital gains tax, or grandfathering.

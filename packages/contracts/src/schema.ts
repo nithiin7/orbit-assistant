@@ -1482,7 +1482,12 @@ export interface paths {
         };
         /** Whether market data is on */
         get: operations["market_data_api_v1_workspaces__workspace_id__finance_market_data_get"];
-        put?: never;
+        /**
+         * Turn market data on or off
+         * @description Turning it on lets this workspace send its holdings' scheme codes and tickers to the
+         *     price services (mfapi.in, Yahoo Finance).
+         */
+        put: operations["update_market_data_api_v1_workspaces__workspace_id__finance_market_data_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -13044,9 +13049,19 @@ export interface components {
         /** MarketDataResponse */
         MarketDataResponse: {
             /**
-             * Enabled
-             * @description Whether this server fetches prices and offers instrument search (`ORBIT_MARKET_DATA_ENABLED`).
+             * Available
+             * @description Whether the server allows market data (`ORBIT_MARKET_DATA_ENABLED`).
              */
+            available: boolean;
+            /**
+             * Enabled
+             * @description Whether this workspace fetches prices and offers instrument search.
+             */
+            enabled: boolean;
+        };
+        /** MarketDataUpdateRequest */
+        MarketDataUpdateRequest: {
+            /** Enabled */
             enabled: boolean;
         };
         /** MealListResponse */
@@ -22894,6 +22909,62 @@ export interface operations {
             };
         };
     };
+    update_market_data_api_v1_workspaces__workspace_id__finance_market_data_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarketDataUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketDataResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Market data is off on this server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     search_instruments_api_v1_workspaces__workspace_id__finance_market_data_search_get: {
         parameters: {
             query: {
@@ -22931,7 +23002,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Market data is off on this server. */
+            /** @description Market data is off for this workspace or server. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -22990,7 +23061,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Market data is off on this server. */
+            /** @description Market data is off for this workspace or server. */
             409: {
                 headers: {
                     [name: string]: unknown;

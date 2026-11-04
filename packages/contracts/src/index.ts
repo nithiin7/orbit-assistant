@@ -221,6 +221,7 @@ export type CreateSipPlanRequest = Schemas["CreateSipPlanRequest"];
 export type UpdateSipPlanRequest = Schemas["UpdateSipPlanRequest"];
 export type RecordSipInstallmentRequest = Schemas["RecordSipInstallmentRequest"];
 export type MarketData = Schemas["MarketDataResponse"];
+export type MarketDataUpdateRequest = Schemas["MarketDataUpdateRequest"];
 export type Instrument = Schemas["InstrumentResponse"];
 export type InstrumentList = Schemas["InstrumentListResponse"];
 export type PriceRefresh = Schemas["PriceRefreshResponse"];

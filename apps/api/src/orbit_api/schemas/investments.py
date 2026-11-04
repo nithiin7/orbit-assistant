@@ -1058,10 +1058,18 @@ class PortfolioParams(BaseModel):
 
 
 class MarketDataResponse(BaseModel):
-    enabled: bool = Field(
-        description="Whether this server fetches prices and offers instrument search "
-        "(`ORBIT_MARKET_DATA_ENABLED`)."
+    available: bool = Field(
+        description="Whether the server allows market data (`ORBIT_MARKET_DATA_ENABLED`)."
     )
+    enabled: bool = Field(
+        description="Whether this workspace fetches prices and offers instrument search."
+    )
+
+
+class MarketDataUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool
 
 
 class InstrumentSearchParams(BaseModel):

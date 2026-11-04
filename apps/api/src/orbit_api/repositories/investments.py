@@ -625,7 +625,12 @@ class SqlSipPlanRepository:
 
     async def auto_debit_owners(self) -> Sequence[WorkspaceOwner]:
         rows = await self._session.execute(
-            select(WorkspaceModel.id, WorkspaceModel.owner_id, UserModel.timezone)
+            select(
+                WorkspaceModel.id,
+                WorkspaceModel.owner_id,
+                UserModel.timezone,
+                WorkspaceModel.market_data_enabled,
+            )
             .join(UserModel, UserModel.id == WorkspaceModel.owner_id)
             .where(
                 WorkspaceModel.id.in_(
@@ -635,8 +640,13 @@ class SqlSipPlanRepository:
             .order_by(WorkspaceModel.id)
         )
         return [
-            WorkspaceOwner(workspace_id=workspace_id, user_id=user_id, timezone=timezone)
-            for workspace_id, user_id, timezone in rows
+            WorkspaceOwner(
+                workspace_id=workspace_id,
+                user_id=user_id,
+                timezone=timezone,
+                market_data=market_data,
+            )
+            for workspace_id, user_id, timezone, market_data in rows
         ]
 
     async def _model(
@@ -869,14 +879,33 @@ def _finance(session: AsyncSession, timing: dict[str, Any]) -> FinanceService:
 
 
 async def workspaces_with_holdings(session: AsyncSession) -> list[uuid.UUID]:
-    """Every workspace with a holding whose price a feed could fetch (it has a symbol)."""
+    """Every workspace with market data on and a holding whose price a feed could fetch (it
+    has a symbol)."""
     rows = await session.scalars(
         select(FinanceHoldingModel.workspace_id)
-        .where(FinanceHoldingModel.symbol != "")
+        .join(WorkspaceModel, WorkspaceModel.id == FinanceHoldingModel.workspace_id)
+        .where(FinanceHoldingModel.symbol != "", WorkspaceModel.market_data_enabled)
         .distinct()
         .order_by(FinanceHoldingModel.workspace_id)
     )
     return list(rows)
+
+
+class SqlMarketDataStore:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def enabled(self, workspace_id: uuid.UUID) -> bool:
+        value = await self._session.scalar(
+            select(WorkspaceModel.market_data_enabled).where(WorkspaceModel.id == workspace_id)
+        )
+        return bool(value)
+
+    async def set_enabled(self, workspace_id: uuid.UUID, enabled: bool) -> None:
+        model = await self._session.get(WorkspaceModel, workspace_id)
+        if model is not None:
+            model.market_data_enabled = enabled
+            await flush(self._session)
 
 
 def build_investment_service(
@@ -897,6 +926,7 @@ def build_investment_service(
         SqlOccurrenceRepository(session),
         SqlTransaction(session),
         notifications=SqlNotificationRepository(session),
+        market_data=SqlMarketDataStore(session),
         **timing,
     )
 

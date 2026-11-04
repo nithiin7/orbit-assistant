@@ -109,7 +109,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.ai_providers = HttpProviderFactory()
     # One HTTP client for every Google and Microsoft call; tests replace it with fakes.
     app.state.integration_connectors = HttpConnectorRegistry(settings)
-    # One HTTP client for market data, used only with `market_data_enabled`; tests replace it.
+    # One HTTP client for market data; routes and workers gate it by server and workspace settings.
     app.state.price_feed = HttpPriceFeed()
     app.add_middleware(
         CORSMiddleware,

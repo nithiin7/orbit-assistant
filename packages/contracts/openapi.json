@@ -7248,6 +7248,72 @@
             }
           }
         }
+      },
+      "put": {
+        "tags": [
+          "finance investments"
+        ],
+        "summary": "Turn market data on or off",
+        "description": "Turning it on lets this workspace send its holdings' scheme codes and tickers to the\nprice services (mfapi.in, Yahoo Finance).",
+        "operationId": "update_market_data_api_v1_workspaces__workspace_id__finance_market_data_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarketDataUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketDataResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Market data is off on this server."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/workspaces/{workspace_id}/finance/market-data/search": {
@@ -7318,7 +7384,7 @@
             "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
           },
           "409": {
-            "description": "Market data is off on this server."
+            "description": "Market data is off for this workspace or server."
           },
           "503": {
             "description": "The price service couldn't be reached."
@@ -7379,7 +7445,7 @@
             "description": "The workspace, investment account, holding, transaction, SIP, or deposit does not exist or is not accessible."
           },
           "409": {
-            "description": "Market data is off on this server."
+            "description": "Market data is off for this workspace or server."
           },
           "503": {
             "description": "The price service couldn't be reached."
@@ -49766,17 +49832,37 @@
       },
       "MarketDataResponse": {
         "properties": {
+          "available": {
+            "type": "boolean",
+            "title": "Available",
+            "description": "Whether the server allows market data (`ORBIT_MARKET_DATA_ENABLED`)."
+          },
           "enabled": {
             "type": "boolean",
             "title": "Enabled",
-            "description": "Whether this server fetches prices and offers instrument search (`ORBIT_MARKET_DATA_ENABLED`)."
+            "description": "Whether this workspace fetches prices and offers instrument search."
           }
         },
         "type": "object",
         "required": [
+          "available",
           "enabled"
         ],
         "title": "MarketDataResponse"
+      },
+      "MarketDataUpdateRequest": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "title": "MarketDataUpdateRequest"
       },
       "MealListResponse": {
         "properties": {

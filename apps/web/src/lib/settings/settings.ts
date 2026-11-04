@@ -3,6 +3,7 @@ import {
   Bot,
   Database,
   Layers,
+  LineChart,
   type LucideIcon,
   Palette,
   Plug,
@@ -39,6 +40,13 @@ export const settingsPanels: readonly SettingsPanel[] = [
     title: "Appearance",
     description: "Mode, colors, and font for this browser.",
     icon: Palette,
+    group: "general",
+  },
+  {
+    slug: "finance",
+    title: "Finance",
+    description: "Live prices for your investments.",
+    icon: LineChart,
     group: "general",
   },
   {

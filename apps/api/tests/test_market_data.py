@@ -105,8 +105,11 @@ def ada(client: TestClient) -> Headers:
 
 @pytest.fixture
 def fin(client: TestClient, ada: Headers) -> str:
+    """Ada's finance URL, with live prices turned on in her workspace."""
     workspace: Json = client.get(WORKSPACES, headers=ada).json()["workspaces"][0]
-    return f"{WORKSPACES}/{workspace['id']}/finance"
+    url = f"{WORKSPACES}/{workspace['id']}/finance"
+    ok(client.put(f"{url}/market-data", json={"enabled": True}, headers=ada))
+    return url
 
 
 def ok(response: Any, code: int = 200) -> Json:
@@ -148,27 +151,58 @@ def balance(client: TestClient, fin: str, headers: Headers, name: str) -> int:
 # API
 
 
-def test_market_data_is_off_unless_the_server_turns_it_on(migrated_settings: Settings) -> None:
-    app = create_app(migrated_settings.model_copy(update={"local_open_registration": True}))
+def test_market_data_is_off_until_the_workspace_turns_it_on(
+    client: TestClient, ada: Headers, feed: FakeFeed
+) -> None:
+    workspace = client.get(WORKSPACES, headers=ada).json()["workspaces"][0]
+    fin = f"{WORKSPACES}/{workspace['id']}/finance"
+    off = {"available": True, "enabled": False}
+    assert ok(client.get(f"{fin}/market-data", headers=ada)) == off
+    search = client.get(
+        f"{fin}/market-data/search", params={"kind": "stock", "q": "infosys"}, headers=ada
+    )
+    assert search.status_code == 409
+    assert client.post(f"{fin}/market-data/refresh", headers=ada).status_code == 409
+    assert feed.asked == []
+
+    on = {"available": True, "enabled": True}
+    assert ok(client.put(f"{fin}/market-data", json={"enabled": True}, headers=ada)) == on
+    assert ok(client.get(f"{fin}/market-data", headers=ada)) == on
+    assert ok(client.put(f"{fin}/market-data", json={"enabled": False}, headers=ada)) == off
+
+    # Another person's workspace is untouched, and they can't change Ada's.
+    grace = bearer(sign_up(client, email="grace@example.com", display_name="Grace"))
+    theirs = client.get(WORKSPACES, headers=grace).json()["workspaces"][0]
+    assert ok(client.get(f"{WORKSPACES}/{theirs['id']}/finance/market-data", headers=grace)) == off
+    other = client.put(f"{fin}/market-data", json={"enabled": True}, headers=grace)
+    assert other.status_code == 404
+
+
+def test_the_server_can_turn_market_data_off_for_everyone(migrated_settings: Settings) -> None:
+    app = create_app(
+        migrated_settings.model_copy(
+            update={"local_open_registration": True, "market_data_enabled": False}
+        )
+    )
     app.state.password_hasher = FAST_PASSWORD_HASHER
     app.state.price_feed = FakeFeed()
     with TestClient(app) as client:
         ada = bearer(sign_up(client, email="ada@example.com", display_name="Ada"))
         workspace = client.get(WORKSPACES, headers=ada).json()["workspaces"][0]
         fin = f"{WORKSPACES}/{workspace['id']}/finance"
-        assert ok(client.get(f"{fin}/market-data", headers=ada)) == {"enabled": False}
-        search = client.get(
-            f"{fin}/market-data/search", params={"kind": "stock", "q": "infosys"}, headers=ada
-        )
-        assert search.status_code == 409
-        assert client.post(f"{fin}/market-data/refresh", headers=ada).status_code == 409
+        assert ok(client.get(f"{fin}/market-data", headers=ada)) == {
+            "available": False,
+            "enabled": False,
+        }
+        turned = client.put(f"{fin}/market-data", json={"enabled": True}, headers=ada)
+        assert turned.status_code == 409
     assert app.state.price_feed.asked == []
 
 
 def test_instruments_can_be_searched(
     client: TestClient, ada: Headers, fin: str, feed: FakeFeed
 ) -> None:
-    assert ok(client.get(f"{fin}/market-data", headers=ada)) == {"enabled": True}
+    assert ok(client.get(f"{fin}/market-data", headers=ada)) == {"available": True, "enabled": True}
     found = ok(
         client.get(
             f"{fin}/market-data/search", params={"kind": "mutual_fund", "q": "parag"}, headers=ada
@@ -451,6 +485,7 @@ def test_the_worker_refreshes_prices_only_while_market_data_is_on(
     fund = add_fund(client, fin, ada, folio["account_id"])
     now = datetime.now(UTC)
     feed.prices[FUND_CODE] = {now.date(): "42"}
+    feed.asked.clear()  # Adding the fund fetched its prices already.
 
     async def run(settings: Settings) -> int:
         database = await open_database(settings)
@@ -462,7 +497,12 @@ def test_the_worker_refreshes_prices_only_while_market_data_is_on(
 
     off = market_settings.model_copy(update={"market_data_enabled": False})
     assert asyncio.run(run(off)) == 0
-    feed.asked.clear()
+    assert feed.asked == []
+    # A workspace with it turned off is skipped too.
+    ok(client.put(f"{fin}/market-data", json={"enabled": False}, headers=ada))
+    assert asyncio.run(run(market_settings)) == 0
+    assert feed.asked == []
+    ok(client.put(f"{fin}/market-data", json={"enabled": True}, headers=ada))
     assert asyncio.run(run(market_settings)) == 1
     assert feed.asked == [FUND_CODE]
     assert ok(client.get(f"{fin}/holdings/{fund['id']}", headers=ada))["price"]["price"] == "42"

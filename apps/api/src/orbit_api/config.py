@@ -126,10 +126,11 @@ class Settings(BaseSettings):
     integrations_webhook_url: AnyHttpUrl | None = None
     # How often the worker looks for due synchronization work.
     integrations_poll_seconds: float = Field(default=30, ge=5, le=3600)
-    # Market data: mutual fund NAVs (mfapi.in) and stock and ETF prices (Yahoo Finance), fetched
-    # automatically and on demand. Off by default: turning it on sends each priced holding's
-    # scheme code or ticker (never units or amounts) to those services.
-    market_data_enabled: bool = False
+    # Market data: mutual fund NAVs (mfapi.in) and stock and ETF prices (Yahoo Finance). Each
+    # workspace turns it on in Settings → Finance (off until then); turning it on sends each
+    # priced holding's scheme code or ticker (never units or amounts) to those services. This
+    # turns it off for everyone on the server.
+    market_data_enabled: bool = True
     # How often the worker refreshes every holding's price while market data is on.
     market_data_refresh_hours: float = Field(default=6, ge=1, le=168)
     # The personal agent and workflow automation (per person, off until each turns it on).

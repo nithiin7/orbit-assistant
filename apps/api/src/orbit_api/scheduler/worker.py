@@ -604,7 +604,9 @@ class ReminderWorker:
             async with self._database.session() as session:
                 try:
                     service = build_investment_service(session, self._clock)
-                    run = await service.record_due_sips(owner, today, feed)
+                    run = await service.record_due_sips(
+                        owner, today, feed if owner.market_data else None
+                    )
                     recorded += run.recorded
                     failed += run.failed
                 except Exception:

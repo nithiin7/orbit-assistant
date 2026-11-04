@@ -25,6 +25,7 @@ import type {
   InvestmentTransactionList,
   InvestmentTransactionListQuery,
   MarketData,
+  MarketDataUpdateRequest,
   NetWorth,
   NetWorthQuery,
   NetWorthSnapshot,
@@ -449,6 +450,15 @@ export function getMarketData(
   { signal }: Signal = {},
 ): Promise<MarketData> {
   return request<MarketData>(path(workspaceId, "/market-data"), { token, signal });
+}
+
+/** Turn live prices on or off for the workspace. */
+export function updateMarketData(
+  token: string,
+  workspaceId: string,
+  body: MarketDataUpdateRequest,
+): Promise<MarketData> {
+  return request<MarketData>(path(workspaceId, "/market-data"), { method: "PUT", body, token });
 }
 
 /** Funds, stocks, or ETFs the server's price service knows by that name. */

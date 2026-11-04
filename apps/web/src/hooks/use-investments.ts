@@ -54,6 +54,7 @@ import {
   instrumentSearchOptions,
   investmentAccountsOptions,
   investmentTransactionsOptions,
+  marketDataKeys,
   marketDataOptions,
   netWorthOptions,
   portfolioOptions,
@@ -70,6 +71,7 @@ import {
   updateDeposit,
   updateHolding,
   updateInvestmentAccount,
+  updateMarketData,
   updateSipPlan,
   valuationsOptions,
   valueDeposit,
@@ -187,11 +189,27 @@ export function useSnapshots(
   );
 }
 
-/** Whether the server fetches prices; `false` while loading or if it can't be told. */
+/** Whether the workspace fetches prices; `false` while loading or if it can't be told. */
 export function useMarketDataEnabled(workspaceId: string): boolean {
+  return useMarketData(workspaceId).data?.enabled ?? false;
+}
+
+/** The workspace's live prices setting, and a way to change it. */
+export function useMarketData(workspaceId: string | null) {
   const { withToken } = useAuth();
-  const result = useQuery(marketDataOptions(withToken, workspaceId));
-  return result.data?.enabled ?? false;
+  const queryClient = useQueryClient();
+  const query = useQuery(marketDataOptions(withToken, workspaceId));
+  const update = useMutation({
+    mutationFn: (enabled: boolean) => {
+      if (workspaceId === null) throw new Error("No workspace is open.");
+      return withToken((token) => updateMarketData(token, workspaceId, { enabled }));
+    },
+    onSuccess: (saved) => {
+      queryClient.setQueryData(marketDataKeys.status(workspaceId), saved);
+      void queryClient.invalidateQueries({ queryKey: financeKeys.all(workspaceId) });
+    },
+  });
+  return { data: query.data, isPending: query.isPending, isError: query.isError, update };
 }
 
 /** Search results for a phrase of at least two characters, kept while the next one loads. */

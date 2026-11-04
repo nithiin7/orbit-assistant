@@ -122,10 +122,10 @@ Integrations (see [Integrations](#integrations) and [integrations.md](integratio
 
 Market data (see [architecture.md](architecture.md#valuation-strategy)):
 
-| Variable                          | Default | Purpose                                                                                                         |
-| --------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------- |
-| `ORBIT_MARKET_DATA_ENABLED`       | `false` | Fetch mutual fund NAVs (mfapi.in) and stock and ETF prices (Yahoo Finance); sends scheme codes and tickers only |
-| `ORBIT_MARKET_DATA_REFRESH_HOURS` | `6`     | How often the worker refreshes every holding's price while market data is on (1 to 168)                         |
+| Variable                          | Default | Purpose                                                                                                          |
+| --------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------- |
+| `ORBIT_MARKET_DATA_ENABLED`       | `true`  | Server-wide kill switch for live prices (mfapi.in and Yahoo Finance); workspaces opt in under Settings → Finance |
+| `ORBIT_MARKET_DATA_REFRESH_HOURS` | `6`     | How often the worker refreshes every holding's price while market data is on (1 to 168)                          |
 
 Automation (see [architecture.md](architecture.md#personal-agent-and-automation)):
 
