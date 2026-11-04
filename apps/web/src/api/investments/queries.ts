@@ -1,5 +1,6 @@
 import type {
   Currency,
+  HoldingKind,
   InvestmentTransactionListQuery,
   NetWorthQuery,
   PortfolioQuery,
@@ -9,6 +10,7 @@ import { queryOptions, skipToken } from "@tanstack/react-query";
 import type { WithToken } from "../client";
 import { financeKeys } from "../finance";
 import {
+  getMarketData,
   getNetWorth,
   getPortfolio,
   listAssets,
@@ -19,6 +21,7 @@ import {
   listSipPlans,
   listSnapshots,
   listValuations,
+  searchInstruments,
 } from "./requests";
 
 /**
@@ -48,6 +51,17 @@ export const investmentKeys = {
     [...investmentKeys.all(workspaceId), "net-worth", query] as const,
   snapshots: (workspaceId: string | null, currency: Currency) =>
     [...investmentKeys.all(workspaceId), "snapshots", currency] as const,
+};
+
+/**
+ * Market data keys sit outside finance: they answer from an outside price service, so finance
+ * changes shouldn't refetch them.
+ */
+export const marketDataKeys = {
+  all: (workspaceId: string | null) => ["workspaces", workspaceId, "market-data"] as const,
+  status: (workspaceId: string | null) => [...marketDataKeys.all(workspaceId), "status"] as const,
+  search: (workspaceId: string | null, kind: HoldingKind, q: string) =>
+    [...marketDataKeys.all(workspaceId), "search", kind, q] as const,
 };
 
 type Fetch<T> = (token: string, workspaceId: string, signal: AbortSignal) => Promise<T>;
@@ -170,5 +184,33 @@ export function snapshotsOptions(
     queryFn: workspaceQuery(withToken, workspaceId, (token, id, signal) =>
       listSnapshots(token, id, currency, { signal }),
     ),
+  });
+}
+
+export function marketDataOptions(withToken: WithToken, workspaceId: string | null) {
+  return queryOptions({
+    queryKey: marketDataKeys.status(workspaceId),
+    queryFn: workspaceQuery(withToken, workspaceId, (token, id, signal) =>
+      getMarketData(token, id, { signal }),
+    ),
+    staleTime: Infinity,
+  });
+}
+
+export function instrumentSearchOptions(
+  withToken: WithToken,
+  workspaceId: string | null,
+  kind: HoldingKind,
+  q: string,
+) {
+  return queryOptions({
+    queryKey: marketDataKeys.search(workspaceId, kind, q),
+    queryFn:
+      q.length < 2
+        ? skipToken
+        : workspaceQuery(withToken, workspaceId, (token, id, signal) =>
+            searchInstruments(token, id, kind, q, { signal }),
+          ),
+    staleTime: 5 * 60_000,
   });
 }

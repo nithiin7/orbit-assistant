@@ -13,6 +13,7 @@ import type {
   DepositContributionRequest,
   DepositList,
   DepositValueRequest,
+  HoldingKind,
   HoldingList,
   InvestmentAccountList,
   InvestmentTransactionList,
@@ -50,14 +51,17 @@ import {
   deleteInvestmentTransaction,
   depositsOptions,
   holdingsOptions,
+  instrumentSearchOptions,
   investmentAccountsOptions,
   investmentTransactionsOptions,
+  marketDataOptions,
   netWorthOptions,
   portfolioOptions,
   recordInvestmentTransaction,
   recordPrice,
   recordSipInstallment,
   recordValuation,
+  refreshPrices,
   reopenDeposit,
   sipPlansOptions,
   snapshotsOptions,
@@ -183,6 +187,28 @@ export function useSnapshots(
   );
 }
 
+/** Whether the server fetches prices; `false` while loading or if it can't be told. */
+export function useMarketDataEnabled(workspaceId: string): boolean {
+  const { withToken } = useAuth();
+  const result = useQuery(marketDataOptions(withToken, workspaceId));
+  return result.data?.enabled ?? false;
+}
+
+/** Search results for a phrase of at least two characters, kept while the next one loads. */
+export function useInstrumentSearch(
+  workspaceId: string,
+  kind: HoldingKind,
+  q: string,
+  enabled: boolean,
+) {
+  const { withToken } = useAuth();
+  return useQuery({
+    ...instrumentSearchOptions(withToken, workspaceId, kind, q),
+    enabled,
+    placeholderData: keepPreviousData,
+  });
+}
+
 type WithId<T> = { id: string; body: T };
 
 /**
@@ -293,6 +319,10 @@ export function useInvestmentMutations(workspaceId: string) {
     recordValuation: useMutation({
       mutationFn: ({ id, body }: WithId<RecordValuationRequest>) =>
         run((t) => recordValuation(t, workspaceId, id, body)),
+      onSuccess,
+    }),
+    refreshPrices: useMutation({
+      mutationFn: () => run((t) => refreshPrices(t, workspaceId)),
       onSuccess,
     }),
     takeSnapshot: useMutation({

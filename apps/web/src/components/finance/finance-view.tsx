@@ -127,7 +127,12 @@ function FinanceFrame({ actions, children }: { actions?: ReactNode; children: Re
         actions={
           actions ? (
             <>
-              <AssistMenu module="finance" actions={ASSIST_ACTIONS.finance} variant="outline" />
+              <AssistMenu
+                module="finance"
+                actions={ASSIST_ACTIONS.finance}
+                variant="outline"
+                size="default"
+              />
               {actions}
             </>
           ) : undefined

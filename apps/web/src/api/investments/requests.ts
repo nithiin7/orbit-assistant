@@ -14,20 +14,24 @@ import type {
   DepositList,
   DepositValueRequest,
   Holding,
+  HoldingKind,
   HoldingList,
   HoldingPrice,
   HoldingPriceList,
+  InstrumentList,
   InvestmentAccount,
   InvestmentAccountList,
   InvestmentTransaction,
   InvestmentTransactionList,
   InvestmentTransactionListQuery,
+  MarketData,
   NetWorth,
   NetWorthQuery,
   NetWorthSnapshot,
   NetWorthSnapshotList,
   Portfolio,
   PortfolioQuery,
+  PriceRefresh,
   RecordInvestmentTransactionRequest,
   RecordPriceRequest,
   RecordSipInstallmentRequest,
@@ -433,6 +437,38 @@ export function takeSnapshot(
   return request<NetWorthSnapshot>(path(workspaceId, "/net-worth/snapshots"), {
     method: "POST",
     body,
+    token,
+  });
+}
+
+// Market data
+
+export function getMarketData(
+  token: string,
+  workspaceId: string,
+  { signal }: Signal = {},
+): Promise<MarketData> {
+  return request<MarketData>(path(workspaceId, "/market-data"), { token, signal });
+}
+
+/** Funds, stocks, or ETFs the server's price service knows by that name. */
+export function searchInstruments(
+  token: string,
+  workspaceId: string,
+  kind: HoldingKind,
+  q: string,
+  { signal }: Signal = {},
+): Promise<InstrumentList> {
+  return request<InstrumentList>(
+    `${path(workspaceId, "/market-data/search")}${toQueryString({ kind, q })}`,
+    { token, signal },
+  );
+}
+
+/** Fetch the latest prices of every holding with a scheme code or ticker. */
+export function refreshPrices(token: string, workspaceId: string): Promise<PriceRefresh> {
+  return request<PriceRefresh>(path(workspaceId, "/market-data/refresh"), {
+    method: "POST",
     token,
   });
 }

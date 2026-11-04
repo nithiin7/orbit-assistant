@@ -31,6 +31,7 @@ import {
   PiggyBank,
   Play,
   Plus,
+  RefreshCw,
   RotateCcw,
   Tag,
   Trash2,
@@ -51,6 +52,7 @@ import {
   useInvestmentAccounts,
   useInvestmentMutations,
   useInvestmentTransactions,
+  useMarketDataEnabled,
   usePortfolio,
   useSipPlans,
 } from "@/hooks/use-investments";
@@ -71,6 +73,7 @@ import {
 import { cn } from "@/utils/common";
 import { formatCalendarDate, localDateString } from "@/utils/dates";
 
+import { AddInvestmentDialog } from "./add-investment-dialog";
 import { Chip, SectionHeading, twoColumnRows } from "./finance-meta";
 import type { FinanceData } from "./finance-view";
 import {
@@ -128,7 +131,8 @@ const HOLDING_SECTIONS: readonly { kind: HoldingKind; label: string; one: string
 
 type Dialog =
   | { kind: "account"; account?: InvestmentAccount }
-  | { kind: "holding"; holding?: Holding; holdingKind?: HoldingKind }
+  | { kind: "add"; holdingKind: HoldingKind }
+  | { kind: "holding"; holding: Holding }
   | { kind: "trade"; holding: Holding; type: TradeType; sip?: SipPlan }
   | { kind: "price"; holding: Holding }
   | { kind: "sip"; holding: Holding; plan?: SipPlan }
@@ -147,6 +151,8 @@ export function InvestmentsView({ workspaceId, accounts, onAnnounce }: FinanceDa
   const deposits = useDeposits(workspaceId, today);
   const sips = useSipPlans(workspaceId, today);
   const [dialog, setDialog] = useState<Dialog | null>(null);
+  const marketData = useMarketDataEnabled(workspaceId);
+  const { refreshPrices } = useInvestmentMutations(workspaceId);
   const [chosenCurrency, setCurrency] = useState<Currency | null>(null);
   const [range, setRange] = useState<Range>("ytd");
   const [section, setSection] = useState<Section>("overview");
@@ -176,13 +182,14 @@ export function InvestmentsView({ workspaceId, accounts, onAnnounce }: FinanceDa
         accounts={accounts}
         adoptable={adoptable}
       />
-    ) : dialog?.kind === "holding" ? (
-      <HoldingDialog
+    ) : dialog?.kind === "add" ? (
+      <AddInvestmentDialog
         {...common}
-        holding={dialog.holding}
         defaultKind={dialog.holdingKind}
         investmentAccounts={profiles}
       />
+    ) : dialog?.kind === "holding" ? (
+      <HoldingDialog {...common} holding={dialog.holding} investmentAccounts={profiles} />
     ) : dialog?.kind === "trade" ? (
       <TradeDialog
         {...common}
@@ -222,10 +229,17 @@ export function InvestmentsView({ workspaceId, accounts, onAnnounce }: FinanceDa
         <EmptyState
           icon={LineChart}
           title="Track your investments"
-          description="Add a mutual fund platform, a broker, or where your fixed deposits are. Prices are entered by hand; Orbit never connects to brokers or banks."
+          description={
+            marketData
+              ? "Add the funds and shares you own: find them by name and enter what you hold. Prices update automatically; Orbit never connects to brokers or banks."
+              : "Add the funds and shares you own and what you hold, or where your fixed deposits are. Prices are entered by hand; Orbit never connects to brokers or banks."
+          }
         >
-          <Button onClick={() => setDialog({ kind: "account" })}>
+          <Button onClick={() => setDialog({ kind: "add", holdingKind: "mutual_fund" })}>
             <Plus aria-hidden="true" />
+            Add an investment
+          </Button>
+          <Button variant="soft" onClick={() => setDialog({ kind: "account" })}>
             Add investment account
           </Button>
         </EmptyState>
@@ -257,13 +271,41 @@ export function InvestmentsView({ workspaceId, accounts, onAnnounce }: FinanceDa
   };
   const holdingSection = HOLDING_SECTIONS.find((entry) => entry.kind === section);
 
+  async function refresh() {
+    try {
+      const result = await refreshPrices.mutateAsync();
+      onAnnounce(
+        result.failed > 0
+          ? `Updated ${result.updated} price(s); ${result.failed} couldn’t be fetched. Try again later.`
+          : result.updated > 0
+            ? `Updated ${result.updated} price(s).`
+            : "No holding has a scheme code or symbol to look its price up by.",
+      );
+    } catch (reason) {
+      onAnnounce(describeApiError(reason, "Couldn’t refresh prices. Try again."));
+    }
+  }
+
   return (
     <div className="space-y-6">
       <ViewHeader
         title="Investments"
-        description="What your funds, shares, and deposits are worth against what they cost. Prices are entered by hand."
+        description={`What your funds, shares, and deposits are worth against what they cost. ${marketData ? "Prices update automatically." : "Prices are entered by hand."}`}
         controls={
           <>
+            {marketData ? (
+              <Button
+                variant="ghost"
+                disabled={refreshPrices.isPending}
+                onClick={() => void refresh()}
+              >
+                <RefreshCw
+                  aria-hidden="true"
+                  className={refreshPrices.isPending ? "animate-spin" : undefined}
+                />
+                Refresh prices
+              </Button>
+            ) : null}
             <CurrencySwitcher currencies={currencies} currency={currency} onChange={setCurrency} />
             <InlineSelect
               label="Gains and income for"
@@ -289,10 +331,9 @@ export function InvestmentsView({ workspaceId, accounts, onAnnounce }: FinanceDa
                       : "A fund traded on an exchange",
                 icon: SECTION_ICONS[kind],
                 group: "Holding",
-                disabled: active.length === 0,
                 onSelect: () => {
                   setSection(kind);
-                  setDialog({ kind: "holding", holdingKind: kind });
+                  setDialog({ kind: "add", holdingKind: kind });
                 },
               })),
               {
@@ -376,8 +417,8 @@ export function InvestmentsView({ workspaceId, accounts, onAnnounce }: FinanceDa
                 <EmptySection
                   message={`No ${holdingSection.label.toLowerCase()} yet. Add one, then record its purchases.`}
                   action={`Add ${holdingSection.one}`}
-                  disabled={active.length === 0}
-                  onAdd={() => setDialog({ kind: "holding", holdingKind: holdingSection.kind })}
+                  disabled={false}
+                  onAdd={() => setDialog({ kind: "add", holdingKind: holdingSection.kind })}
                 />
               }
             />
@@ -1062,7 +1103,8 @@ function HoldingRow({
                     SIP_STATES[plan.state]
                   ) : plan.next_due_date ? (
                     <span className={overdue ? "text-destructive" : undefined}>
-                      {overdue ? "Overdue since" : "Next"} {formatCalendarDate(plan.next_due_date)}
+                      {overdue ? "Overdue since" : plan.auto_debit ? "Auto-debit" : "Next"}{" "}
+                      {formatCalendarDate(plan.next_due_date)}
                     </span>
                   ) : (
                     "Finished"
