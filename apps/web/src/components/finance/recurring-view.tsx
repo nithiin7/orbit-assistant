@@ -42,19 +42,16 @@ const COPY: Record<
   subscription: {
     title: "Subscriptions",
     empty: "No subscriptions yet",
-    description:
-      "Track streaming, software, AI tools, memberships, and broadband to see what they cost each month and when they renew.",
+    description: "Streaming, software, memberships, and more.",
     add: "Add subscription",
-    summary: "What your subscriptions cost and when each renews. Recording one adds the expense.",
+    summary: "What they cost and when each renews.",
   },
   bill: {
     title: "Bills",
     empty: "No recurring bills yet",
-    description:
-      "Track rent, utilities, phone, insurance premiums, and maintenance, and record each payment against its due date.",
+    description: "Rent, utilities, phone, insurance, and more.",
     add: "Add bill",
-    summary:
-      "Rent, utilities, phone, and other bills, with what’s due next. Recording one adds the expense.",
+    summary: "What’s due next.",
   },
 };
 
@@ -175,7 +172,7 @@ export function RecurringView(props: RecurringViewProps) {
 
       {current.length === 0 ? (
         <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">
-          Nothing active. Cancelled and ended ones are below.
+          Nothing active.
         </p>
       ) : (
         <ul

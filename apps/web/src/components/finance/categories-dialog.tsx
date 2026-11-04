@@ -92,9 +92,7 @@ export function CategoriesDialog({
             <h2 id={`${id}-heading`} className="text-base font-semibold">
               Categories
             </h2>
-            <p className="text-xs text-muted-foreground">
-              Built-in categories can’t be deleted. Your own can, once no transaction uses them.
-            </p>
+            <p className="text-xs text-muted-foreground">Built-in categories can’t be deleted.</p>
           </div>
           <Button
             variant="ghost"

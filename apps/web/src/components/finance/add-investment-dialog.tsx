@@ -174,11 +174,7 @@ export function AddInvestmentDialog({
   return (
     <DialogShell
       title="Add an investment"
-      description={
-        marketData
-          ? "Find it by name, then say what you hold. Prices update automatically."
-          : "Enter its details and what you hold."
-      }
+      description={marketData ? "Find it, then add what you hold." : "Add it and what you hold."}
       busy={saving}
       onClose={onClose}
       submitLabel="Add investment"
@@ -246,7 +242,7 @@ export function AddInvestmentDialog({
                 label="Scheme code (optional)"
                 autoComplete="off"
                 inputMode="numeric"
-                hint={marketData ? "The AMFI code, so its NAV updates itself." : undefined}
+                hint={marketData ? "So its NAV updates itself." : undefined}
                 {...register("symbol")}
               />
             ) : (
@@ -295,17 +291,13 @@ export function AddInvestmentDialog({
               name="amount"
               currency={currency}
               label={`Amount invested (${currency})`}
-              hint="What you paid in total, as on your statement."
+              hint="Total paid."
             />
             <FormField
               label={fund ? "Units held (optional)" : "Units held"}
               inputMode="decimal"
               autoComplete="off"
-              hint={
-                fund
-                  ? "Leave blank for a single purchase: it’s worked out from that day’s NAV. For SIPs or several buys, enter the units on your statement."
-                  : "Shares or units, up to 6 decimals."
-              }
+              hint={fund ? "Blank for a one-time buy. For SIPs, use your statement." : undefined}
               {...register("quantity")}
               error={errors.quantity?.message}
             />
@@ -323,9 +315,7 @@ export function AddInvestmentDialog({
             ) : null}
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground">
-            It’s added with no units. Record a buy, or schedule a SIP, when you invest.
-          </p>
+          <p className="text-xs text-muted-foreground">Added with no units.</p>
         )}
       </div>
       <FormAlert message={errors.root?.server?.message ?? null} />

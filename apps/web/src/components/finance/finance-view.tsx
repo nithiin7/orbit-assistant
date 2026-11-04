@@ -60,8 +60,7 @@ import { UpcomingPayments } from "./upcoming-payments";
 
 export type FinanceTab = FinanceViewId;
 
-const DESCRIPTION =
-  "Accounts, spending, plans, commitments, and wealth, entered by hand. Private to you; Orbit never connects to your bank.";
+const DESCRIPTION = "Private to you. Never connected to your bank.";
 
 /** Views that need an account to show anything useful. */
 const NEEDS_ACCOUNT: ReadonlySet<FinanceTab> = new Set(["overview", "transactions"]);
@@ -299,7 +298,7 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
               <EmptyState
                 icon={Landmark}
                 title="Add an account to get started"
-                description="Track a bank account, cash, a card, or a wallet by hand. Orbit never asks for bank logins or connects to your bank."
+                description="Add a bank account, cash, a card, or a wallet."
               >
                 <Button onClick={() => setDialog({ kind: "account" })}>
                   <Plus aria-hidden="true" />

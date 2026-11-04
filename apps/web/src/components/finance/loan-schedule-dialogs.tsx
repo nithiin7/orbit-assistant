@@ -193,15 +193,14 @@ export function RescheduleDialog({
   return (
     <DialogShell
       title={`Reschedule ${loan.name}`}
-      description={`Rebuilds the unpaid installments from the ${formatMoney(loan.outstanding_principal, loan.currency)} still owed. Paid installments stay as they are.`}
+      description={`From the ${formatMoney(loan.outstanding_principal, loan.currency)} still owed. Paid EMIs stay.`}
       busy={saving}
       onClose={onClose}
       submitLabel="Reschedule"
       onSubmit={(event, close) => void handleSubmit((values) => save(values, close))(event)}
     >
       <p className="rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground">
-        Made a prepayment? Record it first as a transfer into the “{loan.name}” account, so it
-        counts toward what you owe.
+        Record any prepayment first, as a transfer into “{loan.name}”.
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField
@@ -216,7 +215,7 @@ export function RescheduleDialog({
           name="emi"
           currency={loan.currency}
           label={`New EMI (${loan.currency}, optional)`}
-          hint="Blank keeps the number of EMIs and works out a new amount. A new EMI changes the tenure."
+          hint="Blank keeps the EMI count."
         />
       </div>
       <DateField control={control} name="nextPaymentDate" label="Next EMI" />

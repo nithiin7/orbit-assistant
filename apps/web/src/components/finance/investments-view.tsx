@@ -231,8 +231,8 @@ export function InvestmentsView({ workspaceId, accounts, onAnnounce }: FinanceDa
           title="Track your investments"
           description={
             marketData
-              ? "Add the funds and shares you own: find them by name and enter what you hold. Prices update automatically; Orbit never connects to brokers or banks."
-              : "Add the funds and shares you own and what you hold, or where your fixed deposits are. Prices are entered by hand; Orbit never connects to brokers or banks."
+              ? "Add the funds and shares you own. Prices update automatically."
+              : "Add the funds, shares, and deposits you own."
           }
         >
           <Button onClick={() => setDialog({ kind: "add", holdingKind: "mutual_fund" })}>
@@ -290,7 +290,6 @@ export function InvestmentsView({ workspaceId, accounts, onAnnounce }: FinanceDa
     <div className="space-y-6">
       <ViewHeader
         title="Investments"
-        description={`What your funds, shares, and deposits are worth against what they cost. ${marketData ? "Prices update automatically." : "Prices are entered by hand."}`}
         controls={
           <>
             {marketData ? (
@@ -903,10 +902,10 @@ function PortfolioSummary({
       {children}
 
       <div className="grid gap-6 @3xl/list:grid-cols-2">
-        <Panel title="Allocation" description="Current value by asset class.">
+        <Panel title="Allocation">
           <ProportionBars slices={data.allocation} currency={currency} label="Allocation" />
         </Panel>
-        <Panel title="By category" description="Scheme categories and deposit types.">
+        <Panel title="By category">
           <ProportionBars slices={data.categories} currency={currency} label="By category" />
         </Panel>
       </div>
@@ -1252,11 +1251,7 @@ function DepositsPanel({
   const today = localDateString();
 
   return (
-    <Panel
-      title="Fixed and recurring deposits"
-      description="Values are estimates from the rate and compounding unless you set them; maturity amounts are projections, not guarantees."
-      flush
-    >
+    <Panel title="Fixed and recurring deposits" description="Values are estimates." flush>
       <ul
         className={cn(
           "@container/rows grid divide-y border-t",
@@ -1439,7 +1434,7 @@ function ActivityPanel({
   };
 
   return (
-    <Panel title="Recent activity" description="Buys, sales, income, fees, and deposits." flush>
+    <Panel title="Recent activity" flush>
       {state.status === "error" ? (
         <div className="px-5 pb-5">
           <LoadError message={state.message} onRetry={activity.reload} />
@@ -1519,11 +1514,7 @@ function AccountsPanel({
 }) {
   const names = new Map(accounts.map((account) => [account.id, account.name]));
   return (
-    <Panel
-      title="Investment accounts"
-      description="Cash is what was moved in and not yet invested; the balance in Accounts also counts what was spent on holdings."
-      flush
-    >
+    <Panel title="Investment accounts" description="Cash is money not yet invested." flush>
       <ul className="divide-y border-t">
         {profiles.map((account) => (
           <li

@@ -140,8 +140,8 @@ function SettlementFields<F extends FieldValues>({
       ) : (
         <p className="self-end pb-2 text-xs text-muted-foreground">
           {settlement === "none"
-            ? "No money moves in your accounts; the units are added as already owned."
-            : "Uses money already moved into the investment account."}
+            ? "No money moves; the units are added as owned."
+            : "Uses the investment account’s cash."}
         </p>
       )}
     </div>
@@ -254,7 +254,7 @@ export function InvestmentAccountDialog({
   return (
     <DialogShell
       title={account ? "Edit investment account" : "Add an investment account"}
-      description="A mutual fund platform, a broker, or where your deposits are. Its balance is the cash in it; holdings are tracked separately."
+      description="A fund platform, broker, or bank."
       busy={saving}
       onClose={onClose}
       submitLabel={account ? "Save changes" : "Add account"}
@@ -409,7 +409,7 @@ export function HoldingDialog({
   return (
     <DialogShell
       title={holding ? "Edit holding" : "Add a holding"}
-      description="Units and cost come from the buys and sales you record, never typed in directly."
+      description="Units come from the buys and sales you record."
       busy={saving}
       onClose={onClose}
       submitLabel={holding ? "Save changes" : "Add holding"}
@@ -640,9 +640,7 @@ export function TradeDialog({
               inputMode="decimal"
               autoComplete="off"
               hint={
-                unitsOptional
-                  ? "Leave blank to work them out from the NAV on that date."
-                  : "Up to 6 decimals, as on your statement."
+                unitsOptional ? "Blank uses the NAV." : "Up to 6 decimals, as on your statement."
               }
               {...register("quantity")}
               error={errors.quantity?.message}
@@ -652,7 +650,7 @@ export function TradeDialog({
               name="fees"
               currency={currency}
               label={`Charges (${currency}, optional)`}
-              hint="Brokerage, stamp duty… Recorded as an expense."
+              hint="Recorded as an expense."
             />
             {type === "buy" && !sip ? (
               <SelectField
@@ -719,7 +717,7 @@ export function PriceDialog({
   return (
     <DialogShell
       title={holding.kind === "mutual_fund" ? "Update NAV" : "Update price"}
-      description={`${holding.name}. Orbit doesn’t fetch prices; enter them from your statement or app.`}
+      description={holding.name}
       busy={saving}
       onClose={onClose}
       submitLabel="Save price"
@@ -814,8 +812,8 @@ export function SipDialog({
       title={plan ? "Edit SIP" : "Schedule a SIP"}
       description={
         autoDebit
-          ? `${holding.name}. Orbit records each installment on its date, from the account below, with units at that day’s NAV.`
-          : `${holding.name}. A scheduled SIP is only a plan: nothing is invested until you record an installment.`
+          ? `${holding.name}. Recorded for you on each date.`
+          : `${holding.name}. Nothing is invested until you record it.`
       }
       busy={saving}
       onClose={onClose}
@@ -852,8 +850,7 @@ export function SipDialog({
           <span className="space-y-0.5">
             <span className="block font-medium">Auto-debit</span>
             <span className="block text-xs text-muted-foreground">
-              Records each installment for you on its date: the transfer from your account and the
-              units, worked out from that day’s NAV once it’s published.
+              Records each installment on its date, at that day’s NAV.
             </span>
           </span>
         </label>
@@ -974,7 +971,7 @@ export function DepositDialog({
   return (
     <DialogShell
       title={deposit ? "Edit deposit" : "Open a deposit"}
-      description="Interest and maturity amounts are estimates from the rate and compounding; your bank’s figures may differ."
+      description="Interest is an estimate; your bank’s figures may differ."
       busy={saving}
       onClose={onClose}
       submitLabel={deposit ? "Save changes" : "Open deposit"}

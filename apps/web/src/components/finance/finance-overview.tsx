@@ -47,7 +47,6 @@ export function FinanceOverview({
     <div className="space-y-6">
       <ViewHeader
         title="Overview"
-        description={`${monthLabel(month)} at a glance: cash flow, what’s due, and your plans.`}
         controls={
           <>
             <MonthSwitcher month={month} thisMonth={thisMonth} onChange={onMonthChange} />
@@ -85,10 +84,7 @@ export function FinanceOverview({
                 selected={month}
               />
             </Panel>
-            <Panel
-              title="Spending by category"
-              description="After refunds. Transfers, such as card bills and investments, aren’t spending."
-            >
+            <Panel title="Spending by category" description="Transfers aren’t spending.">
               {resource.data.spending.categories.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No spending this month.</p>
               ) : (
@@ -238,7 +234,7 @@ function Balances({
   return (
     <Panel
       title="Account balances"
-      description="Opening balances plus everything recorded. Not net worth, which adds investments and other assets."
+      description="Excludes investments and assets."
       flush
       action={
         <Button variant="ghost" size="sm" onClick={onOpenAccounts}>

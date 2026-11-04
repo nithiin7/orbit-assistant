@@ -64,7 +64,7 @@ export function NetWorthView({ workspaceId, onAnnounce }: FinanceData) {
       <EmptyState
         icon={Scale}
         title="Nothing to add up yet"
-        description="Net worth adds your account balances, investments, and other assets, and subtracts cards and loans. Add an account or an asset to begin."
+        description="What you own minus what you owe. Add an account or asset to begin."
       />
     );
   }
@@ -116,7 +116,7 @@ function NetWorthDetail({
     <div className="space-y-6">
       <ViewHeader
         title="Net worth"
-        description={`Everything you own minus everything you owe, as of ${formatCalendarDate(data.as_of)}. Save a snapshot each month to see how it changes.`}
+        description={`As of ${formatCalendarDate(data.as_of)}.`}
         controls={
           <>
             <CurrencySwitcher
@@ -184,10 +184,7 @@ function NetWorthDetail({
       {/* How it changed, beside what it's made of when there's room. */}
       <div className="grid items-start gap-6 @5xl/list:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-6">
-          <Panel
-            title="Net worth over time"
-            description="Monthly snapshots, then today. Reconstructed months were rebuilt later from recorded history."
-          >
+          <Panel title="Net worth over time" description="Monthly snapshots, then today.">
             {snapshots.state.status === "loading" ? (
               <Skeleton className="h-48" />
             ) : snapshots.state.status === "error" ? (
@@ -196,7 +193,7 @@ function NetWorthDetail({
               <TrendBars snapshots={snapshots.state.data.snapshots} live={data} />
             )}
           </Panel>
-          <Panel title="Change" description="Against the snapshots saved for earlier months.">
+          <Panel title="Change">
             <dl className="grid grid-cols-2 gap-4 @2xl/list:grid-cols-4">
               {data.changes.map((change) => (
                 <div key={change.months}>

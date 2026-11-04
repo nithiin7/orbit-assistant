@@ -78,13 +78,7 @@ export function LoansView(props: LoansViewProps) {
       Add loan
     </Button>
   );
-  const header = (
-    <ViewHeader
-      title="Loans"
-      description="What you still owe, each EMI’s split between principal and interest, and the schedule ahead."
-      action={addButton}
-    />
-  );
+  const header = <ViewHeader title="Loans" action={addButton} />;
 
   if (state.status === "error") {
     return (
@@ -112,7 +106,7 @@ export function LoansView(props: LoansViewProps) {
       <EmptyState
         icon={Landmark}
         title="No loans yet"
-        description="Add a home, car, personal, or education loan to see its EMI schedule, what you still owe, and how much goes to interest."
+        description="Add a loan to see its EMIs and what you owe."
       >
         {addButton}
       </EmptyState>
@@ -493,10 +487,7 @@ function LoanSchedule({
   const ref = (installment: Installment) => ({ loanId: loan.id, installmentId: installment.id });
   return (
     <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">
-        Principal repays the loan (a transfer, not spending); interest is an expense. Balances ahead
-        are projected from what you owe today.
-      </p>
+      <p className="text-xs text-muted-foreground">Principal isn’t spending; interest is.</p>
       {error ? <FormAlert message={error} /> : null}
       <ol aria-label={`${loan.name} EMI schedule`} className="divide-y rounded-lg border">
         {state.data.installments.map((installment) => (

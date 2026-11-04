@@ -45,7 +45,7 @@ export function PlanView({
     <div className="space-y-6">
       <ViewHeader
         title="Plan"
-        description="Expected income against commitments, budgets, savings, and investments, and what’s left to spend."
+        description="What’s left after your plans."
         controls={
           <>
             <MonthSwitcher
@@ -158,11 +158,7 @@ function Breakdown({ plan }: { plan: MonthPlan }) {
     { label: "Investments", line: plan.investments, sign: "−", hint: "Planned: SIPs due" },
   ];
   return (
-    <Panel
-      title={`${monthLabel(plan.month)} plan`}
-      description="Planned figures come from your expected income, commitment schedules, budgets, goals, and SIPs; actual ones from what you recorded."
-      flush
-    >
+    <Panel title={`${monthLabel(plan.month)} plan`} description="Planned against actual." flush>
       <table className="w-full text-sm">
         <caption className="sr-only">
           Planned and actual cash flow for {monthLabel(plan.month)}
@@ -310,7 +306,7 @@ function IncomeForm({
           <p className="text-xs text-muted-foreground">
             {plan.income_source === "earlier" && plan.income_month
               ? `Carried from ${monthLabel(plan.income_month)}. Save to set ${monthLabel(plan.month)}’s own.`
-              : "What you expect to earn this month. Later months use it until you change it."}
+              : "What you expect to earn this month."}
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-2">

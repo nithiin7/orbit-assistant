@@ -43,7 +43,7 @@ export function CommitmentsSummary({
   return (
     <Panel
       title="Commitments"
-      description="Expected payments, not spending until you record them."
+      description="Not spending until recorded."
       action={
         <Button variant="ghost" size="sm" onClick={onOpenUpcoming}>
           Upcoming payments

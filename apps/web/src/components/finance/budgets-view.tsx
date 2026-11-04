@@ -78,7 +78,6 @@ export function BudgetsView({
     <div className="space-y-6">
       <ViewHeader
         title="Budgets"
-        description="Limits for all spending or a category, tracked against what you record."
         controls={
           <>
             <MonthSwitcher
@@ -106,7 +105,7 @@ export function BudgetsView({
         <EmptyState
           icon={PiggyBank}
           title={`No budgets for ${monthLabel(month)}`}
-          description="Set a limit for all spending or for categories such as groceries and dining. Orbit tracks it against what you record and alerts you as you approach it."
+          description="Set a spending limit for everything or a category."
         >
           {addButton}
         </EmptyState>
@@ -573,8 +572,7 @@ function PeriodHistory({
             period.spent_at_close !== null &&
             period.spent_at_close !== period.spent ? (
               <p className="text-xs text-muted-foreground">
-                {formatMoney(period.spent_at_close, budget.currency)} when it closed; later
-                corrections don’t change the rollover it passed on.
+                {formatMoney(period.spent_at_close, budget.currency)} when it closed.
               </p>
             ) : null}
           </li>
@@ -597,10 +595,7 @@ function CategorySpending({
     .sort((a, b) => b.spent - a.spent);
   const total = rows.reduce((sum, entry) => sum + entry.spent, 0);
   return (
-    <Panel
-      title="Where it went"
-      description="Each category’s share of this month’s spending. Transfers aren’t spending."
-    >
+    <Panel title="Where it went" description="This month, by category.">
       {rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">No spending this month.</p>
       ) : (
@@ -657,10 +652,7 @@ function MonthHistory({
 }) {
   const { state, reload } = useBudgetHistory(workspaceId, month, currency, today);
   return (
-    <Panel
-      title="Budget against spending"
-      description="The six months to this one, with the budgets each month had. Choose a month to inspect it."
-    >
+    <Panel title="Budget against spending" description="The last six months.">
       {state.status === "error" ? (
         <LoadError message={state.message} onRetry={reload} />
       ) : state.status === "loading" ? (
