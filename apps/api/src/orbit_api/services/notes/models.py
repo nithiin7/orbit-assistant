@@ -42,6 +42,8 @@ class Note:
     journal_date: date | None
     is_pinned: bool
     is_favorite: bool
+    # Locked notes show only their title in lists, search, and previews.
+    is_locked: bool
     archived_at: datetime | None
     trashed_at: datetime | None
     # Counts changes to the title or content; starts at 1.
@@ -126,6 +128,7 @@ class NoteChanges:
     note_type: Change[Literal["note", "quick"]] = UNSET
     is_pinned: Change[bool] = UNSET
     is_favorite: Change[bool] = UNSET
+    is_locked: Change[bool] = UNSET
     archived: Change[bool] = UNSET
 
 

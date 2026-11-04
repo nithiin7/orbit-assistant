@@ -50574,6 +50574,11 @@
             "type": "boolean",
             "title": "Is Favorite"
           },
+          "is_locked": {
+            "type": "boolean",
+            "title": "Is Locked",
+            "description": "Locked notes show only their title in lists and search; `excerpt` is empty."
+          },
           "archived_at": {
             "anyOf": [
               {
@@ -50666,6 +50671,7 @@
           "journal_date",
           "is_pinned",
           "is_favorite",
+          "is_locked",
           "archived_at",
           "trashed_at",
           "revision",
@@ -50738,6 +50744,11 @@
           "is_favorite": {
             "type": "boolean",
             "title": "Is Favorite"
+          },
+          "is_locked": {
+            "type": "boolean",
+            "title": "Is Locked",
+            "description": "Locked notes show only their title in lists and search; `excerpt` is empty."
           },
           "archived_at": {
             "anyOf": [
@@ -50814,6 +50825,7 @@
           "journal_date",
           "is_pinned",
           "is_favorite",
+          "is_locked",
           "archived_at",
           "trashed_at",
           "revision",
@@ -61179,6 +61191,17 @@
               }
             ],
             "title": "Is Favorite"
+          },
+          "is_locked": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Locked"
           },
           "archived": {
             "anyOf": [

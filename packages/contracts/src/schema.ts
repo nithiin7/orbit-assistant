@@ -13367,6 +13367,11 @@ export interface components {
             is_pinned: boolean;
             /** Is Favorite */
             is_favorite: boolean;
+            /**
+             * Is Locked
+             * @description Locked notes show only their title in lists and search; `excerpt` is empty.
+             */
+            is_locked: boolean;
             /** Archived At */
             archived_at: string | null;
             /** Trashed At */
@@ -13445,6 +13450,11 @@ export interface components {
             is_pinned: boolean;
             /** Is Favorite */
             is_favorite: boolean;
+            /**
+             * Is Locked
+             * @description Locked notes show only their title in lists and search; `excerpt` is empty.
+             */
+            is_locked: boolean;
             /** Archived At */
             archived_at: string | null;
             /** Trashed At */
@@ -17204,6 +17214,8 @@ export interface components {
             is_pinned?: boolean | null;
             /** Is Favorite */
             is_favorite?: boolean | null;
+            /** Is Locked */
+            is_locked?: boolean | null;
             /** Archived */
             archived?: boolean | null;
         };

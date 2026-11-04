@@ -149,7 +149,12 @@ NOTE = EntitySource(
     fields=(
         SearchField("tags", "metadata", _note_tags),
         text_field("folder", "metadata", NoteFolderModel.name),
-        text_field("content", "content", NoteModel.plain_text),
+        # A locked note's text is neither matched nor shown; its title still is.
+        text_field(
+            "content",
+            "content",
+            case((NoteModel.is_locked, literal("")), else_=NoteModel.plain_text),
+        ),
     ),
     active=NoteModel.archived_at.is_(None),
     archived=NoteModel.archived_at.is_not(None),

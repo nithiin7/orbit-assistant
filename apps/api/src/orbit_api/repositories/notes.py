@@ -75,6 +75,7 @@ def _to_note(model: NoteModel) -> Note:
         journal_date=model.journal_date,
         is_pinned=model.is_pinned,
         is_favorite=model.is_favorite,
+        is_locked=model.is_locked,
         archived_at=model.archived_at,
         trashed_at=model.trashed_at,
         revision=model.revision,
@@ -145,7 +146,10 @@ def _matches(term: str) -> ColumnElement[bool]:
     )
     return or_(
         NoteModel.title.ilike(pattern, escape=LIKE_ESCAPE),
-        NoteModel.plain_text.ilike(pattern, escape=LIKE_ESCAPE),
+        # A locked note is found by its title, tags, or folder, never by its hidden text.
+        and_(
+            NoteModel.is_locked.is_(False), NoteModel.plain_text.ilike(pattern, escape=LIKE_ESCAPE)
+        ),
         tagged,
         in_folder,
     )
@@ -242,6 +246,7 @@ class SqlNoteRepository:
                 journal_date=note.journal_date,
                 is_pinned=note.is_pinned,
                 is_favorite=note.is_favorite,
+                is_locked=note.is_locked,
                 archived_at=note.archived_at,
                 trashed_at=note.trashed_at,
                 revision=note.revision,
@@ -297,6 +302,7 @@ class SqlNoteRepository:
         model.journal_date = note.journal_date
         model.is_pinned = note.is_pinned
         model.is_favorite = note.is_favorite
+        model.is_locked = note.is_locked
         model.archived_at = note.archived_at
         model.trashed_at = note.trashed_at
         model.revision = note.revision
