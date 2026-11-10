@@ -15,7 +15,11 @@ with an optional AI assistant that only sees what you allow.
 [Quick start](#quick-start) · [Features](#features) · [Self-hosting](docs/deployment.md) ·
 [Contributing](CONTRIBUTING.md)
 
-<img src="docs/screenshots/dashboard.webp" alt="Orbit dashboard" width="900">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dashboard-dark_mode.webp">
+  <source media="(prefers-color-scheme: light)" srcset="docs/screenshots/dashboard-light_mode.webp">
+  <img src="docs/screenshots/dashboard-light_mode.webp" alt="Orbit dashboard" width="900">
+</picture>
 
 </div>
 
@@ -31,32 +35,41 @@ with an optional AI assistant that only sees what you allow.
 
 ## Features
 
-| Module                  | What you get                                                                        |
-| ----------------------- | ----------------------------------------------------------------------------------- |
-| 🏠 **Dashboard**        | Today at a glance: agenda, due tasks, habits, payments, and customizable widgets    |
-| ✅ **Tasks**            | Tasks, shopping lists, and reminders, including recurring ones                      |
-| 📅 **Calendar**         | Month, week, day, and agenda views, recurring events, and drag-and-drop scheduling  |
-| 💰 **Finance**          | Accounts, budgets, loans, subscriptions, investments, goals, and net worth          |
-| 📝 **Notes**            | Rich-text editor, folders, tags, backlinks, a daily journal, and Markdown           |
-| 🔁 **Habits**           | Streaks, routines, a Today view, and history heatmaps                               |
-| 📂 **Documents**        | A personal vault with previews, versions, and expiry reminders                      |
-| 💪 **Health**           | Workout logging, personal records, body measurements, nutrition, and goals          |
-| 🎬 **Watchlist**        | Movies and series to watch, episode tracking, ratings, and a "watch tonight" picker |
-| 🔍 **Search**           | One search across every module, from anywhere with <kbd>Cmd/Ctrl</kbd>+<kbd>K</kbd> |
-| ✨ **AI assistant**     | Chat with your data, summaries and drafts, and automations you approve              |
-| 🔗 **Integrations**     | Google and Microsoft calendars, mail, and files                                     |
-| 🛡️ **Backup & restore** | Encrypted, scheduled backups and exports to JSON, CSV, iCalendar, and Markdown      |
+| Module                  | What you get                                                                             |
+| ----------------------- | ---------------------------------------------------------------------------------------- |
+| 🏠 **Dashboard**        | Today at a glance: agenda, due tasks, habits, payments, and customizable widgets         |
+| ✅ **Tasks**            | Tasks, shopping lists, and reminders, including recurring ones                           |
+| 📅 **Calendar**         | Month, week, day, and agenda views, recurring events, and drag-and-drop scheduling       |
+| 💰 **Finance**          | Accounts, budgets, loans, subscriptions, investments, goals, and net worth               |
+| 📝 **Notes**            | Rich-text editor, folders, tags, backlinks, a daily journal, and Markdown                |
+| 🔁 **Habits**           | Streaks, routines, a Today view, and history heatmaps                                    |
+| 📂 **Documents**        | A personal vault with previews, versions, and expiry reminders                           |
+| 💪 **Health**           | Workout logging, personal records, body measurements, nutrition, and goals               |
+| 🎬 **Watchlist**        | Movies and series to watch, episode tracking, ratings, and a "watch tonight" picker      |
+| 🔖 **Saved**            | Links you come back to, plus reels, videos, and articles to get to later, in collections |
+| 🔍 **Search**           | One search across every module, from anywhere with <kbd>Cmd/Ctrl</kbd>+<kbd>K</kbd>      |
+| ✨ **AI assistant**     | Chat with your data, summaries and drafts, and automations you approve                   |
+| 🔗 **Integrations**     | Google and Microsoft calendars, mail, and files                                          |
+| 🛡️ **Backup & restore** | Encrypted, scheduled backups and exports to JSON, CSV, iCalendar, and Markdown           |
 
 ## Screenshots
 
 <table>
   <tr>
-    <td><img src="docs/screenshots/tasks.webp" alt="Tasks"></td>
-    <td><img src="docs/screenshots/calendar.webp" alt="Calendar"></td>
+    <td align="center"><img src="docs/screenshots/dashboard-light_mode.webp" alt="Dashboard in light mode"><br><sub>Dashboard, light</sub></td>
+    <td align="center"><img src="docs/screenshots/dashboard-dark_mode.webp" alt="Dashboard in dark mode"><br><sub>Dashboard, dark</sub></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/health.webp" alt="Health"></td>
-    <td><img src="docs/screenshots/assistant.webp" alt="AI assistant"></td>
+    <td align="center"><img src="docs/screenshots/calendar.webp" alt="Calendar"><br><sub>Calendar</sub></td>
+    <td align="center"><img src="docs/screenshots/health.webp" alt="Health"><br><sub>Health</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/watchlist.webp" alt="Watchlist"><br><sub>Watchlist</sub></td>
+    <td align="center"><img src="docs/screenshots/saved.webp" alt="Saved links"><br><sub>Saved</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/assistant.webp" alt="AI assistant"><br><sub>AI assistant</sub></td>
+    <td align="center"><img src="docs/screenshots/automation.webp" alt="Automation"><br><sub>Automation</sub></td>
   </tr>
 </table>
 

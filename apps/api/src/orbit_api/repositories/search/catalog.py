@@ -17,6 +17,7 @@ from typing import Any, Final
 from sqlalchemy import ColumnElement, and_, case, exists, literal, or_, select
 
 from orbit_api.db.models import (
+    BookmarkModel,
     CalendarCategoryModel,
     CalendarEventAlertModel,
     CalendarEventExceptionModel,
@@ -829,6 +830,34 @@ MEASUREMENT = EntitySource(
 )
 
 
+# Saved (bookmarks)
+
+BOOKMARK = EntitySource(
+    module="bookmarks",
+    entity_type="bookmark",
+    table=BookmarkModel,
+    id=BookmarkModel.id,
+    title=BookmarkModel.title,
+    updated_at=BookmarkModel.updated_at,
+    created_at=BookmarkModel.created_at,
+    status=BookmarkModel.status,
+    scope=_workspace(BookmarkModel),
+    fields=(
+        text_field("url", "metadata", BookmarkModel.url),
+        text_field("note", "description", BookmarkModel.note),
+    ),
+    # Links already read or watched still match, ranked a little lower.
+    active=BookmarkModel.status != "done",
+    columns={
+        "bookmark_kind": BookmarkModel.kind,
+        "bookmark_url": BookmarkModel.url,
+    },
+    describe=lambda row, _c: Description(
+        details=details(("bookmark_kind", row["bookmark_kind"]), ("url", row["bookmark_url"]))
+    ),
+)
+
+
 # Watchlist
 
 WATCH_ITEM = EntitySource(
@@ -885,4 +914,5 @@ SOURCES: Final[dict[UniversalModule, tuple[EntitySource, ...]]] = {
     "documents": (DOCUMENT,),
     "health": (EXERCISE, WORKOUT, WORKOUT_TEMPLATE, FITNESS_GOAL, MEASUREMENT),
     "watchlist": (WATCH_ITEM,),
+    "bookmarks": (BOOKMARK,),
 }

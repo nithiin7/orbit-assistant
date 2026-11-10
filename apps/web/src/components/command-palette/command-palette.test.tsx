@@ -362,6 +362,62 @@ describe("CommandPalette", () => {
     expect(String(searches.at(-1)?.[0])).toContain("q=garden");
   });
 
+  it("offers to save a pasted link", async () => {
+    const user = userEvent.setup();
+    await renderPalette({ [`GET ${SEARCH}/results`]: json(results([])) });
+    await user.click(screen.getByRole("button", { name: "Search" }));
+    await user.paste("https://www.youtube.com/watch?v=abc");
+
+    const save = await screen.findByRole("option", { name: /Save link from youtube\.com/ });
+    await user.click(save);
+
+    expect(push).toHaveBeenCalledWith(
+      `/saved?add=${encodeURIComponent("https://www.youtube.com/watch?v=abc")}`,
+    );
+  });
+
+  it("opens a saved link's page directly and counts the open", async () => {
+    const user = userEvent.setup();
+    const open = vi.fn();
+    vi.stubGlobal("open", open);
+    const opened: string[] = [];
+    await renderPalette({
+      [`GET ${SEARCH}/results`]: json(
+        results([
+          hit({
+            id: "b-grafana",
+            module: "bookmarks",
+            entity_type: "bookmark",
+            title: "Grafana",
+            status: "reference",
+            details: [
+              { key: "bookmark_kind", value: "tool" },
+              { key: "url", value: "https://grafana.example.com/d/abc" },
+            ],
+          }),
+        ]),
+      ),
+      [`POST /api/v1/workspaces/${personal.id}/bookmarks/items/b-grafana/opened`]: () => {
+        opened.push("b-grafana");
+        return new Response(null, { status: 500 });
+      },
+    });
+    await user.click(screen.getByRole("button", { name: "Search" }));
+    await user.keyboard("grafana");
+
+    const result = await screen.findByRole("option", { name: /Grafana/ });
+    expect(result).toHaveTextContent("grafana.example.com");
+    await user.click(result);
+
+    expect(open).toHaveBeenCalledWith(
+      "https://grafana.example.com/d/abc",
+      "_blank",
+      "noopener,noreferrer",
+    );
+    expect(push).not.toHaveBeenCalled();
+    await waitFor(() => expect(opened).toEqual(["b-grafana"]));
+  });
+
   it("offers recent searches, and every result on the search page", async () => {
     const user = userEvent.setup();
     const { api } = await renderPalette({

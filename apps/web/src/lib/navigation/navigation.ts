@@ -1,5 +1,6 @@
 import {
   AlarmClock,
+  Bookmark,
   Bot,
   CalendarDays,
   CheckSquare,
@@ -122,6 +123,13 @@ export const navItems: readonly NavItem[] = [
     group: "library",
   },
   {
+    title: "Saved",
+    href: "/saved",
+    icon: Bookmark,
+    description: "Links you come back to, and reels, videos, and articles to get to later.",
+    group: "library",
+  },
+  {
     title: "Assistant",
     href: "/assistant",
     icon: Bot,
@@ -162,6 +170,7 @@ const dedicatedRoutes: ReadonlySet<string> = new Set([
   "/notes",
   "/documents",
   "/watchlist",
+  "/saved",
   "/assistant",
   "/automation",
   "/settings",

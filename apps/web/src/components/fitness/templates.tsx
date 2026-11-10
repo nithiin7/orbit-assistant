@@ -544,7 +544,9 @@ function TemplateDialog({
         <ExercisePicker
           exercises={library}
           onClose={() => setPicking(false)}
-          onPick={(exercise: Exercise) => append(newTemplateExercise(exercise.id))}
+          onPick={(picked: Exercise[]) =>
+            append(picked.map((exercise) => newTemplateExercise(exercise.id)))
+          }
         />
       ) : null}
     </DialogShell>

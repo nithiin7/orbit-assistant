@@ -3,6 +3,7 @@
 import type { UniversalSearchModule } from "@orbit/contracts";
 import {
   AlarmClock,
+  Bookmark as BookmarkIcon,
   BookOpen,
   Bot,
   CalendarCheck,
@@ -53,6 +54,7 @@ import {
 import { useQuickCapture } from "@/components/notes/quick-capture";
 import { useQuickActions } from "@/components/quick-actions/quick-actions";
 import { Kbd } from "@/components/ui/kbd";
+import { useBookmarkMutations } from "@/hooks/use-bookmarks";
 import { useCalendarCommands } from "@/hooks/use-calendar-commands";
 import { useDocumentCommands } from "@/hooks/use-document-commands";
 import { useHydrated } from "@/hooks/use-hydrated";
@@ -62,6 +64,7 @@ import {
   useSearchHistoryMutations,
   useUniversalSearch,
 } from "@/hooks/use-universal-search";
+import { hostOf, isWebUrl, saveLinkHref } from "@/lib/bookmarks";
 import { filterCommands, SEARCH_GROUP_LABELS } from "@/lib/command-search";
 import { habitsHref } from "@/lib/habits";
 import { isActivePath, navItems } from "@/lib/navigation";
@@ -80,6 +83,7 @@ import { cn } from "@/utils/common";
 import { isMacPlatform, matchesModShiftShortcut, matchesModShortcut } from "@/utils/keyboard";
 
 type CommandGroup =
+  | "Save"
   | "Create"
   | "Notes"
   | "Documents"
@@ -108,6 +112,7 @@ type Command = {
 };
 
 const GROUPS: readonly CommandGroup[] = [
+  "Save",
   ...Object.values(SEARCH_GROUP_LABELS),
   "Recent searches",
   "Create",
@@ -279,7 +284,34 @@ const SEARCH_ICONS: Record<UniversalSearchModule, LucideIcon> = {
   documents: FileText,
   health: HeartPulse,
   watchlist: Clapperboard,
+  bookmarks: BookmarkIcon,
 };
+
+/** A saved link's address from its search hit, if it's one Orbit will open. */
+function bookmarkUrl(hit: { details: readonly { key: string; value: string }[] }): string | null {
+  const url = hit.details.find((detail) => detail.key === "url")?.value;
+  return url && isWebUrl(url) ? url : null;
+}
+
+/** With a link typed or pasted in, an offer to save it to Saved. */
+function useSaveLinkCommands(query: string): Command[] {
+  const router = useRouter();
+  const url = query.trim();
+  if (!isWebUrl(url)) return [];
+  return [
+    {
+      id: "save-link",
+      group: "Save",
+      label: `Save link from ${hostOf(url)}`,
+      description: "Add it to Saved, with a name and note if you like.",
+      keywords: [],
+      icon: BookmarkIcon,
+      current: false,
+      matched: true,
+      run: () => router.push(saveLinkHref(url)),
+    },
+  ];
+}
 
 /** The best matches the palette shows; "See all results" opens the search page for more. */
 const PALETTE_SEARCH_LIMIT = 8;
@@ -300,6 +332,8 @@ function useSearchPaletteCommands(
   );
   const recent = useRecentSearches(open);
   const { remember } = useSearchHistoryMutations();
+  const { state } = useWorkspaces();
+  const bookmarks = useBookmarkMutations(state.status === "ready" ? state.active.id : "");
   const text = query.trim();
   const commands: Command[] = [];
   // Hits for an older query are hidden once the text no longer matches it.
@@ -316,7 +350,14 @@ function useSearchPaletteCommands(
       matched: true,
       run: () => {
         remember(text);
-        router.push(searchResultHref(hit));
+        // A saved link opens the page itself; that's what it was saved for.
+        const url = hit.entity_type === "bookmark" ? bookmarkUrl(hit) : null;
+        if (url) {
+          window.open(url, "_blank", "noopener,noreferrer");
+          bookmarks.opened.mutate({ id: hit.id });
+        } else {
+          router.push(searchResultHref(hit));
+        }
       },
     });
   }
@@ -466,6 +507,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
   const documentCommands = useDocumentPaletteCommands(isOpen, query);
   const createCommands = useCreateCommands();
   const search = useSearchPaletteCommands(isOpen, query);
+  const saveLinkCommands = useSaveLinkCommands(query);
 
   const commands = useMemo<Command[]>(
     () => [
@@ -505,6 +547,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
   // Order results by group so arrow-key order matches what is on screen. Records the API already
   // matched, and the offers to search a module, skip the local filter.
   const local = [
+    ...saveLinkCommands,
     ...createCommands,
     ...noteCommands,
     ...calendarCommands,

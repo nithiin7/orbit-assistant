@@ -13,6 +13,7 @@ import {
   ArrowUp,
   Check,
   ChevronLeft,
+  Dumbbell,
   FileText,
   MoreHorizontal,
   Pause,
@@ -21,11 +22,10 @@ import {
   Square,
   Timer,
   Trash2,
-  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useState } from "react";
+import { type ReactNode, useEffect, useId, useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import {
@@ -44,10 +44,10 @@ import {
 } from "@/api/fitness";
 import { useConfirm } from "@/components/confirm-dialog";
 import { FormAlert } from "@/components/form-field";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
-import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useExercises, useFitnessAction, useUnits, useWorkout } from "@/hooks/use-fitness";
 import {
@@ -111,6 +111,9 @@ export function WorkoutDetail({
   );
 }
 
+/** Adjustments to the running rest timer, tied to the set that started it. */
+type RestAdjust = { key: string; extra: number; skipped: boolean };
+
 function WorkoutLogger({ workspaceId, workout }: { workspaceId: string; workout: Workout }) {
   const run = useFitnessAction(workspaceId);
   const units = useUnits(workspaceId);
@@ -119,14 +122,20 @@ function WorkoutLogger({ workspaceId, workout }: { workspaceId: string; workout:
   const { confirm, confirmDialog } = useConfirm();
   const [picking, setPicking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [adjust, setAdjust] = useState<RestAdjust | null>(null);
   const live = workout.status === "active" || workout.status === "paused";
   const now = useNow(live);
-  const rest = restTimer(workout, now);
+  const rest = restTimer(workout, now, adjust);
   const totalSets = workout.exercises.reduce((sum, item) => sum + item.sets.length, 0);
   const doneSets = workout.exercises.reduce(
     (sum, item) => sum + item.sets.filter((set) => set.completed).length,
     0,
   );
+  // The exercise to do next: the first with a set still to tick.
+  const upNext = live
+    ? workout.exercises.find((item) => item.sets.some((set) => !set.completed))?.id
+    : undefined;
+  const canPick = exercises.state.status === "success";
 
   const act = (call: (token: string) => Promise<unknown>, touchesHabits = false) => {
     setError(null);
@@ -136,6 +145,23 @@ function WorkoutLogger({ workspaceId, workout }: { workspaceId: string; workout:
   };
   const action = (name: WorkoutAction) =>
     act((token) => workoutAction(token, workspaceId, workout.id, name), name === "complete");
+
+  async function finish() {
+    const left = totalSets - doneSets;
+    if (left > 0) {
+      const ok = await confirm({
+        title:
+          doneSets === 0
+            ? "Finish without any sets done?"
+            : `Finish with ${left} ${left === 1 ? "set" : "sets"} not ticked?`,
+        description:
+          "Sets you haven’t ticked stay in the log but don’t count toward volume or records.",
+        confirmLabel: "Finish workout",
+      });
+      if (!ok) return;
+    }
+    action("complete");
+  }
 
   async function abandon() {
     const ok = await confirm({
@@ -172,152 +198,177 @@ function WorkoutLogger({ workspaceId, workout }: { workspaceId: string; workout:
     act((token) => reorderWorkout(token, workspaceId, workout.id, ids));
   };
 
+  const addExercises = (picked: Exercise[]) =>
+    act(async (token) => {
+      // One at a time, so they land in the order they were picked.
+      let latest: Workout | null = null;
+      for (const exercise of picked) {
+        latest = await addWorkoutExercise(token, workspaceId, workout.id, exercise.id);
+      }
+      return latest;
+    });
+
+  const moreActions = (
+    <Menu
+      variant="ghost"
+      size="icon"
+      chevron={false}
+      align="end"
+      aria-label="More workout actions"
+      items={[
+        ...(live
+          ? [{ id: "abandon", label: "Stop early", icon: Square, onSelect: () => void abandon() }]
+          : []),
+        {
+          id: "delete",
+          label: "Delete workout",
+          icon: Trash2,
+          destructive: true,
+          onSelect: () => void remove(),
+        },
+      ]}
+    >
+      <MoreHorizontal aria-hidden="true" />
+    </Menu>
+  );
+
   return (
     <div className="space-y-4">
-      {/* Sticks below the mobile app bar (h-14), so the clock and Finish stay in reach. */}
-      <header className="sticky top-16 z-10 space-y-3 rounded-xl border bg-card/95 p-4 shadow-elevation-1 backdrop-blur md:top-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0 space-y-0.5">
-            <h2 className="truncate text-lg font-semibold">{workout.name}</h2>
-            <p className="text-xs text-muted-foreground">
-              {shortDate(workout.day)}
-              {workout.template_name ? ` · From ${workout.template_name}` : ""}
-              {workout.status !== "active" ? ` · ${STATUS_LABELS[workout.status]}` : ""}
-            </p>
-          </div>
-          <div className="text-right">
-            <Clock
-              seconds={live ? elapsedSeconds(workout, now) : (workout.duration_s ?? 0)}
-              className="text-2xl font-semibold"
-            />
-            {workout.volume_g > 0 ? (
-              <p className="text-xs text-muted-foreground">
-                Volume {formatVolume(workout.volume_g, units.weight_unit)}
+      {live ? (
+        // Sticks below the mobile app bar (h-14), so the clock, rest timer, and Finish stay in reach.
+        <header className="sticky top-16 z-10 space-y-3 rounded-xl border bg-card/95 p-4 shadow-elevation-1 backdrop-blur md:top-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 space-y-0.5">
+              <p className="flex items-center gap-1.5 text-xs font-medium text-brand">
+                <span aria-hidden="true" className="relative flex size-2">
+                  {workout.status === "active" ? (
+                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-brand opacity-60 motion-reduce:animate-none" />
+                  ) : null}
+                  <span className="relative inline-flex size-2 rounded-full bg-brand" />
+                </span>
+                {STATUS_LABELS[workout.status]}
               </p>
-            ) : null}
+              <h2 className="truncate text-lg font-semibold">{workout.name}</h2>
+              <p className="text-xs text-muted-foreground">
+                {shortDate(workout.day)}
+                {workout.template_name ? ` · From ${workout.template_name}` : ""}
+              </p>
+            </div>
+            <div className="text-right">
+              <Clock seconds={elapsedSeconds(workout, now)} className="text-2xl font-semibold" />
+              {workout.volume_g > 0 ? (
+                <p className="text-xs text-muted-foreground tabular-nums">
+                  {formatVolume(workout.volume_g, units.weight_unit)} lifted
+                </p>
+              ) : null}
+            </div>
           </div>
-        </div>
-        {totalSets > 0 ? (
-          <Meter
-            label="Sets done"
-            value={`${doneSets} of ${totalSets}`}
-            fraction={doneSets / totalSets}
-            tone={doneSets === totalSets ? "success" : "brand"}
-          />
-        ) : null}
-        <div className="flex flex-wrap items-center gap-2">
-          {live ? (
-            <>
-              <Button className="flex-1 sm:flex-none" onClick={() => action("complete")}>
-                <Check aria-hidden="true" />
-                Finish
-              </Button>
-              {workout.status === "active" ? (
-                <Button variant="outline" onClick={() => action("pause")}>
-                  <Pause aria-hidden="true" />
-                  Pause
-                </Button>
-              ) : (
-                <Button variant="soft" onClick={() => action("resume")}>
-                  <Play aria-hidden="true" />
-                  Resume
-                </Button>
-              )}
-            </>
+          {totalSets > 0 ? (
+            <Meter
+              label="Sets done"
+              value={`${doneSets} of ${totalSets}`}
+              fraction={doneSets / totalSets}
+              tone={doneSets === totalSets ? "success" : "brand"}
+            />
           ) : null}
-          <Menu
-            variant="ghost"
-            size="icon"
-            chevron={false}
-            align="end"
-            aria-label="More workout actions"
-            className="ml-auto"
-            items={[
-              ...(live
-                ? [
-                    {
-                      id: "abandon",
-                      label: "Stop early",
-                      icon: Square,
-                      onSelect: () => void abandon(),
-                    },
-                  ]
-                : []),
-              {
-                id: "delete",
-                label: "Delete workout",
-                icon: Trash2,
-                destructive: true,
-                onSelect: () => void remove(),
-              },
-            ]}
-          >
-            <MoreHorizontal aria-hidden="true" />
-          </Menu>
-        </div>
-        {rest ? (
-          <div
-            role="timer"
-            aria-live="off"
-            className="flex items-center justify-between gap-2 rounded-lg bg-brand-subtle px-3 py-2 text-sm text-brand"
-          >
-            <span className="flex items-center gap-2">
-              <Timer aria-hidden="true" className="size-4" />
-              Rest after {rest.name}
-            </span>
-            <span className="font-mono font-semibold tabular-nums">{formatClock(rest.left)}</span>
+          {rest ? (
+            <RestBar
+              rest={rest}
+              onAdd={() =>
+                setAdjust({
+                  key: rest.key,
+                  extra: (adjust?.key === rest.key ? adjust.extra : 0) + 15,
+                  skipped: false,
+                })
+              }
+              onSkip={() => setAdjust({ key: rest.key, extra: 0, skipped: true })}
+            />
+          ) : null}
+          <div className="flex items-center gap-2">
+            <Button className="flex-1 sm:flex-none" onClick={() => void finish()}>
+              <Check aria-hidden="true" />
+              Finish
+            </Button>
+            {workout.status === "active" ? (
+              <Button variant="outline" onClick={() => action("pause")}>
+                <Pause aria-hidden="true" />
+                Pause
+              </Button>
+            ) : (
+              <Button variant="soft" onClick={() => action("resume")}>
+                <Play aria-hidden="true" />
+                Resume
+              </Button>
+            )}
+            <div className="ml-auto">{moreActions}</div>
           </div>
-        ) : null}
-      </header>
+        </header>
+      ) : (
+        <WorkoutSummary workout={workout} units={units} doneSets={doneSets} actions={moreActions} />
+      )}
 
       <FormAlert message={error} />
 
       {workout.exercises.length === 0 ? (
-        <div className="flex flex-col items-center gap-1 rounded-xl border border-dashed p-8 text-center">
-          <p className="text-sm font-medium">No exercises yet</p>
-          <p className="text-xs text-muted-foreground">
-            Add the first one, then tick off each set as you finish it.
-          </p>
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed px-6 py-10 text-center">
+          <span
+            aria-hidden="true"
+            className="flex size-11 items-center justify-center rounded-full bg-brand-subtle text-brand"
+          >
+            <Dumbbell className="size-5" />
+          </span>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold">Add your first exercise</p>
+            <p className="mx-auto max-w-sm text-xs text-muted-foreground">
+              Pick one or more from your library. Enter the weight and reps for each set, then tick
+              it when you’re done; a rest timer starts on its own.
+            </p>
+          </div>
+          <Button variant="soft" onClick={() => setPicking(true)} disabled={!canPick}>
+            <Plus aria-hidden="true" />
+            Add exercises
+          </Button>
         </div>
-      ) : null}
-
-      <ol className="space-y-3">
-        {workout.exercises.map((item, index) => (
-          <li key={item.id}>
-            <ExerciseCard
-              workspaceId={workspaceId}
-              workout={workout}
-              item={item}
-              units={units}
-              first={index === 0}
-              last={index === workout.exercises.length - 1}
-              onMove={(delta) => move(index, delta)}
-              act={act}
-              confirm={confirm}
-            />
-          </li>
-        ))}
-      </ol>
-
-      <Button
-        variant="outline"
-        className="w-full border-dashed"
-        onClick={() => setPicking(true)}
-        disabled={exercises.state.status !== "success"}
-      >
-        <Plus aria-hidden="true" />
-        Add exercise
-      </Button>
+      ) : (
+        <>
+          <ol className="space-y-3">
+            {workout.exercises.map((item, index) => (
+              <li key={item.id}>
+                <ExerciseCard
+                  workspaceId={workspaceId}
+                  workout={workout}
+                  item={item}
+                  index={index}
+                  units={units}
+                  upNext={item.id === upNext}
+                  last={index === workout.exercises.length - 1}
+                  onMove={(delta) => move(index, delta)}
+                  act={act}
+                  confirm={confirm}
+                />
+              </li>
+            ))}
+          </ol>
+          <Button
+            variant="outline"
+            className="w-full border-dashed"
+            onClick={() => setPicking(true)}
+            disabled={!canPick}
+          >
+            <Plus aria-hidden="true" />
+            Add exercises
+          </Button>
+        </>
+      )}
 
       <WorkoutNotes workspaceId={workspaceId} workout={workout} act={act} />
 
       {picking && exercises.state.status === "success" ? (
         <ExercisePicker
           exercises={exercises.state.data.exercises}
+          added={new Set(workout.exercises.flatMap((item) => item.exercise_id ?? []))}
           onClose={() => setPicking(false)}
-          onPick={(exercise: Exercise) =>
-            act((token) => addWorkoutExercise(token, workspaceId, workout.id, exercise.id))
-          }
+          onPick={addExercises}
         />
       ) : null}
       {confirmDialog}
@@ -325,22 +376,121 @@ function WorkoutLogger({ workspaceId, workout }: { workspaceId: string; workout:
   );
 }
 
+/** A finished (or stopped) workout at a glance. */
+function WorkoutSummary({
+  workout,
+  units,
+  doneSets,
+  actions,
+}: {
+  workout: Workout;
+  units: Units;
+  doneSets: number;
+  actions: ReactNode;
+}) {
+  const completed = workout.status === "completed";
+  const stats = [
+    { label: "Time", value: <Clock seconds={workout.duration_s ?? 0} /> },
+    { label: "Exercises", value: workout.exercises.length },
+    { label: "Sets done", value: doneSets },
+    {
+      label: "Volume",
+      value: workout.volume_g > 0 ? formatVolume(workout.volume_g, units.weight_unit) : "—",
+    },
+  ];
+  return (
+    <header className="space-y-4 rounded-xl border bg-card p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <span
+            aria-hidden="true"
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center rounded-full",
+              completed ? "bg-success/15 text-success" : "bg-muted text-muted-foreground",
+            )}
+          >
+            {completed ? <Check className="size-5" /> : <Square className="size-4" />}
+          </span>
+          <div className="min-w-0 space-y-0.5">
+            <h2 className="truncate text-lg font-semibold">{workout.name}</h2>
+            <p className="text-xs text-muted-foreground">
+              {shortDate(workout.day)}
+              {workout.template_name ? ` · From ${workout.template_name}` : ""}
+              {` · ${STATUS_LABELS[workout.status]}`}
+            </p>
+          </div>
+        </div>
+        {actions}
+      </div>
+      <dl className="grid grid-cols-2 gap-2 @md:grid-cols-4">
+        {stats.map((stat) => (
+          <div key={stat.label} className="rounded-lg bg-muted/50 px-3 py-2">
+            <dt className="text-xs text-muted-foreground">{stat.label}</dt>
+            <dd className="text-base font-semibold tabular-nums">{stat.value}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="text-xs text-muted-foreground">
+        You can still correct sets below; templates aren’t changed.
+      </p>
+    </header>
+  );
+}
+
+type Rest = { key: string; name: string; total: number; left: number };
+
 /** The rest countdown after the most recently completed set, while it's still running. */
-function restTimer(workout: Workout, now: number): { name: string; left: number } | null {
+function restTimer(workout: Workout, now: number, adjust: RestAdjust | null): Rest | null {
   if (workout.status !== "active") return null;
-  let latest: { at: number; name: string; rest: number } | null = null;
+  let latest: { at: number; key: string; name: string; rest: number } | null = null;
   for (const item of workout.exercises) {
     for (const set of item.sets) {
       if (!set.completed_at) continue;
       const at = Date.parse(set.completed_at);
       if (!latest || at > latest.at) {
-        latest = { at, name: item.name, rest: item.rest_seconds ?? DEFAULT_REST };
+        latest = {
+          at,
+          key: `${set.id}@${set.completed_at}`,
+          name: item.name,
+          rest: item.rest_seconds ?? DEFAULT_REST,
+        };
       }
     }
   }
   if (!latest || latest.rest === 0) return null;
-  const left = Math.round(latest.rest - (now - latest.at) / 1000);
-  return left > 0 ? { name: latest.name, left } : null;
+  const mine = adjust?.key === latest.key ? adjust : null;
+  if (mine?.skipped) return null;
+  const total = latest.rest + (mine?.extra ?? 0);
+  const left = Math.round(total - (now - latest.at) / 1000);
+  return left > 0 ? { key: latest.key, name: latest.name, total, left } : null;
+}
+
+function RestBar({ rest, onAdd, onSkip }: { rest: Rest; onAdd: () => void; onSkip: () => void }) {
+  return (
+    <div className="space-y-2 rounded-lg bg-brand-subtle px-3 py-2.5 text-brand">
+      <div className="flex items-center gap-3">
+        <div role="timer" aria-live="off" className="flex min-w-0 flex-1 items-center gap-2">
+          <Timer aria-hidden="true" className="size-4 shrink-0" />
+          <span className="min-w-0 truncate text-sm">Rest after {rest.name}</span>
+          <span className="ml-auto font-mono text-lg font-semibold tabular-nums">
+            {formatClock(rest.left)}
+          </span>
+        </div>
+        <Button size="sm" variant="ghost" className="h-8 px-2 text-brand" onClick={onAdd}>
+          +15s
+        </Button>
+        <Button size="sm" variant="ghost" className="h-8 px-2 text-brand" onClick={onSkip}>
+          Skip
+        </Button>
+      </div>
+      <div aria-hidden="true" className="h-1 overflow-hidden rounded-full bg-brand/15">
+        <div
+          className="h-full rounded-full bg-brand transition-[width] duration-1000 ease-linear"
+          style={{ width: `${Math.min(100, (rest.left / rest.total) * 100)}%` }}
+        />
+      </div>
+    </div>
+  );
 }
 
 type Act = (call: (token: string) => Promise<unknown>, touchesHabits?: boolean) => void;
@@ -349,8 +499,9 @@ function ExerciseCard({
   workspaceId,
   workout,
   item,
+  index,
   units,
-  first,
+  upNext,
   last,
   onMove,
   act,
@@ -359,8 +510,9 @@ function ExerciseCard({
   workspaceId: string;
   workout: Workout;
   item: WorkoutExercise;
+  index: number;
   units: Units;
-  first: boolean;
+  upNext: boolean;
   last: boolean;
   onMove: (delta: number) => void;
   act: Act;
@@ -370,6 +522,15 @@ function ExerciseCard({
   const [editingRest, setEditingRest] = useState(false);
   const fields = setFields(item.exercise_type);
   const previous = item.previous;
+  const done = item.sets.filter((set) => set.completed).length;
+  const allDone = item.sets.length > 0 && done === item.sets.length;
+  const restSeconds = item.rest_seconds ?? DEFAULT_REST;
+  const lastTime = previous
+    ? previous.sets
+        .filter((s) => s.completed)
+        .map((s) => describeSet(s, item.exercise_type, units))
+        .join(", ")
+    : "";
 
   async function removeExercise() {
     const ok = await confirm({
@@ -381,24 +542,57 @@ function ExerciseCard({
     if (ok) act((token) => removeWorkoutExercise(token, workspaceId, workout.id, item.id));
   }
 
+  const column = "pb-1.5 text-center text-xs font-medium text-muted-foreground";
+
   return (
-    <article aria-labelledby={`${id}-name`} className="space-y-3 rounded-xl border bg-card p-4">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h3 id={`${id}-name`} className="truncate text-sm font-semibold">
-            {item.name}
-          </h3>
-          {previous ? (
-            <p className="text-xs text-muted-foreground">
-              Last time ({shortDate(previous.day)}):{" "}
-              {previous.sets
-                .filter((s) => s.completed)
-                .map((s) => describeSet(s, item.exercise_type, units))
-                .join(", ") || "no sets done"}
-            </p>
-          ) : (
-            <p className="text-xs text-muted-foreground">First time logging this exercise.</p>
+    <article
+      aria-labelledby={`${id}-name`}
+      className={cn(
+        "space-y-3 rounded-xl border bg-card p-4 transition-colors duration-150",
+        upNext && "border-brand/40 ring-1 ring-brand/20",
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <span
+          aria-hidden="true"
+          className={cn(
+            "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums",
+            allDone
+              ? "bg-success text-white"
+              : upNext
+                ? "bg-brand text-brand-foreground"
+                : "bg-muted text-muted-foreground",
           )}
+        >
+          {allDone ? <Check className="size-3.5" /> : index + 1}
+        </span>
+        <div className="min-w-0 flex-1 space-y-0.5">
+          <div className="flex items-center gap-2">
+            <h3 id={`${id}-name`} className="truncate text-sm font-semibold">
+              {item.name}
+            </h3>
+            {upNext ? <Badge variant="brand">Up next</Badge> : null}
+          </div>
+          <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+            <span className="tabular-nums">
+              {done} of {item.sets.length} sets
+            </span>
+            <span aria-hidden="true">·</span>
+            <button
+              type="button"
+              onClick={() => setEditingRest(true)}
+              aria-label={`Rest ${formatDuration(restSeconds)}, change`}
+              className="inline-flex items-center gap-1 rounded-sm underline-offset-2 outline-none hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Timer aria-hidden="true" className="size-3" />
+              Rest {restSeconds === 0 ? "off" : formatClock(restSeconds)}
+            </button>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {previous
+              ? `Last time (${shortDate(previous.day)}): ${lastTime || "no sets done"}`
+              : "First time logging this exercise."}
+          </p>
         </div>
         <Menu
           variant="ghost"
@@ -411,7 +605,7 @@ function ExerciseCard({
               id: "up",
               label: "Move up",
               icon: ArrowUp,
-              disabled: first,
+              disabled: index === 0,
               onSelect: () => onMove(-1),
             },
             {
@@ -456,75 +650,76 @@ function ExerciseCard({
         />
       ) : null}
 
-      <table className="w-full text-sm">
-        <caption className="sr-only">Sets of {item.name}</caption>
-        <thead>
-          <tr className="text-left text-xs text-muted-foreground">
-            <th scope="col" className="w-8 pb-1 font-medium">
-              Set
-            </th>
-            {fields.weight ? (
-              <th scope="col" className="pb-1 font-medium">
-                {units.weight_unit}
+      {item.sets.length > 0 ? (
+        <table className="w-full table-fixed text-sm">
+          <caption className="sr-only">Sets of {item.name}</caption>
+          <thead>
+            <tr>
+              <th scope="col" className={cn(column, "w-11")}>
+                Set
               </th>
-            ) : null}
-            {fields.reps ? (
-              <th scope="col" className="pb-1 font-medium">
-                Reps
+              {previous ? (
+                <th scope="col" className={cn(column, "hidden @sm:table-cell")}>
+                  Previous
+                </th>
+              ) : null}
+              {fields.weight ? (
+                <th scope="col" className={column}>
+                  {units.weight_unit}
+                </th>
+              ) : null}
+              {fields.reps ? (
+                <th scope="col" className={column}>
+                  Reps
+                </th>
+              ) : null}
+              {fields.distance ? (
+                <th scope="col" className={column}>
+                  {units.distance_unit}
+                </th>
+              ) : null}
+              {fields.duration ? (
+                <th scope="col" className={column}>
+                  Time
+                </th>
+              ) : null}
+              <th scope="col" className={cn(column, "w-12")}>
+                <span className="sr-only">Done</span>
+                <Check aria-hidden="true" className="mx-auto size-3.5" />
               </th>
-            ) : null}
-            {fields.distance ? (
-              <th scope="col" className="pb-1 font-medium">
-                {units.distance_unit}
-              </th>
-            ) : null}
-            {fields.duration ? (
-              <th scope="col" className="pb-1 font-medium">
-                Time
-              </th>
-            ) : null}
-            {previous ? (
-              <th scope="col" className="hidden pb-1 font-medium @lg:table-cell">
-                Last time
-              </th>
-            ) : null}
-            <th scope="col" className="w-20 pb-1 text-right font-medium">
-              <span className="sr-only">Done</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {item.sets.map((set, index) => (
-            <SetRow
-              key={set.id}
-              set={set}
-              number={index + 1}
-              item={item}
-              previous={previous?.sets[index] ?? null}
-              units={units}
-              onSave={(values) =>
-                act((token) =>
-                  updateWorkoutSet(token, workspaceId, workout.id, item.id, set.id, values),
-                )
-              }
-              onDelete={() =>
-                act((token) => deleteWorkoutSet(token, workspaceId, workout.id, item.id, set.id))
-              }
-            />
-          ))}
-        </tbody>
-      </table>
+            </tr>
+          </thead>
+          <tbody>
+            {item.sets.map((set, number) => (
+              <SetRow
+                key={set.id}
+                set={set}
+                number={number + 1}
+                item={item}
+                previous={previous?.sets[number] ?? null}
+                units={units}
+                onSave={(values) =>
+                  act((token) =>
+                    updateWorkoutSet(token, workspaceId, workout.id, item.id, set.id, values),
+                  )
+                }
+                onDelete={() =>
+                  act((token) => deleteWorkoutSet(token, workspaceId, workout.id, item.id, set.id))
+                }
+              />
+            ))}
+          </tbody>
+        </table>
+      ) : null}
 
       <Button
         variant="ghost"
         size="sm"
+        className="w-full"
         onClick={() => act((token) => addWorkoutSet(token, workspaceId, workout.id, item.id, null))}
       >
         <Plus aria-hidden="true" />
         Add set
-        {item.sets.length > 0 ? (
-          <span className="font-normal text-muted-foreground">(copies the last)</span>
-        ) : null}
       </Button>
     </article>
   );
@@ -553,7 +748,7 @@ function RestEditor({
     >
       <div className="space-y-1">
         <label htmlFor={id} className="block text-xs font-medium">
-          Rest between sets (m:ss)
+          Rest between sets (m:ss, 0 for none)
         </label>
         <Input
           id={id}
@@ -582,6 +777,8 @@ type SetDraft = {
   duration: string;
 };
 
+type ValueKey = "weight" | "reps" | "distance" | "duration";
+
 function draftOf(set: WorkoutSet, units: Units): SetDraft {
   return {
     setType: set.set_type,
@@ -589,6 +786,19 @@ function draftOf(set: WorkoutSet, units: Units): SetDraft {
     reps: set.reps === null ? "" : String(set.reps),
     distance: distanceInput(set.distance_m, units.distance_unit),
     duration: clockInput(set.duration_s),
+  };
+}
+
+/** Blank fields take the hint's values, so ticking an empty set repeats last time. */
+function filled(draft: SetDraft, hint: SetDraft | null): SetDraft {
+  if (!hint) return draft;
+  const pick = (key: ValueKey) => (draft[key].trim() === "" ? hint[key] : draft[key]);
+  return {
+    ...draft,
+    weight: pick("weight"),
+    reps: pick("reps"),
+    distance: pick("distance"),
+    duration: pick("duration"),
   };
 }
 
@@ -620,9 +830,17 @@ function requestOf(
   };
 }
 
+const SET_TYPE_TONE: Record<WorkoutSetType, string> = {
+  working: "text-foreground",
+  warmup: "text-warning",
+  drop: "text-brand",
+  failure: "text-destructive",
+};
+
 /**
- * One set: its values, saved when a field loses focus, and a check to mark it done. The row
- * keeps what's typed while it's mounted, so a save landing mid-typing never overwrites it.
+ * One set: its values, saved when a field loses focus, and a check to mark it done. Blank
+ * fields show last time's values, and ticking a blank set uses them. The row keeps what's typed
+ * while it's mounted, so a save landing mid-typing never overwrites it.
  */
 function SetRow({
   set,
@@ -646,6 +864,7 @@ function SetRow({
   const [invalid, setInvalid] = useState(false);
   const fields = setFields(item.exercise_type);
   const label = `Set ${number}`;
+  const hint = previous ? draftOf(previous, units) : null;
 
   const save = (completed: boolean, next: SetDraft = draft) => {
     const request = requestOf(next, set, completed, units);
@@ -661,49 +880,73 @@ function SetRow({
     if (!unchanged) onSave(request);
   };
 
-  const field = (key: "weight" | "reps" | "distance" | "duration", name: string) => (
-    <td className="py-1 pr-2">
+  const toggleDone = () => {
+    if (set.completed) {
+      save(false);
+      return;
+    }
+    const next = filled(draft, hint);
+    setDraft(next);
+    save(true, next);
+  };
+
+  const field = (key: ValueKey, name: string) => (
+    <td className="px-1 py-1">
       <Input
         aria-label={`${label} ${name}`}
         inputMode={key === "duration" ? "text" : key === "reps" ? "numeric" : "decimal"}
-        placeholder={key === "duration" ? "m:ss" : undefined}
+        placeholder={hint?.[key] || (key === "duration" ? "m:ss" : "–")}
         autoComplete="off"
-        className="h-10 min-w-0 px-2 text-center tabular-nums"
+        className={cn(
+          "h-10 min-w-0 px-1 text-center font-medium tabular-nums placeholder:font-normal placeholder:text-muted-foreground/60",
+          set.completed && "border-transparent bg-transparent",
+        )}
         value={draft[key]}
         aria-invalid={invalid || undefined}
+        onFocus={(event) => event.currentTarget.select()}
         onChange={(event) => setDraft({ ...draft, [key]: event.target.value })}
         onBlur={() => save(set.completed)}
       />
     </td>
   );
 
+  const short = SET_TYPE_SHORT[draft.setType];
+
   return (
-    <tr className={cn(set.completed && "[&_input]:bg-success/10")}>
-      <td className="py-1 pr-2">
-        <Select
-          aria-label={`${label} type`}
-          value={draft.setType}
-          onValueChange={(setType) => {
-            const next = { ...draft, setType };
-            setDraft(next);
-            save(set.completed, next);
-          }}
-          options={SET_TYPES.map((option) => ({
-            value: option.value,
-            label:
-              option.value === "working"
-                ? String(number)
-                : `${number} ${SET_TYPE_SHORT[option.value]}`,
-          }))}
-          className="h-10 w-14 px-1.5"
-        />
+    <tr className={cn("transition-colors duration-150", set.completed && "bg-success/10")}>
+      <td className="rounded-l-lg py-1 pl-1">
+        <Menu
+          variant="ghost"
+          size="sm"
+          chevron={false}
+          aria-label={`${label} options`}
+          className={cn("h-10 w-9 px-0 font-semibold tabular-nums", SET_TYPE_TONE[draft.setType])}
+          items={[
+            ...SET_TYPES.map((option) => ({
+              id: option.value,
+              label: option.label,
+              group: "Set type",
+              checked: draft.setType === option.value,
+              onSelect: () => {
+                const next = { ...draft, setType: option.value };
+                setDraft(next);
+                save(set.completed, next);
+              },
+            })),
+            {
+              id: "remove",
+              label: "Remove set",
+              icon: Trash2,
+              destructive: true,
+              onSelect: onDelete,
+            },
+          ]}
+        >
+          {short || number}
+        </Menu>
       </td>
-      {fields.weight ? field("weight", units.weight_unit) : null}
-      {fields.reps ? field("reps", "reps") : null}
-      {fields.distance ? field("distance", units.distance_unit) : null}
-      {fields.duration ? field("duration", "time") : null}
       {item.previous ? (
-        <td className="hidden py-1 pr-2 @lg:table-cell">
+        <td className="hidden px-1 py-1 text-center @sm:table-cell">
           {previous ? (
             <button
               type="button"
@@ -714,34 +957,29 @@ function SetRow({
                 setDraft(next);
                 save(set.completed, next);
               }}
-              className="rounded-md px-1.5 py-1 text-xs whitespace-nowrap text-muted-foreground tabular-nums transition-colors duration-150 outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+              className="max-w-full truncate rounded-md px-1.5 py-1 text-xs whitespace-nowrap text-muted-foreground tabular-nums transition-colors duration-150 outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
             >
               {describeSet(previous, item.exercise_type, units)}
             </button>
           ) : (
-            <span className="px-1.5 text-xs text-muted-foreground/60">—</span>
+            <span className="text-xs text-muted-foreground/60">—</span>
           )}
         </td>
       ) : null}
-      <td className="py-1 text-right whitespace-nowrap">
+      {fields.weight ? field("weight", units.weight_unit) : null}
+      {fields.reps ? field("reps", "reps") : null}
+      {fields.distance ? field("distance", units.distance_unit) : null}
+      {fields.duration ? field("duration", "time") : null}
+      <td className="rounded-r-lg py-1 pr-1 text-right">
         <Button
           size="icon"
           variant={set.completed ? "default" : "outline"}
           aria-label={`${label} done`}
           aria-pressed={set.completed}
-          className={cn("size-10", set.completed && "bg-success hover:bg-success/90")}
-          onClick={() => save(!set.completed)}
+          className={cn("size-10", set.completed && "bg-success text-white hover:bg-success/90")}
+          onClick={toggleDone}
         >
           <Check aria-hidden="true" />
-        </Button>
-        <Button
-          size="icon"
-          variant="ghost"
-          aria-label={`Remove ${label.toLowerCase()}`}
-          className="size-8 text-muted-foreground hover:text-foreground"
-          onClick={onDelete}
-        >
-          <X aria-hidden="true" />
         </Button>
       </td>
     </tr>
@@ -803,12 +1041,6 @@ function WorkoutNotes({
         </Button>
       </LinkedRecords>
       <FormAlert message={error} />
-      {workout.status === "completed" || workout.status === "abandoned" ? (
-        <p className="text-xs text-muted-foreground">
-          {workout.duration_s !== null ? `Took ${formatDuration(workout.duration_s)}. ` : ""}
-          Edits to sets here correct the record; templates aren’t changed.
-        </p>
-      ) : null}
     </section>
   );
 }

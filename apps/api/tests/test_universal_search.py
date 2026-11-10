@@ -238,6 +238,12 @@ def seed_everything(client: TestClient, ws: str, headers: Headers) -> None:
         headers,
         {"kind": "movie", "title": "Orchard Nights", "platform": "Netflix", "notes": ""},
     )
+    post(
+        client,
+        f"{ws}/bookmarks/items",
+        headers,
+        {"url": "https://example.com/orchard-guide", "title": "Orchard guide"},
+    )
 
 
 class TestModules:
@@ -268,6 +274,7 @@ class TestModules:
             "fitness_goal",
             "measurement",
             "watch_item",
+            "bookmark",
         }
         assert body["total"] == len(body["hits"])
         assert [f["module"] for f in body["facets"]] == list(UNIVERSAL_MODULES)
@@ -275,6 +282,7 @@ class TestModules:
         assert facets(body)["finance"] == 9
         assert facets(body)["health"] == 4
         assert facets(body)["watchlist"] == 1
+        assert facets(body)["bookmarks"] == 1
 
     def test_hits_never_carry_amounts_or_private_notes(
         self, client: TestClient, ws: str, ada: Headers

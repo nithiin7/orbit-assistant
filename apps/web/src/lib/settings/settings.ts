@@ -1,5 +1,6 @@
 import {
   Archive,
+  Bookmark,
   Bot,
   Clapperboard,
   Database,
@@ -55,6 +56,13 @@ export const settingsPanels: readonly SettingsPanel[] = [
     title: "Watchlist",
     description: "Posters and details for movies and series.",
     icon: Clapperboard,
+    group: "general",
+  },
+  {
+    slug: "saved",
+    title: "Saved",
+    description: "Link previews: names, descriptions, images, and icons.",
+    icon: Bookmark,
     group: "general",
   },
   {

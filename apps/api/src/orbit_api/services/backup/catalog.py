@@ -25,6 +25,7 @@ Module = Literal[
     "assistant",
     "search",
     "watchlist",
+    "bookmarks",
 ]
 
 MODULES: Final[tuple[Module, ...]] = (
@@ -40,6 +41,7 @@ MODULES: Final[tuple[Module, ...]] = (
     "assistant",
     "search",
     "watchlist",
+    "bookmarks",
 )
 
 MODULE_LABELS: Final[dict[Module, str]] = {
@@ -55,6 +57,7 @@ MODULE_LABELS: Final[dict[Module, str]] = {
     "assistant": "Assistant conversations",
     "search": "Saved searches",
     "watchlist": "Watchlist",
+    "bookmarks": "Saved",
 }
 
 _PREFIXES: Final[tuple[tuple[str, Module], ...]] = (
@@ -83,6 +86,10 @@ _EXACT: Final[dict[str, Module]] = {
     "ai_insight_dismissals": "assistant",
     "saved_searches": "search",
     "watch_items": "watchlist",
+    "bookmarks": "bookmarks",
+    "bookmark_collections": "bookmarks",
+    "bookmark_previews": "bookmarks",
+    "bookmark_settings": "bookmarks",
 }
 
 # Tables a backup leaves out, and why. Credentials and tokens never leave the server; derived
@@ -127,6 +134,7 @@ FILE_COLUMNS: Final[dict[str, str]] = {
     "document_versions": "blob_id",
     "fitness_photos": "blob_id",
     "watch_items": "poster_blob_id",
+    "bookmark_previews": "id",
 }
 
 # Records an import matches to existing ones by their natural key rather than duplicating, in

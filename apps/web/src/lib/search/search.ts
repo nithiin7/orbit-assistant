@@ -7,6 +7,7 @@ import type {
   UniversalSearchQuery,
 } from "@orbit/contracts";
 
+import { bookmarkHref, hostOf } from "@/lib/bookmarks";
 import { calendarHref } from "@/lib/calendar";
 import { documentsHref } from "@/lib/documents";
 import { financeViewHref } from "@/lib/finance-views";
@@ -34,6 +35,7 @@ export const SEARCH_MODULES: readonly Labelled<UniversalSearchModule>[] = [
   { value: "documents", label: "Documents" },
   { value: "health", label: "Health" },
   { value: "watchlist", label: "Watchlist" },
+  { value: "bookmarks", label: "Saved" },
 ];
 
 export const ENTITY_LABELS: Readonly<Record<SearchEntityType, string>> = {
@@ -60,6 +62,7 @@ export const ENTITY_LABELS: Readonly<Record<SearchEntityType, string>> = {
   fitness_goal: "Fitness goal",
   measurement: "Body measurement",
   watch_item: "Watchlist",
+  bookmark: "Saved link",
 };
 
 export function moduleLabel(module: UniversalSearchModule): string {
@@ -126,6 +129,8 @@ export function searchResultHref(
       return fitnessHref({ kind: "view", view: "body" });
     case "watch_item":
       return watchTitleHref(hit.id);
+    case "bookmark":
+      return bookmarkHref(hit.id);
   }
 }
 
@@ -155,6 +160,7 @@ const INACTIVE_LABELS: Readonly<Partial<Record<string, string>>> = {
   abandoned: "Abandoned",
   matured: "Matured",
   disabled: "Off",
+  done: "Done",
 };
 
 /** The short facts shown under a hit: its kind, date, and details, never amounts. */
@@ -172,6 +178,7 @@ export function describeHit(hit: UniversalSearchHit): string[] {
     else if (key === "enabled") continue;
     else if (key === "location" || key === "year") facts.push(value);
     else if (key === "platform") facts.push(`On ${value}`);
+    else if (key === "url") facts.push(hostOf(value));
     else if (key in DETAIL_LABELS) facts.push(`${DETAIL_LABELS[key]}: ${value}`);
     else facts.push(humanize(value));
   }
@@ -198,6 +205,7 @@ const FIELD_LABELS: Readonly<Record<string, string>> = {
   platform: "where to watch",
   recommended_by: "recommended by",
   overview: "overview",
+  url: "link",
 };
 
 /** "Matched in tags and notes" for fields other than the title. */
@@ -288,6 +296,7 @@ const MODULE_FILTERS: Readonly<Record<UniversalSearchModule, readonly ModuleFilt
   documents: ["documentCategory"],
   health: [],
   watchlist: [],
+  bookmarks: [],
 };
 
 export function moduleFilters(module: UniversalSearchModule | null): readonly ModuleFilter[] {
