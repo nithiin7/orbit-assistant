@@ -7,9 +7,11 @@ import {
   formatGoalValue,
   formatRecord,
   IMPERIAL_UNITS,
+  matchesName,
   METRIC_UNITS,
   parseFitnessLocation,
   share,
+  sortFoods,
 } from "./fitness";
 import {
   entrySchema,
@@ -350,5 +352,33 @@ describe("forms", () => {
         "Asia/Kolkata",
       ),
     ).toEqual({ started_at: "2026-01-01T01:30:00.000Z", ended_at: "2026-01-01T02:15:00.000Z" });
+  });
+});
+
+describe("saved food search and sort", () => {
+  const foods = [
+    { name: "Oats" },
+    { name: "banana" },
+    { name: "Crème fraîche" },
+    { name: "Egg 10" },
+    { name: "Egg 2" },
+  ];
+
+  it("match names ignoring case, accents, and outer spaces", () => {
+    expect(matchesName("Crème fraîche", " CREME ")).toBe(true);
+    expect(matchesName("Oats", "")).toBe(true);
+    expect(matchesName("Oats", "rice")).toBe(false);
+  });
+
+  it("sort by name either way, or keep the most-used order", () => {
+    expect(sortFoods(foods, "most-used").map((f) => f.name)).toEqual(foods.map((f) => f.name));
+    expect(sortFoods(foods, "name-asc").map((f) => f.name)).toEqual([
+      "banana",
+      "Crème fraîche",
+      "Egg 2",
+      "Egg 10",
+      "Oats",
+    ]);
+    expect(sortFoods(foods, "name-desc").map((f) => f.name)[0]).toBe("Oats");
   });
 });

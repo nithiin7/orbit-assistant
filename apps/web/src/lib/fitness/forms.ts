@@ -23,7 +23,9 @@ import type {
   Measurement,
   MeasurementRequest,
   Muscle,
+  Portion,
   PortionRequest,
+  SavedMealRequest,
   UnitSystem,
   WorkoutTemplate,
   WorkoutTemplateCategory,
@@ -643,6 +645,26 @@ export function toFoodRequest(values: FoodFormValues, units: Units): FoodRequest
     serving_quantity_milli: parseQuantity(values.servingQuantity) ?? 1000,
     serving_unit: values.servingUnit,
     nutrients: toNutrients(values, units),
+  };
+}
+
+export type MealNameFormValues = { name: string };
+
+export const mealNameSchema = object({
+  name: singleLineText(NAME_MAX).required("Name the meal, such as “Rice combo”."),
+});
+
+/** A saved meal holding copies of these portions (their nutrients are kept as logged). */
+export function toSavedMealRequest(name: string, portions: readonly Portion[]): SavedMealRequest {
+  return {
+    name: name.trim(),
+    items: portions.map((portion) => ({
+      quantity_milli: portion.quantity_milli,
+      food_id: null,
+      name: portion.name,
+      serving_unit: portion.serving_unit,
+      nutrients: portion.nutrients,
+    })),
   };
 }
 
