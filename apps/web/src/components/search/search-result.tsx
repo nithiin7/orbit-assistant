@@ -11,6 +11,7 @@ import {
   HeartPulse,
   Landmark,
   type LucideIcon,
+  MapPinned,
   NotebookPen,
   PiggyBank,
   Receipt,
@@ -50,6 +51,7 @@ const ICONS: Readonly<Record<SearchEntityType, LucideIcon>> = {
   measurement: Ruler,
   watch_item: Clapperboard,
   bookmark: BookmarkIcon,
+  place: MapPinned,
 };
 
 const updatedFormat = new Intl.DateTimeFormat(undefined, {

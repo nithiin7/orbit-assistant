@@ -7,6 +7,7 @@ import {
   Layers,
   LineChart,
   type LucideIcon,
+  MapPinned,
   Palette,
   Plug,
   UserRound,
@@ -63,6 +64,13 @@ export const settingsPanels: readonly SettingsPanel[] = [
     title: "Saved",
     description: "Link previews: names, descriptions, images, and icons.",
     icon: Bookmark,
+    group: "general",
+  },
+  {
+    slug: "places",
+    title: "Places",
+    description: "Online maps and place search.",
+    icon: MapPinned,
     group: "general",
   },
   {

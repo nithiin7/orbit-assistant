@@ -14,7 +14,8 @@ and in-app notifications (database-backed worker), finance (ledger, commitments,
 budgets, goals, plans; opt-in mutual fund NAV and stock prices from mfapi.in and Yahoo
 Finance; auto-debit SIPs), notes, calendar (RFC 5545 recurrence), habits and routines, documents
 vault, health and fitness (private per person), saved links (`/saved`, "bookmarks" in code;
-opt-in link previews), watchlist (movies and series; opt-in TMDB lookup), dashboard, universal
+opt-in link previews), watchlist (movies and series; opt-in TMDB lookup), places (visited and wishlist on a world
+map; opt-in online maps and Nominatim search), dashboard, universal
 search (SQL, no index),
 AI layer (off by default; OpenAI, Anthropic, Gemini, Ollama, OpenAI-compatible), Google and
 Microsoft integrations, backup and restore, and a personal agent with approval-gated workflows.

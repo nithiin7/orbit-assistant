@@ -3027,6 +3027,59 @@ The `bookmarks` module ("Saved") backs up its tables, with preview files (`FILE_
 Previews only see what a signed-out visitor sees (Instagram often shows nothing); no browser
 extension or share target; no dashboard widget or agent tool; no import of browser bookmarks.
 
+## Places
+
+Where you've been and where you want to go, on a map of your world, at `/places` (Library in the
+sidebar). Built as a showcase: the overview counts the countries you've visited against the 195
+UN members and observer states, the share of the world, and the continents reached.
+
+### Data
+
+`places` (RLS on PostgreSQL): `name`, `locality` (city or region), `country_code` (ISO 3166-1
+alpha-2, checked against every assigned code in `services/places/countries.py`), an optional
+`latitude`/`longitude` pair (both or neither), `status` (`visited` or `want_to_visit`), an
+optional `visited_on` (visited places only; a CHECK enforces it and moving a place to the
+wishlist clears it), `favorite`, and `note`. One row per place, no separate visits.
+`place_settings` holds whether the workspace uses online maps; no row means off.
+
+### Online maps and place search (opt-in)
+
+Off by default, per workspace (**Settings → Places**, `PUT …/places/settings`), and the server
+can forbid it with `ORBIT_ONLINE_MAPS_ENABLED=false`. Offline, the web draws the bundled Natural
+Earth 1:50m country shapes (`world-atlas`, ISO numeric ids mapped in `lib/places/countries.ts`)
+with MapLibre GL and no network at all; places need only a name and a country. Online, the
+browser loads tiles from `ORBIT_MAP_STYLE_URL` (OpenFreeMap by default; the settings response
+carries the URL) and `POST …/places/search` looks names up through
+`providers/geo/nominatim.py` against `ORBIT_GEOCODER_URL`. Only the phrase is sent, with a generic
+User-Agent; requests are spaced a second apart across the server (Nominatim's usage policy) and
+the last 256 answers are cached in memory. Search failures are 502, searching with maps off 409.
+Tests replace `app.state.geocoder` with a fake.
+
+### Web
+
+`components/places/`: the side-rail layout (`?view=` for **Your world**, **Visited**, **Want to
+go**). Your world puts the map first (visited countries shaded, wished-for ones lighter, a pin per
+place with a position, pins cluster) with the tally over it (a ring for the share of 195), then
+highlights (latest trip, most explored country, next up, this year), progress per inhabited
+continent, country and continent milestones, and a "passport" of visited flags. Visited shows a
+card per country or a timeline by year; Want to go is a grid of bucket-list cards. Both filter by
+text and continent and sort. "Been there" asks (optionally) when, then celebrates a new country.
+Flags come from `flag-icons` (one SVG per country, loaded only when shown; `country-flag.tsx`).
+`world-map.tsx` imports MapLibre and the country shapes on demand and reads the theme tokens
+(converted from `oklch`) so the map follows light and dark mode; tests mock it, since WebGL
+doesn't run in jsdom. The dashboard widget shows the tally and the next place on the list. Logic lives in `lib/places`.
+
+### Backup and search
+
+The `places` module backs up both tables and exports JSON or CSV. Universal search finds places by
+name, city, and note.
+
+### Limitations
+
+No reverse geocoding (picking a spot on the map), no import (for example Google Maps saved
+places), no trips or repeat visits, no agent tool. Small countries missing from the 1:50m
+shapes, and places without a pin, still count in the tally but can't be seen on the offline map.
+
 ## Health and fitness
 
 A personal wellness tracker: workouts, an exercise library and templates, body measurements and
