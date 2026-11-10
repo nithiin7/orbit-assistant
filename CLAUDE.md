@@ -30,5 +30,10 @@
 - **Subagents** (`.claude/agents/`): `frontend-engineer`, `backend-engineer`, `test-engineer`,
   and `code-reviewer`. Use one only when the user asks or a large task splits cleanly; give it
   the files and decisions you already know so it doesn't start cold.
+- **Layouts:** module pages with several views use the side rail from AGENTS.md (mirror
+  `habits-nav.tsx`), not tab strips.
+- **Never touch real data.** Don't run migrations or scripts against `apps/api/.data/` or the
+  database in `apps/api/.env`; work on copies. Migrations must keep data
+  (`test_upgrades_keep_existing_data`); tell the user to back up before they migrate.
 - **Reports are short:** what changed and why, check results, and anything unresolved. No
   restating the diff.
