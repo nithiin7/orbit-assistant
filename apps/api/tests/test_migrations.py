@@ -46,6 +46,61 @@ def test_downgrade_to_base_and_upgrade_again(migrated_settings: Settings) -> Non
     assert recorded_revisions(migrated_settings) == [head_revision()]
 
 
+def _row_counts(settings: Settings) -> dict[str, int]:
+    """Rows in every table that holds data (Alembic's own table aside)."""
+    with sqlite3.connect(settings.sqlite_path) as connection:
+        tables = [
+            row[0]
+            for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+                " AND name NOT LIKE 'sqlite_%' AND name != 'alembic_version'"
+            )
+        ]
+        return {
+            table: connection.execute(f'SELECT count(*) FROM "{table}"').fetchone()[0]
+            for table in tables
+        }
+
+
+def test_upgrades_keep_existing_data(settings: Settings) -> None:
+    """Every migration after the first data tables keeps the rows already there.
+
+    Regression: batch mode rebuilds a SQLite table by copying it and dropping the original. With
+    foreign keys on, that drop cascades, so rebuilding `users` (0026) or `workspaces` (0029)
+    silently deleted every workspace's data. Migrations now run with foreign keys off."""
+    upgrade(settings, "0004")
+    user, workspace, task = (uuid.uuid4().hex for _ in range(3))
+    with sqlite3.connect(settings.sqlite_path) as connection:
+        connection.execute(
+            "INSERT INTO users (id, auth_provider, auth_subject, email, display_name,"
+            " created_at, updated_at) VALUES (?, 'local', 'ada', 'ada@example.com', 'Ada',"
+            " '2026-01-01', '2026-01-01')",
+            (user,),
+        )
+        connection.execute(
+            "INSERT INTO workspaces (id, owner_id, name, is_personal, created_at, updated_at)"
+            " VALUES (?, ?, 'Personal', 1, '2026-01-01', '2026-01-01')",
+            (workspace, user),
+        )
+        connection.execute(
+            "INSERT INTO tasks (id, workspace_id, title, description, status, priority,"
+            " created_at, updated_at) VALUES (?, ?, 'Keep me', '', 'open', 2,"
+            " '2026-01-01', '2026-01-01')",
+            (task, workspace),
+        )
+    seeded = _row_counts(settings)
+
+    script = ScriptDirectory.from_config(alembic_config())
+    later = [revision.revision for revision in script.walk_revisions("0004", "head")]
+    for revision in reversed(later[:-1]):  # Oldest first, skipping 0004 itself.
+        upgrade(settings, revision)
+        counts = _row_counts(settings)
+        for table, rows in seeded.items():
+            assert counts.get(table) == rows, f"{revision} lost rows from {table}"
+    with sqlite3.connect(settings.sqlite_path) as connection:
+        assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
+
+
 def test_models_match_migrations(migrated_settings: Settings) -> None:
     """Fails when an ORM model changes without a migration. Fix with an Alembic revision."""
     command.check(alembic_config(migrated_settings))
