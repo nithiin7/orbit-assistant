@@ -3755,6 +3755,978 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/watchlist/lookup": {
+      "get": {
+        "tags": [
+          "watchlist"
+        ],
+        "summary": "Get the title lookup settings",
+        "operationId": "get_lookup_api_v1_workspaces__workspace_id__watchlist_lookup_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchlistLookupResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or title does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "watchlist"
+        ],
+        "summary": "Turn title lookup on or off",
+        "description": "With lookup on, this workspace sends search phrases and TMDB IDs to TMDB. Posters are\ndownloaded by the server, never by the browser.",
+        "operationId": "update_lookup_api_v1_workspaces__workspace_id__watchlist_lookup_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WatchlistLookupRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchlistLookupResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or title does not exist or is not accessible."
+          },
+          "409": {
+            "description": "No TMDB API key is saved yet."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/watchlist/lookup/key": {
+      "put": {
+        "tags": [
+          "watchlist"
+        ],
+        "summary": "Save the TMDB API key",
+        "description": "Checks the key with TMDB, stores it encrypted, and turns lookup on. The key is never\nreturned.",
+        "operationId": "save_lookup_key_api_v1_workspaces__workspace_id__watchlist_lookup_key_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WatchlistKeyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchlistLookupResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or title does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The server can't store API keys."
+          },
+          "422": {
+            "description": "TMDB refused the key."
+          },
+          "503": {
+            "description": "TMDB couldn't be reached."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "watchlist"
+        ],
+        "summary": "Remove the TMDB API key",
+        "description": "Turns lookup off. Titles and posters already added stay.",
+        "operationId": "remove_lookup_key_api_v1_workspaces__workspace_id__watchlist_lookup_key_delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchlistLookupResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or title does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/watchlist/search": {
+      "get": {
+        "tags": [
+          "watchlist"
+        ],
+        "summary": "Find a movie or series at TMDB",
+        "description": "Only the search phrase leaves the server.",
+        "operationId": "search_titles_api_v1_workspaces__workspace_id__watchlist_search_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TitleMatchesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or title does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Title lookup is off for this workspace or server."
+          },
+          "503": {
+            "description": "TMDB couldn't be reached."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/watchlist/search/poster": {
+      "get": {
+        "tags": [
+          "watchlist"
+        ],
+        "summary": "Get a search result's poster thumbnail",
+        "description": "Fetched through the server, so the browser never contacts TMDB.",
+        "operationId": "search_poster_api_v1_workspaces__workspace_id__watchlist_search_poster_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^/[A-Za-z0-9_-]{1,100}\\.(?:jpg|jpeg|png)$",
+              "description": "A search result's `poster_path`.",
+              "title": "Path"
+            },
+            "description": "A search result's `poster_path`."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The thumbnail.",
+            "content": {
+              "image/jpeg": {},
+              "image/png": {}
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or title does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Title lookup is off for this workspace or server."
+          },
+          "503": {
+            "description": "TMDB couldn't be reached."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/watchlist/items": {
+      "get": {
+        "tags": [
+          "watchlist"
+        ],
+        "summary": "List the watchlist",
+        "operationId": "list_items_api_v1_workspaces__workspace_id__watchlist_items_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchItemsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or title does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "watchlist"
+        ],
+        "summary": "Add a title",
+        "description": "With `source_id`, the title, details, and poster come from TMDB; otherwise from the\nrequest.",
+        "operationId": "add_item_api_v1_workspaces__workspace_id__watchlist_items_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWatchItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchItemResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or title does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Already added, or lookup is off."
+          },
+          "503": {
+            "description": "TMDB couldn't be reached."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/watchlist/items/{item_id}": {
+      "get": {
+        "tags": [
+          "watchlist"
+        ],
+        "summary": "Get a title",
+        "operationId": "get_item_api_v1_workspaces__workspace_id__watchlist_items__item_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The title's ID.",
+              "title": "Item Id"
+            },
+            "description": "The title's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchItemResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or title does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "watchlist"
+        ],
+        "summary": "Update a title",
+        "operationId": "update_item_api_v1_workspaces__workspace_id__watchlist_items__item_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The title's ID.",
+              "title": "Item Id"
+            },
+            "description": "The title's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWatchItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchItemResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or title does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "watchlist"
+        ],
+        "summary": "Remove a title",
+        "description": "Permanently remove a title and its poster.",
+        "operationId": "delete_item_api_v1_workspaces__workspace_id__watchlist_items__item_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The title's ID.",
+              "title": "Item Id"
+            },
+            "description": "The title's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or title does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/watchlist/items/{item_id}/next-episode": {
+      "post": {
+        "tags": [
+          "watchlist"
+        ],
+        "summary": "Log the next episode of a series",
+        "description": "Starts the series if it hasn't started; logging its last known episode marks it\nwatched.",
+        "operationId": "next_episode_api_v1_workspaces__workspace_id__watchlist_items__item_id__next_episode_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The title's ID.",
+              "title": "Item Id"
+            },
+            "description": "The title's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchItemResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or title does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/watchlist/items/{item_id}/move-to-top": {
+      "post": {
+        "tags": [
+          "watchlist"
+        ],
+        "summary": "Make a title the next to watch",
+        "operationId": "move_to_top_api_v1_workspaces__workspace_id__watchlist_items__item_id__move_to_top_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The title's ID.",
+              "title": "Item Id"
+            },
+            "description": "The title's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchItemResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or title does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/watchlist/items/{item_id}/refresh": {
+      "post": {
+        "tags": [
+          "watchlist"
+        ],
+        "summary": "Fetch a title's details again",
+        "description": "For a series that gained a season. Only for titles added from a search.",
+        "operationId": "refresh_item_api_v1_workspaces__workspace_id__watchlist_items__item_id__refresh_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The title's ID.",
+              "title": "Item Id"
+            },
+            "description": "The title's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchItemResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or title does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Title lookup is off for this workspace or server."
+          },
+          "503": {
+            "description": "TMDB couldn't be reached."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/watchlist/items/{item_id}/poster": {
+      "get": {
+        "tags": [
+          "watchlist"
+        ],
+        "summary": "Get a title's poster",
+        "operationId": "get_poster_api_v1_workspaces__workspace_id__watchlist_items__item_id__poster_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The title's ID.",
+              "title": "Item Id"
+            },
+            "description": "The title's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The poster.",
+            "content": {
+              "image/jpeg": {},
+              "image/png": {}
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or title does not exist or is not accessible."
+          },
+          "204": {
+            "description": "The title has no poster."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/reminders": {
       "get": {
         "tags": [
@@ -27570,7 +28542,8 @@
                   "finance",
                   "habits",
                   "documents",
-                  "health"
+                  "health",
+                  "watchlist"
                 ],
                 "type": "string"
               },
@@ -27608,7 +28581,8 @@
                   "workout",
                   "workout_template",
                   "fitness_goal",
-                  "measurement"
+                  "measurement",
+                  "watch_item"
                 ],
                 "type": "string"
               },
@@ -42107,6 +43081,120 @@
         "title": "CreateTransferRequest",
         "description": "Move money between two accounts in the same currency, such as paying a credit-card bill\nor putting money into an investment account. Never income or spending."
       },
+      "CreateWatchItemRequest": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "movie",
+              "series"
+            ],
+            "title": "Kind"
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2147483647.0,
+                "minimum": 1.0,
+                "description": "The title's TMDB ID."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "release_year": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2200.0,
+                "minimum": 1870.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Year"
+          },
+          "runtime_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 6000.0,
+                "minimum": 1.0,
+                "description": "Minutes."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runtime Minutes"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "want",
+              "watching",
+              "watched",
+              "dropped"
+            ],
+            "title": "Status",
+            "default": "want"
+          },
+          "platform": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Platform"
+          },
+          "recommended_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommended By"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "title": "CreateWatchItemRequest",
+        "description": "Add a title found in a search (`source_id` and `kind`), or one entered by hand (`title`\nand `kind`). A looked-up title's name and details come from TMDB."
+      },
       "CreateWorkspaceRequest": {
         "properties": {
           "name": {
@@ -42130,7 +43218,7 @@
               "$ref": "#/components/schemas/DashboardWidgetModel"
             },
             "type": "array",
-            "maxItems": 23,
+            "maxItems": 24,
             "title": "Widgets",
             "description": "The widgets to show, in order. Each widget may appear once; an empty list is an empty dashboard."
           },
@@ -42211,6 +43299,7 @@
               "notes",
               "documents",
               "shopping",
+              "watchlist",
               "cash_flow",
               "upcoming_payments",
               "budget",
@@ -44820,7 +45909,8 @@
               "documents",
               "fitness",
               "assistant",
-              "search"
+              "search",
+              "watchlist"
             ],
             "title": "Module"
           },
@@ -44867,7 +45957,8 @@
                   "documents",
                   "fitness",
                   "assistant",
-                  "search"
+                  "search",
+                  "watchlist"
                 ]
               },
               {
@@ -53464,6 +54555,30 @@
         ],
         "title": "ProfileResponse"
       },
+      "ProgressModel": {
+        "properties": {
+          "season": {
+            "type": "integer",
+            "maximum": 500.0,
+            "minimum": 1.0,
+            "title": "Season"
+          },
+          "episode": {
+            "type": "integer",
+            "maximum": 10000.0,
+            "minimum": 1.0,
+            "title": "Episode"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "season",
+          "episode"
+        ],
+        "title": "ProgressModel",
+        "description": "The last episode watched."
+      },
       "QualityResponse": {
         "properties": {
           "estimated": {
@@ -55805,7 +56920,8 @@
                 "finance",
                 "habits",
                 "documents",
-                "health"
+                "health",
+                "watchlist"
               ]
             },
             "type": "array",
@@ -55837,7 +56953,8 @@
                 "workout",
                 "workout_template",
                 "fitness_goal",
-                "measurement"
+                "measurement",
+                "watch_item"
               ]
             },
             "type": "array",
@@ -56303,7 +57420,8 @@
               "finance",
               "habits",
               "documents",
-              "health"
+              "health",
+              "watchlist"
             ],
             "title": "Module"
           },
@@ -59008,6 +60126,93 @@
         "title": "TestAiProviderRequest",
         "description": "Test a connection without saving it. Give the settings, or `provider_id` alone to test a\nsaved one. With both, a missing key is taken from the saved connection."
       },
+      "TitleMatchResponse": {
+        "properties": {
+          "source_id": {
+            "type": "integer",
+            "title": "Source Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "movie",
+              "series"
+            ],
+            "title": "Kind"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "release_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Year"
+          },
+          "overview": {
+            "type": "string",
+            "title": "Overview"
+          },
+          "poster_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poster Path",
+            "description": "Fetch the thumbnail from `/watchlist/search/poster?path=`."
+          },
+          "existing_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Existing Id",
+            "description": "The watchlist's copy of this title, if it's already added."
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_id",
+          "kind",
+          "title",
+          "release_year",
+          "overview",
+          "poster_path",
+          "existing_id"
+        ],
+        "title": "TitleMatchResponse"
+      },
+      "TitleMatchesResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/TitleMatchResponse"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "TitleMatchesResponse"
+      },
       "TodayOverviewResponse": {
         "properties": {
           "date": {
@@ -59320,7 +60525,8 @@
               "finance",
               "habits",
               "documents",
-              "health"
+              "health",
+              "watchlist"
             ],
             "title": "Module"
           },
@@ -59348,7 +60554,8 @@
               "workout",
               "workout_template",
               "fitness_goal",
-              "measurement"
+              "measurement",
+              "watch_item"
             ],
             "title": "Entity Type"
           },
@@ -59537,7 +60744,8 @@
                 "finance",
                 "habits",
                 "documents",
-                "health"
+                "health",
+                "watchlist"
               ]
             },
             "type": "array",
@@ -63322,6 +64530,146 @@
         "title": "UpdateTransactionRequest",
         "description": "Correct some of a transaction's fields. Omitted fields keep their values;\n`category_id: null` and `to_account_id: null` clear them. The result must follow the same\nrules as a new transaction, so turning a transfer into an expense also clears\n`to_account_id`."
       },
+      "UpdateWatchItemRequest": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "movie",
+                  "series"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "release_year": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2200.0,
+                "minimum": 1870.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Year"
+          },
+          "runtime_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 6000.0,
+                "minimum": 1.0,
+                "description": "Minutes."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runtime Minutes"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "want",
+                  "watching",
+                  "watched",
+                  "dropped"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProgressModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rating": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10.0,
+                "minimum": 1.0,
+                "description": "Half stars out of five: 1 to 10."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rating"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "platform": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Platform"
+          },
+          "recommended_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommended By"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateWatchItemRequest",
+        "description": "Change some of a title's fields. Omitted fields keep their values; `null` clears an\noptional one. Moving to `watched` fills in a series' last episode when the seasons are\nknown; moving back to `want` clears progress."
+      },
       "UpdateWorkspaceRequest": {
         "properties": {
           "name": {
@@ -63469,6 +64817,286 @@
           "message"
         ],
         "title": "VerificationResponse"
+      },
+      "WatchItemResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workspace Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "movie",
+              "series"
+            ],
+            "title": "Kind"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "release_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Year"
+          },
+          "overview": {
+            "type": "string",
+            "title": "Overview",
+            "description": "Empty when unknown."
+          },
+          "genres": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Genres"
+          },
+          "runtime_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runtime Minutes",
+            "description": "A movie's length, or a series' typical episode length."
+          },
+          "season_episodes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season Episodes",
+            "description": "A series' episode count per season, when known."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "want",
+              "watching",
+              "watched",
+              "dropped"
+            ],
+            "title": "Status"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProgressModel"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Series only: the last episode watched."
+          },
+          "rating": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rating",
+            "description": "Half stars out of five: 1 to 10."
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "platform": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Platform",
+            "description": "Where to watch it, such as \"Netflix\"."
+          },
+          "recommended_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommended By"
+          },
+          "looked_up": {
+            "type": "boolean",
+            "title": "Looked Up",
+            "description": "Added from a TMDB search, so it can be refreshed."
+          },
+          "has_poster": {
+            "type": "boolean",
+            "title": "Has Poster"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position",
+            "description": "Order within its status; lower comes first."
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At",
+            "description": "Set while the title is watched."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workspace_id",
+          "kind",
+          "title",
+          "release_year",
+          "overview",
+          "genres",
+          "runtime_minutes",
+          "season_episodes",
+          "status",
+          "progress",
+          "rating",
+          "notes",
+          "platform",
+          "recommended_by",
+          "looked_up",
+          "has_poster",
+          "position",
+          "started_at",
+          "finished_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "WatchItemResponse"
+      },
+      "WatchItemsResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WatchItemResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Every title, in position order."
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "WatchItemsResponse"
+      },
+      "WatchlistKeyRequest": {
+        "properties": {
+          "api_key": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 16,
+            "pattern": "^[A-Za-z0-9._-]+$",
+            "title": "Api Key",
+            "description": "A TMDB v3 API key or v4 read access token. Checked with TMDB, then stored encrypted; it's never returned."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "api_key"
+        ],
+        "title": "WatchlistKeyRequest"
+      },
+      "WatchlistLookupRequest": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "title": "WatchlistLookupRequest"
+      },
+      "WatchlistLookupResponse": {
+        "properties": {
+          "configured": {
+            "type": "boolean",
+            "title": "Configured",
+            "description": "Whether this workspace has saved a TMDB API key."
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "description": "Whether this workspace looks titles up at TMDB."
+          }
+        },
+        "type": "object",
+        "required": [
+          "configured",
+          "enabled"
+        ],
+        "title": "WatchlistLookupResponse"
       },
       "WaterDayResponse": {
         "properties": {

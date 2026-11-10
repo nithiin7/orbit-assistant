@@ -24,6 +24,7 @@ Module = Literal[
     "fitness",
     "assistant",
     "search",
+    "watchlist",
 ]
 
 MODULES: Final[tuple[Module, ...]] = (
@@ -38,6 +39,7 @@ MODULES: Final[tuple[Module, ...]] = (
     "fitness",
     "assistant",
     "search",
+    "watchlist",
 )
 
 MODULE_LABELS: Final[dict[Module, str]] = {
@@ -52,6 +54,7 @@ MODULE_LABELS: Final[dict[Module, str]] = {
     "fitness": "Health and fitness",
     "assistant": "Assistant conversations",
     "search": "Saved searches",
+    "watchlist": "Watchlist",
 }
 
 _PREFIXES: Final[tuple[tuple[str, Module], ...]] = (
@@ -79,6 +82,7 @@ _EXACT: Final[dict[str, Module]] = {
     "ai_messages": "assistant",
     "ai_insight_dismissals": "assistant",
     "saved_searches": "search",
+    "watch_items": "watchlist",
 }
 
 # Tables a backup leaves out, and why. Credentials and tokens never leave the server; derived
@@ -113,6 +117,7 @@ EXCLUDED_TABLES: Final[dict[str, str]] = {
     "backups": "backups don't contain other backups",
     "backup_settings": "set again in the restored workspace",
     "backup_uploads": "staging state",
+    "watchlist_settings": "the encrypted TMDB key never leaves the server",
 }
 
 # Columns that name a file in the attachment store: `(table, column)`. The file is stored as
@@ -121,6 +126,7 @@ FILE_COLUMNS: Final[dict[str, str]] = {
     "note_attachments": "id",
     "document_versions": "blob_id",
     "fitness_photos": "blob_id",
+    "watch_items": "poster_blob_id",
 }
 
 # Records an import matches to existing ones by their natural key rather than duplicating, in

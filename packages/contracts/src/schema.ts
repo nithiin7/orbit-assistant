@@ -888,6 +888,212 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/watchlist/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the title lookup settings */
+        get: operations["get_lookup_api_v1_workspaces__workspace_id__watchlist_lookup_get"];
+        /**
+         * Turn title lookup on or off
+         * @description With lookup on, this workspace sends search phrases and TMDB IDs to TMDB. Posters are
+         *     downloaded by the server, never by the browser.
+         */
+        put: operations["update_lookup_api_v1_workspaces__workspace_id__watchlist_lookup_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/watchlist/lookup/key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Save the TMDB API key
+         * @description Checks the key with TMDB, stores it encrypted, and turns lookup on. The key is never
+         *     returned.
+         */
+        put: operations["save_lookup_key_api_v1_workspaces__workspace_id__watchlist_lookup_key_put"];
+        post?: never;
+        /**
+         * Remove the TMDB API key
+         * @description Turns lookup off. Titles and posters already added stay.
+         */
+        delete: operations["remove_lookup_key_api_v1_workspaces__workspace_id__watchlist_lookup_key_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/watchlist/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find a movie or series at TMDB
+         * @description Only the search phrase leaves the server.
+         */
+        get: operations["search_titles_api_v1_workspaces__workspace_id__watchlist_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/watchlist/search/poster": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a search result's poster thumbnail
+         * @description Fetched through the server, so the browser never contacts TMDB.
+         */
+        get: operations["search_poster_api_v1_workspaces__workspace_id__watchlist_search_poster_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/watchlist/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the watchlist */
+        get: operations["list_items_api_v1_workspaces__workspace_id__watchlist_items_get"];
+        put?: never;
+        /**
+         * Add a title
+         * @description With `source_id`, the title, details, and poster come from TMDB; otherwise from the
+         *     request.
+         */
+        post: operations["add_item_api_v1_workspaces__workspace_id__watchlist_items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/watchlist/items/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a title */
+        get: operations["get_item_api_v1_workspaces__workspace_id__watchlist_items__item_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Remove a title
+         * @description Permanently remove a title and its poster.
+         */
+        delete: operations["delete_item_api_v1_workspaces__workspace_id__watchlist_items__item_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update a title */
+        patch: operations["update_item_api_v1_workspaces__workspace_id__watchlist_items__item_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/watchlist/items/{item_id}/next-episode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Log the next episode of a series
+         * @description Starts the series if it hasn't started; logging its last known episode marks it
+         *     watched.
+         */
+        post: operations["next_episode_api_v1_workspaces__workspace_id__watchlist_items__item_id__next_episode_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/watchlist/items/{item_id}/move-to-top": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Make a title the next to watch */
+        post: operations["move_to_top_api_v1_workspaces__workspace_id__watchlist_items__item_id__move_to_top_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/watchlist/items/{item_id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fetch a title's details again
+         * @description For a series that gained a season. Only for titles added from a search.
+         */
+        post: operations["refresh_item_api_v1_workspaces__workspace_id__watchlist_items__item_id__refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/watchlist/items/{item_id}/poster": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a title's poster */
+        get: operations["get_poster_api_v1_workspaces__workspace_id__watchlist_items__item_id__poster_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/reminders": {
         parameters: {
             query?: never;
@@ -9834,6 +10040,41 @@ export interface components {
              */
             notes: string;
         };
+        /**
+         * CreateWatchItemRequest
+         * @description Add a title found in a search (`source_id` and `kind`), or one entered by hand (`title`
+         *     and `kind`). A looked-up title's name and details come from TMDB.
+         */
+        CreateWatchItemRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "movie" | "series";
+            /** Source Id */
+            source_id?: number | null;
+            /** Title */
+            title?: string | null;
+            /** Release Year */
+            release_year?: number | null;
+            /** Runtime Minutes */
+            runtime_minutes?: number | null;
+            /**
+             * Status
+             * @default want
+             * @enum {string}
+             */
+            status: "want" | "watching" | "watched" | "dropped";
+            /** Platform */
+            platform?: string | null;
+            /** Recommended By */
+            recommended_by?: string | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+        };
         /** CreateWorkspaceRequest */
         CreateWorkspaceRequest: {
             /** Name */
@@ -9883,7 +10124,7 @@ export interface components {
              * Id
              * @enum {string}
              */
-            id: "today" | "quick_actions" | "attention" | "workspace" | "status" | "tasks" | "reminders" | "calendar" | "habits" | "notes" | "documents" | "shopping" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "savings_goals" | "workouts" | "water" | "nutrition" | "weight" | "fitness_goals" | "modules";
+            id: "today" | "quick_actions" | "attention" | "workspace" | "status" | "tasks" | "reminders" | "calendar" | "habits" | "notes" | "documents" | "shopping" | "watchlist" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "savings_goals" | "workouts" | "water" | "nutrition" | "weight" | "fitness_goals" | "modules";
             /**
              * Size
              * @description `half` widgets sit side by side on wide screens.
@@ -10908,7 +11149,7 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search";
+            module: "tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist";
             /** Label */
             label: string;
             /** Formats */
@@ -10917,7 +11158,7 @@ export interface components {
         /** ExportModuleRequest */
         ExportModuleRequest: {
             /** Module */
-            module: ("tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search") | null;
+            module: ("tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist") | null;
             /**
              * Format
              * @enum {string}
@@ -14552,6 +14793,16 @@ export interface components {
              */
             updated_at: string;
         };
+        /**
+         * ProgressModel
+         * @description The last episode watched.
+         */
+        ProgressModel: {
+            /** Season */
+            season: number;
+            /** Episode */
+            episode: number;
+        };
         /** QualityResponse */
         QualityResponse: {
             /** Estimated */
@@ -15467,12 +15718,12 @@ export interface components {
              * Module
              * @description Repeat to search only some modules.
              */
-            module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health")[];
+            module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist")[];
             /**
              * Type
              * @description Repeat to search only some record types.
              */
-            type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement")[];
+            type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item")[];
             /**
              * Date From
              * @description The record's own date: due date, event, transaction, …
@@ -15628,7 +15879,7 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health";
+            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist";
             /**
              * Total
              * @description Matches under every filter except the module filter.
@@ -16739,6 +16990,37 @@ export interface components {
             /** Api Key */
             api_key?: string | null;
         };
+        /** TitleMatchResponse */
+        TitleMatchResponse: {
+            /** Source Id */
+            source_id: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "movie" | "series";
+            /** Title */
+            title: string;
+            /** Release Year */
+            release_year: number | null;
+            /** Overview */
+            overview: string;
+            /**
+             * Poster Path
+             * @description Fetch the thumbnail from `/watchlist/search/poster?path=`.
+             */
+            poster_path: string | null;
+            /**
+             * Existing Id
+             * @description The watchlist's copy of this title, if it's already added.
+             */
+            existing_id: string | null;
+        };
+        /** TitleMatchesResponse */
+        TitleMatchesResponse: {
+            /** Results */
+            results: components["schemas"]["TitleMatchResponse"][];
+        };
         /**
          * TodayOverviewResponse
          * @description Each section is `null` when it wasn't requested or failed to load; failed ones are
@@ -16864,12 +17146,12 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health";
+            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist";
             /**
              * Entity Type
              * @enum {string}
              */
-            entity_type: "task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement";
+            entity_type: "task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item";
             /**
              * Id
              * Format: uuid
@@ -16961,7 +17243,7 @@ export interface components {
              * Unavailable
              * @description Modules that couldn't be searched.
              */
-            unavailable: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health")[];
+            unavailable: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist")[];
         };
         /** UnreadCountResponse */
         UnreadCountResponse: {
@@ -17748,6 +18030,33 @@ export interface components {
             /** Notes */
             notes?: string | null;
         };
+        /**
+         * UpdateWatchItemRequest
+         * @description Change some of a title's fields. Omitted fields keep their values; `null` clears an
+         *     optional one. Moving to `watched` fills in a series' last episode when the seasons are
+         *     known; moving back to `want` clears progress.
+         */
+        UpdateWatchItemRequest: {
+            /** Title */
+            title?: string | null;
+            /** Kind */
+            kind?: ("movie" | "series") | null;
+            /** Release Year */
+            release_year?: number | null;
+            /** Runtime Minutes */
+            runtime_minutes?: number | null;
+            /** Status */
+            status?: ("want" | "watching" | "watched" | "dropped") | null;
+            progress?: components["schemas"]["ProgressModel"] | null;
+            /** Rating */
+            rating?: number | null;
+            /** Notes */
+            notes?: string | null;
+            /** Platform */
+            platform?: string | null;
+            /** Recommended By */
+            recommended_by?: string | null;
+        };
         /** UpdateWorkspaceRequest */
         UpdateWorkspaceRequest: {
             /** Name */
@@ -17814,6 +18123,129 @@ export interface components {
             level: "checksum" | "full";
             /** Message */
             message: string;
+        };
+        /** WatchItemResponse */
+        WatchItemResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "movie" | "series";
+            /** Title */
+            title: string;
+            /** Release Year */
+            release_year: number | null;
+            /**
+             * Overview
+             * @description Empty when unknown.
+             */
+            overview: string;
+            /** Genres */
+            genres: string[];
+            /**
+             * Runtime Minutes
+             * @description A movie's length, or a series' typical episode length.
+             */
+            runtime_minutes: number | null;
+            /**
+             * Season Episodes
+             * @description A series' episode count per season, when known.
+             */
+            season_episodes: number[] | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "want" | "watching" | "watched" | "dropped";
+            /** @description Series only: the last episode watched. */
+            progress: components["schemas"]["ProgressModel"] | null;
+            /**
+             * Rating
+             * @description Half stars out of five: 1 to 10.
+             */
+            rating: number | null;
+            /** Notes */
+            notes: string;
+            /**
+             * Platform
+             * @description Where to watch it, such as "Netflix".
+             */
+            platform: string | null;
+            /** Recommended By */
+            recommended_by: string | null;
+            /**
+             * Looked Up
+             * @description Added from a TMDB search, so it can be refreshed.
+             */
+            looked_up: boolean;
+            /** Has Poster */
+            has_poster: boolean;
+            /**
+             * Position
+             * @description Order within its status; lower comes first.
+             */
+            position: number;
+            /** Started At */
+            started_at: string | null;
+            /**
+             * Finished At
+             * @description Set while the title is watched.
+             */
+            finished_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** WatchItemsResponse */
+        WatchItemsResponse: {
+            /**
+             * Items
+             * @description Every title, in position order.
+             */
+            items: components["schemas"]["WatchItemResponse"][];
+        };
+        /** WatchlistKeyRequest */
+        WatchlistKeyRequest: {
+            /**
+             * Api Key
+             * @description A TMDB v3 API key or v4 read access token. Checked with TMDB, then stored encrypted; it's never returned.
+             */
+            api_key: string;
+        };
+        /** WatchlistLookupRequest */
+        WatchlistLookupRequest: {
+            /** Enabled */
+            enabled: boolean;
+        };
+        /** WatchlistLookupResponse */
+        WatchlistLookupResponse: {
+            /**
+             * Configured
+             * @description Whether this workspace has saved a TMDB API key.
+             */
+            configured: boolean;
+            /**
+             * Enabled
+             * @description Whether this workspace looks titles up at TMDB.
+             */
+            enabled: boolean;
         };
         /** WaterDayResponse */
         WaterDayResponse: {
@@ -20762,6 +21194,798 @@ export interface operations {
                 content?: never;
             };
             /** @description The workspace, list, or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_lookup_api_v1_workspaces__workspace_id__watchlist_lookup_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchlistLookupResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or title does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_lookup_api_v1_workspaces__workspace_id__watchlist_lookup_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WatchlistLookupRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchlistLookupResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or title does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No TMDB API key is saved yet. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_lookup_key_api_v1_workspaces__workspace_id__watchlist_lookup_key_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WatchlistKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchlistLookupResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or title does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The server can't store API keys. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description TMDB refused the key. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description TMDB couldn't be reached. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    remove_lookup_key_api_v1_workspaces__workspace_id__watchlist_lookup_key_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchlistLookupResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or title does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_titles_api_v1_workspaces__workspace_id__watchlist_search_get: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TitleMatchesResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or title does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Title lookup is off for this workspace or server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description TMDB couldn't be reached. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    search_poster_api_v1_workspaces__workspace_id__watchlist_search_poster_get: {
+        parameters: {
+            query: {
+                /** @description A search result's `poster_path`. */
+                path: string;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The thumbnail. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": unknown;
+                    "image/png": unknown;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or title does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Title lookup is off for this workspace or server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description TMDB couldn't be reached. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_items_api_v1_workspaces__workspace_id__watchlist_items_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchItemsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or title does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_item_api_v1_workspaces__workspace_id__watchlist_items_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWatchItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchItemResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or title does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already added, or lookup is off. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description TMDB couldn't be reached. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_item_api_v1_workspaces__workspace_id__watchlist_items__item_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The title's ID. */
+                item_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchItemResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or title does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_item_api_v1_workspaces__workspace_id__watchlist_items__item_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The title's ID. */
+                item_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or title does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_item_api_v1_workspaces__workspace_id__watchlist_items__item_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The title's ID. */
+                item_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWatchItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchItemResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or title does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    next_episode_api_v1_workspaces__workspace_id__watchlist_items__item_id__next_episode_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The title's ID. */
+                item_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchItemResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or title does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    move_to_top_api_v1_workspaces__workspace_id__watchlist_items__item_id__move_to_top_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The title's ID. */
+                item_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchItemResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or title does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_item_api_v1_workspaces__workspace_id__watchlist_items__item_id__refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The title's ID. */
+                item_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchItemResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or title does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Title lookup is off for this workspace or server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description TMDB couldn't be reached. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_poster_api_v1_workspaces__workspace_id__watchlist_items__item_id__poster_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The title's ID. */
+                item_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The poster. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": unknown;
+                    "image/png": unknown;
+                };
+            };
+            /** @description The title has no poster. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or title does not exist or is not accessible. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -36781,9 +38005,9 @@ export interface operations {
         parameters: {
             query: {
                 /** @description Repeat to search only some modules. */
-                module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health")[];
+                module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist")[];
                 /** @description Repeat to search only some record types. */
-                type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement")[];
+                type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item")[];
                 /** @description The record's own date: due date, event, transaction, … */
                 date_from?: string | null;
                 date_to?: string | null;

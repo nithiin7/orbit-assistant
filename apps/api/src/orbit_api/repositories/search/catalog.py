@@ -51,6 +51,7 @@ from orbit_api.db.models import (
     RoutineModel,
     RoutineStepModel,
     TaskModel,
+    WatchItemModel,
 )
 from orbit_api.repositories.search.sources import (
     AnySelect,
@@ -828,6 +829,41 @@ MEASUREMENT = EntitySource(
 )
 
 
+# Watchlist
+
+WATCH_ITEM = EntitySource(
+    module="watchlist",
+    entity_type="watch_item",
+    table=WatchItemModel,
+    id=WatchItemModel.id,
+    title=WatchItemModel.title,
+    updated_at=WatchItemModel.updated_at,
+    created_at=WatchItemModel.created_at,
+    status=WatchItemModel.status,
+    scope=_workspace(WatchItemModel),
+    fields=(
+        text_field("platform", "metadata", WatchItemModel.platform),
+        text_field("recommended_by", "metadata", WatchItemModel.recommended_by),
+        text_field("notes", "description", WatchItemModel.notes),
+        text_field("overview", "content", WatchItemModel.overview),
+    ),
+    # Watched and dropped titles still match, ranked a little lower.
+    active=WatchItemModel.status.in_(("want", "watching")),
+    columns={
+        "watch_kind": WatchItemModel.kind,
+        "release_year": WatchItemModel.release_year,
+        "platform_name": WatchItemModel.platform,
+    },
+    describe=lambda row, _c: Description(
+        details=details(
+            ("watch_kind", row["watch_kind"]),
+            ("year", row["release_year"]),
+            ("platform", row["platform_name"]),
+        )
+    ),
+)
+
+
 SOURCES: Final[dict[UniversalModule, tuple[EntitySource, ...]]] = {
     "tasks": (TASK,),
     "notes": (NOTE,),
@@ -848,4 +884,5 @@ SOURCES: Final[dict[UniversalModule, tuple[EntitySource, ...]]] = {
     "habits": (HABIT, ROUTINE),
     "documents": (DOCUMENT,),
     "health": (EXERCISE, WORKOUT, WORKOUT_TEMPLATE, FITNESS_GOAL, MEASUREMENT),
+    "watchlist": (WATCH_ITEM,),
 }

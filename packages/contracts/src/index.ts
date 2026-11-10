@@ -53,6 +53,17 @@ export type ShoppingItemStatus = ShoppingItem["status"];
 export type ShoppingItems = Schemas["ShoppingItemsResponse"];
 export type CreateShoppingItemRequest = Schemas["CreateItemRequest"];
 export type UpdateShoppingItemRequest = Schemas["UpdateItemRequest"];
+
+export type WatchItem = Schemas["WatchItemResponse"];
+export type WatchKind = WatchItem["kind"];
+export type WatchStatus = WatchItem["status"];
+export type WatchProgress = Schemas["ProgressModel"];
+export type WatchItems = Schemas["WatchItemsResponse"];
+export type CreateWatchItemRequest = Schemas["CreateWatchItemRequest"];
+export type UpdateWatchItemRequest = Schemas["UpdateWatchItemRequest"];
+export type WatchlistLookup = Schemas["WatchlistLookupResponse"];
+export type TitleMatch = Schemas["TitleMatchResponse"];
+export type TitleMatches = Schemas["TitleMatchesResponse"];
 export type BulkChangeResponse = Schemas["BulkChangeResponse"];
 export type DashboardLayout = Schemas["DashboardLayoutResponse"];
 export type DashboardLayoutRequest = Schemas["DashboardLayoutRequest"];
