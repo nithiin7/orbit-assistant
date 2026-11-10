@@ -126,6 +126,63 @@ describe("Automation overview", () => {
     expect(posted).toEqual([{ goal: "Plan my week", idempotency_key: expect.any(String) }]);
     expect(screen.getByRole("link", { name: /Plan my week/ })).toBeInTheDocument();
   });
+
+  it("fills the request from a suggestion", async () => {
+    const user = userEvent.setup();
+    mockApi({ ...session, [`GET ${AGENT}`]: json(overview()) });
+    await renderSignedIn(<AutomationView />);
+    const suggestions = await screen.findByRole("group", { name: "Suggestions" });
+    await user.click(within(suggestions).getByRole("button", { name: "What’s overdue?" }));
+    expect(screen.getByLabelText("What should the agent do?")).toHaveValue("What’s overdue?");
+  });
+
+  it("shows headline figures and the workflows that run next", async () => {
+    const briefing = findTemplate("briefing")?.workflow("UTC");
+    if (!briefing) throw new Error("No briefing template");
+    mockApi({
+      ...session,
+      [`GET ${AGENT}`]: json(
+        overview({
+          workflows: 2,
+          enabled_workflows: 1,
+          recent: [execution(), execution({ id: "e2", status: "failed" })],
+        }),
+      ),
+      [`GET ${AGENT}/workflows`]: json({
+        workflows: [
+          {
+            ...briefing,
+            id: "w1",
+            next_run_at: "2026-11-12T08:00:00Z",
+            last_run_at: null,
+            created_at: "2026-11-01T09:00:00Z",
+            updated_at: "2026-11-01T09:00:00Z",
+          },
+          {
+            ...briefing,
+            id: "w2",
+            name: "Paused one",
+            enabled: false,
+            next_run_at: null,
+            last_run_at: null,
+            created_at: "2026-11-01T09:00:00Z",
+            updated_at: "2026-11-01T09:00:00Z",
+          },
+        ],
+      }),
+    });
+    await renderSignedIn(<AutomationView />);
+    const glance = await screen.findByRole("region", { name: "At a glance" });
+    expect(within(glance).getByText("of 2 in all")).toBeInTheDocument();
+    expect(within(glance).getByText("1/2")).toBeInTheDocument();
+    expect(within(glance).getByRole("link", { name: "Needs you" })).toHaveAttribute(
+      "href",
+      "/automation?tab=approvals",
+    );
+    expect(await screen.findByText(briefing.name)).toBeInTheDocument();
+    expect(screen.queryByText("Paused one")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "More ideas" })).toBeInTheDocument();
+  });
 });
 
 describe("Approval center", () => {
