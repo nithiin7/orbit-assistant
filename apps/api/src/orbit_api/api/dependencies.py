@@ -39,6 +39,7 @@ from orbit_api.repositories.investments import (
 )
 from orbit_api.repositories.notes import build_attachment_service, build_note_service
 from orbit_api.repositories.notifications import SqlNotificationRepository
+from orbit_api.repositories.places import SqlPlaceRepository, SqlPlaceSettings
 from orbit_api.repositories.planning import build_planning_service
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.search.history import build_search_history
@@ -71,6 +72,7 @@ from orbit_api.services.networth.service import NetWorthService
 from orbit_api.services.notes.attachments import AttachmentService
 from orbit_api.services.notes.service import NoteService
 from orbit_api.services.notifications.service import NotificationService
+from orbit_api.services.places.service import Geocoder, PlaceService
 from orbit_api.services.planning.service import PlanningService
 from orbit_api.services.reminders.service import ReminderService
 from orbit_api.services.search.history import SearchHistoryService
@@ -310,6 +312,21 @@ def get_watchlist_service(
 
 
 WatchlistServiceDep = Annotated[WatchlistService, Depends(get_watchlist_service)]
+
+
+def get_place_service(request: Request, session: SessionDep, settings: SettingsDep) -> PlaceService:
+    # Tests replace the geocoder with a fake.
+    geocoder: Geocoder = getattr(request.app.state, "geocoder")  # noqa: B009 - untyped State
+    return PlaceService(
+        SqlPlaceRepository(session),
+        SqlPlaceSettings(session),
+        SqlTransaction(session),
+        geocoder,
+        online_maps_allowed=settings.online_maps_enabled,
+    )
+
+
+PlaceServiceDep = Annotated[PlaceService, Depends(get_place_service)]
 
 
 def get_archive_store(settings: SettingsDep) -> FileArchiveStore:

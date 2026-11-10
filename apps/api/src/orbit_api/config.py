@@ -133,6 +133,13 @@ class Settings(BaseSettings):
     market_data_enabled: bool = True
     # How often the worker refreshes every holding's price while market data is on.
     market_data_refresh_hours: float = Field(default=6, ge=1, le=168)
+    # Online maps for Places: map tiles the browser loads from `map_style_url`, and place search
+    # through the geocoder at `geocoder_url` (Nominatim's API). Each workspace turns them on in
+    # Settings → Places (off until then); place search sends only the search phrase. This turns
+    # them off for everyone on the server, leaving the offline world map.
+    online_maps_enabled: bool = True
+    map_style_url: AnyHttpUrl = AnyHttpUrl("https://tiles.openfreemap.org/styles/positron")
+    geocoder_url: AnyHttpUrl = AnyHttpUrl("https://nominatim.openstreetmap.org")
     # The personal agent and workflow automation (per person, off until each turns it on).
     # `false` turns it off for everyone: no runs start and the worker skips agent jobs.
     agent_enabled: bool = True

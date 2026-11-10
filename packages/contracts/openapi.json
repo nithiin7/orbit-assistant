@@ -5692,6 +5692,510 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/places/settings": {
+      "get": {
+        "tags": [
+          "places"
+        ],
+        "summary": "Get the Places settings",
+        "operationId": "get_settings_api_v1_workspaces__workspace_id__places_settings_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceSettingsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or place is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "places"
+        ],
+        "summary": "Change the Places settings",
+        "description": "With online maps on, the browser loads map tiles from the map server (which sees the\nareas viewed), and place search sends the search phrase to the geocoder.",
+        "operationId": "update_settings_api_v1_workspaces__workspace_id__places_settings_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaceSettingsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceSettingsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or place is not accessible."
+          },
+          "409": {
+            "description": "This server doesn't allow online maps."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/places/search": {
+      "post": {
+        "tags": [
+          "places"
+        ],
+        "summary": "Look up a place by name",
+        "description": "Sends only the search phrase to the geocoder. Results aren't saved; pick one to add it.",
+        "operationId": "search_places_api_v1_workspaces__workspace_id__places_search_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaceSearchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceMatchesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or place is not accessible."
+          },
+          "409": {
+            "description": "Online maps are off for this workspace."
+          },
+          "502": {
+            "description": "The geocoder failed."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/places/items": {
+      "get": {
+        "tags": [
+          "places"
+        ],
+        "summary": "List places",
+        "operationId": "list_places_api_v1_workspaces__workspace_id__places_items_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlacesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or place is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "places"
+        ],
+        "summary": "Add a place",
+        "operationId": "create_place_api_v1_workspaces__workspace_id__places_items_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlaceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or place is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/places/items/{place_id}": {
+      "get": {
+        "tags": [
+          "places"
+        ],
+        "summary": "Get a place",
+        "operationId": "get_place_api_v1_workspaces__workspace_id__places_items__place_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "place_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The place's ID.",
+              "title": "Place Id"
+            },
+            "description": "The place's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or place is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "places"
+        ],
+        "summary": "Update a place",
+        "operationId": "update_place_api_v1_workspaces__workspace_id__places_items__place_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "place_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The place's ID.",
+              "title": "Place Id"
+            },
+            "description": "The place's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlaceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or place is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "places"
+        ],
+        "summary": "Delete a place",
+        "operationId": "delete_place_api_v1_workspaces__workspace_id__places_items__place_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "place_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The place's ID.",
+              "title": "Place Id"
+            },
+            "description": "The place's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or place is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/reminders": {
       "get": {
         "tags": [
@@ -29509,7 +30013,8 @@
                   "documents",
                   "health",
                   "watchlist",
-                  "bookmarks"
+                  "bookmarks",
+                  "places"
                 ],
                 "type": "string"
               },
@@ -29549,7 +30054,8 @@
                   "fitness_goal",
                   "measurement",
                   "watch_item",
-                  "bookmark"
+                  "bookmark",
+                  "place"
                 ],
                 "type": "string"
               },
@@ -43735,6 +44241,79 @@
         "title": "CreateNoteRequest",
         "description": "A new note. Give `content` (an editor document) or `text` (plain text, one paragraph per\nline, for quick capture), or neither for an empty note."
       },
+      "CreatePlaceRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "country_code": {
+            "type": "string",
+            "maxLength": 2,
+            "minLength": 2,
+            "title": "Country Code"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "visited",
+              "want_to_visit"
+            ],
+            "title": "Status"
+          },
+          "locality": {
+            "type": "string",
+            "maxLength": 120,
+            "title": "Locality",
+            "default": ""
+          },
+          "location": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlaceLocation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "visited_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visited On",
+            "description": "Visited places only."
+          },
+          "favorite": {
+            "type": "boolean",
+            "title": "Favorite",
+            "default": false
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Note",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "country_code",
+          "status"
+        ],
+        "title": "CreatePlaceRequest",
+        "description": "Add a place. A name and a country are enough to shade the country on the map; a location\nadds a pin."
+      },
       "CreateRecurringPaymentRequest": {
         "properties": {
           "kind": {
@@ -44573,7 +45152,7 @@
               "$ref": "#/components/schemas/DashboardWidgetModel"
             },
             "type": "array",
-            "maxItems": 24,
+            "maxItems": 25,
             "title": "Widgets",
             "description": "The widgets to show, in order. Each widget may appear once; an empty list is an empty dashboard."
           },
@@ -44655,6 +45234,7 @@
               "documents",
               "shopping",
               "watchlist",
+              "places",
               "cash_flow",
               "upcoming_payments",
               "budget",
@@ -47266,7 +47846,8 @@
               "assistant",
               "search",
               "watchlist",
-              "bookmarks"
+              "bookmarks",
+              "places"
             ],
             "title": "Module"
           },
@@ -47315,7 +47896,8 @@
                   "assistant",
                   "search",
                   "watchlist",
-                  "bookmarks"
+                  "bookmarks",
+                  "places"
                 ]
               },
               {
@@ -55172,6 +55754,248 @@
         ],
         "title": "PhotoResponse"
       },
+      "PlaceLocation": {
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Longitude"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "title": "PlaceLocation",
+        "description": "Where to pin a place on the map."
+      },
+      "PlaceMatchResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "locality": {
+            "type": "string",
+            "title": "Locality"
+          },
+          "country_code": {
+            "type": "string",
+            "title": "Country Code"
+          },
+          "location": {
+            "$ref": "#/components/schemas/PlaceLocation"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "The full address, to tell matches apart."
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "locality",
+          "country_code",
+          "location",
+          "label"
+        ],
+        "title": "PlaceMatchResponse"
+      },
+      "PlaceMatchesResponse": {
+        "properties": {
+          "matches": {
+            "items": {
+              "$ref": "#/components/schemas/PlaceMatchResponse"
+            },
+            "type": "array",
+            "title": "Matches"
+          }
+        },
+        "type": "object",
+        "required": [
+          "matches"
+        ],
+        "title": "PlaceMatchesResponse"
+      },
+      "PlaceResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "locality": {
+            "type": "string",
+            "title": "Locality",
+            "description": "The city or region. Empty when not given."
+          },
+          "country_code": {
+            "type": "string",
+            "title": "Country Code",
+            "description": "ISO 3166-1 alpha-2, upper case."
+          },
+          "location": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlaceLocation"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Where to pin it; places added without place search have none."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "visited",
+              "want_to_visit"
+            ],
+            "title": "Status"
+          },
+          "visited_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visited On",
+            "description": "When the visit was; visited places only."
+          },
+          "favorite": {
+            "type": "boolean",
+            "title": "Favorite"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "description": "Empty when not given."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "locality",
+          "country_code",
+          "location",
+          "status",
+          "visited_on",
+          "favorite",
+          "note",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "PlaceResponse"
+      },
+      "PlaceSearchRequest": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 2,
+            "title": "Query"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "title": "PlaceSearchRequest"
+      },
+      "PlaceSettingsRequest": {
+        "properties": {
+          "online_maps": {
+            "type": "boolean",
+            "title": "Online Maps"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "online_maps"
+        ],
+        "title": "PlaceSettingsRequest"
+      },
+      "PlaceSettingsResponse": {
+        "properties": {
+          "online_maps": {
+            "type": "boolean",
+            "title": "Online Maps",
+            "description": "Whether the map loads tiles from the internet and place search is on."
+          },
+          "online_maps_allowed": {
+            "type": "boolean",
+            "title": "Online Maps Allowed",
+            "description": "Whether this server allows online maps."
+          },
+          "map_style_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Map Style Url",
+            "description": "The MapLibre style to load while online maps are on; otherwise null."
+          }
+        },
+        "type": "object",
+        "required": [
+          "online_maps",
+          "online_maps_allowed",
+          "map_style_url"
+        ],
+        "title": "PlaceSettingsResponse"
+      },
+      "PlacesResponse": {
+        "properties": {
+          "places": {
+            "items": {
+              "$ref": "#/components/schemas/PlaceResponse"
+            },
+            "type": "array",
+            "title": "Places",
+            "description": "Every place, newest first."
+          }
+        },
+        "type": "object",
+        "required": [
+          "places"
+        ],
+        "title": "PlacesResponse"
+      },
       "PlanResponse": {
         "properties": {
           "month": {
@@ -58279,7 +59103,8 @@
                 "documents",
                 "health",
                 "watchlist",
-                "bookmarks"
+                "bookmarks",
+                "places"
               ]
             },
             "type": "array",
@@ -58313,7 +59138,8 @@
                 "fitness_goal",
                 "measurement",
                 "watch_item",
-                "bookmark"
+                "bookmark",
+                "place"
               ]
             },
             "type": "array",
@@ -58781,7 +59607,8 @@
               "documents",
               "health",
               "watchlist",
-              "bookmarks"
+              "bookmarks",
+              "places"
             ],
             "title": "Module"
           },
@@ -61929,7 +62756,8 @@
               "documents",
               "health",
               "watchlist",
-              "bookmarks"
+              "bookmarks",
+              "places"
             ],
             "title": "Module"
           },
@@ -61959,7 +62787,8 @@
               "fitness_goal",
               "measurement",
               "watch_item",
-              "bookmark"
+              "bookmark",
+              "place"
             ],
             "title": "Entity Type"
           },
@@ -62150,7 +62979,8 @@
                 "documents",
                 "health",
                 "watchlist",
-                "bookmarks"
+                "bookmarks",
+                "places"
               ]
             },
             "type": "array",
@@ -65039,6 +65869,112 @@
         "type": "object",
         "title": "UpdateOccurrenceRequest",
         "description": "Change one occurrence (`this`), it and every later one (`following`), or the whole series\n(`series`). Moving or resizing an occurrence with `series` moves or resizes them all."
+      },
+      "UpdatePlaceRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "locality": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locality"
+          },
+          "country_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2,
+                "minLength": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country Code"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlaceLocation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "visited",
+                  "want_to_visit"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "visited_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visited On"
+          },
+          "favorite": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Favorite"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdatePlaceRequest",
+        "description": "Change some of a place's fields. Omitted fields keep their values; `location: null`\nremoves the pin and `visited_on: null` clears the date. Moving a place to `want_to_visit`\nclears its date."
       },
       "UpdateProfileRequest": {
         "properties": {

@@ -1274,6 +1274,85 @@ export interface paths {
         patch: operations["update_collection_api_v1_workspaces__workspace_id__bookmarks_collections__collection_id__patch"];
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/places/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the Places settings */
+        get: operations["get_settings_api_v1_workspaces__workspace_id__places_settings_get"];
+        /**
+         * Change the Places settings
+         * @description With online maps on, the browser loads map tiles from the map server (which sees the
+         *     areas viewed), and place search sends the search phrase to the geocoder.
+         */
+        put: operations["update_settings_api_v1_workspaces__workspace_id__places_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/places/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Look up a place by name
+         * @description Sends only the search phrase to the geocoder. Results aren't saved; pick one to add it.
+         */
+        post: operations["search_places_api_v1_workspaces__workspace_id__places_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/places/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List places */
+        get: operations["list_places_api_v1_workspaces__workspace_id__places_items_get"];
+        put?: never;
+        /** Add a place */
+        post: operations["create_place_api_v1_workspaces__workspace_id__places_items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/places/items/{place_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a place */
+        get: operations["get_place_api_v1_workspaces__workspace_id__places_items__place_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete a place */
+        delete: operations["delete_place_api_v1_workspaces__workspace_id__places_items__place_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update a place */
+        patch: operations["update_place_api_v1_workspaces__workspace_id__places_items__place_id__patch"];
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/reminders": {
         parameters: {
             query?: never;
@@ -10090,6 +10169,43 @@ export interface components {
             tags?: string[];
         };
         /**
+         * CreatePlaceRequest
+         * @description Add a place. A name and a country are enough to shade the country on the map; a location
+         *     adds a pin.
+         */
+        CreatePlaceRequest: {
+            /** Name */
+            name: string;
+            /** Country Code */
+            country_code: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "visited" | "want_to_visit";
+            /**
+             * Locality
+             * @default
+             */
+            locality: string;
+            location?: components["schemas"]["PlaceLocation"] | null;
+            /**
+             * Visited On
+             * @description Visited places only.
+             */
+            visited_on?: string | null;
+            /**
+             * Favorite
+             * @default false
+             */
+            favorite: boolean;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+        };
+        /**
          * CreateRecurringPaymentRequest
          * @description Track a subscription or a recurring bill. Its due dates repeat from `next_due_date`.
          */
@@ -10472,7 +10588,7 @@ export interface components {
              * Id
              * @enum {string}
              */
-            id: "today" | "quick_actions" | "attention" | "workspace" | "status" | "tasks" | "reminders" | "calendar" | "habits" | "notes" | "documents" | "shopping" | "watchlist" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "savings_goals" | "workouts" | "water" | "nutrition" | "weight" | "fitness_goals" | "modules";
+            id: "today" | "quick_actions" | "attention" | "workspace" | "status" | "tasks" | "reminders" | "calendar" | "habits" | "notes" | "documents" | "shopping" | "watchlist" | "places" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "savings_goals" | "workouts" | "water" | "nutrition" | "weight" | "fitness_goals" | "modules";
             /**
              * Size
              * @description `half` widgets sit side by side on wide screens.
@@ -11497,7 +11613,7 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks";
+            module: "tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks" | "places";
             /** Label */
             label: string;
             /** Formats */
@@ -11506,7 +11622,7 @@ export interface components {
         /** ExportModuleRequest */
         ExportModuleRequest: {
             /** Module */
-            module: ("tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks") | null;
+            module: ("tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks" | "places") | null;
             /**
              * Format
              * @enum {string}
@@ -14824,6 +14940,121 @@ export interface components {
              */
             created_at: string;
         };
+        /**
+         * PlaceLocation
+         * @description Where to pin a place on the map.
+         */
+        PlaceLocation: {
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+        };
+        /** PlaceMatchResponse */
+        PlaceMatchResponse: {
+            /** Name */
+            name: string;
+            /** Locality */
+            locality: string;
+            /** Country Code */
+            country_code: string;
+            location: components["schemas"]["PlaceLocation"];
+            /**
+             * Label
+             * @description The full address, to tell matches apart.
+             */
+            label: string;
+        };
+        /** PlaceMatchesResponse */
+        PlaceMatchesResponse: {
+            /** Matches */
+            matches: components["schemas"]["PlaceMatchResponse"][];
+        };
+        /** PlaceResponse */
+        PlaceResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Locality
+             * @description The city or region. Empty when not given.
+             */
+            locality: string;
+            /**
+             * Country Code
+             * @description ISO 3166-1 alpha-2, upper case.
+             */
+            country_code: string;
+            /** @description Where to pin it; places added without place search have none. */
+            location: components["schemas"]["PlaceLocation"] | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "visited" | "want_to_visit";
+            /**
+             * Visited On
+             * @description When the visit was; visited places only.
+             */
+            visited_on: string | null;
+            /** Favorite */
+            favorite: boolean;
+            /**
+             * Note
+             * @description Empty when not given.
+             */
+            note: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** PlaceSearchRequest */
+        PlaceSearchRequest: {
+            /** Query */
+            query: string;
+        };
+        /** PlaceSettingsRequest */
+        PlaceSettingsRequest: {
+            /** Online Maps */
+            online_maps: boolean;
+        };
+        /** PlaceSettingsResponse */
+        PlaceSettingsResponse: {
+            /**
+             * Online Maps
+             * @description Whether the map loads tiles from the internet and place search is on.
+             */
+            online_maps: boolean;
+            /**
+             * Online Maps Allowed
+             * @description Whether this server allows online maps.
+             */
+            online_maps_allowed: boolean;
+            /**
+             * Map Style Url
+             * @description The MapLibre style to load while online maps are on; otherwise null.
+             */
+            map_style_url: string | null;
+        };
+        /** PlacesResponse */
+        PlacesResponse: {
+            /**
+             * Places
+             * @description Every place, newest first.
+             */
+            places: components["schemas"]["PlaceResponse"][];
+        };
         /** PlanResponse */
         PlanResponse: {
             /**
@@ -16066,12 +16297,12 @@ export interface components {
              * Module
              * @description Repeat to search only some modules.
              */
-            module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks")[];
+            module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places")[];
             /**
              * Type
              * @description Repeat to search only some record types.
              */
-            type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark")[];
+            type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place")[];
             /**
              * Date From
              * @description The record's own date: due date, event, transaction, …
@@ -16227,7 +16458,7 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks";
+            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places";
             /**
              * Total
              * @description Matches under every filter except the module filter.
@@ -17509,12 +17740,12 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks";
+            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places";
             /**
              * Entity Type
              * @enum {string}
              */
-            entity_type: "task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark";
+            entity_type: "task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place";
             /**
              * Id
              * Format: uuid
@@ -17606,7 +17837,7 @@ export interface components {
              * Unavailable
              * @description Modules that couldn't be searched.
              */
-            unavailable: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks")[];
+            unavailable: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places")[];
         };
         /** UnreadCountResponse */
         UnreadCountResponse: {
@@ -18190,6 +18421,29 @@ export interface components {
             end?: string | null;
             /** Status */
             status?: ("confirmed" | "cancelled") | null;
+        };
+        /**
+         * UpdatePlaceRequest
+         * @description Change some of a place's fields. Omitted fields keep their values; `location: null`
+         *     removes the pin and `visited_on: null` clears the date. Moving a place to `want_to_visit`
+         *     clears its date.
+         */
+        UpdatePlaceRequest: {
+            /** Name */
+            name?: string | null;
+            /** Locality */
+            locality?: string | null;
+            /** Country Code */
+            country_code?: string | null;
+            location?: components["schemas"]["PlaceLocation"] | null;
+            /** Status */
+            status?: ("visited" | "want_to_visit") | null;
+            /** Visited On */
+            visited_on?: string | null;
+            /** Favorite */
+            favorite?: boolean | null;
+            /** Note */
+            note?: string | null;
         };
         /**
          * UpdateProfileRequest
@@ -23154,6 +23408,407 @@ export interface operations {
             };
             /** @description The name is taken. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_settings_api_v1_workspaces__workspace_id__places_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaceSettingsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or place is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_settings_api_v1_workspaces__workspace_id__places_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaceSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaceSettingsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or place is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description This server doesn't allow online maps. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_places_api_v1_workspaces__workspace_id__places_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaceSearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaceMatchesResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or place is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Online maps are off for this workspace. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The geocoder failed. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_places_api_v1_workspaces__workspace_id__places_items_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlacesResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or place is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_place_api_v1_workspaces__workspace_id__places_items_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePlaceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaceResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or place is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_place_api_v1_workspaces__workspace_id__places_items__place_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The place's ID. */
+                place_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaceResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or place is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_place_api_v1_workspaces__workspace_id__places_items__place_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The place's ID. */
+                place_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or place is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_place_api_v1_workspaces__workspace_id__places_items__place_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The place's ID. */
+                place_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePlaceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaceResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or place is not accessible. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -39172,9 +39827,9 @@ export interface operations {
         parameters: {
             query: {
                 /** @description Repeat to search only some modules. */
-                module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks")[];
+                module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places")[];
                 /** @description Repeat to search only some record types. */
-                type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark")[];
+                type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place")[];
                 /** @description The record's own date: due date, event, transaction, … */
                 date_from?: string | null;
                 date_to?: string | null;

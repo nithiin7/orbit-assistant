@@ -23,6 +23,7 @@ from orbit_api.config import Settings, get_settings
 from orbit_api.db.database import open_database
 from orbit_api.observability import RequestContextMiddleware
 from orbit_api.providers.ai.registry import HttpProviderFactory
+from orbit_api.providers.geo.nominatim import NominatimGeocoder
 from orbit_api.providers.integrations.registry import HttpConnectorRegistry
 from orbit_api.providers.media.tmdb import TmdbClient
 from orbit_api.providers.prices.feed import HttpPriceFeed
@@ -69,6 +70,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         connectors = app.state.integration_connectors
         prices = app.state.price_feed
         tmdb = app.state.tmdb
+        geocoder = app.state.geocoder
         stop = asyncio.Event()
         worker = None
         if settings.scheduler_embedded:
@@ -94,6 +96,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await connectors.aclose()
             await prices.aclose()
             await tmdb.aclose()
+            await geocoder.aclose()
             await database.dispose()
 
     app = FastAPI(
@@ -117,6 +120,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.price_feed = HttpPriceFeed()
     # One HTTP client for watchlist title lookup, used with each workspace's own TMDB key.
     app.state.tmdb = TmdbClient()
+    # One HTTP client for place search, used only by workspaces that turn online maps on.
+    app.state.geocoder = NominatimGeocoder(base_url=str(settings.geocoder_url))
     # Link previews for Saved, only for workspaces that turn them on. Opens a connection per
     # request, so there's nothing to close.
     app.state.link_previews = LinkPreviewClient()

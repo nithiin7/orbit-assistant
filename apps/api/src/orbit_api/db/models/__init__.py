@@ -129,6 +129,7 @@ from orbit_api.db.models.notes import (
     NoteTagModel,
     NoteTaskLinkModel,
 )
+from orbit_api.db.models.places import PlaceModel, PlaceSettingsModel
 from orbit_api.db.models.reminders import (
     NotificationModel,
     ReminderModel,
@@ -245,6 +246,8 @@ __all__ = [
     "NoteTagModel",
     "NoteTaskLinkModel",
     "NotificationModel",
+    "PlaceModel",
+    "PlaceSettingsModel",
     "RecentSearchModel",
     "ReminderModel",
     "ReminderOccurrenceModel",

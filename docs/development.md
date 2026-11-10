@@ -127,6 +127,14 @@ Market data (see [architecture.md](architecture.md#valuation-strategy)):
 | `ORBIT_MARKET_DATA_ENABLED`       | `true`  | Server-wide kill switch for live prices (mfapi.in and Yahoo Finance); workspaces opt in under Settings → Finance |
 | `ORBIT_MARKET_DATA_REFRESH_HOURS` | `6`     | How often the worker refreshes every holding's price while market data is on (1 to 168)                          |
 
+Places (see [architecture.md](architecture.md#places)):
+
+| Variable                    | Default                                         | Purpose                                                                                           |
+| --------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `ORBIT_ONLINE_MAPS_ENABLED` | `true`                                          | Server-wide kill switch for map tiles and place search; workspaces opt in under Settings → Places |
+| `ORBIT_MAP_STYLE_URL`       | `https://tiles.openfreemap.org/styles/positron` | MapLibre style the browser loads tiles from while online maps are on                              |
+| `ORBIT_GEOCODER_URL`        | `https://nominatim.openstreetmap.org`           | Nominatim-compatible geocoder for place search; requests are spaced a second apart and cached     |
+
 Automation (see [architecture.md](architecture.md#personal-agent-and-automation)):
 
 | Variable              | Default | Purpose                                                                                                   |
