@@ -17076,6 +17076,21 @@ export interface components {
             fiber_mg?: number | null;
             /** Water Ml */
             water_ml?: number | null;
+            /**
+             * Steps
+             * @description Daily steps.
+             */
+            steps?: number | null;
+            /**
+             * Active S
+             * @description Daily active time (walks, runs, rides, swims, cardio).
+             */
+            active_s?: number | null;
+            /**
+             * Sleep S
+             * @description Nightly sleep.
+             */
+            sleep_s?: number | null;
         };
         /** TaskListDetailResponse */
         TaskListDetailResponse: {

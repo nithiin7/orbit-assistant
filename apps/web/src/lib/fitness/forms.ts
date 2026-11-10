@@ -105,6 +105,12 @@ export type ProfileFormValues = {
   fatTarget: string;
   fiberTarget: string;
   waterTarget: string;
+  /** Daily steps. Blank uses the default goal. */
+  stepsTarget: string;
+  /** Daily active minutes. */
+  activeTarget: string;
+  /** Nightly sleep, in hours. */
+  sleepTarget: string;
   quickAmounts: string;
   hiddenSections: FitnessSection[];
 };
@@ -182,6 +188,9 @@ export const profileSchema = object({
     1,
     WATER_TARGET_MAX_ML,
   ),
+  stepsTarget: optionalNumber("Enter 1 to 200,000 steps, or leave it blank.", 1, 200_000),
+  activeTarget: optionalNumber("Enter 1 to 1,440 minutes, or leave it blank.", 1, 1440),
+  sleepTarget: optionalNumber("Enter 1 to 24 hours, or leave it blank.", 1, 24),
   quickAmounts: string()
     .defined()
     .test("amounts", "List up to six amounts, separated by commas.", (value, context) => {
@@ -218,6 +227,9 @@ export function toProfileFormValues(profile: FitnessProfile): ProfileFormValues 
     fatTarget: gramsInput(t.fat_mg),
     fiberTarget: gramsInput(t.fiber_mg),
     waterTarget: waterInput(t.water_ml, profile.water_unit),
+    stepsTarget: t.steps == null ? "" : String(t.steps),
+    activeTarget: t.active_s == null ? "" : String(Math.round(t.active_s / 60)),
+    sleepTarget: t.sleep_s == null ? "" : String(Math.round(t.sleep_s / 360) / 10),
     quickAmounts: profile.water_quick_amounts_ml
       .map((ml) => waterInput(ml, profile.water_unit))
       .join(", "),
@@ -227,6 +239,12 @@ export function toProfileFormValues(profile: FitnessProfile): ProfileFormValues 
 
 function positiveOrNull(value: number | null): number | null {
   return value !== null && value > 0 ? value : null;
+}
+
+/** A typed number times `scale`, rounded, or `null` when blank or not positive. */
+function scaledOrNull(value: string, scale: number): number | null {
+  const number = parseDecimal(value);
+  return number !== null && number > 0 ? Math.round(number * scale) : null;
 }
 
 export function toProfileRequest(values: ProfileFormValues): FitnessProfileRequest {
@@ -246,6 +264,9 @@ export function toProfileRequest(values: ProfileFormValues): FitnessProfileReque
       fat_mg: positiveOrNull(parseGrams(values.fatTarget)),
       fiber_mg: positiveOrNull(parseGrams(values.fiberTarget)),
       water_ml: positiveOrNull(parseWater(values.waterTarget, values.waterUnit)),
+      steps: scaledOrNull(values.stepsTarget, 1),
+      active_s: scaledOrNull(values.activeTarget, 60),
+      sleep_s: scaledOrNull(values.sleepTarget, 3600),
     },
     water_quick_amounts_ml: values.quickAmounts
       .split(",")

@@ -9,6 +9,17 @@
   --animate-celebrate-in: celebrate-in 360ms var(--ease-spring);
   --animate-check-pop: check-pop 360ms var(--ease-spring);
   --animate-confetti: confetti 1100ms var(--ease-out-soft) both;
+  /* Activity rings sweep in from empty; each arc sets --ring-offset, its final dash offset. */
+  --animate-ring-fill: ring-fill 900ms var(--ease-out-soft) both;
+
+  @keyframes ring-fill {
+    from {
+      stroke-dashoffset: 100;
+    }
+    to {
+      stroke-dashoffset: var(--ring-offset);
+    }
+  }
 
   @keyframes page-in {
     from {

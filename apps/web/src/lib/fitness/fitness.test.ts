@@ -256,6 +256,9 @@ describe("forms", () => {
         fat_mg: null,
         fiber_mg: null,
         water_ml: 2366,
+        steps: 8000,
+        active_s: 45 * 60,
+        sleep_s: 7.5 * 3600,
       },
       water_quick_amounts_ml: [237, 473],
       hidden_sections: [],
@@ -264,9 +267,21 @@ describe("forms", () => {
     const values = toProfileFormValues(profile);
     expect(values.height).toBe("70");
     expect(values.waterTarget).toBe("80");
+    expect([values.stepsTarget, values.activeTarget, values.sleepTarget]).toEqual([
+      "8000",
+      "45",
+      "7.5",
+    ]);
     expect(toProfileRequest(values)).toMatchObject({
       height_mm: 1778,
-      targets: { energy_cal: 2_000_000, protein_mg: 150_000, water_ml: 2366 },
+      targets: {
+        energy_cal: 2_000_000,
+        protein_mg: 150_000,
+        water_ml: 2366,
+        steps: 8000,
+        active_s: 2700,
+        sleep_s: 27_000,
+      },
       water_quick_amounts_ml: [237, 473],
     });
   });
@@ -310,6 +325,14 @@ describe("forms", () => {
     ).rejects.toThrow("Enter a height from 19.7 in to 107 in, or leave it blank.");
     await expect(profileSchema.validate({ ...metric, waterTarget: "30000" })).rejects.toThrow(
       "Enter up to 20,000 ml, or leave it blank.",
+    );
+    expect(toProfileRequest(metric).targets).toMatchObject({
+      steps: null,
+      active_s: null,
+      sleep_s: null,
+    });
+    await expect(profileSchema.validate({ ...metric, sleepTarget: "30" })).rejects.toThrow(
+      "Enter 1 to 24 hours, or leave it blank.",
     );
     await expect(profileSchema.validate({ ...metric, energyTarget: "25000" })).rejects.toThrow(
       "Enter up to 20,000 kcal, or leave it blank.",

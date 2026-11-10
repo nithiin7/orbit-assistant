@@ -3166,6 +3166,15 @@ measure that doesn't account for muscle, frame, age, or sex. No body-fat figure 
 another value): steps, walks, runs, rides, swims, and other cardio (distance and/or time), sleep
 (time), and rest days (no values). A CHECK ties values to the kind. Nothing is estimated.
 
+The profile holds three optional daily activity targets (`steps_target`, `active_target_s`,
+`sleep_target_s`, added in `0032`); the web uses 10,000 steps, 30 active minutes, and 8 hours of
+sleep for any left blank. The **Activity** view draws them as three rings for a day: **Active**
+(minutes of walks, runs, rides, swims, and other cardio), **Steps**, and **Sleep**. Around the
+rings: a day stepper, quick-log chips per kind, the last 7 days as small rings, a ring streak
+(days in a row with a ring closed; rest days keep it going without adding to it), weekly totals,
+and history grouped by day. Saving an entry that closes a ring shows a celebration. All ring math
+is client-side, in `src/lib/fitness/activity.ts`, over the latest 200 entries.
+
 ### Goal tracking
 
 - **Goals** (`fitness_goals`) have a category (body weight, strength, workouts per week, running
@@ -3284,9 +3293,9 @@ The OpenAPI document is the reference for fields.
   exercise's records, estimated 1RM chart, and history), **Templates** (ordered editor, start,
   duplicate, archive, schedule on the calendar with a reminder), **Body** (measurements, weight
   trend, BMI with its caveat, progress photos with side-by-side comparison), **Food** (a day
-  by meal, totals and targets, saved foods and meals, 14-day history), **Water**, **Activity**,
+  by meal, totals and targets, saved foods and meals, 14-day history), **Water**, **Activity** (rings),
   **Goals** (progress, pace, milestones, check-ins, related habit, notes and documents),
-  **Progress** (analytics and records), and **Settings** (units, height, targets, quick amounts,
+  **Progress** (analytics and records), and **Settings** (units, height, targets, ring goals, quick amounts,
   overview sections, and linked habits).
 - Charts are small SVGs with the same values in a visually hidden table.
 - Code: `src/api/fitness`, `src/hooks/use-fitness.ts`, `src/lib/fitness` (units, display, forms),

@@ -17,6 +17,8 @@ import { useHabitList } from "@/hooks/use-habits";
 import {
   ACTIVITY_KINDS,
   DASHBOARD_SECTIONS,
+  DEFAULT_ACTIVITY_GOALS,
+  formatNumber,
   IMPERIAL_UNITS,
   labelOf,
   METRIC_UNITS,
@@ -196,6 +198,31 @@ function ProfileForm({ workspaceId, profile }: { workspaceId: string; profile: F
             inputMode="decimal"
             {...register("waterTarget")}
             error={errors.waterTarget?.message}
+          />
+        </div>
+      </Section>
+      <Section
+        title="Activity rings"
+        description={`Leave any blank to use the default: ${formatNumber(DEFAULT_ACTIVITY_GOALS.steps)} steps, ${DEFAULT_ACTIVITY_GOALS.active_s / 60} active minutes, and ${DEFAULT_ACTIVITY_GOALS.sleep_s / 3600} hours of sleep.`}
+      >
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <FormField
+            label="Steps"
+            inputMode="numeric"
+            {...register("stepsTarget")}
+            error={errors.stepsTarget?.message}
+          />
+          <FormField
+            label="Active minutes"
+            inputMode="numeric"
+            {...register("activeTarget")}
+            error={errors.activeTarget?.message}
+          />
+          <FormField
+            label="Sleep (hours)"
+            inputMode="decimal"
+            {...register("sleepTarget")}
+            error={errors.sleepTarget?.message}
           />
         </div>
         <FormField

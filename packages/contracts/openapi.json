@@ -60806,6 +60806,48 @@
               }
             ],
             "title": "Water Ml"
+          },
+          "steps": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 200000.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Steps",
+            "description": "Daily steps."
+          },
+          "active_s": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 86400.0,
+                "minimum": 60.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active S",
+            "description": "Daily active time (walks, runs, rides, swims, cardio)."
+          },
+          "sleep_s": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 86400.0,
+                "minimum": 3600.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sleep S",
+            "description": "Nightly sleep."
           }
         },
         "additionalProperties": false,
