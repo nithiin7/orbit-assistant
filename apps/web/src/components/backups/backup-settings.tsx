@@ -33,6 +33,7 @@ import { settingsSectionsClassName } from "@/lib/settings";
 import { cn } from "@/utils/common";
 
 import { AutomaticBackups } from "./automatic-backups";
+import { BackupFolder } from "./backup-folder";
 import { CreateBackupDialog } from "./create-backup-dialog";
 import { ExportSection } from "./export-section";
 import { PasswordDialog } from "./password-dialog";
@@ -104,6 +105,9 @@ function Overview({ overview }: { overview: BackupOverview }) {
           <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           The latest backup failed{latest.error ? `: ${latest.error}` : "."}
         </p>
+      ) : null}
+      {overview.folder ? (
+        <BackupFolder folder={overview.folder} canReveal={overview.can_reveal_folder} />
       ) : null}
       <p className="text-xs text-muted-foreground">
         Download a copy to keep it safe somewhere else.
