@@ -6,7 +6,7 @@ from datetime import date, datetime, time
 from typing import Literal
 
 from orbit_api.services.reminders.recurrence import Recurrence, Schedule
-from orbit_api.services.tasks.models import TaskStatus
+from orbit_api.services.tasks.models import TaskListColor, TaskStatus
 from orbit_api.utils.changes import UNSET, Change
 
 # Derived, never stored:
@@ -58,12 +58,22 @@ class Reminder:
 
 
 @dataclass(frozen=True, slots=True)
+class ReminderTaskList:
+    """The list a reminder's task is on."""
+
+    name: str
+    color: TaskListColor
+
+
+@dataclass(frozen=True, slots=True)
 class ReminderTask:
     """The task a reminder is about, as shown alongside it."""
 
     id: uuid.UUID
     title: str
     status: TaskStatus
+    # The list the task is on, if any.
+    list: ReminderTaskList | None = None
 
 
 @dataclass(frozen=True, slots=True)

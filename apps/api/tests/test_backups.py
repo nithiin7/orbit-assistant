@@ -119,7 +119,13 @@ def doc(text: str, link_to: str | None = None) -> Json:
 
 def populate(client: TestClient, ws: str, headers: Headers) -> Json:
     """Data in every module, with relationships between them."""
-    task = ok(client.post(f"{ws}/tasks", json={"title": "File taxes"}, headers=headers), 201)
+    admin = ok(client.post(f"{ws}/task-lists", json={"name": "Admin"}, headers=headers), 201)
+    task = ok(
+        client.post(
+            f"{ws}/tasks", json={"title": "File taxes", "list_id": admin["id"]}, headers=headers
+        ),
+        201,
+    )
     folder = ok(
         client.post(
             f"{ws}/note-folders", json={"name": "Projects", "parent_id": None}, headers=headers
@@ -343,7 +349,7 @@ class TestBackupRoundTrip:
         archive = zipfile.ZipFile(io.BytesIO(data))
         manifest = json.loads(archive.read("orbit-backup/manifest.json"))
         assert manifest["format"] == "orbit-backup" and manifest["format_version"] == 1
-        assert manifest["schema_revision"] == "0026"
+        assert manifest["schema_revision"] == "0027"
         for name, entry in manifest["tables"].items():
             content = archive.read(f"orbit-backup/database/{name}.jsonl")
             assert hashlib.sha256(content).hexdigest() == entry["sha256"]
@@ -845,9 +851,14 @@ class TestFailedRestores:
 class TestExportsAndImports:
     def test_module_exports(self, client: TestClient, ws: str, ada: Headers) -> None:
         populate(client, ws, ada)
+        # Tasks has two tables (tasks and their lists), so its CSV export is a zip of both.
         csv = client.post(f"{ws}/exports", json={"module": "tasks", "format": "csv"}, headers=ada)
-        assert csv.status_code == 200 and csv.headers["content-type"].startswith("text/csv")
-        assert "File taxes" in csv.text
+        assert csv.status_code == 200 and csv.headers["content-type"] == "application/zip"
+        tables = zipfile.ZipFile(io.BytesIO(csv.content))
+        assert "File taxes" in next(
+            tables.read(name).decode() for name in tables.namelist() if name.endswith("/tasks.csv")
+        )
+        assert any(name.endswith("/task_lists.csv") for name in tables.namelist())
         finance = client.post(
             f"{ws}/exports", json={"module": "finance", "format": "json"}, headers=ada
         ).json()

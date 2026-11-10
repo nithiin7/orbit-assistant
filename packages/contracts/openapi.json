@@ -2115,6 +2115,37 @@
             "description": "Only tasks due on or before this date (inclusive)."
           },
           {
+            "name": "list_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only tasks on this list.",
+              "title": "List Id"
+            },
+            "description": "Only tasks on this list."
+          },
+          {
+            "name": "unlisted",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "`true` for only tasks on no list. Not with `list_id`.",
+              "default": false,
+              "title": "Unlisted"
+            },
+            "description": "`true` for only tasks on no list. Not with `list_id`."
+          },
+          {
             "name": "sort",
             "in": "query",
             "required": false,
@@ -2658,6 +2689,263 @@
           },
           "404": {
             "description": "The workspace or task does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/task-lists": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "List task lists",
+        "description": "The workspace's lists, oldest first, each with its number of open tasks.",
+        "operationId": "list_task_lists_api_v1_workspaces__workspace_id__task_lists_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskListsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or list does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Create a task list",
+        "operationId": "create_task_list_api_v1_workspaces__workspace_id__task_lists_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTaskListRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskListDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or list does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The name is taken, or there are too many lists."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/task-lists/{list_id}": {
+      "patch": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Rename or recolor a task list",
+        "operationId": "update_task_list_api_v1_workspaces__workspace_id__task_lists__list_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The list's ID.",
+              "title": "List Id"
+            },
+            "description": "The list's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaskListRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskListDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or list does not exist or is not accessible."
+          },
+          "409": {
+            "description": "The name is taken."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Delete a task list",
+        "description": "Its tasks are kept, on no list.",
+        "operationId": "delete_task_list_api_v1_workspaces__workspace_id__task_lists__list_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The list's ID.",
+              "title": "List Id"
+            },
+            "description": "The list's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or list does not exist or is not accessible."
           },
           "422": {
             "description": "Validation Error",
@@ -41579,6 +41867,37 @@
         ],
         "title": "CreateSipPlanRequest"
       },
+      "CreateTaskListRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "blue",
+              "green",
+              "amber",
+              "rose",
+              "violet",
+              "teal",
+              "orange",
+              "slate"
+            ],
+            "title": "Color",
+            "default": "blue"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "CreateTaskListRequest"
+      },
       "CreateTaskRequest": {
         "properties": {
           "title": {
@@ -41639,6 +41958,19 @@
               }
             ],
             "title": "Scheduled End"
+          },
+          "list_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "List Id",
+            "description": "A list in this workspace."
           }
         },
         "additionalProperties": false,
@@ -54277,6 +54609,34 @@
         ],
         "title": "ReminderSettingsResponse"
       },
+      "ReminderTaskListResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "blue",
+              "green",
+              "amber",
+              "rose",
+              "violet",
+              "teal",
+              "orange",
+              "slate"
+            ],
+            "title": "Color"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "color"
+        ],
+        "title": "ReminderTaskListResponse"
+      },
       "ReminderTaskResponse": {
         "properties": {
           "id": {
@@ -54295,13 +54655,25 @@
               "completed"
             ],
             "title": "Status"
+          },
+          "list": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReminderTaskListResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The list the task is on, if any."
           }
         },
         "type": "object",
         "required": [
           "id",
           "title",
-          "status"
+          "status",
+          "list"
         ],
         "title": "ReminderTaskResponse"
       },
@@ -57962,6 +58334,52 @@
         "type": "object",
         "title": "TargetsModel"
       },
+      "TaskListDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "blue",
+              "green",
+              "amber",
+              "rose",
+              "violet",
+              "teal",
+              "orange",
+              "slate"
+            ],
+            "title": "Color"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position",
+            "description": "Lists are shown in this order."
+          },
+          "open_tasks": {
+            "type": "integer",
+            "title": "Open Tasks",
+            "description": "Open tasks on the list."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "color",
+          "position",
+          "open_tasks"
+        ],
+        "title": "TaskListDetailResponse"
+      },
       "TaskListResponse": {
         "properties": {
           "tasks": {
@@ -57983,6 +58401,22 @@
           "total"
         ],
         "title": "TaskListResponse"
+      },
+      "TaskListsResponse": {
+        "properties": {
+          "lists": {
+            "items": {
+              "$ref": "#/components/schemas/TaskListDetailResponse"
+            },
+            "type": "array",
+            "title": "Lists"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lists"
+        ],
+        "title": "TaskListsResponse"
       },
       "TaskResponse": {
         "properties": {
@@ -58074,6 +58508,19 @@
             ],
             "title": "Scheduled End"
           },
+          "list_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "List Id",
+            "description": "The list the task is on, if any."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -58097,6 +58544,7 @@
           "completed_at",
           "scheduled_start",
           "scheduled_end",
+          "list_id",
           "created_at",
           "updated_at"
         ],
@@ -62620,6 +63068,48 @@
         "title": "UpdateSipPlanRequest",
         "description": "`state` pauses, cancels, or resumes (`active`) the SIP. `null` clears `end_date` or\n`funding_account_id`."
       },
+      "UpdateTaskListRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "blue",
+                  "green",
+                  "amber",
+                  "rose",
+                  "violet",
+                  "teal",
+                  "orange",
+                  "slate"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateTaskListRequest",
+        "description": "Rename or recolor a list. Omitted fields keep their values."
+      },
       "UpdateTaskRequest": {
         "properties": {
           "title": {
@@ -62700,6 +63190,19 @@
               }
             ],
             "title": "Scheduled End"
+          },
+          "list_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "List Id",
+            "description": "Move the task to this list; `null` takes it off its list."
           }
         },
         "additionalProperties": false,

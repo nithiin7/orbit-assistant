@@ -614,3 +614,152 @@ def test_every_task_endpoint_requires_authentication(
 
     assert response.status_code == 401
     assert response.headers["WWW-Authenticate"] == "Bearer"
+
+
+# Lists
+
+
+def make_list(
+    client: TestClient, tasks_url: str, headers: Headers, **fields: Any
+) -> dict[str, Any]:
+    response = client.post(lists_url(tasks_url), json={"name": "Work", **fields}, headers=headers)
+    assert response.status_code == 201, response.text
+    created: dict[str, Any] = response.json()
+    return created
+
+
+def lists_url(tasks_url: str) -> str:
+    return tasks_url.removesuffix("/tasks") + "/task-lists"
+
+
+def test_create_rename_recolor_and_list_task_lists(
+    client: TestClient, ada: Headers, tasks_url: str
+) -> None:
+    url = lists_url(tasks_url)
+    assert client.get(url, headers=ada).json() == {"lists": []}
+
+    work = make_list(client, tasks_url, ada, name="  Work ", color="violet")
+    home = make_list(client, tasks_url, ada, name="Home")
+    assert {key: work[key] for key in ("name", "color", "position", "open_tasks")} == {
+        "name": "Work",
+        "color": "violet",
+        "position": 0,
+        "open_tasks": 0,
+    }
+    assert home["color"] == "blue"
+
+    response = client.patch(f"{url}/{work['id']}", json={"name": "Day job"}, headers=ada)
+    assert response.status_code == 200, response.text
+    assert (response.json()["name"], response.json()["color"]) == ("Day job", "violet")
+    client.patch(f"{url}/{home['id']}", json={"color": "teal"}, headers=ada)
+
+    listed = client.get(url, headers=ada).json()["lists"]
+    assert [(e["name"], e["color"]) for e in listed] == [("Day job", "violet"), ("Home", "teal")]
+
+
+def test_task_list_input_is_validated(client: TestClient, ada: Headers, tasks_url: str) -> None:
+    url = lists_url(tasks_url)
+    work = make_list(client, tasks_url, ada)
+
+    for body in ({"name": ""}, {"name": "x" * 51}, {"name": "a\nb"}, {"name": "A", "color": "red"}):
+        assert client.post(url, json=body, headers=ada).status_code == 422
+    for body in ({}, {"name": None}, {"color": None}, {"position": 3}):
+        assert client.patch(f"{url}/{work['id']}", json=body, headers=ada).status_code == 422
+    taken = client.post(url, json={"name": "WORK"}, headers=ada)
+    assert (taken.status_code, taken.json()) == (
+        409,
+        {"detail": "Another list already has that name."},
+    )
+    home = make_list(client, tasks_url, ada, name="Home")
+    renamed = client.patch(f"{url}/{home['id']}", json={"name": " work"}, headers=ada)
+    assert renamed.status_code == 409
+    missing = f"{url}/{uuid.uuid4()}"
+    assert client.patch(missing, json={"name": "X"}, headers=ada).status_code == 404
+    assert client.delete(missing, headers=ada).status_code == 404
+
+
+def test_tasks_go_on_lists_and_filter_by_them(
+    client: TestClient, ada: Headers, tasks_url: str
+) -> None:
+    work = make_list(client, tasks_url, ada, name="Work")
+    home = make_list(client, tasks_url, ada, name="Home")
+    report = create(client, tasks_url, ada, title="Report", list_id=work["id"])
+    create(client, tasks_url, ada, title="Standup", list_id=work["id"])
+    create(client, tasks_url, ada, title="Laundry", list_id=home["id"])
+    create(client, tasks_url, ada, title="Loose end")
+    assert report["list_id"] == work["id"]
+
+    assert titles(client, tasks_url, ada, list_id=work["id"]) == ["Standup", "Report"]
+    assert titles(client, tasks_url, ada, unlisted=True) == ["Loose end"]
+    both = client.get(tasks_url, params={"list_id": work["id"], "unlisted": True}, headers=ada)
+    assert both.status_code == 422
+
+    # Move a task between lists, then off them.
+    moved = client.patch(f"{tasks_url}/{report['id']}", json={"list_id": home["id"]}, headers=ada)
+    assert moved.json()["list_id"] == home["id"]
+    client.post(f"{tasks_url}/{report['id']}/complete", headers=ada)
+    counts = {
+        e["name"]: e["open_tasks"]
+        for e in client.get(lists_url(tasks_url), headers=ada).json()["lists"]
+    }
+    assert counts == {"Work": 1, "Home": 1}
+    cleared = client.patch(f"{tasks_url}/{report['id']}", json={"list_id": None}, headers=ada)
+    assert cleared.json()["list_id"] is None
+    # Other changes leave the list alone.
+    laundry = titles(client, tasks_url, ada, list_id=home["id"])
+    assert laundry == ["Laundry"]
+
+
+def test_tasks_only_go_on_lists_in_their_workspace(
+    client: TestClient, ada: Headers, grace: Headers, tasks_url: str
+) -> None:
+    graces_tasks = f"{WORKSPACES}/{personal_id(client, grace)}/tasks"
+    graces_list = make_list(client, graces_tasks, grace)
+    task = create(client, tasks_url, ada)
+    unknown = {"detail": "That list doesn't exist in this workspace."}
+
+    for list_id in (graces_list["id"], str(uuid.uuid4())):
+        planted = client.post(tasks_url, json={"title": "X", "list_id": list_id}, headers=ada)
+        moved = client.patch(f"{tasks_url}/{task['id']}", json={"list_id": list_id}, headers=ada)
+        assert (planted.status_code, planted.json()) == (422, unknown)
+        assert (moved.status_code, moved.json()) == (422, unknown)
+    # Ada can't filter, rename, or delete Grace's list from her own workspace either.
+    assert titles(client, tasks_url, ada, list_id=graces_list["id"]) == []
+    own_url = f"{lists_url(tasks_url)}/{graces_list['id']}"
+    assert client.patch(own_url, json={"name": "Mine"}, headers=ada).status_code == 404
+    assert client.delete(own_url, headers=ada).status_code == 404
+    # Nor through Grace's workspace.
+    graces_url = f"{lists_url(graces_tasks)}/{graces_list['id']}"
+    not_found = {"detail": "Workspace not found."}
+    for response in (
+        client.get(lists_url(graces_tasks), headers=ada),
+        client.post(lists_url(graces_tasks), json={"name": "Planted"}, headers=ada),
+        client.patch(graces_url, json={"name": "Mine"}, headers=ada),
+        client.delete(graces_url, headers=ada),
+    ):
+        assert (response.status_code, response.json()) == (404, not_found)
+    assert client.get(lists_url(graces_tasks), headers=grace).json()["lists"][0]["name"] == "Work"
+
+
+def test_deleting_a_list_keeps_its_tasks(client: TestClient, ada: Headers, tasks_url: str) -> None:
+    work = make_list(client, tasks_url, ada)
+    task = create(client, tasks_url, ada, title="Report", list_id=work["id"])
+
+    response = client.delete(f"{lists_url(tasks_url)}/{work['id']}", headers=ada)
+
+    assert response.status_code == 204
+    assert client.get(f"{tasks_url}/{task['id']}", headers=ada).json()["list_id"] is None
+    assert client.get(lists_url(tasks_url), headers=ada).json() == {"lists": []}
+
+
+def test_deleting_a_workspace_deletes_its_task_lists(
+    client: TestClient, ada: Headers, migrated_settings: Settings
+) -> None:
+    lab = client.post(WORKSPACES, json={"name": "Lab"}, headers=ada).json()
+    lab_tasks = f"{WORKSPACES}/{lab['id']}/tasks"
+    lab_list = make_list(client, lab_tasks, ada, name="Lab work")
+    create(client, lab_tasks, ada, list_id=lab_list["id"])
+
+    assert client.delete(lab_tasks.removesuffix("/tasks"), headers=ada).status_code == 204
+
+    assert query(migrated_settings.sqlite_path, "SELECT name FROM task_lists") == []

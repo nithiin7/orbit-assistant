@@ -25,7 +25,13 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from orbit_api.db.models import ReminderModel, ReminderOccurrenceModel, TaskModel, WorkspaceModel
+from orbit_api.db.models import (
+    ReminderModel,
+    ReminderOccurrenceModel,
+    TaskListModel,
+    TaskModel,
+    WorkspaceModel,
+)
 from orbit_api.repositories.transaction import flush
 from orbit_api.services.reminders.models import (
     ClaimedOccurrence,
@@ -40,6 +46,7 @@ from orbit_api.services.reminders.models import (
     ReminderQuery,
     ReminderStatus,
     ReminderTask,
+    ReminderTaskList,
     ReminderView,
 )
 from orbit_api.services.reminders.recurrence import (
@@ -47,7 +54,7 @@ from orbit_api.services.reminders.recurrence import (
     recurrence_from_json,
     recurrence_to_json,
 )
-from orbit_api.services.tasks.models import TaskStatus
+from orbit_api.services.tasks.models import TaskListColor, TaskStatus
 
 _ACTIVE: tuple[OccurrenceStatus, ...] = ("pending", "processing")
 
@@ -117,7 +124,9 @@ def _status(next_at: ColumnElement[datetime], now: datetime) -> ColumnElement[st
 def _select_views(
     now: datetime,
 ) -> tuple[
-    Select[ReminderModel, str, str, datetime, str], ColumnElement[datetime], ColumnElement[str]
+    Select[ReminderModel, str, str, datetime, str, str, str],
+    ColumnElement[datetime],
+    ColumnElement[str],
 ]:
     next_at = _next_occurrence_at()
     status = _status(next_at, now)
@@ -127,7 +136,11 @@ def _select_views(
         TaskModel.status,
         next_at.label("next_at"),
         status.label("status"),
+        TaskListModel.name,
+        TaskListModel.color,
     ).outerjoin(TaskModel, TaskModel.id == ReminderModel.task_id)
+    # The composite foreign key keeps a task's list in its workspace.
+    statement = statement.outerjoin(TaskListModel, TaskListModel.id == TaskModel.list_id)
     return statement, next_at, status
 
 
@@ -135,10 +148,20 @@ def _to_view(row: Any) -> ReminderView:
     model: ReminderModel = row[0]
     task_title: str | None = row[1]
     task_status: str | None = row[2]
+    list_name: str | None = row[5]
+    list_color: str | None = row[6]
     task = None
     if model.task_id is not None and task_title is not None:
+        task_list = (
+            ReminderTaskList(name=list_name, color=cast(TaskListColor, list_color))
+            if list_name is not None
+            else None
+        )
         task = ReminderTask(
-            id=model.task_id, title=task_title, status=cast(TaskStatus, task_status)
+            id=model.task_id,
+            title=task_title,
+            status=cast(TaskStatus, task_status),
+            list=task_list,
         )
     return ReminderView(
         reminder=_to_reminder(model),
