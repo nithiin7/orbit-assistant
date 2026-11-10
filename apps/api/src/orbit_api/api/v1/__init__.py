@@ -7,6 +7,7 @@ from orbit_api.api.v1 import (
     ai,
     auth,
     backups,
+    bookmarks,
     budgets,
     calendar,
     commitments,
@@ -44,6 +45,7 @@ router.include_router(tasks.router)
 router.include_router(tasks.lists_router)
 router.include_router(shopping.router)
 router.include_router(watchlist.router)
+router.include_router(bookmarks.router)
 router.include_router(reminders.router)
 router.include_router(finance.router)
 router.include_router(commitments.router)

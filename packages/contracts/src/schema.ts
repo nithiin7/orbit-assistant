@@ -1094,6 +1094,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/bookmarks/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List bookmarks */
+        get: operations["list_bookmarks_api_v1_workspaces__workspace_id__bookmarks_items_get"];
+        put?: never;
+        /**
+         * Save a link
+         * @description Orbit never fetches the page: a missing title, kind, or status is worked out from the URL
+         *     alone.
+         */
+        post: operations["create_bookmark_api_v1_workspaces__workspace_id__bookmarks_items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/bookmarks/items/{bookmark_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a bookmark */
+        get: operations["get_bookmark_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete a bookmark */
+        delete: operations["delete_bookmark_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update a bookmark */
+        patch: operations["update_bookmark_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/bookmarks/items/{bookmark_id}/opened": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record that a bookmark was opened
+         * @description Counts opens so the most used bookmarks can be listed first.
+         */
+        post: operations["record_open_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__opened_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/bookmarks/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List bookmark collections
+         * @description The workspace's collections, oldest first, each with its number of bookmarks.
+         */
+        get: operations["list_collections_api_v1_workspaces__workspace_id__bookmarks_collections_get"];
+        put?: never;
+        /** Create a bookmark collection */
+        post: operations["create_collection_api_v1_workspaces__workspace_id__bookmarks_collections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/bookmarks/collections/{collection_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a bookmark collection
+         * @description Its bookmarks are kept, in no collection.
+         */
+        delete: operations["delete_collection_api_v1_workspaces__workspace_id__bookmarks_collections__collection_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename or recolor a bookmark collection */
+        patch: operations["update_collection_api_v1_workspaces__workspace_id__bookmarks_collections__collection_id__patch"];
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/reminders": {
         parameters: {
             query?: never;
@@ -8261,6 +8364,98 @@ export interface components {
              */
             weight_day: string;
         };
+        /** BookmarkCollectionResponse */
+        BookmarkCollectionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Color
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /**
+             * Position
+             * @description Collections are shown in this order.
+             */
+            position: number;
+            /**
+             * Bookmarks
+             * @description Bookmarks in the collection.
+             */
+            bookmarks: number;
+        };
+        /** BookmarkCollectionsResponse */
+        BookmarkCollectionsResponse: {
+            /** Collections */
+            collections: components["schemas"]["BookmarkCollectionResponse"][];
+        };
+        /** BookmarkResponse */
+        BookmarkResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Collection Id
+             * @description The collection it's in, if any.
+             */
+            collection_id: string | null;
+            /** Url */
+            url: string;
+            /** Title */
+            title: string;
+            /**
+             * Note
+             * @description What the page is for. Empty when not given.
+             */
+            note: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "link" | "article" | "video" | "reel" | "repo" | "tool";
+            /**
+             * Status
+             * @description `reference`: kept to come back to; `later`: to read or watch; `done`.
+             * @enum {string}
+             */
+            status: "reference" | "later" | "done";
+            /** Tags */
+            tags: string[];
+            /** Pinned */
+            pinned: boolean;
+            /**
+             * Open Count
+             * @description How many times it was opened from Orbit.
+             */
+            open_count: number;
+            /** Last Opened At */
+            last_opened_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** BookmarksResponse */
+        BookmarksResponse: {
+            /**
+             * Bookmarks
+             * @description Every bookmark, newest first.
+             */
+            bookmarks: components["schemas"]["BookmarkResponse"][];
+        };
         /** BudgetDetailResponse */
         BudgetDetailResponse: {
             budget: components["schemas"]["BudgetResponse"];
@@ -9024,6 +9219,49 @@ export interface components {
             encryption: "none" | "password" | "backup_key";
             /** Password */
             password?: string | null;
+        };
+        /** CreateBookmarkCollectionRequest */
+        CreateBookmarkCollectionRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Color
+             * @default blue
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+        };
+        /**
+         * CreateBookmarkRequest
+         * @description Save a URL. Without a title, kind, or status, they're worked out from the URL alone; the
+         *     page itself is never fetched.
+         */
+        CreateBookmarkRequest: {
+            /** Url */
+            url: string;
+            /** Title */
+            title?: string | null;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /** Kind */
+            kind?: ("link" | "article" | "video" | "reel" | "repo" | "tool") | null;
+            /** Status */
+            status?: ("reference" | "later" | "done") | null;
+            /** Tags */
+            tags?: string[];
+            /**
+             * Pinned
+             * @default false
+             */
+            pinned: boolean;
+            /**
+             * Collection Id
+             * @description A collection here.
+             */
+            collection_id?: string | null;
         };
         /**
          * CreateBudgetRequest
@@ -11149,7 +11387,7 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist";
+            module: "tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks";
             /** Label */
             label: string;
             /** Formats */
@@ -11158,7 +11396,7 @@ export interface components {
         /** ExportModuleRequest */
         ExportModuleRequest: {
             /** Module */
-            module: ("tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist") | null;
+            module: ("tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks") | null;
             /**
              * Format
              * @enum {string}
@@ -15718,12 +15956,12 @@ export interface components {
              * Module
              * @description Repeat to search only some modules.
              */
-            module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist")[];
+            module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks")[];
             /**
              * Type
              * @description Repeat to search only some record types.
              */
-            type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item")[];
+            type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark")[];
             /**
              * Date From
              * @description The record's own date: due date, event, transaction, …
@@ -15879,7 +16117,7 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist";
+            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks";
             /**
              * Total
              * @description Matches under every filter except the module filter.
@@ -17146,12 +17384,12 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist";
+            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks";
             /**
              * Entity Type
              * @enum {string}
              */
-            entity_type: "task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item";
+            entity_type: "task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark";
             /**
              * Id
              * Format: uuid
@@ -17243,7 +17481,7 @@ export interface components {
              * Unavailable
              * @description Modules that couldn't be searched.
              */
-            unavailable: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist")[];
+            unavailable: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks")[];
         };
         /** UnreadCountResponse */
         UnreadCountResponse: {
@@ -17384,6 +17622,39 @@ export interface components {
             encrypt: boolean;
             /** Password */
             password?: string | null;
+        };
+        /**
+         * UpdateBookmarkCollectionRequest
+         * @description Rename or recolor a collection. Omitted fields keep their values.
+         */
+        UpdateBookmarkCollectionRequest: {
+            /** Name */
+            name?: string | null;
+            /** Color */
+            color?: ("blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate") | null;
+        };
+        /**
+         * UpdateBookmarkRequest
+         * @description Change some of a bookmark's fields. Omitted fields keep their values; `collection_id:
+         *     null` takes it out of its collection.
+         */
+        UpdateBookmarkRequest: {
+            /** Url */
+            url?: string | null;
+            /** Title */
+            title?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Kind */
+            kind?: ("link" | "article" | "video" | "reel" | "repo" | "tool") | null;
+            /** Status */
+            status?: ("reference" | "later" | "done") | null;
+            /** Tags */
+            tags?: string[] | null;
+            /** Pinned */
+            pinned?: boolean | null;
+            /** Collection Id */
+            collection_id?: string | null;
         };
         /**
          * UpdateBudgetRequest
@@ -21987,6 +22258,508 @@ export interface operations {
             };
             /** @description The workspace or title does not exist or is not accessible. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_bookmarks_api_v1_workspaces__workspace_id__bookmarks_items_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarksResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, bookmark, or collection is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_bookmark_api_v1_workspaces__workspace_id__bookmarks_items_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBookmarkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, bookmark, or collection is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description This URL is already saved. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_bookmark_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The bookmark's ID. */
+                bookmark_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, bookmark, or collection is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_bookmark_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The bookmark's ID. */
+                bookmark_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, bookmark, or collection is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_bookmark_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The bookmark's ID. */
+                bookmark_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBookmarkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, bookmark, or collection is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Another bookmark has this URL. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_open_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__opened_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The bookmark's ID. */
+                bookmark_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, bookmark, or collection is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_collections_api_v1_workspaces__workspace_id__bookmarks_collections_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkCollectionsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, bookmark, or collection is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_collection_api_v1_workspaces__workspace_id__bookmarks_collections_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBookmarkCollectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkCollectionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, bookmark, or collection is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The name is taken, or there are too many collections. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_collection_api_v1_workspaces__workspace_id__bookmarks_collections__collection_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The collection's ID. */
+                collection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, bookmark, or collection is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_collection_api_v1_workspaces__workspace_id__bookmarks_collections__collection_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The collection's ID. */
+                collection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBookmarkCollectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkCollectionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, bookmark, or collection is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The name is taken. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -38005,9 +38778,9 @@ export interface operations {
         parameters: {
             query: {
                 /** @description Repeat to search only some modules. */
-                module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist")[];
+                module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks")[];
                 /** @description Repeat to search only some record types. */
-                type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item")[];
+                type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark")[];
                 /** @description The record's own date: due date, event, transaction, … */
                 date_from?: string | null;
                 date_to?: string | null;

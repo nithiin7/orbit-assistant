@@ -4727,6 +4727,650 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/bookmarks/items": {
+      "get": {
+        "tags": [
+          "bookmarks"
+        ],
+        "summary": "List bookmarks",
+        "operationId": "list_bookmarks_api_v1_workspaces__workspace_id__bookmarks_items_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookmarksResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, bookmark, or collection is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "bookmarks"
+        ],
+        "summary": "Save a link",
+        "description": "Orbit never fetches the page: a missing title, kind, or status is worked out from the URL\nalone.",
+        "operationId": "create_bookmark_api_v1_workspaces__workspace_id__bookmarks_items_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookmarkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookmarkResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, bookmark, or collection is not accessible."
+          },
+          "409": {
+            "description": "This URL is already saved."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/bookmarks/items/{bookmark_id}": {
+      "get": {
+        "tags": [
+          "bookmarks"
+        ],
+        "summary": "Get a bookmark",
+        "operationId": "get_bookmark_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bookmark_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The bookmark's ID.",
+              "title": "Bookmark Id"
+            },
+            "description": "The bookmark's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookmarkResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, bookmark, or collection is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "bookmarks"
+        ],
+        "summary": "Update a bookmark",
+        "operationId": "update_bookmark_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bookmark_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The bookmark's ID.",
+              "title": "Bookmark Id"
+            },
+            "description": "The bookmark's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBookmarkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookmarkResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, bookmark, or collection is not accessible."
+          },
+          "409": {
+            "description": "Another bookmark has this URL."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "bookmarks"
+        ],
+        "summary": "Delete a bookmark",
+        "operationId": "delete_bookmark_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bookmark_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The bookmark's ID.",
+              "title": "Bookmark Id"
+            },
+            "description": "The bookmark's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, bookmark, or collection is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/bookmarks/items/{bookmark_id}/opened": {
+      "post": {
+        "tags": [
+          "bookmarks"
+        ],
+        "summary": "Record that a bookmark was opened",
+        "description": "Counts opens so the most used bookmarks can be listed first.",
+        "operationId": "record_open_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__opened_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bookmark_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The bookmark's ID.",
+              "title": "Bookmark Id"
+            },
+            "description": "The bookmark's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookmarkResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, bookmark, or collection is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/bookmarks/collections": {
+      "get": {
+        "tags": [
+          "bookmarks"
+        ],
+        "summary": "List bookmark collections",
+        "description": "The workspace's collections, oldest first, each with its number of bookmarks.",
+        "operationId": "list_collections_api_v1_workspaces__workspace_id__bookmarks_collections_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookmarkCollectionsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, bookmark, or collection is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "bookmarks"
+        ],
+        "summary": "Create a bookmark collection",
+        "operationId": "create_collection_api_v1_workspaces__workspace_id__bookmarks_collections_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookmarkCollectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookmarkCollectionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, bookmark, or collection is not accessible."
+          },
+          "409": {
+            "description": "The name is taken, or there are too many collections."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/bookmarks/collections/{collection_id}": {
+      "patch": {
+        "tags": [
+          "bookmarks"
+        ],
+        "summary": "Rename or recolor a bookmark collection",
+        "operationId": "update_collection_api_v1_workspaces__workspace_id__bookmarks_collections__collection_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "collection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The collection's ID.",
+              "title": "Collection Id"
+            },
+            "description": "The collection's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBookmarkCollectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookmarkCollectionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, bookmark, or collection is not accessible."
+          },
+          "409": {
+            "description": "The name is taken."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "bookmarks"
+        ],
+        "summary": "Delete a bookmark collection",
+        "description": "Its bookmarks are kept, in no collection.",
+        "operationId": "delete_collection_api_v1_workspaces__workspace_id__bookmarks_collections__collection_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "collection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The collection's ID.",
+              "title": "Collection Id"
+            },
+            "description": "The collection's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, bookmark, or collection is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/reminders": {
       "get": {
         "tags": [
@@ -28543,7 +29187,8 @@
                   "habits",
                   "documents",
                   "health",
-                  "watchlist"
+                  "watchlist",
+                  "bookmarks"
                 ],
                 "type": "string"
               },
@@ -28582,7 +29227,8 @@
                   "workout_template",
                   "fitness_goal",
                   "measurement",
-                  "watch_item"
+                  "watch_item",
+                  "bookmark"
                 ],
                 "type": "string"
               },
@@ -39016,6 +39662,197 @@
         ],
         "title": "BmiResponse"
       },
+      "BookmarkCollectionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "blue",
+              "green",
+              "amber",
+              "rose",
+              "violet",
+              "teal",
+              "orange",
+              "slate"
+            ],
+            "title": "Color"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position",
+            "description": "Collections are shown in this order."
+          },
+          "bookmarks": {
+            "type": "integer",
+            "title": "Bookmarks",
+            "description": "Bookmarks in the collection."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "color",
+          "position",
+          "bookmarks"
+        ],
+        "title": "BookmarkCollectionResponse"
+      },
+      "BookmarkCollectionsResponse": {
+        "properties": {
+          "collections": {
+            "items": {
+              "$ref": "#/components/schemas/BookmarkCollectionResponse"
+            },
+            "type": "array",
+            "title": "Collections"
+          }
+        },
+        "type": "object",
+        "required": [
+          "collections"
+        ],
+        "title": "BookmarkCollectionsResponse"
+      },
+      "BookmarkResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "collection_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection Id",
+            "description": "The collection it's in, if any."
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "description": "What the page is for. Empty when not given."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "link",
+              "article",
+              "video",
+              "reel",
+              "repo",
+              "tool"
+            ],
+            "title": "Kind"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "reference",
+              "later",
+              "done"
+            ],
+            "title": "Status",
+            "description": "`reference`: kept to come back to; `later`: to read or watch; `done`."
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "pinned": {
+            "type": "boolean",
+            "title": "Pinned"
+          },
+          "open_count": {
+            "type": "integer",
+            "title": "Open Count",
+            "description": "How many times it was opened from Orbit."
+          },
+          "last_opened_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Opened At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "collection_id",
+          "url",
+          "title",
+          "note",
+          "kind",
+          "status",
+          "tags",
+          "pinned",
+          "open_count",
+          "last_opened_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "BookmarkResponse"
+      },
+      "BookmarksResponse": {
+        "properties": {
+          "bookmarks": {
+            "items": {
+              "$ref": "#/components/schemas/BookmarkResponse"
+            },
+            "type": "array",
+            "title": "Bookmarks",
+            "description": "Every bookmark, newest first."
+          }
+        },
+        "type": "object",
+        "required": [
+          "bookmarks"
+        ],
+        "title": "BookmarksResponse"
+      },
       "BudgetDetailResponse": {
         "properties": {
           "budget": {
@@ -40650,6 +41487,136 @@
         "additionalProperties": false,
         "type": "object",
         "title": "CreateBackupRequest"
+      },
+      "CreateBookmarkCollectionRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "blue",
+              "green",
+              "amber",
+              "rose",
+              "violet",
+              "teal",
+              "orange",
+              "slate"
+            ],
+            "title": "Color",
+            "default": "blue"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "CreateBookmarkCollectionRequest"
+      },
+      "CreateBookmarkRequest": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Url"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Note",
+            "default": ""
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "link",
+                  "article",
+                  "video",
+                  "reel",
+                  "repo",
+                  "tool"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "reference",
+                  "later",
+                  "done"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "tags": {
+            "items": {
+              "type": "string",
+              "maxLength": 30,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Tags"
+          },
+          "pinned": {
+            "type": "boolean",
+            "title": "Pinned",
+            "default": false
+          },
+          "collection_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection Id",
+            "description": "A collection here."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "CreateBookmarkRequest",
+        "description": "Save a URL. Without a title, kind, or status, they're worked out from the URL alone; the\npage itself is never fetched."
       },
       "CreateBudgetRequest": {
         "properties": {
@@ -45910,7 +46877,8 @@
               "fitness",
               "assistant",
               "search",
-              "watchlist"
+              "watchlist",
+              "bookmarks"
             ],
             "title": "Module"
           },
@@ -45958,7 +46926,8 @@
                   "fitness",
                   "assistant",
                   "search",
-                  "watchlist"
+                  "watchlist",
+                  "bookmarks"
                 ]
               },
               {
@@ -56921,7 +57890,8 @@
                 "habits",
                 "documents",
                 "health",
-                "watchlist"
+                "watchlist",
+                "bookmarks"
               ]
             },
             "type": "array",
@@ -56954,7 +57924,8 @@
                 "workout_template",
                 "fitness_goal",
                 "measurement",
-                "watch_item"
+                "watch_item",
+                "bookmark"
               ]
             },
             "type": "array",
@@ -57421,7 +58392,8 @@
               "habits",
               "documents",
               "health",
-              "watchlist"
+              "watchlist",
+              "bookmarks"
             ],
             "title": "Module"
           },
@@ -60526,7 +61498,8 @@
               "habits",
               "documents",
               "health",
-              "watchlist"
+              "watchlist",
+              "bookmarks"
             ],
             "title": "Module"
           },
@@ -60555,7 +61528,8 @@
               "workout_template",
               "fitness_goal",
               "measurement",
-              "watch_item"
+              "watch_item",
+              "bookmark"
             ],
             "title": "Entity Type"
           },
@@ -60745,7 +61719,8 @@
                 "habits",
                 "documents",
                 "health",
-                "watchlist"
+                "watchlist",
+                "bookmarks"
               ]
             },
             "type": "array",
@@ -61461,6 +62436,169 @@
           "encrypt"
         ],
         "title": "UpdateBackupSettingsRequest"
+      },
+      "UpdateBookmarkCollectionRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "blue",
+                  "green",
+                  "amber",
+                  "rose",
+                  "violet",
+                  "teal",
+                  "orange",
+                  "slate"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateBookmarkCollectionRequest",
+        "description": "Rename or recolor a collection. Omitted fields keep their values."
+      },
+      "UpdateBookmarkRequest": {
+        "properties": {
+          "url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "link",
+                  "article",
+                  "video",
+                  "reel",
+                  "repo",
+                  "tool"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "reference",
+                  "later",
+                  "done"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "maxLength": 30,
+                  "minLength": 1
+                },
+                "type": "array",
+                "maxItems": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags"
+          },
+          "pinned": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pinned"
+          },
+          "collection_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateBookmarkRequest",
+        "description": "Change some of a bookmark's fields. Omitted fields keep their values; `collection_id:\nnull` takes it out of its collection."
       },
       "UpdateBudgetRequest": {
         "properties": {

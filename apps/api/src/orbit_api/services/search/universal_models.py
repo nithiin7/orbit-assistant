@@ -20,6 +20,7 @@ UniversalModule = Literal[
     "documents",
     "health",
     "watchlist",
+    "bookmarks",
 ]
 # The order modules are listed in (tabs, facets).
 UNIVERSAL_MODULES: Final[tuple[UniversalModule, ...]] = get_args(UniversalModule)
@@ -48,6 +49,7 @@ EntityType = Literal[
     "fitness_goal",
     "measurement",
     "watch_item",
+    "bookmark",
 ]
 ENTITY_TYPES: Final[tuple[EntityType, ...]] = get_args(EntityType)
 
