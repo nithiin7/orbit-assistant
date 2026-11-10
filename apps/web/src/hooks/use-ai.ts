@@ -7,15 +7,19 @@ import type {
   AiConnectionTest,
   AiConversationDetail,
   AiConversationList,
+  AiFoodEstimate,
+  AiFoodIdeas,
   AiIndexStatus,
   AiInsight,
   AiModel,
   AiModelList,
+  AiModule,
   AiProposal,
   AiProvider,
   AiProviderList,
   AiSettings,
   AiUsage,
+  AiWorkoutSuggestion,
   CreateAiProviderRequest,
   TestAiProviderRequest,
   UpdateAiProviderRequest,
@@ -39,10 +43,13 @@ import {
   deleteAiProvider,
   deleteConversation,
   dismissInsight,
+  estimateFood,
   insightsOptions,
   renameConversation,
   runAssist,
   streamAiMessage,
+  suggestFoods,
+  suggestWorkout,
   testAiProvider,
   updateAiProvider,
   updateAiSettings,
@@ -317,6 +324,46 @@ export function useAssist() {
   const timezone = useViewerTimeZone();
   return useMutation<AiAssistResult, Error, Omit<AiAssistRequest, "timezone">>({
     mutationFn: (body) => withToken((t) => runAssist(t, workspaceId ?? "", { ...body, timezone })),
+  });
+}
+
+/**
+ * Whether AI features can run: AI on for the server and the person, with a chat model chosen,
+ * and, when `module` is given, permission to read it. False while settings load.
+ */
+export function useAiReady(module?: AiModule): boolean {
+  const settings = useAiSettings();
+  if (settings.status !== "success") return false;
+  const s = settings.data;
+  return (
+    s.server_enabled &&
+    s.enabled &&
+    s.chat_model !== null &&
+    (module === undefined || s.modules.includes(module))
+  );
+}
+
+// Health helpers. Each returns a draft; nothing is saved until the person saves it.
+
+export function useEstimateFood(workspaceId: string) {
+  const { withToken } = useAuth();
+  return useMutation<AiFoodEstimate, Error, string>({
+    mutationFn: (description) => withToken((t) => estimateFood(t, workspaceId, { description })),
+  });
+}
+
+export function useSuggestFoods(workspaceId: string) {
+  const { withToken } = useAuth();
+  return useMutation<AiFoodIdeas, Error, string>({
+    mutationFn: (cuisine) => withToken((t) => suggestFoods(t, workspaceId, { cuisine })),
+  });
+}
+
+export function useSuggestWorkout(workspaceId: string) {
+  const { withToken } = useAuth();
+  const timezone = useViewerTimeZone();
+  return useMutation<AiWorkoutSuggestion, Error, string>({
+    mutationFn: (focus) => withToken((t) => suggestWorkout(t, workspaceId, { focus, timezone })),
   });
 }
 

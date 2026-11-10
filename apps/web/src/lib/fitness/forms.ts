@@ -6,6 +6,7 @@
 import type {
   ActivityKind,
   ActivityRequest,
+  AiWorkoutSuggestion,
   Equipment,
   Exercise,
   ExerciseCategory,
@@ -17,7 +18,6 @@ import type {
   FitnessProfile,
   FitnessProfileRequest,
   FitnessSection,
-  Food,
   FoodRequest,
   MealType,
   Measurement,
@@ -437,6 +437,27 @@ function optionalInt(value: string): number | null {
   return value.trim() === "" ? null : Number(value);
 }
 
+/** An AI-suggested workout as a template the person can save, keeping its plan and notes. */
+export function suggestionTemplateRequest(suggestion: AiWorkoutSuggestion): WorkoutTemplateRequest {
+  return {
+    name: suggestion.name,
+    category: suggestion.category,
+    description: suggestion.description,
+    notes: suggestion.notes,
+    exercises: suggestion.exercises.map((item) => ({
+      exercise_id: item.exercise_id,
+      sets: item.sets,
+      target_reps_min: item.target_reps_min,
+      target_reps_max: item.target_reps_max,
+      target_weight_g: null,
+      target_duration_s: item.target_duration_s,
+      target_distance_m: item.target_distance_m,
+      rest_seconds: item.rest_seconds,
+      notes: item.notes,
+    })),
+  };
+}
+
 export function toTemplateRequest(
   values: TemplateFormValues,
   units: Units,
@@ -625,7 +646,7 @@ export function newFoodValues(): FoodFormValues {
   };
 }
 
-export function toFoodFormValues(food: Food, units: Units): FoodFormValues {
+export function toFoodFormValues(food: FoodRequest, units: Units): FoodFormValues {
   const n = food.nutrients;
   return {
     name: food.name,

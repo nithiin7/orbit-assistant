@@ -79,7 +79,7 @@ function routes({
   foods?: Food[];
   meals?: SavedMeal[];
   entries?: Portion[];
-  extra?: Record<string, (request: MockRequest) => Response>;
+  extra?: Record<string, (request: MockRequest) => Response | Promise<Response>>;
 }) {
   return {
     "GET /api/v1/auth/config": json({ provider: "local", registration_open: false }),
@@ -226,5 +226,90 @@ describe("NutritionView", () => {
       name: "Rice combo",
       items: [{ name: "Rice" }, { name: "Curd" }],
     });
+  });
+
+  it("fills a new food's nutrients with an AI estimate to review before saving", async () => {
+    let asked: unknown = null;
+    let saved: unknown = null;
+    mockApi(
+      routes({
+        extra: {
+          "GET /api/v1/me/ai/settings": json({
+            server_enabled: true,
+            enabled: true,
+            chat_provider_id: "p1",
+            chat_model: "llama3",
+            embedding_provider_id: null,
+            embedding_model: null,
+            fallback_provider_id: null,
+            fallback_model: null,
+            allow_cloud: false,
+            modules: [],
+            response_style: "balanced",
+            monthly_token_limit: null,
+            indexing_enabled: true,
+          }),
+          [`POST /api/v1/workspaces/${personal.id}/ai/health/food-estimate`]: (request) => {
+            asked = request.body;
+            return Response.json({
+              food: {
+                name: "Masala dosa",
+                serving_quantity_milli: 1000,
+                serving_unit: "piece",
+                nutrients: {
+                  energy_cal: 168_000,
+                  protein_mg: 4_000,
+                  carbs_mg: 29_000,
+                  fat_mg: 3_500,
+                  fiber_mg: 2_000,
+                },
+                note: "A medium dosa with potato filling.",
+              },
+              provider_name: "Local",
+              model: "llama3",
+              processing: "local",
+            });
+          },
+          [`POST ${WS}/foods`]: (request) => {
+            saved = request.body;
+            return Response.json(food("f9", "Masala dosa"), { status: 201 });
+          },
+        },
+      }),
+    );
+    const user = userEvent.setup();
+    await renderSignedIn(<NutritionView workspaceId={personal.id} today={TODAY} />);
+
+    await user.click(await screen.findByRole("button", { name: "New food" }));
+    const dialog = await screen.findByRole("dialog", { name: "New food" });
+    await user.type(within(dialog).getByRole("textbox", { name: "Name" }), "Masala dosa");
+    await user.clear(within(dialog).getByRole("textbox", { name: "Serving" }));
+    await user.type(within(dialog).getByRole("textbox", { name: "Serving" }), "1");
+    await user.clear(within(dialog).getByRole("textbox", { name: "Unit" }));
+    await user.type(within(dialog).getByRole("textbox", { name: "Unit" }), "piece");
+    await user.click(await within(dialog).findByRole("button", { name: "Estimate with AI" }));
+
+    expect(await within(dialog).findByRole("status")).toHaveTextContent(
+      "A medium dosa with potato filling.",
+    );
+    expect(asked).toEqual({ description: "Masala dosa, 1 piece" });
+    expect(within(dialog).getByRole("textbox", { name: "Energy (kcal)" })).toHaveValue("168");
+    expect(within(dialog).getByRole("textbox", { name: "Fat (g)" })).toHaveValue("3.5");
+
+    await user.click(within(dialog).getByRole("button", { name: "Save food" }));
+    await waitFor(() =>
+      expect(saved).toEqual({
+        name: "Masala dosa",
+        serving_quantity_milli: 1000,
+        serving_unit: "piece",
+        nutrients: {
+          energy_cal: 168_000,
+          protein_mg: 4_000,
+          carbs_mg: 29_000,
+          fat_mg: 3_500,
+          fiber_mg: 2_000,
+        },
+      }),
+    );
   });
 });

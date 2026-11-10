@@ -10,6 +10,7 @@ import {
   Plus,
   Save,
   Search,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
@@ -34,6 +35,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
 import { Select } from "@/components/ui/select";
+import { useAiReady, useEstimateFood } from "@/hooks/use-ai";
 import {
   useFitnessAction,
   useFoods,
@@ -42,6 +44,7 @@ import {
   useNutritionHistory,
   useUnits,
 } from "@/hooks/use-fitness";
+import { processingLabel } from "@/lib/ai";
 import {
   energyInput,
   type EntryFormValues,
@@ -72,6 +75,7 @@ import {
 } from "@/lib/fitness";
 import { addDays } from "@/utils/dates";
 
+import { FoodIdeasDialog } from "./food-ideas";
 import { BarChart, Loaded, Meter, Section, shortDate } from "./shared";
 
 export function NutritionView({ workspaceId, today }: { workspaceId: string; today: string }) {
@@ -451,6 +455,7 @@ function SavedFoods({
 }) {
   const foods = useFoods(workspaceId);
   const [editing, setEditing] = useState<Food | "new" | null>(null);
+  const [browsing, setBrowsing] = useState(false);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<FoodSort>("most-used");
   async function remove(food: Food) {
@@ -467,17 +472,23 @@ function SavedFoods({
       title="Saved foods"
       description="Foods you eat often, with their nutrients per serving."
       action={
-        <Button variant="soft" size="sm" onClick={() => setEditing("new")}>
-          <Plus aria-hidden="true" />
-          New food
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setBrowsing(true)}>
+            Food ideas
+          </Button>
+          <Button variant="soft" size="sm" onClick={() => setEditing("new")}>
+            <Plus aria-hidden="true" />
+            New food
+          </Button>
+        </div>
       }
     >
       <Loaded resource={foods.state} reload={foods.reload} skeleton="h-16">
         {({ foods: list }) =>
           list.length === 0 ? (
             <p className="text-xs text-muted-foreground">
-              No saved foods. Enter nutrients by hand; Orbit doesn’t use a food database.
+              No saved foods. Add your own, or start from Food ideas: common foods of a cuisine with
+              typical nutrients.
             </p>
           ) : (
             <div className="space-y-3">
@@ -549,6 +560,20 @@ function SavedFoods({
           editing={editing === "new" ? null : editing}
           units={units}
           onClose={() => setEditing(null)}
+        />
+      ) : null}
+      {browsing ? (
+        <FoodIdeasDialog
+          workspaceId={workspaceId}
+          units={units}
+          savedNames={
+            new Set(
+              foods.state.status === "success"
+                ? foods.state.data.foods.map((food) => food.name.toLocaleLowerCase())
+                : [],
+            )
+          }
+          onClose={() => setBrowsing(false)}
         />
       ) : null}
     </Section>
@@ -716,15 +741,46 @@ function FoodDialog({
   onClose: () => void;
 }) {
   const run = useFitnessAction(workspaceId);
+  const aiReady = useAiReady();
+  const estimate = useEstimateFood(workspaceId);
   const {
     register,
     handleSubmit,
     setError,
+    setValue,
+    getValues,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<FoodFormValues>({
     resolver: yupResolver(foodSchema),
     defaultValues: editing ? toFoodFormValues(editing, units) : newFoodValues(),
   });
+
+  /** Fill the serving and nutrients with an AI estimate; the person reviews before saving. */
+  function estimateNutrients() {
+    const { name, servingQuantity, servingUnit } = getValues();
+    if (!name.trim()) {
+      setError("name", { message: "Name the food to estimate it, such as “masala dosa”." });
+      return;
+    }
+    const serving = `${servingQuantity.trim()} ${servingUnit.trim()}`.trim();
+    estimate.mutate(serving ? `${name.trim()}, ${serving}` : name.trim(), {
+      onSuccess: ({ food }) => {
+        const values = toFoodFormValues(food, units);
+        const fields = [
+          "servingQuantity",
+          "servingUnit",
+          "energy",
+          "protein",
+          "carbs",
+          "fat",
+          "fiber",
+        ] as const;
+        for (const field of fields) setValue(field, values[field], { shouldDirty: true });
+        clearErrors();
+      },
+    });
+  }
 
   async function save(values: FoodFormValues, close: () => void) {
     try {
@@ -768,6 +824,31 @@ function FoodDialog({
           error={errors.servingUnit?.message}
         />
       </div>
+      {aiReady ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="soft"
+            size="sm"
+            onClick={estimateNutrients}
+            disabled={estimate.isPending}
+          >
+            <Sparkles aria-hidden="true" />
+            {estimate.isPending ? "Estimating…" : "Estimate with AI"}
+          </Button>
+          <p className="text-xs text-muted-foreground">Sends only the name and serving.</p>
+        </div>
+      ) : null}
+      {estimate.data ? (
+        <p role="status" className="rounded-lg bg-muted p-2.5 text-xs text-muted-foreground">
+          Estimated by {estimate.data.provider_name} ({processingLabel(estimate.data.processing)}
+          ). {estimate.data.food.note} Check the numbers before saving.
+        </p>
+      ) : null}
+      <FormAlert
+        message={
+          estimate.isError ? describeApiError(estimate.error, "Couldn’t estimate this food.") : null
+        }
+      />
       <NutrientInputs
         fields={{
           energy: register("energy"),
