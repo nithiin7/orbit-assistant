@@ -1,7 +1,16 @@
 "use client";
 
 import type { IntegrationConnection, MailLabel, MailMessage } from "@orbit/contracts";
-import { ExternalLink, Search } from "lucide-react";
+import {
+  AlarmClock,
+  ArrowLeft,
+  CheckSquare,
+  ExternalLink,
+  Inbox,
+  type LucideIcon,
+  Search,
+  StickyNote,
+} from "lucide-react";
 import Link from "next/link";
 import { type FormEvent, useId, useState } from "react";
 
@@ -19,7 +28,14 @@ import {
   useMessage,
   useMessages,
 } from "@/hooks/use-integrations";
-import { capabilityName, ENTITY_LABELS, linkedRecordHref, MAIL_PERIODS } from "@/lib/integrations";
+import {
+  capabilityName,
+  connectionHref,
+  ENTITY_LABELS,
+  linkedRecordHref,
+  MAIL_PERIODS,
+} from "@/lib/integrations";
+import { cn } from "@/utils/common";
 import { addDays, localDateString } from "@/utils/dates";
 
 import { ErrorText } from "./section";
@@ -31,26 +47,14 @@ const TIMES = Array.from({ length: 48 }, (_, i) => {
   return { value, label: value };
 });
 
-export function MailBrowser({ connection }: { connection: IntegrationConnection }) {
+/** Settings for a connection's mail: which labels Orbit may list, and how far back. */
+export function MailSettings({ connection }: { connection: IntegrationConnection }) {
   const labels = useMailLabels(connection.id);
   if (labels.status === "loading") return <Skeleton className="h-24 w-full rounded-xl" />;
   if (labels.status === "error") return <ErrorText message={labels.message} />;
-  const selected = labels.data.labels.filter((label) => label.selected);
-  return (
-    <div className="space-y-5">
-      <MailScope connection={connection} labels={labels.data.labels} />
-      {selected.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Choose at least one label above to see its messages here.
-        </p>
-      ) : (
-        <Messages connection={connection} labels={selected} />
-      )}
-    </div>
-  );
+  return <MailScope connection={connection} labels={labels.data.labels} />;
 }
 
-/** Which labels Orbit may list, and how far back. */
 function MailScope({
   connection,
   labels,
@@ -124,6 +128,69 @@ function MailScope({
   );
 }
 
+/**
+ * Mail from connected accounts, read on demand: switch account and label, search, open a
+ * message, and turn it into a task, note, or reminder without leaving the page.
+ */
+export function MailInbox({
+  connections,
+  initialConnectionId,
+}: {
+  connections: IntegrationConnection[];
+  initialConnectionId?: string | null;
+}) {
+  const [connectionId, setConnectionId] = useState(
+    () => connections.find((c) => c.id === initialConnectionId)?.id ?? connections[0]?.id ?? "",
+  );
+  const connection = connections.find((c) => c.id === connectionId) ?? connections[0];
+  if (!connection) return null;
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      {connections.length > 1 ? (
+        <Select
+          aria-label="Account"
+          value={connection.id}
+          options={connections.map((c) => ({ value: c.id, label: c.account_email }))}
+          onValueChange={setConnectionId}
+        />
+      ) : null}
+      <AccountMail key={connection.id} connection={connection} />
+    </div>
+  );
+}
+
+function AccountMail({ connection }: { connection: IntegrationConnection }) {
+  const labels = useMailLabels(connection.id);
+  if (labels.status === "loading") {
+    return (
+      <div aria-busy="true" className="space-y-2">
+        <span className="sr-only">Loading mail…</span>
+        <Skeleton className="h-9 w-full rounded-lg" />
+        <Skeleton className="h-40 w-full rounded-xl" />
+      </div>
+    );
+  }
+  if (labels.status === "error") return <ErrorText message={labels.message} />;
+  const selected = labels.data.labels.filter((label) => label.selected);
+  if (selected.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed px-6 py-10 text-center">
+        <Inbox className="size-6 text-muted-foreground" aria-hidden="true" />
+        <p className="text-sm text-pretty text-muted-foreground">
+          Choose which labels Orbit may show, and your mail appears here.
+        </p>
+        <Link
+          href={`${connectionHref(connection.id)}#mail`}
+          className="text-sm font-medium text-brand hover:underline"
+        >
+          Choose labels
+        </Link>
+      </div>
+    );
+  }
+  return <Messages connection={connection} labels={selected} />;
+}
+
 function Messages({
   connection,
   labels,
@@ -147,50 +214,82 @@ function Messages({
     setOpen(null);
   };
 
+  if (open) {
+    return <MessageView connection={connection} messageId={open} onBack={() => setOpen(null)} />;
+  }
+
   return (
-    <div className="space-y-4">
-      <form role="search" onSubmit={submit} className="flex flex-wrap gap-2">
-        <Select
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      {labels.length > 1 ? (
+        <div
+          role="group"
           aria-label="Label"
-          className="w-44"
-          value={current}
-          options={labels.map((l) => ({ value: l.id, label: l.name }))}
-          onValueChange={(value) => {
-            setLabelId(value);
-            setOpen(null);
-          }}
+          className="-mx-1 scrollbar-none flex gap-1 overflow-x-auto px-1"
+        >
+          {labels.map((label) => (
+            <button
+              key={label.id}
+              type="button"
+              aria-pressed={label.id === current}
+              onClick={() => setLabelId(label.id)}
+              className={cn(
+                "h-8 shrink-0 rounded-full px-3 text-sm font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                label.id === current
+                  ? "bg-brand-subtle text-brand"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
+              )}
+            >
+              {label.name}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <form role="search" onSubmit={submit} className="relative">
+        <Search
+          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden="true"
         />
         <Input
           aria-label="Search mail"
           placeholder="Search mail"
           value={draft}
           onChange={(event) => setDraft(event.currentTarget.value)}
-          className="min-w-0 flex-1"
+          className="pl-9"
         />
-        <Button type="submit" variant="ghost" size="icon" aria-label="Search">
-          <Search className="size-4" aria-hidden="true" />
-        </Button>
       </form>
+      {search ? (
+        <p className="text-sm text-muted-foreground">
+          Results for “{search}”.{" "}
+          <button
+            type="button"
+            className="font-medium text-brand hover:underline"
+            onClick={() => {
+              setSearch("");
+              setDraft("");
+            }}
+          >
+            Clear search
+          </button>
+        </p>
+      ) : null}
       {messages.status === "loading" ? (
-        <Skeleton className="h-32 w-full rounded-xl" />
+        <div aria-busy="true" className="space-y-2">
+          <span className="sr-only">Loading messages…</span>
+          {[0, 1, 2, 3].map((row) => (
+            <Skeleton key={row} className="h-16 w-full rounded-xl" />
+          ))}
+        </div>
       ) : messages.status === "error" ? (
         <ErrorText message={messages.message} />
       ) : messages.data.messages.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
+        <p className="rounded-xl border border-dashed px-6 py-10 text-center text-sm text-muted-foreground">
           {search ? "No messages match." : "No messages in this period."}
         </p>
       ) : (
-        <ul className="divide-y rounded-xl border">
+        <ul className="divide-y overflow-hidden rounded-xl border bg-card">
           {messages.data.messages.map((message) => (
             <li key={message.id}>
-              <MessageRow
-                message={message}
-                expanded={open === message.id}
-                onToggle={() => setOpen(open === message.id ? null : message.id)}
-              />
-              {open === message.id ? (
-                <MessageView connection={connection} messageId={message.id} />
-              ) : null}
+              <MessageRow message={message} onOpen={() => setOpen(message.id)} />
             </li>
           ))}
         </ul>
@@ -199,56 +298,85 @@ function Messages({
   );
 }
 
-function MessageRow({
-  message,
-  expanded,
-  onToggle,
-}: {
-  message: MailMessage;
-  expanded: boolean;
-  onToggle: () => void;
-}) {
+/** "Shop <shop@example.com>" → "Shop"; a bare address stays as it is. */
+function senderName(sender: string): string {
+  const name = sender
+    .replace(/<[^>]*>/, "")
+    .replaceAll('"', "")
+    .trim();
+  return name || sender;
+}
+
+function receivedLabel(at: string, now: Date = new Date()): string {
+  const date = new Date(at);
+  return date.toDateString() === now.toDateString()
+    ? date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
+    : date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function MessageRow({ message, onOpen }: { message: MailMessage; onOpen: () => void }) {
   return (
     <button
       type="button"
-      aria-expanded={expanded}
-      onClick={onToggle}
+      onClick={onOpen}
       className="flex w-full flex-col gap-0.5 px-4 py-3 text-left outline-none hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
     >
       <span className="flex items-baseline justify-between gap-3">
-        <span className="truncate text-sm font-medium">{message.subject || "(No subject)"}</span>
+        <span className="truncate text-sm font-semibold">{senderName(message.sender)}</span>
         <time dateTime={message.received_at} className="shrink-0 text-xs text-muted-foreground">
-          {new Date(message.received_at).toLocaleDateString(undefined, {
-            month: "short",
-            day: "numeric",
-          })}
+          {receivedLabel(message.received_at)}
         </time>
       </span>
-      <span className="truncate text-xs text-muted-foreground">
-        {message.sender} — {message.snippet}
-      </span>
+      <span className="truncate text-sm">{message.subject || "(No subject)"}</span>
+      <span className="truncate text-xs text-muted-foreground">{message.snippet}</span>
     </button>
   );
 }
+
+type Made = { kind: RecordFromMessage["kind"]; id: string };
+
+const MADE_TEXT: Readonly<Record<RecordFromMessage["kind"], string>> = {
+  task: "Added to your tasks.",
+  note: "Saved to your notes Inbox.",
+  reminder: "Reminder set.",
+};
 
 /** One message, read from the provider when opened, with actions that turn it into records. */
 function MessageView({
   connection,
   messageId,
+  onBack,
 }: {
   connection: IntegrationConnection;
   messageId: string;
+  onBack: () => void;
 }) {
   const detail = useMessage(connection.id, messageId);
   const actions = useConnectionMutations(connection.id);
   const [error, setError] = useState<string | null>(null);
-  const [created, setCreated] = useState<string | null>(null);
+  const [made, setMade] = useState<Made | null>(null);
   const [reminding, setReminding] = useState(false);
 
-  if (detail.status === "loading") return <Skeleton className="m-4 h-24 rounded-xl" />;
+  const back = (
+    <Button variant="ghost" size="sm" className="-ml-2 self-start" onClick={onBack}>
+      <ArrowLeft aria-hidden="true" />
+      All messages
+    </Button>
+  );
+
+  if (detail.status === "loading") {
+    return (
+      <div className="flex flex-col gap-3">
+        {back}
+        <Skeleton className="h-6 w-2/3" />
+        <Skeleton className="h-40 w-full rounded-xl" />
+      </div>
+    );
+  }
   if (detail.status === "error") {
     return (
-      <div className="px-4 pb-4">
+      <div className="flex flex-col gap-3">
+        {back}
         <ErrorText message={detail.message} />
       </div>
     );
@@ -257,86 +385,93 @@ function MessageView({
   const title = (message.subject || "Email").slice(0, TITLE_LIMIT);
   const context = [`From ${message.sender}`, message.url ?? ""].filter(Boolean).join("\n");
 
-  const create = (record: RecordFromMessage, done: string) => {
+  const create = (record: RecordFromMessage) => {
     setError(null);
-    setCreated(null);
+    setMade(null);
     actions.createFromMessage.mutate(
       { messageId, record },
       {
-        onSuccess: () => {
-          setCreated(done);
+        onSuccess: (created) => {
+          setMade({ kind: record.kind, id: created.id });
           setReminding(false);
         },
         onError: (cause) => setError(describeApiError(cause, "Couldn’t create it.")),
       },
     );
   };
+  const pending = actions.createFromMessage.isPending;
 
   return (
-    <article
-      aria-label={message.subject || "Message"}
-      className="space-y-3 border-t bg-muted/30 px-4 py-4"
-    >
-      <div className="space-y-0.5 text-xs text-muted-foreground">
-        <p>From {message.sender}</p>
-        {recipients.length ? <p>To {recipients.join(", ")}</p> : null}
-      </div>
-      <p className="max-h-72 overflow-y-auto text-sm whitespace-pre-wrap">
-        {body || message.snippet}
-      </p>
-      <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          variant="soft"
-          disabled={actions.createFromMessage.isPending}
+    <article aria-label={message.subject || "Message"} className="flex min-h-0 flex-col gap-4">
+      {back}
+      <header className="space-y-1">
+        <h3 className="text-base font-semibold text-balance">
+          {message.subject || "(No subject)"}
+        </h3>
+        <div className="space-y-0.5 text-xs text-muted-foreground">
+          <p>
+            From {message.sender} ·{" "}
+            <time dateTime={message.received_at}>
+              {new Date(message.received_at).toLocaleString(undefined, {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
+            </time>
+          </p>
+          {recipients.length ? <p className="truncate">To {recipients.join(", ")}</p> : null}
+        </div>
+      </header>
+
+      <div
+        role="group"
+        aria-label="Make something from this email"
+        className="flex flex-wrap items-center gap-2 rounded-xl border bg-muted/40 p-2"
+      >
+        <ActionButton
+          icon={CheckSquare}
+          label="Add as task"
+          primary
+          disabled={pending}
           onClick={() =>
-            create(
-              { kind: "task", body: { title, description: context.slice(0, DESCRIPTION_LIMIT) } },
-              "Task created.",
-            )
+            create({
+              kind: "task",
+              body: { title, description: context.slice(0, DESCRIPTION_LIMIT) },
+            })
           }
-        >
-          Create task
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={actions.createFromMessage.isPending}
+        />
+        <ActionButton
+          icon={StickyNote}
+          label="Save as note"
+          disabled={pending}
           onClick={() =>
-            create(
-              { kind: "note", body: { title, text: `${context}\n\n${body}`.slice(0, 20_000) } },
-              "Note created in your Inbox.",
-            )
+            create({
+              kind: "note",
+              body: { title, text: `${context}\n\n${body}`.slice(0, 20_000) },
+            })
           }
-        >
-          Save as note
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          aria-expanded={reminding}
+        />
+        <ActionButton
+          icon={AlarmClock}
+          label="Remind me"
+          expanded={reminding}
           onClick={() => setReminding(!reminding)}
-        >
-          Remind me
-        </Button>
+        />
         {message.url ? (
           <a
             href={message.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-8 items-center gap-1 rounded-md px-3 text-sm text-brand outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+            className="ml-auto inline-flex h-8 items-center gap-1 rounded-md px-2 text-sm text-brand outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
           >
             Open in {capabilityName(connection.provider, "mail")}
             <ExternalLink className="size-3.5" aria-hidden="true" />
           </a>
         ) : null}
-      </div>
-      {reminding ? (
-        <ReminderForm
-          pending={actions.createFromMessage.isPending}
-          onSubmit={(date, time) =>
-            create(
-              {
+        {reminding ? (
+          <ReminderForm
+            pending={pending}
+            onSubmit={(date, time) =>
+              create({
                 kind: "reminder",
                 body: {
                   title,
@@ -344,36 +479,73 @@ function MessageView({
                   time_of_day: time,
                   description: context.slice(0, 2000),
                 },
-              },
-              "Reminder set.",
-            )
-          }
-        />
-      ) : null}
-      {created ? (
-        <p role="status" className="text-sm text-brand">
-          {created}
-        </p>
-      ) : null}
+              })
+            }
+          />
+        ) : null}
+      </div>
+
+      <p role="status" className="text-sm empty:hidden">
+        {made ? (
+          <span className="flex flex-wrap items-center gap-x-2 text-success">
+            {MADE_TEXT[made.kind]}
+            <Link
+              href={linkedRecordHref(made.kind, made.id)}
+              className="font-medium text-brand hover:underline"
+            >
+              View {ENTITY_LABELS[made.kind].toLowerCase()}
+            </Link>
+          </span>
+        ) : null}
+      </p>
       <ErrorText message={error} />
+
       {links.length ? (
-        <div className="space-y-1">
-          <p className="text-xs font-medium text-muted-foreground">Made from this email</p>
-          <ul className="flex flex-wrap gap-2">
-            {links.map((link) => (
-              <li key={link.id}>
-                <Link
-                  href={linkedRecordHref(link.entity_type, link.entity_id)}
-                  className="text-sm text-brand hover:underline"
-                >
-                  {ENTITY_LABELS[link.entity_type]}
-                </Link>
-              </li>
-            ))}
-          </ul>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="font-medium text-muted-foreground">Made from this email:</span>
+          {links.map((link) => (
+            <Link
+              key={link.id}
+              href={linkedRecordHref(link.entity_type, link.entity_id)}
+              className="rounded-full bg-brand-subtle px-2 py-0.5 font-medium text-brand hover:underline"
+            >
+              {ENTITY_LABELS[link.entity_type]}
+            </Link>
+          ))}
         </div>
       ) : null}
+
+      <p className="text-sm leading-relaxed whitespace-pre-wrap">{body || message.snippet}</p>
     </article>
+  );
+}
+
+function ActionButton({
+  icon: Icon,
+  label,
+  primary = false,
+  expanded,
+  disabled,
+  onClick,
+}: {
+  icon: LucideIcon;
+  label: string;
+  primary?: boolean;
+  expanded?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <Button
+      size="sm"
+      variant={primary ? "default" : "soft"}
+      aria-expanded={expanded}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      <Icon aria-hidden="true" />
+      {label}
+    </Button>
   );
 }
 
@@ -388,7 +560,7 @@ function ReminderForm({
   const [time, setTime] = useState("09:00");
   return (
     <form
-      className="flex flex-wrap items-center gap-2"
+      className="flex w-full flex-wrap items-center gap-2"
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit(date, time);

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Task } from "@orbit/contracts";
+import type { Task, TaskListDetail } from "@orbit/contracts";
 import { Trash2 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/utils/common";
 
-import { DueDateLabel, PriorityBadge } from "./task-meta";
+import { DueDateLabel, PriorityBadge, TaskListBadge } from "./task-meta";
 
 type TaskItemProps = {
   task: Task;
+  /** The list the task is on, when it's on one and that isn't already the list in view. */
+  list?: TaskListDetail;
   today: string;
   /** A completion change or deletion is in flight. */
   pending: boolean;
@@ -22,7 +24,15 @@ type TaskItemProps = {
 
 const completedFormat = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
 
-export function TaskItem({ task, today, pending, onToggle, onEdit, onDelete }: TaskItemProps) {
+export function TaskItem({
+  task,
+  list,
+  today,
+  pending,
+  onToggle,
+  onEdit,
+  onDelete,
+}: TaskItemProps) {
   const titleId = useId();
   const [confirming, setConfirming] = useState(false);
   const confirmRef = useRef<HTMLButtonElement>(null);
@@ -80,8 +90,9 @@ export function TaskItem({ task, today, pending, onToggle, onEdit, onDelete }: T
             </p>
           ) : null}
         </div>
-        {task.due_date || task.priority !== "none" || task.completed_at ? (
+        {list || task.due_date || task.priority !== "none" || task.completed_at ? (
           <div className="flex shrink-0 flex-wrap items-center gap-1.5 @lg/rows:justify-end">
+            {list ? <TaskListBadge name={list.name} color={list.color} /> : null}
             <PriorityBadge priority={task.priority} />
             {task.due_date ? (
               <DueDateLabel dueDate={task.due_date} today={today} muted={completed} />

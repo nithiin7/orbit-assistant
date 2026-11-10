@@ -1,6 +1,6 @@
 /** Task display rules, filters, and form schemas that mirror the API's. */
 
-import type { TaskListQuery, TaskPriority, TaskStatus } from "@orbit/contracts";
+import type { TaskListColor, TaskListQuery, TaskPriority, TaskStatus } from "@orbit/contracts";
 import { mixed, object, string } from "yup";
 
 import { type Option } from "@/utils/common";
@@ -9,6 +9,7 @@ import { multiLineText, singleLineText } from "@/utils/validation";
 
 export const TASK_TITLE_MAX_LENGTH = 200;
 export const TASK_DESCRIPTION_MAX_LENGTH = 5000;
+export const TASK_LIST_NAME_MAX_LENGTH = 50;
 /** The most tasks the Tasks page loads at once; beyond that it asks the user to narrow down. */
 export const TASK_PAGE_SIZE = 200;
 
@@ -47,9 +48,13 @@ export function isTaskSort(value: string): value is TaskSort {
   return SORTS.some((item) => item.value === value);
 }
 
+/** Every list, tasks on no list, or one list's ID. */
+export type ListFilter = "all" | "none" | (string & {});
+
 export type TaskFilters = {
   status: StatusFilter;
   priority: TaskPriority | "all";
+  list: ListFilter;
   /** Already trimmed. */
   search: string;
   sort: TaskSort;
@@ -58,6 +63,7 @@ export type TaskFilters = {
 export const DEFAULT_TASK_FILTERS: TaskFilters = {
   status: "open",
   priority: "all",
+  list: "all",
   search: "",
   sort: "due_date",
 };
@@ -67,6 +73,8 @@ export function toTaskListQuery(filters: TaskFilters): TaskListQuery {
     status: filters.status === "all" ? undefined : filters.status,
     priority: filters.priority === "all" ? undefined : [filters.priority],
     q: filters.search || undefined,
+    list_id: filters.list === "all" || filters.list === "none" ? undefined : filters.list,
+    unlisted: filters.list === "none" ? true : undefined,
     sort: filters.sort,
     limit: TASK_PAGE_SIZE,
   };
@@ -84,10 +92,14 @@ const priorityField = mixed<TaskPriority>()
 /** `""` when no due date is set. */
 const dueDateField = string().defined();
 
+/** A list's ID, or `"none"` for no list. */
+const listField = string().defined();
+
 export const newTaskSchema = object({
   title: taskTitleField,
   dueDate: dueDateField,
   priority: priorityField,
+  list: listField,
 });
 
 export const taskSchema = object({
@@ -95,6 +107,40 @@ export const taskSchema = object({
   description: multiLineText(TASK_DESCRIPTION_MAX_LENGTH),
   dueDate: dueDateField,
   priority: priorityField,
+  list: listField,
+});
+
+// Lists
+
+/** The palette a list's color comes from; the API accepts the same names. */
+export const TASK_LIST_COLORS: readonly Option<TaskListColor>[] = [
+  { value: "blue", label: "Blue" },
+  { value: "green", label: "Green" },
+  { value: "amber", label: "Amber" },
+  { value: "rose", label: "Rose" },
+  { value: "violet", label: "Violet" },
+  { value: "teal", label: "Teal" },
+  { value: "orange", label: "Orange" },
+  { value: "slate", label: "Slate" },
+];
+
+/** Classes for each list color: a solid dot, and a soft chip. */
+export const TASK_LIST_STYLES: Record<TaskListColor, { dot: string; chip: string }> = {
+  blue: { dot: "bg-event-blue", chip: "bg-event-blue/12 text-foreground" },
+  green: { dot: "bg-event-green", chip: "bg-event-green/12 text-foreground" },
+  amber: { dot: "bg-event-amber", chip: "bg-event-amber/15 text-foreground" },
+  rose: { dot: "bg-event-rose", chip: "bg-event-rose/12 text-foreground" },
+  violet: { dot: "bg-event-violet", chip: "bg-event-violet/12 text-foreground" },
+  teal: { dot: "bg-event-teal", chip: "bg-event-teal/12 text-foreground" },
+  orange: { dot: "bg-event-orange", chip: "bg-event-orange/12 text-foreground" },
+  slate: { dot: "bg-event-slate", chip: "bg-event-slate/12 text-foreground" },
+};
+
+export const taskListSchema = object({
+  name: singleLineText(TASK_LIST_NAME_MAX_LENGTH).required("Enter a name."),
+  color: mixed<TaskListColor>()
+    .oneOf(TASK_LIST_COLORS.map((item) => item.value))
+    .defined(),
 });
 
 export type DueState = "overdue" | "today" | "soon" | "later";

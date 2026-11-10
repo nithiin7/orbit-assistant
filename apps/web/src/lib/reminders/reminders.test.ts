@@ -125,7 +125,7 @@ describe("reminder form", () => {
   it("round-trips an existing reminder through the form values", () => {
     const weekly = reminder({
       recurrence: { frequency: "weekly", weekdays: ["mon", "wed"] },
-      task: { id: "t1", title: "Taxes", status: "open" },
+      task: { id: "t1", title: "Taxes", status: "open", list: null },
     });
 
     const values = toFormValues(weekly);
@@ -176,7 +176,10 @@ describe("statusHint", () => {
     expect(statusHint(reminder({ status: "overdue" }))).toMatch(/shortly/);
     expect(
       statusHint(
-        reminder({ status: "completed", task: { id: "t", title: "T", status: "completed" } }),
+        reminder({
+          status: "completed",
+          task: { id: "t", title: "T", status: "completed", list: null },
+        }),
       ),
     ).toMatch(/task is completed/);
   });

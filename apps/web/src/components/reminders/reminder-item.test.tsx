@@ -54,11 +54,25 @@ describe("ReminderItem", () => {
       ...reminder,
       timezone: "Asia/Tokyo",
       recurrence: { frequency: "weekly", weekdays: ["mon", "thu"] },
-      task: { id: "t1", title: "File taxes", status: "completed" },
+      task: { id: "t1", title: "File taxes", status: "completed", list: null },
     });
     expect(screen.getByText("Weekly on Mon, Thu")).toBeInTheDocument();
     expect(screen.getByText("File taxes")).toHaveClass("line-through");
     expect(screen.getByText("Asia / Tokyo")).toBeInTheDocument();
+    expect(screen.queryByText(/List:/)).not.toBeInTheDocument();
+  });
+
+  it("shows the list its task is on", () => {
+    renderItem({
+      ...reminder,
+      task: {
+        id: "t1",
+        title: "Send report",
+        status: "open",
+        list: { name: "Work", color: "violet" },
+      },
+    });
+    expect(screen.getByText("Work").parentElement).toHaveTextContent("List: Work");
   });
 
   it("is read-only when a bill, subscription, or loan manages it", () => {

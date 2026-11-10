@@ -27,7 +27,7 @@ from orbit_api.services.reminders.models import (
     ReminderView,
 )
 from orbit_api.services.reminders.recurrence import WEEKDAYS, Frequency, Recurrence, Weekday
-from orbit_api.services.tasks.models import TaskStatus
+from orbit_api.services.tasks.models import TaskListColor, TaskStatus
 from orbit_api.utils.changes import UNSET
 
 DESCRIPTION_MAX_LENGTH = 2000
@@ -97,14 +97,25 @@ class RecurrenceModel(BaseModel):
         return cls(frequency=recurrence.frequency, weekdays=weekdays)
 
 
+class ReminderTaskListResponse(BaseModel):
+    name: str
+    color: TaskListColor
+
+
 class ReminderTaskResponse(BaseModel):
     id: uuid.UUID
     title: str
     status: TaskStatus
+    list: ReminderTaskListResponse | None = Field(description="The list the task is on, if any.")
 
     @classmethod
     def of(cls, task: ReminderTask) -> "ReminderTaskResponse":
-        return cls(id=task.id, title=task.title, status=task.status)
+        task_list = (
+            ReminderTaskListResponse(name=task.list.name, color=task.list.color)
+            if task.list
+            else None
+        )
+        return cls(id=task.id, title=task.title, status=task.status, list=task_list)
 
 
 class ReminderCommitmentResponse(BaseModel):

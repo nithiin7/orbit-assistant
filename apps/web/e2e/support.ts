@@ -15,7 +15,15 @@ export async function signUp(page: Page, name = "Ada"): Promise<{ email: string 
   await page.getByLabel("Email").fill(person.email);
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page).not.toHaveURL(/sign-up/);
+  await expect(page).toHaveURL(/\/welcome/);
+  return person;
+}
+
+/** Sign up and leave the setup guide for later, landing on the dashboard. */
+export async function signUpAndSkipSetup(page: Page, name = "Ada"): Promise<{ email: string }> {
+  const person = await signUp(page, name);
+  await page.getByRole("button", { name: "Finish later" }).click();
+  await expect(page).not.toHaveURL(/\/welcome/);
   return person;
 }
 

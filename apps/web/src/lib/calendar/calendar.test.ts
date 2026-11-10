@@ -59,6 +59,7 @@ function task(overrides: Partial<Task> = {}): Task {
     completed_at: null,
     scheduled_start: null,
     scheduled_end: null,
+    list_id: null,
     created_at: "2030-01-01T00:00:00Z",
     updated_at: "2030-01-01T00:00:00Z",
     ...overrides,

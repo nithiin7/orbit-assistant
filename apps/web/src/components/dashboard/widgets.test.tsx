@@ -43,6 +43,7 @@ function task(overrides: Partial<Task> & Pick<Task, "id" | "title">): Task {
     completed_at: null,
     scheduled_start: null,
     scheduled_end: null,
+    list_id: null,
     created_at: "2026-10-01T09:00:00Z",
     updated_at: "2026-10-01T09:00:00Z",
     ...overrides,
@@ -137,7 +138,7 @@ describe("TaskWidget", () => {
 
     await waitFor(() =>
       expect(sent(api, "POST", `${WS}/tasks`)).toEqual([
-        { title: "Call bank", description: "", priority: "none", due_date: today },
+        { title: "Call bank", description: "", priority: "none", due_date: today, list_id: null },
       ]),
     );
   });
@@ -287,9 +288,17 @@ describe("WaterWidget", () => {
 });
 
 describe("QuickActionsWidget", () => {
+  const waterDay = (total: number) => ({
+    day: today,
+    entries: [],
+    total_ml: total,
+    target_ml: null,
+  });
   const routes = {
     ...session,
     [`GET ${WS}/routines`]: json({ routines: [] }),
+    [`GET ${WS}/fitness/water`]: json(waterDay(0)),
+    [`GET ${WS}/fitness/profile`]: status(500),
   };
 
   it("records an expense with the Finance page's dialog, without leaving", async () => {
@@ -336,19 +345,31 @@ describe("QuickActionsWidget", () => {
     expect(push).not.toHaveBeenCalled();
   });
 
-  it("records water at once and says so", async () => {
+  it("records water at once and shows the running total on the button", async () => {
     const user = userEvent.setup();
+    let total = 500;
     const api = mockApi({
       ...routes,
-      [`GET ${WS}/fitness/profile`]: status(500),
-      [`POST ${WS}/fitness/water`]: json({}, 201),
+      [`GET ${WS}/fitness/water`]: () => Response.json(waterDay(total)),
+      [`POST ${WS}/fitness/water`]: () => {
+        total += 250;
+        return Response.json(waterDay(total), { status: 201 });
+      },
     });
     await withProviders(<QuickActionsWidget />);
+    const button = screen.getByRole("button", { name: "Record 250 ml of water" });
+    await waitFor(() => expect(button).toHaveTextContent("500 ml today"));
 
-    await user.click(screen.getByRole("button", { name: "Record 250 ml of water" }));
+    await user.click(button);
+    await waitFor(() => expect(button).toHaveTextContent("750 ml today"));
+    await user.click(button);
+    await waitFor(() => expect(button).toHaveTextContent("1,000 ml today"));
 
-    expect(await screen.findByText("Recorded 250 ml of water.")).toBeInTheDocument();
-    expect(sent(api, "POST", "/fitness/water")).toHaveLength(1);
+    expect(sent(api, "POST", "/fitness/water")).toHaveLength(2);
+    // Announced, but not shown as a line that grows the card.
+    const announcement = screen.getByRole("status");
+    expect(announcement).toHaveTextContent("Recorded 250 ml of water. 1,000 ml today.");
+    expect(announcement).toHaveClass("sr-only");
   });
 
   it("opens the vault's upload for documents", async () => {

@@ -7,13 +7,20 @@ from datetime import UTC, date, datetime, timedelta
 import pytest
 
 from orbit_api.services.tasks.models import (
+    MAX_TASK_LISTS,
     Task,
     TaskChanges,
     TaskDraft,
+    TaskList,
+    TaskListChanges,
+    TaskListNameTakenError,
+    TaskListNotFoundError,
+    TaskListOverview,
     TaskNotFoundError,
     TaskPage,
     TaskQuery,
     TaskSummary,
+    TooManyTaskListsError,
 )
 from orbit_api.services.tasks.service import TaskService
 from tests.test_account_service import FakeTransaction
@@ -27,6 +34,7 @@ OTHER_WORKSPACE = uuid.uuid4()
 class FakeTasks:
     def __init__(self) -> None:
         self.items: dict[uuid.UUID, Task] = {}
+        self.task_lists: dict[uuid.UUID, TaskList] = {}
         self.saves = 0
 
     async def add(self, task: Task) -> None:
@@ -52,6 +60,39 @@ class FakeTasks:
 
     async def summarize(self, workspace_id: uuid.UUID, today: date) -> TaskSummary:
         raise NotImplementedError
+
+    async def lists(self, workspace_id: uuid.UUID) -> list[TaskListOverview]:
+        own = [entry for entry in self.task_lists.values() if entry.workspace_id == workspace_id]
+        return [
+            TaskListOverview(
+                task_list=entry,
+                open=sum(
+                    1
+                    for task in self.items.values()
+                    if task.list_id == entry.id and task.status == "open"
+                ),
+            )
+            for entry in sorted(own, key=lambda entry: entry.position)
+        ]
+
+    async def get_list(self, workspace_id: uuid.UUID, list_id: uuid.UUID) -> TaskList | None:
+        entry = self.task_lists.get(list_id)
+        return entry if entry and entry.workspace_id == workspace_id else None
+
+    async def add_list(self, task_list: TaskList) -> None:
+        self.task_lists[task_list.id] = task_list
+
+    async def save_list(self, task_list: TaskList) -> None:
+        self.task_lists[task_list.id] = task_list
+
+    async def delete_list(self, workspace_id: uuid.UUID, list_id: uuid.UUID) -> bool:
+        if await self.get_list(workspace_id, list_id) is None:
+            return False
+        for task in list(self.items.values()):
+            if task.list_id == list_id:
+                self.items[task.id] = replace(task, list_id=None)
+        del self.task_lists[list_id]
+        return True
 
 
 class Clock:
@@ -164,3 +205,57 @@ async def test_delete_commits_only_when_a_task_was_deleted(
         await service.delete(WORKSPACE, task.id)
 
     assert transaction.commits == 2
+
+
+async def test_list_names_are_unique_ignoring_case_and_spacing(service: TaskService) -> None:
+    work = await service.create_list(WORKSPACE, "Side  project", "blue")
+
+    with pytest.raises(TaskListNameTakenError):
+        await service.create_list(WORKSPACE, "side project", "green")
+    other = await service.create_list(WORKSPACE, "Home", "green")
+    with pytest.raises(TaskListNameTakenError):
+        await service.update_list(WORKSPACE, other.id, TaskListChanges(name="SIDE PROJECT"))
+    # Renaming a list to a new spelling of its own name is fine, and so is the same name in
+    # another workspace.
+    renamed = await service.update_list(WORKSPACE, work.id, TaskListChanges(name="Side Project"))
+    assert renamed.name == "Side Project"
+    assert (await service.create_list(OTHER_WORKSPACE, "Side project", "blue")).name
+
+
+async def test_new_lists_go_last(service: TaskService) -> None:
+    first = await service.create_list(WORKSPACE, "Work", "blue")
+    second = await service.create_list(WORKSPACE, "Home", "green")
+
+    assert (first.position, second.position) == (0, 1)
+    assert [e.task_list.name for e in await service.lists(WORKSPACE)] == ["Work", "Home"]
+
+
+async def test_a_workspace_has_a_limited_number_of_lists(service: TaskService) -> None:
+    for index in range(MAX_TASK_LISTS):
+        await service.create_list(WORKSPACE, f"List {index}", "blue")
+
+    with pytest.raises(TooManyTaskListsError):
+        await service.create_list(WORKSPACE, "One more", "blue")
+
+
+async def test_tasks_only_go_on_lists_in_their_workspace(service: TaskService) -> None:
+    elsewhere = await service.create_list(OTHER_WORKSPACE, "Work", "blue")
+    task = await service.create(WORKSPACE, TaskDraft(title="Plan"))
+
+    with pytest.raises(TaskListNotFoundError):
+        await service.create(WORKSPACE, TaskDraft(title="Plan", list_id=elsewhere.id))
+    with pytest.raises(TaskListNotFoundError):
+        await service.update(WORKSPACE, task.id, TaskChanges(list_id=elsewhere.id))
+    with pytest.raises(TaskListNotFoundError):
+        await service.delete_list(WORKSPACE, elsewhere.id)
+
+
+async def test_deleting_a_list_keeps_its_tasks(service: TaskService, repository: FakeTasks) -> None:
+    work = await service.create_list(WORKSPACE, "Work", "blue")
+    task = await service.create(WORKSPACE, TaskDraft(title="Plan", list_id=work.id))
+    assert [e.open for e in await service.lists(WORKSPACE)] == [1]
+
+    await service.delete_list(WORKSPACE, work.id)
+
+    assert repository.items[task.id].list_id is None
+    assert await service.lists(WORKSPACE) == []

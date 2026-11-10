@@ -502,7 +502,7 @@ function Models({
   );
 }
 
-function ModelChoice({
+export function ModelChoice({
   label,
   required = false,
   hint,

@@ -1,7 +1,19 @@
 "use client";
 
 import type { IntegrationConnection, RemoteFile } from "@orbit/contracts";
-import { ChevronRight, FileText, Folder, Search } from "lucide-react";
+import {
+  ChevronRight,
+  CircleCheck,
+  ExternalLink,
+  File,
+  FileImage,
+  FileSpreadsheet,
+  FileText,
+  Folder,
+  type LucideIcon,
+  Presentation,
+  Search,
+} from "lucide-react";
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
 
@@ -11,13 +23,33 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConnectionMutations, useRemoteFiles } from "@/hooks/use-integrations";
 import { capabilityName, formatFileSize, linkedRecordHref } from "@/lib/integrations";
+import { cn } from "@/utils/common";
 
 import { ErrorText } from "./section";
 
 type Crumb = { id: string; name: string };
 
-/** Browse and search the account's files, and import chosen ones into Documents. */
-export function FileBrowser({ connection }: { connection: IntegrationConnection }) {
+/** An icon for a provider's MIME type, so documents, sheets, and images read at a glance. */
+function fileIcon(mimeType: string): { icon: LucideIcon; tone: string } {
+  if (mimeType.startsWith("image/")) return { icon: FileImage, tone: "text-event-violet" };
+  if (/spreadsheet|excel|csv/.test(mimeType))
+    return { icon: FileSpreadsheet, tone: "text-success" };
+  if (/presentation|powerpoint/.test(mimeType)) return { icon: Presentation, tone: "text-warning" };
+  if (/pdf|document|word|text/.test(mimeType)) return { icon: FileText, tone: "text-brand" };
+  return { icon: File, tone: "text-muted-foreground" };
+}
+
+/**
+ * Browse and search the account's files, and import chosen ones into Documents (into
+ * `importFolderId` when given). Orbit keeps a copy; the file at the provider is never changed.
+ */
+export function FileBrowser({
+  connection,
+  importFolderId = null,
+}: {
+  connection: IntegrationConnection;
+  importFolderId?: string | null;
+}) {
   const [path, setPath] = useState<Crumb[]>([]);
   const [draft, setDraft] = useState("");
   const [search, setSearch] = useState("");
@@ -95,12 +127,13 @@ export function FileBrowser({ connection }: { connection: IntegrationConnection 
           {search ? "No files match." : "This folder is empty."}
         </p>
       ) : (
-        <ul className="divide-y rounded-xl border">
+        <ul className="divide-y overflow-hidden rounded-xl border bg-card">
           {files.data.files.map((file) => (
             <FileRow
               key={file.id}
               connection={connection}
               file={file}
+              importFolderId={importFolderId}
               onOpen={() => setPath([...path, { id: file.id, name: file.name }])}
             />
           ))}
@@ -113,10 +146,12 @@ export function FileBrowser({ connection }: { connection: IntegrationConnection 
 function FileRow({
   connection,
   file,
+  importFolderId,
   onOpen,
 }: {
   connection: IntegrationConnection;
   file: RemoteFile;
+  importFolderId: string | null;
   onOpen: () => void;
 }) {
   const actions = useConnectionMutations(connection.id);
@@ -124,6 +159,19 @@ function FileRow({
   const imported = file.imported;
   const fail = (fallback: string) => (cause: unknown) =>
     setError(describeApiError(cause, fallback));
+
+  const { icon: Icon, tone } = fileIcon(file.mime_type);
+  const openAtProvider = file.url ? (
+    <a
+      href={file.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`Open “${file.name}” in ${capabilityName(connection.provider, "files")}`}
+      className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <ExternalLink className="size-4" aria-hidden="true" />
+    </a>
+  ) : null;
 
   if (file.folder) {
     return (
@@ -133,7 +181,12 @@ function FileRow({
           onClick={onOpen}
           className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm outline-none hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
         >
-          <Folder className="size-4 text-brand" aria-hidden="true" />
+          <span
+            aria-hidden="true"
+            className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-subtle text-brand"
+          >
+            <Folder className="size-4" />
+          </span>
           <span className="flex-1 truncate font-medium">{file.name}</span>
           <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
         </button>
@@ -143,9 +196,19 @@ function FileRow({
 
   return (
     <li className="flex flex-wrap items-center gap-3 px-4 py-3">
-      <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <span
+        aria-hidden="true"
+        className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted"
+      >
+        <Icon className={cn("size-4", tone)} />
+      </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{file.name}</p>
+        <p className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
+          <span className="truncate">{file.name}</span>
+          {imported && imported.status !== "update_available" && imported.status !== "missing" ? (
+            <CircleCheck className="size-3.5 shrink-0 text-success" aria-label="Imported" />
+          ) : null}
+        </p>
         <p className="text-xs text-muted-foreground">
           {[
             formatFileSize(file.size),
@@ -187,12 +250,16 @@ function FileRow({
           disabled={actions.importFile.isPending}
           onClick={() => {
             setError(null);
-            actions.importFile.mutate(file.id, { onError: fail("Couldn’t import this file.") });
+            actions.importFile.mutate(
+              { fileId: file.id, folderId: importFolderId },
+              { onError: fail("Couldn’t import this file.") },
+            );
           }}
         >
           Import
         </Button>
       )}
+      {openAtProvider}
     </li>
   );
 }

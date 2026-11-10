@@ -66,6 +66,8 @@ export type DocumentsLocation = {
   search: string;
   fileKind: DocumentFileKind | null;
   window: ExpiryWindow;
+  /** A connected account whose drive is being browsed, in place of Orbit's documents. */
+  driveId: string | null;
 };
 
 export const DOCUMENTS_PATH = "/documents";
@@ -74,6 +76,11 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function idParam(value: string | null): string | null {
   return value && UUID.test(value) ? value.toLowerCase() : null;
+}
+
+/** Connection IDs are opaque; accept only a short, plain token. */
+function tokenParam(value: string | null): string | null {
+  return value && /^[\w-]{1,64}$/.test(value) ? value : null;
 }
 
 function isFileKind(value: string | null): value is DocumentFileKind {
@@ -104,11 +111,16 @@ export function parseDocumentsLocation(params: Pick<URLSearchParams, "get">): Do
     search,
     fileKind: isFileKind(kind) ? kind : null,
     window: EXPIRY_WINDOWS.find((value) => value === window) ?? DEFAULT_EXPIRY_WINDOW,
+    driveId: tokenParam(params.get("drive")),
   };
 }
 
 export function documentsHref(location: Partial<DocumentsLocation>): string {
   const params = new URLSearchParams();
+  if (location.driveId) {
+    params.set("drive", location.driveId);
+    return `${DOCUMENTS_PATH}?${params.toString()}`;
+  }
   if (location.folderId) params.set("folder", location.folderId);
   else if (location.categoryId) params.set("category", location.categoryId);
   else if (location.tag) params.set("tag", location.tag);

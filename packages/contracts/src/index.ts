@@ -38,6 +38,12 @@ export type TaskListQuery = NonNullable<
 export type TaskSummaryQuery = NonNullable<
   paths["/api/v1/workspaces/{workspace_id}/tasks/summary"]["get"]["parameters"]["query"]
 >;
+/** A named, colored list a task can be on (Work, Personal, ...), with its open task count. */
+export type TaskListDetail = Schemas["TaskListDetailResponse"];
+export type TaskListColor = TaskListDetail["color"];
+export type TaskLists = Schemas["TaskListsResponse"];
+export type CreateTaskListRequest = Schemas["CreateTaskListRequest"];
+export type UpdateTaskListRequest = Schemas["UpdateTaskListRequest"];
 export type ShoppingList = Schemas["ShoppingListResponse"];
 export type ShoppingListOverview = Schemas["ShoppingListOverviewResponse"];
 export type ShoppingLists = Schemas["ShoppingListsResponse"];

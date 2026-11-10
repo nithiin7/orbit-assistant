@@ -19,6 +19,10 @@ from orbit_api.services.tasks.models import (
     Task,
     TaskChanges,
     TaskDraft,
+    TaskList,
+    TaskListChanges,
+    TaskListColor,
+    TaskListOverview,
     TaskPriority,
     TaskQuery,
     TaskSchedule,
@@ -36,6 +40,11 @@ PAGE_MAX_SIZE = 500
 Title = Annotated[
     str,
     StringConstraints(strip_whitespace=True, min_length=1, max_length=TITLE_MAX_LENGTH),
+    AfterValidator(single_line),
+]
+ListName = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=50),
     AfterValidator(single_line),
 ]
 Description = Annotated[
@@ -59,6 +68,7 @@ class TaskResponse(BaseModel):
         "from the due date. Set together with `scheduled_end`."
     )
     scheduled_end: datetime | None
+    list_id: uuid.UUID | None = Field(description="The list the task is on, if any.")
     created_at: datetime
     updated_at: datetime
 
@@ -75,6 +85,7 @@ class TaskResponse(BaseModel):
             completed_at=task.completed_at,
             scheduled_start=task.scheduled_start,
             scheduled_end=task.scheduled_end,
+            list_id=task.list_id,
             created_at=task.created_at,
             updated_at=task.updated_at,
         )
@@ -108,6 +119,10 @@ class TaskListParams(BaseModel):
     due_to: date | None = Field(
         default=None, description="Only tasks due on or before this date (inclusive)."
     )
+    list_id: uuid.UUID | None = Field(default=None, description="Only tasks on this list.")
+    unlisted: bool = Field(
+        default=False, description="`true` for only tasks on no list. Not with `list_id`."
+    )
     sort: TaskSort = "created_at"
     order: SortOrder | None = Field(
         default=None,
@@ -121,6 +136,8 @@ class TaskListParams(BaseModel):
     def _check_due_range(self) -> Self:
         if self.due_from and self.due_to and self.due_to < self.due_from:
             raise ValueError("due_to must not be before due_from")
+        if self.list_id is not None and self.unlisted:
+            raise ValueError("use list_id or unlisted, not both")
         return self
 
     def to_query(self) -> TaskQuery:
@@ -131,6 +148,7 @@ class TaskListParams(BaseModel):
             scheduled=self.scheduled,
             due_from=self.due_from,
             due_to=self.due_to,
+            list_id=None if self.unlisted else (self.list_id or UNSET),
             sort=self.sort,
             order=self.order,
             limit=self.limit,
@@ -173,6 +191,7 @@ class CreateTaskRequest(BaseModel):
     due_date: date | None = None
     scheduled_start: AwareDatetime | None = None
     scheduled_end: AwareDatetime | None = None
+    list_id: uuid.UUID | None = Field(default=None, description="A list in this workspace.")
 
     @model_validator(mode="after")
     def _check_schedule(self) -> Self:
@@ -187,6 +206,7 @@ class CreateTaskRequest(BaseModel):
             priority=self.priority,
             due_date=self.due_date,
             schedule=_schedule(self.scheduled_start, self.scheduled_end),
+            list_id=self.list_id,
         )
 
 
@@ -204,6 +224,9 @@ class UpdateTaskRequest(BaseModel):
         default=None, description="Change with `scheduled_end`; both `null` unschedules the task."
     )
     scheduled_end: AwareDatetime | None = None
+    list_id: uuid.UUID | None = Field(
+        default=None, description="Move the task to this list; `null` takes it off its list."
+    )
 
     @model_validator(mode="after")
     def _check_fields(self) -> Self:
@@ -229,6 +252,64 @@ class UpdateTaskRequest(BaseModel):
                 if "scheduled_start" in provided
                 else UNSET
             ),
+            list_id=self.list_id if "list_id" in provided else UNSET,
+        )
+
+
+class TaskListDetailResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+    color: TaskListColor
+    position: int = Field(description="Lists are shown in this order.")
+    open_tasks: int = Field(description="Open tasks on the list.")
+
+    @classmethod
+    def of(cls, task_list: TaskList, open_tasks: int) -> "TaskListDetailResponse":
+        return cls(
+            id=task_list.id,
+            name=task_list.name,
+            color=task_list.color,
+            position=task_list.position,
+            open_tasks=open_tasks,
+        )
+
+    @classmethod
+    def of_overview(cls, overview: TaskListOverview) -> "TaskListDetailResponse":
+        return cls.of(overview.task_list, overview.open)
+
+
+class TaskListsResponse(BaseModel):
+    lists: list[TaskListDetailResponse]
+
+
+class CreateTaskListRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: ListName
+    color: TaskListColor = "blue"
+
+
+class UpdateTaskListRequest(BaseModel):
+    """Rename or recolor a list. Omitted fields keep their values."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: ListName | None = None
+    color: TaskListColor | None = None
+
+    @model_validator(mode="after")
+    def _check_fields(self) -> Self:
+        if not self.model_fields_set:
+            raise ValueError("include at least one field to change")
+        for name in self.model_fields_set:
+            if getattr(self, name) is None:
+                raise ValueError(f"{name} cannot be null")
+        return self
+
+    def to_changes(self) -> TaskListChanges:
+        return TaskListChanges(
+            name=self.name if self.name is not None else UNSET,
+            color=self.color if self.color is not None else UNSET,
         )
 
 

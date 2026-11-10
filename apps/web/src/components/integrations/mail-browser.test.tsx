@@ -6,7 +6,7 @@ import { ada, json, mockApi, personal, status } from "@/test/api-mock";
 import { connection, INTEGRATIONS } from "@/test/integrations";
 import { renderSignedIn } from "@/test/session";
 
-import { MailBrowser } from "./mail-browser";
+import { MailInbox, MailSettings } from "./mail-browser";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
@@ -35,8 +35,8 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("MailBrowser", () => {
-  it("asks for labels before showing any mail", async () => {
+describe("MailSettings", () => {
+  it("saves which labels Orbit may show", async () => {
     const user = userEvent.setup();
     let selected: string[] = [];
     const labels = () =>
@@ -53,15 +53,32 @@ describe("MailBrowser", () => {
         selected = (body as { label_ids: string[] }).label_ids;
         return labels();
       },
-      [`GET ${MAIL}/messages`]: json({ messages: [], next_page: null }),
     });
-    await renderSignedIn(<MailBrowser connection={connection()} />);
-    expect(await screen.findByText(/Choose at least one label/)).toBeInTheDocument();
+    await renderSignedIn(<MailSettings connection={connection()} />);
+    const save = await screen.findByRole("button", { name: "Save labels" });
+    expect(save).toBeDisabled();
     await user.click(screen.getByRole("checkbox", { name: "Receipts" }));
-    await user.click(screen.getByRole("button", { name: "Save labels" }));
-    expect(await screen.findByText("No messages in this period.")).toBeInTheDocument();
+    await user.click(save);
+    await waitFor(() => expect(screen.getByRole("checkbox", { name: "Receipts" })).toBeChecked());
+    expect(screen.getByRole("button", { name: "Save labels" })).toBeDisabled();
     const put = fetchMock.mock.calls.find(([, init]) => init?.method === "PUT");
     expect(JSON.parse(String(put?.[1]?.body))).toEqual({ label_ids: ["L1"] });
+  });
+});
+
+describe("MailInbox", () => {
+  it("points to Settings until a label is chosen", async () => {
+    mockApi({
+      ...session,
+      [`GET ${MAIL}/labels`]: json({
+        labels: [{ id: "INBOX", name: "Inbox", system: true, selected: false }],
+      }),
+    });
+    await renderSignedIn(<MailInbox connections={[connection()]} />);
+    expect(await screen.findByRole("link", { name: "Choose labels" })).toHaveAttribute(
+      "href",
+      "/settings/integrations?connection=c1#mail",
+    );
   });
 
   it("opens a message as text and turns it into a linked task", async () => {
@@ -80,7 +97,7 @@ describe("MailBrowser", () => {
       }),
       [`POST ${MAIL}/messages/m1/task`]: json({ kind: "task", id: "t9", title: "Invoice 42" }, 201),
     });
-    await renderSignedIn(<MailBrowser connection={connection()} />);
+    await renderSignedIn(<MailInbox connections={[connection()]} />);
     await user.click(await screen.findByRole("button", { name: /Invoice 42/ }));
     // HTML-looking text stays text: never rendered as markup.
     expect(await screen.findByText("<b>Pay</b> by Friday")).toBeInTheDocument();
@@ -88,13 +105,19 @@ describe("MailBrowser", () => {
       "rel",
       "noopener noreferrer",
     );
-    await user.click(screen.getByRole("button", { name: "Create task" }));
-    expect(await screen.findByRole("status")).toHaveTextContent("Task created.");
+    await user.click(screen.getByRole("button", { name: "Add as task" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Added to your tasks.");
+    expect(screen.getByRole("link", { name: "View task" })).toHaveAttribute(
+      "href",
+      "/tasks?task=t9",
+    );
     const created = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/m1/task"));
     expect(JSON.parse(String(created?.[1]?.body))).toEqual({
       title: "Invoice 42",
       description: "From Shop <shop@example.com>\nhttps://mail.google.com/mail/#all/m1",
     });
+    await user.click(screen.getByRole("button", { name: "All messages" }));
+    expect(await screen.findByRole("button", { name: /Invoice 42/ })).toBeInTheDocument();
   });
 
   it("searches within the chosen label", async () => {
@@ -106,7 +129,7 @@ describe("MailBrowser", () => {
       }),
       [`GET ${MAIL}/messages`]: json({ messages: [], next_page: null }),
     });
-    await renderSignedIn(<MailBrowser connection={connection()} />);
+    await renderSignedIn(<MailInbox connections={[connection()]} />);
     await user.type(await screen.findByRole("textbox", { name: "Search mail" }), "invoice{Enter}");
     await waitFor(() =>
       expect(

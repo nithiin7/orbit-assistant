@@ -41,8 +41,11 @@ import {
   energyInput,
   gramsInput,
   hoursInput,
+  KJ_PER_KCAL,
   lengthInput,
   minutesInput,
+  ML_PER_FL_OZ,
+  MM_PER_INCH,
   parseDecimal,
   parseDistance,
   parseEnergy,
@@ -106,6 +109,38 @@ export type ProfileFormValues = {
   hiddenSections: FitnessSection[];
 };
 
+// The API's profile limits, in its canonical units.
+const HEIGHT_MM = { min: 500, max: 2720 };
+const WATER_TARGET_MAX_ML = 20_000;
+const ENERGY_TARGET_MAX_CAL = 20_000_000;
+const QUICK_AMOUNT_MAX_ML = 5000;
+
+/**
+ * An optional amount typed in the person's units, checked against the API's range in canonical
+ * units so a value it would refuse is flagged on its field with the range in those units.
+ */
+function optionalInRange(
+  toCanonical: (value: string, parent: Partial<ProfileFormValues>) => number | null,
+  range: (parent: Partial<ProfileFormValues>) => string,
+  min: number,
+  max: number,
+) {
+  return string()
+    .defined()
+    .test("range", (value, context) => {
+      if (value.trim() === "") return true;
+      const parent = context.parent as Partial<ProfileFormValues>;
+      const canonical = toCanonical(value, parent);
+      if (canonical !== null && canonical >= min && canonical <= max) return true;
+      return context.createError({ message: `Enter ${range(parent)}, or leave it blank.` });
+    });
+}
+
+/** `value` in `unit`, rounded for showing a limit. */
+function limit(value: number, unit: string): string {
+  return `${Number(value.toFixed(value < 100 ? 1 : 0)).toLocaleString()} ${unit}`;
+}
+
 export const profileSchema = object({
   unitSystem: mixed<UnitSystem>().defined(),
   weightUnit: mixed<FitnessProfile["weight_unit"]>().defined(),
@@ -113,22 +148,55 @@ export const profileSchema = object({
   distanceUnit: mixed<FitnessProfile["distance_unit"]>().defined(),
   energyUnit: mixed<FitnessProfile["energy_unit"]>().defined(),
   waterUnit: mixed<FitnessProfile["water_unit"]>().defined(),
-  height: optionalNumber("Enter a height, or leave it blank."),
+  height: optionalInRange(
+    (value, { lengthUnit = "cm" }) => parseLength(value, lengthUnit),
+    ({ lengthUnit = "cm" }) =>
+      lengthUnit === "cm"
+        ? `a height from ${limit(HEIGHT_MM.min / 10, "cm")} to ${limit(HEIGHT_MM.max / 10, "cm")}`
+        : `a height from ${limit(HEIGHT_MM.min / MM_PER_INCH, "in")} to ${limit(HEIGHT_MM.max / MM_PER_INCH, "in")}`,
+    HEIGHT_MM.min,
+    HEIGHT_MM.max,
+  ),
   dateOfBirth: string().defined(),
-  energyTarget: optionalNumber("Enter a positive number."),
+  energyTarget: optionalInRange(
+    (value, { energyUnit = "kcal" }) => parseEnergy(value, energyUnit),
+    ({ energyUnit = "kcal" }) =>
+      `up to ${energyUnit === "kcal" ? limit(ENERGY_TARGET_MAX_CAL / 1000, "kcal") : limit((ENERGY_TARGET_MAX_CAL / 1000) * KJ_PER_KCAL, "kJ")}`,
+    1,
+    ENERGY_TARGET_MAX_CAL,
+  ),
   proteinTarget: optionalNumber("Enter grams, or leave it blank.", 0, 2000),
   carbsTarget: optionalNumber("Enter grams, or leave it blank.", 0, 2000),
   fatTarget: optionalNumber("Enter grams, or leave it blank.", 0, 2000),
   fiberTarget: optionalNumber("Enter grams, or leave it blank.", 0, 2000),
-  waterTarget: optionalNumber("Enter an amount, or leave it blank."),
+  waterTarget: optionalInRange(
+    (value, { waterUnit = "ml" }) => parseWater(value, waterUnit),
+    ({ waterUnit = "ml" }) =>
+      `up to ${
+        waterUnit === "ml"
+          ? limit(WATER_TARGET_MAX_ML, "ml")
+          : waterUnit === "l"
+            ? limit(WATER_TARGET_MAX_ML / 1000, "l")
+            : limit(WATER_TARGET_MAX_ML / ML_PER_FL_OZ, "fl oz")
+      }`,
+    1,
+    WATER_TARGET_MAX_ML,
+  ),
   quickAmounts: string()
     .defined()
-    .test("amounts", "List up to six amounts, separated by commas.", (value) => {
+    .test("amounts", "List up to six amounts, separated by commas.", (value, context) => {
+      const { waterUnit = "ml" } = context.parent as Partial<ProfileFormValues>;
       const parts = value
         .split(",")
         .map((part) => part.trim())
         .filter(Boolean);
-      return parts.length <= 6 && parts.every((part) => (parseDecimal(part) ?? 0) > 0);
+      return (
+        parts.length <= 6 &&
+        parts.every((part) => {
+          const ml = parseWater(part, waterUnit);
+          return ml !== null && ml >= 1 && ml <= QUICK_AMOUNT_MAX_ML;
+        })
+      );
     }),
   hiddenSections: array(mixed<FitnessSection>().defined()).defined(),
 });

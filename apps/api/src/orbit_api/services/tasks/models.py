@@ -12,6 +12,35 @@ TaskStatus = Literal["open", "completed"]
 # Ordered from lowest to highest.
 TaskPriority = Literal["none", "low", "medium", "high"]
 TaskSort = Literal["due_date", "priority", "created_at", "completed_at"]
+TaskListColor = Literal["blue", "green", "amber", "rose", "violet", "teal", "orange", "slate"]
+
+# A workspace's lists are few and meant to be scanned at a glance.
+MAX_TASK_LISTS = 50
+
+
+@dataclass(frozen=True, slots=True)
+class TaskList:
+    id: uuid.UUID
+    workspace_id: uuid.UUID
+    name: str
+    color: TaskListColor
+    # Lists are shown in this order: oldest first.
+    position: int
+    created_at: datetime
+    updated_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class TaskListOverview:
+    task_list: TaskList
+    # Open tasks on the list.
+    open: int
+
+
+@dataclass(frozen=True, slots=True)
+class TaskListChanges:
+    name: Change[str] = UNSET
+    color: Change[TaskListColor] = UNSET
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,6 +60,8 @@ class Task:
     # due date. Both set or both unset; the end is after the start.
     scheduled_start: datetime | None = None
     scheduled_end: datetime | None = None
+    # The list the task is on, if any.
+    list_id: uuid.UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,18 +79,20 @@ class TaskDraft:
     priority: TaskPriority = "none"
     due_date: date | None = None
     schedule: TaskSchedule | None = None
+    list_id: uuid.UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class TaskChanges:
     """A partial update. `UNSET` leaves a field as it is; `due_date=None` clears the date and
-    `schedule=None` unschedules the task."""
+    `schedule=None` unschedules the task, and `list_id=None` takes it off its list."""
 
     title: Change[str] = UNSET
     description: Change[str] = UNSET
     priority: Change[TaskPriority] = UNSET
     due_date: Change[date | None] = UNSET
     schedule: Change[TaskSchedule | None] = UNSET
+    list_id: Change[uuid.UUID | None] = UNSET
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +107,8 @@ class TaskQuery:
     # Inclusive bounds on the due date; either set leaves out tasks without one.
     due_from: date | None = None
     due_to: date | None = None
+    # Only tasks on this list. `UNSET` means any list or none; `None` means tasks on no list.
+    list_id: Change[uuid.UUID | None] = UNSET
     sort: TaskSort = "created_at"
     # `None` uses the sort's natural order: earliest due date, highest priority, newest first,
     # or most recently completed first.
@@ -104,3 +139,15 @@ class TaskNotFoundError(Exception):
 
 class InvalidTaskScheduleError(ValueError):
     """A scheduled time block that ends before it starts or is too long."""
+
+
+class TaskListNotFoundError(Exception):
+    """The task list does not exist in this workspace."""
+
+
+class TaskListNameTakenError(Exception):
+    """Another list in the workspace has the same name, ignoring case and spacing."""
+
+
+class TooManyTaskListsError(Exception):
+    """The workspace already has `MAX_TASK_LISTS` lists."""

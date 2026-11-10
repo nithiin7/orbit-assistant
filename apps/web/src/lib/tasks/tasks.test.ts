@@ -8,11 +8,18 @@ import {
   groupTasksByDue,
   isNarrowed,
   TASK_PAGE_SIZE,
+  taskListSchema,
   taskSchema,
   toTaskListQuery,
 } from "./tasks";
 
-const validTask = { title: "Pay rent", description: "", dueDate: "", priority: "none" };
+const validTask = {
+  title: "Pay rent",
+  description: "",
+  dueDate: "",
+  priority: "none",
+  list: "none",
+};
 const taskErrors = (changes: Partial<typeof validTask>) =>
   fieldErrors(taskSchema, { ...validTask, ...changes });
 
@@ -22,6 +29,8 @@ describe("toTaskListQuery", () => {
       status: "open",
       priority: undefined,
       q: undefined,
+      list_id: undefined,
+      unlisted: undefined,
       sort: "due_date",
       limit: TASK_PAGE_SIZE,
     });
@@ -29,14 +38,41 @@ describe("toTaskListQuery", () => {
 
   it("maps every filter", () => {
     expect(
-      toTaskListQuery({ status: "all", priority: "high", search: "rent", sort: "priority" }),
+      toTaskListQuery({
+        status: "all",
+        priority: "high",
+        list: "list-1",
+        search: "rent",
+        sort: "priority",
+      }),
     ).toEqual({
       status: undefined,
       priority: ["high"],
       q: "rent",
+      list_id: "list-1",
+      unlisted: undefined,
       sort: "priority",
       limit: TASK_PAGE_SIZE,
     });
+  });
+
+  it("asks for tasks on no list", () => {
+    expect(toTaskListQuery({ ...DEFAULT_TASK_FILTERS, list: "none" })).toMatchObject({
+      list_id: undefined,
+      unlisted: true,
+    });
+  });
+});
+
+describe("taskListSchema", () => {
+  it("trims names and accepts only the API's colors", () => {
+    expect(taskListSchema.validateSync({ name: "  Work ", color: "teal" })).toEqual({
+      name: "Work",
+      color: "teal",
+    });
+    expect(fieldErrors(taskListSchema, { name: "", color: "blue" }).name).toBe("Enter a name.");
+    expect(fieldErrors(taskListSchema, { name: "x".repeat(51), color: "blue" }).name).toBeDefined();
+    expect(fieldErrors(taskListSchema, { name: "Work", color: "red" }).color).toBeDefined();
   });
 });
 

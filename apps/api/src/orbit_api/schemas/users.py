@@ -7,7 +7,7 @@ from typing import Literal, Self
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from orbit_api.schemas.common import Name, TimeZoneName
-from orbit_api.services.accounts.models import User
+from orbit_api.services.accounts.models import SetupStatus, User
 from orbit_api.utils.changes import UNSET, Change
 
 
@@ -24,6 +24,10 @@ class UserProfile(BaseModel):
         description="The user's IANA time zone, used by default for new reminders; `null` "
         "until they choose one."
     )
+    setup_status: SetupStatus = Field(
+        description="Progress through the first-run setup guide: `pending` until the user opens "
+        "it, `deferred` once they leave it for later, `done` once finished or dismissed."
+    )
     created_at: datetime
 
     @classmethod
@@ -34,6 +38,7 @@ class UserProfile(BaseModel):
             display_name=user.display_name,
             auth_provider=user.auth_provider,
             timezone=user.timezone,
+            setup_status=user.setup_status,
             created_at=user.created_at,
         )
 
@@ -46,6 +51,7 @@ class UpdateProfileRequest(BaseModel):
 
     display_name: Name | None = None
     timezone: TimeZoneName | None = None
+    setup_status: SetupStatus | None = None
 
     @model_validator(mode="after")
     def _check_fields(self) -> Self:
@@ -53,6 +59,8 @@ class UpdateProfileRequest(BaseModel):
             raise ValueError("include at least one field to change")
         if "display_name" in self.model_fields_set and self.display_name is None:
             raise ValueError("display_name cannot be null")
+        if "setup_status" in self.model_fields_set and self.setup_status is None:
+            raise ValueError("setup_status cannot be null")
         return self
 
     @property

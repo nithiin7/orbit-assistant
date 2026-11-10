@@ -67,6 +67,7 @@ _PREFIXES: Final[tuple[tuple[str, Module], ...]] = (
 
 _EXACT: Final[dict[str, Module]] = {
     "tasks": "tasks",
+    "task_lists": "tasks",
     "reminders": "reminders",
     "reminder_occurrences": "reminders",
     "notifications": "reminders",
@@ -134,6 +135,7 @@ MATCH_KEYS: Final[dict[str, tuple[tuple[str, ...], ...]]] = {
     "note_tags": (("normalized_name",),),
     "fitness_exercises": (("builtin_key",),),
     "shopping_lists": (("is_default",),),
+    "task_lists": (("normalized_name",),),
 }
 
 

@@ -5,13 +5,16 @@ from collections.abc import Sequence
 from datetime import date
 from typing import Any, cast
 
-from sqlalchemy import ColumnElement, and_, case, delete, func, or_, select
+from sqlalchemy import ColumnElement, and_, case, delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from orbit_api.db.models import TaskModel
+from orbit_api.db.models import TaskListModel, TaskModel
 from orbit_api.repositories.transaction import flush
 from orbit_api.services.tasks.models import (
     Task,
+    TaskList,
+    TaskListColor,
+    TaskListOverview,
     TaskNotFoundError,
     TaskPage,
     TaskPriority,
@@ -19,6 +22,8 @@ from orbit_api.services.tasks.models import (
     TaskStatus,
     TaskSummary,
 )
+from orbit_api.services.tasks.service import normalize_list_name
+from orbit_api.utils.changes import UNSET
 from orbit_api.utils.text_search import LIKE_ESCAPE, contains_pattern
 
 # Priorities are stored as ranks so that ordering by the column orders by importance.
@@ -43,6 +48,20 @@ def to_task(model: TaskModel) -> Task:
         updated_at=model.updated_at,
         scheduled_start=model.scheduled_start,
         scheduled_end=model.scheduled_end,
+        list_id=model.list_id,
+    )
+
+
+def to_task_list(model: TaskListModel) -> TaskList:
+    return TaskList(
+        id=model.id,
+        workspace_id=model.workspace_id,
+        name=model.name,
+        # The table's CHECK constraint limits `color` to the palette.
+        color=cast(TaskListColor, model.color),
+        position=model.position,
+        created_at=model.created_at,
+        updated_at=model.updated_at,
     )
 
 
@@ -60,6 +79,12 @@ def _filters(workspace_id: uuid.UUID, query: TaskQuery) -> list[ColumnElement[bo
         conditions.append(TaskModel.due_date >= query.due_from)
     if query.due_to is not None:
         conditions.append(TaskModel.due_date <= query.due_to)
+    if query.list_id is not UNSET:
+        conditions.append(
+            TaskModel.list_id.is_(None)
+            if query.list_id is None
+            else TaskModel.list_id == query.list_id
+        )
     if query.priorities:
         conditions.append(TaskModel.priority.in_(_PRIORITY_RANKS[p] for p in query.priorities))
     if query.search:
@@ -121,6 +146,7 @@ class SqlTaskRepository:
                 updated_at=task.updated_at,
                 scheduled_start=task.scheduled_start,
                 scheduled_end=task.scheduled_end,
+                list_id=task.list_id,
             )
         )
         await flush(self._session)
@@ -153,6 +179,7 @@ class SqlTaskRepository:
         model.completed_at = task.completed_at
         model.scheduled_start = task.scheduled_start
         model.scheduled_end = task.scheduled_end
+        model.list_id = task.list_id
         model.updated_at = task.updated_at
         await flush(self._session)
 
@@ -182,6 +209,80 @@ class SqlTaskRepository:
             )
         ).one()
         return TaskSummary(open=row[0], completed=row[1], overdue=row[2], due_today=row[3])
+
+    # Lists
+
+    async def lists(self, workspace_id: uuid.UUID) -> list[TaskListOverview]:
+        open_tasks = (
+            select(func.count())
+            .where(
+                TaskModel.workspace_id == workspace_id,
+                TaskModel.list_id == TaskListModel.id,
+                TaskModel.status == "open",
+            )
+            .scalar_subquery()
+        )
+        rows = await self._session.execute(
+            select(TaskListModel, open_tasks)
+            .where(TaskListModel.workspace_id == workspace_id)
+            .order_by(TaskListModel.position, TaskListModel.created_at, TaskListModel.id)
+        )
+        return [
+            TaskListOverview(task_list=to_task_list(model), open=count) for model, count in rows
+        ]
+
+    async def get_list(self, workspace_id: uuid.UUID, list_id: uuid.UUID) -> TaskList | None:
+        model = await self._get_list_model(workspace_id, list_id)
+        return to_task_list(model) if model else None
+
+    async def add_list(self, task_list: TaskList) -> None:
+        self._session.add(
+            TaskListModel(
+                id=task_list.id,
+                workspace_id=task_list.workspace_id,
+                name=task_list.name,
+                normalized_name=normalize_list_name(task_list.name),
+                color=task_list.color,
+                position=task_list.position,
+                created_at=task_list.created_at,
+                updated_at=task_list.updated_at,
+            )
+        )
+        await flush(self._session)
+
+    async def save_list(self, task_list: TaskList) -> None:
+        model = await self._get_list_model(task_list.workspace_id, task_list.id)
+        if model is None:
+            return
+        model.name = task_list.name
+        model.normalized_name = normalize_list_name(task_list.name)
+        model.color = task_list.color
+        model.position = task_list.position
+        model.updated_at = task_list.updated_at
+        await flush(self._session)
+
+    async def delete_list(self, workspace_id: uuid.UUID, list_id: uuid.UUID) -> bool:
+        # The foreign key has no ON DELETE action, so the tasks come off the list first.
+        await self._session.execute(
+            update(TaskModel)
+            .where(TaskModel.workspace_id == workspace_id, TaskModel.list_id == list_id)
+            .values(list_id=None)
+        )
+        deleted = await self._session.scalars(
+            delete(TaskListModel)
+            .where(TaskListModel.id == list_id, TaskListModel.workspace_id == workspace_id)
+            .returning(TaskListModel.id)
+        )
+        return deleted.first() is not None
+
+    async def _get_list_model(
+        self, workspace_id: uuid.UUID, list_id: uuid.UUID
+    ) -> TaskListModel | None:
+        return await self._session.scalar(
+            select(TaskListModel).where(
+                TaskListModel.id == list_id, TaskListModel.workspace_id == workspace_id
+            )
+        )
 
     async def _get_model(self, workspace_id: uuid.UUID, task_id: uuid.UUID) -> TaskModel | None:
         return await self._session.scalar(

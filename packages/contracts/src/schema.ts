@@ -687,6 +687,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/task-lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List task lists
+         * @description The workspace's lists, oldest first, each with its number of open tasks.
+         */
+        get: operations["list_task_lists_api_v1_workspaces__workspace_id__task_lists_get"];
+        put?: never;
+        /** Create a task list */
+        post: operations["create_task_list_api_v1_workspaces__workspace_id__task_lists_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/task-lists/{list_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a task list
+         * @description Its tasks are kept, on no list.
+         */
+        delete: operations["delete_task_list_api_v1_workspaces__workspace_id__task_lists__list_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename or recolor a task list */
+        patch: operations["update_task_list_api_v1_workspaces__workspace_id__task_lists__list_id__patch"];
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/shopping/lists": {
         parameters: {
             query?: never;
@@ -9682,6 +9724,17 @@ export interface components {
              */
             notes: string;
         };
+        /** CreateTaskListRequest */
+        CreateTaskListRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Color
+             * @default blue
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+        };
         /** CreateTaskRequest */
         CreateTaskRequest: {
             /** Title */
@@ -9703,6 +9756,11 @@ export interface components {
             scheduled_start?: string | null;
             /** Scheduled End */
             scheduled_end?: string | null;
+            /**
+             * List Id
+             * @description A list in this workspace.
+             */
+            list_id?: string | null;
         };
         /**
          * CreateTransactionRequest
@@ -15015,6 +15073,16 @@ export interface components {
             /** Timezone */
             timezone: string;
         };
+        /** ReminderTaskListResponse */
+        ReminderTaskListResponse: {
+            /** Name */
+            name: string;
+            /**
+             * Color
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+        };
         /** ReminderTaskResponse */
         ReminderTaskResponse: {
             /**
@@ -15029,6 +15097,8 @@ export interface components {
              * @enum {string}
              */
             status: "open" | "completed";
+            /** @description The list the task is on, if any. */
+            list: components["schemas"]["ReminderTaskListResponse"] | null;
         };
         /** RemoteFileListResponse */
         RemoteFileListResponse: {
@@ -16408,6 +16478,31 @@ export interface components {
             /** Water Ml */
             water_ml?: number | null;
         };
+        /** TaskListDetailResponse */
+        TaskListDetailResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Color
+             * @enum {string}
+             */
+            color: "blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate";
+            /**
+             * Position
+             * @description Lists are shown in this order.
+             */
+            position: number;
+            /**
+             * Open Tasks
+             * @description Open tasks on the list.
+             */
+            open_tasks: number;
+        };
         /** TaskListResponse */
         TaskListResponse: {
             /** Tasks */
@@ -16417,6 +16512,11 @@ export interface components {
              * @description Tasks matching the filters, across all pages.
              */
             total: number;
+        };
+        /** TaskListsResponse */
+        TaskListsResponse: {
+            /** Lists */
+            lists: components["schemas"]["TaskListDetailResponse"][];
         };
         /** TaskResponse */
         TaskResponse: {
@@ -16464,6 +16564,11 @@ export interface components {
             scheduled_start: string | null;
             /** Scheduled End */
             scheduled_end: string | null;
+            /**
+             * List Id
+             * @description The list the task is on, if any.
+             */
+            list_id: string | null;
             /**
              * Created At
              * Format: date-time
@@ -17418,6 +17523,8 @@ export interface components {
             display_name?: string | null;
             /** Timezone */
             timezone?: string | null;
+            /** Setup Status */
+            setup_status?: ("pending" | "deferred" | "done") | null;
         };
         /**
          * UpdateRecurringPaymentRequest
@@ -17580,6 +17687,16 @@ export interface components {
             notes?: string | null;
         };
         /**
+         * UpdateTaskListRequest
+         * @description Rename or recolor a list. Omitted fields keep their values.
+         */
+        UpdateTaskListRequest: {
+            /** Name */
+            name?: string | null;
+            /** Color */
+            color?: ("blue" | "green" | "amber" | "rose" | "violet" | "teal" | "orange" | "slate") | null;
+        };
+        /**
          * UpdateTaskRequest
          * @description Change some of a task's fields. Omitted fields keep their values; `due_date: null` clears
          *     the due date. Completion has its own endpoints.
@@ -17600,6 +17717,11 @@ export interface components {
             scheduled_start?: string | null;
             /** Scheduled End */
             scheduled_end?: string | null;
+            /**
+             * List Id
+             * @description Move the task to this list; `null` takes it off its list.
+             */
+            list_id?: string | null;
         };
         /**
          * UpdateTransactionRequest
@@ -17656,6 +17778,12 @@ export interface components {
              * @description The user's IANA time zone, used by default for new reminders; `null` until they choose one.
              */
             timezone: string | null;
+            /**
+             * Setup Status
+             * @description Progress through the first-run setup guide: `pending` until the user opens it, `deferred` once they leave it for later, `done` once finished or dismissed.
+             * @enum {string}
+             */
+            setup_status: "pending" | "deferred" | "done";
             /**
              * Created At
              * Format: date-time
@@ -19482,6 +19610,10 @@ export interface operations {
                 due_from?: string | null;
                 /** @description Only tasks due on or before this date (inclusive). */
                 due_to?: string | null;
+                /** @description Only tasks on this list. */
+                list_id?: string | null;
+                /** @description `true` for only tasks on no list. Not with `list_id`. */
+                unlisted?: boolean;
                 sort?: "due_date" | "priority" | "created_at" | "completed_at";
                 /** @description Defaults to the sort's natural order: soonest due date, highest priority, newest, or most recently completed. Tasks without a due date always come last. */
                 order?: ("asc" | "desc") | null;
@@ -19848,6 +19980,210 @@ export interface operations {
             };
             /** @description The workspace or task does not exist or is not accessible. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_task_lists_api_v1_workspaces__workspace_id__task_lists_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskListsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or list does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_task_list_api_v1_workspaces__workspace_id__task_lists_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaskListRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskListDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or list does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The name is taken, or there are too many lists. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_task_list_api_v1_workspaces__workspace_id__task_lists__list_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The list's ID. */
+                list_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or list does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_task_list_api_v1_workspaces__workspace_id__task_lists__list_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The list's ID. */
+                list_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTaskListRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskListDetailResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or list does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The name is taken. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

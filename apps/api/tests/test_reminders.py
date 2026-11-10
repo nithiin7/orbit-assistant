@@ -399,11 +399,32 @@ def test_reminder_about_a_task(client: TestClient, ada: Headers, home: str) -> N
 
     reminder = create(client, home, ada, task_id=task_id)
 
-    assert reminder["task"] == {"id": task_id, "title": "File taxes", "status": "open"}
+    assert reminder["task"] == {
+        "id": task_id,
+        "title": "File taxes",
+        "status": "open",
+        "list": None,
+    }
     detached = client.patch(
         f"{home}/reminders/{reminder['id']}", json={"task_id": None}, headers=ada
     )
     assert detached.json()["task"] is None
+
+
+def test_reminder_shows_its_tasks_list(client: TestClient, ada: Headers, home: str) -> None:
+    work = client.post(
+        f"{home}/task-lists", json={"name": "Work", "color": "violet"}, headers=ada
+    ).json()
+    task_id = create_task(client, home, ada, title="Send report")
+    reminder = create(client, home, ada, task_id=task_id)
+    assert reminder["task"]["list"] is None
+
+    client.patch(f"{home}/tasks/{task_id}", json={"list_id": work["id"]}, headers=ada)
+
+    listed = client.get(f"{home}/reminders", headers=ada).json()["reminders"]
+    assert listed[0]["task"]["list"] == {"name": "Work", "color": "violet"}
+    shown = client.get(f"{home}/reminders/{reminder['id']}", headers=ada).json()
+    assert shown["task"]["list"] == {"name": "Work", "color": "violet"}
 
 
 def test_task_must_be_in_the_reminders_workspace(

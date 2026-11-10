@@ -22,8 +22,10 @@ const signedIn = {
   "GET /api/v1/workspaces": json({ workspaces: [personal] }),
 };
 const TASKS = `/api/v1/workspaces/${personal.id}/tasks`;
+const LISTS = `/api/v1/workspaces/${personal.id}/task-lists`;
 const session = {
   ...signedIn,
+  [`GET ${LISTS}`]: json({ lists: [] }),
   [`GET ${TASKS}/summary`]: json({ open: 2, completed: 5, overdue: 1, due_today: 1 }),
   // The task dialog lists the task's linked documents.
   [`GET /api/v1/workspaces/${personal.id}/documents`]: json({ documents: [], total: 0 }),
@@ -45,6 +47,7 @@ function task(overrides: Partial<Task> & Pick<Task, "id" | "title">): Task {
     completed_at: null,
     scheduled_start: null,
     scheduled_end: null,
+    list_id: null,
     created_at: "2026-10-01T09:00:00Z",
     updated_at: "2026-10-01T09:00:00Z",
     ...overrides,
@@ -179,7 +182,7 @@ describe("TasksPanel", () => {
 
     expect(await screen.findByRole("checkbox", { name: "Book dentist" })).toBeInTheDocument();
     expect(posted).toEqual([
-      { title: "Book dentist", description: "", priority: "medium", due_date: null },
+      { title: "Book dentist", description: "", priority: "medium", due_date: null, list_id: null },
     ]);
     expect(title).toHaveValue("");
     expect(screen.getByRole("status")).toHaveTextContent("Added “Book dentist”.");
@@ -401,5 +404,160 @@ describe("TasksPanel", () => {
     await renderSignedIn(<TasksPanel />);
 
     expect(await screen.findByText(/Showing 2 of 250 tasks/)).toBeInTheDocument();
+  });
+
+  describe("lists", () => {
+    const work = {
+      id: "l-work",
+      name: "Work",
+      color: "violet",
+      position: 0,
+      open_tasks: 1,
+    } as const;
+    const home = { id: "l-home", name: "Home", color: "teal", position: 1, open_tasks: 0 } as const;
+    const report = task({ id: "t-report", title: "Send report", list_id: work.id });
+
+    it("shows each task's list, and filters by list", async () => {
+      const user = userEvent.setup();
+      const api = mockApi({
+        ...session,
+        [`GET ${LISTS}`]: json({ lists: [work, home] }),
+        [`GET ${TASKS}`]: json({ tasks: [report, rent], total: 2 }),
+      });
+      await renderSignedIn(<TasksPanel />);
+
+      const row = (await screen.findByRole("checkbox", { name: "Send report" })).closest("li");
+      expect(row).toHaveTextContent(/List: Work/);
+      const lists = within(screen.getByRole("group", { name: "Lists" }));
+      expect(lists.getByRole("button", { name: "Work, 1 open" })).toBeInTheDocument();
+
+      await user.click(lists.getByRole("button", { name: "Work, 1 open" }));
+
+      expect(lists.getByRole("button", { name: "Work, 1 open" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+      expect(await screen.findByRole("heading", { name: /^Work/ })).toBeInTheDocument();
+      await waitFor(() => expect(listQueries(api).at(-1)?.get("list_id")).toBe(work.id));
+      // The list in view goes without saying on its own tasks.
+      await waitFor(() => expect(screen.queryByText(/List: Work/)).not.toBeInTheDocument());
+
+      await user.click(lists.getByRole("button", { name: "No list" }));
+      await waitFor(() => expect(listQueries(api).at(-1)?.get("unlisted")).toBe("true"));
+    });
+
+    it("creates a list, then adds tasks to it", async () => {
+      const user = userEvent.setup();
+      const created = { id: "l-new", name: "Errands", color: "amber", position: 0, open_tasks: 0 };
+      let lists: (typeof created)[] = [];
+      const posted: unknown[] = [];
+      mockApi({
+        ...session,
+        [`GET ${LISTS}`]: () => Response.json({ lists }),
+        [`POST ${LISTS}`]: ({ body }: MockRequest) => {
+          posted.push(body);
+          lists = [created];
+          return Response.json(created, { status: 201 });
+        },
+        [`GET ${TASKS}`]: json({ tasks: [], total: 0 }),
+        [`POST ${TASKS}`]: ({ body }: MockRequest) => {
+          posted.push(body);
+          return Response.json(task({ id: "t-milk", title: "Buy milk", list_id: created.id }), {
+            status: 201,
+          });
+        },
+      });
+      await renderSignedIn(<TasksPanel />);
+
+      await user.click(await screen.findByRole("button", { name: "New list" }));
+      const dialog = screen.getByRole("dialog", { name: "New list" });
+      await user.type(within(dialog).getByRole("textbox", { name: "List name" }), "Errands");
+      await chooseOption(user, within(dialog).getByRole("combobox", { name: "Color" }), "Amber");
+      await user.click(within(dialog).getByRole("button", { name: "Create list" }));
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(
+        await screen.findByRole("heading", { name: "Nothing on Errands to do" }),
+      ).toBeVisible();
+      // The new list is in view, so new tasks go on it.
+      expect(screen.getByRole("combobox", { name: "List" })).toHaveTextContent("Errands");
+      await user.type(screen.getByRole("textbox", { name: "Task title" }), "Buy milk{Enter}");
+
+      await waitFor(() => expect(posted).toHaveLength(2));
+      expect(posted).toEqual([
+        { name: "Errands", color: "amber" },
+        { title: "Buy milk", description: "", priority: "none", due_date: null, list_id: "l-new" },
+      ]);
+    });
+
+    it("explains a taken name in the dialog", async () => {
+      const user = userEvent.setup();
+      mockApi({
+        ...session,
+        [`GET ${LISTS}`]: json({ lists: [work] }),
+        [`POST ${LISTS}`]: json({ detail: "Another list already has that name." }, 409),
+        [`GET ${TASKS}`]: json({ tasks: [], total: 0 }),
+      });
+      await renderSignedIn(<TasksPanel />);
+
+      await user.click(await screen.findByRole("button", { name: "New list" }));
+      const dialog = screen.getByRole("dialog", { name: "New list" });
+      await user.type(within(dialog).getByRole("textbox", { name: "List name" }), "work");
+      await user.click(within(dialog).getByRole("button", { name: "Create list" }));
+
+      expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+        "Another list already has that name.",
+      );
+    });
+
+    it("moves a task to a list from its details", async () => {
+      const user = userEvent.setup();
+      const patches: unknown[] = [];
+      mockApi({
+        ...session,
+        [`GET ${LISTS}`]: json({ lists: [work, home] }),
+        [`GET ${TASKS}`]: json({ tasks: [report], total: 1 }),
+        [`PATCH ${TASKS}/${report.id}`]: ({ body }: MockRequest) => {
+          patches.push(body);
+          return Response.json({ ...report, list_id: home.id });
+        },
+      });
+      await renderSignedIn(<TasksPanel />);
+
+      await user.click(await screen.findByRole("button", { name: "Edit “Send report”" }));
+      const dialog = screen.getByRole("dialog", { name: "Edit task" });
+      await chooseOption(user, within(dialog).getByRole("combobox", { name: "List" }), "Home");
+      await user.click(within(dialog).getByRole("button", { name: "Save changes" }));
+
+      await waitFor(() => expect(patches).toEqual([{ list_id: home.id }]));
+    });
+
+    it("deletes the list in view after confirming, keeping its tasks", async () => {
+      const user = userEvent.setup();
+      let lists: (typeof work)[] = [work];
+      const deleted: string[] = [];
+      const api = mockApi({
+        ...session,
+        [`GET ${LISTS}`]: () => Response.json({ lists }),
+        [`DELETE ${LISTS}/${work.id}`]: ({ path }: MockRequest) => {
+          deleted.push(path);
+          lists = [];
+          return new Response(null, { status: 204 });
+        },
+        [`GET ${TASKS}`]: json({ tasks: [report], total: 1 }),
+      });
+      await renderSignedIn(<TasksPanel />);
+      await user.click(await screen.findByRole("button", { name: "Work, 1 open" }));
+
+      await user.click(await screen.findByRole("button", { name: "Work list options" }));
+      await user.click(screen.getByRole("menuitem", { name: "Delete list" }));
+      const confirm = screen.getByRole("alertdialog", { name: "Delete “Work”?" });
+      expect(confirm).toHaveTextContent("Its tasks are kept, on no list.");
+      await user.click(within(confirm).getByRole("button", { name: "Delete list" }));
+
+      await waitFor(() => expect(deleted).toHaveLength(1));
+      expect(await screen.findByRole("heading", { name: "Open tasks" })).toBeInTheDocument();
+      await waitFor(() => expect(listQueries(api).at(-1)?.get("list_id")).toBeNull());
+    });
   });
 });

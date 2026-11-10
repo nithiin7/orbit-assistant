@@ -214,6 +214,7 @@ function routes(extra: Record<string, Handler> = {}) {
     [`GET ${DOCS}/${passport.id}`]: json(detailOf(passport)),
     [`POST ${DOCS}/${policy.id}/open`]: status(204),
     [`POST ${DOCS}/${passport.id}/open`]: status(204),
+    [`GET ${WS}/integrations/connections`]: json({ connections: [] }),
     ...extra,
   };
 }
@@ -468,5 +469,75 @@ describe("DocumentsPanel", () => {
     expect(
       await screen.findByRole("heading", { name: "Keep your important documents in one place" }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("Connected drives", () => {
+  const drive = {
+    id: "c1",
+    workspace_id: personal.id,
+    provider: "google",
+    account_email: "ada@gmail.example",
+    display_name: "Ada",
+    capabilities: ["calendar", "files"],
+    scopes: [],
+    status: "active",
+    mail_days: 30,
+    last_synced_at: null,
+    last_error: null,
+    created_at: "2030-01-01T00:00:00Z",
+  };
+  const lease = {
+    id: "f1",
+    name: "Lease.pdf",
+    folder: false,
+    mime_type: "application/pdf",
+    size: 2048,
+    modified_at: null,
+    url: "https://drive.google.com/file/d/f1",
+    imported: null,
+  };
+
+  it("browses a drive from the rail and imports into the chosen folder", async () => {
+    const user = userEvent.setup();
+    const api = mockApi(
+      routes({
+        [`GET ${WS}/integrations/connections`]: json({ connections: [drive] }),
+        [`GET ${WS}/integrations/connections/c1/files`]: json({ files: [lease], next_page: null }),
+        [`POST ${WS}/integrations/connections/c1/files/f1/import`]: json(
+          { document_id: "d1", title: "Lease", link: {} },
+          201,
+        ),
+      }),
+    );
+    await renderDocuments();
+
+    const rail = await screen.findByRole("navigation", { name: "Documents" });
+    await user.click(await within(rail).findByRole("button", { name: "Google Drive" }));
+    expect(push).toHaveBeenLastCalledWith("/documents?drive=c1");
+
+    expect(await screen.findByRole("heading", { name: "Google Drive" })).toBeInTheDocument();
+    expect(await screen.findByText("Lease.pdf")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open “Lease.pdf” in Google Drive" })).toHaveAttribute(
+      "href",
+      lease.url,
+    );
+    await user.click(screen.getByRole("combobox", { name: "Import into folder" }));
+    await user.click(await screen.findByRole("option", { name: "Garage" }));
+    await user.click(screen.getByRole("button", { name: "Import" }));
+
+    await waitFor(() =>
+      expect(
+        calls(api, "POST", `${WS}/integrations/connections/c1/files/f1/import`).map(({ init }) =>
+          JSON.parse(String(init?.body)),
+        ),
+      ).toEqual([{ folder_id: garage.id }]),
+    );
+  });
+
+  it("says so when the drive is no longer connected", async () => {
+    mockApi(routes());
+    await renderDocuments("drive=gone");
+    expect(await screen.findByText(/isn’t connected any more/)).toBeInTheDocument();
   });
 });

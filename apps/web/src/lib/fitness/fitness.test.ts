@@ -21,6 +21,7 @@ import {
   newGoalValues,
   newMeasurementValues,
   parseGoalValue,
+  profileSchema,
   toActivityRequest,
   toGoalRequest,
   toMeasurementRequest,
@@ -268,6 +269,54 @@ describe("forms", () => {
       targets: { energy_cal: 2_000_000, protein_mg: 150_000, water_ml: 2366 },
       water_quick_amounts_ml: [237, 473],
     });
+  });
+
+  it("check profile amounts against the API's limits, in the person's units", async () => {
+    const metric = toProfileFormValues({
+      unit_system: "metric",
+      weight_unit: "kg",
+      length_unit: "cm",
+      distance_unit: "km",
+      energy_unit: "kcal",
+      water_unit: "ml",
+      height_mm: null,
+      date_of_birth: null,
+      targets: {
+        energy_cal: null,
+        protein_mg: null,
+        carbs_mg: null,
+        fat_mg: null,
+        fiber_mg: null,
+        water_ml: null,
+      },
+      water_quick_amounts_ml: [250, 500],
+      hidden_sections: [],
+      updated_at: "2026-01-01T00:00:00Z",
+    });
+    await expect(
+      profileSchema.validate({
+        ...metric,
+        height: "175",
+        waterTarget: "3000",
+        energyTarget: "2200",
+      }),
+    ).resolves.toBeTruthy();
+    // A height in metres typed into the centimetre field.
+    await expect(profileSchema.validate({ ...metric, height: "1.75" })).rejects.toThrow(
+      "Enter a height from 50 cm to 272 cm, or leave it blank.",
+    );
+    await expect(
+      profileSchema.validate({ ...metric, lengthUnit: "in", height: "5.9" }),
+    ).rejects.toThrow("Enter a height from 19.7 in to 107 in, or leave it blank.");
+    await expect(profileSchema.validate({ ...metric, waterTarget: "30000" })).rejects.toThrow(
+      "Enter up to 20,000 ml, or leave it blank.",
+    );
+    await expect(profileSchema.validate({ ...metric, energyTarget: "25000" })).rejects.toThrow(
+      "Enter up to 20,000 kcal, or leave it blank.",
+    );
+    await expect(profileSchema.validate({ ...metric, quickAmounts: "250, 6000" })).rejects.toThrow(
+      "List up to six amounts, separated by commas.",
+    );
   });
 
   it("work out schedule and log times", () => {

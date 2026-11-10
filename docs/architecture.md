@@ -656,6 +656,24 @@ The dashboard's arrangement and display preferences are saved per user; see
 [Customization model](#customization-model). The dashboard itself is described under
 [Daily dashboard and command center](#daily-dashboard-and-command-center).
 
+### First-run setup guide
+
+A short, optional guide at `/welcome` (outside the app shell) helps a new user set up their
+name, photo, and time zone; appearance; then, for the areas they pick, finance accounts and live
+prices, the health profile, Google or Microsoft connections, and an AI provider, model, and
+switch. Every step reuses the APIs and forms behind Settings, so nothing is held as a draft, and
+any step can be skipped.
+
+- Progress is `users.setup_status`: `pending` for new profiles, `deferred` once the guide is
+  opened or left for later, and `done` once finished or dismissed. It changes through
+  `PATCH /api/v1/me`. Migration `0026` sets existing users to `done`.
+- While `pending`, the app layout redirects to `/welcome` (only once, since opening the guide
+  sets `deferred`). While `deferred`, the dashboard shows a "Finish setting up" card.
+  Settings → Account offers "Run setup again", which never moves a `done` user back.
+- Connecting an account leaves the page for the provider's consent screen. Before it does, the
+  guide remembers `/welcome?step=connect` in `sessionStorage`; the OAuth callback returns there
+  once (same-origin paths only), otherwise it opens the connection's settings.
+
 ## Tasks
 
 The first product feature: to-dos inside a workspace.
@@ -675,6 +693,7 @@ The first product feature: to-dos inside a workspace.
 | `due_date`                 | Optional calendar date (no time or time zone)                                     |
 | `completed_at`             | Set exactly when `status` is `completed` (CHECK)                                  |
 | `scheduled_start`, `_end`  | Optional UTC time block on the calendar, both or neither, end after start (CHECK) |
+| `list_id`                  | Optional list the task is on; composite FK `(list_id, workspace_id)` (`0027`)     |
 | `created_at`, `updated_at` | UTC timestamps; `updated_at` changes only when a field actually changes           |
 
 Indexes: `(workspace_id, status, due_date)` and `(workspace_id, status, priority)`, matching the
@@ -682,6 +701,14 @@ list's usual shape (one workspace, often one status, sorted by due date or prior
 a case-insensitive substring match (`ILIKE`, with `%`, `_`, and `\` matched literally), which
 can't use an index; it scans one workspace's tasks, which is fine at personal scale. PostgreSQL
 full-text or trigram search can replace it if that changes.
+
+`task_lists` (migration `0027`) groups tasks into named, colored lists such as Work or Personal.
+A task is on at most one list. Each list has a `name` (1 to 50 characters), a `normalized_name`
+(whitespace collapsed and case-folded, unique per workspace, so "Work" and " work" are one
+list), a `color` from the calendar's eight-color palette, and a `position` (creation order). A
+workspace has at most 50 lists. The tasks foreign key has no `ON DELETE` action, like calendar
+categories: deleting a list first takes its tasks off it, so tasks are never deleted with a list.
+Backups put lists in the Tasks module and match them on import by `normalized_name`.
 
 ### API
 
@@ -705,6 +732,14 @@ workspace is `404 Workspace not found.`, and a task from another workspace is
   uses its natural direction: soonest due date, highest priority, or newest. Tasks without a due
   date always come last. Ties fall back to priority, due date, and creation time, so the order is
   stable.
+- `GET` also filters by `list_id`, or by `unlisted=true` for tasks on no list (not both). `POST`
+  and `PATCH` accept `list_id` (`null` on `PATCH` takes the task off its list); a list from
+  another workspace, or a missing one, is `422`.
+- Lists live under `/api/v1/workspaces/{workspace_id}/task-lists`: `GET` (oldest first, each
+  with `open_tasks`), `POST` (`name`, optional `color`, default `blue`), `PATCH /{list_id}`
+  (`name` and/or `color`), and `DELETE /{list_id}` (its tasks stay, on no list). A taken name or
+  the 51st list is `409`. Reminders about a task include the task's list (`task.list`: name and
+  color) so they can show it.
 - `GET` also filters by `scheduled` (`true` or `false`); `POST` and `PATCH` accept
   `scheduled_start` and `scheduled_end` together (aware datetimes, at most a week apart; both
   `null` unschedules). See [Calendar task integration](#calendar-task-integration).
@@ -729,11 +764,17 @@ workspace is `404 Workspace not found.`, and a task from another workspace is
   if the API refuses. A completed task stays visible, struck through, until the list reloads.
   Creating or editing a task reloads the list in the background, so it lands in sorted position.
 - The page loads at most 200 tasks and says when more match, rather than paginating.
+- Lists: the side rail has a Lists section (All lists, each list with its open count, No list,
+  and New list). With a list selected, the header shows its name and a menu to rename, recolor,
+  or delete it, and the composer adds tasks to it. Rows show their list as a colored chip, except
+  in that list's own view; the edit dialog moves a task between lists. Reminders show the list of
+  the task they're about.
 - The dashboard's task card shows the summary counts and the next five open tasks by due date.
 
 ### Not implemented
 
-Recurring tasks, subtasks, tags, sharing, and drag-and-drop ordering. Tasks can have a
+Recurring tasks, subtasks, tags (a task is on at most one list), reordering lists, sharing, and
+drag-and-drop ordering. Tasks can have a
 scheduled time block on the [calendar](#calendar-task-integration), separate from the due date, and
 [reminders](#reminders-and-notifications), which are a separate feature.
 
@@ -4075,10 +4116,17 @@ connection's owner. Another person's connection is a 404.
   connected accounts with status and services, connecting (provider, then what Orbit may access,
   each with why; read-only calendars by default; editing implies reading), and a privacy note.
 - **A connection's page** (`?connection=<id>`): status with Sync now and a health check, a
-  reconnect warning, calendars (select, direction, interval, category, last sync and errors,
-  what happens to Orbit edits), mail (labels, period, list, search, plain-text reading, Create
-  task, Save as note, Remind me), files (folders, search, import, new versions), sync activity
-  (counts, errors, retry, cancel), permissions with reconnecting to add more, and disconnecting.
+  reconnect warning, one card per granted service linking to where it lives (Calendar, the
+  inbox beside Tasks, the drive in Documents), calendars (select, direction, interval,
+  category, last sync and errors, what happens to Orbit edits), mail settings (labels, period),
+  sync activity (latest three, expandable; counts, errors, retry, cancel), permissions with
+  reconnecting to add more, and disconnecting.
+- **Mail beside Tasks** (`InboxButton`, `/tasks?inbox=<id>`): shown once an account grants
+  mail; a side panel with account and label switching, search, plain-text reading, and Add as
+  task, Save as note, Remind me, each linking to what it made.
+- **Drives in Documents** (`/documents?drive=<id>`): the rail's "Connected drives" lists
+  accounts that grant files; the panel browses and searches the drive and imports into a
+  chosen Orbit folder, marking imported files and offering their new versions.
 - **`/integrations/callback`** completes the authorization and opens the connection.
 - **Origins** appear in calendar event details and document details.
 - Query keys: `["workspaces", id, "integrations", …]`; a connection polls while a run is in

@@ -1,16 +1,18 @@
 "use client";
 
 import { yupResolver } from "@hookform/resolvers/yup";
-import { LogOut } from "lucide-react";
+import { LogOut, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 import { describeApiError } from "@/api/client";
 import { updateMe } from "@/api/profile";
 import { FormAlert, FormField } from "@/components/form-field";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { displayNameSchema } from "@/lib/auth/validation";
 import { settingsSectionsClassName } from "@/lib/settings";
+import { SETUP_PATH } from "@/lib/setup";
 import { useAuth, useCurrentUser } from "@/providers/auth";
 
 import { ChangePassword } from "./change-password";
@@ -91,7 +93,26 @@ export function AccountSettings() {
 
       {user.auth_provider === "local" ? <ChangePassword /> : null}
 
-      <div className="border-t pt-4 [column-span:all]">
+      <section
+        aria-labelledby="setup-guide-title"
+        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4"
+      >
+        <div className="space-y-0.5">
+          <h2 id="setup-guide-title" className="text-sm font-semibold">
+            Setup guide
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Walk through theme, money, health, accounts, and AI again.
+          </p>
+        </div>
+        <Link href={SETUP_PATH} className={buttonVariants({ variant: "soft", size: "sm" })}>
+          <Sparkles aria-hidden="true" />
+          Run setup again
+        </Link>
+      </section>
+
+      {/* Its own top margin: in columns, the margin of the item above is dropped at the column end. */}
+      <div className="mt-6 border-t pt-4 [column-span:all]">
         <Button
           variant="outline"
           size="sm"

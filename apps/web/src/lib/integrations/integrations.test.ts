@@ -7,8 +7,10 @@ import {
   formatFileSize,
   formatSynced,
   linkedRecordHref,
+  rememberConnectReturn,
   runStatusLabel,
   runSummary,
+  takeConnectReturn,
 } from "./integrations";
 
 function run(overrides: Partial<IntegrationSyncRun> = {}): IntegrationSyncRun {
@@ -71,5 +73,21 @@ describe("integration helpers", () => {
     expect(linkedRecordHref("task", "t1")).toBe("/tasks?task=t1");
     expect(linkedRecordHref("reminder", "r1")).toBe("/reminders");
     expect(connectionHref("a b")).toBe("/settings/integrations?connection=a%20b");
+  });
+});
+
+describe("connect return path", () => {
+  it("returns a remembered same-origin path once", () => {
+    rememberConnectReturn("/welcome?step=connect");
+    expect(takeConnectReturn()).toBe("/welcome?step=connect");
+    expect(takeConnectReturn()).toBeNull();
+  });
+
+  it("ignores other origins and can be forgotten", () => {
+    rememberConnectReturn("//evil.example");
+    expect(takeConnectReturn()).toBeNull();
+    rememberConnectReturn("/welcome");
+    rememberConnectReturn(null);
+    expect(takeConnectReturn()).toBeNull();
   });
 });

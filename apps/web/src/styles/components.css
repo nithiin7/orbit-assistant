@@ -61,4 +61,21 @@
       translate: -100% 0;
     }
   }
+
+  /* Side panel: slides in from the right edge, beside the page it belongs to. */
+  .dialog-sheet {
+    transition-duration: 220ms;
+  }
+
+  .dialog-sheet:not([open]) {
+    opacity: 1;
+    translate: 100% 0;
+  }
+
+  @starting-style {
+    .dialog-sheet[open] {
+      opacity: 1;
+      translate: 100% 0;
+    }
+  }
 }

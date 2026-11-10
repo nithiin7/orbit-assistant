@@ -65,6 +65,7 @@ import { NewDocumentDialog } from "./document-dialogs";
 import { type DocumentLayout, DocumentList, type DocumentListAction } from "./document-list";
 import { DocumentsOverview } from "./documents-overview";
 import { DocumentsRail, VIEW_ICONS } from "./documents-rail";
+import { DrivePanel } from "./drive-panel";
 import { DropZone, UploadList, useUploadQueue } from "./upload";
 
 const SEARCH_DELAY_MS = 250;
@@ -409,336 +410,340 @@ function DocumentsView({ workspaceId }: { workspaceId: string }) {
             {rail}
           </aside>
 
-          <DropZone onFiles={uploads.add} className="min-w-0">
-            <section
-              aria-labelledby="document-list-heading"
-              className="@container/list min-w-0 space-y-3"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <h2
-                  id="document-list-heading"
-                  className="flex min-w-0 items-center gap-2 text-lg font-semibold tracking-tight"
-                >
-                  {ViewIcon ? (
-                    <ViewIcon
-                      className="size-4 shrink-0 text-muted-foreground"
-                      aria-hidden="true"
-                    />
-                  ) : null}
-                  <span className="truncate">{title}</span>
-                </h2>
-                <div className="flex shrink-0 items-center gap-1">
-                  {location.view === "trash" && (counts?.trashed ?? 0) > 0 ? (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() =>
-                        void confirmAction(
-                          "Empty the Trash?",
-                          "Every document in the Trash, with its files and versions, is deleted for good.",
-                          "Empty Trash",
-                        ).then((confirmed) => {
-                          if (!confirmed) return;
-                          mutations.emptyTrash.mutateAsync().then(
-                            ({ deleted }) => setAnnouncement(`Deleted ${deleted} documents.`),
-                            (reason: unknown) =>
-                              setError(describeApiError(reason, "Couldn’t empty the Trash.")),
-                          );
-                        })
-                      }
-                    >
-                      Empty Trash
-                    </Button>
-                  ) : null}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="@5xl/documents:hidden"
-                    aria-expanded={railOpen}
-                    aria-controls="documents-rail-panel"
-                    onClick={() => setRailOpen((open) => !open)}
+          {location.driveId ? (
+            <DrivePanel connectionId={location.driveId} folders={folders} />
+          ) : (
+            <DropZone onFiles={uploads.add} className="min-w-0">
+              <section
+                aria-labelledby="document-list-heading"
+                className="@container/list min-w-0 space-y-3"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <h2
+                    id="document-list-heading"
+                    className="flex min-w-0 items-center gap-2 text-lg font-semibold tracking-tight"
                   >
-                    Browse
-                  </Button>
-                </div>
-              </div>
-
-              {railOpen ? (
-                <div
-                  id="documents-rail-panel"
-                  className="rounded-xl border bg-card p-3 @5xl/documents:hidden"
-                >
-                  {rail}
-                </div>
-              ) : null}
-
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="relative min-w-48 flex-1">
-                  <Search
-                    className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  <Input
-                    type="search"
-                    aria-label="Search documents"
-                    placeholder="Search names, files, tags, issuers…"
-                    value={searchText}
-                    className="pl-8"
-                    onChange={(event) => updateSearch(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Escape" && searchText) {
-                        event.preventDefault();
-                        updateSearch("");
-                      }
-                    }}
-                  />
-                </div>
-                {!showOverview ? (
-                  <>
-                    <Select
-                      aria-label="File type"
-                      value={location.fileKind ?? ALL_KINDS}
-                      onValueChange={(value) =>
-                        router.replace(
-                          documentsHref({
-                            ...location,
-                            fileKind: value === ALL_KINDS ? null : (value as DocumentFileKind),
-                          }),
-                        )
-                      }
-                      options={[{ value: ALL_KINDS, label: "All types" }, ...FILE_KINDS]}
-                      className="w-36"
-                    />
-                    {location.view === "expiring" && !folder && !category && !location.tag ? (
-                      <Select
-                        aria-label="Expiring within"
-                        value={String(location.window)}
-                        onValueChange={(value) =>
-                          router.replace(
-                            documentsHref({ ...location, window: Number(value) as 7 | 30 | 90 }),
-                          )
+                    {ViewIcon ? (
+                      <ViewIcon
+                        className="size-4 shrink-0 text-muted-foreground"
+                        aria-hidden="true"
+                      />
+                    ) : null}
+                    <span className="truncate">{title}</span>
+                  </h2>
+                  <div className="flex shrink-0 items-center gap-1">
+                    {location.view === "trash" && (counts?.trashed ?? 0) > 0 ? (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() =>
+                          void confirmAction(
+                            "Empty the Trash?",
+                            "Every document in the Trash, with its files and versions, is deleted for good.",
+                            "Empty Trash",
+                          ).then((confirmed) => {
+                            if (!confirmed) return;
+                            mutations.emptyTrash.mutateAsync().then(
+                              ({ deleted }) => setAnnouncement(`Deleted ${deleted} documents.`),
+                              (reason: unknown) =>
+                                setError(describeApiError(reason, "Couldn’t empty the Trash.")),
+                            );
+                          })
                         }
-                        options={EXPIRY_WINDOWS.map((days) => ({
-                          value: String(days),
-                          label: `Next ${days} days`,
-                        }))}
-                        className="w-36"
-                      />
-                    ) : null}
-                    {location.view !== "recent" &&
-                    location.view !== "expiring" &&
-                    location.view !== "expired" ? (
-                      <Select
-                        aria-label="Sort by"
-                        value={sort}
-                        onValueChange={(value) => setSort(value)}
-                        options={DOCUMENT_SORTS}
-                        className="w-40"
-                      />
-                    ) : null}
-                    <div className="flex rounded-md border" role="group" aria-label="Layout">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn("size-9 rounded-r-none", layout === "list" && "bg-accent")}
-                        aria-pressed={layout === "list"}
-                        aria-label="List"
-                        onClick={() => setLayout("list")}
                       >
-                        <List aria-hidden="true" />
+                        Empty Trash
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn("size-9 rounded-l-none", layout === "grid" && "bg-accent")}
-                        aria-pressed={layout === "grid"}
-                        aria-label="Grid"
-                        onClick={() => setLayout("grid")}
-                      >
-                        <LayoutGrid aria-hidden="true" />
-                      </Button>
-                    </div>
-                  </>
-                ) : null}
-              </div>
-
-              {uploadRequested && uploads.items.length === 0 ? (
-                <div className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 text-center">
-                  <Upload className="size-6 text-muted-foreground" aria-hidden="true" />
-                  <p className="text-sm text-muted-foreground">
-                    Drop files here, or choose them from your device.
-                  </p>
-                  <Button onClick={pickFiles}>Choose files</Button>
-                </div>
-              ) : null}
-
-              <UploadList
-                items={uploads.items}
-                onRetry={uploads.retry}
-                onDismiss={uploads.dismiss}
-                onClear={uploads.clearFinished}
-                onOpen={openDocument}
-              />
-
-              {selected.size > 0 ? (
-                <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-brand-subtle/40 px-4 py-2 text-sm">
-                  <span className="font-medium">{selected.size} selected</span>
-                  <Button
-                    variant="soft"
-                    size="sm"
-                    onClick={() =>
-                      exportArchive(
-                        { document_ids: [...selected], include_versions: true },
-                        `${selected.size} documents`,
-                      )
-                    }
-                  >
-                    <FileArchive aria-hidden="true" />
-                    Export
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())}>
-                    <X aria-hidden="true" />
-                    Clear
-                  </Button>
-                </div>
-              ) : null}
-
-              {showOverview ? (
-                overview.state.status === "loading" ? (
-                  <ListSkeleton />
-                ) : overview.state.status === "error" ? (
-                  <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
-                    <p>{overview.state.message}</p>
-                    <Button variant="outline" size="sm" onClick={overview.reload}>
-                      Try again
+                    ) : null}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="@5xl/documents:hidden"
+                      aria-expanded={railOpen}
+                      aria-controls="documents-rail-panel"
+                      onClick={() => setRailOpen((open) => !open)}
+                    >
+                      Browse
                     </Button>
                   </div>
-                ) : overview.state.data.counts.all === 0 &&
-                  overview.state.data.counts.archived === 0 &&
-                  uploads.items.length === 0 ? (
-                  <EmptyState
-                    icon={FileArchive}
-                    title="Keep your important documents in one place"
-                    description="Upload passports, policies, payslips, receipts, and warranties, or drop files here. Orbit can remind you before they expire."
-                  >
-                    <Button onClick={pickFiles}>
-                      <Upload aria-hidden="true" />
-                      Upload files
-                    </Button>
-                    <Button variant="outline" onClick={() => setCreating(true)}>
-                      Record without a file
-                    </Button>
-                  </EmptyState>
-                ) : (
-                  <DocumentsOverview
-                    overview={overview.state.data}
-                    today={today}
-                    onOpen={openDocument}
-                    onNavigate={(next) => navigate(next)}
-                  />
-                )
-              ) : list.state.status === "loading" ? (
-                <ListSkeleton />
-              ) : list.state.status === "error" ? (
-                <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
-                  <p>{list.state.message}</p>
-                  <Button variant="outline" size="sm" onClick={list.reload}>
-                    Try again
-                  </Button>
                 </div>
-              ) : listItems.length === 0 ? (
-                location.search || location.fileKind ? (
-                  <EmptyState
-                    icon={SearchX}
-                    title="No documents match"
-                    description="Try other words, or another file type. Document numbers aren’t searched, to keep them private."
+
+                {railOpen ? (
+                  <div
+                    id="documents-rail-panel"
+                    className="rounded-xl border bg-card p-3 @5xl/documents:hidden"
                   >
+                    {rail}
+                  </div>
+                ) : null}
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="relative min-w-48 flex-1">
+                    <Search
+                      className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                    <Input
+                      type="search"
+                      aria-label="Search documents"
+                      placeholder="Search names, files, tags, issuers…"
+                      value={searchText}
+                      className="pl-8"
+                      onChange={(event) => updateSearch(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Escape" && searchText) {
+                          event.preventDefault();
+                          updateSearch("");
+                        }
+                      }}
+                    />
+                  </div>
+                  {!showOverview ? (
+                    <>
+                      <Select
+                        aria-label="File type"
+                        value={location.fileKind ?? ALL_KINDS}
+                        onValueChange={(value) =>
+                          router.replace(
+                            documentsHref({
+                              ...location,
+                              fileKind: value === ALL_KINDS ? null : (value as DocumentFileKind),
+                            }),
+                          )
+                        }
+                        options={[{ value: ALL_KINDS, label: "All types" }, ...FILE_KINDS]}
+                        className="w-36"
+                      />
+                      {location.view === "expiring" && !folder && !category && !location.tag ? (
+                        <Select
+                          aria-label="Expiring within"
+                          value={String(location.window)}
+                          onValueChange={(value) =>
+                            router.replace(
+                              documentsHref({ ...location, window: Number(value) as 7 | 30 | 90 }),
+                            )
+                          }
+                          options={EXPIRY_WINDOWS.map((days) => ({
+                            value: String(days),
+                            label: `Next ${days} days`,
+                          }))}
+                          className="w-36"
+                        />
+                      ) : null}
+                      {location.view !== "recent" &&
+                      location.view !== "expiring" &&
+                      location.view !== "expired" ? (
+                        <Select
+                          aria-label="Sort by"
+                          value={sort}
+                          onValueChange={(value) => setSort(value)}
+                          options={DOCUMENT_SORTS}
+                          className="w-40"
+                        />
+                      ) : null}
+                      <div className="flex rounded-md border" role="group" aria-label="Layout">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={cn("size-9 rounded-r-none", layout === "list" && "bg-accent")}
+                          aria-pressed={layout === "list"}
+                          aria-label="List"
+                          onClick={() => setLayout("list")}
+                        >
+                          <List aria-hidden="true" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={cn("size-9 rounded-l-none", layout === "grid" && "bg-accent")}
+                          aria-pressed={layout === "grid"}
+                          aria-label="Grid"
+                          onClick={() => setLayout("grid")}
+                        >
+                          <LayoutGrid aria-hidden="true" />
+                        </Button>
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+
+                {uploadRequested && uploads.items.length === 0 ? (
+                  <div className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 text-center">
+                    <Upload className="size-6 text-muted-foreground" aria-hidden="true" />
+                    <p className="text-sm text-muted-foreground">
+                      Drop files here, or choose them from your device.
+                    </p>
+                    <Button onClick={pickFiles}>Choose files</Button>
+                  </div>
+                ) : null}
+
+                <UploadList
+                  items={uploads.items}
+                  onRetry={uploads.retry}
+                  onDismiss={uploads.dismiss}
+                  onClear={uploads.clearFinished}
+                  onOpen={openDocument}
+                />
+
+                {selected.size > 0 ? (
+                  <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-brand-subtle/40 px-4 py-2 text-sm">
+                    <span className="font-medium">{selected.size} selected</span>
                     <Button
-                      variant="outline"
+                      variant="soft"
+                      size="sm"
                       onClick={() =>
-                        navigate(
-                          { view: location.view },
-                          {
-                            folderId: location.folderId,
-                            categoryId: location.categoryId,
-                            tag: location.tag,
-                          },
+                        exportArchive(
+                          { document_ids: [...selected], include_versions: true },
+                          `${selected.size} documents`,
                         )
                       }
                     >
-                      Clear search
+                      <FileArchive aria-hidden="true" />
+                      Export
                     </Button>
-                  </EmptyState>
-                ) : (
-                  <EmptyState
-                    icon={VIEW_ICONS[location.view]}
-                    title={emptyTitle(location)}
-                    description={emptyDescription(location)}
-                  >
-                    {location.view !== "trash" && location.view !== "archived" ? (
-                      <Button variant="outline" onClick={pickFiles}>
+                    <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())}>
+                      <X aria-hidden="true" />
+                      Clear
+                    </Button>
+                  </div>
+                ) : null}
+
+                {showOverview ? (
+                  overview.state.status === "loading" ? (
+                    <ListSkeleton />
+                  ) : overview.state.status === "error" ? (
+                    <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
+                      <p>{overview.state.message}</p>
+                      <Button variant="outline" size="sm" onClick={overview.reload}>
+                        Try again
+                      </Button>
+                    </div>
+                  ) : overview.state.data.counts.all === 0 &&
+                    overview.state.data.counts.archived === 0 &&
+                    uploads.items.length === 0 ? (
+                    <EmptyState
+                      icon={FileArchive}
+                      title="Keep your important documents in one place"
+                      description="Upload passports, policies, payslips, receipts, and warranties, or drop files here. Orbit can remind you before they expire."
+                    >
+                      <Button onClick={pickFiles}>
                         <Upload aria-hidden="true" />
                         Upload files
                       </Button>
-                    ) : null}
-                  </EmptyState>
-                )
-              ) : (
-                <>
-                  <DocumentList
-                    documents={listItems}
-                    categories={categories}
-                    search={location.search}
-                    layout={layout}
-                    today={today}
-                    selected={selected}
-                    pending={pending}
-                    onToggleSelected={(document) =>
-                      setSelected((current) => {
-                        const next = new Set(current);
-                        if (next.has(document.id)) next.delete(document.id);
-                        else next.add(document.id);
-                        return next;
-                      })
-                    }
-                    onOpen={(document) => openDocument(document.id)}
-                    onAction={act}
-                  />
-                  {pages > 1 && location.view !== "recent" ? (
-                    <nav
-                      aria-label="Pages"
-                      className="flex items-center justify-between text-sm text-muted-foreground"
+                      <Button variant="outline" onClick={() => setCreating(true)}>
+                        Record without a file
+                      </Button>
+                    </EmptyState>
+                  ) : (
+                    <DocumentsOverview
+                      overview={overview.state.data}
+                      today={today}
+                      onOpen={openDocument}
+                      onNavigate={(next) => navigate(next)}
+                    />
+                  )
+                ) : list.state.status === "loading" ? (
+                  <ListSkeleton />
+                ) : list.state.status === "error" ? (
+                  <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
+                    <p>{list.state.message}</p>
+                    <Button variant="outline" size="sm" onClick={list.reload}>
+                      Try again
+                    </Button>
+                  </div>
+                ) : listItems.length === 0 ? (
+                  location.search || location.fileKind ? (
+                    <EmptyState
+                      icon={SearchX}
+                      title="No documents match"
+                      description="Try other words, or another file type. Document numbers aren’t searched, to keep them private."
                     >
-                      <span>
-                        {page * DOCUMENTS_PAGE_SIZE + 1}–
-                        {Math.min(total, (page + 1) * DOCUMENTS_PAGE_SIZE)} of {total}
-                      </span>
-                      <span className="flex gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={page === 0}
-                          onClick={() => setPage(page - 1)}
-                        >
-                          <ChevronLeft aria-hidden="true" />
-                          Previous
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          navigate(
+                            { view: location.view },
+                            {
+                              folderId: location.folderId,
+                              categoryId: location.categoryId,
+                              tag: location.tag,
+                            },
+                          )
+                        }
+                      >
+                        Clear search
+                      </Button>
+                    </EmptyState>
+                  ) : (
+                    <EmptyState
+                      icon={VIEW_ICONS[location.view]}
+                      title={emptyTitle(location)}
+                      description={emptyDescription(location)}
+                    >
+                      {location.view !== "trash" && location.view !== "archived" ? (
+                        <Button variant="outline" onClick={pickFiles}>
+                          <Upload aria-hidden="true" />
+                          Upload files
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={page + 1 >= pages}
-                          onClick={() => setPage(page + 1)}
-                        >
-                          Next
-                          <ChevronRight aria-hidden="true" />
-                        </Button>
-                      </span>
-                    </nav>
-                  ) : null}
-                </>
-              )}
-            </section>
-          </DropZone>
+                      ) : null}
+                    </EmptyState>
+                  )
+                ) : (
+                  <>
+                    <DocumentList
+                      documents={listItems}
+                      categories={categories}
+                      search={location.search}
+                      layout={layout}
+                      today={today}
+                      selected={selected}
+                      pending={pending}
+                      onToggleSelected={(document) =>
+                        setSelected((current) => {
+                          const next = new Set(current);
+                          if (next.has(document.id)) next.delete(document.id);
+                          else next.add(document.id);
+                          return next;
+                        })
+                      }
+                      onOpen={(document) => openDocument(document.id)}
+                      onAction={act}
+                    />
+                    {pages > 1 && location.view !== "recent" ? (
+                      <nav
+                        aria-label="Pages"
+                        className="flex items-center justify-between text-sm text-muted-foreground"
+                      >
+                        <span>
+                          {page * DOCUMENTS_PAGE_SIZE + 1}–
+                          {Math.min(total, (page + 1) * DOCUMENTS_PAGE_SIZE)} of {total}
+                        </span>
+                        <span className="flex gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={page === 0}
+                            onClick={() => setPage(page - 1)}
+                          >
+                            <ChevronLeft aria-hidden="true" />
+                            Previous
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={page + 1 >= pages}
+                            onClick={() => setPage(page + 1)}
+                          >
+                            Next
+                            <ChevronRight aria-hidden="true" />
+                          </Button>
+                        </span>
+                      </nav>
+                    ) : null}
+                  </>
+                )}
+              </section>
+            </DropZone>
+          )}
         </div>
       )}
 

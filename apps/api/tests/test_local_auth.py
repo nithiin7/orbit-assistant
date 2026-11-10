@@ -43,6 +43,7 @@ def test_sign_up_creates_profile_and_personal_workspace(client: TestClient) -> N
     assert body["user"]["email"] == "ada@example.com"
     assert body["user"]["display_name"] == "Ada"
     assert body["user"]["auth_provider"] == "local"
+    assert body["user"]["setup_status"] == "pending"
 
     workspaces = client.get("/api/v1/workspaces", headers=bearer(body["access_token"])).json()
     assert [(w["name"], w["is_personal"], w["role"]) for w in workspaces["workspaces"]] == [

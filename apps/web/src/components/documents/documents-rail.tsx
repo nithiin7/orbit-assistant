@@ -11,6 +11,7 @@ import {
   CalendarClock,
   ChevronRight,
   Clock,
+  Cloud,
   Folder,
   FolderOpen,
   FolderPlus,
@@ -32,7 +33,9 @@ import { FolderPickerDialog } from "@/components/notes/organize-dialogs";
 import { Button } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
 import { useDocumentOrganizer } from "@/hooks/use-documents";
+import { useConnectionsWith } from "@/hooks/use-integrations";
 import { DOCUMENT_VIEWS, type DocumentsLocation, type DocumentView } from "@/lib/documents";
+import { capabilityName } from "@/lib/integrations";
 import { cn } from "@/utils/common";
 import { buildFolderTree, folderAncestors, folderSubtree, visibleFolders } from "@/utils/folders";
 
@@ -120,7 +123,11 @@ export function DocumentsRail({
   const foldersHeading = useId();
   const categoriesHeading = useId();
   const tagsHeading = useId();
-  const narrowed = Boolean(location.folderId || location.categoryId || location.tag);
+  const drivesHeading = useId();
+  const drives = useConnectionsWith("files");
+  const narrowed = Boolean(
+    location.folderId || location.categoryId || location.tag || location.driveId,
+  );
 
   const toggle = (folderId: string) =>
     setExpanded((current) => {
@@ -344,6 +351,29 @@ export function DocumentsRail({
                 />
               </li>
             ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {drives.length > 0 ? (
+        <section aria-labelledby={drivesHeading} className="space-y-1">
+          <RailHeading id={drivesHeading} title="Connected drives" />
+          <ul className="space-y-0.5">
+            {drives.map((drive) => {
+              const name = capabilityName(drive.provider, "files");
+              const shared = drives.filter((d) => d.provider === drive.provider).length > 1;
+              return (
+                <li key={drive.id}>
+                  <RailButton
+                    selected={location.driveId === drive.id}
+                    icon={Cloud}
+                    label={shared ? `${name} · ${drive.account_email}` : name}
+                    count={null}
+                    onClick={() => onNavigate({ driveId: drive.id })}
+                  />
+                </li>
+              );
+            })}
           </ul>
         </section>
       ) : null}
