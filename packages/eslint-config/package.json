@@ -9,7 +9,7 @@
     "./next": "./next.js"
   },
   "dependencies": {
-    "eslint-config-next": "16.4.3",
+    "eslint-config-next": "16.4.5",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-simple-import-sort": "14.0.0"
   },
