@@ -4,6 +4,7 @@ import type {
   IntegrationCapability,
   IntegrationConflictList,
   IntegrationConflictResolution,
+  IntegrationConnection,
   IntegrationConnectionDetail,
   IntegrationConnectionList,
   IntegrationEntityType,
@@ -68,6 +69,17 @@ export function useConnections(): Resource<IntegrationConnectionList> {
   const result = useQuery(connectionsOptions(withToken, workspaceId));
   useWorkspaceNotFound(result.error);
   return queryResource(result, "Couldn’t load connected accounts.");
+}
+
+/**
+ * Connected accounts that granted a service (mail, files, calendar), for showing that service
+ * where it's used rather than only in Settings. Empty while loading or when nothing is connected.
+ */
+export function useConnectionsWith(capability: IntegrationCapability): IntegrationConnection[] {
+  const connections = useConnections();
+  return connections.status === "success"
+    ? connections.data.connections.filter((c) => c.capabilities.includes(capability))
+    : [];
 }
 
 export function useConnection(connectionId: string): Resource<IntegrationConnectionDetail> {
@@ -255,7 +267,10 @@ export function useConnectionMutations(connectionId: string) {
       onSuccess: refresh,
     }),
     importFile: useMutation({
-      mutationFn: (fileId: string) => call((t, w) => importRemoteFile(t, w, connectionId, fileId)),
+      mutationFn: ({ fileId, folderId }: { fileId: string; folderId?: string | null }) =>
+        call((t, w) =>
+          importRemoteFile(t, w, connectionId, fileId, folderId ? { folder_id: folderId } : {}),
+        ),
       onSuccess: refreshImported,
     }),
     updateFile: useMutation({

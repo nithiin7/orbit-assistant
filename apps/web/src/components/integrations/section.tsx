@@ -19,8 +19,9 @@ export function Section({
 }) {
   return (
     <section
+      id={id}
       aria-labelledby={`${id}-title`}
-      className="rounded-2xl border bg-card shadow-elevation-1"
+      className="scroll-mt-6 rounded-2xl border bg-card shadow-elevation-1"
     >
       <header className="flex flex-wrap items-start gap-3 border-b px-4 py-4 sm:px-5">
         <span

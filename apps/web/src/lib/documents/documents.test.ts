@@ -37,6 +37,10 @@ describe("documents location", () => {
     // Malformed IDs are ignored rather than sent to the API.
     expect(location("folder=../etc&document=x").folderId).toBeNull();
     expect(location("within=12&view=expiring").window).toBe(30);
+    // A connected drive replaces the library view, and its ID must be a plain token.
+    expect(location("drive=c1").driveId).toBe("c1");
+    expect(documentsHref({ driveId: "c1", view: "trash" })).toBe("/documents?drive=c1");
+    expect(location("drive=../x").driveId).toBeNull();
   });
 
   it("maps views to list queries", () => {

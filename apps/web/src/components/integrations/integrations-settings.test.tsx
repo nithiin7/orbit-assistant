@@ -201,6 +201,25 @@ describe("A connection's page", () => {
     ),
   });
 
+  it("links each service to where it lives in Orbit", async () => {
+    mockApi({
+      ...routes({ connection: connection() }),
+      [`GET ${INTEGRATIONS}/connections/c1/mail/labels`]: json({ labels: [] }),
+    });
+    await renderSignedIn(<IntegrationsSettings />);
+    const services = await screen.findByRole("region", { name: "Services" });
+    expect(within(services).getByRole("link", { name: /Open inbox/ })).toHaveAttribute(
+      "href",
+      "/tasks?inbox=c1",
+    );
+    expect(within(services).getByRole("link", { name: /Browse in Documents/ })).toHaveAttribute(
+      "href",
+      "/documents?drive=c1",
+    );
+    // Mail settings stay here; the messages themselves open beside Tasks.
+    expect(screen.getByRole("heading", { name: "Gmail settings" })).toBeInTheDocument();
+  });
+
   it("shows calendars, activity, and permissions", async () => {
     mockApi(routes());
     await renderSignedIn(<IntegrationsSettings />);

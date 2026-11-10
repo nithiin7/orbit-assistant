@@ -4075,10 +4075,17 @@ connection's owner. Another person's connection is a 404.
   connected accounts with status and services, connecting (provider, then what Orbit may access,
   each with why; read-only calendars by default; editing implies reading), and a privacy note.
 - **A connection's page** (`?connection=<id>`): status with Sync now and a health check, a
-  reconnect warning, calendars (select, direction, interval, category, last sync and errors,
-  what happens to Orbit edits), mail (labels, period, list, search, plain-text reading, Create
-  task, Save as note, Remind me), files (folders, search, import, new versions), sync activity
-  (counts, errors, retry, cancel), permissions with reconnecting to add more, and disconnecting.
+  reconnect warning, one card per granted service linking to where it lives (Calendar, the
+  inbox beside Tasks, the drive in Documents), calendars (select, direction, interval,
+  category, last sync and errors, what happens to Orbit edits), mail settings (labels, period),
+  sync activity (latest three, expandable; counts, errors, retry, cancel), permissions with
+  reconnecting to add more, and disconnecting.
+- **Mail beside Tasks** (`InboxButton`, `/tasks?inbox=<id>`): shown once an account grants
+  mail; a side panel with account and label switching, search, plain-text reading, and Add as
+  task, Save as note, Remind me, each linking to what it made.
+- **Drives in Documents** (`/documents?drive=<id>`): the rail's "Connected drives" lists
+  accounts that grant files; the panel browses and searches the drive and imports into a
+  chosen Orbit folder, marking imported files and offering their new versions.
 - **`/integrations/callback`** completes the authorization and opens the connection.
 - **Origins** appear in calendar event details and document details.
 - Query keys: `["workspaces", id, "integrations", …]`; a connection polls while a run is in

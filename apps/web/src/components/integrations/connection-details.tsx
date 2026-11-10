@@ -9,10 +9,12 @@ import type {
 } from "@orbit/contracts";
 import {
   Activity,
+  ArrowRight,
   CalendarDays,
   ChevronLeft,
   FolderOpen,
   KeyRound,
+  type LucideIcon,
   Mail,
   RefreshCw,
   TriangleAlert,
@@ -39,7 +41,9 @@ import {
 import {
   capabilityName,
   DIRECTIONS,
+  driveHref,
   formatSynced,
+  inboxHref,
   PROVIDER_NAMES,
   runKindLabel,
   runStatusLabel,
@@ -48,15 +52,17 @@ import {
   SYNC_INTERVALS,
 } from "@/lib/integrations";
 
-import { FileBrowser } from "./file-browser";
 import { ConnectAccount } from "./integrations-settings";
-import { MailBrowser } from "./mail-browser";
+import { MailSettings } from "./mail-browser";
 import { ProviderMark } from "./provider-mark";
 import { ErrorText, Section } from "./section";
 
 const NO_CATEGORY = "none";
 
-/** One connected account: its status, permissions, calendars, mail, files, and activity. */
+/**
+ * One connected account: its status, where each service lives in Orbit (the calendar, the inbox
+ * beside Tasks, the drive inside Documents), their settings, activity, and access.
+ */
 export function ConnectionDetails({ connectionId }: { connectionId: string }) {
   const detail = useConnection(connectionId);
   return (
@@ -90,25 +96,16 @@ function Details({ detail }: { detail: IntegrationConnectionDetail }) {
   return (
     <>
       <Header detail={detail} />
+      <Services detail={detail} />
       {has("calendar") ? <Calendars detail={detail} /> : null}
       {has("mail") ? (
         <Section
           id="mail"
           icon={Mail}
-          title={capabilityName(connection.provider, "mail")}
-          description="Read on demand. Nothing is copied."
+          title={`${capabilityName(connection.provider, "mail")} settings`}
+          description="What the inbox beside Tasks shows. Mail is read when you open it; nothing is copied."
         >
-          <MailBrowser connection={connection} />
-        </Section>
-      ) : null}
-      {has("files") ? (
-        <Section
-          id="files"
-          icon={FolderOpen}
-          title={capabilityName(connection.provider, "files")}
-          description="Import files into Documents. Orbit never edits them."
-        >
-          <FileBrowser connection={connection} />
+          <MailSettings connection={connection} />
         </Section>
       ) : null}
       <SyncActivity detail={detail} />
@@ -132,10 +129,16 @@ function Header({ detail }: { detail: IntegrationConnectionDetail }) {
     >
       <div className="flex flex-wrap items-start gap-3">
         <ProviderMark provider={connection.provider} />
-        <div className="min-w-0 flex-1 space-y-0.5">
+        <div className="min-w-0 flex-1 space-y-1">
           <h2 className="truncate text-base font-semibold">{connection.account_email}</h2>
-          <p className="text-sm text-muted-foreground">
-            {PROVIDER_NAMES[connection.provider]} · {STATUS_LABELS[connection.status]} · synced{" "}
+          <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <Badge
+              variant={connection.status === "active" ? "brand" : "outline"}
+              className={connection.status === "active" ? undefined : "text-destructive"}
+            >
+              {STATUS_LABELS[connection.status]}
+            </Badge>
+            {PROVIDER_NAMES[connection.provider]} · synced{" "}
             {formatSynced(connection.last_synced_at).toLowerCase()}
           </p>
         </div>
@@ -192,6 +195,85 @@ function Header({ detail }: { detail: IntegrationConnectionDetail }) {
       ) : null}
       <ErrorText message={error} />
     </section>
+  );
+}
+
+/** Each granted service, with a way to where it's used in Orbit. */
+function Services({ detail }: { detail: IntegrationConnectionDetail }) {
+  const { connection } = detail;
+  const has = (capability: IntegrationConnection["capabilities"][number]) =>
+    connection.capabilities.includes(capability);
+  const shown = detail.resources.filter((calendar) => calendar.enabled).length;
+  const tiles: ServiceTileProps[] = [];
+  if (has("calendar")) {
+    tiles.push({
+      icon: CalendarDays,
+      title: capabilityName(connection.provider, "calendar"),
+      text:
+        detail.resources.length === 0
+          ? "No calendars found yet."
+          : `${shown} of ${detail.resources.length} calendars shown in Orbit.`,
+      href: "/calendar",
+      linkLabel: "Open Calendar",
+    });
+  }
+  if (has("mail")) {
+    tiles.push({
+      icon: Mail,
+      title: capabilityName(connection.provider, "mail"),
+      text: "Opens beside Tasks. Turn an email into a task, note, or reminder.",
+      href: inboxHref(connection.id),
+      linkLabel: "Open inbox",
+    });
+  }
+  if (has("files")) {
+    tiles.push({
+      icon: FolderOpen,
+      title: capabilityName(connection.provider, "files"),
+      text: "Browse it in Documents and import the files you want to keep.",
+      href: driveHref(connection.id),
+      linkLabel: "Browse in Documents",
+    });
+  }
+  if (tiles.length === 0) return null;
+  return (
+    <section aria-label="Services" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      {tiles.map((tile) => (
+        <ServiceTile key={tile.title} {...tile} />
+      ))}
+    </section>
+  );
+}
+
+type ServiceTileProps = {
+  icon: LucideIcon;
+  title: string;
+  text: string;
+  href: string;
+  linkLabel: string;
+};
+
+function ServiceTile({ icon: Icon, title, text, href, linkLabel }: ServiceTileProps) {
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-elevation-1">
+      <div className="flex items-center gap-3">
+        <span
+          aria-hidden="true"
+          className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-subtle text-brand"
+        >
+          <Icon className="size-4.5" />
+        </span>
+        <h3 className="text-sm font-semibold">{title}</h3>
+      </div>
+      <p className="flex-1 text-sm text-pretty text-muted-foreground">{text}</p>
+      <Link
+        href={href}
+        className="inline-flex items-center gap-1 self-start rounded-md text-sm font-medium text-brand outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        {linkLabel}
+        <ArrowRight className="size-3.5" aria-hidden="true" />
+      </Link>
+    </div>
   );
 }
 
@@ -336,9 +418,22 @@ function CalendarRow({
 function SyncActivity({ detail }: { detail: IntegrationConnectionDetail }) {
   const actions = useConnectionMutations(detail.connection.id);
   const names = new Map(detail.resources.map((r) => [r.id, r.name]));
-  const runs = detail.runs.slice(0, 10);
+  const [all, setAll] = useState(false);
+  const recent = detail.runs.slice(0, 10);
+  const runs = all ? recent : recent.slice(0, 3);
   return (
-    <Section id="activity" icon={Activity} title="Sync activity">
+    <Section
+      id="activity"
+      icon={Activity}
+      title="Sync activity"
+      action={
+        recent.length > 3 ? (
+          <Button variant="ghost" size="sm" aria-expanded={all} onClick={() => setAll(!all)}>
+            {all ? "Show less" : `Show ${recent.length - 3} more`}
+          </Button>
+        ) : null
+      }
+    >
       {runs.length === 0 ? (
         <p className="text-sm text-muted-foreground">Nothing has been synchronized yet.</p>
       ) : (

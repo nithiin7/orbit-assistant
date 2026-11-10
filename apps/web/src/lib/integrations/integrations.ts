@@ -137,6 +137,16 @@ export function connectionHref(connectionId: string): string {
   return `/settings/integrations?connection=${encodeURIComponent(connectionId)}`;
 }
 
+/** The Tasks page with a connection's mail open beside it. */
+export function inboxHref(connectionId: string): string {
+  return `/tasks?inbox=${encodeURIComponent(connectionId)}`;
+}
+
+/** The Documents page browsing a connection's drive. */
+export function driveHref(connectionId: string): string {
+  return documentsHref({ driveId: connectionId });
+}
+
 /** Where an Orbit record made from an external one opens. */
 export function linkedRecordHref(entityType: IntegrationEntityType, id: string): string {
   switch (entityType) {
