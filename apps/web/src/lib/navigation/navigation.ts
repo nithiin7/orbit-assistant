@@ -165,6 +165,16 @@ export const sidebarSections = navGroups
   .map((group) => ({ ...group, items: navItems.filter((item) => item.group === group.id) }))
   .filter((section) => section.items.length > 0);
 
+/** A stable key for a link, used by the sidebar preference: the route without its slash. */
+export function navItemKey(item: Pick<NavItem, "href">): string {
+  return item.href === "/" ? "dashboard" : item.href.slice(1);
+}
+
+/** Every link can be hidden from the sidebar except the dashboard, Orbit's home. */
+export function canHideNavItem(item: Pick<NavItem, "group">): boolean {
+  return item.group !== "home";
+}
+
 /** Routes with their own page; every other item is rendered by the `[section]` placeholder. */
 const dedicatedRoutes: ReadonlySet<string> = new Set([
   "/",

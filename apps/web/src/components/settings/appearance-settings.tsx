@@ -7,9 +7,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { FONTS, PALETTES } from "@/lib/appearance-preference";
 
 import { setAppFont, setPalette, useAppFont, usePalette } from "./appearance-state";
+import { SidebarSettings } from "./sidebar-settings";
 import { ThemeSelector } from "./theme-selector";
 
-/** Mode, color theme, and font. Every choice is saved in this browser only. */
+/** Mode, color theme, font, and sidebar links. Every choice is saved in this browser only. */
 export function AppearanceSettings() {
   return (
     <div className="space-y-8">
@@ -34,6 +35,13 @@ export function AppearanceSettings() {
       >
         <FontSelector />
       </AppearanceSection>
+      <AppearanceSection
+        id="appearance-sidebar"
+        title="Sidebar"
+        description="Choose which pages show in the sidebar. Hidden pages stay one search away."
+      >
+        <SidebarSettings />
+      </AppearanceSection>
     </div>
   );
 }
@@ -50,7 +58,7 @@ function AppearanceSection({
   children: ReactNode;
 }) {
   return (
-    <section aria-labelledby={`${id}-title`} className="space-y-3">
+    <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-6 space-y-3">
       <div className="space-y-0.5">
         <h2 id={`${id}-title`} className="text-base font-semibold">
           {title}

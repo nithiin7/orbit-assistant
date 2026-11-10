@@ -13,7 +13,12 @@ vi.mock("next/navigation", () => ({
 }));
 
 afterEach(() => {
-  delete document.documentElement.dataset.sidebar;
+  pathname.current = "/";
+  const { dataset } = document.documentElement;
+  delete dataset.sidebar;
+  delete dataset.navHidden;
+  delete dataset.navFolded;
+  localStorage.clear();
 });
 
 describe("NavLinks", () => {
@@ -61,5 +66,41 @@ describe("NavLinks", () => {
     await user.hover(screen.getByRole("link", { name: "Dashboard" }));
     await new Promise((resolve) => setTimeout(resolve, 500));
     expect(screen.getAllByText("Dashboard")).toHaveLength(1);
+  });
+
+  it("leaves out hidden links and drops a section whose links are all hidden", () => {
+    document.documentElement.dataset.navHidden = "finance assistant automation";
+    render(<NavLinks />);
+    expect(screen.queryByRole("link", { name: "Finance" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Habits" })).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "AI" })).not.toBeInTheDocument();
+  });
+
+  it("folds a section to its heading, keeps the current page, and remembers it", async () => {
+    const user = userEvent.setup();
+    pathname.current = "/notes";
+    render(<NavLinks />);
+
+    const heading = screen.getByRole("button", { name: "Library" });
+    expect(heading).toHaveAttribute("aria-expanded", "true");
+    await user.click(heading);
+
+    expect(heading).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("link", { name: "Notes" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Documents" })).not.toBeInTheDocument();
+    expect(document.documentElement.dataset.navFolded).toBe("library");
+    expect(localStorage.getItem("orbit:nav")).toBe(
+      JSON.stringify({ hidden: [], folded: ["library"] }),
+    );
+
+    await user.click(heading);
+    expect(screen.getByRole("link", { name: "Documents" })).toBeInTheDocument();
+  });
+
+  it("shows every link of a folded section in the collapsed sidebar", () => {
+    document.documentElement.dataset.sidebar = "collapsed";
+    document.documentElement.dataset.navFolded = "library";
+    render(<NavLinks collapsible />);
+    expect(screen.getByRole("link", { name: "Documents" })).toBeInTheDocument();
   });
 });
