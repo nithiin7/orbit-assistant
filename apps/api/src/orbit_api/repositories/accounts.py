@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from orbit_api.db.models import LocalCredentialModel, LocalSessionModel, UserModel
 from orbit_api.repositories.transaction import flush
-from orbit_api.services.accounts.models import AuthProvider, User
+from orbit_api.services.accounts.models import AuthProvider, SetupStatus, User
 from orbit_api.services.local_auth.models import LocalCredential
 from orbit_api.utils.changes import UNSET, Change
 
@@ -23,6 +23,8 @@ def _to_user(model: UserModel) -> User:
         display_name=model.display_name,
         created_at=model.created_at,
         timezone=model.timezone,
+        # Guaranteed by the `ck_users_setup_status` constraint.
+        setup_status=cast(SetupStatus, model.setup_status),
     )
 
 
@@ -50,6 +52,7 @@ class SqlAccountRepository:
                 auth_subject=auth_subject,
                 email=user.email,
                 display_name=user.display_name,
+                setup_status=user.setup_status,
                 created_at=user.created_at,
                 updated_at=user.created_at,
             )
@@ -64,6 +67,7 @@ class SqlAccountRepository:
         email: str | None = None,
         display_name: str | None = None,
         timezone: Change[str | None] = UNSET,
+        setup_status: SetupStatus | None = None,
     ) -> User:
         model = await self._session.get_one(UserModel, user_id)
         if email is not None:
@@ -72,6 +76,8 @@ class SqlAccountRepository:
             model.display_name = display_name
         if timezone is not UNSET:
             model.timezone = timezone
+        if setup_status is not None:
+            model.setup_status = setup_status
         await flush(self._session)
         return _to_user(model)
 

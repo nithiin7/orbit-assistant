@@ -17418,6 +17418,8 @@ export interface components {
             display_name?: string | null;
             /** Timezone */
             timezone?: string | null;
+            /** Setup Status */
+            setup_status?: ("pending" | "deferred" | "done") | null;
         };
         /**
          * UpdateRecurringPaymentRequest
@@ -17656,6 +17658,12 @@ export interface components {
              * @description The user's IANA time zone, used by default for new reminders; `null` until they choose one.
              */
             timezone: string | null;
+            /**
+             * Setup Status
+             * @description Progress through the first-run setup guide: `pending` until the user opens it, `deferred` once they leave it for later, `done` once finished or dismissed.
+             * @enum {string}
+             */
+            setup_status: "pending" | "deferred" | "done";
             /**
              * Created At
              * Format: date-time

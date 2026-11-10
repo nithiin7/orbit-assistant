@@ -6,6 +6,9 @@ from datetime import datetime
 from typing import Literal
 
 AuthProvider = Literal["local", "supabase"]
+# `pending` until the user opens the setup guide, `deferred` once they leave it for later, and
+# `done` once they finish or dismiss it.
+SetupStatus = Literal["pending", "deferred", "done"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -17,6 +20,7 @@ class User:
     created_at: datetime
     # An IANA time zone name; `None` until the user chooses one.
     timezone: str | None = None
+    setup_status: SetupStatus = "pending"
 
 
 @dataclass(frozen=True, slots=True)

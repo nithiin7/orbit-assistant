@@ -4,7 +4,12 @@ import uuid
 from datetime import UTC, datetime
 from typing import Protocol
 
-from orbit_api.services.accounts.models import AuthProvider, ExternalIdentity, User
+from orbit_api.services.accounts.models import (
+    AuthProvider,
+    ExternalIdentity,
+    SetupStatus,
+    User,
+)
 from orbit_api.services.transactions import ConflictError, Transaction
 from orbit_api.services.workspaces.service import (
     PERSONAL_WORKSPACE_NAME,
@@ -30,6 +35,7 @@ class AccountRepository(Protocol):
         email: str | None = None,
         display_name: str | None = None,
         timezone: Change[str | None] = UNSET,
+        setup_status: SetupStatus | None = None,
     ) -> User:
         """Change the given fields; `None` (or `UNSET` for the time zone) keeps a field."""
         ...
@@ -62,6 +68,7 @@ class AccountService:
             email=email,
             display_name=display_name,
             created_at=datetime.now(UTC),
+            setup_status="pending",
         )
         await self._accounts.add(user, auth_subject=subject or str(user_id))
         await self._workspaces.add(
@@ -100,9 +107,13 @@ class AccountService:
         *,
         display_name: str | None = None,
         timezone: Change[str | None] = UNSET,
+        setup_status: SetupStatus | None = None,
     ) -> User:
-        """Change the display name and/or time zone; `timezone=None` clears the preference."""
-        user = await self._accounts.update(user_id, display_name=display_name, timezone=timezone)
+        """Change the display name, time zone, and/or setup guide progress; `timezone=None`
+        clears the time zone preference."""
+        user = await self._accounts.update(
+            user_id, display_name=display_name, timezone=timezone, setup_status=setup_status
+        )
         await self._transaction.commit()
         return user
 

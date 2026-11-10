@@ -25,6 +25,7 @@ class UserModel(Base):
         CheckConstraint("length(email) BETWEEN 3 AND 320", name="email_length"),
         CheckConstraint("length(display_name) BETWEEN 1 AND 100", name="display_name_length"),
         CheckConstraint("length(timezone) BETWEEN 1 AND 64", name="timezone_length"),
+        CheckConstraint("setup_status IN ('pending', 'deferred', 'done')", name="setup_status"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
@@ -34,6 +35,8 @@ class UserModel(Base):
     display_name: Mapped[str] = mapped_column(String(100))
     # The user's IANA time zone, such as `Europe/Paris`; `None` until they choose one.
     timezone: Mapped[str | None] = mapped_column(String(64))
+    # Progress through the first-run setup guide: `pending`, `deferred`, or `done`.
+    setup_status: Mapped[str] = mapped_column(String(16), default="pending", server_default="done")
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now, onupdate=utc_now)
 

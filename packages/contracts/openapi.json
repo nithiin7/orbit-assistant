@@ -61843,6 +61843,22 @@
               }
             ],
             "title": "Timezone"
+          },
+          "setup_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "deferred",
+                  "done"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Setup Status"
           }
         },
         "additionalProperties": false,
@@ -62855,6 +62871,16 @@
             "title": "Timezone",
             "description": "The user's IANA time zone, used by default for new reminders; `null` until they choose one."
           },
+          "setup_status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "deferred",
+              "done"
+            ],
+            "title": "Setup Status",
+            "description": "Progress through the first-run setup guide: `pending` until the user opens it, `deferred` once they leave it for later, `done` once finished or dismissed."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -62868,6 +62894,7 @@
           "display_name",
           "auth_provider",
           "timezone",
+          "setup_status",
           "created_at"
         ],
         "title": "UserProfile",

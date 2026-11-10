@@ -177,9 +177,25 @@ def test_update_profile(client: TestClient, ada: dict[str, str]) -> None:
     assert client.get("/api/v1/me", headers=ada).json()["display_name"] == "Countess"
 
 
+def test_setup_guide_progress(client: TestClient, ada: dict[str, str]) -> None:
+    assert client.get("/api/v1/me", headers=ada).json()["setup_status"] == "pending"
+
+    deferred = client.patch("/api/v1/me", json={"setup_status": "deferred"}, headers=ada)
+    assert deferred.status_code == 200
+    assert deferred.json()["setup_status"] == "deferred"
+
+    client.patch("/api/v1/me", json={"display_name": "Ada"}, headers=ada)
+    assert client.get("/api/v1/me", headers=ada).json()["setup_status"] == "deferred"
+
+    client.patch("/api/v1/me", json={"setup_status": "done"}, headers=ada)
+    assert client.get("/api/v1/me", headers=ada).json()["setup_status"] == "done"
+
+
 @pytest.mark.parametrize(
     "body",
     [
+        {"setup_status": None},
+        {"setup_status": "skipped"},
         {"display_name": ""},
         {"display_name": "x" * 101},
         {"display_name": "Ada", "email": "eve@example.com"},
