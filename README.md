@@ -31,21 +31,22 @@ with an optional AI assistant that only sees what you allow.
 
 ## Features
 
-| Module                  | What you get                                                                        |
-| ----------------------- | ----------------------------------------------------------------------------------- |
-| 🏠 **Dashboard**        | Today at a glance: agenda, due tasks, habits, payments, and customizable widgets    |
-| ✅ **Tasks**            | Tasks, shopping lists, and reminders, including recurring ones                      |
-| 📅 **Calendar**         | Month, week, day, and agenda views, recurring events, and drag-and-drop scheduling  |
-| 💰 **Finance**          | Accounts, budgets, loans, subscriptions, investments, goals, and net worth          |
-| 📝 **Notes**            | Rich-text editor, folders, tags, backlinks, a daily journal, and Markdown           |
-| 🔁 **Habits**           | Streaks, routines, a Today view, and history heatmaps                               |
-| 📂 **Documents**        | A personal vault with previews, versions, and expiry reminders                      |
-| 💪 **Health**           | Workout logging, personal records, body measurements, nutrition, and goals          |
-| 🎬 **Watchlist**        | Movies and series to watch, episode tracking, ratings, and a "watch tonight" picker |
-| 🔍 **Search**           | One search across every module, from anywhere with <kbd>Cmd/Ctrl</kbd>+<kbd>K</kbd> |
-| ✨ **AI assistant**     | Chat with your data, summaries and drafts, and automations you approve              |
-| 🔗 **Integrations**     | Google and Microsoft calendars, mail, and files                                     |
-| 🛡️ **Backup & restore** | Encrypted, scheduled backups and exports to JSON, CSV, iCalendar, and Markdown      |
+| Module                  | What you get                                                                             |
+| ----------------------- | ---------------------------------------------------------------------------------------- |
+| 🏠 **Dashboard**        | Today at a glance: agenda, due tasks, habits, payments, and customizable widgets         |
+| ✅ **Tasks**            | Tasks, shopping lists, and reminders, including recurring ones                           |
+| 📅 **Calendar**         | Month, week, day, and agenda views, recurring events, and drag-and-drop scheduling       |
+| 💰 **Finance**          | Accounts, budgets, loans, subscriptions, investments, goals, and net worth               |
+| 📝 **Notes**            | Rich-text editor, folders, tags, backlinks, a daily journal, and Markdown                |
+| 🔁 **Habits**           | Streaks, routines, a Today view, and history heatmaps                                    |
+| 📂 **Documents**        | A personal vault with previews, versions, and expiry reminders                           |
+| 💪 **Health**           | Workout logging, personal records, body measurements, nutrition, and goals               |
+| 🎬 **Watchlist**        | Movies and series to watch, episode tracking, ratings, and a "watch tonight" picker      |
+| 🔖 **Saved**            | Links you come back to, plus reels, videos, and articles to get to later, in collections |
+| 🔍 **Search**           | One search across every module, from anywhere with <kbd>Cmd/Ctrl</kbd>+<kbd>K</kbd>      |
+| ✨ **AI assistant**     | Chat with your data, summaries and drafts, and automations you approve                   |
+| 🔗 **Integrations**     | Google and Microsoft calendars, mail, and files                                          |
+| 🛡️ **Backup & restore** | Encrypted, scheduled backups and exports to JSON, CSV, iCalendar, and Markdown           |
 
 ## Screenshots
 

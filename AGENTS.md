@@ -13,8 +13,8 @@ FastAPI API that talk only over HTTP. Every record belongs to a workspace.
 and in-app notifications (database-backed worker), finance (ledger, commitments, investments,
 budgets, goals, plans; opt-in mutual fund NAV and stock prices from mfapi.in and Yahoo
 Finance; auto-debit SIPs), notes, calendar (RFC 5545 recurrence), habits and routines, documents
-vault, health and fitness (private per person), watchlist (movies and series; opt-in TMDB
-lookup), dashboard, universal search (SQL, no index),
+vault, health and fitness (private per person), saved links (`/saved`; "bookmarks" in code),
+watchlist (movies and series; opt-in TMDB lookup), dashboard, universal search (SQL, no index),
 AI layer (off by default; OpenAI, Anthropic, Gemini, Ollama, OpenAI-compatible), Google and
 Microsoft integrations, backup and restore, and a personal agent with approval-gated workflows.
 

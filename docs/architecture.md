@@ -2957,6 +2957,52 @@ Universal search covers titles (title, platform, recommended by, notes, overview
 `/watchlist?title=<id>`), and the dashboard has an optional Watchlist widget. No agent tool yet; no per-episode history or
 rewatch log (finishing again replaces `finished_at`); posters only come from TMDB, not uploads.
 
+## Saved links
+
+Pages a workspace comes back to, and reels, videos, and articles to get to later, at `/saved`
+(Library in the sidebar). The API, tables, and code call them bookmarks; `saved_searches` is
+unrelated.
+
+### Data
+
+`bookmark_collections` (RLS on PostgreSQL): named, colored groups (the task lists' palette),
+names unique per workspace ignoring case and spacing, at most 50. `bookmarks` (RLS): `url`
+(`http`/`https` with a host, at most 2,048 characters), `title`, `note` (what it's for),
+`kind` (`link`, `article`, `video`, `reel`, `repo`, `tool`), `status` (`reference`, `later`,
+`done`), `tags` (JSON list, at most 10), `pinned`, `open_count`, `last_opened_at`, and an
+optional `collection_id` (a composite foreign key on `(collection_id, workspace_id)`; deleting a
+collection takes its links out of it first). A URL is saved once per workspace (409 with the
+existing link); the check is in the service, not a unique index, because a long non-ASCII URL
+can exceed PostgreSQL's index row size.
+
+Orbit never fetches a saved page. Without a title, kind, or status, `services/bookmarks/urls.py`
+works them out from the URL alone: Instagram and Facebook `/reel/`, TikTok, and YouTube Shorts
+are reels; YouTube, Vimeo, and similar are videos; `github.com/<owner>/<repo>` and the like are
+repos; a few writing hosts and `/blog/` paths are articles. Reels, videos, and articles start on
+the `later` queue, everything else as `reference`. The default title is the host and last path
+segment. `POST …/items/{id}/opened` counts an open without changing `updated_at`.
+
+### Web
+
+`components/bookmarks/`: the side-rail layout (`?view=` for **All links**, **Pinned**, **Read &
+watch later**, **Reels & videos**, **Not in a collection**; `?collection=` for a collection,
+created from the rail). All links starts with a "Quick launch" grid of pinned links (most used
+first). Each view filters by text and tag and sorts by newest, most used, or name. Links open in
+a new tab (`noopener noreferrer`) and count the open. **Save link** (or N) opens the dialog;
+pasting a link anywhere on the page outside a text field saves it at once, into the collection
+on screen. In the command palette, a pasted link offers "Save link" (`/saved?add=<url>`), and
+saved-link search hits open the page itself. Logic lives in `lib/bookmarks`.
+
+### Backup
+
+The `bookmarks` module ("Saved") backs up both tables and exports JSON or CSV (one file per
+table).
+
+### Limitations
+
+No page fetching, so no automatic titles, favicons, or thumbnails yet; no browser extension or
+share target; no dashboard widget or agent tool; no import of browser bookmarks.
+
 ## Health and fitness
 
 A personal wellness tracker: workouts, an exercise library and templates, body measurements and
