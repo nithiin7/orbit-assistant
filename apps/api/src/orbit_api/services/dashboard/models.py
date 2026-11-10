@@ -18,6 +18,7 @@ WidgetId = Literal[
     "notes",
     "documents",
     "shopping",
+    "watchlist",
     "cash_flow",
     "upcoming_payments",
     "budget",

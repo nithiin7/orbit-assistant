@@ -24,6 +24,7 @@ from orbit_api.db.database import open_database
 from orbit_api.observability import RequestContextMiddleware
 from orbit_api.providers.ai.registry import HttpProviderFactory
 from orbit_api.providers.integrations.registry import HttpConnectorRegistry
+from orbit_api.providers.media.tmdb import TmdbClient
 from orbit_api.providers.prices.feed import HttpPriceFeed
 from orbit_api.scheduler.worker import (
     AgentJobs,
@@ -66,6 +67,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         providers = app.state.ai_providers
         connectors = app.state.integration_connectors
         prices = app.state.price_feed
+        tmdb = app.state.tmdb
         stop = asyncio.Event()
         worker = None
         if settings.scheduler_embedded:
@@ -90,6 +92,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await providers.aclose()
             await connectors.aclose()
             await prices.aclose()
+            await tmdb.aclose()
             await database.dispose()
 
     app = FastAPI(
@@ -111,6 +114,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.integration_connectors = HttpConnectorRegistry(settings)
     # One HTTP client for market data; routes and workers gate it by server and workspace settings.
     app.state.price_feed = HttpPriceFeed()
+    # One HTTP client for watchlist title lookup, used with each workspace's own TMDB key.
+    app.state.tmdb = TmdbClient()
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

@@ -4,6 +4,7 @@ import {
   BookOpen,
   CalendarDays,
   CheckSquare,
+  Clapperboard,
   Dumbbell,
   FileLock2,
   HeartPulse,
@@ -46,6 +47,7 @@ const ICONS: Readonly<Record<SearchEntityType, LucideIcon>> = {
   workout_template: Dumbbell,
   fitness_goal: Target,
   measurement: Ruler,
+  watch_item: Clapperboard,
 };
 
 const updatedFormat = new Intl.DateTimeFormat(undefined, {

@@ -403,6 +403,15 @@ written once. SQLite is embedded in the API process; local mode needs no databas
 - `0021_create_backups` creates `backups` (with a partial unique index for one running backup per
   workspace), `backup_settings`, and `backup_uploads` with RLS (see
   [Backup, restore, and data portability](#backup-restore-and-data-portability)).
+- `0028_create_watchlist` creates `watch_items` with RLS and adds
+  `workspaces.watchlist_lookup_enabled` (see [Watchlist](#watchlist)).
+- `0029_create_watchlist_settings` creates `watchlist_settings` (the encrypted TMDB key and the
+  lookup switch) with RLS and drops `workspaces.watchlist_lookup_enabled`.
+- **Migrations run with SQLite foreign keys off.** Batch mode rebuilds a table by copying it and
+  dropping the original; with foreign keys on, that drop runs `ON DELETE CASCADE`, so rebuilding
+  `users` or `workspaces` (0007, 0026, 0029) deleted every workspace's data. `env.py` creates
+  its engine with `enforce_foreign_keys=False` and runs `PRAGMA foreign_key_check` before
+  committing; `test_upgrades_keep_existing_data` upgrades seeded data one revision at a time.
 - Migrations are **applied explicitly** (`pnpm db:migrate`), never automatically at startup.
   Startup only checks that the database is at the head revision. For a shared cloud database,
   schema changes should be deliberate and reviewable.
@@ -2890,6 +2899,64 @@ document is the reference for fields.
 - The opt-in PostgreSQL suite covers the document SQL through the service; the HTTP tests run on
   SQLite.
 
+## Watchlist
+
+Movies and series a workspace wants to watch, is watching, has watched, or dropped, at
+`/watchlist` (Library in the sidebar).
+
+### Data
+
+`watch_items` (one table, RLS on PostgreSQL): `kind` (`movie`, `series`), `title`,
+`release_year`, `overview`, `genres` (JSON list), `runtime_minutes` (a series' typical episode
+length), `season_episodes` (JSON list of episode counts per season, specials left out),
+`status` (`want`, `watching`, `watched`, `dropped`), `progress_season` and `progress_episode`
+(the last episode watched; series only), `rating` (half stars out of five as 1 to 10),
+`notes`, `platform`, `recommended_by`, `source_id` (the TMDB ID of a looked-up title, unique per
+workspace and kind), `poster_blob_id` (a file in the attachment store), `position` (queue order),
+`started_at`, and `finished_at` (set exactly while watched).
+
+Status changes keep the dates consistent in the service: starting sets `started_at`; finishing
+sets `finished_at` and, for a series with known seasons, its last episode; moving back to
+`want` clears progress and dates. `POST …/next-episode` advances through the known seasons and
+marks the series watched on its last episode; without season counts episodes just count up.
+`POST …/move-to-top` puts a title first in the queue.
+
+### Title lookup (TMDB)
+
+Optional, per workspace, set in **Settings → Watchlist**: paste a TMDB v3 API key or v4 read
+access token (`PUT …/watchlist/lookup/key`). The API checks it with TMDB (`/authentication`),
+stores it Fernet-encrypted in `watchlist_settings` with the AI key (`ORBIT_AI_SECRET_KEY`, or
+`ai-secret.key` beside the database), turns lookup on, and never returns it. `PUT …/lookup`
+pauses or resumes lookup; `DELETE …/lookup/key` forgets the key. With lookup on,
+`GET …/watchlist/search?q=` sends only the phrase to TMDB, and adding a match (`source_id`)
+fetches its details and a `w342` poster once. Posters are stored in the attachment store and
+served by `GET …/items/{id}/poster`; search thumbnails go through
+`GET …/watchlist/search/poster?path=` (path validated), so the browser never contacts TMDB.
+`POST …/items/{id}/refresh` refetches a looked-up title's details, such as a new season. A poster
+that can't be downloaded is skipped rather than failing the add. The adapter is
+`providers/media/tmdb.py` (one shared HTTP client, a catalog per key); the UI shows TMDB's
+required attribution where lookup is used.
+
+### Web
+
+`components/watchlist/`: the side-rail layout (`?view=`): **Up next** (a "Continue watching"
+shelf with one-tap next episode, the front of the queue, recently watched), then one view per
+status with type and platform filters; a poster grid with quick actions, a title sheet (status, episode
+progress, half-star rating, details), a search-first Add dialog (Enter adds the highlighted
+match; titles can always be entered by hand), and "Watch tonight", which suggests a title from
+the queue by time available and genre. Logic lives in `lib/watchlist`.
+
+### Backup
+
+The `watchlist` module backs up `watch_items` with its poster files (`FILE_COLUMNS`) and exports
+JSON or CSV. `watchlist_settings` is excluded: the encrypted TMDB key never leaves the server.
+
+### Limitations
+
+Universal search covers titles (title, platform, recommended by, notes, overview; hits open
+`/watchlist?title=<id>`), and the dashboard has an optional Watchlist widget. No agent tool yet; no per-episode history or
+rewatch log (finishing again replaces `finished_at`); posters only come from TMDB, not uploads.
+
 ## Health and fitness
 
 A personal wellness tracker: workouts, an exercise library and templates, body measurements and
@@ -4293,7 +4360,7 @@ mapping and is not implemented.
 
 `POST …/exports` builds a module export from one snapshot into a temporary file, streams it,
 and deletes it: JSON for every module; CSV (one table, or a ZIP of one CSV per table) for tasks,
-shopping, reminders, habits, and health; Markdown (a ZIP of `.md` files with YAML front matter in
+shopping, the watchlist, reminders, habits, and health; Markdown (a ZIP of `.md` files with YAML front matter in
 their folders, archived and trashed notes in `Archive/` and `Trash/`) for notes; and iCalendar
 for the calendar (`TZID` times with generated `VTIMEZONE`s, Orbit's month-end and leap-day rules
 as `BYMONTHDAY…;BYSETPOS=-1`, `EXDATE`s for skipped occurrences, `RECURRENCE-ID` overrides,

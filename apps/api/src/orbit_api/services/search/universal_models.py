@@ -11,7 +11,15 @@ from datetime import date, datetime
 from typing import Final, Literal, get_args
 
 UniversalModule = Literal[
-    "tasks", "notes", "calendar", "reminders", "finance", "habits", "documents", "health"
+    "tasks",
+    "notes",
+    "calendar",
+    "reminders",
+    "finance",
+    "habits",
+    "documents",
+    "health",
+    "watchlist",
 ]
 # The order modules are listed in (tabs, facets).
 UNIVERSAL_MODULES: Final[tuple[UniversalModule, ...]] = get_args(UniversalModule)
@@ -39,6 +47,7 @@ EntityType = Literal[
     "workout_template",
     "fitness_goal",
     "measurement",
+    "watch_item",
 ]
 ENTITY_TYPES: Final[tuple[EntityType, ...]] = get_args(EntityType)
 

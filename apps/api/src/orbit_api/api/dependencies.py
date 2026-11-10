@@ -45,6 +45,7 @@ from orbit_api.repositories.search.providers import build_universal_search
 from orbit_api.repositories.shopping import SqlShoppingItemRepository, SqlShoppingListRepository
 from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import SqlTransaction
+from orbit_api.repositories.watchlist import SqlLookupSettings, SqlWatchItemRepository
 from orbit_api.repositories.workspaces import SqlWorkspaceRepository
 from orbit_api.services.accounts.service import AccountService
 from orbit_api.services.avatars.service import AvatarService
@@ -75,9 +76,11 @@ from orbit_api.services.search.service import SearchService
 from orbit_api.services.search.universal import UniversalSearchService
 from orbit_api.services.shopping.service import ShoppingService
 from orbit_api.services.tasks.service import TaskService
+from orbit_api.services.watchlist.service import TitleCatalogs, WatchlistService
 from orbit_api.services.workspaces.service import WorkspaceService
 from orbit_api.system.attachment_store import FileAttachmentStore
 from orbit_api.system.backup_store import FileArchiveStore
+from orbit_api.system.secrets import FernetSecretBox
 
 
 async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
@@ -270,6 +273,24 @@ def get_attachment_store(settings: SettingsDep) -> FileAttachmentStore:
 
 
 AttachmentStoreDep = Annotated[FileAttachmentStore, Depends(get_attachment_store)]
+
+
+def get_watchlist_service(
+    request: Request, session: SessionDep, settings: SettingsDep, store: AttachmentStoreDep
+) -> WatchlistService:
+    # Tests replace the TMDB client with a fake.
+    catalogs: TitleCatalogs = getattr(request.app.state, "tmdb")  # noqa: B009 - untyped State
+    return WatchlistService(
+        SqlWatchItemRepository(session),
+        SqlLookupSettings(session),
+        store,
+        SqlTransaction(session),
+        FernetSecretBox.from_settings(settings),
+        catalogs,
+    )
+
+
+WatchlistServiceDep = Annotated[WatchlistService, Depends(get_watchlist_service)]
 
 
 def get_archive_store(settings: SettingsDep) -> FileArchiveStore:

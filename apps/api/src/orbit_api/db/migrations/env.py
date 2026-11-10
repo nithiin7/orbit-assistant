@@ -7,7 +7,7 @@ through `orbit_api.db.migrate`, otherwise the `ORBIT_*` environment (`uv run ale
 import asyncio
 
 from alembic import context
-from sqlalchemy import Connection
+from sqlalchemy import Connection, text
 
 # Imported for its side effect: registering every ORM table on `Base.metadata`.
 import orbit_api.db.models  # noqa: F401  # pyright: ignore[reportUnusedImport]
@@ -34,10 +34,19 @@ def _run_migrations(connection: Connection) -> None:
     )
     with context.begin_transaction():
         context.run_migrations()
+        if connection.dialect.name == "sqlite":
+            # Foreign keys are off while migrating (see `create_engine`), so check them before
+            # committing: a migration that leaves a dangling reference rolls back instead.
+            broken = connection.execute(text("PRAGMA foreign_key_check")).first()
+            if broken is not None:
+                raise RuntimeError(
+                    f"Migration left a broken reference in {broken[0]}; nothing was changed."
+                )
 
 
 async def _run_online() -> None:
-    engine = create_engine(_settings())
+    # Foreign keys off on SQLite, so batch-mode table rebuilds can't cascade-delete data.
+    engine = create_engine(_settings(), enforce_foreign_keys=False)
     try:
         async with engine.connect() as connection:
             await connection.run_sync(_run_migrations)

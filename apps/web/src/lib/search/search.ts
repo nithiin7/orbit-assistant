@@ -13,6 +13,7 @@ import { financeViewHref } from "@/lib/finance-views";
 import { fitnessHref } from "@/lib/fitness";
 import { habitsHref } from "@/lib/habits";
 import { notesHref } from "@/lib/notes";
+import { watchTitleHref } from "@/lib/watchlist";
 import { formatCalendarDate } from "@/utils/dates";
 
 /** The page's path. */
@@ -32,6 +33,7 @@ export const SEARCH_MODULES: readonly Labelled<UniversalSearchModule>[] = [
   { value: "habits", label: "Habits" },
   { value: "documents", label: "Documents" },
   { value: "health", label: "Health" },
+  { value: "watchlist", label: "Watchlist" },
 ];
 
 export const ENTITY_LABELS: Readonly<Record<SearchEntityType, string>> = {
@@ -57,6 +59,7 @@ export const ENTITY_LABELS: Readonly<Record<SearchEntityType, string>> = {
   workout_template: "Workout template",
   fitness_goal: "Fitness goal",
   measurement: "Body measurement",
+  watch_item: "Watchlist",
 };
 
 export function moduleLabel(module: UniversalSearchModule): string {
@@ -121,6 +124,8 @@ export function searchResultHref(
       return fitnessHref({ kind: "view", view: "templates" });
     case "measurement":
       return fitnessHref({ kind: "view", view: "body" });
+    case "watch_item":
+      return watchTitleHref(hit.id);
   }
 }
 
@@ -165,7 +170,8 @@ export function describeHit(hit: UniversalSearchHit): string[] {
     if (key === "priority") facts.push(`${humanize(value)} priority`);
     else if (key === "repeats") facts.push("Repeats");
     else if (key === "enabled") continue;
-    else if (key === "location") facts.push(value);
+    else if (key === "location" || key === "year") facts.push(value);
+    else if (key === "platform") facts.push(`On ${value}`);
     else if (key in DETAIL_LABELS) facts.push(`${DETAIL_LABELS[key]}: ${value}`);
     else facts.push(humanize(value));
   }
@@ -189,6 +195,9 @@ const FIELD_LABELS: Readonly<Record<string, string>> = {
   exercises: "exercises",
   instructions: "instructions",
   note: "note",
+  platform: "where to watch",
+  recommended_by: "recommended by",
+  overview: "overview",
 };
 
 /** "Matched in tags and notes" for fields other than the title. */
@@ -278,6 +287,7 @@ const MODULE_FILTERS: Readonly<Record<UniversalSearchModule, readonly ModuleFilt
   habits: ["habitKind"],
   documents: ["documentCategory"],
   health: [],
+  watchlist: [],
 };
 
 export function moduleFilters(module: UniversalSearchModule | null): readonly ModuleFilter[] {

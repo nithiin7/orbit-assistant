@@ -14,10 +14,16 @@ CONNECT_TIMEOUT_SECONDS = 10
 POSTGRES_POOL_RECYCLE_SECONDS = 1800
 
 
-def create_engine(settings: Settings) -> AsyncEngine:
-    """Create the engine for the selected storage mode. Never falls back to another mode."""
+def create_engine(settings: Settings, *, enforce_foreign_keys: bool = True) -> AsyncEngine:
+    """Create the engine for the selected storage mode. Never falls back to another mode.
+
+    `enforce_foreign_keys=False` is only for migrations on SQLite: batch mode rebuilds a table by
+    copying it and dropping the original, and with foreign keys on, that `DROP TABLE` deletes
+    every row that references the table through `ON DELETE CASCADE` (for `users` or
+    `workspaces`, all of a workspace's data). Migrations check the keys themselves afterwards.
+    """
     if settings.storage_mode == "local":
-        return _create_sqlite_engine(settings.sqlite_path)
+        return _create_sqlite_engine(settings.sqlite_path, enforce_foreign_keys)
     return _create_postgres_engine(settings)
 
 
@@ -29,14 +35,18 @@ def describe_target(settings: Settings) -> str:
     return f"PostgreSQL database '{url.database}' on {url.host}"
 
 
-def _create_sqlite_engine(path: Path) -> AsyncEngine:
+def _create_sqlite_engine(path: Path, enforce_foreign_keys: bool) -> AsyncEngine:
     _prepare_sqlite_file(path)
     engine = create_async_engine(
         URL.create("sqlite+aiosqlite", database=str(path)),
         # Keep bound values (user data) out of error messages and logs.
         hide_parameters=True,
     )
-    event.listen(engine.sync_engine, "connect", _configure_sqlite_connection)
+    event.listen(
+        engine.sync_engine,
+        "connect",
+        _configure_sqlite_connection if enforce_foreign_keys else _configure_migration_connection,
+    )
     return engine
 
 
@@ -61,6 +71,18 @@ def _configure_sqlite_connection(
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA synchronous=NORMAL")
         cursor.execute(f"PRAGMA busy_timeout={CONNECT_TIMEOUT_SECONDS * 1000}")
+    finally:
+        cursor.close()
+
+
+def _configure_migration_connection(
+    dbapi_connection: DBAPIConnection, record: ConnectionPoolEntry
+) -> None:
+    _configure_sqlite_connection(dbapi_connection, record)
+    cursor = dbapi_connection.cursor()
+    try:
+        # Set outside any transaction, where SQLite ignores it.
+        cursor.execute("PRAGMA foreign_keys=OFF")
     finally:
         cursor.close()
 

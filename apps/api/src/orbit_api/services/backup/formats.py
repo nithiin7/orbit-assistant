@@ -2,7 +2,8 @@
 
 | Module                | Formats                                               |
 | --------------------- | ----------------------------------------------------- |
-| Tasks, shopping       | CSV (one table), JSON                                 |
+| Tasks, shopping,      | CSV (one table), JSON                                 |
+| watchlist             |                                                       |
 | Reminders, habits,    | CSV (a ZIP with one CSV per table), JSON              |
 | health and fitness    |                                                       |
 | Notes                 | Markdown (a ZIP of `.md` files in their folders), JSON |
@@ -44,6 +45,7 @@ EXPORT_FORMATS: Final[dict[Module, tuple[ExportFormat, ...]]] = {
     "fitness": ("json", "csv"),
     "assistant": ("json",),
     "search": ("json",),
+    "watchlist": ("json", "csv"),
 }
 
 _UNSAFE_NAME = re.compile(r'[\x00-\x1f\x7f/\\:*?"<>|]')

@@ -41,6 +41,7 @@ with an optional AI assistant that only sees what you allow.
 | 🔁 **Habits**           | Streaks, routines, a Today view, and history heatmaps                               |
 | 📂 **Documents**        | A personal vault with previews, versions, and expiry reminders                      |
 | 💪 **Health**           | Workout logging, personal records, body measurements, nutrition, and goals          |
+| 🎬 **Watchlist**        | Movies and series to watch, episode tracking, ratings, and a "watch tonight" picker |
 | 🔍 **Search**           | One search across every module, from anywhere with <kbd>Cmd/Ctrl</kbd>+<kbd>K</kbd> |
 | ✨ **AI assistant**     | Chat with your data, summaries and drafts, and automations you approve              |
 | 🔗 **Integrations**     | Google and Microsoft calendars, mail, and files                                     |

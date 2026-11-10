@@ -12,6 +12,7 @@ import {
   CalendarRange,
   Check,
   CheckSquare,
+  Clapperboard,
   Clock,
   CornerDownLeft,
   Droplets,
@@ -277,6 +278,7 @@ const SEARCH_ICONS: Record<UniversalSearchModule, LucideIcon> = {
   habits: Repeat2,
   documents: FileText,
   health: HeartPulse,
+  watchlist: Clapperboard,
 };
 
 /** The best matches the palette shows; "See all results" opens the search page for more. */
