@@ -1,6 +1,7 @@
 import type { SearchEntityType, UniversalSearchHit } from "@orbit/contracts";
 import {
   AlarmClock,
+  Bookmark as BookmarkIcon,
   BookOpen,
   CalendarDays,
   CheckSquare,
@@ -48,6 +49,7 @@ const ICONS: Readonly<Record<SearchEntityType, LucideIcon>> = {
   fitness_goal: Target,
   measurement: Ruler,
   watch_item: Clapperboard,
+  bookmark: BookmarkIcon,
 };
 
 const updatedFormat = new Intl.DateTimeFormat(undefined, {
