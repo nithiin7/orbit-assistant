@@ -132,6 +132,16 @@ Rpe = Annotated[float, Field(ge=1, le=10, description="Effort, 1 to 10 in steps 
 Rest = Annotated[int, Field(ge=0, le=3600, description="Rest between sets, in seconds.")]
 BodyMm = Annotated[int, Field(ge=10, le=3000, description="Millimetres.")]
 HeightMm = Annotated[int, Field(ge=500, le=2720, description="Millimetres.")]
+
+
+def _birth_date(value: date) -> date:
+    # Not `CalendarDate`: that starts in 2000, which rejects most people's birthdays.
+    if value.year < 1900 or value > date.today():
+        raise ValueError("must be a past date, from 1900 on")
+    return value
+
+
+BirthDate = Annotated[date, AfterValidator(_birth_date)]
 EnergyCal = Annotated[
     int, Field(ge=0, le=100_000_000, description="Small calories (1 kcal = 1,000 cal).")
 ]
@@ -249,7 +259,7 @@ class ProfileRequest(BaseModel):
     energy_unit: EnergyUnit = "kcal"
     water_unit: WaterUnit = "ml"
     height_mm: HeightMm | None = None
-    date_of_birth: CalendarDate | None = Field(
+    date_of_birth: BirthDate | None = Field(
         default=None, description="Optional; not needed for anything Orbit calculates."
     )
     targets: TargetsModel = Field(default_factory=TargetsModel)

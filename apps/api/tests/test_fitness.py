@@ -158,6 +158,15 @@ class TestProfile:
         for bad in ({"weight_unit": "stone"}, {"height_mm": 100}, {"user_id": str(uuid.uuid4())}):
             assert client.put(f"{fit}/profile", json=bad, headers=ada).status_code == 422
 
+    def test_date_of_birth_accepts_past_dates_before_2000(
+        self, client: TestClient, fit: str, ada: Headers
+    ) -> None:
+        saved = ok(client.put(f"{fit}/profile", json={"date_of_birth": "1990-05-14"}, headers=ada))
+        assert saved["date_of_birth"] == "1990-05-14"
+        for bad in ("1899-12-31", (date.today() + timedelta(days=1)).isoformat()):
+            body = {"date_of_birth": bad}
+            assert client.put(f"{fit}/profile", json=body, headers=ada).status_code == 422
+
 
 class TestExercises:
     def test_builtins_are_created_once(self, client: TestClient, fit: str, ada: Headers) -> None:
