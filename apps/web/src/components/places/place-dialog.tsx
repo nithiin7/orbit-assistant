@@ -2,7 +2,7 @@
 
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { PlaceMatch } from "@orbit/contracts";
-import { MapPin, Search, X } from "lucide-react";
+import { ChevronRight, LoaderCircle, MapPin, Search, SearchX, X } from "lucide-react";
 import Link from "next/link";
 import { type KeyboardEvent, useId, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import {
   COUNTRY_OPTIONS,
+  countryName,
   NOTE_MAX_LENGTH,
   placeSchema,
   type PlaceValues,
@@ -152,7 +153,20 @@ export function PlaceDialog({ mode, initial, onSearch, onSave, onClose }: PlaceD
             <label htmlFor={`${id}-search`} className="block text-sm font-medium">
               Find a place
             </label>
-            <div className="flex gap-2">
+            {/* The button sits inside the field at a fixed size, so typing or searching never
+                reflows the row. */}
+            <div className="relative">
+              {searching ? (
+                <LoaderCircle
+                  aria-hidden="true"
+                  className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground motion-safe:animate-spin"
+                />
+              ) : (
+                <Search
+                  aria-hidden="true"
+                  className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                />
+              )}
               <Input
                 id={`${id}-search`}
                 type="search"
@@ -162,43 +176,29 @@ export function PlaceDialog({ mode, initial, onSearch, onSave, onClose }: PlaceD
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 onKeyDown={onSearchKey}
+                aria-busy={searching || undefined}
+                className="h-10 pr-24 pl-9 [&::-webkit-search-cancel-button]:hidden"
               />
               <Button
                 variant="soft"
+                size="sm"
                 disabled={searching || query.trim().length < 2}
                 onClick={() => void search()}
+                className="absolute top-1/2 right-1 w-20 -translate-y-1/2"
               >
-                <Search aria-hidden="true" />
-                {searching ? "Searching…" : "Search"}
+                Search
               </Button>
             </div>
+            <p role="status" className="sr-only">
+              {searching ? "Searching…" : ""}
+            </p>
             <FormAlert message={searchError} />
             {matches !== null ? (
-              matches.length === 0 ? (
-                <p role="status" className="text-sm text-muted-foreground">
-                  No matches. Try another spelling, or fill it in below.
-                </p>
-              ) : (
-                <ul aria-label="Search results" className="max-h-56 space-y-1 overflow-y-auto">
-                  {matches.map((match) => (
-                    <li key={`${match.label}-${match.location.latitude}`}>
-                      <button
-                        type="button"
-                        onClick={() => choose(match)}
-                        className="flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
-                      >
-                        <CountryFlag code={match.country_code} className="mt-0.5" />
-                        <span className="min-w-0">
-                          <span className="block truncate text-sm font-medium">{match.name}</span>
-                          <span className="block truncate text-xs text-muted-foreground">
-                            {match.label}
-                          </span>
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )
+              <SearchResults
+                matches={matches}
+                onChoose={choose}
+                onDismiss={() => setMatches(null)}
+              />
             ) : null}
           </div>
         ) : null}
@@ -307,5 +307,94 @@ export function PlaceDialog({ mode, initial, onSearch, onSave, onClose }: PlaceD
         </div>
       </form>
     </dialog>
+  );
+}
+
+/** The place's city and country, without repeating its name. */
+function matchSummary(match: PlaceMatch): string {
+  const country = match.country_code ? countryName(match.country_code) : "";
+  const locality = match.locality.trim() === match.name.trim() ? "" : match.locality.trim();
+  return [locality, country].filter(Boolean).join(", ");
+}
+
+/** Matches from a place search, in a panel under the search field. */
+function SearchResults({
+  matches,
+  onChoose,
+  onDismiss,
+}: {
+  matches: readonly PlaceMatch[];
+  onChoose: (match: PlaceMatch) => void;
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="overflow-hidden rounded-lg border bg-card shadow-elevation-1">
+      <div className="flex items-center justify-between gap-2 border-b bg-muted/40 py-1 pr-1 pl-3">
+        <p role="status" className="text-xs text-muted-foreground">
+          {matches.length === 0
+            ? "No matches"
+            : `${matches.length} ${matches.length === 1 ? "match" : "matches"} · pick one to fill in the details`}
+        </p>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7"
+          aria-label="Clear search results"
+          onClick={onDismiss}
+        >
+          <X aria-hidden="true" className="size-3.5" />
+        </Button>
+      </div>
+      {matches.length === 0 ? (
+        <div className="flex items-center gap-3 px-3 py-4 text-sm text-muted-foreground">
+          <SearchX aria-hidden="true" className="size-4 shrink-0" />
+          <span>Try another spelling, or fill it in yourself below.</span>
+        </div>
+      ) : (
+        <ul
+          aria-label="Search results"
+          className="max-h-64 divide-y overflow-y-auto overscroll-contain"
+        >
+          {matches.map((match) => {
+            const summary = matchSummary(match);
+            return (
+              <li key={`${match.label}-${match.location.latitude}-${match.location.longitude}`}>
+                <button
+                  type="button"
+                  onClick={() => onChoose(match)}
+                  className="group flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors outline-none hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                >
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted">
+                    {match.country_code ? (
+                      <CountryFlag code={match.country_code} />
+                    ) : (
+                      <MapPin aria-hidden="true" className="size-4 text-muted-foreground" />
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium">{match.name}</span>
+                    {summary ? (
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {summary}
+                      </span>
+                    ) : null}
+                    <span
+                      className="mt-0.5 line-clamp-1 text-xs break-all text-muted-foreground/70"
+                      title={match.label}
+                    >
+                      {match.label}
+                    </span>
+                  </span>
+                  <ChevronRight
+                    aria-hidden="true"
+                    className="size-4 shrink-0 text-muted-foreground/60 transition-colors group-hover:text-brand group-focus-visible:text-brand"
+                  />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }
