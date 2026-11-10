@@ -1,14 +1,18 @@
 import { StorageStatusCard } from "@/components/storage/storage-indicator";
-import { settingsSectionsClassName } from "@/lib/settings";
 
 import { DatabaseLocation } from "./database-location";
 
+/**
+ * A grid rather than the shared settings columns: columns rebalance when the help opens, which
+ * moved the database card from one column to the other. Here the cards keep their places and the
+ * help spans the full width below them.
+ */
 export function StorageSettings() {
   return (
-    <div className={settingsSectionsClassName}>
+    <div className="grid items-start gap-6 @5xl/panel:grid-cols-2">
       <StorageStatusCard />
       <DatabaseLocation />
-      <details className="space-y-2 text-sm text-muted-foreground">
+      <details className="col-span-full space-y-2 text-sm text-muted-foreground">
         <summary className="cursor-pointer rounded-md font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
           How to switch storage
         </summary>

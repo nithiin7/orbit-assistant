@@ -91,7 +91,8 @@ export function AccountSettings() {
 
       {user.auth_provider === "local" ? <ChangePassword /> : null}
 
-      <div className="border-t pt-4 [column-span:all]">
+      {/* Its own top margin: in columns, the margin of the item above is dropped at the column end. */}
+      <div className="mt-6 border-t pt-4 [column-span:all]">
         <Button
           variant="outline"
           size="sm"
