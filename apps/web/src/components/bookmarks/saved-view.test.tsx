@@ -38,6 +38,10 @@ function bookmark(overrides: Partial<Bookmark> & Pick<Bookmark, "id" | "title">)
     pinned: false,
     open_count: 0,
     last_opened_at: null,
+    preview_description: null,
+    has_image: false,
+    has_icon: false,
+    previewed_at: null,
     created_at: "2026-11-01T09:00:00Z",
     updated_at: "2026-11-01T09:00:00Z",
     ...overrides,
@@ -53,7 +57,11 @@ const recipes: BookmarkCollection = {
 };
 
 /** Stateful lists, so mutations that refetch see their changes. */
-function routes(initial: Bookmark[], collections: BookmarkCollection[] = []) {
+function routes(
+  initial: Bookmark[],
+  collections: BookmarkCollection[] = [],
+  { previews = false }: { previews?: boolean } = {},
+) {
   let items = initial;
   return {
     set: (next: Bookmark[]) => {
@@ -62,6 +70,7 @@ function routes(initial: Bookmark[], collections: BookmarkCollection[] = []) {
     route: {
       [`GET ${BM}/items`]: () => Response.json({ bookmarks: items }),
       [`GET ${BM}/collections`]: () => Response.json({ collections }),
+      [`GET ${BM}/settings`]: () => Response.json({ previews_enabled: previews }),
     },
   };
 }
@@ -344,5 +353,97 @@ describe("SavedPanel", () => {
 
     expect(await screen.findByText("Couldn’t load your saved links.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
+  });
+
+  describe("link previews", () => {
+    it("fetches a preview after saving when previews are on", async () => {
+      const user = userEvent.setup();
+      const store = routes([], [], { previews: true });
+      const saved = bookmark({
+        id: "b-yt",
+        title: "youtube.com · watch",
+        url: "https://www.youtube.com/watch?v=abc",
+        kind: "video",
+        status: "later",
+      });
+      const previewed = {
+        ...saved,
+        title: "How to sharpen a knife",
+        preview_description: "A five minute guide.",
+        previewed_at: "2026-11-10T10:00:00Z",
+      };
+      const previewCalls: string[] = [];
+      mockApi({
+        ...session,
+        ...store.route,
+        [`POST ${BM}/items`]: () => {
+          store.set([saved]);
+          return Response.json(saved, { status: 201 });
+        },
+        [`POST ${BM}/items/b-yt/preview`]: () => {
+          previewCalls.push("b-yt");
+          store.set([previewed]);
+          return Response.json(previewed);
+        },
+      });
+
+      await renderSignedIn(<SavedPanel />);
+
+      await user.click(await screen.findByRole("button", { name: "Save a link" }));
+      const dialog = await screen.findByRole("dialog", { name: "Save a link" });
+      expect(dialog).toHaveTextContent("Orbit fetches the page’s name, description, and image");
+      await user.type(
+        within(dialog).getByRole("textbox", { name: "Link" }),
+        "https://www.youtube.com/watch?v=abc",
+      );
+      await user.click(within(dialog).getByRole("button", { name: "Save link" }));
+
+      expect(await screen.findByText("How to sharpen a knife")).toBeInTheDocument();
+      expect(screen.getByText("A five minute guide.")).toBeInTheDocument();
+      expect(previewCalls).toEqual(["b-yt"]);
+    });
+
+    it("offers previews in Settings when they're off, and never fetches one", async () => {
+      const user = userEvent.setup();
+      let previewCalls = 0;
+      mockApi({
+        ...session,
+        ...routes([bookmark({ id: "b-1", title: "One" })]).route,
+        [`POST ${BM}/items/b-1/preview`]: () => {
+          previewCalls += 1;
+          return new Response(null, { status: 409 });
+        },
+      });
+
+      await renderSignedIn(<SavedPanel />);
+
+      await user.click(await screen.findByRole("button", { name: "Actions for One" }));
+      expect(screen.queryByRole("menuitem", { name: /preview/i })).not.toBeInTheDocument();
+      await user.keyboard("{Escape}");
+      await user.click(screen.getByRole("button", { name: "Save link" }));
+      const dialog = await screen.findByRole("dialog", { name: "Save a link" });
+      expect(within(dialog).getByRole("link", { name: "Turn on link previews" })).toHaveAttribute(
+        "href",
+        "/settings/saved",
+      );
+      expect(previewCalls).toBe(0);
+    });
+
+    it("refreshes a preview from the menu and reports failures", async () => {
+      const user = userEvent.setup();
+      mockApi({
+        ...session,
+        ...routes([bookmark({ id: "b-1", title: "One" })], [], { previews: true }).route,
+        [`POST ${BM}/items/b-1/preview`]: () =>
+          Response.json({ detail: "Couldn't get a preview from that page." }, { status: 502 }),
+      });
+
+      await renderSignedIn(<SavedPanel />);
+
+      await user.click(await screen.findByRole("button", { name: "Actions for One" }));
+      await user.click(await screen.findByRole("menuitem", { name: "Refresh preview" }));
+
+      expect(await screen.findByText("Couldn't get a preview from that page.")).toBeInTheDocument();
+    });
   });
 });

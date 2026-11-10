@@ -3,6 +3,7 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { BookmarkCollection } from "@orbit/contracts";
 import { X } from "lucide-react";
+import Link from "next/link";
 import { useId } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
@@ -29,6 +30,8 @@ type BookmarkDialogProps = {
   mode: "add" | "edit";
   initial: BookmarkValues;
   collections: readonly BookmarkCollection[];
+  /** Whether the workspace fetches link previews, which changes what "Save a link" promises. */
+  previewsOn?: boolean;
   onSave: (values: BookmarkValues) => Promise<void>;
   /** Called once the dialog has closed, whether saved or cancelled. */
   onClose: () => void;
@@ -39,6 +42,7 @@ export function BookmarkDialog({
   mode,
   initial,
   collections,
+  previewsOn = false,
   onSave,
   onClose,
 }: BookmarkDialogProps) {
@@ -98,7 +102,20 @@ export function BookmarkDialog({
             </h2>
             {adding ? (
               <p className="text-sm text-pretty text-muted-foreground">
-                Only the link is needed. Orbit never visits the page; the rest is optional.
+                {previewsOn ? (
+                  "Only the link is needed. Orbit fetches the page’s name, description, and image after you save."
+                ) : (
+                  <>
+                    Only the link is needed; the rest is optional.{" "}
+                    <Link
+                      href="/settings/saved"
+                      className="rounded-sm font-medium text-brand outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      Turn on link previews
+                    </Link>{" "}
+                    to fill in names and images automatically.
+                  </>
+                )}
               </p>
             ) : null}
           </div>

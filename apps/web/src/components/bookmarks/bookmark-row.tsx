@@ -15,13 +15,16 @@ import {
   Pencil,
   Pin,
   PinOff,
+  RefreshCw,
   SquarePlay,
   Trash2,
   Wrench,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 
+import type { PreviewRole } from "@/api/bookmarks";
 import { Menu, type MenuItem } from "@/components/ui/menu";
+import { useBookmarkPreviewFile } from "@/hooks/use-bookmarks";
 import { hostOf, initialOf, KIND_LABELS } from "@/lib/bookmarks";
 import { TASK_LIST_STYLES } from "@/lib/tasks";
 import { cn } from "@/utils/common";
@@ -43,6 +46,8 @@ export type BookmarkActions = {
   setStatus: (bookmark: Bookmark, status: Bookmark["status"]) => void;
   copy: (bookmark: Bookmark) => void;
   remove: (bookmark: Bookmark) => void;
+  /** Fetch the link's preview again; left out while previews are off. */
+  refreshPreview?: (bookmark: Bookmark) => void;
 };
 
 function menuItems(bookmark: Bookmark, actions: BookmarkActions): MenuItem[] {
@@ -70,6 +75,15 @@ function menuItems(bookmark: Bookmark, actions: BookmarkActions): MenuItem[] {
       onSelect: () => actions.setStatus(bookmark, "later"),
     });
   }
+  const { refreshPreview } = actions;
+  if (refreshPreview) {
+    items.push({
+      id: "preview",
+      label: "Refresh preview",
+      icon: RefreshCw,
+      onSelect: () => refreshPreview(bookmark),
+    });
+  }
   items.push(
     { id: "copy", label: "Copy link", icon: Copy, onSelect: () => actions.copy(bookmark) },
     {
@@ -88,15 +102,20 @@ function OutboundLink({
   bookmark,
   actions,
   className,
+  decorative = false,
   children,
 }: {
   bookmark: Bookmark;
   actions: BookmarkActions;
   className?: string;
+  /** A second way to the same page (a thumbnail): skipped by keyboard and screen readers. */
+  decorative?: boolean;
   children: ReactNode;
 }) {
   return (
     <a
+      aria-hidden={decorative || undefined}
+      tabIndex={decorative ? -1 : undefined}
       href={bookmark.url}
       target="_blank"
       rel="noopener noreferrer"
@@ -111,17 +130,68 @@ function OutboundLink({
   );
 }
 
-function SiteBadge({ bookmark, size }: { bookmark: Bookmark; size: "sm" | "md" }) {
+/** An image from a Blob, shown through an object URL that is revoked when it changes. */
+function BlobImage({ blob, className }: { blob: Blob; className?: string }) {
+  const image = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const url = URL.createObjectURL(blob);
+    if (image.current) image.current.src = url;
+    return () => URL.revokeObjectURL(url);
+  }, [blob]);
+
+  return (
+    // An object URL can't go through the Next.js image loader. The link's name is beside the
+    // image, so the image itself is decorative.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img ref={image} alt="" className={className} />
+  );
+}
+
+/** A link's stored preview image or icon, or `fallback` while it loads or when there's none. */
+function PreviewImage({
+  workspaceId,
+  bookmark,
+  role,
+  className,
+  fallback,
+}: {
+  workspaceId: string;
+  bookmark: Bookmark;
+  role: PreviewRole;
+  className?: string;
+  fallback: ReactNode;
+}) {
+  const file = useBookmarkPreviewFile(workspaceId, bookmark, role);
+  return file.data ? <BlobImage blob={file.data} className={className} /> : fallback;
+}
+
+function SiteBadge({
+  workspaceId,
+  bookmark,
+  size,
+}: {
+  workspaceId: string;
+  bookmark: Bookmark;
+  size: "sm" | "md";
+}) {
   const Icon = KIND_ICONS[bookmark.kind];
   return (
     <span
       aria-hidden="true"
       className={cn(
-        "relative flex shrink-0 items-center justify-center rounded-lg bg-brand-subtle font-semibold text-brand",
+        "relative flex shrink-0 items-center justify-center rounded-lg font-semibold",
+        bookmark.has_icon ? "border bg-white" : "bg-brand-subtle text-brand",
         size === "md" ? "size-10 text-base" : "size-9 text-sm",
       )}
     >
-      {initialOf(bookmark)}
+      <PreviewImage
+        workspaceId={workspaceId}
+        bookmark={bookmark}
+        role="icon"
+        className="size-5 object-contain"
+        fallback={initialOf(bookmark)}
+      />
       <span className="absolute -right-1 -bottom-1 flex size-4.5 items-center justify-center rounded-full border bg-card text-muted-foreground">
         <Icon className="size-2.5" />
       </span>
@@ -131,15 +201,20 @@ function SiteBadge({ bookmark, size }: { bookmark: Bookmark; size: "sm" | "md" }
 
 /** One saved link in a list: its site, name, what it's for, tags, and actions. */
 export function BookmarkRow({
+  workspaceId,
   bookmark,
   collection,
   actions,
   pending,
+  previewing = false,
 }: {
+  workspaceId: string;
   bookmark: Bookmark;
   collection: BookmarkCollection | null;
   actions: BookmarkActions;
   pending: boolean;
+  /** A preview is being fetched. */
+  previewing?: boolean;
 }) {
   const host = hostOf(bookmark.url);
   return (
@@ -151,7 +226,7 @@ export function BookmarkRow({
         bookmark.status === "done" && "bg-card/60",
       )}
     >
-      <SiteBadge bookmark={bookmark} size="md" />
+      <SiteBadge workspaceId={workspaceId} bookmark={bookmark} size="md" />
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex min-w-0 items-center gap-1.5">
           <OutboundLink
@@ -196,6 +271,19 @@ export function BookmarkRow({
           <p className="line-clamp-2 text-sm text-pretty whitespace-pre-line text-muted-foreground">
             {bookmark.note}
           </p>
+        ) : bookmark.preview_description ? (
+          <p className="line-clamp-2 text-sm text-pretty text-muted-foreground/80">
+            {bookmark.preview_description}
+          </p>
+        ) : null}
+        {previewing ? (
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <RefreshCw
+              className="size-3 animate-spin motion-reduce:animate-none"
+              aria-hidden="true"
+            />
+            Getting preview…
+          </p>
         ) : null}
         {bookmark.tags.length > 0 ? (
           <ul aria-label="Tags" className="flex flex-wrap gap-1 pt-0.5">
@@ -210,6 +298,25 @@ export function BookmarkRow({
           </ul>
         ) : null}
       </div>
+      {bookmark.has_image ? (
+        <OutboundLink
+          bookmark={bookmark}
+          actions={actions}
+          decorative
+          className={cn(
+            "block shrink-0 overflow-hidden rounded-lg border bg-muted",
+            bookmark.kind === "reel" ? "h-20 w-14 sm:h-24 sm:w-16" : "aspect-video w-20 sm:w-28",
+          )}
+        >
+          <PreviewImage
+            workspaceId={workspaceId}
+            bookmark={bookmark}
+            role="image"
+            className="size-full object-cover"
+            fallback={null}
+          />
+        </OutboundLink>
+      ) : null}
       <div className="flex shrink-0 items-center gap-0.5">
         <OutboundLink
           bookmark={bookmark}
@@ -237,9 +344,11 @@ export function BookmarkRow({
 
 /** A pinned link in the quick-launch grid: one click opens it. */
 export function PinnedTile({
+  workspaceId,
   bookmark,
   actions,
 }: {
+  workspaceId: string;
   bookmark: Bookmark;
   actions: BookmarkActions;
 }) {
@@ -250,7 +359,7 @@ export function PinnedTile({
         actions={actions}
         className="flex items-center gap-2.5 rounded-xl border bg-card p-2.5 transition-[border-color,translate,box-shadow] duration-150 outline-none hover:-translate-y-px hover:border-brand/30 hover:shadow-elevation-1 focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none motion-reduce:hover:translate-y-0"
       >
-        <SiteBadge bookmark={bookmark} size="sm" />
+        <SiteBadge workspaceId={workspaceId} bookmark={bookmark} size="sm" />
         <span className="min-w-0">
           <span className="block truncate text-sm font-medium">{bookmark.title}</span>
           <span className="block truncate text-xs text-muted-foreground">

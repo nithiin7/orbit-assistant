@@ -25,7 +25,12 @@ import { Menu } from "@/components/ui/menu";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChoiceChips } from "@/components/watchlist/choice-chips";
-import { useBookmarkCollections, useBookmarkMutations, useBookmarks } from "@/hooks/use-bookmarks";
+import {
+  useBookmarkCollections,
+  useBookmarkMutations,
+  useBookmarks,
+  useBookmarkSettings,
+} from "@/hooks/use-bookmarks";
 import {
   bookmarksIn,
   bookmarkValues,
@@ -114,6 +119,8 @@ function SavedPage({ workspaceId }: { workspaceId: string }) {
   const { bookmarks, reload } = useBookmarks(workspaceId);
   const { collections: collectionsResource } = useBookmarkCollections(workspaceId);
   const mutations = useBookmarkMutations(workspaceId);
+  const { settings } = useBookmarkSettings(workspaceId);
+  const previewsOn = settings?.previews_enabled === true;
   const { confirm, confirmDialog } = useConfirm();
   const params = useSearchParams();
   const router = useRouter();
@@ -127,6 +134,7 @@ function SavedPage({ workspaceId }: { workspaceId: string }) {
   const [tag, setTag] = useState(ALL_TAGS);
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
+  const [previewing, setPreviewing] = useState<ReadonlySet<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
 
@@ -149,6 +157,28 @@ function SavedPage({ workspaceId }: { workspaceId: string }) {
 
   const collectionForNew = view.kind === "collection" ? view.id : null;
 
+  function markPending(id: string, isPending: boolean) {
+    setPending((current) => toggled(current, id, isPending));
+  }
+
+  /** Fetch a link's preview. After a save it's quiet: the link is saved either way. */
+  async function fetchPreview(bookmark: Bookmark, { quiet }: { quiet: boolean }) {
+    if (!quiet) setError(null);
+    setPreviewing((current) => toggled(current, bookmark.id, true));
+    try {
+      const updated = await mutations.preview.mutateAsync(bookmark);
+      if (!quiet) setAnnouncement(`Updated the preview for “${updated.title}”.`);
+    } catch (reason) {
+      if (!quiet) setError(describeApiError(reason, "Couldn’t get a preview. Try again."));
+    } finally {
+      setPreviewing((current) => toggled(current, bookmark.id, false));
+    }
+  }
+
+  function afterSave(saved: Bookmark) {
+    if (previewsOn) void fetchPreview(saved, { quiet: true });
+  }
+
   /** Save a pasted link straight away, into the collection on screen. */
   const savePasted = useEffectEvent(async (url: string) => {
     setError(null);
@@ -157,6 +187,7 @@ function SavedPage({ workspaceId }: { workspaceId: string }) {
         createRequestOf(newBookmarkValues(url, collectionForNew)),
       );
       setAnnouncement(`Saved “${saved.title}”.`);
+      afterSave(saved);
     } catch (reason) {
       setError(describeApiError(reason, "Couldn’t save the link. Try again."));
     }
@@ -187,15 +218,6 @@ function SavedPage({ workspaceId }: { workspaceId: string }) {
       document.removeEventListener("paste", onPaste);
     };
   }, []);
-
-  function markPending(id: string, isPending: boolean) {
-    setPending((current) => {
-      const next = new Set(current);
-      if (isPending) next.add(id);
-      else next.delete(id);
-      return next;
-    });
-  }
 
   async function update(bookmark: Bookmark, changes: UpdateBookmarkRequest, done: string) {
     setError(null);
@@ -267,6 +289,9 @@ function SavedPage({ workspaceId }: { workspaceId: string }) {
         () => setError("Couldn’t copy the link. Copy it from Edit instead."),
       ),
     remove,
+    refreshPreview: previewsOn
+      ? (bookmark) => void fetchPreview(bookmark, { quiet: false })
+      : undefined,
   };
 
   const headerActions = (
@@ -320,7 +345,12 @@ function SavedPage({ workspaceId }: { workspaceId: string }) {
             </h3>
             <ul className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-2">
               {pinned.map((bookmark) => (
-                <PinnedTile key={bookmark.id} bookmark={bookmark} actions={actions} />
+                <PinnedTile
+                  key={bookmark.id}
+                  workspaceId={workspaceId}
+                  bookmark={bookmark}
+                  actions={actions}
+                />
               ))}
             </ul>
           </section>
@@ -382,7 +412,9 @@ function SavedPage({ workspaceId }: { workspaceId: string }) {
             {shown.map((bookmark) => (
               <BookmarkRow
                 key={bookmark.id}
+                workspaceId={workspaceId}
                 bookmark={bookmark}
+                previewing={previewing.has(bookmark.id)}
                 collection={
                   view.kind === "collection"
                     ? null
@@ -460,9 +492,11 @@ function SavedPage({ workspaceId }: { workspaceId: string }) {
           mode="add"
           initial={newBookmarkValues(dialog.url, collectionForNew)}
           collections={collections}
+          previewsOn={previewsOn}
           onSave={async (values) => {
             const saved = await mutations.add.mutateAsync(createRequestOf(values));
             setAnnouncement(`Saved “${saved.title}”.`);
+            afterSave(saved);
           }}
           onClose={() => closeDialog("add")}
         />
@@ -564,6 +598,13 @@ function Shell({
       </div>
     </div>
   );
+}
+
+function toggled(set: ReadonlySet<string>, id: string, on: boolean): ReadonlySet<string> {
+  const next = new Set(set);
+  if (on) next.add(id);
+  else next.delete(id);
+  return next;
 }
 
 function LoadError({ message, onRetry }: { message: string; onRetry: () => void }) {

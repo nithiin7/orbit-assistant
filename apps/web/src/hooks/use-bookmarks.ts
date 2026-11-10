@@ -4,6 +4,7 @@ import type {
   Bookmark,
   BookmarkCollection,
   BookmarkCollections,
+  BookmarkSettings,
   CreateBookmarkCollectionRequest,
   CreateBookmarkRequest,
   UpdateBookmarkCollectionRequest,
@@ -14,15 +15,20 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   bookmarkCollectionsOptions,
   bookmarkKeys,
+  bookmarkSettingsOptions,
   bookmarksOptions,
   createBookmark,
   createBookmarkCollection,
   deleteBookmark,
   deleteBookmarkCollection,
+  getBookmarkPreviewFile,
+  type PreviewRole,
   recordBookmarkOpen,
+  refreshBookmarkPreview,
   replaceCachedBookmark,
   updateBookmark,
   updateBookmarkCollection,
+  updateBookmarkSettings,
   updateCachedBookmarks,
 } from "@/api/bookmarks";
 import { queryResource } from "@/hooks/query-resource";
@@ -85,6 +91,12 @@ export function useBookmarkMutations(workspaceId: string) {
     },
   });
 
+  const preview = useMutation({
+    mutationFn: (bookmark: Pick<Bookmark, "id">) =>
+      withToken((token) => refreshBookmarkPreview(token, workspaceId, bookmark.id)),
+    onSuccess: store,
+  });
+
   const opened = useMutation({
     mutationFn: (bookmark: Pick<Bookmark, "id">) =>
       withToken((token) => recordBookmarkOpen(token, workspaceId, bookmark.id)),
@@ -134,5 +146,46 @@ export function useBookmarkMutations(workspaceId: string) {
     },
   });
 
-  return { add, update, opened, remove, createCollection, updateCollection, removeCollection };
+  return {
+    add,
+    update,
+    preview,
+    opened,
+    remove,
+    createCollection,
+    updateCollection,
+    removeCollection,
+  };
+}
+
+/** Whether this workspace fetches link previews, and the switch for it. */
+export function useBookmarkSettings(workspaceId: string) {
+  const { withToken } = useAuth();
+  const queryClient = useQueryClient();
+  const query = useQuery(bookmarkSettingsOptions(withToken, workspaceId));
+  const toggle = useMutation({
+    mutationFn: (enabled: boolean) =>
+      withToken((token) =>
+        updateBookmarkSettings(token, workspaceId, { previews_enabled: enabled }),
+      ),
+    onSuccess: (settings) =>
+      queryClient.setQueryData<BookmarkSettings>(bookmarkKeys.settings(workspaceId), settings),
+  });
+  return { settings: query.data ?? null, isError: query.isError, toggle };
+}
+
+/** A link's stored preview image or icon, fetched once per preview. */
+export function useBookmarkPreviewFile(workspaceId: string, bookmark: Bookmark, role: PreviewRole) {
+  const { withToken } = useAuth();
+  const stored = role === "image" ? bookmark.has_image : bookmark.has_icon;
+  return useQuery({
+    queryKey: bookmarkKeys.previewFile(workspaceId, bookmark.id, role, bookmark.previewed_at ?? ""),
+    queryFn: ({ signal }) =>
+      withToken((token) =>
+        getBookmarkPreviewFile(token, workspaceId, bookmark.id, role, { signal }),
+      ),
+    enabled: stored,
+    staleTime: Infinity,
+    retry: false,
+  });
 }
