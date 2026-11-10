@@ -3088,8 +3088,8 @@ shapes, and places without a pin, still count in the tally but can't be seen on 
 
 A personal wellness tracker: workouts, an exercise library and templates, body measurements and
 progress photos, nutrition and water, activity, and fitness goals. It isn't a medical
-application: nothing is diagnosed, prescribed, recommended by AI, imported from devices, or sent
-to another service. Code: `services/fitness/` (`records.py` and `calculations.py` hold the rules
+application: nothing is diagnosed, prescribed, or imported from devices, and nothing is sent to
+another service except through the opt-in AI helpers (see [Health helpers](#health-helpers)). Code: `services/fitness/` (`records.py` and `calculations.py` hold the rules
 as pure functions; `service.py` covers the profile, library, and templates; `workouts.py`,
 `body.py`, `nutrition.py`, `tracking.py`, and `integrations.py` the rest; `overview.py` the
 dashboard), `repositories/fitness.py`, `api/v1/fitness.py`, migration `0016_create_fitness`. The
@@ -3204,8 +3204,10 @@ measure that doesn't account for muscle, frame, age, or sex. No body-fat figure 
 ### Nutrition calculations
 
 - **Foods** hold nutrients (energy, protein, carbohydrates, fat, optional fiber) for one serving
-  of a given quantity and unit (100 g, 1 slice). There's no food database; everything is entered
-  by hand.
+  of a given quantity and unit (100 g, 1 slice). There's no food database. Foods are entered by
+  hand, added from a built-in **food pack** (common foods of a cuisine with typical nutrients,
+  `lib/fitness/food-packs.ts`, client-side), or filled from an AI estimate (see
+  [Health helpers](#health-helpers)); every one is saved through the same food route.
 - **Food entries** are a portion on a date and meal (breakfast, lunch, dinner, snacks, other):
   either a saved food, whose nutrients are scaled by quantity / serving quantity with integer
   round-half-up to the canonical unit, or typed-in nutrients for the whole quantity. Entries copy
@@ -3362,8 +3364,9 @@ The OpenAPI document is the reference for fields.
 
 ### Health limitations
 
-- No external integrations (Apple Health, Google Fit, wearables, food databases, barcodes), no
-  AI recommendations, and no medical features.
+- No external integrations (Apple Health, Google Fit, wearables, food databases, barcodes) and
+  no medical features. AI helpers give estimates and ideas only, as drafts the person saves.
+- Food packs are a small fixed list of rounded reference values, not a database.
 - Contributions to habits apply to records saved after the link is turned on; they never lower a
   day, so deleting a workout leaves its habit day done.
 - Goals track themselves only for body weight and strength; other kinds use check-ins.
@@ -3779,6 +3782,7 @@ services/ai/            framework-free domain logic
 ├── prompts.py          prompt assembly, record fencing, citation and proposal checks
 ├── assistant.py        conversations, grounding, streaming turns
 ├── assist.py           contextual features (summaries, extraction, drafts)
+├── health_assist.py    Health helpers: nutrient estimates, food ideas, workout ideas
 ├── actions.py          proposal lifecycle; validator and executor protocols
 └── insights.py         deterministic insights and dismissals
 providers/ai/           HTTP adapters (openai.py, anthropic.py, gemini.py, ollama.py, registry.py)
@@ -3957,6 +3961,28 @@ summaries (descriptive, no diagnosis or advice). The web exposes these through a
 in Notes, Documents, Calendar, Finance, Habits, and Health, shown only when AI is on and allowed
 to read that module.
 
+### Health helpers
+
+`services/ai/health_assist.py` (`HealthAssistService`) adds three helpers to Health. Each
+returns a draft and saves nothing; the person saves it through the fitness routes.
+
+| Helper            | Where in Health                 | Sends to the model                                  | Needs                 |
+| ----------------- | ------------------------------- | --------------------------------------------------- | --------------------- |
+| Nutrient estimate | Food form, **Estimate with AI** | Only the typed name and serving                     | AI on                 |
+| Food ideas        | Saved foods, **Food ideas**     | Only the typed region or cuisine                    | AI on                 |
+| Workout idea      | Templates, **Suggest with AI**  | Active goals, last 14 days of workouts, the library | AI on, Health allowed |
+
+- Model output is parsed and checked like any other: numbers are clamped to what the fitness
+  routes accept (energy ≤ 10,000 kcal, nutrients ≤ 5 kg per serving, sets 1–20, rest ≤ 1 h);
+  foods without a name, unit, serving, or energy are dropped; a reply with nothing usable is a 502. A workout may only use the person's own unarchived exercises, sent as references (`E1`,
+  `E2`, …) so IDs never reach the model; unknown or repeated references are dropped; an empty
+  library is a 422.
+- Typed text is fenced as a record, like other untrusted content. The system prompt asks for
+  general estimates and ideas, not medical, dietary, or treatment advice, and the web labels
+  results as estimates with the provider and whether it ran locally.
+- Food ideas without AI come from the built-in food packs; the chosen pack is remembered in the
+  browser (`orbit:food-pack`). Location is never detected: the person picks or types a region.
+
 `GET …/ai/insights` (`insights.py`) is deterministic, with no model involved: spending changes
 against the same days last month, budgets near or over, payments due within a week, habit
 consistency against the 30-day rate, task completion and overdue counts, calendar workload, and
@@ -4032,6 +4058,9 @@ at 80%.
 | `POST …/ai/messages`                                     | Ask (server-sent events)                      |
 | `POST …/ai/proposals/{id}/approve`, `/reject`            | Decide a proposal                             |
 | `POST …/ai/assist`                                       | Run a contextual feature                      |
+| `POST …/ai/health/food-estimate`                         | Estimate a food's nutrients (draft)           |
+| `POST …/ai/health/food-ideas`                            | Common foods of a cuisine (drafts)            |
+| `POST …/ai/health/workout-suggestion`                    | A workout from the person's library (draft)   |
 | `GET …/ai/search`                                        | Hybrid semantic search                        |
 | `GET …/ai/insights`, `POST …/ai/insights/dismiss`        | Insights                                      |
 | `GET …/ai/index`, `POST /rebuild`, `/retry`, `DELETE`    | Index status and maintenance                  |

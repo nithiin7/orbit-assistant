@@ -27,6 +27,10 @@ from orbit_api.schemas.ai import (
     AiConversationDetailResponse,
     AiConversationListResponse,
     AiConversationResponse,
+    AiFoodEstimateRequest,
+    AiFoodEstimateResponse,
+    AiFoodIdeasRequest,
+    AiFoodIdeasResponse,
     AiIndexActionResponse,
     AiIndexResponse,
     AiInsightListResponse,
@@ -45,6 +49,8 @@ from orbit_api.schemas.ai import (
     AiTurnStarted,
     AiUsageParams,
     AiUsageResponse,
+    AiWorkoutSuggestionRequest,
+    AiWorkoutSuggestionResponse,
     CreateAiProviderRequest,
     DismissAiInsightRequest,
     RenameAiConversationRequest,
@@ -63,6 +69,7 @@ from orbit_api.services.ai.assistant import (
     viewer_for,
 )
 from orbit_api.services.ai.configuration import ProviderChanges, ProviderDraft, SettingsChanges
+from orbit_api.services.ai.health_assist import EmptyLibraryError
 from orbit_api.services.ai.indexing import permitted_types
 from orbit_api.services.ai.models import (
     AiDisabledError,
@@ -149,6 +156,11 @@ def _errors() -> Generator[None]:
         ) from None
     except SourceNotFoundError:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That record wasn't found.") from None
+    except EmptyLibraryError:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "Add some exercises to your library first.",
+        ) from None
     except (UnsupportedCapabilityError, ProviderRequestError) as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, exc.message) from None
     except ProviderError as exc:
@@ -488,6 +500,47 @@ async def assist(
             _zone(body.timezone, user.timezone),
         )
     return AiAssistResponse.of(result)
+
+
+# Health helpers
+
+
+@router.post("/health/food-estimate", summary="Estimate a food's nutrients")
+async def estimate_food(
+    body: AiFoodEstimateRequest, workspace: WorkspaceDep, user: CurrentUserDep, ai: AiServicesDep
+) -> AiFoodEstimateResponse:
+    """Estimated nutrients for one serving, to review in the food form. Sends only the text
+    typed, so it needs AI on but not permission to read Health. Nothing is saved."""
+    with _errors():
+        result = await ai.health.estimate_food(workspace.id, user.id, body.description)
+    return AiFoodEstimateResponse.of(result)
+
+
+@router.post("/health/food-ideas", summary="Suggest common foods of a cuisine")
+async def food_ideas(
+    body: AiFoodIdeasRequest, workspace: WorkspaceDep, user: CurrentUserDep, ai: AiServicesDep
+) -> AiFoodIdeasResponse:
+    """Everyday foods of a region or cuisine with estimated nutrients. Sends only the cuisine
+    typed. Nothing is saved until the person adds the foods."""
+    with _errors():
+        result = await ai.health.food_ideas(workspace.id, user.id, body.cuisine)
+    return AiFoodIdeasResponse.of(result)
+
+
+@router.post("/health/workout-suggestion", summary="Suggest a workout")
+async def suggest_workout(
+    body: AiWorkoutSuggestionRequest,
+    workspace: WorkspaceDep,
+    user: CurrentUserDep,
+    ai: AiServicesDep,
+) -> AiWorkoutSuggestionResponse:
+    """A workout from the person's own exercise library, shaped by their active goals and
+    recent workouts. Needs permission to read Health. Nothing is saved."""
+    with _errors():
+        result = await ai.health.suggest_workout(
+            workspace.id, user.id, body.focus, _zone(body.timezone, user.timezone)
+        )
+    return AiWorkoutSuggestionResponse.of(result)
 
 
 # Semantic search

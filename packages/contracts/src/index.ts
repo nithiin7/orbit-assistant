@@ -633,6 +633,13 @@ export type AiStreamDone = { message: AiMessage; proposals: AiProposal[] };
 export type AiAssistRequest = Schemas["AiAssistRequest"];
 export type AiAssistKind = AiAssistRequest["kind"];
 export type AiAssistResult = Schemas["AiAssistResponse"];
+export type AiFoodEstimateRequest = Schemas["AiFoodEstimateRequest"];
+export type AiFoodEstimate = Schemas["AiFoodEstimateResponse"];
+export type AiFoodIdeasRequest = Schemas["AiFoodIdeasRequest"];
+export type AiFoodIdeas = Schemas["AiFoodIdeasResponse"];
+export type AiFoodDraft = Schemas["AiFoodDraftResponse"];
+export type AiWorkoutSuggestionRequest = Schemas["AiWorkoutSuggestionRequest"];
+export type AiWorkoutSuggestion = Schemas["AiWorkoutSuggestionResponse"];
 export type AiSearchQuery = NonNullable<
   paths["/api/v1/workspaces/{workspace_id}/ai/search"]["get"]["parameters"]["query"]
 >;

@@ -15,8 +15,16 @@ from pydantic import (
 )
 
 from orbit_api.schemas.common import Name, TimeZoneName, single_line
+from orbit_api.schemas.fitness import NutrientsModel
 from orbit_api.services.ai.assist import AssistKind, AssistResult
 from orbit_api.services.ai.configuration import ConnectionTest, ResolvedProvider
+from orbit_api.services.ai.health_assist import (
+    FoodDraftSuggestion,
+    FoodEstimate,
+    FoodIdeas,
+    Provenance,
+    WorkoutIdea,
+)
 from orbit_api.services.ai.models import (
     ActionKind,
     AiModule,
@@ -43,6 +51,7 @@ from orbit_api.services.ai.models import (
     UsageSummary,
 )
 from orbit_api.services.ai.providers import KIND_CAPABILITIES, base_url_of, processing_of
+from orbit_api.services.fitness.models import TemplateCategory
 
 ModelName = Annotated[
     str,
@@ -659,3 +668,150 @@ class AiIndexResponse(BaseModel):
 
 class AiIndexActionResponse(BaseModel):
     affected: int
+
+
+# Health helpers
+
+
+HealthPrompt = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=200),
+    AfterValidator(single_line),
+]
+
+
+def _processing(provenance: Provenance) -> Processing:
+    return "local" if provenance.processing == "local" else "cloud"
+
+
+class AiFoodEstimateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    description: HealthPrompt = Field(
+        description='The food and, optionally, the serving, as typed ("masala dosa, 1 piece").'
+    )
+
+
+class AiFoodIdeasRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    cuisine: HealthPrompt = Field(description='A region or cuisine ("Kerala", "Mexican").')
+
+
+class AiWorkoutSuggestionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    focus: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, max_length=200),
+        AfterValidator(single_line),
+    ] = Field(default="", description="What the workout should be like, in the person's words.")
+    timezone: TimeZoneName | None = None
+
+
+class AiFoodDraftResponse(BaseModel):
+    """A food for the person to review and save; nothing is saved by the AI."""
+
+    name: str
+    serving_quantity_milli: int
+    serving_unit: str
+    nutrients: NutrientsModel = Field(description="Estimated, for one serving.")
+    note: str
+
+    @classmethod
+    def of(cls, food: FoodDraftSuggestion) -> "AiFoodDraftResponse":
+        return cls(
+            name=food.name,
+            serving_quantity_milli=food.serving_quantity_milli,
+            serving_unit=food.serving_unit,
+            nutrients=NutrientsModel.of(food.nutrients),
+            note=food.note,
+        )
+
+
+class AiFoodEstimateResponse(BaseModel):
+    food: AiFoodDraftResponse
+    provider_name: str
+    model: str
+    processing: Processing
+
+    @classmethod
+    def of(cls, result: FoodEstimate) -> "AiFoodEstimateResponse":
+        p = result.provenance
+        return cls(
+            food=AiFoodDraftResponse.of(result.food),
+            provider_name=p.provider_name,
+            model=p.model,
+            processing=_processing(p),
+        )
+
+
+class AiFoodIdeasResponse(BaseModel):
+    cuisine: str
+    foods: list[AiFoodDraftResponse]
+    provider_name: str
+    model: str
+    processing: Processing
+
+    @classmethod
+    def of(cls, result: FoodIdeas) -> "AiFoodIdeasResponse":
+        provenance = result.provenance
+        return cls(
+            cuisine=result.cuisine,
+            foods=[AiFoodDraftResponse.of(f) for f in result.foods],
+            provider_name=provenance.provider_name,
+            model=provenance.model,
+            processing=_processing(provenance),
+        )
+
+
+class AiSuggestedExerciseResponse(BaseModel):
+    exercise_id: uuid.UUID
+    exercise_name: str
+    sets: int
+    target_reps_min: int | None
+    target_reps_max: int | None
+    target_duration_s: int | None
+    target_distance_m: int | None
+    rest_seconds: int | None
+    notes: str
+
+
+class AiWorkoutSuggestionResponse(BaseModel):
+    """A workout draft from the person's own exercises, to save as a template or discard."""
+
+    name: str
+    category: TemplateCategory
+    description: str
+    notes: str
+    exercises: list[AiSuggestedExerciseResponse]
+    provider_name: str
+    model: str
+    processing: Processing
+
+    @classmethod
+    def of(cls, result: WorkoutIdea) -> "AiWorkoutSuggestionResponse":
+        w, p = result.workout, result.provenance
+        return cls(
+            name=w.name,
+            category=w.category,
+            description=w.description,
+            notes=w.notes,
+            exercises=[
+                AiSuggestedExerciseResponse(
+                    exercise_id=e.exercise.id,
+                    exercise_name=e.exercise.details.name,
+                    sets=e.plan.sets,
+                    target_reps_min=e.plan.target_reps_min,
+                    target_reps_max=e.plan.target_reps_max,
+                    target_duration_s=e.plan.target_duration_s,
+                    target_distance_m=e.plan.target_distance_m,
+                    rest_seconds=e.plan.rest_seconds,
+                    notes=e.plan.notes,
+                )
+                for e in w.exercises
+            ],
+            provider_name=p.provider_name,
+            model=p.model,
+            processing=_processing(p),
+        )

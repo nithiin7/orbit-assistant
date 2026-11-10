@@ -33346,6 +33346,201 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/ai/health/food-estimate": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Estimate a food's nutrients",
+        "description": "Estimated nutrients for one serving, to review in the food form. Sends only the text\ntyped, so it needs AI on but not permission to read Health. Nothing is saved.",
+        "operationId": "estimate_food_api_v1_workspaces__workspace_id__ai_health_food_estimate_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiFoodEstimateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiFoodEstimateResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace (or record) does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/ai/health/food-ideas": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Suggest common foods of a cuisine",
+        "description": "Everyday foods of a region or cuisine with estimated nutrients. Sends only the cuisine\ntyped. Nothing is saved until the person adds the foods.",
+        "operationId": "food_ideas_api_v1_workspaces__workspace_id__ai_health_food_ideas_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiFoodIdeasRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiFoodIdeasResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace (or record) does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/ai/health/workout-suggestion": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Suggest a workout",
+        "description": "A workout from the person's own exercise library, shaped by their active goals and\nrecent workouts. Needs permission to read Health. Nothing is saved.",
+        "operationId": "suggest_workout_api_v1_workspaces__workspace_id__ai_health_workout_suggestion_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiWorkoutSuggestionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiWorkoutSuggestionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace (or record) does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/ai/search": {
       "get": {
         "tags": [
@@ -38645,6 +38840,145 @@
         ],
         "title": "AiConversationResponse"
       },
+      "AiFoodDraftResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "serving_quantity_milli": {
+            "type": "integer",
+            "title": "Serving Quantity Milli"
+          },
+          "serving_unit": {
+            "type": "string",
+            "title": "Serving Unit"
+          },
+          "nutrients": {
+            "$ref": "#/components/schemas/NutrientsModel",
+            "description": "Estimated, for one serving."
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "serving_quantity_milli",
+          "serving_unit",
+          "nutrients",
+          "note"
+        ],
+        "title": "AiFoodDraftResponse",
+        "description": "A food for the person to review and save; nothing is saved by the AI."
+      },
+      "AiFoodEstimateRequest": {
+        "properties": {
+          "description": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Description",
+            "description": "The food and, optionally, the serving, as typed (\"masala dosa, 1 piece\")."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "description"
+        ],
+        "title": "AiFoodEstimateRequest"
+      },
+      "AiFoodEstimateResponse": {
+        "properties": {
+          "food": {
+            "$ref": "#/components/schemas/AiFoodDraftResponse"
+          },
+          "provider_name": {
+            "type": "string",
+            "title": "Provider Name"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "processing": {
+            "type": "string",
+            "enum": [
+              "local",
+              "cloud"
+            ],
+            "title": "Processing"
+          }
+        },
+        "type": "object",
+        "required": [
+          "food",
+          "provider_name",
+          "model",
+          "processing"
+        ],
+        "title": "AiFoodEstimateResponse"
+      },
+      "AiFoodIdeasRequest": {
+        "properties": {
+          "cuisine": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Cuisine",
+            "description": "A region or cuisine (\"Kerala\", \"Mexican\")."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cuisine"
+        ],
+        "title": "AiFoodIdeasRequest"
+      },
+      "AiFoodIdeasResponse": {
+        "properties": {
+          "cuisine": {
+            "type": "string",
+            "title": "Cuisine"
+          },
+          "foods": {
+            "items": {
+              "$ref": "#/components/schemas/AiFoodDraftResponse"
+            },
+            "type": "array",
+            "title": "Foods"
+          },
+          "provider_name": {
+            "type": "string",
+            "title": "Provider Name"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "processing": {
+            "type": "string",
+            "enum": [
+              "local",
+              "cloud"
+            ],
+            "title": "Processing"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cuisine",
+          "foods",
+          "provider_name",
+          "model",
+          "processing"
+        ],
+        "title": "AiFoodIdeasResponse"
+      },
       "AiIndexActionResponse": {
         "properties": {
           "affected": {
@@ -39462,6 +39796,95 @@
         ],
         "title": "AiSettingsResponse"
       },
+      "AiSuggestedExerciseResponse": {
+        "properties": {
+          "exercise_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Exercise Id"
+          },
+          "exercise_name": {
+            "type": "string",
+            "title": "Exercise Name"
+          },
+          "sets": {
+            "type": "integer",
+            "title": "Sets"
+          },
+          "target_reps_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Reps Min"
+          },
+          "target_reps_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Reps Max"
+          },
+          "target_duration_s": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Duration S"
+          },
+          "target_distance_m": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Distance M"
+          },
+          "rest_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rest Seconds"
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "exercise_id",
+          "exercise_name",
+          "sets",
+          "target_reps_min",
+          "target_reps_max",
+          "target_duration_s",
+          "target_distance_m",
+          "rest_seconds",
+          "notes"
+        ],
+        "title": "AiSuggestedExerciseResponse"
+      },
       "AiUsageLineResponse": {
         "properties": {
           "provider_name": {
@@ -39568,6 +39991,100 @@
           "near_limit"
         ],
         "title": "AiUsageResponse"
+      },
+      "AiWorkoutSuggestionRequest": {
+        "properties": {
+          "focus": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Focus",
+            "description": "What the workout should be like, in the person's words.",
+            "default": ""
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AiWorkoutSuggestionRequest"
+      },
+      "AiWorkoutSuggestionResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "push",
+              "pull",
+              "legs",
+              "upper",
+              "lower",
+              "full_body",
+              "cardio",
+              "mobility",
+              "other"
+            ],
+            "title": "Category"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "exercises": {
+            "items": {
+              "$ref": "#/components/schemas/AiSuggestedExerciseResponse"
+            },
+            "type": "array",
+            "title": "Exercises"
+          },
+          "provider_name": {
+            "type": "string",
+            "title": "Provider Name"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "processing": {
+            "type": "string",
+            "enum": [
+              "local",
+              "cloud"
+            ],
+            "title": "Processing"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "category",
+          "description",
+          "notes",
+          "exercises",
+          "provider_name",
+          "model",
+          "processing"
+        ],
+        "title": "AiWorkoutSuggestionResponse",
+        "description": "A workout draft from the person's own exercises, to save as a template or discard."
       },
       "ApproveAgentActionRequest": {
         "properties": {

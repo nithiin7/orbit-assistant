@@ -6161,6 +6161,69 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/ai/health/food-estimate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Estimate a food's nutrients
+         * @description Estimated nutrients for one serving, to review in the food form. Sends only the text
+         *     typed, so it needs AI on but not permission to read Health. Nothing is saved.
+         */
+        post: operations["estimate_food_api_v1_workspaces__workspace_id__ai_health_food_estimate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/ai/health/food-ideas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Suggest common foods of a cuisine
+         * @description Everyday foods of a region or cuisine with estimated nutrients. Sends only the cuisine
+         *     typed. Nothing is saved until the person adds the foods.
+         */
+        post: operations["food_ideas_api_v1_workspaces__workspace_id__ai_health_food_ideas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/ai/health/workout-suggestion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Suggest a workout
+         * @description A workout from the person's own exercise library, shaped by their active goals and
+         *     recent workouts. Needs permission to read Health. Nothing is saved.
+         */
+        post: operations["suggest_workout_api_v1_workspaces__workspace_id__ai_health_workout_suggestion_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/ai/search": {
         parameters: {
             query?: never;
@@ -7815,6 +7878,67 @@ export interface components {
              */
             updated_at: string;
         };
+        /**
+         * AiFoodDraftResponse
+         * @description A food for the person to review and save; nothing is saved by the AI.
+         */
+        AiFoodDraftResponse: {
+            /** Name */
+            name: string;
+            /** Serving Quantity Milli */
+            serving_quantity_milli: number;
+            /** Serving Unit */
+            serving_unit: string;
+            /** @description Estimated, for one serving. */
+            nutrients: components["schemas"]["NutrientsModel"];
+            /** Note */
+            note: string;
+        };
+        /** AiFoodEstimateRequest */
+        AiFoodEstimateRequest: {
+            /**
+             * Description
+             * @description The food and, optionally, the serving, as typed ("masala dosa, 1 piece").
+             */
+            description: string;
+        };
+        /** AiFoodEstimateResponse */
+        AiFoodEstimateResponse: {
+            food: components["schemas"]["AiFoodDraftResponse"];
+            /** Provider Name */
+            provider_name: string;
+            /** Model */
+            model: string;
+            /**
+             * Processing
+             * @enum {string}
+             */
+            processing: "local" | "cloud";
+        };
+        /** AiFoodIdeasRequest */
+        AiFoodIdeasRequest: {
+            /**
+             * Cuisine
+             * @description A region or cuisine ("Kerala", "Mexican").
+             */
+            cuisine: string;
+        };
+        /** AiFoodIdeasResponse */
+        AiFoodIdeasResponse: {
+            /** Cuisine */
+            cuisine: string;
+            /** Foods */
+            foods: components["schemas"]["AiFoodDraftResponse"][];
+            /** Provider Name */
+            provider_name: string;
+            /** Model */
+            model: string;
+            /**
+             * Processing
+             * @enum {string}
+             */
+            processing: "local" | "cloud";
+        };
         /** AiIndexActionResponse */
         AiIndexActionResponse: {
             /** Affected */
@@ -8104,6 +8228,30 @@ export interface components {
             /** Indexing Enabled */
             indexing_enabled: boolean;
         };
+        /** AiSuggestedExerciseResponse */
+        AiSuggestedExerciseResponse: {
+            /**
+             * Exercise Id
+             * Format: uuid
+             */
+            exercise_id: string;
+            /** Exercise Name */
+            exercise_name: string;
+            /** Sets */
+            sets: number;
+            /** Target Reps Min */
+            target_reps_min: number | null;
+            /** Target Reps Max */
+            target_reps_max: number | null;
+            /** Target Duration S */
+            target_duration_s: number | null;
+            /** Target Distance M */
+            target_distance_m: number | null;
+            /** Rest Seconds */
+            rest_seconds: number | null;
+            /** Notes */
+            notes: string;
+        };
         /** AiUsageLineResponse */
         AiUsageLineResponse: {
             /** Provider Name */
@@ -8147,6 +8295,45 @@ export interface components {
             monthly_token_limit: number | null;
             /** Near Limit */
             near_limit: boolean;
+        };
+        /** AiWorkoutSuggestionRequest */
+        AiWorkoutSuggestionRequest: {
+            /**
+             * Focus
+             * @description What the workout should be like, in the person's words.
+             * @default
+             */
+            focus: string;
+            /** Timezone */
+            timezone?: string | null;
+        };
+        /**
+         * AiWorkoutSuggestionResponse
+         * @description A workout draft from the person's own exercises, to save as a template or discard.
+         */
+        AiWorkoutSuggestionResponse: {
+            /** Name */
+            name: string;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "push" | "pull" | "legs" | "upper" | "lower" | "full_body" | "cardio" | "mobility" | "other";
+            /** Description */
+            description: string;
+            /** Notes */
+            notes: string;
+            /** Exercises */
+            exercises: components["schemas"]["AiSuggestedExerciseResponse"][];
+            /** Provider Name */
+            provider_name: string;
+            /** Model */
+            model: string;
+            /**
+             * Processing
+             * @enum {string}
+             */
+            processing: "local" | "cloud";
         };
         /** ApproveAgentActionRequest */
         ApproveAgentActionRequest: {
@@ -42162,6 +42349,153 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AiAssistResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    estimate_food_api_v1_workspaces__workspace_id__ai_health_food_estimate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiFoodEstimateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiFoodEstimateResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    food_ideas_api_v1_workspaces__workspace_id__ai_health_food_ideas_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiFoodIdeasRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiFoodIdeasResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    suggest_workout_api_v1_workspaces__workspace_id__ai_health_workout_suggestion_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiWorkoutSuggestionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiWorkoutSuggestionResponse"];
                 };
             };
             /** @description Not signed in. */
