@@ -1172,6 +1172,57 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/backups/reveal": {
+      "post": {
+        "tags": [
+          "backups"
+        ],
+        "summary": "Open the backups folder in the file manager",
+        "description": "Opens this workspace's backup folder in Finder, File Explorer, or the desktop file\nmanager on the machine running the API, which in local mode is the user's own computer.\nThe folder comes from the server's settings and the workspace ID, never from the request.",
+        "operationId": "reveal_backups_folder_api_v1_workspaces__workspace_id__backups_reveal_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "Not available in cloud mode or in production."
+          },
+          "503": {
+            "description": "No file manager could be opened on the API's machine."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/backups/settings": {
       "put": {
         "tags": [
@@ -40077,6 +40128,23 @@
             },
             "type": "array",
             "title": "Modules"
+          },
+          "folder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folder",
+            "description": "The folder on the API's machine holding this workspace's backups. Only in local mode, outside production."
+          },
+          "can_reveal_folder": {
+            "type": "boolean",
+            "title": "Can Reveal Folder",
+            "description": "Whether the API can open that folder in the file manager."
           }
         },
         "type": "object",
@@ -40087,7 +40155,9 @@
           "total_bytes",
           "last_success_at",
           "running",
-          "modules"
+          "modules",
+          "folder",
+          "can_reveal_folder"
         ],
         "title": "BackupOverviewResponse"
       },

@@ -186,8 +186,8 @@ pnpm dev:api        # logs "Storage mode: local. Using the SQLite database at â€
 The simplest way to back up a workspace is **Settings â†’ Backup & restore**: a backup is a
 checksummed ZIP of the workspace's records and files, read from one consistent snapshot while
 the API keeps running, optionally password-encrypted, and restorable into this or another Orbit
-installation (local or cloud). Automatic daily, weekly, or monthly backups can run too. Stored backups live in `ORBIT_BACKUPS_PATH`; download copies to keep
-them on another disk.
+installation (local or cloud). Automatic daily, weekly, or monthly backups can run too. Stored backups live in `ORBIT_BACKUPS_PATH`; in local mode the Backup page shows that folder
+and opens it. Download copies to keep them on another disk.
 
 To back up a whole installation (every account and workspace) instead, copy the database and
 the files together. SQLite runs in WAL mode, so recent writes may sit in `orbit.sqlite3-wal`

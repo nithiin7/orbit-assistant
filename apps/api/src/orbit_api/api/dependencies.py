@@ -84,6 +84,7 @@ from orbit_api.services.watchlist.service import TitleCatalogs, WatchlistService
 from orbit_api.services.workspaces.service import WorkspaceService
 from orbit_api.system.attachment_store import FileAttachmentStore
 from orbit_api.system.backup_store import FileArchiveStore
+from orbit_api.system.file_manager import FileRevealer
 from orbit_api.system.secrets import FernetSecretBox
 
 
@@ -104,6 +105,20 @@ def get_app_settings(request: Request) -> Settings:
 
 
 SettingsDep = Annotated[Settings, Depends(get_app_settings)]
+
+
+def exposes_local_paths(settings: Settings) -> bool:
+    """Whether the API may share and open folders on its own machine: only in local mode, which
+    runs on the user's own computer. A production server keeps its filesystem layout to itself,
+    and has no desktop to open."""
+    return settings.storage_mode == "local" and not settings.is_production
+
+
+def get_file_revealer(request: Request) -> FileRevealer:
+    return request.app.state.file_revealer
+
+
+FileRevealerDep = Annotated[FileRevealer, Depends(get_file_revealer)]
 
 
 def get_password_hasher(request: Request) -> PasswordHasher:

@@ -243,9 +243,16 @@ class BackupOverviewResponse(BaseModel):
     last_success_at: datetime | None
     running: bool
     modules: list[ExportModuleInfo]
+    folder: str | None = Field(
+        description="The folder on the API's machine holding this workspace's backups. Only in "
+        "local mode, outside production."
+    )
+    can_reveal_folder: bool = Field(
+        description="Whether the API can open that folder in the file manager."
+    )
 
     @classmethod
-    def of(cls, overview: Overview) -> "BackupOverviewResponse":
+    def of(cls, overview: Overview, *, folder: str | None) -> "BackupOverviewResponse":
         last = overview.last_success
         return cls(
             settings=BackupSettingsResponse.of(overview.settings),
@@ -260,6 +267,8 @@ class BackupOverviewResponse(BaseModel):
                 )
                 for module in MODULES
             ],
+            folder=folder,
+            can_reveal_folder=folder is not None,
         )
 
 

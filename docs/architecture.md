@@ -313,6 +313,10 @@ written once. SQLite is embedded in the API process; local mode needs no databas
   command without a shell, on the configured path only (`system/file_manager.py`). Production
   and cloud mode never return the path and refuse to open anything; health endpoints never
   report paths.
+- **Settings → Backup & restore** shows the workspace's backup folder the same way: the overview
+  (`GET …/backups`) carries `folder` and `can_reveal_folder`, and `POST …/backups/reveal`
+  creates the folder if needed and opens it. Same rules: local mode outside production only;
+  the path comes from `ORBIT_BACKUPS_PATH` and the workspace ID, never from the request.
 - Startup logs the mode and a credential-free target, for example
   `Storage mode: local. Using the SQLite database at …`.
 - **No fallback.** If the selected database cannot be opened, reached, or is not migrated, the

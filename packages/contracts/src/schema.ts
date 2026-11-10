@@ -388,6 +388,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/backups/reveal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open the backups folder in the file manager
+         * @description Opens this workspace's backup folder in Finder, File Explorer, or the desktop file
+         *     manager on the machine running the API, which in local mode is the user's own computer.
+         *     The folder comes from the server's settings and the workspace ID, never from the request.
+         */
+        post: operations["reveal_backups_folder_api_v1_workspaces__workspace_id__backups_reveal_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/backups/settings": {
         parameters: {
             query?: never;
@@ -8365,6 +8387,16 @@ export interface components {
             running: boolean;
             /** Modules */
             modules: components["schemas"]["ExportModuleInfo"][];
+            /**
+             * Folder
+             * @description The folder on the API's machine holding this workspace's backups. Only in local mode, outside production.
+             */
+            folder: string | null;
+            /**
+             * Can Reveal Folder
+             * @description Whether the API can open that folder in the file manager.
+             */
+            can_reveal_folder: boolean;
         };
         /** BackupResponse */
         BackupResponse: {
@@ -20076,6 +20108,56 @@ export interface operations {
             };
             /** @description The backup failed; the failure is recorded in the history. */
             500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reveal_backups_folder_api_v1_workspaces__workspace_id__backups_reveal_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not available in cloud mode or in production. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description No file manager could be opened on the API's machine. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
