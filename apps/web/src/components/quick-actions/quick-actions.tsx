@@ -1,13 +1,13 @@
 "use client";
 
 import type { CreateTaskRequest } from "@orbit/contracts";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createContext, type ReactNode, useContext, useId, useState } from "react";
 
 import { describeApiError } from "@/api/client";
-import { addWater } from "@/api/fitness";
+import { addWater, fitnessKeys } from "@/api/fitness";
 import { taskListOptions } from "@/api/tasks";
 import { NewEventDialog, nextEventValues } from "@/components/calendar/calendar-widget";
 import { TransactionDialog } from "@/components/finance/transaction-dialog";
@@ -42,10 +42,17 @@ type QuickActionsValue = {
   run: (action: QuickAction) => void;
   /** The last action's outcome, for a polite status region. */
   message: string;
+  /**
+   * The message only needs announcing: the action shows its own result where it was taken (water
+   * updates the button's running total), so a visible line would just repeat it.
+   */
+  messageQuiet: boolean;
   /** Set when the last action that ran at once failed. */
   error: string | null;
   /** How much one tap of "water" records, in the person's unit. */
   waterLabel: string;
+  /** How many water taps are still saving. */
+  waterPending: number;
 };
 
 const QuickActionsContext = createContext<QuickActionsValue | null>(null);
@@ -71,7 +78,10 @@ export function QuickActionsProvider({ children }: { children: ReactNode }) {
   const timeZone = useViewerTimeZone();
   const today = todayIn(timeZone);
   const [dialog, setDialog] = useState<DialogAction | null>(null);
-  const [message, setMessage] = useState("");
+  const queryClient = useQueryClient();
+  const [status, setStatus] = useState({ message: "", quiet: false });
+  const setMessage = (message: string) => setStatus({ message, quiet: false });
+  const [waterPending, setWaterPending] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const runFitness = useFitnessAction(workspaceId ?? "");
   const startWorkout = useStartWorkout(workspaceId ?? "", today, timeZone);
@@ -94,12 +104,23 @@ export function QuickActionsProvider({ children }: { children: ReactNode }) {
         return;
       case "water":
         setUsedWater(true);
+        setWaterPending((count) => count + 1);
         runFitness((token) => addWater(token, workspaceId, today, waterMl), {
           touches: ["habits"],
-        }).then(
-          () => setMessage(`Recorded ${waterLabel} of water.`),
-          (reason: unknown) => setError(describeApiError(reason, "Couldn’t add the water.")),
-        );
+        })
+          .then(
+            (day) => {
+              // The saved day carries the new total, so the running total updates at once.
+              queryClient.setQueryData(fitnessKeys.water(workspaceId, today), day);
+              const total = formatWater(day.total_ml, profileData?.water_unit ?? "ml");
+              setStatus({
+                message: `Recorded ${waterLabel} of water. ${total} today.`,
+                quiet: true,
+              });
+            },
+            (reason: unknown) => setError(describeApiError(reason, "Couldn’t add the water.")),
+          )
+          .finally(() => setWaterPending((count) => count - 1));
         return;
       case "workout":
         startWorkout(null).catch((reason: unknown) =>
@@ -110,7 +131,14 @@ export function QuickActionsProvider({ children }: { children: ReactNode }) {
         setDialog(action);
     }
   };
-  const value: QuickActionsValue = { run, message, error, waterLabel };
+  const value: QuickActionsValue = {
+    run,
+    message: status.message,
+    messageQuiet: status.quiet,
+    error,
+    waterLabel,
+    waterPending,
+  };
 
   const close = () => setDialog(null);
   const done = (text: string) => setMessage(text);

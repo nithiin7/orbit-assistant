@@ -19,9 +19,13 @@ import { type QuickAction, useQuickActions } from "@/components/quick-actions/qu
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Menu } from "@/components/ui/menu";
-import { useActiveWorkspaceId } from "@/hooks/use-calendar";
+import { useActiveWorkspaceId, useViewerTimeZone } from "@/hooks/use-calendar";
+import { useUnits, useWaterDay } from "@/hooks/use-fitness";
 import { useRoutineList, useRoutineMutations } from "@/hooks/use-habits";
+import { todayIn } from "@/lib/calendar";
+import { formatWater } from "@/lib/fitness";
 import { habitsHref } from "@/lib/habits";
+import { cn } from "@/utils/common";
 
 const ACTIONS: readonly { action: QuickAction; label: string; icon: LucideIcon }[] = [
   { action: "task", label: "Task", icon: CheckSquare },
@@ -38,8 +42,16 @@ const ACTIONS: readonly { action: QuickAction; label: string; icon: LucideIcon }
  * does the job at once (water, a quick note), through the shared quick actions.
  */
 export function QuickActionsWidget() {
-  const { run, message, error, waterLabel } = useQuickActions();
+  const { run, message, messageQuiet, error, waterLabel, waterPending } = useQuickActions();
   const workspaceId = useActiveWorkspaceId();
+  const today = todayIn(useViewerTimeZone());
+  // Today's total sits on the water button, so every tap visibly adds to it.
+  const water = useWaterDay(workspaceId, today);
+  const units = useUnits(workspaceId);
+  const waterTotal =
+    water.state.status === "success" && water.state.data.total_ml > 0
+      ? formatWater(water.state.data.total_ml, units.water_unit)
+      : null;
   const router = useRouter();
   const routines = useRoutineList(workspaceId, "active");
   const { start } = useRoutineMutations(workspaceId ?? "");
@@ -78,9 +90,20 @@ export function QuickActionsWidget() {
             size="sm"
             disabled={workspaceId === null}
             aria-label={`Record ${waterLabel} of water`}
+            title={waterTotal ? `${waterTotal} of water today` : undefined}
             onClick={() => run("water")}
           >
-            <Droplets aria-hidden="true" />+{waterLabel}
+            <Droplets aria-hidden="true" className={cn(waterPending > 0 && "animate-pulse")} />+
+            {waterLabel}
+            {waterTotal ? (
+              <span
+                key={waterTotal}
+                aria-hidden="true"
+                className="-mr-1 inline-block animate-check-pop rounded-full bg-background/70 px-1.5 py-px text-[11px] font-medium text-muted-foreground tabular-nums"
+              >
+                {waterTotal} today
+              </span>
+            ) : null}
           </Button>
           <Menu
             variant="soft"
@@ -107,7 +130,13 @@ export function QuickActionsWidget() {
             Routine
           </Menu>
         </div>
-        <p role="status" className="mt-2 text-xs text-muted-foreground empty:hidden">
+        <p
+          role="status"
+          className={cn(
+            "mt-2 text-xs text-muted-foreground empty:hidden",
+            messageQuiet && "sr-only",
+          )}
+        >
           {error ? "" : message}
         </p>
         {error ? (
