@@ -2975,12 +2975,36 @@ collection takes its links out of it first). A URL is saved once per workspace (
 existing link); the check is in the service, not a unique index, because a long non-ASCII URL
 can exceed PostgreSQL's index row size.
 
-Orbit never fetches a saved page. Without a title, kind, or status, `services/bookmarks/urls.py`
+Saving never fetches the page. Without a title, kind, or status, `services/bookmarks/urls.py`
 works them out from the URL alone: Instagram and Facebook `/reel/`, TikTok, and YouTube Shorts
 are reels; YouTube, Vimeo, and similar are videos; `github.com/<owner>/<repo>` and the like are
 repos; a few writing hosts and `/blog/` paths are articles. Reels, videos, and articles start on
 the `later` queue, everything else as `reference`. The default title is the host and last path
 segment. `POST …/items/{id}/opened` counts an open without changing `updated_at`.
+
+### Link previews (opt-in)
+
+Off by default, per workspace (`bookmark_settings`; **Settings → Saved**,
+`PUT …/bookmarks/settings`). With previews on, the web asks for `POST …/items/{id}/preview` right after a save (and from a
+link's menu). The server fetches the page and reads its `<head>` with the standard-library HTML
+parser (`services/bookmarks/preview.py`): Open Graph and Twitter title, description, image, and
+type, the `<title>`, and an icon `<link>` (else `/favicon.ico`). It fills `preview_description`
+and `previewed_at`, replaces the title only while it is still the URL-made default, and turns a
+plain `link` into `video` or `article` when `og:type` says so. The image (up to 2 MB) and icon (up
+to 256 KB) are kept only if their first bytes are JPEG, PNG, GIF, WebP, or (icons) ICO, never SVG;
+each is a row in `bookmark_previews` (`role` `image` or `icon`) whose `id` names the file in the
+attachment store. A refresh replaces both rows and deletes the old files after commit; deleting a
+bookmark deletes its rows and files. `GET …/items/{id}/image` and `…/icon` serve them (204 when
+absent) with `nosniff` and `default-src 'none'`.
+
+The fetcher (`providers/web/link_preview.py`) guards against SSRF: `http`/`https` on ports 80 and
+443 only, no credentials in the URL; it resolves the host and refuses unless every address is
+public (`is_global`, not multicast, IPv4-mapped IPv6 unwrapped); it connects to the checked
+address with the real name in `Host` and in TLS (`sni_hostname`, so certificates are verified
+against it and a second DNS answer can't redirect the connection); a new client per request,
+`trust_env=False`, no cookies, at most four redirects each checked again, 512 KB of HTML, and 8
+seconds in all. Failures are 502, blocked addresses 422, previews off 409. Tests replace
+`app.state.link_previews` with a fake.
 
 ### Web
 
@@ -2995,13 +3019,13 @@ saved-link search hits open the page itself. Logic lives in `lib/bookmarks`.
 
 ### Backup
 
-The `bookmarks` module ("Saved") backs up both tables and exports JSON or CSV (one file per
-table).
+The `bookmarks` module ("Saved") backs up its tables, with preview files (`FILE_COLUMNS`:
+`bookmark_previews.id`), and exports JSON or CSV (one file per table).
 
 ### Limitations
 
-No page fetching, so no automatic titles, favicons, or thumbnails yet; no browser extension or
-share target; no dashboard widget or agent tool; no import of browser bookmarks.
+Previews only see what a signed-out visitor sees (Instagram often shows nothing); no browser
+extension or share target; no dashboard widget or agent tool; no import of browser bookmarks.
 
 ## Health and fitness
 
