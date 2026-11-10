@@ -30,6 +30,7 @@ import { StorageIndicator } from "@/components/storage/storage-indicator";
 import { TaskWidget } from "@/components/tasks/task-widget";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { WatchlistWidget } from "@/components/watchlist/watchlist-widget";
 import { WorkspaceOverview } from "@/components/workspace/workspace-overview";
 import { useDashboardLayout } from "@/hooks/use-dashboard-layout";
 import {
@@ -68,6 +69,7 @@ const widgetComponents: Record<WidgetId, ComponentType> = {
   notes: NotesWidget,
   documents: DocumentsWidget,
   shopping: ShoppingOverview,
+  watchlist: WatchlistWidget,
   cash_flow: CashFlowWidget,
   upcoming_payments: UpcomingPaymentsWidget,
   budget: BudgetWidget,

@@ -1,6 +1,7 @@
 import {
   Archive,
   Bot,
+  Clapperboard,
   Database,
   Layers,
   LineChart,
@@ -47,6 +48,13 @@ export const settingsPanels: readonly SettingsPanel[] = [
     title: "Finance",
     description: "Live prices for your investments.",
     icon: LineChart,
+    group: "general",
+  },
+  {
+    slug: "watchlist",
+    title: "Watchlist",
+    description: "Posters and details for movies and series.",
+    icon: Clapperboard,
     group: "general",
   },
   {

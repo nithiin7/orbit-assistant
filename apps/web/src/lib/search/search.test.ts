@@ -178,3 +178,25 @@ describe("search state in the URL", () => {
     expect(toSearchQuery({ ...state, q: "  deed " }).q).toBe("deed");
   });
 });
+
+describe("watchlist hits", () => {
+  it("open the title's sheet and describe the title without its status when active", () => {
+    const title = hit({
+      module: "watchlist",
+      entity_type: "watch_item",
+      status: "want",
+      details: [
+        { key: "watch_kind", value: "series" },
+        { key: "year", value: "2011" },
+        { key: "platform", value: "Netflix" },
+      ],
+    });
+
+    expect(searchResultHref(title)).toBe("/watchlist?title=11111111-0000-4000-8000-000000000001");
+    expect(describeHit(title)).toEqual(["Watchlist", "Series", "2011", "On Netflix"]);
+    expect(describeHit({ ...title, active: false, status: "watched", details: [] })).toEqual([
+      "Watchlist",
+      "Watched",
+    ]);
+  });
+});
