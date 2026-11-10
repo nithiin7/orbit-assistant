@@ -1,6 +1,7 @@
 import { screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { rememberConnectReturn } from "@/lib/integrations";
 import { ada, json, mockApi, personal, status } from "@/test/api-mock";
 import { connection } from "@/test/integrations";
 import { renderSignedIn } from "@/test/session";
@@ -50,6 +51,16 @@ describe("OAuthCallback", () => {
       code: "abc",
       error: null,
     });
+  });
+
+  it("returns to a remembered page, such as the setup guide, once", async () => {
+    search.params = new URLSearchParams({ state: "s".repeat(43), code: "abc" });
+    rememberConnectReturn("/welcome?step=connect");
+    mockApi({ ...session, "POST /api/v1/integrations/oauth/complete": json(connection()) });
+    await renderSignedIn(<OAuthCallback />);
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/welcome?step=connect"));
+    expect(sessionStorage.getItem("orbit.integrations.return")).toBeNull();
   });
 
   it("explains a refused or expired authorization", async () => {

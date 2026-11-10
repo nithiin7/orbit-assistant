@@ -24,6 +24,7 @@ import { HabitsWidget } from "@/components/habits/habits-widget";
 import { NotesWidget } from "@/components/notes/notes-widget";
 import { PageHeader } from "@/components/page-header";
 import { ReminderOverview } from "@/components/reminders/reminder-overview";
+import { SetupCard } from "@/components/setup/setup-card";
 import { ShoppingOverview } from "@/components/shopping/shopping-overview";
 import { StorageIndicator } from "@/components/storage/storage-indicator";
 import { TaskWidget } from "@/components/tasks/task-widget";
@@ -182,6 +183,8 @@ function DashboardLayout({ userId }: { userId: string }) {
       <p role="status" className="sr-only">
         {announcement}
       </p>
+
+      <SetupCard />
 
       {saveError ? (
         <div

@@ -53,6 +53,7 @@ export const ada: UserProfile = {
   display_name: "Ada",
   auth_provider: "local",
   timezone: null,
+  setup_status: "done",
   created_at: "2026-10-01T09:00:00Z",
 };
 

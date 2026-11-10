@@ -52,7 +52,7 @@ import {
   SYNC_INTERVALS,
 } from "@/lib/integrations";
 
-import { ConnectAccount } from "./integrations-settings";
+import { ConnectAccount } from "./connect-account";
 import { MailSettings } from "./mail-browser";
 import { ProviderMark } from "./provider-mark";
 import { ErrorText, Section } from "./section";

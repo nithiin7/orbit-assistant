@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { describeApiError } from "@/api/client";
 import { EmptyState } from "@/components/empty-state";
 import { useCompleteAuthorization } from "@/hooks/use-integrations";
-import { CALLBACK_PATH, connectionHref } from "@/lib/integrations";
+import { CALLBACK_PATH, connectionHref, takeConnectReturn } from "@/lib/integrations";
 
 /**
  * Where the provider sends the browser after consent. The code and state go to the API with
@@ -34,7 +34,10 @@ export function OAuthCallback() {
     if (!received.state) return;
     complete.mutate(
       { state: received.state, code: received.code, error: received.error },
-      { onSuccess: (connection) => router.replace(connectionHref(connection.id)) },
+      {
+        onSuccess: (connection) =>
+          router.replace(takeConnectReturn() ?? connectionHref(connection.id)),
+      },
     );
   }, [complete, received, router]);
 

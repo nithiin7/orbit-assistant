@@ -656,6 +656,24 @@ The dashboard's arrangement and display preferences are saved per user; see
 [Customization model](#customization-model). The dashboard itself is described under
 [Daily dashboard and command center](#daily-dashboard-and-command-center).
 
+### First-run setup guide
+
+A short, optional guide at `/welcome` (outside the app shell) helps a new user set up their
+name, photo, and time zone; appearance; then, for the areas they pick, finance accounts and live
+prices, the health profile, Google or Microsoft connections, and an AI provider, model, and
+switch. Every step reuses the APIs and forms behind Settings, so nothing is held as a draft, and
+any step can be skipped.
+
+- Progress is `users.setup_status`: `pending` for new profiles, `deferred` once the guide is
+  opened or left for later, and `done` once finished or dismissed. It changes through
+  `PATCH /api/v1/me`. Migration `0026` sets existing users to `done`.
+- While `pending`, the app layout redirects to `/welcome` (only once, since opening the guide
+  sets `deferred`). While `deferred`, the dashboard shows a "Finish setting up" card.
+  Settings → Account offers "Run setup again", which never moves a `done` user back.
+- Connecting an account leaves the page for the provider's consent screen. Before it does, the
+  guide remembers `/welcome?step=connect` in `sessionStorage`; the OAuth callback returns there
+  once (same-origin paths only), otherwise it opens the connection's settings.
+
 ## Tasks
 
 The first product feature: to-dos inside a workspace.

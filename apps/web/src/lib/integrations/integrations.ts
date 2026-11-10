@@ -132,6 +132,33 @@ export function formatSynced(at: string | null, now: Date = new Date()): string 
 /** Where the provider's consent page sends people back to; see the API's redirect URL. */
 export const CALLBACK_PATH = "/integrations/callback";
 
+const RETURN_KEY = "orbit.integrations.return";
+
+/**
+ * Remember a page in this tab to come back to once a connection completes, or forget it with
+ * `null`. Storage can be unavailable (private windows, blocked site data); the callback then
+ * falls back to the connection's settings.
+ */
+export function rememberConnectReturn(path: string | null): void {
+  try {
+    if (path) sessionStorage.setItem(RETURN_KEY, path);
+    else sessionStorage.removeItem(RETURN_KEY);
+  } catch {
+    // Without storage, the callback opens the connection's settings instead.
+  }
+}
+
+/** The remembered page, once; only same-origin paths are returned. */
+export function takeConnectReturn(): string | null {
+  try {
+    const path = sessionStorage.getItem(RETURN_KEY);
+    sessionStorage.removeItem(RETURN_KEY);
+    return path?.startsWith("/") && !path.startsWith("//") ? path : null;
+  } catch {
+    return null;
+  }
+}
+
 /** The settings view of one connection. */
 export function connectionHref(connectionId: string): string {
   return `/settings/integrations?connection=${encodeURIComponent(connectionId)}`;

@@ -62,6 +62,27 @@ describe("Integrations overview", () => {
     expect(screen.getByText(/Tokens stay encrypted on the server/)).toBeInTheDocument();
   });
 
+  it("keeps connecting another account out of the way until asked", async () => {
+    const user = userEvent.setup();
+    mockApi({
+      ...session,
+      [`GET ${INTEGRATIONS}/connections`]: json({ connections: [connection()] }),
+    });
+    await renderSignedIn(<IntegrationsSettings />);
+
+    await screen.findByRole("link", { name: /ada@gmail\.example/ });
+    expect(screen.queryByRole("button", { name: "Continue to Google" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Add account" }));
+    expect(screen.getByRole("heading", { name: "Connect another account" })).toBeVisible();
+    expect(screen.getByRole("radio", { name: /Google.*1 connected/ })).toBeChecked();
+    expect(screen.getByRole("button", { name: "Continue to Google" })).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("button", { name: "Continue to Google" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add account" })).toBeVisible();
+  });
+
   it("connects with only the chosen permissions and goes to the provider", async () => {
     const user = userEvent.setup();
     const assign = vi.fn();
@@ -74,7 +95,7 @@ describe("Integrations overview", () => {
       }),
     });
     await renderSignedIn(<IntegrationsSettings />);
-    expect(await screen.findByText(/No accounts connected yet/)).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Connect an account" })).toBeVisible();
     // Read-only calendars are the default; mail needs opting in.
     expect(screen.getByRole("checkbox", { name: "Google Calendar" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Gmail" })).not.toBeChecked();
@@ -94,7 +115,8 @@ describe("Integrations overview", () => {
       connection_id: null,
     });
     // An unconfigured provider says so instead of offering to connect.
-    expect(screen.getByText(/Not set up on this Orbit server/)).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Microsoft/ })).toBeDisabled();
+    expect(screen.getByText(/not set up on this Orbit server/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Continue to Microsoft" })).not.toBeInTheDocument();
   });
 
