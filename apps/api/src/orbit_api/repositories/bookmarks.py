@@ -7,7 +7,12 @@ from typing import Any, cast
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from orbit_api.db.models import BookmarkCollectionModel, BookmarkModel
+from orbit_api.db.models import (
+    BookmarkCollectionModel,
+    BookmarkModel,
+    BookmarkPreviewModel,
+    BookmarkSettingsModel,
+)
 from orbit_api.repositories.transaction import flush
 from orbit_api.services.bookmarks.models import (
     Bookmark,
@@ -16,11 +21,15 @@ from orbit_api.services.bookmarks.models import (
     BookmarkStatus,
     CollectionColor,
     CollectionOverview,
+    PreviewFile,
 )
 from orbit_api.services.bookmarks.service import normalize_collection_name
 
+type Previews = dict[str, PreviewFile]
 
-def _to_bookmark(model: BookmarkModel) -> Bookmark:
+
+def _to_bookmark(model: BookmarkModel, previews: Previews | None = None) -> Bookmark:
+    previews = previews or {}
     return Bookmark(
         id=model.id,
         workspace_id=model.workspace_id,
@@ -37,6 +46,10 @@ def _to_bookmark(model: BookmarkModel) -> Bookmark:
         last_opened_at=model.last_opened_at,
         created_at=model.created_at,
         updated_at=model.updated_at,
+        preview_description=model.preview_description,
+        previewed_at=model.previewed_at,
+        image=previews.get("image"),
+        icon=previews.get("icon"),
     )
 
 
@@ -53,6 +66,8 @@ def _fields(bookmark: Bookmark) -> dict[str, Any]:
         "pinned": bookmark.pinned,
         "open_count": bookmark.open_count,
         "last_opened_at": bookmark.last_opened_at,
+        "preview_description": bookmark.preview_description,
+        "previewed_at": bookmark.previewed_at,
         "updated_at": bookmark.updated_at,
     }
 
@@ -80,11 +95,30 @@ class SqlBookmarkRepository:
             .where(BookmarkModel.workspace_id == workspace_id)
             .order_by(BookmarkModel.created_at.desc(), BookmarkModel.id)
         )
-        return [_to_bookmark(model) for model in models]
+        previews = await self._previews(workspace_id, None)
+        return [_to_bookmark(model, previews.get(model.id)) for model in models]
 
     async def get(self, workspace_id: uuid.UUID, bookmark_id: uuid.UUID) -> Bookmark | None:
         model = await self._get_model(workspace_id, bookmark_id)
-        return _to_bookmark(model) if model else None
+        if model is None:
+            return None
+        previews = await self._previews(workspace_id, bookmark_id)
+        return _to_bookmark(model, previews.get(bookmark_id))
+
+    async def _previews(
+        self, workspace_id: uuid.UUID, bookmark_id: uuid.UUID | None
+    ) -> dict[uuid.UUID, Previews]:
+        query = select(BookmarkPreviewModel).where(
+            BookmarkPreviewModel.workspace_id == workspace_id
+        )
+        if bookmark_id is not None:
+            query = query.where(BookmarkPreviewModel.bookmark_id == bookmark_id)
+        found: dict[uuid.UUID, Previews] = {}
+        for row in await self._session.scalars(query):
+            found.setdefault(row.bookmark_id, {})[row.role] = PreviewFile(
+                id=row.id, content_type=row.content_type
+            )
+        return found
 
     async def find_url(self, workspace_id: uuid.UUID, url: str) -> uuid.UUID | None:
         return await self._session.scalar(
@@ -112,13 +146,53 @@ class SqlBookmarkRepository:
             setattr(model, name, value)
         await flush(self._session)
 
-    async def delete(self, workspace_id: uuid.UUID, bookmark_id: uuid.UUID) -> bool:
-        deleted = await self._session.scalars(
-            delete(BookmarkModel)
-            .where(BookmarkModel.id == bookmark_id, BookmarkModel.workspace_id == workspace_id)
-            .returning(BookmarkModel.id)
+    async def delete(self, workspace_id: uuid.UUID, bookmark_id: uuid.UUID) -> Bookmark | None:
+        bookmark = await self.get(workspace_id, bookmark_id)
+        if bookmark is None:
+            return None
+        # Explicitly, rather than relying on ON DELETE CASCADE (SQLite only cascades with foreign
+        # keys on).
+        await self._session.execute(
+            delete(BookmarkPreviewModel).where(
+                BookmarkPreviewModel.bookmark_id == bookmark_id,
+                BookmarkPreviewModel.workspace_id == workspace_id,
+            )
         )
-        return deleted.first() is not None
+        await self._session.execute(
+            delete(BookmarkModel).where(
+                BookmarkModel.id == bookmark_id, BookmarkModel.workspace_id == workspace_id
+            )
+        )
+        return bookmark
+
+    async def replace_previews(self, bookmark: Bookmark) -> list[uuid.UUID]:
+        await self.save(bookmark)
+        rows = await self._session.scalars(
+            select(BookmarkPreviewModel).where(
+                BookmarkPreviewModel.bookmark_id == bookmark.id,
+                BookmarkPreviewModel.workspace_id == bookmark.workspace_id,
+            )
+        )
+        removed = [row.id for row in rows]
+        await self._session.execute(
+            delete(BookmarkPreviewModel).where(
+                BookmarkPreviewModel.bookmark_id == bookmark.id,
+                BookmarkPreviewModel.workspace_id == bookmark.workspace_id,
+            )
+        )
+        for role, file in (("image", bookmark.image), ("icon", bookmark.icon)):
+            if file is not None:
+                self._session.add(
+                    BookmarkPreviewModel(
+                        id=file.id,
+                        workspace_id=bookmark.workspace_id,
+                        bookmark_id=bookmark.id,
+                        role=role,
+                        content_type=file.content_type,
+                    )
+                )
+        await flush(self._session)
+        return removed
 
     async def _get_model(
         self, workspace_id: uuid.UUID, bookmark_id: uuid.UUID
@@ -215,3 +289,24 @@ class SqlBookmarkRepository:
                 BookmarkCollectionModel.workspace_id == workspace_id,
             )
         )
+
+
+class SqlBookmarkSettings:
+    """A workspace's Saved settings; no row means previews are off."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def previews_enabled(self, workspace_id: uuid.UUID) -> bool:
+        model = await self._session.get(BookmarkSettingsModel, workspace_id)
+        return model is not None and model.previews_enabled
+
+    async def set_previews_enabled(self, workspace_id: uuid.UUID, enabled: bool) -> None:
+        model = await self._session.get(BookmarkSettingsModel, workspace_id)
+        if model is None:
+            self._session.add(
+                BookmarkSettingsModel(workspace_id=workspace_id, previews_enabled=enabled)
+            )
+        else:
+            model.previews_enabled = enabled
+        await flush(self._session)

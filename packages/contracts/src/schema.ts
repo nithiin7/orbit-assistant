@@ -1094,6 +1094,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/bookmarks/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the Saved settings */
+        get: operations["get_settings_api_v1_workspaces__workspace_id__bookmarks_settings_get"];
+        /**
+         * Change the Saved settings
+         * @description With previews on, the server visits each link it's asked to preview: the site sees the
+         *     server's address, and the page's title, description, image, and icon are stored.
+         */
+        put: operations["update_settings_api_v1_workspaces__workspace_id__bookmarks_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/bookmarks/items": {
         parameters: {
             query?: never;
@@ -1149,6 +1171,61 @@ export interface paths {
          * @description Counts opens so the most used bookmarks can be listed first.
          */
         post: operations["record_open_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__opened_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/bookmarks/items/{bookmark_id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fetch a bookmark's preview
+         * @description Visits the page (public addresses on ports 80 and 443 only) for its description, preview
+         *     image, and icon, and its title while the title is still the one made from the URL.
+         */
+        post: operations["refresh_preview_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/bookmarks/items/{bookmark_id}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a bookmark's preview image */
+        get: operations["get_image_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__image_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/bookmarks/items/{bookmark_id}/icon": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a bookmark's site icon */
+        get: operations["get_icon_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__icon_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -8438,6 +8515,26 @@ export interface components {
             /** Last Opened At */
             last_opened_at: string | null;
             /**
+             * Preview Description
+             * @description The page's own description, from its preview.
+             */
+            preview_description: string | null;
+            /**
+             * Has Image
+             * @description A preview image is stored (`GET …/image`).
+             */
+            has_image: boolean;
+            /**
+             * Has Icon
+             * @description A site icon is stored (`GET …/icon`).
+             */
+            has_icon: boolean;
+            /**
+             * Previewed At
+             * @description When the preview was last fetched.
+             */
+            previewed_at: string | null;
+            /**
              * Created At
              * Format: date-time
              */
@@ -8447,6 +8544,19 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** BookmarkSettingsRequest */
+        BookmarkSettingsRequest: {
+            /** Previews Enabled */
+            previews_enabled: boolean;
+        };
+        /** BookmarkSettingsResponse */
+        BookmarkSettingsResponse: {
+            /**
+             * Previews Enabled
+             * @description Whether the server fetches pages to fill in titles, descriptions, images, and icons.
+             */
+            previews_enabled: boolean;
         };
         /** BookmarksResponse */
         BookmarksResponse: {
@@ -22274,6 +22384,100 @@ export interface operations {
             };
         };
     };
+    get_settings_api_v1_workspaces__workspace_id__bookmarks_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkSettingsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, bookmark, or collection is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_settings_api_v1_workspaces__workspace_id__bookmarks_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookmarkSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkSettingsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, bookmark, or collection is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_bookmarks_api_v1_workspaces__workspace_id__bookmarks_items_get: {
         parameters: {
             query?: never;
@@ -22546,6 +22750,181 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["BookmarkResponse"];
                 };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, bookmark, or collection is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_preview_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The bookmark's ID. */
+                bookmark_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, bookmark, or collection is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Link previews are off for this workspace. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The link isn't a public web page Orbit will contact. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The page couldn't be fetched. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_image_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__image_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The bookmark's ID. */
+                bookmark_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The image. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": unknown;
+                    "image/png": unknown;
+                    "image/gif": unknown;
+                    "image/webp": unknown;
+                    "image/x-icon": unknown;
+                };
+            };
+            /** @description The bookmark has no preview image. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, bookmark, or collection is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_icon_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__icon_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The bookmark's ID. */
+                bookmark_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The icon. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": unknown;
+                    "image/png": unknown;
+                    "image/gif": unknown;
+                    "image/webp": unknown;
+                    "image/x-icon": unknown;
+                };
+            };
+            /** @description The bookmark has no icon. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Not signed in. */
             401: {

@@ -22,7 +22,12 @@ from orbit_api.db.models.ai import (
 )
 from orbit_api.db.models.avatars import UserAvatarModel
 from orbit_api.db.models.backup import BackupModel, BackupSettingsModel, BackupUploadModel
-from orbit_api.db.models.bookmarks import BookmarkCollectionModel, BookmarkModel
+from orbit_api.db.models.bookmarks import (
+    BookmarkCollectionModel,
+    BookmarkModel,
+    BookmarkPreviewModel,
+    BookmarkSettingsModel,
+)
 from orbit_api.db.models.budgets import (
     FinanceBudgetAlertModel,
     FinanceBudgetModel,
@@ -158,6 +163,8 @@ __all__ = [
     "BackupUploadModel",
     "BookmarkCollectionModel",
     "BookmarkModel",
+    "BookmarkPreviewModel",
+    "BookmarkSettingsModel",
     "CalendarCategoryModel",
     "CalendarEventAlertModel",
     "CalendarEventExceptionModel",

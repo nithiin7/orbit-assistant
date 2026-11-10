@@ -4727,6 +4727,123 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/bookmarks/settings": {
+      "get": {
+        "tags": [
+          "bookmarks"
+        ],
+        "summary": "Get the Saved settings",
+        "operationId": "get_settings_api_v1_workspaces__workspace_id__bookmarks_settings_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookmarkSettingsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, bookmark, or collection is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "bookmarks"
+        ],
+        "summary": "Change the Saved settings",
+        "description": "With previews on, the server visits each link it's asked to preview: the site sees the\nserver's address, and the page's title, description, image, and icon are stored.",
+        "operationId": "update_settings_api_v1_workspaces__workspace_id__bookmarks_settings_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookmarkSettingsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookmarkSettingsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, bookmark, or collection is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/bookmarks/items": {
       "get": {
         "tags": [
@@ -5100,6 +5217,210 @@
           },
           "404": {
             "description": "The workspace, bookmark, or collection is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/bookmarks/items/{bookmark_id}/preview": {
+      "post": {
+        "tags": [
+          "bookmarks"
+        ],
+        "summary": "Fetch a bookmark's preview",
+        "description": "Visits the page (public addresses on ports 80 and 443 only) for its description, preview\nimage, and icon, and its title while the title is still the one made from the URL.",
+        "operationId": "refresh_preview_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__preview_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bookmark_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The bookmark's ID.",
+              "title": "Bookmark Id"
+            },
+            "description": "The bookmark's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookmarkResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, bookmark, or collection is not accessible."
+          },
+          "409": {
+            "description": "Link previews are off for this workspace."
+          },
+          "422": {
+            "description": "The link isn't a public web page Orbit will contact."
+          },
+          "502": {
+            "description": "The page couldn't be fetched."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/bookmarks/items/{bookmark_id}/image": {
+      "get": {
+        "tags": [
+          "bookmarks"
+        ],
+        "summary": "Get a bookmark's preview image",
+        "operationId": "get_image_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__image_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bookmark_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The bookmark's ID.",
+              "title": "Bookmark Id"
+            },
+            "description": "The bookmark's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image.",
+            "content": {
+              "image/jpeg": {},
+              "image/png": {},
+              "image/gif": {},
+              "image/webp": {},
+              "image/x-icon": {}
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, bookmark, or collection is not accessible."
+          },
+          "204": {
+            "description": "The bookmark has no preview image."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/bookmarks/items/{bookmark_id}/icon": {
+      "get": {
+        "tags": [
+          "bookmarks"
+        ],
+        "summary": "Get a bookmark's site icon",
+        "operationId": "get_icon_api_v1_workspaces__workspace_id__bookmarks_items__bookmark_id__icon_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bookmark_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The bookmark's ID.",
+              "title": "Bookmark Id"
+            },
+            "description": "The bookmark's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The icon.",
+            "content": {
+              "image/jpeg": {},
+              "image/png": {},
+              "image/gif": {},
+              "image/webp": {},
+              "image/x-icon": {}
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, bookmark, or collection is not accessible."
+          },
+          "204": {
+            "description": "The bookmark has no icon."
           },
           "422": {
             "description": "Validation Error",
@@ -39807,6 +40128,41 @@
             ],
             "title": "Last Opened At"
           },
+          "preview_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Description",
+            "description": "The page's own description, from its preview."
+          },
+          "has_image": {
+            "type": "boolean",
+            "title": "Has Image",
+            "description": "A preview image is stored (`GET …/image`)."
+          },
+          "has_icon": {
+            "type": "boolean",
+            "title": "Has Icon",
+            "description": "A site icon is stored (`GET …/icon`)."
+          },
+          "previewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previewed At",
+            "description": "When the preview was last fetched."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -39831,10 +40187,42 @@
           "pinned",
           "open_count",
           "last_opened_at",
+          "preview_description",
+          "has_image",
+          "has_icon",
+          "previewed_at",
           "created_at",
           "updated_at"
         ],
         "title": "BookmarkResponse"
+      },
+      "BookmarkSettingsRequest": {
+        "properties": {
+          "previews_enabled": {
+            "type": "boolean",
+            "title": "Previews Enabled"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "previews_enabled"
+        ],
+        "title": "BookmarkSettingsRequest"
+      },
+      "BookmarkSettingsResponse": {
+        "properties": {
+          "previews_enabled": {
+            "type": "boolean",
+            "title": "Previews Enabled",
+            "description": "Whether the server fetches pages to fill in titles, descriptions, images, and icons."
+          }
+        },
+        "type": "object",
+        "required": [
+          "previews_enabled"
+        ],
+        "title": "BookmarkSettingsResponse"
       },
       "BookmarksResponse": {
         "properties": {

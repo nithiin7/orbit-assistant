@@ -87,6 +87,48 @@ class BookmarkModel(Base):
     pinned: Mapped[bool]
     open_count: Mapped[int] = mapped_column(Integer)
     last_opened_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    # The page's own description, from its preview (only with previews on); the service keeps
+    # it to 500 characters.
+    preview_description: Mapped[str | None] = mapped_column(Text)
+    # When the preview was last fetched, successfully or not.
+    previewed_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
     # Set by the service on edits only (no `onupdate`): opening a bookmark isn't editing it.
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
+
+
+class BookmarkPreviewModel(Base):
+    """An image fetched for a bookmark's preview: the page's preview image or the site's icon.
+    `id` is also the file's name in the attachment store. Deleting the bookmark deletes these
+    rows; the service removes the files."""
+
+    __tablename__ = "bookmark_previews"
+    __table_args__ = (
+        CheckConstraint("role IN ('image', 'icon')", name="role"),
+        CheckConstraint(
+            "content_type IN ('image/jpeg', 'image/png', 'image/gif', 'image/webp',"
+            " 'image/x-icon')",
+            name="content_type",
+        ),
+        UniqueConstraint("bookmark_id", "role"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+    workspace_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"))
+    # Same workspace as the bookmark: the repository writes both from the bookmark itself.
+    bookmark_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("bookmarks.id", ondelete="CASCADE"))
+    role: Mapped[str] = mapped_column(String(8))
+    content_type: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
+
+
+class BookmarkSettingsModel(Base):
+    """A workspace's Saved settings. No row means previews are off."""
+
+    __tablename__ = "bookmark_settings"
+
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), primary_key=True
+    )
+    previews_enabled: Mapped[bool]
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now, onupdate=utc_now)

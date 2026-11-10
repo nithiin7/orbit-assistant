@@ -37,6 +37,11 @@ class Bookmark:
     last_opened_at: datetime | None
     created_at: datetime
     updated_at: datetime
+    # The page's own description, from its preview.
+    preview_description: str | None = None
+    previewed_at: datetime | None = None
+    image: "PreviewFile | None" = None
+    icon: "PreviewFile | None" = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -114,3 +119,31 @@ class CollectionNameTakenError(Exception):
 
 class TooManyCollectionsError(Exception):
     """The workspace already has `MAX_COLLECTIONS` collections."""
+
+
+@dataclass(frozen=True, slots=True)
+class PreviewFile:
+    """A stored preview image or icon: its file in the attachment store, and its type."""
+
+    id: uuid.UUID
+    content_type: str
+
+
+@dataclass(frozen=True, slots=True)
+class FetchedPage:
+    # Where the page ended up, after redirects.
+    url: str
+    html: str
+
+
+class PreviewsOffError(Exception):
+    """The workspace hasn't turned link previews on."""
+
+
+class PreviewFetchError(Exception):
+    """The page or image couldn't be fetched, or wasn't what was expected."""
+
+
+class BlockedAddressError(PreviewFetchError):
+    """The link points at a private, local, or otherwise non-public address, or a port other
+    than 80 or 443, which previews never contact."""

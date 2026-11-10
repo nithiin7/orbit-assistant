@@ -4,7 +4,7 @@
 import uuid
 from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Annotated
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, HTTPException, Path, Response, status
 
@@ -14,6 +14,8 @@ from orbit_api.schemas.bookmarks import (
     BookmarkCollectionResponse,
     BookmarkCollectionsResponse,
     BookmarkResponse,
+    BookmarkSettingsRequest,
+    BookmarkSettingsResponse,
     BookmarksResponse,
     CreateBookmarkCollectionRequest,
     CreateBookmarkRequest,
@@ -22,10 +24,13 @@ from orbit_api.schemas.bookmarks import (
 )
 from orbit_api.services.bookmarks.models import (
     MAX_COLLECTIONS,
+    BlockedAddressError,
     BookmarkNotFoundError,
     CollectionNameTakenError,
     CollectionNotFoundError,
     DuplicateBookmarkError,
+    PreviewFetchError,
+    PreviewsOffError,
     TooManyCollectionsError,
 )
 
@@ -51,6 +56,19 @@ def _bookmark_errors() -> Generator[None]:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Bookmark not found.") from None
     except DuplicateBookmarkError:
         raise HTTPException(status.HTTP_409_CONFLICT, "You've already saved this link.") from None
+    except PreviewsOffError:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "Link previews are off. Turn them on in Settings → Saved."
+        ) from None
+    except BlockedAddressError:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "Orbit only previews public web pages on the standard ports.",
+        ) from None
+    except PreviewFetchError:
+        raise HTTPException(
+            status.HTTP_502_BAD_GATEWAY, "Couldn't get a preview from that page."
+        ) from None
     except CollectionNotFoundError:
         # The collection was named in the body, so it's a bad request rather than a missing
         # resource.
@@ -75,6 +93,47 @@ def _collection_errors() -> Generator[None]:
             status.HTTP_409_CONFLICT,
             f"A workspace can have at most {MAX_COLLECTIONS} collections.",
         ) from None
+
+
+_IMAGE_CONTENT: dict[str, Any] = {
+    "image/jpeg": {},
+    "image/png": {},
+    "image/gif": {},
+    "image/webp": {},
+    "image/x-icon": {},
+}
+
+
+def _image(content_type: str, data: bytes) -> Response:
+    return Response(
+        content=data,
+        media_type=content_type,
+        headers={
+            "Cache-Control": "private, max-age=604800",
+            "X-Content-Type-Options": "nosniff",
+            "Content-Security-Policy": "default-src 'none'",
+        },
+    )
+
+
+# Settings
+
+
+@router.get("/settings", summary="Get the Saved settings")
+async def get_settings(
+    workspace: WorkspaceDep, bookmarks: BookmarkServiceDep
+) -> BookmarkSettingsResponse:
+    return BookmarkSettingsResponse(previews_enabled=await bookmarks.previews_enabled(workspace.id))
+
+
+@router.put("/settings", summary="Change the Saved settings")
+async def update_settings(
+    body: BookmarkSettingsRequest, workspace: WorkspaceDep, bookmarks: BookmarkServiceDep
+) -> BookmarkSettingsResponse:
+    """With previews on, the server visits each link it's asked to preview: the site sees the
+    server's address, and the page's title, description, image, and icon are stored."""
+    enabled = await bookmarks.set_previews_enabled(workspace.id, body.previews_enabled)
+    return BookmarkSettingsResponse(previews_enabled=enabled)
 
 
 # Bookmarks
@@ -135,6 +194,67 @@ async def record_open(
     """Counts opens so the most used bookmarks can be listed first."""
     with _bookmark_errors():
         return BookmarkResponse.of(await bookmarks.record_open(workspace.id, bookmark_id))
+
+
+@router.post(
+    "/items/{bookmark_id}/preview",
+    summary="Fetch a bookmark's preview",
+    responses={
+        409: {"description": "Link previews are off for this workspace."},
+        422: {"description": "The link isn't a public web page Orbit will contact."},
+        502: {"description": "The page couldn't be fetched."},
+    },
+)
+async def refresh_preview(
+    bookmark_id: BookmarkId, workspace: WorkspaceDep, bookmarks: BookmarkServiceDep
+) -> BookmarkResponse:
+    """Visits the page (public addresses on ports 80 and 443 only) for its description, preview
+    image, and icon, and its title while the title is still the one made from the URL."""
+    with _bookmark_errors():
+        return BookmarkResponse.of(await bookmarks.refresh_preview(workspace.id, bookmark_id))
+
+
+async def _preview_file(
+    bookmark_id: uuid.UUID,
+    workspace_id: uuid.UUID,
+    bookmarks: BookmarkServiceDep,
+    role: Literal["image", "icon"],
+) -> Response:
+    with _bookmark_errors():
+        found = await bookmarks.preview_file(workspace_id, bookmark_id, role)
+    if found is None:
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return _image(*found)
+
+
+@router.get(
+    "/items/{bookmark_id}/image",
+    summary="Get a bookmark's preview image",
+    response_class=Response,
+    responses={
+        200: {"content": _IMAGE_CONTENT, "description": "The image."},
+        204: {"description": "The bookmark has no preview image."},
+    },
+)
+async def get_image(
+    bookmark_id: BookmarkId, workspace: WorkspaceDep, bookmarks: BookmarkServiceDep
+) -> Response:
+    return await _preview_file(bookmark_id, workspace.id, bookmarks, "image")
+
+
+@router.get(
+    "/items/{bookmark_id}/icon",
+    summary="Get a bookmark's site icon",
+    response_class=Response,
+    responses={
+        200: {"content": _IMAGE_CONTENT, "description": "The icon."},
+        204: {"description": "The bookmark has no icon."},
+    },
+)
+async def get_icon(
+    bookmark_id: BookmarkId, workspace: WorkspaceDep, bookmarks: BookmarkServiceDep
+) -> Response:
+    return await _preview_file(bookmark_id, workspace.id, bookmarks, "icon")
 
 
 @router.delete(

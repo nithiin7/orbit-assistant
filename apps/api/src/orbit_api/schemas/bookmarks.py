@@ -88,6 +88,12 @@ class BookmarkResponse(BaseModel):
     pinned: bool
     open_count: int = Field(description="How many times it was opened from Orbit.")
     last_opened_at: datetime | None
+    preview_description: str | None = Field(
+        description="The page's own description, from its preview."
+    )
+    has_image: bool = Field(description="A preview image is stored (`GET …/image`).")
+    has_icon: bool = Field(description="A site icon is stored (`GET …/icon`).")
+    previewed_at: datetime | None = Field(description="When the preview was last fetched.")
     created_at: datetime
     updated_at: datetime
 
@@ -105,6 +111,10 @@ class BookmarkResponse(BaseModel):
             pinned=bookmark.pinned,
             open_count=bookmark.open_count,
             last_opened_at=bookmark.last_opened_at,
+            preview_description=bookmark.preview_description,
+            has_image=bookmark.image is not None,
+            has_icon=bookmark.icon is not None,
+            previewed_at=bookmark.previewed_at,
             created_at=bookmark.created_at,
             updated_at=bookmark.updated_at,
         )
@@ -234,3 +244,16 @@ class UpdateBookmarkCollectionRequest(BaseModel):
             name=self.name if self.name is not None else UNSET,
             color=self.color if self.color is not None else UNSET,
         )
+
+
+class BookmarkSettingsResponse(BaseModel):
+    previews_enabled: bool = Field(
+        description="Whether the server fetches pages to fill in titles, descriptions, images, "
+        "and icons."
+    )
+
+
+class BookmarkSettingsRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    previews_enabled: bool

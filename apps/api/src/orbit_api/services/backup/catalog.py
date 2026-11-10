@@ -88,6 +88,8 @@ _EXACT: Final[dict[str, Module]] = {
     "watch_items": "watchlist",
     "bookmarks": "bookmarks",
     "bookmark_collections": "bookmarks",
+    "bookmark_previews": "bookmarks",
+    "bookmark_settings": "bookmarks",
 }
 
 # Tables a backup leaves out, and why. Credentials and tokens never leave the server; derived
@@ -132,6 +134,7 @@ FILE_COLUMNS: Final[dict[str, str]] = {
     "document_versions": "blob_id",
     "fitness_photos": "blob_id",
     "watch_items": "poster_blob_id",
+    "bookmark_previews": "id",
 }
 
 # Records an import matches to existing ones by their natural key rather than duplicating, in
