@@ -28,6 +28,7 @@ const taxes: Task = {
   completed_at: null,
   scheduled_start: null,
   scheduled_end: null,
+  list_id: null,
   created_at: "2026-10-01T09:00:00Z",
   updated_at: "2026-10-01T09:00:00Z",
 };
@@ -56,7 +57,7 @@ const dentist = reminder({
   id: "r-dentist",
   title: "Call the dentist",
   recurrence: { frequency: "weekly", weekdays: ["mon", "thu"] },
-  task: { id: taxes.id, title: taxes.title, status: "open" },
+  task: { id: taxes.id, title: taxes.title, status: "open", list: null },
 });
 
 const session = {

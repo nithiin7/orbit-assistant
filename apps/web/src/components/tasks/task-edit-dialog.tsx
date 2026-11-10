@@ -1,7 +1,7 @@
 "use client";
 
 import { yupResolver } from "@hookform/resolvers/yup";
-import type { Task, UpdateTaskRequest } from "@orbit/contracts";
+import type { Task, TaskListDetail, UpdateTaskRequest } from "@orbit/contracts";
 import { X } from "lucide-react";
 import { useId } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -18,10 +18,13 @@ import { useActiveWorkspaceId } from "@/hooks/use-calendar";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { TASK_DESCRIPTION_MAX_LENGTH, taskSchema } from "@/lib/tasks";
 
+import { ListSelect, NO_LIST } from "./list-select";
 import { PrioritySelect } from "./priority-select";
 
 type TaskEditDialogProps = {
   task: Task;
+  /** The workspace's lists, to move the task between. */
+  lists: readonly TaskListDetail[];
   onSave: (task: Task, changes: UpdateTaskRequest) => Promise<void>;
   /** Called once the dialog has closed, whether saved or cancelled. */
   onClose: () => void;
@@ -31,7 +34,7 @@ type TaskEditDialogProps = {
  * Edits a task in a modal `<dialog>`, which provides focus containment, Escape to close, and an
  * inert background. Focus returns to whatever opened it.
  */
-export function TaskEditDialog({ task, onSave, onClose }: TaskEditDialogProps) {
+export function TaskEditDialog({ task, lists, onSave, onClose }: TaskEditDialogProps) {
   const id = useId();
   const workspaceId = useActiveWorkspaceId();
   const {
@@ -48,6 +51,7 @@ export function TaskEditDialog({ task, onSave, onClose }: TaskEditDialogProps) {
       description: task.description,
       dueDate: task.due_date ?? "",
       priority: task.priority,
+      list: task.list_id ?? NO_LIST,
     },
   });
   const { close, dialogProps } = useModalDialog({ onClose, dismissible: !saving });
@@ -60,6 +64,8 @@ export function TaskEditDialog({ task, onSave, onClose }: TaskEditDialogProps) {
     if (values.description !== task.description) changes.description = values.description;
     if ((values.dueDate || null) !== task.due_date) changes.due_date = values.dueDate || null;
     if (values.priority !== task.priority) changes.priority = values.priority;
+    const listId = values.list === NO_LIST ? null : values.list;
+    if (listId !== task.list_id) changes.list_id = listId;
     if (Object.keys(changes).length === 0) {
       close();
       return;
@@ -175,6 +181,20 @@ export function TaskEditDialog({ task, onSave, onClose }: TaskEditDialogProps) {
               <PrioritySelect id={`${id}-priority`} value={field.value} onChange={field.onChange} />
             )}
           />
+          {lists.length > 0 || task.list_id ? (
+            <Controller
+              control={control}
+              name="list"
+              render={({ field }) => (
+                <ListSelect
+                  id={`${id}-list`}
+                  lists={lists}
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+          ) : null}
         </div>
 
         <TaskNotes taskId={task.id} />

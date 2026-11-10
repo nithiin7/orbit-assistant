@@ -1,29 +1,38 @@
 "use client";
 
 import type {
+  CreateTaskListRequest,
   CreateTaskRequest,
   Task,
   TaskList,
+  TaskListDetail,
   TaskListQuery,
+  TaskLists,
   TaskSummary,
+  UpdateTaskListRequest,
   UpdateTaskRequest,
 } from "@orbit/contracts";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect } from "react";
 
 import { describeApiError } from "@/api/client";
+import { reminderKeys } from "@/api/reminders";
 import {
   completeTask,
   createTask,
+  createTaskList,
   deleteTask,
+  deleteTaskList,
   getTask,
   removeCachedTask,
   reopenTask,
   replaceCachedTask,
   taskKeys,
   taskListOptions,
+  taskListsOptions,
   taskSummaryOptions,
   updateTask,
+  updateTaskList,
 } from "@/api/tasks";
 import { queryResource, type Resource } from "@/hooks/query-resource";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
@@ -121,9 +130,11 @@ export function useTaskMutations(workspaceId: string) {
       queryKey: taskKeys.all(workspaceId),
       refetchType: "none",
     });
-  /** Counts are shown beside the lists, so they refresh right away. */
-  const refetchSummaries = () =>
+  /** Counts are shown beside the views and lists, so they refresh right away. */
+  const refetchSummaries = () => {
     void queryClient.invalidateQueries({ queryKey: taskKeys.summaries(workspaceId) });
+    void queryClient.invalidateQueries({ queryKey: taskKeys.taskLists(workspaceId) });
+  };
 
   const create = useMutation({
     mutationFn: (draft: CreateTaskRequest) =>
@@ -174,6 +185,58 @@ export function useTaskMutations(workspaceId: string) {
   });
 
   return { create, update, toggle, remove };
+}
+
+/** The workspace's task lists (Work, Personal, ...), with a lookup by ID for task rows. */
+export function useTaskLists(workspaceId: string | null): {
+  state: Resource<TaskListDetail[]>;
+  byId: ReadonlyMap<string, TaskListDetail>;
+} {
+  const { withToken } = useAuth();
+  const result = useQuery({
+    ...taskListsOptions(withToken, workspaceId),
+    select: (data) => data.lists,
+  });
+  const state = queryResource(result, "Couldn’t load your lists.");
+  const lists = result.data ?? [];
+  return { state, byId: new Map(lists.map((entry) => [entry.id, entry])) };
+}
+
+/**
+ * Creating, renaming, recoloring, and deleting task lists. Tasks and reminders show their list,
+ * so they refresh too; deleting a list also takes its tasks off it.
+ */
+export function useTaskListMutations(workspaceId: string) {
+  const { withToken } = useAuth();
+  const queryClient = useQueryClient();
+  const refreshLists = () =>
+    void queryClient.invalidateQueries({ queryKey: taskKeys.taskLists(workspaceId) });
+  const refreshEverything = () => {
+    void queryClient.invalidateQueries({ queryKey: taskKeys.all(workspaceId) });
+    void queryClient.invalidateQueries({ queryKey: reminderKeys.all(workspaceId) });
+  };
+
+  const create = useMutation({
+    mutationFn: (body: CreateTaskListRequest) =>
+      withToken((token) => createTaskList(token, workspaceId, body)),
+    // Show the new list at once (it's usually selected next), then confirm with the server.
+    onSuccess: (created) =>
+      queryClient.setQueryData<TaskLists>(
+        taskKeys.taskLists(workspaceId),
+        (current) => current && { lists: [...current.lists, created] },
+      ),
+    onSettled: refreshLists,
+  });
+  const update = useMutation({
+    mutationFn: ({ id, body }: { id: string; body: UpdateTaskListRequest }) =>
+      withToken((token) => updateTaskList(token, workspaceId, id, body)),
+    onSettled: refreshEverything,
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) => withToken((token) => deleteTaskList(token, workspaceId, id)),
+    onSettled: refreshEverything,
+  });
+  return { create, update, remove };
 }
 
 /**

@@ -1,7 +1,7 @@
 "use client";
 
 import { yupResolver } from "@hookform/resolvers/yup";
-import type { CreateTaskRequest } from "@orbit/contracts";
+import type { CreateTaskRequest, TaskListDetail } from "@orbit/contracts";
 import { Plus } from "lucide-react";
 import { type Ref, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -15,16 +15,26 @@ import { Kbd } from "@/components/ui/kbd";
 import { newTaskSchema } from "@/lib/tasks";
 import { mergeRefs } from "@/utils/common";
 
+import { ListSelect, NO_LIST } from "./list-select";
 import { PrioritySelect } from "./priority-select";
 
 type TaskComposerProps = {
   onCreate: (draft: CreateTaskRequest) => Promise<void>;
   /** Lets the page focus the title field from its keyboard shortcut. */
   titleRef?: Ref<HTMLInputElement>;
+  /** The workspace's lists; the picker only shows once there is one. */
+  lists?: readonly TaskListDetail[];
+  /** The list new tasks start on: the one in view, if any. */
+  defaultListId?: string | null;
 };
 
-/** Quick entry: type a title, optionally set a due date and priority, press Enter. */
-export function TaskComposer({ onCreate, titleRef }: TaskComposerProps) {
+/** Quick entry: type a title, optionally set a due date, priority, and list, press Enter. */
+export function TaskComposer({
+  onCreate,
+  titleRef,
+  lists = [],
+  defaultListId = null,
+}: TaskComposerProps) {
   const id = useId();
   const {
     register,
@@ -35,14 +45,25 @@ export function TaskComposer({ onCreate, titleRef }: TaskComposerProps) {
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: yupResolver(newTaskSchema),
-    defaultValues: { title: "", dueDate: "", priority: "none" as const },
+    defaultValues: {
+      title: "",
+      dueDate: "",
+      priority: "none" as const,
+      list: defaultListId ?? NO_LIST,
+    },
   });
 
-  const onSubmit = handleSubmit(async ({ title, dueDate, priority }) => {
+  const onSubmit = handleSubmit(async ({ title, dueDate, priority, list }) => {
     try {
-      await onCreate({ title, description: "", priority, due_date: dueDate || null });
-      // Ready for the next task; focus stays in the title field.
-      reset();
+      await onCreate({
+        title,
+        description: "",
+        priority,
+        due_date: dueDate || null,
+        list_id: list === NO_LIST ? null : list,
+      });
+      // Ready for the next task; focus stays in the title field. The list stays as chosen.
+      reset({ title: "", dueDate: "", priority: "none", list });
     } catch (reason) {
       setError("root.server", {
         message: describeApiError(reason, "Couldn’t add the task. Try again."),
@@ -125,6 +146,22 @@ export function TaskComposer({ onCreate, titleRef }: TaskComposerProps) {
               />
             )}
           />
+          {lists.length > 0 ? (
+            <Controller
+              control={control}
+              name="list"
+              render={({ field }) => (
+                <ListSelect
+                  id={`${id}-list`}
+                  lists={lists}
+                  value={field.value}
+                  onChange={field.onChange}
+                  className="min-w-32 flex-1 @2xl/list:w-36 @2xl/list:flex-none"
+                  hiddenLabel
+                />
+              )}
+            />
+          ) : null}
           <Button type="submit" disabled={isSubmitting} className="flex-1 @md/list:flex-none">
             {isSubmitting ? "Adding…" : "Add task"}
           </Button>

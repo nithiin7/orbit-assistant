@@ -1,7 +1,7 @@
-import type { TaskPriority } from "@orbit/contracts";
+import type { TaskListColor, TaskPriority } from "@orbit/contracts";
 import { CalendarDays } from "lucide-react";
 
-import { describeDueDate, type DueState, priorityLabel } from "@/lib/tasks";
+import { describeDueDate, type DueState, priorityLabel, TASK_LIST_STYLES } from "@/lib/tasks";
 import { cn } from "@/utils/common";
 
 /** The dot that marks a priority, here and in the priority filter. */
@@ -61,6 +61,20 @@ export function DueDateLabel({
       <CalendarDays className="size-3" aria-hidden="true" />
       <span className="sr-only">Due </span>
       <time dateTime={dueDate}>{text}</time>
+    </span>
+  );
+}
+
+/** The list a task (or a reminder's task) is on: its color dot and name. */
+export function TaskListBadge({ name, color }: { name: string; color: TaskListColor }) {
+  return (
+    <span className={cn(chipClassName, "max-w-40", TASK_LIST_STYLES[color].chip)}>
+      <span
+        aria-hidden="true"
+        className={cn("size-2 shrink-0 rounded-full", TASK_LIST_STYLES[color].dot)}
+      />
+      <span className="sr-only">List: </span>
+      <span className="truncate">{name}</span>
     </span>
   );
 }

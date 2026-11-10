@@ -1,10 +1,14 @@
 import type {
+  CreateTaskListRequest,
   CreateTaskRequest,
   Task,
   TaskList,
+  TaskListDetail,
   TaskListQuery,
+  TaskLists,
   TaskSummary,
   TaskSummaryQuery,
+  UpdateTaskListRequest,
   UpdateTaskRequest,
 } from "@orbit/contracts";
 
@@ -76,4 +80,45 @@ export function reopenTask(token: string, workspaceId: string, taskId: string): 
 
 export function deleteTask(token: string, workspaceId: string, taskId: string): Promise<void> {
   return request<void>(taskPath(workspaceId, taskId), { method: "DELETE", token });
+}
+
+// Lists (Work, Personal, ...) that tasks can be on.
+
+function taskListPath(workspaceId: string, listId = ""): string {
+  return workspacePath(workspaceId, `/task-lists${listId && `/${encodeURIComponent(listId)}`}`);
+}
+
+/** The workspace's task lists, oldest first, each with its number of open tasks. */
+export function listTaskLists(
+  token: string,
+  workspaceId: string,
+  { signal }: Signal = {},
+): Promise<TaskLists> {
+  return request<TaskLists>(taskListPath(workspaceId), { token, signal });
+}
+
+export function createTaskList(
+  token: string,
+  workspaceId: string,
+  body: CreateTaskListRequest,
+): Promise<TaskListDetail> {
+  return request<TaskListDetail>(taskListPath(workspaceId), { method: "POST", body, token });
+}
+
+export function updateTaskList(
+  token: string,
+  workspaceId: string,
+  listId: string,
+  body: UpdateTaskListRequest,
+): Promise<TaskListDetail> {
+  return request<TaskListDetail>(taskListPath(workspaceId, listId), {
+    method: "PATCH",
+    body,
+    token,
+  });
+}
+
+/** Delete a list. Its tasks stay, on no list. */
+export function deleteTaskList(token: string, workspaceId: string, listId: string): Promise<void> {
+  return request<void>(taskListPath(workspaceId, listId), { method: "DELETE", token });
 }

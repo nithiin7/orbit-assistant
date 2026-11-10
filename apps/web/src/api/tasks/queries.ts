@@ -2,7 +2,7 @@ import type { Task, TaskList, TaskListQuery, TaskSummaryQuery } from "@orbit/con
 import { type QueryClient, queryOptions, skipToken } from "@tanstack/react-query";
 
 import type { WithToken } from "../client";
-import { getTaskSummary, listTasks } from "./requests";
+import { getTaskSummary, listTaskLists, listTasks } from "./requests";
 
 /**
  * Cache keys for a workspace's tasks. Every key starts with the workspace ID, so one workspace's
@@ -17,6 +17,8 @@ export const taskKeys = {
   summaries: (workspaceId: string | null) => [...taskKeys.all(workspaceId), "summary"] as const,
   summary: (workspaceId: string | null, query: TaskSummaryQuery) =>
     [...taskKeys.summaries(workspaceId), query] as const,
+  /** The workspace's lists (Work, Personal, ...), whose open counts follow task changes. */
+  taskLists: (workspaceId: string | null) => [...taskKeys.all(workspaceId), "task-lists"] as const,
 };
 
 export function taskListOptions(
@@ -45,6 +47,16 @@ export function taskSummaryOptions(
         ? skipToken
         : ({ signal }) =>
             withToken((token) => getTaskSummary(token, workspaceId, query, { signal })),
+  });
+}
+
+export function taskListsOptions(withToken: WithToken, workspaceId: string | null) {
+  return queryOptions({
+    queryKey: taskKeys.taskLists(workspaceId),
+    queryFn:
+      workspaceId === null
+        ? skipToken
+        : ({ signal }) => withToken((token) => listTaskLists(token, workspaceId, { signal })),
   });
 }
 

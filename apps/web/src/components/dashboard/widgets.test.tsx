@@ -43,6 +43,7 @@ function task(overrides: Partial<Task> & Pick<Task, "id" | "title">): Task {
     completed_at: null,
     scheduled_start: null,
     scheduled_end: null,
+    list_id: null,
     created_at: "2026-10-01T09:00:00Z",
     updated_at: "2026-10-01T09:00:00Z",
     ...overrides,
@@ -137,7 +138,7 @@ describe("TaskWidget", () => {
 
     await waitFor(() =>
       expect(sent(api, "POST", `${WS}/tasks`)).toEqual([
-        { title: "Call bank", description: "", priority: "none", due_date: today },
+        { title: "Call bank", description: "", priority: "none", due_date: today, list_id: null },
       ]),
     );
   });

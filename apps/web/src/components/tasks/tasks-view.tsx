@@ -1,20 +1,38 @@
 "use client";
 
 import type { CreateTaskRequest, Task, UpdateTaskRequest } from "@orbit/contracts";
-import { AlertCircle, CalendarClock, CheckCheck, ListTodo, SearchX } from "lucide-react";
+import type { TaskListDetail } from "@orbit/contracts";
+import {
+  AlertCircle,
+  CalendarClock,
+  CheckCheck,
+  ListTodo,
+  MoreHorizontal,
+  SearchX,
+} from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { describeApiError } from "@/api/client";
+import { useConfirm } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
+import { Menu } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useLinkedTask, useTaskList, useTaskMutations, useTaskSummary } from "@/hooks/use-tasks";
+import {
+  useLinkedTask,
+  useTaskList,
+  useTaskListMutations,
+  useTaskLists,
+  useTaskMutations,
+  useTaskSummary,
+} from "@/hooks/use-tasks";
 import {
   DEFAULT_TASK_FILTERS,
   groupTasksByDue,
   isNarrowed,
   type StatusFilter,
+  TASK_LIST_STYLES,
   type TaskFilters,
   toTaskListQuery,
 } from "@/lib/tasks";
@@ -26,6 +44,8 @@ import { isEditableTarget } from "@/utils/keyboard";
 import { TaskComposer } from "./task-composer";
 import { TaskEditDialog } from "./task-edit-dialog";
 import { TaskItem } from "./task-item";
+import { TaskListDialog, type TaskListValues } from "./task-list-dialog";
+import { TaskListFilter } from "./task-list-filter";
 import { TaskToolbar } from "./task-toolbar";
 import { TaskViews } from "./task-views";
 
@@ -56,6 +76,14 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
   const { state, refreshing, reload } = useTaskList(workspaceId, query);
   const summary = useTaskSummary(workspaceId);
   const mutations = useTaskMutations(workspaceId);
+  const lists = useTaskLists(workspaceId);
+  const listMutations = useTaskListMutations(workspaceId);
+  const { confirm, confirmDialog } = useConfirm();
+  // The list being created (`"new"`) or edited, in a dialog.
+  const [listDialog, setListDialog] = useState<TaskListDetail | "new" | null>(null);
+  const listOptions = lists.state.status === "success" ? lists.state.data : [];
+  const selectedList =
+    filters.list === "all" || filters.list === "none" ? undefined : lists.byId.get(filters.list);
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [editing, setEditing] = useState<Task | null>(null);
   // A note's link to a task opens it here.
@@ -158,6 +186,36 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
     [mutations.remove, setTaskPending],
   );
 
+  const saveList = async (values: TaskListValues) => {
+    if (listDialog === "new") {
+      const created = await listMutations.create.mutateAsync(values);
+      setAnnouncement(`Created the list “${created.name}”.`);
+      // Show the new, empty list, ready for its first task.
+      setFilters((current) => ({ ...current, list: created.id }));
+    } else if (listDialog) {
+      const updated = await listMutations.update.mutateAsync({ id: listDialog.id, body: values });
+      setAnnouncement(`Saved the list “${updated.name}”.`);
+    }
+  };
+
+  const removeList = async (list: TaskListDetail) => {
+    const confirmed = await confirm({
+      title: `Delete “${list.name}”?`,
+      description: "Its tasks are kept, on no list.",
+      confirmLabel: "Delete list",
+      destructive: true,
+    });
+    if (!confirmed) return;
+    setActionError(null);
+    try {
+      await listMutations.remove.mutateAsync(list.id);
+      setFilters((current) => ({ ...current, list: "all" }));
+      setAnnouncement(`Deleted the list “${list.name}”.`);
+    } catch (reason) {
+      setActionError(describeApiError(reason, "Couldn’t delete the list. Try again."));
+    }
+  };
+
   const clearNarrowing = () => {
     setSearch("");
     setFilters((current) => ({ ...current, search: "", priority: "all" }));
@@ -167,6 +225,10 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
     <TaskItem
       key={task.id}
       task={task}
+      // The list in view goes without saying.
+      list={
+        task.list_id && task.list_id !== filters.list ? lists.byId.get(task.list_id) : undefined
+      }
       today={today}
       pending={pending.has(task.id)}
       onToggle={(item) => void toggle(item)}
@@ -186,16 +248,70 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
   return (
     <div className="@container/tasks">
       <div className="grid gap-6 @4xl/tasks:grid-cols-[13rem_minmax(0,1fr)] @4xl/tasks:gap-8 @7xl/tasks:grid-cols-[15rem_minmax(0,1fr)] @7xl/tasks:gap-12">
-        <aside className="min-w-0 @4xl/tasks:sticky @4xl/tasks:top-6 @4xl/tasks:self-start">
+        <aside className="min-w-0 space-y-3 @4xl/tasks:sticky @4xl/tasks:top-6 @4xl/tasks:space-y-6 @4xl/tasks:self-start">
           <TaskViews filters={filters} onFiltersChange={setFilters} summary={summary} />
+          <TaskListFilter
+            lists={lists.state}
+            selected={filters.list}
+            onSelect={(list) => setFilters((current) => ({ ...current, list }))}
+            onCreate={() => setListDialog("new")}
+          />
         </aside>
 
         <section aria-labelledby="task-list-heading" className="@container/list min-w-0 space-y-5">
           <div className="flex flex-col gap-3 @3xl/list:flex-row @3xl/list:items-end @3xl/list:justify-between">
             <div className="min-w-0 space-y-1.5">
-              <h2 id="task-list-heading" className="text-lg font-semibold tracking-tight">
-                {VIEW_TITLES[filters.status]}
-              </h2>
+              <div className="flex min-w-0 items-center gap-1">
+                <h2
+                  id="task-list-heading"
+                  className="flex min-w-0 items-center gap-2 text-lg font-semibold tracking-tight"
+                >
+                  {selectedList ? (
+                    <>
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          "size-2.5 shrink-0 rounded-full",
+                          TASK_LIST_STYLES[selectedList.color].dot,
+                        )}
+                      />
+                      <span className="truncate">{selectedList.name}</span>
+                      <span className="shrink-0 font-normal text-muted-foreground">
+                        · {VIEW_TITLES[filters.status]}
+                      </span>
+                    </>
+                  ) : filters.list === "none" ? (
+                    `${VIEW_TITLES[filters.status]} on no list`
+                  ) : (
+                    VIEW_TITLES[filters.status]
+                  )}
+                </h2>
+                {selectedList ? (
+                  <Menu
+                    aria-label={`${selectedList.name} list options`}
+                    variant="ghost"
+                    size="icon"
+                    chevron={false}
+                    align="start"
+                    className="size-8 shrink-0 text-muted-foreground"
+                    items={[
+                      {
+                        id: "edit",
+                        label: "Rename or recolor",
+                        onSelect: () => setListDialog(selectedList),
+                      },
+                      {
+                        id: "delete",
+                        label: "Delete list",
+                        destructive: true,
+                        onSelect: () => void removeList(selectedList),
+                      },
+                    ]}
+                  >
+                    <MoreHorizontal aria-hidden="true" />
+                  </Menu>
+                ) : null}
+              </div>
               <AttentionSummary
                 overdue={summary?.overdue ?? 0}
                 dueToday={summary?.due_today ?? 0}
@@ -210,7 +326,14 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
             />
           </div>
 
-          <TaskComposer onCreate={create} titleRef={titleRef} />
+          <TaskComposer
+            // A new task goes on the list in view; switching lists starts afresh.
+            key={filters.list}
+            onCreate={create}
+            titleRef={titleRef}
+            lists={listOptions}
+            defaultListId={filters.list === "all" || filters.list === "none" ? null : filters.list}
+          />
           <FormAlert message={actionError} />
 
           <div
@@ -229,7 +352,11 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
                 </Button>
               </div>
             ) : state.data.tasks.length === 0 ? (
-              <TaskEmptyState filters={filters} onClear={clearNarrowing} />
+              <TaskEmptyState
+                filters={filters}
+                listName={selectedList?.name ?? null}
+                onClear={clearNarrowing}
+              />
             ) : (
               <div className="space-y-6">
                 {grouped ? (
@@ -299,8 +426,27 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
         </p>
 
         {editing ? (
-          <TaskEditDialog task={editing} onSave={save} onClose={() => setEditing(null)} />
+          <TaskEditDialog
+            task={editing}
+            lists={listOptions}
+            onSave={save}
+            onClose={() => setEditing(null)}
+          />
         ) : null}
+        {listDialog ? (
+          <TaskListDialog
+            title={listDialog === "new" ? "New list" : "Edit list"}
+            submitLabel={listDialog === "new" ? "Create list" : "Save"}
+            initial={
+              listDialog === "new"
+                ? { name: "", color: "blue" }
+                : { name: listDialog.name, color: listDialog.color }
+            }
+            onSave={saveList}
+            onClose={() => setListDialog(null)}
+          />
+        ) : null}
+        {confirmDialog}
       </div>
     </div>
   );
@@ -339,7 +485,16 @@ function AttentionSummary({ overdue, dueToday }: { overdue: number; dueToday: nu
   );
 }
 
-function TaskEmptyState({ filters, onClear }: { filters: TaskFilters; onClear: () => void }) {
+function TaskEmptyState({
+  filters,
+  listName,
+  onClear,
+}: {
+  filters: TaskFilters;
+  /** The list in view, if one is. */
+  listName: string | null;
+  onClear: () => void;
+}) {
   if (isNarrowed(filters)) {
     return (
       <EmptyState
@@ -351,6 +506,15 @@ function TaskEmptyState({ filters, onClear }: { filters: TaskFilters; onClear: (
           Clear search and filters
         </Button>
       </EmptyState>
+    );
+  }
+  if (listName !== null && filters.status !== "completed") {
+    return (
+      <EmptyState
+        icon={ListTodo}
+        title={`Nothing on ${listName}${filters.status === "open" ? " to do" : " yet"}`}
+        description="Add a task above and it goes on this list. You can also move a task here from its details."
+      />
     );
   }
   if (filters.status === "completed") {

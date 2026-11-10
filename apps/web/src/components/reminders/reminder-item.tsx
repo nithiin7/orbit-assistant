@@ -5,6 +5,7 @@ import { AlarmClock, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { TaskListBadge } from "@/components/tasks/task-meta";
 import { Button } from "@/components/ui/button";
 import { fireGroupOf, formatOccurrence, statusHint } from "@/lib/reminders";
 import { cn } from "@/utils/common";
@@ -159,6 +160,9 @@ export function ReminderItem({
           <FireTimeChip reminder={reminder} group={fireGroupOf(reminder, viewerTimeZone)} />
           <RecurrenceChip reminder={reminder} />
           {reminder.task ? <TaskChip task={reminder.task} /> : null}
+          {reminder.task?.list ? (
+            <TaskListBadge name={reminder.task.list.name} color={reminder.task.list.color} />
+          ) : null}
           {sameTimeZone(reminder.timezone, viewerTimeZone) ? null : (
             <TimeZoneChip timeZone={reminder.timezone} />
           )}
