@@ -395,6 +395,9 @@ describe("HealthPanel: logging a workout", () => {
     });
     await renderSignedIn(<HealthPanel />);
     await user.click(await screen.findByRole("button", { name: "Finish" }));
+    const dialog = await screen.findByRole("alertdialog");
+    expect(dialog).toHaveTextContent("Finish without any sets done?");
+    await user.click(within(dialog).getByRole("button", { name: "Finish workout" }));
     await waitFor(() =>
       expect(api.mock.calls.some(([url]) => String(url).endsWith("/sessions/w1/complete"))).toBe(
         true,
@@ -403,6 +406,74 @@ describe("HealthPanel: logging a workout", () => {
     expect(await screen.findByText(/· Completed/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Finish" })).not.toBeInTheDocument();
     expect(screen.getByText("10:00")).toBeInTheDocument();
+  });
+
+  it("ticks a blank set with last time's values, and the rest timer can be skipped", async () => {
+    const user = userEvent.setup();
+    navigation.params = new URLSearchParams("workout=w1");
+    let current = workout();
+    const api = mockApi({
+      ...session(),
+      [`GET ${WS}/sessions/w1`]: () => Response.json(current),
+      [`PUT ${WS}/sessions/w1/exercises/item-1/sets/set-1`]: () => {
+        const saved = set({
+          reps: 5,
+          weight_g: 100_000,
+          completed: true,
+          completed_at: new Date().toISOString(),
+        });
+        current = workout({ exercises: [exercise({ sets: [saved] })] });
+        return Response.json(current);
+      },
+    });
+    await renderSignedIn(<HealthPanel />);
+    const card = await screen.findByRole("article", { name: "Bench press" });
+    expect(within(card).getByRole("textbox", { name: "Set 1 kg" })).toHaveAttribute(
+      "placeholder",
+      "100",
+    );
+
+    await user.click(within(card).getByRole("button", { name: "Set 1 done" }));
+    await waitFor(() => {
+      const saves = api.mock.calls.filter(([, init]) => init?.method === "PUT");
+      expect(JSON.parse(String(saves.at(-1)?.[1]?.body))).toMatchObject({
+        reps: 5,
+        weight_g: 100_000,
+        completed: true,
+      });
+    });
+    expect(await screen.findByRole("timer")).toHaveTextContent("Rest after Bench press");
+    await user.click(screen.getByRole("button", { name: "Skip" }));
+    expect(screen.queryByRole("timer")).not.toBeInTheDocument();
+  });
+
+  it("adds several exercises at once, in the order picked", async () => {
+    const user = userEvent.setup();
+    navigation.params = new URLSearchParams("workout=w1");
+    const added: string[] = [];
+    const library = [
+      { ...builtin("goblet_squat"), id: "squat", name: "Squat" },
+      { ...builtin("goblet_squat"), id: "row", name: "Row" },
+    ];
+    mockApi({
+      ...session(),
+      [`GET ${WS}/exercises`]: json({ exercises: library }),
+      [`GET ${WS}/sessions/w1`]: () => Response.json(workout({ exercises: [] })),
+      [`POST ${WS}/sessions/w1/exercises`]: (request) => {
+        const { body } = request;
+        if (typeof body === "object" && body !== null && "exercise_id" in body) {
+          added.push(String(body.exercise_id));
+        }
+        return Response.json(workout({ exercises: [] }));
+      },
+    });
+    await renderSignedIn(<HealthPanel />);
+    await user.click(await screen.findByRole("button", { name: "Add exercises" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add exercises" });
+    await user.click(within(dialog).getByRole("button", { name: /Row/ }));
+    await user.click(within(dialog).getByRole("button", { name: /Squat/ }));
+    await user.click(within(dialog).getByRole("button", { name: "Add 2 exercises" }));
+    await waitFor(() => expect(added).toEqual(["row", "squat"]));
   });
 
   it("explains when a workout can't be loaded", async () => {

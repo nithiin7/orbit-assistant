@@ -1,7 +1,7 @@
 "use client";
 
-import type { Exercise, FitnessLinkedRecord } from "@orbit/contracts";
-import { FileLock2, Link2, NotebookPen, Search, X } from "lucide-react";
+import type { Exercise, ExerciseCategory, FitnessLinkedRecord } from "@orbit/contracts";
+import { Check, FileLock2, Link2, NotebookPen, Plus, Search, X } from "lucide-react";
 import Link from "next/link";
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 
@@ -287,25 +287,38 @@ export function NumberInput({
   );
 }
 
-/** A modal list of exercises to choose from, searchable by name, muscle, or category. */
+/**
+ * Choosing exercises from the library: search or filter by category, tap to select as many as
+ * needed, then add them together. Exercises in `added` are marked so they aren't added twice
+ * by accident (they can still be picked).
+ */
 export function ExercisePicker({
   exercises,
   onPick,
   onClose,
-  title = "Add an exercise",
+  added,
+  title = "Add exercises",
 }: {
   exercises: readonly Exercise[];
-  onPick: (exercise: Exercise) => void;
+  onPick: (exercises: Exercise[]) => void;
   onClose: () => void;
+  /** Exercise ids already in the workout or template. */
+  added?: ReadonlySet<string>;
   title?: string;
 }) {
   const id = useId();
   const { close, dialogProps } = useModalDialog({ onClose });
   const [query, setQuery] = useState("");
+  const [category, setCategory] = useState<ExerciseCategory | "all">("all");
+  const [selected, setSelected] = useState<string[]>([]);
+  const library = exercises.filter((exercise) => !exercise.archived);
+  const categories = EXERCISE_CATEGORIES.filter((option) =>
+    library.some((exercise) => exercise.category === option.value),
+  );
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const matches = exercises.filter(
+  const matches = library.filter(
     (exercise) =>
-      !exercise.archived &&
+      (category === "all" || exercise.category === category) &&
       words.every((word) =>
         [
           exercise.name,
@@ -318,60 +331,137 @@ export function ExercisePicker({
           .includes(word),
       ),
   );
+  const toggle = (exerciseId: string) =>
+    setSelected(
+      selected.includes(exerciseId)
+        ? selected.filter((item) => item !== exerciseId)
+        : [...selected, exerciseId],
+    );
+  const chip = (value: ExerciseCategory | "all", label: string) => (
+    <button
+      key={value}
+      type="button"
+      aria-pressed={category === value}
+      onClick={() => setCategory(value)}
+      className={cn(
+        "h-7 shrink-0 rounded-full px-2.5 text-xs font-medium whitespace-nowrap transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        category === value
+          ? "bg-brand-subtle text-brand"
+          : "text-muted-foreground hover:bg-accent hover:text-foreground",
+      )}
+    >
+      {label}
+    </button>
+  );
+
   return (
     <dialog
       {...dialogProps}
       aria-labelledby={`${id}-title`}
       className="dialog-motion dialog-pop mx-auto mt-[6vh] max-h-[88vh] w-[calc(100%-2rem)] max-w-lg overflow-hidden rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
     >
-      <div className="flex items-center justify-between gap-2 border-b p-4">
-        <h2 id={`${id}-title`} className="text-base font-semibold">
-          {title}
-        </h2>
-        <Button variant="ghost" size="icon" className="size-8" aria-label="Close" onClick={close}>
-          <X aria-hidden="true" />
-        </Button>
-      </div>
-      <div className="relative border-b p-3">
-        <Search
-          aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 left-5 size-4 -translate-y-1/2 text-muted-foreground"
-        />
-        <Input
-          autoFocus
-          aria-label="Search exercises"
-          placeholder="Search by name or muscle"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          className="pl-8"
-        />
-      </div>
-      <ul className="max-h-[55vh] overflow-y-auto p-2">
-        {matches.length === 0 ? (
-          <li className="p-4 text-center text-sm text-muted-foreground">No exercises match.</li>
-        ) : (
-          matches.map((exercise) => (
-            <li key={exercise.id}>
-              <button
-                type="button"
-                onClick={() => {
-                  onPick(exercise);
-                  close();
-                }}
-                className="flex w-full flex-col items-start rounded-md px-3 py-2 text-left outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <span className="text-sm font-medium">{exercise.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  {labelOf(EXERCISE_CATEGORIES, exercise.category)}
-                  {exercise.primary_muscles.length > 0
-                    ? ` · ${exercise.primary_muscles.join(", ").replaceAll("_", " ")}`
-                    : ""}
-                </span>
-              </button>
+      <div className="flex max-h-[88vh] flex-col">
+        <div className="flex items-center justify-between gap-2 border-b p-4">
+          <div className="min-w-0">
+            <h2 id={`${id}-title`} className="text-base font-semibold">
+              {title}
+            </h2>
+            <p className="text-xs text-muted-foreground">Tap to select one or more.</p>
+          </div>
+          <Button variant="ghost" size="icon" className="size-8" aria-label="Close" onClick={close}>
+            <X aria-hidden="true" />
+          </Button>
+        </div>
+        <div className="space-y-2 border-b p-3">
+          <div className="relative">
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              autoFocus
+              aria-label="Search exercises"
+              placeholder="Search by name or muscle"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              className="pl-8"
+            />
+          </div>
+          {categories.length > 1 ? (
+            <div
+              role="group"
+              aria-label="Category"
+              className="-mx-1 flex gap-1 overflow-x-auto px-1"
+            >
+              {chip("all", "All")}
+              {categories.map((option) => chip(option.value, option.label))}
+            </div>
+          ) : null}
+        </div>
+        <ul className="min-h-0 flex-1 overflow-y-auto p-2">
+          {matches.length === 0 ? (
+            <li className="p-4 text-center text-sm text-muted-foreground">
+              No exercises match. Add your own under Exercises.
             </li>
-          ))
-        )}
-      </ul>
+          ) : (
+            matches.map((exercise) => {
+              const on = selected.includes(exercise.id);
+              return (
+                <li key={exercise.id}>
+                  <button
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => toggle(exercise.id)}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors duration-150 outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
+                      on && "bg-brand-subtle hover:bg-brand-subtle",
+                    )}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        "flex size-5 shrink-0 items-center justify-center rounded-full border",
+                        on ? "border-brand bg-brand text-brand-foreground" : "border-input",
+                      )}
+                    >
+                      {on ? <Check className="size-3" /> : null}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium">{exercise.name}</span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {labelOf(EXERCISE_CATEGORIES, exercise.category)}
+                        {exercise.primary_muscles.length > 0
+                          ? ` · ${exercise.primary_muscles.join(", ").replaceAll("_", " ")}`
+                          : ""}
+                      </span>
+                    </span>
+                    {added?.has(exercise.id) ? (
+                      <span className="shrink-0 text-xs text-muted-foreground">Added</span>
+                    ) : null}
+                  </button>
+                </li>
+              );
+            })
+          )}
+        </ul>
+        <div className="flex items-center justify-end gap-2 border-t p-3">
+          <Button variant="ghost" onClick={close}>
+            Cancel
+          </Button>
+          <Button
+            disabled={selected.length === 0}
+            onClick={() => {
+              onPick(selected.flatMap((exerciseId) => library.filter((e) => e.id === exerciseId)));
+              close();
+            }}
+          >
+            <Plus aria-hidden="true" />
+            {selected.length === 0
+              ? "Add"
+              : `Add ${selected.length} ${selected.length === 1 ? "exercise" : "exercises"}`}
+          </Button>
+        </div>
+      </div>
     </dialog>
   );
 }
