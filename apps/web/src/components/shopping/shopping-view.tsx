@@ -299,8 +299,11 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
                       renderItems(
                         needed,
                         `${needed.length} ${needed.length === 1 ? "item" : "items"} to buy`,
-                        // Two columns of items on very wide screens, with a rule between them.
-                        "grid @min-[88rem]/list:grid-cols-2 @min-[88rem]/list:divide-y-0 @min-[88rem]/list:*:-mb-px @min-[88rem]/list:*:border-b @min-[88rem]/list:*:odd:border-r @min-[88rem]/list:*:odd:last:border-r-0",
+                        // Two columns of items on very wide screens, with a rule between them. A
+                        // single item keeps the full width so its details don't stop mid-card.
+                        needed.length > 1
+                          ? "grid @min-[88rem]/list:grid-cols-2 @min-[88rem]/list:divide-y-0 @min-[88rem]/list:*:-mb-px @min-[88rem]/list:*:border-b @min-[88rem]/list:*:odd:border-r @min-[88rem]/list:*:odd:last:border-r-0"
+                          : undefined,
                       )
                     ) : (
                       <div className="flex items-center gap-3 rounded-xl border border-dashed bg-card/40 px-4 py-6 text-sm text-muted-foreground">
