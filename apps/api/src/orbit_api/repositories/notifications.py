@@ -27,6 +27,7 @@ def _to_notification(model: NotificationModel) -> Notification:
         scheduled_for=model.scheduled_for,
         created_at=model.created_at,
         read_at=model.read_at,
+        link=model.link,
     )
 
 
@@ -51,6 +52,7 @@ class SqlNotificationRepository:
                 scheduled_for=notification.scheduled_for,
                 created_at=notification.created_at,
                 read_at=notification.read_at,
+                link=notification.link,
             )
         )
         await flush(self._session)

@@ -474,7 +474,9 @@ reminders); `notifications.occurrence_id`/`reminder_id` `ON DELETE SET NULL`, `u
   `recurrence`), `enabled`, last outcome. `reminder_occurrences`: one firing — `scheduled_for`
   (UTC), status, `attempts`, `available_at` (backoff), lease (`claim_token`, `claimed_until`),
   `last_error`. `notifications`: one delivered occurrence per recipient, with a copy of title and
-  description, `read_at`. `users.timezone`: optional IANA preference for new reminders.
+  description, `read_at`, and an optional in-app `link` (agent runs, approvals, budgets, SIPs,
+  integrations, reminders; the bell opens it, falling back to Reminders for older reminder
+  rows, and shows the Markdown body as a plain-text preview). `users.timezone`: optional IANA preference for new reminders.
 - Why three tables: reminder = what the user edits; occurrence = the worker's unit of work
   (claims, retries, outcome), keeping delivery state observable; notification = what the user
   reads, outliving edits and deletion of its reminder.

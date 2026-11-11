@@ -233,3 +233,4 @@ class NotificationModel(Base):
     scheduled_for: Mapped[datetime] = mapped_column(UTCDateTime)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
     read_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    link: Mapped[str | None] = mapped_column(String(500))

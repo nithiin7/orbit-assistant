@@ -696,6 +696,7 @@ class BudgetService:
                     scheduled_for=now,
                     created_at=now,
                     read_at=None,
+                    link="/finance?view=budgets",
                 )
             )
         for threshold in record:

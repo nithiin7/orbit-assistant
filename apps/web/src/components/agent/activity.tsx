@@ -8,6 +8,7 @@ import { useState } from "react";
 import { describeApiError } from "@/api/client";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
+import { Markdown } from "@/components/markdown/markdown";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAgentExecution, useAgentExecutions, useChangeExecution } from "@/hooks/use-agent";
@@ -255,7 +256,7 @@ export function ExecutionDetail({ executionId }: { executionId: string }) {
               <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                 Result
               </p>
-              <p className="text-sm whitespace-pre-line">{detail.data.execution.summary}</p>
+              <Markdown text={detail.data.execution.summary} />
             </div>
           ) : null}
           {detail.data.execution.error ? (

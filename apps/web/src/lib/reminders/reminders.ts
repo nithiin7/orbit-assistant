@@ -2,6 +2,7 @@
 
 import type {
   CreateReminderRequest,
+  Notification,
   Recurrence,
   Reminder,
   ReminderListQuery,
@@ -12,6 +13,7 @@ import { array, mixed, object, string } from "yup";
 
 import { type Option } from "@/utils/common";
 import { daysBetween } from "@/utils/dates";
+import { isSafeLink } from "@/utils/markdown";
 import { localParts } from "@/utils/time-zones";
 import { multiLineText, singleLineText } from "@/utils/validation";
 
@@ -157,6 +159,16 @@ export function formatReceived(at: string, now: Date = new Date()): string {
   return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(
     new Date(at),
   );
+}
+
+/**
+ * Where opening a notification goes: its own in-app link, or Reminders for reminders delivered
+ * before notifications had links. Only in-app paths are followed.
+ */
+export function notificationHref(notification: Notification): string | null {
+  const link = notification.link?.trim();
+  if (link) return link.startsWith("/") && isSafeLink(link) ? link : null;
+  return notification.reminder_id ? "/reminders" : null;
 }
 
 /** The next whole hour on the wall clock of `timeZone`: a sensible default for a new reminder. */

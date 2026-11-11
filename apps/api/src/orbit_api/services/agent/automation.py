@@ -300,7 +300,9 @@ class AutomationService:
         if not agent.notifications.insights:
             return False
         body = "\n".join(f"• {item.label}" for item in new[:10])
-        await self._notifier.notify(agent.user_id, agent.workspace_id, finding.title, body)
+        await self._notifier.notify(
+            agent.user_id, agent.workspace_id, finding.title, body, link="/automation"
+        )
         return True
 
     async def purge(self) -> int:

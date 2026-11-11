@@ -56450,7 +56450,7 @@
             "type": "string",
             "format": "uuid",
             "title": "Workspace Id",
-            "description": "The workspace the reminder belongs to."
+            "description": "The workspace it came from."
           },
           "reminder_id": {
             "anyOf": [
@@ -56472,7 +56472,7 @@
           "body": {
             "type": "string",
             "title": "Body",
-            "description": "The reminder's description when it fired; may be empty."
+            "description": "The message; may be empty, and may use Markdown."
           },
           "scheduled_for": {
             "type": "string",
@@ -56498,6 +56498,18 @@
             ],
             "title": "Read At",
             "description": "When it was first read, or `null` if unread."
+          },
+          "link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link",
+            "description": "The in-app path opening it goes to, such as `/automation?tab=activity`."
           }
         },
         "type": "object",
@@ -56509,7 +56521,8 @@
           "body",
           "scheduled_for",
           "created_at",
-          "read_at"
+          "read_at",
+          "link"
         ],
         "title": "NotificationResponse"
       },

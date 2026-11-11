@@ -284,6 +284,9 @@ def test_writes_wait_for_approval_of_the_exact_action(
     assert [n["title"] for n in notifications(client, ada)].count(
         "Approval needed: Create task “Call the bank”"
     ) == 1
+    assert {
+        n["link"] for n in notifications(client, ada) if n["title"].startswith("Approval needed")
+    } == {"/automation?tab=approvals"}
 
     # A decision for a different action (another hash) runs nothing.
     wrong = client.post(
@@ -665,6 +668,8 @@ def test_workflow_runs_steps_in_order_with_conditions_and_templates(
     [note] = notifications(client, ada)
     assert note["title"] == "1 overdue tasks"
     assert "Taxes" in note["body"]
+    # Opening it goes to the run that sent it.
+    assert note["link"] == f"/automation?tab=activity&run={second['id']}"
     # No model was needed for a deterministic workflow.
     assert fake.state.requests == []
 

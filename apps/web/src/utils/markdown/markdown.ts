@@ -161,3 +161,30 @@ export function parseInline(text: string): Inline[] {
   pushText();
   return result;
 }
+
+function inlineText(children: Inline[]): string {
+  return children
+    .map((child) => ("children" in child ? inlineText(child.children) : child.text))
+    .join("");
+}
+
+/** Markdown as plain text, one line per block, for short previews where formatting won't fit. */
+export function markdownToPlainText(source: string): string {
+  return parseMarkdown(source)
+    .flatMap((block): string[] => {
+      switch (block.type) {
+        case "heading":
+        case "paragraph":
+        case "quote":
+          return [inlineText(block.children)];
+        case "list":
+          return block.items.map((item) => `• ${inlineText(item)}`);
+        case "code":
+          return [block.text];
+        case "rule":
+          return [];
+      }
+    })
+    .filter((line) => line.trim() !== "")
+    .join("\n");
+}

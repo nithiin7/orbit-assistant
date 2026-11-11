@@ -15040,7 +15040,7 @@ export interface components {
             /**
              * Workspace Id
              * Format: uuid
-             * @description The workspace the reminder belongs to.
+             * @description The workspace it came from.
              */
             workspace_id: string;
             /**
@@ -15052,7 +15052,7 @@ export interface components {
             title: string;
             /**
              * Body
-             * @description The reminder's description when it fired; may be empty.
+             * @description The message; may be empty, and may use Markdown.
              */
             body: string;
             /**
@@ -15072,6 +15072,11 @@ export interface components {
              * @description When it was first read, or `null` if unread.
              */
             read_at: string | null;
+            /**
+             * Link
+             * @description The in-app path opening it goes to, such as `/automation?tab=activity`.
+             */
+            link: string | null;
         };
         /** NutrientsModel */
         NutrientsModel: {

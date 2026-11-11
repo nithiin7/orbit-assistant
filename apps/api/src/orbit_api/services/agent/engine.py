@@ -159,9 +159,19 @@ class AgentStore(Protocol):
     async def trim_workflow_memory(self, workflow_id: uuid.UUID, keep: int) -> None: ...
 
 
+def run_link(execution_id: uuid.UUID) -> str:
+    """The in-app page showing one run, for notifications about it."""
+    return f"/automation?tab=activity&run={execution_id}"
+
+
 class Notifier(Protocol):
     async def notify(
-        self, user_id: uuid.UUID, workspace_id: uuid.UUID, title: str, body: str
+        self,
+        user_id: uuid.UUID,
+        workspace_id: uuid.UUID,
+        title: str,
+        body: str,
+        link: str | None = None,
     ) -> None: ...
 
 
@@ -874,6 +884,7 @@ class ExecutionEngine:
                 execution.workspace_id,
                 f"Approval needed: {call.summary}"[:200],
                 f"{execution.title}: {reason}"[:2000],
+                link="/automation?tab=approvals",
             )
         await self._transaction.commit()
         return paused
@@ -1266,6 +1277,7 @@ class ExecutionEngine:
                     execution.workspace_id,
                     f"“{execution.title}” finished"[:200],
                     (summary or "Done.")[:2000],
+                    link=run_link(execution.id),
                 )
             if status == "failed" and agent.notifications.failed:
                 await self._notifier.notify(
@@ -1273,6 +1285,7 @@ class ExecutionEngine:
                     execution.workspace_id,
                     f"“{execution.title}” failed"[:200],
                     (error or "Something went wrong.")[:2000],
+                    link=run_link(execution.id),
                 )
         if commit:
             await self._transaction.commit()

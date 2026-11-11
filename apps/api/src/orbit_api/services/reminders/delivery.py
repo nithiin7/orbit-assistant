@@ -205,4 +205,5 @@ def _notification(
         scheduled_for=claim.scheduled_for,
         created_at=now,
         read_at=None,
+        link="/reminders",
     )

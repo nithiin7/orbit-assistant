@@ -39,7 +39,12 @@ def _lock(connection_id: uuid.UUID) -> asyncio.Lock:
 
 class Notifier(Protocol):
     async def notify(
-        self, user_id: uuid.UUID, workspace_id: uuid.UUID, title: str, body: str
+        self,
+        user_id: uuid.UUID,
+        workspace_id: uuid.UUID,
+        title: str,
+        body: str,
+        link: str | None = None,
     ) -> None: ...
 
 
@@ -141,6 +146,7 @@ class TokenManager:
             f"Reconnect {current.account_email}",
             "Orbit lost access to this account, so it stopped synchronizing. Your imported "
             "data is kept. Reconnect it in Settings → Integrations.",
+            link="/integrations",
         )
         await self._transaction.commit()
 

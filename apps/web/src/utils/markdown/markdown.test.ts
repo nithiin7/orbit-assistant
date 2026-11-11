@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isSafeLink, parseInline, parseMarkdown } from "./markdown";
+import { isSafeLink, markdownToPlainText, parseInline, parseMarkdown } from "./markdown";
 
 describe("parseMarkdown", () => {
   it("reads headings, lists, quotes, code, and paragraphs", () => {
@@ -47,5 +47,15 @@ describe("parseMarkdown", () => {
     expect(parseMarkdown("<img src=x onerror=alert(1)>")).toEqual([
       { type: "paragraph", children: [{ type: "text", text: "<img src=x onerror=alert(1)>" }] },
     ]);
+  });
+});
+
+describe("markdownToPlainText", () => {
+  it("drops formatting and keeps one line per block", () => {
+    expect(
+      markdownToPlainText(
+        "# Your day\n\nA **busy** one, see [tasks](/tasks).\n\n- `9:00` standup\n- lunch\n\n---\n\n> Breathe",
+      ),
+    ).toBe("Your day\nA busy one, see tasks.\n• 9:00 standup\n• lunch\nBreathe");
   });
 });
