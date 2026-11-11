@@ -30,6 +30,7 @@ function seed(): QueryClient {
     id: "l1",
     workspace_id: "w1",
     name: "Groceries",
+    icon: "basket" as const,
     is_default: true,
     created_at: "2026-10-01T09:00:00Z",
     updated_at: "2026-10-01T09:00:00Z",

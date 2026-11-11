@@ -1,5 +1,6 @@
 "use client";
 
+import type { ShoppingListIcon } from "@orbit/contracts";
 import { ArrowRight, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 
@@ -7,6 +8,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShoppingOverview } from "@/hooks/use-shopping";
+
+import { SHOPPING_LIST_ICON_COMPONENTS } from "./list-icon";
 
 /** How many items are still to buy on each list in the active workspace, for the dashboard. */
 export function ShoppingOverview() {
@@ -47,6 +50,7 @@ export function ShoppingOverview() {
             <ul className="divide-y rounded-lg border">
               {resource.data.map((list) => (
                 <li key={list.id} className="flex items-center gap-3 px-3 py-2">
+                  <ListIcon icon={list.icon} />
                   <span className="min-w-0 flex-1 truncate text-sm">{list.name}</span>
                   <span className="text-xs text-muted-foreground tabular-nums">
                     {list.needed_count === 0 ? "Nothing to buy" : `${list.needed_count} to buy`}
@@ -59,4 +63,9 @@ export function ShoppingOverview() {
       </Card>
     </section>
   );
+}
+
+function ListIcon({ icon }: { icon: ShoppingListIcon }) {
+  const Icon = SHOPPING_LIST_ICON_COMPONENTS[icon];
+  return <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />;
 }

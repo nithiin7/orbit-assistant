@@ -3,19 +3,12 @@ import { describe, expect, it } from "vitest";
 
 import { fieldErrors } from "@/test/validation";
 
-import {
-  countItems,
-  itemSchema,
-  linkLabel,
-  listNameSchema,
-  optionalText,
-  sortItems,
-} from "./shopping";
+import { countItems, itemSchema, linkLabel, listSchema, optionalText, sortItems } from "./shopping";
 
 const validItem = { name: "Oat milk", quantity: "", url: "", notes: "" };
 const itemErrors = (changes: Partial<typeof validItem>) =>
   fieldErrors(itemSchema, { ...validItem, ...changes });
-const listNameError = (name: string) => fieldErrors(listNameSchema, { name }).name;
+const listNameError = (name: string) => fieldErrors(listSchema, { name, icon: "basket" }).name;
 
 function item(overrides: Partial<ShoppingItem> & Pick<ShoppingItem, "id">): ShoppingItem {
   return {

@@ -26,6 +26,7 @@ function list(
 ) {
   return {
     workspace_id: personal.id,
+    icon: "basket",
     is_default: false,
     needed_count: 0,
     purchased_count: 0,
@@ -90,7 +91,7 @@ describe("ShoppingPanel", () => {
     // The default list can be renamed but not deleted.
     await user.click(screen.getByRole("button", { name: "List options" }));
     const options = screen.getByRole("menu", { name: "List options" });
-    expect(within(options).getByRole("menuitem", { name: "Rename list" })).toBeInTheDocument();
+    expect(within(options).getByRole("menuitem", { name: "Edit list" })).toBeInTheDocument();
     expect(within(options).queryByRole("menuitem", { name: /Delete/ })).not.toBeInTheDocument();
   });
 
@@ -341,14 +342,43 @@ describe("ShoppingPanel", () => {
     await screen.findByRole("checkbox", { name: "Milk" });
 
     await user.click(screen.getByRole("button", { name: "List options" }));
-    await user.click(screen.getByRole("menuitem", { name: "Rename list" }));
-    const dialog = screen.getByRole("dialog", { name: "Rename list" });
+    await user.click(screen.getByRole("menuitem", { name: "Edit list" }));
+    const dialog = screen.getByRole("dialog", { name: "Edit list" });
     const name = within(dialog).getByRole("textbox", { name: "List name" });
     await user.clear(name);
     await user.type(name, "Weekly shop{Enter}");
 
     expect(await screen.findByRole("heading", { name: "Weekly shop" })).toBeInTheDocument();
     expect(sent).toEqual([{ name: "Weekly shop" }]);
+  });
+
+  it("changes a list's icon without renaming it", async () => {
+    const user = userEvent.setup();
+    const sent: unknown[] = [];
+    mockApi({
+      ...session,
+      ...listsRoute,
+      ...itemsRoutes,
+      [`PATCH ${SHOP}/lists/${groceries.id}`]: ({ body }: MockRequest) => {
+        sent.push(body);
+        return Response.json({ ...groceries, icon: "carrot" });
+      },
+    });
+    await renderSignedIn(<ShoppingPanel />);
+    await screen.findByRole("checkbox", { name: "Milk" });
+
+    await user.click(screen.getByRole("button", { name: "List options" }));
+    await user.click(screen.getByRole("menuitem", { name: "Edit list" }));
+    const dialog = screen.getByRole("dialog", { name: "Edit list" });
+    expect(within(dialog).getByRole("button", { name: "Basket" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await user.click(within(dialog).getByRole("button", { name: "Vegetables" }));
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(sent).toEqual([{ icon: "carrot" }]));
+    expect(await screen.findByText("Saved the list.")).toBeInTheDocument();
   });
 
   it("shows how much of the list is bought", async () => {

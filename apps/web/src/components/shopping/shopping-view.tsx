@@ -6,7 +6,7 @@ import type {
   ShoppingListOverview,
   UpdateShoppingItemRequest,
 } from "@orbit/contracts";
-import { PartyPopper, RotateCcw, ShoppingBasket } from "lucide-react";
+import { PartyPopper, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { describeApiError } from "@/api/client";
@@ -15,6 +15,7 @@ import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShopping, useShoppingMutations } from "@/hooks/use-shopping";
+import { DEFAULT_LIST_ICON } from "@/lib/shopping";
 import { useWorkspaces } from "@/providers/workspace";
 import { cn } from "@/utils/common";
 import { isEditableTarget } from "@/utils/keyboard";
@@ -22,7 +23,8 @@ import { isEditableTarget } from "@/utils/keyboard";
 import { ItemComposer } from "./item-composer";
 import { ItemEditDialog } from "./item-edit-dialog";
 import { ListActions } from "./list-actions";
-import { ListNameDialog } from "./list-name-dialog";
+import { SHOPPING_LIST_ICON_COMPONENTS } from "./list-icon";
+import { type ListDetails, ListNameDialog } from "./list-name-dialog";
 import { ListTabs } from "./list-tabs";
 import { ShoppingItemRow } from "./shopping-item";
 
@@ -37,7 +39,7 @@ export function ShoppingPanel() {
   return <ShoppingView key={state.active.id} workspaceId={state.active.id} />;
 }
 
-type NameDialog = { mode: "create" } | { mode: "rename"; list: ShoppingListOverview };
+type NameDialog = { mode: "create" } | { mode: "edit"; list: ShoppingListOverview };
 
 function ShoppingView({ workspaceId }: { workspaceId: string }) {
   const shopping = useShopping(workspaceId);
@@ -77,18 +79,27 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
   // Lists
 
   const saveListName = useCallback(
-    async (dialog: NameDialog, name: string) => {
+    async (dialog: NameDialog, details: ListDetails) => {
       if (dialog.mode === "create") {
-        const created = await mutations.createList.mutateAsync(name);
+        const created = await mutations.createList.mutateAsync(details);
         select(created.id);
         setAnnouncement(`Created “${created.name}”.`);
       } else {
-        const renamed = await mutations.renameList.mutateAsync({ list: dialog.list, name });
-        setAnnouncement(`Renamed to “${renamed.name}”.`);
+        const { list } = dialog;
+        const renamed = details.name !== list.name;
+        const updated = await mutations.updateList.mutateAsync({
+          list,
+          // Send only what changed, so a stale form can't undo another change.
+          changes: {
+            ...(renamed ? { name: details.name } : {}),
+            ...(details.icon !== list.icon ? { icon: details.icon } : {}),
+          },
+        });
+        setAnnouncement(renamed ? `Renamed to “${updated.name}”.` : "Saved the list.");
       }
       setActionError(null);
     },
-    [mutations.createList, mutations.renameList, select],
+    [mutations.createList, mutations.updateList, select],
   );
 
   const removeList = useCallback(
@@ -253,7 +264,7 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
               <ListActions
                 key={active.id}
                 list={active}
-                onRename={() => setNameDialog({ mode: "rename", list: active })}
+                onEdit={() => setNameDialog({ mode: "edit", list: active })}
                 onDelete={removeList}
               />
             </div>
@@ -278,7 +289,7 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
                 <LoadError message={items.message} onRetry={shopping.reloadItems} />
               ) : items.data.length === 0 ? (
                 <EmptyState
-                  icon={ShoppingBasket}
+                  icon={SHOPPING_LIST_ICON_COMPONENTS[active.icon]}
                   title="Nothing on this list yet"
                   description="Add what you need above. Check items off as you buy them."
                 />
@@ -357,10 +368,14 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
       ) : null}
       {nameDialog ? (
         <ListNameDialog
-          title={nameDialog.mode === "create" ? "New shopping list" : "Rename list"}
+          title={nameDialog.mode === "create" ? "New shopping list" : "Edit list"}
           submitLabel={nameDialog.mode === "create" ? "Create list" : "Save"}
-          initialName={nameDialog.mode === "rename" ? nameDialog.list.name : ""}
-          onSave={(name) => saveListName(nameDialog, name)}
+          initial={
+            nameDialog.mode === "edit"
+              ? { name: nameDialog.list.name, icon: nameDialog.list.icon }
+              : { name: "", icon: DEFAULT_LIST_ICON }
+          }
+          onSave={(details) => saveListName(nameDialog, details)}
           onClose={() => setNameDialog(null)}
         />
       ) : null}

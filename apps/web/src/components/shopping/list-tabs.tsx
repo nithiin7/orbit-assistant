@@ -1,10 +1,12 @@
 "use client";
 
 import type { ShoppingListOverview } from "@orbit/contracts";
-import { Plus, ShoppingBasket } from "lucide-react";
+import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/utils/common";
+
+import { SHOPPING_LIST_ICON_COMPONENTS } from "./list-icon";
 
 type ListTabsProps = {
   lists: ShoppingListOverview[];
@@ -27,6 +29,7 @@ export function ListTabs({ lists, activeId, onSelect, onCreate }: ListTabsProps)
         <ul className="-mx-1 scrollbar-none flex min-w-0 flex-1 gap-1 overflow-x-auto px-1 @4xl/shop:mx-0 @4xl/shop:flex-col @4xl/shop:overflow-visible @4xl/shop:px-0">
           {lists.map((list) => {
             const active = list.id === activeId;
+            const ListIcon = SHOPPING_LIST_ICON_COMPONENTS[list.icon];
             return (
               <li key={list.id} className="shrink-0">
                 <button
@@ -41,7 +44,7 @@ export function ListTabs({ lists, activeId, onSelect, onCreate }: ListTabsProps)
                       : "text-muted-foreground hover:bg-accent hover:text-foreground",
                   )}
                 >
-                  <ShoppingBasket className="size-4 shrink-0" aria-hidden="true" />
+                  <ListIcon className="size-4 shrink-0" aria-hidden="true" />
                   <span className="min-w-0 flex-1 truncate text-left">{list.name}</span>
                   <span
                     aria-hidden="true"

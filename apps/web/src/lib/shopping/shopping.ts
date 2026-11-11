@@ -1,8 +1,9 @@
 /** Shopping list ordering, link display, and form schemas that mirror the API's. */
 
-import type { ShoppingItem } from "@orbit/contracts";
-import { object, string } from "yup";
+import type { ShoppingItem, ShoppingListIcon } from "@orbit/contracts";
+import { mixed, object, string } from "yup";
 
+import { type Option } from "@/utils/common";
 import { multiLineText, singleLineText, tooLongMessage } from "@/utils/validation";
 
 export const LIST_NAME_MAX_LENGTH = 100;
@@ -22,8 +23,29 @@ const urlField = string()
     (value) => !value || (!/\s/.test(value) && parseWebUrl(value) !== null),
   );
 
-export const listNameSchema = object({
+/** The icons a list can show, in picker order. New lists use the basket. */
+export const SHOPPING_LIST_ICONS: readonly Option<ShoppingListIcon>[] = [
+  { value: "basket", label: "Basket" },
+  { value: "cart", label: "Cart" },
+  { value: "apple", label: "Fruit" },
+  { value: "carrot", label: "Vegetables" },
+  { value: "coffee", label: "Coffee" },
+  { value: "pill", label: "Pharmacy" },
+  { value: "home", label: "Home" },
+  { value: "gift", label: "Gift" },
+  { value: "shirt", label: "Clothes" },
+  { value: "paw", label: "Pets" },
+  { value: "baby", label: "Baby" },
+  { value: "wrench", label: "Hardware" },
+];
+
+export const DEFAULT_LIST_ICON: ShoppingListIcon = "basket";
+
+export const listSchema = object({
   name: singleLineText(LIST_NAME_MAX_LENGTH).required("Enter a name."),
+  icon: mixed<ShoppingListIcon>()
+    .oneOf(SHOPPING_LIST_ICONS.map((option) => option.value))
+    .defined(),
 });
 
 const itemFields = {

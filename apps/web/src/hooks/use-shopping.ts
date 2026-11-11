@@ -4,7 +4,9 @@ import type {
   CreateShoppingItemRequest,
   ShoppingItem,
   ShoppingListOverview,
+  ShoppingListRequest,
   UpdateShoppingItemRequest,
+  UpdateShoppingListRequest,
 } from "@orbit/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
@@ -16,7 +18,6 @@ import {
   deleteShoppingItem,
   deleteShoppingList,
   purchaseShoppingItem,
-  renameShoppingList,
   replaceCachedItem,
   restockShoppingItem,
   restockShoppingList,
@@ -26,6 +27,7 @@ import {
   updateCachedItems,
   updateCachedLists,
   updateShoppingItem,
+  updateShoppingList,
 } from "@/api/shopping";
 import { queryResource, type Resource } from "@/hooks/query-resource";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
@@ -80,8 +82,8 @@ export function useShoppingMutations(workspaceId: string) {
   const queryClient = useQueryClient();
 
   const createList = useMutation({
-    mutationFn: (name: string) =>
-      withToken((token) => createShoppingList(token, workspaceId, { name })),
+    mutationFn: (body: ShoppingListRequest) =>
+      withToken((token) => createShoppingList(token, workspaceId, body)),
     onSuccess: (created) =>
       updateCachedLists(queryClient, workspaceId, (lists) => [
         ...lists,
@@ -89,12 +91,17 @@ export function useShoppingMutations(workspaceId: string) {
       ]),
   });
 
-  const renameList = useMutation({
-    mutationFn: ({ list, name }: { list: ShoppingListOverview; name: string }) =>
-      withToken((token) => renameShoppingList(token, workspaceId, list.id, { name })),
-    onSuccess: (renamed) =>
+  const updateList = useMutation({
+    mutationFn: ({
+      list,
+      changes,
+    }: {
+      list: ShoppingListOverview;
+      changes: UpdateShoppingListRequest;
+    }) => withToken((token) => updateShoppingList(token, workspaceId, list.id, changes)),
+    onSuccess: (updated) =>
       updateCachedLists(queryClient, workspaceId, (lists) =>
-        lists.map((entry) => (entry.id === renamed.id ? { ...entry, ...renamed } : entry)),
+        lists.map((entry) => (entry.id === updated.id ? { ...entry, ...updated } : entry)),
       ),
   });
 
@@ -176,7 +183,7 @@ export function useShoppingMutations(workspaceId: string) {
 
   return {
     createList,
-    renameList,
+    updateList,
     deleteList,
     restockList,
     clearPurchased,

@@ -7,6 +7,7 @@ import type {
   ShoppingListRequest,
   ShoppingLists,
   UpdateShoppingItemRequest,
+  UpdateShoppingListRequest,
 } from "@orbit/contracts";
 
 import { request, type Signal, workspacePath } from "../client";
@@ -44,11 +45,12 @@ export function createShoppingList(
   });
 }
 
-export function renameShoppingList(
+/** Renames a list or changes its icon; omitted fields keep their values. */
+export function updateShoppingList(
   token: string,
   workspaceId: string,
   listId: string,
-  body: ShoppingListRequest,
+  body: UpdateShoppingListRequest,
 ): Promise<ShoppingList> {
   return request<ShoppingList>(shoppingListPath(workspaceId, listId), {
     method: "PATCH",
