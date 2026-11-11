@@ -1,10 +1,11 @@
 "use client";
 
 import type { WatchItem } from "@orbit/contracts";
-import { CirclePlay, Dices, X } from "lucide-react";
+import { CirclePlay, Dices } from "lucide-react";
 import { useId, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogFooter, DialogHeader } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import {
@@ -69,31 +70,22 @@ export function TonightDialog({
   const next = pick?.kind === "series" ? seriesProgress(pick).next : null;
 
   return (
-    <dialog
+    <Dialog
       {...dialogProps}
       aria-labelledby={`${id}-heading`}
-      className="dialog-motion dialog-pop mx-auto mt-[8vh] w-[calc(100%-2rem)] max-w-md rounded-2xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
+      className="mt-[8vh] max-w-md rounded-2xl"
     >
       <div className="space-y-5 p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h2 id={`${id}-heading`} className="text-base font-semibold">
-              What should I watch tonight?
-            </h2>
+        <DialogHeader
+          titleId={`${id}-heading`}
+          title="What should I watch tonight?"
+          description={
             <p className="text-sm text-muted-foreground">
               A pick from your queue, to end the scrolling.
             </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="-mt-1.5 -mr-1.5 size-8"
-            aria-label="Close"
-            onClick={close}
-          >
-            <X aria-hidden="true" />
-          </Button>
-        </div>
+          }
+          onClose={close}
+        />
 
         <ChoiceChips
           label="Time you have"
@@ -161,7 +153,7 @@ export function TonightDialog({
           )}
         </div>
 
-        <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
+        <DialogFooter>
           {pick ? (
             <>
               <Button variant="ghost" onClick={() => roll(skipped)} disabled={starting}>
@@ -187,8 +179,8 @@ export function TonightDialog({
               Pick for me
             </Button>
           )}
-        </div>
+        </DialogFooter>
       </div>
-    </dialog>
+    </Dialog>
   );
 }

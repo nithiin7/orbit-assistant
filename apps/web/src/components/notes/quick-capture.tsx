@@ -18,6 +18,7 @@ import {
 import { describeApiError } from "@/api/client";
 import { FormAlert } from "@/components/form-field";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import { Kbd } from "@/components/ui/kbd";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useNoteMutations } from "@/hooks/use-notes";
@@ -91,7 +92,7 @@ function QuickCaptureDialog({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <dialog
+    <Dialog
       ref={attach}
       aria-labelledby={headingId}
       onCancel={(event) => {
@@ -105,7 +106,7 @@ function QuickCaptureDialog({ onClose }: { onClose: () => void }) {
       onClick={(event) => {
         if (event.target === event.currentTarget && !busy) requestClose();
       }}
-      className="dialog-motion dialog-pop mx-auto mt-[12vh] w-[calc(100%-2rem)] max-w-lg overflow-hidden rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
+      className="mt-[12vh] max-w-lg overflow-hidden"
     >
       {workspaceId ? (
         saved ? (
@@ -149,7 +150,7 @@ function QuickCaptureDialog({ onClose }: { onClose: () => void }) {
       ) : (
         <p className="p-5 text-sm text-muted-foreground">Loading your workspace…</p>
       )}
-    </dialog>
+    </Dialog>
   );
 }
 

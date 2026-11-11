@@ -11,6 +11,7 @@ import { describeApiError } from "@/api/client";
 import { DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogFormActions, DialogHeader } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
@@ -102,23 +103,18 @@ export function PlaceDialog({ mode, initial, onSearch, onSave, onClose }: PlaceD
   }
 
   return (
-    <dialog
-      {...dialogProps}
-      aria-labelledby={`${id}-heading`}
-      className="dialog-motion dialog-pop mx-auto mt-[6vh] w-[calc(100%-2rem)] max-w-lg rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
-    >
+    <Dialog {...dialogProps} aria-labelledby={`${id}-heading`} className="mt-[6vh] max-w-lg">
       <form
         noValidate
         // Called here, not during render: `save` closes the dialog through a ref.
         onSubmit={(event) => void handleSubmit(save)(event)}
         className="space-y-4 p-5"
       >
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h2 id={`${id}-heading`} className="text-base font-semibold">
-              {adding ? "Add a place" : "Edit place"}
-            </h2>
-            {adding ? (
+        <DialogHeader
+          titleId={`${id}-heading`}
+          title={adding ? "Add a place" : "Edit place"}
+          description={
+            adding ? (
               <p className="text-sm text-pretty text-muted-foreground">
                 {onSearch ? (
                   "Search for it to drop a pin, or fill it in yourself."
@@ -135,18 +131,10 @@ export function PlaceDialog({ mode, initial, onSearch, onSave, onClose }: PlaceD
                   </>
                 )}
               </p>
-            ) : null}
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="-mt-1.5 -mr-1.5 size-8"
-            aria-label="Close"
-            onClick={close}
-          >
-            <X aria-hidden="true" />
-          </Button>
-        </div>
+            ) : null
+          }
+          onClose={close}
+        />
 
         {onSearch ? (
           <div className="space-y-2">
@@ -297,16 +285,13 @@ export function PlaceDialog({ mode, initial, onSearch, onSave, onClose }: PlaceD
 
         <FormAlert message={errors.root?.server?.message ?? null} />
 
-        <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
-          <Button variant="ghost" disabled={saving} onClick={close}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={saving}>
-            {saving ? "Saving…" : adding ? "Add place" : "Save changes"}
-          </Button>
-        </div>
+        <DialogFormActions
+          busy={saving}
+          onCancel={close}
+          submitLabel={adding ? "Add place" : "Save changes"}
+        />
       </form>
-    </dialog>
+    </Dialog>
   );
 }
 

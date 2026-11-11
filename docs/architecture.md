@@ -41,6 +41,9 @@ Browser ──► apps/web (Next.js, :3000) ──HTTP/JSON──► apps/api (F
 - `Select`, date picker, and money input are custom controls in `src/components/ui/`; popups use
   the Popover API so they sit above modal dialogs. Money groups per currency: lakhs/crores for
   INR, thousands otherwise.
+- Modals are native `<dialog>`s opened by `useModalDialog`. `Dialog`, `DialogHeader`, and
+  `DialogFormActions` (`src/components/ui/dialog.tsx`) give them one frame, heading, and action
+  row; `DialogShell` (`src/components/dialog-shell.tsx`) composes them for plain form dialogs.
 
 ## Shared API contract
 
@@ -1709,7 +1712,9 @@ Under `/api/v1/workspaces/{workspace_id}`; CRUD for `/documents`, `/document-fol
 - `components/documents/`; state in the URL; rail with views, folder tree, categories, tags.
 - Uploads one at a time with per-file status (`fetch` has no upload progress).
 - Code: `src/api/documents`, `src/hooks/use-documents.ts`, `use-document-commands.ts`,
-  `src/lib/documents`; folder trees shared with notes in `src/utils/folders`.
+  `src/lib/documents`; folder trees shared with notes in `src/utils/folders`, the rail's tree,
+  rail entries, and folder dialogs in `src/components/folders/`, tree state in
+  `src/hooks/use-folder-tree.ts`.
 
 ### Document limitations
 
@@ -1863,8 +1868,8 @@ only (CHECK; cleared on moving to wishlist). One row per place, no visits table.
 ### Web
 
 `components/places/`, rail `?view=` Your world, Visited, Want to go. Flags from `flag-icons`
-(`country-flag.tsx`, lazy). `world-map.tsx` lazy-loads MapLibre and shapes, converts `oklch`
-tokens for theming; tests mock it (no WebGL in jsdom). Logic in `lib/places`; dashboard widget.
+(`country-flag.tsx`, lazy). `world-map.tsx` lazy-loads MapLibre and shapes, points MapLibre 6
+at its bundler-emitted worker (`setWorkerUrl`), converts `oklch` tokens for theming; tests mock it (no WebGL in jsdom). Logic in `lib/places`; dashboard widget.
 
 ### Backup and search
 

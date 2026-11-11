@@ -11,17 +11,17 @@ import {
   Gauge,
   HardDrive,
   KeyRound,
-  type LucideIcon,
   Plug,
   Plus,
   ShieldCheck,
   SlidersHorizontal,
 } from "lucide-react";
 import Link from "next/link";
-import { type ReactNode, useId, useState } from "react";
+import { type ComponentProps, useId, useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import { useConfirm } from "@/components/confirm-dialog";
+import { IconTile, SettingsCard, SettingsSwitch } from "@/components/settings/settings-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -129,87 +129,22 @@ export function AiSettingsPanel() {
 
 // ─── Layout pieces ──────────────────────────────────────────────────────────────────────────────
 
-function IconTile({ icon: Icon, muted = false }: { icon: LucideIcon; muted?: boolean }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        "flex size-9 shrink-0 items-center justify-center rounded-xl",
-        muted ? "bg-muted text-muted-foreground" : "bg-brand-subtle text-brand",
-      )}
-    >
-      <Icon className="size-4.5" />
-    </span>
-  );
-}
-
-/** A settings card: an icon, a title, one line on what it's for, then its controls. */
+/** A settings card with an id, so the page's links can jump to it. */
 function Section({
   id,
-  icon,
-  title,
-  description,
-  action,
-  children,
-}: {
-  id: string;
-  icon: LucideIcon;
-  title: string;
-  description: string;
-  action?: ReactNode;
-  children: ReactNode;
-}) {
+  ...card
+}: { id: string } & Omit<
+  ComponentProps<typeof SettingsCard>,
+  "titleId" | "id" | "className" | "headerClassName"
+>) {
   return (
-    <section
+    <SettingsCard
       id={id}
-      aria-labelledby={`${id}-title`}
-      className="scroll-mt-6 rounded-2xl border bg-card shadow-elevation-1"
-    >
-      <header className="flex flex-wrap items-start gap-3 border-b px-4 py-4 sm:px-5">
-        <IconTile icon={icon} />
-        <div className="min-w-0 flex-1 space-y-0.5">
-          <h2 id={`${id}-title`} className="text-base font-semibold">
-            {title}
-          </h2>
-          <p className="text-sm text-pretty text-muted-foreground">{description}</p>
-        </div>
-        {action}
-      </header>
-      <div className="space-y-5 px-4 py-5 sm:px-5">{children}</div>
-    </section>
-  );
-}
-
-/** A labelled on/off setting with a sentence on what it does. */
-function SwitchRow({
-  label,
-  description,
-  checked,
-  onChange,
-}: {
-  label: string;
-  description: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  const id = useId();
-  return (
-    <div className="flex items-start justify-between gap-4">
-      <div className="space-y-0.5">
-        <label htmlFor={id} className="text-sm font-medium">
-          {label}
-        </label>
-        <p id={`${id}-description`} className="text-xs text-pretty text-muted-foreground">
-          {description}
-        </p>
-      </div>
-      <Switch
-        id={id}
-        checked={checked}
-        onCheckedChange={onChange}
-        aria-describedby={`${id}-description`}
-      />
-    </div>
+      titleId={`${id}-title`}
+      className="scroll-mt-6"
+      headerClassName="flex-wrap"
+      {...card}
+    />
   );
 }
 
@@ -647,11 +582,11 @@ function Privacy({
         <WhereIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         {where}
       </p>
-      <SwitchRow
+      <SettingsSwitch
         label="Allow cloud processing"
-        description="Off means only local providers are used."
+        hint="Off means only local providers are used."
         checked={settings.allow_cloud}
-        onChange={(allow_cloud) => onSave({ allow_cloud })}
+        onCheckedChange={(allow_cloud) => onSave({ allow_cloud })}
       />
       <fieldset className="space-y-3 border-t pt-5" aria-describedby="ai-modules-hint">
         <legend className="float-left w-full text-sm font-medium">
@@ -792,11 +727,11 @@ function Indexing({
       title="Search index"
       description="Needs a search model under Models."
     >
-      <SwitchRow
+      <SettingsSwitch
         label="Keep an index for semantic search"
-        description="New and changed records are indexed in the background."
+        hint="New and changed records are indexed in the background."
         checked={settings.indexing_enabled}
-        onChange={(indexing_enabled) => onSave({ indexing_enabled })}
+        onCheckedChange={(indexing_enabled) => onSave({ indexing_enabled })}
       />
       {resource.status === "success" ? (
         <div className="space-y-3 border-t pt-5">

@@ -4,10 +4,7 @@ import type { NoteCounts, NoteFolder, Tag } from "@orbit/contracts";
 import {
   Archive,
   BookOpen,
-  ChevronRight,
   Clock,
-  Folder,
-  FolderOpen,
   FolderPlus,
   Hash,
   Inbox,
@@ -18,21 +15,16 @@ import {
   Star,
   Trash2,
 } from "lucide-react";
-import { type ReactNode, useId, useState } from "react";
+import { useId, useState } from "react";
 
+import { FolderPickerDialog, NameDialog } from "@/components/folders/folder-dialogs";
+import { FolderTree, RailButton, RailHeading } from "@/components/folders/folder-rail";
 import { Menu } from "@/components/ui/menu";
+import { useFolderTree } from "@/hooks/use-folder-tree";
 import { useNoteOrganizer } from "@/hooks/use-notes";
-import {
-  buildFolderTree,
-  folderSubtree,
-  NOTE_VIEWS,
-  type NotesLocation,
-  type NoteView,
-  visibleFolders,
-} from "@/lib/notes";
-import { cn } from "@/utils/common";
+import { folderSubtree, NOTE_VIEWS, type NotesLocation, type NoteView } from "@/lib/notes";
 
-import { DeleteFolderDialog, FolderPickerDialog, NameDialog } from "./organize-dialogs";
+import { DeleteFolderDialog } from "./organize-dialogs";
 
 export const VIEW_ICONS: Record<NoteView, LucideIcon> = {
   inbox: Inbox,
@@ -95,23 +87,10 @@ export function NotesRail({
   onAnnounce,
 }: NotesRailProps) {
   const organizer = useNoteOrganizer(workspaceId);
-  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
+  const { rows, expanded, parents, toggle, expand } = useFolderTree(folders);
   const [dialog, setDialog] = useState<RailDialog | null>(null);
-  const tree = buildFolderTree(folders);
-  const rows = visibleFolders(tree, expanded);
-  const parents = new Set(
-    folders.flatMap((folder) => (folder.parent_id ? [folder.parent_id] : [])),
-  );
   const foldersHeading = useId();
   const tagsHeading = useId();
-
-  const toggle = (folderId: string) =>
-    setExpanded((current) => {
-      const next = new Set(current);
-      if (next.has(folderId)) next.delete(folderId);
-      else next.add(folderId);
-      return next;
-    });
 
   const notesInside = (folder: NoteFolder) => {
     const ids = folderSubtree(folders, folder.id);
@@ -130,6 +109,7 @@ export function NotesRail({
           return (
             <li key={id}>
               <RailButton
+                noun="note"
                 selected={selected}
                 icon={Icon}
                 label={label}
@@ -143,89 +123,40 @@ export function NotesRail({
 
       <section aria-labelledby={foldersHeading} className="space-y-1">
         <RailHeading id={foldersHeading} title="Folders" />
-        {rows.length === 0 ? (
-          <p className="px-3 py-1 text-xs text-muted-foreground">
-            Folders group related notes. Notes without one stay in the Inbox.
-          </p>
-        ) : (
-          <ul className="space-y-0.5">
-            {rows.map(({ folder, depth }) => {
-              const open = expanded.has(folder.id);
-              const selected = location.folderId === folder.id;
-              const hasChildren = parents.has(folder.id);
-              return (
-                <li
-                  key={folder.id}
-                  className="group/folder relative flex items-center"
-                  style={{ paddingLeft: `${depth * 0.875}rem` }}
-                >
-                  <button
-                    type="button"
-                    aria-label={`${open ? "Collapse" : "Expand"} “${folder.name}”`}
-                    aria-expanded={open}
-                    onClick={() => toggle(folder.id)}
-                    className={cn(
-                      "flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
-                      !hasChildren && "invisible",
-                    )}
-                    tabIndex={hasChildren ? 0 : -1}
-                  >
-                    <ChevronRight
-                      className={cn(
-                        "size-3.5 transition-transform duration-150",
-                        open && "rotate-90",
-                      )}
-                      aria-hidden="true"
-                    />
-                  </button>
-                  <RailButton
-                    selected={selected}
-                    icon={selected || open ? FolderOpen : Folder}
-                    label={folder.name}
-                    count={folder.note_count}
-                    onClick={() => onNavigate({ folderId: folder.id })}
-                    className="pr-9 pl-1.5"
-                  />
-                  <div className="absolute right-0.5 opacity-0 transition-opacity group-focus-within/folder:opacity-100 group-hover/folder:opacity-100 pointer-coarse:opacity-100">
-                    <Menu
-                      aria-label={`Actions for “${folder.name}”`}
-                      variant="ghost"
-                      size="icon"
-                      chevron={false}
-                      align="end"
-                      className="size-7"
-                      items={[
-                        {
-                          id: "new",
-                          label: "New subfolder",
-                          onSelect: () => setDialog({ kind: "new-folder", parent: folder }),
-                        },
-                        {
-                          id: "rename",
-                          label: "Rename",
-                          onSelect: () => setDialog({ kind: "rename-folder", folder }),
-                        },
-                        {
-                          id: "move",
-                          label: "Move to…",
-                          onSelect: () => setDialog({ kind: "move-folder", folder }),
-                        },
-                        {
-                          id: "delete",
-                          label: "Delete…",
-                          destructive: true,
-                          onSelect: () => setDialog({ kind: "delete-folder", folder }),
-                        },
-                      ]}
-                    >
-                      <MoreHorizontal aria-hidden="true" />
-                    </Menu>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        <FolderTree
+          rows={rows}
+          expanded={expanded}
+          parents={parents}
+          onToggle={toggle}
+          selectedId={location.folderId}
+          count={(folder) => folder.note_count}
+          noun="note"
+          onOpen={(folder) => onNavigate({ folderId: folder.id })}
+          menuItems={(folder) => [
+            {
+              id: "new",
+              label: "New subfolder",
+              onSelect: () => setDialog({ kind: "new-folder", parent: folder }),
+            },
+            {
+              id: "rename",
+              label: "Rename",
+              onSelect: () => setDialog({ kind: "rename-folder", folder }),
+            },
+            {
+              id: "move",
+              label: "Move to…",
+              onSelect: () => setDialog({ kind: "move-folder", folder }),
+            },
+            {
+              id: "delete",
+              label: "Delete…",
+              destructive: true,
+              onSelect: () => setDialog({ kind: "delete-folder", folder }),
+            },
+          ]}
+          empty="Folders group related notes. Notes without one stay in the Inbox."
+        />
         <button
           type="button"
           onClick={() => setDialog({ kind: "new-folder", parent: null })}
@@ -247,6 +178,7 @@ export function NotesRail({
             {tags.map((tag) => (
               <li key={tag.id} className="group/tag relative">
                 <RailButton
+                  noun="note"
                   selected={location.tagId === tag.id}
                   icon={Hash}
                   label={tag.name}
@@ -312,8 +244,7 @@ export function NotesRail({
               name,
               parent_id: dialog.parent?.id ?? null,
             });
-            if (dialog.parent)
-              setExpanded((current) => new Set([...current, dialog.parent?.id ?? ""]));
+            if (dialog.parent) expand(dialog.parent?.id ?? "");
             onAnnounce(`Created folder “${created.name}”.`);
           }}
         />
@@ -377,58 +308,5 @@ export function NotesRail({
         />
       ) : null}
     </nav>
-  );
-}
-
-function RailHeading({ id, title, children }: { id: string; title: string; children?: ReactNode }) {
-  return (
-    <div className="flex h-7 items-center justify-between pr-0.5 pl-3">
-      <h2 id={id} className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-        {title}
-      </h2>
-      {children}
-    </div>
-  );
-}
-
-function RailButton({
-  selected,
-  icon: Icon,
-  label,
-  count,
-  onClick,
-  className,
-}: {
-  selected: boolean;
-  icon: LucideIcon;
-  label: string;
-  count: number | null;
-  onClick: () => void;
-  className?: string;
-}) {
-  return (
-    <button
-      type="button"
-      aria-current={selected ? "page" : undefined}
-      onClick={onClick}
-      className={cn(
-        "flex h-8 w-full min-w-0 items-center gap-2.5 rounded-lg px-3 text-left font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        selected
-          ? "bg-brand-subtle text-brand"
-          : "text-muted-foreground hover:bg-accent hover:text-foreground",
-        className,
-      )}
-    >
-      <Icon className="size-4 shrink-0" aria-hidden="true" />
-      <span className="min-w-0 flex-1 truncate">{label}</span>
-      {count === null || count === 0 ? null : (
-        <>
-          <span aria-hidden="true" className="text-xs text-muted-foreground tabular-nums">
-            {count}
-          </span>
-          <span className="sr-only">, {count === 1 ? "1 note" : `${count} notes`}</span>
-        </>
-      )}
-    </button>
   );
 }

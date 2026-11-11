@@ -48,8 +48,6 @@ function inputText(value: number, decimals: number): string {
 
 // Weight
 
-export const WEIGHT_LABELS: Record<WeightUnit, string> = { kg: "kg", lb: "lb" };
-
 export function gramsTo(grams: number, unit: WeightUnit): number {
   return unit === "kg" ? grams / 1000 : grams / GRAMS_PER_POUND;
 }

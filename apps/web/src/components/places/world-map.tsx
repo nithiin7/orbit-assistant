@@ -231,6 +231,11 @@ export function WorldMap({ places, styleUrl, label, onSelectPlace, className }: 
           countriesRef.current ? Promise.resolve(countriesRef.current) : loadCountries(),
         ]);
         if (cancelled) return;
+        // MapLibre 6 runs its tile worker from a separate module file, which it would look for
+        // next to its own (bundled) code; point it at the copy the bundler emits instead.
+        maplibre.setWorkerUrl(
+          new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url).href,
+        );
         countriesRef.current = countries;
         const palette = readPalette(element);
         const map = new maplibre.Map({

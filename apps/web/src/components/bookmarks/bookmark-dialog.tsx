@@ -2,15 +2,14 @@
 
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { BookmarkCollection } from "@orbit/contracts";
-import { X } from "lucide-react";
 import Link from "next/link";
 import { useId } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 import { describeApiError } from "@/api/client";
 import { FormAlert, FormField, SelectField } from "@/components/form-field";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogFormActions, DialogHeader } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import {
@@ -84,23 +83,18 @@ export function BookmarkDialog({
   ];
 
   return (
-    <dialog
-      {...dialogProps}
-      aria-labelledby={`${id}-heading`}
-      className="dialog-motion dialog-pop mx-auto mt-[8vh] w-[calc(100%-2rem)] max-w-lg rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
-    >
+    <Dialog {...dialogProps} aria-labelledby={`${id}-heading`} className="mt-[8vh] max-w-lg">
       <form
         noValidate
         // Called here, not during render: `save` closes the dialog through a ref.
         onSubmit={(event) => void handleSubmit(save)(event)}
         className="space-y-4 p-5"
       >
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h2 id={`${id}-heading`} className="text-base font-semibold">
-              {adding ? "Save a link" : "Edit link"}
-            </h2>
-            {adding ? (
+        <DialogHeader
+          titleId={`${id}-heading`}
+          title={adding ? "Save a link" : "Edit link"}
+          description={
+            adding ? (
               <p className="text-sm text-pretty text-muted-foreground">
                 {previewsOn ? (
                   "Only the link is needed. Orbit fetches the page’s name, description, and image after you save."
@@ -117,18 +111,10 @@ export function BookmarkDialog({
                   </>
                 )}
               </p>
-            ) : null}
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="-mt-1.5 -mr-1.5 size-8"
-            aria-label="Close"
-            onClick={close}
-          >
-            <X aria-hidden="true" />
-          </Button>
-        </div>
+            ) : null
+          }
+          onClose={close}
+        />
 
         <FormField
           label="Link"
@@ -200,15 +186,12 @@ export function BookmarkDialog({
 
         <FormAlert message={errors.root?.server?.message ?? null} />
 
-        <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
-          <Button variant="ghost" disabled={saving} onClick={close}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={saving}>
-            {saving ? "Saving…" : adding ? "Save link" : "Save changes"}
-          </Button>
-        </div>
+        <DialogFormActions
+          busy={saving}
+          onCancel={close}
+          submitLabel={adding ? "Save link" : "Save changes"}
+        />
       </form>
-    </dialog>
+    </Dialog>
   );
 }

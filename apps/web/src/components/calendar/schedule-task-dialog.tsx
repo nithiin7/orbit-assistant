@@ -2,13 +2,13 @@
 
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { Task } from "@orbit/contracts";
-import { X } from "lucide-react";
 import { useId } from "react";
 import { useForm } from "react-hook-form";
 
 import { describeApiError } from "@/api/client";
 import { DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogCloseButton } from "@/components/ui/dialog";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import {
   minutesOfTime,
@@ -64,11 +64,7 @@ export function ScheduleTaskDialog({
   }
 
   return (
-    <dialog
-      {...dialogProps}
-      aria-labelledby={`${id}-heading`}
-      className="dialog-motion dialog-pop mx-auto mt-[10vh] w-[calc(100%-2rem)] max-w-sm rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
-    >
+    <Dialog {...dialogProps} aria-labelledby={`${id}-heading`} className="mt-[10vh] max-w-sm">
       <form
         noValidate
         onSubmit={(event) => void handleSubmit(save)(event)}
@@ -81,15 +77,7 @@ export function ScheduleTaskDialog({
             </h2>
             <p className="truncate text-sm text-muted-foreground">{task.title}</p>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="-mt-1.5 -mr-1.5 size-8"
-            aria-label="Close"
-            onClick={close}
-          >
-            <X aria-hidden="true" />
-          </Button>
+          <DialogCloseButton onClick={close} />
         </div>
         <DateField control={control} name="date" label="Date" />
         <div className="grid grid-cols-2 gap-3">
@@ -111,6 +99,6 @@ export function ScheduleTaskDialog({
           </Button>
         </div>
       </form>
-    </dialog>
+    </Dialog>
   );
 }

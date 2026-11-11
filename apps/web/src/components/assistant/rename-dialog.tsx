@@ -7,7 +7,7 @@ import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
 import { FormAlert, FormField } from "@/components/form-field";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogFormActions } from "@/components/ui/dialog";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { conversationTitleSchema } from "@/lib/ai";
 
@@ -43,11 +43,7 @@ export function RenameDialog({ initialTitle, onSave, onClose }: RenameDialogProp
   }
 
   return (
-    <dialog
-      {...dialogProps}
-      aria-labelledby={`${id}-heading`}
-      className="dialog-motion dialog-pop mx-auto mt-[10vh] w-[calc(100%-2rem)] max-w-sm rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
-    >
+    <Dialog {...dialogProps} aria-labelledby={`${id}-heading`} className="mt-[10vh] max-w-sm">
       <form
         noValidate
         onSubmit={(event) => void handleSubmit(save)(event)}
@@ -64,15 +60,8 @@ export function RenameDialog({ initialTitle, onSave, onClose }: RenameDialogProp
           error={errors.title?.message}
         />
         <FormAlert message={errors.root?.server?.message ?? null} />
-        <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
-          <Button variant="ghost" disabled={saving} onClick={close}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={saving}>
-            {saving ? "Saving…" : "Rename"}
-          </Button>
-        </div>
+        <DialogFormActions busy={saving} onCancel={close} submitLabel="Rename" />
       </form>
-    </dialog>
+    </Dialog>
   );
 }

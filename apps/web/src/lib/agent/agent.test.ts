@@ -18,7 +18,7 @@ import {
   WORKFLOW_TEMPLATES,
   workflowFormValues,
   workflowRequest,
-} from "./agent";
+} from ".";
 
 describe("where things live", () => {
   it("reads and builds tab locations", () => {

@@ -27,7 +27,7 @@ import {
   saveMeal,
 } from "@/api/fitness";
 import { useConfirm } from "@/components/confirm-dialog";
-import { DialogShell } from "@/components/finance/dialog-shell";
+import { DialogShell } from "@/components/dialog-shell";
 import { DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -865,7 +865,8 @@ function FoodDialog({
   );
 }
 
-function FoodEntryDialog({
+/** Add a food entry (or edit one): a saved food by amount, or one typed in with its nutrients. */
+export function FoodEntryDialog({
   workspaceId,
   day,
   meal,

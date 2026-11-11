@@ -8,7 +8,6 @@ import type {
   FinanceTransaction,
   FinanceTransactionType,
 } from "@orbit/contracts";
-import { X } from "lucide-react";
 import { useId } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
@@ -16,7 +15,7 @@ import type { InferType } from "yup";
 import { describeApiError } from "@/api/client";
 import { LinkedDocuments } from "@/components/documents/linked-documents";
 import { AmountField, DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogFormActions, DialogHeader } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useFinanceMutations } from "@/hooks/use-finance";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
@@ -146,30 +145,21 @@ export function TransactionDialog({
   }
 
   return (
-    <dialog
+    <Dialog
       {...dialogProps}
       aria-labelledby={`${id}-heading`}
-      className="dialog-motion dialog-pop mx-auto mt-[6vh] max-h-[88vh] w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
+      className="mt-[6vh] max-h-[88vh] max-w-lg overflow-y-auto"
     >
       <form
         noValidate
         onSubmit={(event) => void handleSubmit(save)(event)}
         className="space-y-4 p-5"
       >
-        <div className="flex items-start justify-between gap-4">
-          <h2 id={`${id}-heading`} className="text-base font-semibold">
-            {transaction ? "Edit transaction" : "Record a transaction"}
-          </h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="-mt-1.5 -mr-1.5 size-8"
-            aria-label="Close"
-            onClick={close}
-          >
-            <X aria-hidden="true" />
-          </Button>
-        </div>
+        <DialogHeader
+          titleId={`${id}-heading`}
+          title={transaction ? "Edit transaction" : "Record a transaction"}
+          onClose={close}
+        />
 
         <Controller
           control={control}
@@ -302,15 +292,12 @@ export function TransactionDialog({
 
         <FormAlert message={errors.root?.server?.message ?? null} />
 
-        <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
-          <Button variant="ghost" disabled={saving} onClick={close}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={saving}>
-            {saving ? "Saving…" : transaction ? "Save changes" : "Record"}
-          </Button>
-        </div>
+        <DialogFormActions
+          busy={saving}
+          onCancel={close}
+          submitLabel={transaction ? "Save changes" : "Record"}
+        />
       </form>
-    </dialog>
+    </Dialog>
   );
 }

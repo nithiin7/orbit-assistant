@@ -8,6 +8,12 @@ packages:
 allowBuilds:
   unrs-resolver: false
 
+overrides:
+  # GHSA-g3hv-75wg-m249 (globparts DoS) is fixed only in minimatch 11. typescript-estree
+  # (lint-only) asks for ^10 but calls just `minimatch(path, pattern, { dot: true })`, which 11
+  # keeps; `pnpm lint` verifies it.
+  "@typescript-eslint/typescript-estree>minimatch": "^11.0.1"
+
 peerDependencyRules:
   allowedVersions:
     # openapi-typescript declares TypeScript 5 but works with 6 (verified by `contracts:check`).

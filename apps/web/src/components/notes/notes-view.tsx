@@ -42,6 +42,7 @@ import { describeApiError } from "@/api/client";
 import { AssistMenu } from "@/components/ai/assist-menu";
 import { useConfirm } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
+import { FolderPickerDialog } from "@/components/folders/folder-dialogs";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -87,7 +88,6 @@ import { NoteDetails } from "./note-details";
 import { NoteEditor, type NoteEditorHandle } from "./note-editor";
 import { type NoteLayout, NoteList, type NoteListAction } from "./note-list";
 import { NotesRail, VIEW_ICONS } from "./notes-rail";
-import { FolderPickerDialog } from "./organize-dialogs";
 import { useQuickCapture } from "./quick-capture";
 
 const SEARCH_DELAY_MS = 250;

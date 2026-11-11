@@ -13,6 +13,7 @@ import { type Control, useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
+import { DialogShell } from "@/components/dialog-shell";
 import { AmountField, DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Textarea } from "@/components/ui/textarea";
 import { useBudgetMutations } from "@/hooks/use-budgets";
@@ -34,8 +35,6 @@ import {
   savingsAccounts,
 } from "@/lib/goals";
 import { formatCalendarDate, localDateString } from "@/utils/dates";
-
-import { DialogShell } from "./dialog-shell";
 
 type GoalValues = InferType<typeof goalSchema>;
 

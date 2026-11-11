@@ -1,5 +1,5 @@
 import { cn } from "@/utils/common";
-import { addDays, dayOfWeek, formatCalendarDate } from "@/utils/dates";
+import { dayOfWeek, formatCalendarDate } from "@/utils/dates";
 
 export type HeatCell = {
   day: string;
@@ -63,11 +63,4 @@ export function Heatmap({ cells, label }: { cells: readonly HeatCell[]; label: s
       </figcaption>
     </figure>
   );
-}
-
-/** Every date from `start` to `end`, inclusive. */
-export function datesBetween(start: string, end: string): string[] {
-  const result: string[] = [];
-  for (let day = start; day <= end; day = addDays(day, 1)) result.push(day);
-  return result;
 }

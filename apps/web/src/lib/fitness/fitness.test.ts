@@ -8,6 +8,7 @@ import {
   formatRecord,
   IMPERIAL_UNITS,
   matchesName,
+  mealAt,
   METRIC_UNITS,
   parseFitnessLocation,
   share,
@@ -380,5 +381,22 @@ describe("saved food search and sort", () => {
       "Oats",
     ]);
     expect(sortFoods(foods, "name-desc").map((f) => f.name)[0]).toBe("Oats");
+  });
+});
+
+describe("mealAt", () => {
+  it("picks the meal for the time of day, with snacks in between", () => {
+    expect([4, 5, 10, 11, 14, 15, 17, 18, 21, 22].map(mealAt)).toEqual([
+      "snack",
+      "breakfast",
+      "breakfast",
+      "lunch",
+      "lunch",
+      "snack",
+      "snack",
+      "dinner",
+      "dinner",
+      "snack",
+    ]);
   });
 });

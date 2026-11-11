@@ -10,6 +10,7 @@ import { describeApiError } from "@/api/client";
 import { DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogFormActions, DialogHeader } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -110,30 +111,17 @@ export function EventDialog({
   };
 
   return (
-    <dialog
+    <Dialog
       {...dialogProps}
       aria-labelledby={`${id}-heading`}
-      className="dialog-motion dialog-pop mx-auto mt-[4vh] max-h-[92vh] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
+      className="mt-[4vh] max-h-[92vh] max-w-xl overflow-y-auto"
     >
       <form
         noValidate
         onSubmit={(event) => void handleSubmit(save)(event)}
         className="space-y-4 p-5"
       >
-        <div className="flex items-start justify-between gap-4">
-          <h2 id={`${id}-heading`} className="text-base font-semibold">
-            {HEADINGS[mode]}
-          </h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="-mt-1.5 -mr-1.5 size-8"
-            aria-label="Close"
-            onClick={close}
-          >
-            <X aria-hidden="true" />
-          </Button>
-        </div>
+        <DialogHeader titleId={`${id}-heading`} title={HEADINGS[mode]} onClose={close} />
 
         <FormField
           label="Title"
@@ -429,15 +417,12 @@ export function EventDialog({
 
         <FormAlert message={errors.root?.server?.message ?? null} />
 
-        <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
-          <Button variant="ghost" disabled={saving} onClick={close}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={saving}>
-            {saving ? "Saving…" : mode === "create" ? "Create event" : "Save changes"}
-          </Button>
-        </div>
+        <DialogFormActions
+          busy={saving}
+          onCancel={close}
+          submitLabel={mode === "create" ? "Create event" : "Save changes"}
+        />
       </form>
-    </dialog>
+    </Dialog>
   );
 }

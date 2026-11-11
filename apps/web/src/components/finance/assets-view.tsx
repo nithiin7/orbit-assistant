@@ -28,6 +28,7 @@ import { useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
+import { DialogShell } from "@/components/dialog-shell";
 import { EmptyState } from "@/components/empty-state";
 import { AmountField, DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
@@ -55,7 +56,6 @@ import {
 import { cn } from "@/utils/common";
 import { formatCalendarDate, localDateString } from "@/utils/dates";
 
-import { DialogShell } from "./dialog-shell";
 import { Chip, rowListClassName, twoColumnRows } from "./finance-meta";
 import type { FinanceData } from "./finance-view";
 import { FreshnessBadge } from "./investment-parts";

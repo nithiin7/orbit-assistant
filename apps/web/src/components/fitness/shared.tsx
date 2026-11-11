@@ -8,6 +8,7 @@ import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { describeApiError } from "@/api/client";
 import { type LinkOwner, type LinkTarget, setFitnessLink } from "@/api/fitness";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -359,10 +360,10 @@ export function ExercisePicker({
   );
 
   return (
-    <dialog
+    <Dialog
       {...dialogProps}
       aria-labelledby={`${id}-title`}
-      className="dialog-motion dialog-pop mx-auto mt-[6vh] max-h-[88vh] w-[calc(100%-2rem)] max-w-lg overflow-hidden rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
+      className="mt-[6vh] max-h-[88vh] max-w-lg overflow-hidden"
     >
       <div className="flex max-h-[88vh] flex-col">
         <div className="flex items-center justify-between gap-2 border-b p-4">
@@ -466,7 +467,7 @@ export function ExercisePicker({
           </Button>
         </div>
       </div>
-    </dialog>
+    </Dialog>
   );
 }
 
@@ -632,10 +633,10 @@ function LinkPicker({
   const candidates = useLinkCandidates(workspaceId, kind, query);
   const noun = kind === "note" ? "note" : "document";
   return (
-    <dialog
+    <Dialog
       {...dialogProps}
       aria-labelledby={`${id}-title`}
-      className="dialog-motion dialog-pop mx-auto mt-[6vh] max-h-[88vh] w-[calc(100%-2rem)] max-w-lg overflow-hidden rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
+      className="mt-[6vh] max-h-[88vh] max-w-lg overflow-hidden"
     >
       <div className="flex items-center justify-between gap-2 border-b p-4">
         <h2 id={`${id}-title`} className="text-base font-semibold">
@@ -680,6 +681,6 @@ function LinkPicker({
           }
         </Loaded>
       </div>
-    </dialog>
+    </Dialog>
   );
 }

@@ -488,15 +488,69 @@ def _spec(
     )
 
 
-def build_tools(deps: ToolDeps) -> ToolRegistry:
-    context = deps.context
-    sources = context.sources
-    tools: list[Tool] = []
+type _Handler = _Read[Any] | _Action | _Custom
 
-    def add(spec: ToolSpec, handler: _Read[Any] | _Action | _Custom) -> None:
+
+def _adder(tools: list[Tool]) -> Callable[[ToolSpec, _Handler], None]:
+    """`add(spec, handler)` for one builder; the handler stamps the tool's name on its calls."""
+
+    def add(spec: ToolSpec, handler: _Handler) -> None:
         tools.append(Tool(spec=spec, handler=_Named(spec.name, handler)))
 
-    # Tasks
+    return add
+
+
+async def _summarize(
+    deps: ToolDeps,
+    kind: Literal["note_summary", "document_summary", "document_extract"],
+    target_id: uuid.UUID,
+    ctx: ToolContext,
+) -> ToolOutput:
+    try:
+        result = await deps.assist.run(
+            ctx.workspace_id,
+            ctx.user_id,
+            AssistRequest(kind=kind, target_id=target_id),
+            ctx.timezone,
+        )
+    except (
+        ModuleNotPermittedError,
+        AiDisabledError,
+        AiNotConfiguredError,
+        CloudProcessingNotAllowedError,
+        UsageLimitReachedError,
+        SourceNotFoundError,
+        ProviderError,
+    ) as exc:
+        raise _assist_error(exc) from None
+    items = "\n".join(f"- {item.label}: {item.detail}".rstrip(": ") for item in result.items[:20])
+    text = result.text + (f"\n{items}" if items else "")
+    refs = tuple(c.ref for c in result.citations if c.ref.id is not None)
+    return ToolOutput(text=text[:MAX_TEXT], records=refs, data={"count": len(refs) or 1})
+
+
+def build_tools(deps: ToolDeps) -> ToolRegistry:
+    """Every agent tool, module by module, in the order the model sees them."""
+    return ToolRegistry(
+        [
+            *_task_tools(deps),
+            *_reminder_tools(deps),
+            *_calendar_tools(deps),
+            *_note_tools(deps),
+            *_document_tools(deps),
+            *_finance_tools(deps),
+            *_health_tools(deps),
+            *_mail_tools(deps),
+            *_memory_and_workflow_tools(deps),
+        ]
+    )
+
+
+def _task_tools(deps: ToolDeps) -> list[Tool]:
+    """Tasks."""
+    sources = deps.context.sources
+    tools: list[Tool] = []
+    add = _adder(tools)
 
     async def search_tasks(args: SearchTasksArgs, ctx: ToolContext) -> ToolOutput:
         due_from: date | None = None
@@ -645,7 +699,14 @@ def build_tools(deps: ToolDeps) -> ToolRegistry:
         _Custom(prepare_update, run_update),
     )
 
-    # Reminders and notifications
+    return tools
+
+
+def _reminder_tools(deps: ToolDeps) -> list[Tool]:
+    """Reminders and notifications."""
+    context = deps.context
+    tools: list[Tool] = []
+    add = _adder(tools)
 
     async def get_reminders(args: RemindersArgs, ctx: ToolContext) -> ToolOutput:
         return _blocks(
@@ -720,7 +781,14 @@ def build_tools(deps: ToolDeps) -> ToolRegistry:
         _Custom(prepare_notify, run_notify),
     )
 
-    # Calendar
+    return tools
+
+
+def _calendar_tools(deps: ToolDeps) -> list[Tool]:
+    """Calendar."""
+    context = deps.context
+    tools: list[Tool] = []
+    add = _adder(tools)
 
     async def search_calendar(args: CalendarArgs, ctx: ToolContext) -> ToolOutput:
         start = ctx.today - timedelta(days=args.days_back)
@@ -752,7 +820,14 @@ def build_tools(deps: ToolDeps) -> ToolRegistry:
         _Action(deps, "create_event", CreateEventArgs, None, "A calendar event is added."),
     )
 
-    # Notes
+    return tools
+
+
+def _note_tools(deps: ToolDeps) -> list[Tool]:
+    """Notes."""
+    sources = deps.context.sources
+    tools: list[Tool] = []
+    add = _adder(tools)
 
     async def search_notes(args: SearchNotesArgs, ctx: ToolContext) -> ToolOutput:
         page = await sources.notes.find(
@@ -785,37 +860,8 @@ def build_tools(deps: ToolDeps) -> ToolRegistry:
         _Read("Search notes", SearchNotesArgs, search_notes),
     )
 
-    async def summarize(
-        kind: Literal["note_summary", "document_summary", "document_extract"],
-        target_id: uuid.UUID,
-        ctx: ToolContext,
-    ) -> ToolOutput:
-        try:
-            result = await deps.assist.run(
-                ctx.workspace_id,
-                ctx.user_id,
-                AssistRequest(kind=kind, target_id=target_id),
-                ctx.timezone,
-            )
-        except (
-            ModuleNotPermittedError,
-            AiDisabledError,
-            AiNotConfiguredError,
-            CloudProcessingNotAllowedError,
-            UsageLimitReachedError,
-            SourceNotFoundError,
-            ProviderError,
-        ) as exc:
-            raise _assist_error(exc) from None
-        items = "\n".join(
-            f"- {item.label}: {item.detail}".rstrip(": ") for item in result.items[:20]
-        )
-        text = result.text + (f"\n{items}" if items else "")
-        refs = tuple(c.ref for c in result.citations if c.ref.id is not None)
-        return ToolOutput(text=text[:MAX_TEXT], records=refs, data={"count": len(refs) or 1})
-
     async def summarize_note(args: NoteArgs, ctx: ToolContext) -> ToolOutput:
-        return await summarize("note_summary", args.note_id, ctx)
+        return await _summarize(deps, "note_summary", args.note_id, ctx)
 
     add(
         _spec(
@@ -879,7 +925,14 @@ def build_tools(deps: ToolDeps) -> ToolRegistry:
         _Action(deps, "add_note_tags", TagNoteArgs, note_target, "Tags are added to the note."),
     )
 
-    # Documents
+    return tools
+
+
+def _document_tools(deps: ToolDeps) -> list[Tool]:
+    """Documents."""
+    sources = deps.context.sources
+    tools: list[Tool] = []
+    add = _adder(tools)
 
     async def search_documents(args: SearchDocumentsArgs, ctx: ToolContext) -> ToolOutput:
         expiry = (
@@ -960,10 +1013,10 @@ def build_tools(deps: ToolDeps) -> ToolRegistry:
     )
 
     async def summarize_document(args: DocumentArgs, ctx: ToolContext) -> ToolOutput:
-        return await summarize("document_summary", args.document_id, ctx)
+        return await _summarize(deps, "document_summary", args.document_id, ctx)
 
     async def extract_document(args: DocumentArgs, ctx: ToolContext) -> ToolOutput:
-        return await summarize("document_extract", args.document_id, ctx)
+        return await _summarize(deps, "document_extract", args.document_id, ctx)
 
     add(
         _spec(
@@ -1022,7 +1075,15 @@ def build_tools(deps: ToolDeps) -> ToolRegistry:
         ),
     )
 
-    # Finance (read only)
+    return tools
+
+
+def _finance_tools(deps: ToolDeps) -> list[Tool]:
+    """Finance (read only)."""
+    context = deps.context
+    sources = context.sources
+    tools: list[Tool] = []
+    add = _adder(tools)
 
     async def get_accounts(args: NoArgs, ctx: ToolContext) -> ToolOutput:
         accounts = await sources.finance.accounts(ctx.workspace_id)
@@ -1169,7 +1230,14 @@ def build_tools(deps: ToolDeps) -> ToolRegistry:
         _Read("Read upcoming payments", PaymentsArgs, upcoming_payments),
     )
 
-    # Habits and health
+    return tools
+
+
+def _health_tools(deps: ToolDeps) -> list[Tool]:
+    """Habits and health."""
+    context = deps.context
+    tools: list[Tool] = []
+    add = _adder(tools)
 
     async def habit_progress(args: NoArgs, ctx: ToolContext) -> ToolOutput:
         return _blocks(await context.habits(_viewer(ctx)))
@@ -1222,7 +1290,13 @@ def build_tools(deps: ToolDeps) -> ToolRegistry:
         _Read("Read the health summary", NoArgs, health_summary),
     )
 
-    # Mail (read only)
+    return tools
+
+
+def _mail_tools(deps: ToolDeps) -> list[Tool]:
+    """Mail (read only)."""
+    tools: list[Tool] = []
+    add = _adder(tools)
 
     async def search_email(args: SearchEmailArgs, ctx: ToolContext) -> ToolOutput:
         if deps.mail is None:
@@ -1247,7 +1321,13 @@ def build_tools(deps: ToolDeps) -> ToolRegistry:
         _Read("Search email", SearchEmailArgs, search_email),
     )
 
-    # Memory and workflows (agent runs only)
+    return tools
+
+
+def _memory_and_workflow_tools(deps: ToolDeps) -> list[Tool]:
+    """Memory and workflows (agent runs only)."""
+    tools: list[Tool] = []
+    add = _adder(tools)
 
     async def prepare_remember(arguments: dict[str, object], ctx: ToolContext) -> PreparedCall:
         args = _validate(RememberArgs, arguments)
@@ -1329,7 +1409,7 @@ def build_tools(deps: ToolDeps) -> ToolRegistry:
         _Custom(prepare_run, run_workflow),
     )
 
-    return ToolRegistry(tools)
+    return tools
 
 
 class _AgentMemories:

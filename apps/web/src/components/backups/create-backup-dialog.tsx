@@ -1,15 +1,14 @@
 "use client";
 
 import { yupResolver } from "@hookform/resolvers/yup";
-import { X } from "lucide-react";
 import { useId } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
 import { FormAlert, FormField, SelectField } from "@/components/form-field";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogFormActions, DialogHeader } from "@/components/ui/dialog";
 import { useCreateBackup } from "@/hooks/use-backups";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { createBackupSchema, ENCRYPTION_CHOICES, MIN_PASSWORD_LENGTH } from "@/lib/backups";
@@ -63,30 +62,13 @@ export function CreateBackupDialog({
   }
 
   return (
-    <dialog
-      {...dialogProps}
-      aria-labelledby={`${id}-heading`}
-      className="dialog-motion dialog-pop mx-auto mt-[10vh] w-[calc(100%-2rem)] max-w-md rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
-    >
+    <Dialog {...dialogProps} aria-labelledby={`${id}-heading`} className="mt-[10vh] max-w-md">
       <form
         noValidate
         onSubmit={(event) => void handleSubmit(save)(event)}
         className="space-y-4 p-5"
       >
-        <div className="flex items-start justify-between gap-4">
-          <h2 id={`${id}-heading`} className="text-base font-semibold">
-            Create a backup
-          </h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="-mt-1.5 -mr-1.5 size-8"
-            aria-label="Close"
-            onClick={close}
-          >
-            <X aria-hidden="true" />
-          </Button>
-        </div>
+        <DialogHeader titleId={`${id}-heading`} title="Create a backup" onClose={close} />
 
         <label className="flex items-start gap-3 text-sm">
           <Checkbox {...register("includeFiles")} className="mt-0.5" />
@@ -132,15 +114,13 @@ export function CreateBackupDialog({
 
         <FormAlert message={errors.root?.server?.message ?? null} />
 
-        <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
-          <Button variant="ghost" disabled={isSubmitting} onClick={close}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Backing up…" : "Create backup"}
-          </Button>
-        </div>
+        <DialogFormActions
+          busy={isSubmitting}
+          onCancel={close}
+          submitLabel="Create backup"
+          busyLabel="Backing up…"
+        />
       </form>
-    </dialog>
+    </Dialog>
   );
 }

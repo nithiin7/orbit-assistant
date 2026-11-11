@@ -2,7 +2,6 @@
 
 import type { CreateTaskRequest } from "@orbit/contracts";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createContext, type ReactNode, useContext, useId, useState } from "react";
 
@@ -16,6 +15,7 @@ import { useQuickCapture } from "@/components/notes/quick-capture";
 import { ReminderDialog } from "@/components/reminders/reminder-dialog";
 import { TaskComposer } from "@/components/tasks/task-composer";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogCloseButton } from "@/components/ui/dialog";
 import {
   useActiveWorkspaceId,
   useCalendarCategories,
@@ -186,29 +186,17 @@ function NewTaskDialog({ workspaceId, onClose, onCreated }: ActionProps) {
   }
 
   return (
-    <dialog
-      {...dialogProps}
-      aria-labelledby={`${id}-heading`}
-      className="dialog-motion dialog-pop mx-auto mt-[12vh] w-[calc(100%-2rem)] max-w-xl rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
-    >
+    <Dialog {...dialogProps} aria-labelledby={`${id}-heading`} className="mt-[12vh] max-w-xl">
       <div className="space-y-4 p-5">
         <div className="flex items-start justify-between gap-4">
           <h2 id={`${id}-heading`} className="text-base font-semibold">
             New task
           </h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="-mt-1 -mr-2 size-8"
-            aria-label="Close"
-            onClick={close}
-          >
-            <X aria-hidden="true" />
-          </Button>
+          <DialogCloseButton className="-mt-1 -mr-2" onClick={close} />
         </div>
         <TaskComposer onCreate={save} />
       </div>
-    </dialog>
+    </Dialog>
   );
 }
 
@@ -298,12 +286,12 @@ function ActionError({
   const id = useId();
   const { close, dialogProps } = useModalDialog({ onClose });
   return (
-    <dialog
+    <Dialog
       {...dialogProps}
       role="alertdialog"
       aria-labelledby={`${id}-heading`}
       aria-describedby={`${id}-message`}
-      className="dialog-motion dialog-pop mx-auto mt-[12vh] w-[calc(100%-2rem)] max-w-sm rounded-xl border bg-popover p-5 text-popover-foreground shadow-elevation-3"
+      className="mt-[12vh] max-w-sm p-5"
     >
       <h2 id={`${id}-heading`} className="text-base font-semibold">
         Couldn’t open this
@@ -319,6 +307,6 @@ function ActionError({
           Try again
         </Button>
       </div>
-    </dialog>
+    </Dialog>
   );
 }

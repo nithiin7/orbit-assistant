@@ -332,6 +332,14 @@ export const MEALS: readonly Option<MealType>[] = [
   { value: "other", label: "Other" },
 ];
 
+/** The meal someone is most likely logging at this hour (0–23) of their day. */
+export function mealAt(hour: number): MealType {
+  if (hour >= 5 && hour < 11) return "breakfast";
+  if (hour >= 11 && hour < 15) return "lunch";
+  if (hour >= 18 && hour < 22) return "dinner";
+  return "snack";
+}
+
 /** A share of a target, from 0 to 1, or `null` without a target. */
 export function share(value: number, target: number | null | undefined): number | null {
   if (!target) return null;

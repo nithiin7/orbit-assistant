@@ -2,14 +2,13 @@
 
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { ShoppingItem, UpdateShoppingItemRequest } from "@orbit/contracts";
-import { X } from "lucide-react";
 import { useId } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
 import { FormAlert, FormField } from "@/components/form-field";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogFormActions, DialogHeader } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { itemSchema, NOTES_MAX_LENGTH, optionalText } from "@/lib/shopping";
@@ -66,31 +65,14 @@ export function ItemEditDialog({ item, onSave, onClose }: ItemEditDialogProps) {
   }
 
   return (
-    <dialog
-      {...dialogProps}
-      aria-labelledby={`${id}-heading`}
-      className="dialog-motion dialog-pop mx-auto mt-[10vh] w-[calc(100%-2rem)] max-w-lg rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
-    >
+    <Dialog {...dialogProps} aria-labelledby={`${id}-heading`} className="mt-[10vh] max-w-lg">
       <form
         noValidate
         // Called here, not during render: `save` closes the dialog through a ref.
         onSubmit={(event) => void handleSubmit(save)(event)}
         className="space-y-4 p-5"
       >
-        <div className="flex items-start justify-between gap-4">
-          <h2 id={`${id}-heading`} className="text-base font-semibold">
-            Edit item
-          </h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="-mt-1.5 -mr-1.5 size-8"
-            aria-label="Close"
-            onClick={close}
-          >
-            <X aria-hidden="true" />
-          </Button>
-        </div>
+        <DialogHeader titleId={`${id}-heading`} title="Edit item" onClose={close} />
 
         <FormField
           label="Item"
@@ -144,15 +126,8 @@ export function ItemEditDialog({ item, onSave, onClose }: ItemEditDialogProps) {
 
         <FormAlert message={errors.root?.server?.message ?? null} />
 
-        <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
-          <Button variant="ghost" disabled={saving} onClick={close}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={saving}>
-            {saving ? "Saving…" : "Save changes"}
-          </Button>
-        </div>
+        <DialogFormActions busy={saving} onCancel={close} submitLabel="Save changes" />
       </form>
-    </dialog>
+    </Dialog>
   );
 }

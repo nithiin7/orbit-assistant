@@ -10,14 +10,21 @@ import { Menu } from "@/components/ui/menu";
 import { useActiveWorkspaceId, useViewerTimeZone } from "@/hooks/use-calendar";
 import { useTemplates, useUnits } from "@/hooks/use-fitness";
 import { todayIn } from "@/lib/calendar";
-import { FITNESS_VIEW_HINTS, fitnessHref, parseFitnessLocation, viewOf } from "@/lib/fitness";
+import { hourIn } from "@/lib/dashboard";
+import {
+  FITNESS_VIEW_HINTS,
+  fitnessHref,
+  mealAt,
+  parseFitnessLocation,
+  viewOf,
+} from "@/lib/fitness";
 
 import { ActivityDialog, ActivityView } from "./activity";
 import { BodyView, MeasurementDialog } from "./body";
 import { ExerciseDetail, ExercisesView } from "./exercises";
 import { GoalDetail, GoalsView } from "./goals";
 import { HealthNav, VIEW_ICONS, viewLabel } from "./health-nav";
-import { NutritionView } from "./nutrition";
+import { FoodEntryDialog, NutritionView } from "./nutrition";
 import { OverviewView } from "./overview";
 import { ProgressView } from "./progress";
 import { SettingsView } from "./settings";
@@ -26,7 +33,7 @@ import { WaterView } from "./water";
 import { WorkoutDetail } from "./workout-detail";
 import { LogWorkoutDialog, useStartWorkout, WorkoutsView } from "./workouts";
 
-type Dialog = "log-workout" | "measurement" | "activity" | null;
+type Dialog = "log-workout" | "food" | "measurement" | "activity" | null;
 
 /** The Health & Fitness page: the view or record named in the URL, and its quick-log dialogs. */
 export function HealthPanel() {
@@ -111,7 +118,7 @@ function HealthContent({
                       id: "food",
                       label: "Food",
                       icon: Utensils,
-                      onSelect: () => router.push(fitnessHref({ kind: "view", view: "nutrition" })),
+                      onSelect: () => setDialog("food"),
                     },
                     {
                       id: "water",
@@ -164,6 +171,16 @@ function HealthContent({
           workspaceId={workspaceId}
           today={today}
           timeZone={timeZone}
+          onClose={() => setDialog(null)}
+        />
+      ) : null}
+      {dialog === "food" ? (
+        <FoodEntryDialog
+          workspaceId={workspaceId}
+          day={today}
+          meal={mealAt(hourIn(timeZone))}
+          editing={null}
+          units={units}
           onClose={() => setDialog(null)}
         />
       ) : null}

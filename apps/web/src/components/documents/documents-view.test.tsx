@@ -403,6 +403,86 @@ describe("DocumentsPanel", () => {
     expect(calls(api, "DELETE", `${DOCS}/${passport.id}`)).toHaveLength(0);
   });
 
+  it("moves a selection into a folder, then to the Trash", async () => {
+    const user = userEvent.setup();
+    const api = mockApi(
+      routes({
+        [`PATCH ${DOCS}/${policy.id}`]: json(detailOf(policy)),
+        [`PATCH ${DOCS}/${passport.id}`]: json(detailOf(passport)),
+        [`POST ${DOCS}/${policy.id}/trash`]: json(detailOf(policy)),
+        [`POST ${DOCS}/${passport.id}/trash`]: json(detailOf(passport)),
+      }),
+    );
+    await renderDocuments("view=all");
+    const list = await screen.findByRole("list", { name: "Documents" });
+    await user.click(within(list).getByRole("checkbox", { name: "Select “Car insurance”" }));
+    await user.click(within(list).getByRole("checkbox", { name: "Select “Passport”" }));
+    expect(screen.getByText("2 selected")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Move…" }));
+    const dialog = await screen.findByRole("dialog", { name: "Move 2 documents" });
+    await user.click(within(dialog).getByRole("combobox", { name: "Destination" }));
+    await user.click(await screen.findByRole("option", { name: "Archive box" }));
+    await user.click(within(dialog).getByRole("button", { name: "Move" }));
+    await waitFor(() =>
+      expect(
+        [policy.id, passport.id].flatMap((id) =>
+          calls(api, "PATCH", `${DOCS}/${id}`).map(({ init }) => JSON.parse(String(init?.body))),
+        ),
+      ).toEqual([{ folder_id: other.id }, { folder_id: other.id }]),
+    );
+    // A finished change clears the selection.
+    await waitFor(() => expect(screen.queryByText("2 selected")).not.toBeInTheDocument());
+
+    await user.click(within(list).getByRole("checkbox", { name: "Select “Car insurance”" }));
+    await user.click(within(list).getByRole("checkbox", { name: "Select “Passport”" }));
+    await user.click(screen.getByRole("button", { name: "Move to Trash" }));
+    await waitFor(() => {
+      expect(calls(api, "POST", `${DOCS}/${policy.id}/trash`)).toHaveLength(1);
+      expect(calls(api, "POST", `${DOCS}/${passport.id}/trash`)).toHaveLength(1);
+    });
+  });
+
+  it("keeps the documents that failed selected and says so", async () => {
+    const user = userEvent.setup();
+    mockApi(
+      routes({
+        [`POST ${DOCS}/${policy.id}/trash`]: json(detailOf(policy)),
+        [`POST ${DOCS}/${passport.id}/trash`]: json({ detail: "Nope." }, 422),
+      }),
+    );
+    await renderDocuments("view=all");
+    const list = await screen.findByRole("list", { name: "Documents" });
+    await user.click(within(list).getByRole("checkbox", { name: "Select “Car insurance”" }));
+    await user.click(within(list).getByRole("checkbox", { name: "Select “Passport”" }));
+    await user.click(screen.getByRole("button", { name: "Move to Trash" }));
+
+    expect(await screen.findByText(/1 of 2/)).toBeInTheDocument();
+    expect(screen.getByText("1 selected")).toBeInTheDocument();
+    expect(within(list).getByRole("checkbox", { name: "Select “Passport”" })).toBeChecked();
+  });
+
+  it("restores or deletes a selection from the Trash, asking before deleting", async () => {
+    const user = userEvent.setup();
+    const trashed = { ...passport, state: "trashed" as const, trashed_at: "2026-10-02T09:00:00Z" };
+    const api = mockApi(
+      routes({
+        [`GET ${DOCS}`]: json({ documents: [trashed], total: 1 }),
+        [`DELETE ${DOCS}/${passport.id}`]: status(204),
+      }),
+    );
+    await renderDocuments("view=trash");
+    const list = await screen.findByRole("list", { name: "Documents" });
+    await user.click(within(list).getByRole("checkbox", { name: "Select “Passport”" }));
+    expect(screen.queryByRole("button", { name: "Move…" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Restore" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Delete forever…" }));
+    const confirm = await screen.findByRole("alertdialog", { name: "Delete 1 document forever?" });
+    await user.click(within(confirm).getByRole("button", { name: "Delete forever" }));
+    await waitFor(() => expect(calls(api, "DELETE", `${DOCS}/${passport.id}`)).toHaveLength(1));
+  });
+
   it("asks before deleting a trashed document forever", async () => {
     const user = userEvent.setup();
     const trashed = { ...passport, state: "trashed" as const, trashed_at: "2026-10-02T09:00:00Z" };
@@ -532,6 +612,37 @@ describe("Connected drives", () => {
           JSON.parse(String(init?.body)),
         ),
       ).toEqual([{ folder_id: garage.id }]),
+    );
+  });
+
+  it("imports a file straight into a folder picked for it", async () => {
+    const user = userEvent.setup();
+    const api = mockApi(
+      routes({
+        [`GET ${WS}/integrations/connections`]: json({ connections: [drive] }),
+        [`GET ${WS}/integrations/connections/c1/files`]: json({ files: [lease], next_page: null }),
+        [`POST ${WS}/integrations/connections/c1/files/f1/import`]: json(
+          { document_id: "d1", title: "Lease", link: {} },
+          201,
+        ),
+      }),
+    );
+    await renderDocuments("drive=c1");
+    await screen.findByText("Lease.pdf");
+
+    await user.click(screen.getByRole("button", { name: "More import options for “Lease.pdf”" }));
+    await user.click(screen.getByRole("menuitem", { name: "Import to folder…" }));
+    const dialog = await screen.findByRole("dialog", { name: "Import “Lease.pdf”" });
+    await user.click(within(dialog).getByRole("combobox", { name: "Destination" }));
+    await user.click(await screen.findByRole("option", { name: "Archive box" }));
+    await user.click(within(dialog).getByRole("button", { name: "Import" }));
+
+    await waitFor(() =>
+      expect(
+        calls(api, "POST", `${WS}/integrations/connections/c1/files/f1/import`).map(({ init }) =>
+          JSON.parse(String(init?.body)),
+        ),
+      ).toEqual([{ folder_id: other.id }]),
     );
   });
 

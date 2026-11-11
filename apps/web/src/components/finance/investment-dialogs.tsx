@@ -25,6 +25,7 @@ import {
 import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
+import { DialogShell } from "@/components/dialog-shell";
 import { AmountField, DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -59,7 +60,6 @@ import { localDateString } from "@/utils/dates";
 import { browserTimeZone } from "@/utils/time-zones";
 
 import { ReminderFields } from "./commitment-parts";
-import { DialogShell } from "./dialog-shell";
 
 const TRADE_TYPES: readonly Option<InvestmentTransactionType>[] = [
   { value: "buy", label: "Buy" },

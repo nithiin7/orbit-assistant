@@ -6,6 +6,7 @@ import { useId } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 import { describeApiError } from "@/api/client";
+import { DialogShell } from "@/components/dialog-shell";
 import { AmountField, DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Textarea } from "@/components/ui/textarea";
 import { useBudgetMutations } from "@/hooks/use-budgets";
@@ -22,8 +23,6 @@ import {
 } from "@/lib/budgets";
 import { CURRENCY_OPTIONS } from "@/lib/finance";
 import { monthLabel } from "@/utils/dates";
-
-import { DialogShell } from "./dialog-shell";
 
 type BudgetDialogProps = {
   workspaceId: string;

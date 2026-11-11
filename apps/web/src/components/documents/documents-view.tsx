@@ -11,12 +11,15 @@ import {
   ChevronRight,
   FileArchive,
   FilePlus2,
+  FolderInput,
   FolderOpen,
   LayoutGrid,
   List,
   Plus,
+  RotateCcw,
   Search,
   SearchX,
+  Trash2,
   Upload,
   X,
 } from "lucide-react";
@@ -26,8 +29,8 @@ import { useRef, useState } from "react";
 import { describeApiError } from "@/api/client";
 import { useConfirm } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
+import { FolderPickerDialog } from "@/components/folders/folder-dialogs";
 import { FormAlert } from "@/components/form-field";
-import { FolderPickerDialog } from "@/components/notes/organize-dialogs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
@@ -133,6 +136,7 @@ function DocumentsView({ workspaceId }: { workspaceId: string }) {
   const [railOpen, setRailOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [moving, setMoving] = useState<DocumentSummary | null>(null);
+  const [movingSelected, setMovingSelected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
@@ -268,6 +272,60 @@ function DocumentsView({ workspaceId }: { workspaceId: string }) {
         return;
     }
   };
+
+  /**
+   * Run one change on every selected document. Documents that fail stay selected, so the
+   * person can try them again.
+   */
+  const actOnSelected = async (
+    work: (documentId: string) => Promise<unknown>,
+    done: (count: number) => string,
+    failure: string,
+  ) => {
+    const ids = [...selected];
+    setError(null);
+    setPending((current) => new Set([...current, ...ids]));
+    const results = await Promise.allSettled(ids.map(work));
+    setPending((current) => new Set([...current].filter((id) => !ids.includes(id))));
+    const failed = ids.filter((_, index) => results[index]?.status === "rejected");
+    setSelected(new Set(failed));
+    if (failed.length > 0) {
+      const reason = results.find((result) => result.status === "rejected")?.reason;
+      setError(
+        `${failure} (${failed.length} of ${ids.length}): ${describeApiError(reason, "Something went wrong.")}`,
+      );
+    }
+    if (failed.length < ids.length) setAnnouncement(done(ids.length - failed.length));
+  };
+  const plural = (count: number) => (count === 1 ? "1 document" : `${count} documents`);
+  const inTrash = location.view === "trash";
+
+  const trashSelected = () =>
+    void actOnSelected(
+      (documentId) => mutations.act.mutateAsync({ documentId, action: "trash" }),
+      (count) => `Moved ${plural(count)} to the Trash.`,
+      "Couldn’t move some documents to the Trash",
+    );
+  const restoreSelected = () =>
+    void actOnSelected(
+      (documentId) => mutations.act.mutateAsync({ documentId, action: "restore" }),
+      (count) => `Restored ${plural(count)}.`,
+      "Couldn’t restore some documents",
+    );
+  const deleteSelected = () =>
+    void confirm({
+      title: `Delete ${plural(selected.size)} forever?`,
+      description: "Their files and every earlier version are deleted. This can’t be undone.",
+      confirmLabel: "Delete forever",
+      destructive: true,
+    }).then((confirmed) => {
+      if (confirmed)
+        void actOnSelected(
+          (documentId) => mutations.remove.mutateAsync(documentId),
+          (count) => `Deleted ${plural(count)}.`,
+          "Couldn’t delete some documents",
+        );
+    });
 
   const confirmAction = (title: string, description: string, confirmLabel = "Delete") =>
     confirm({ title, description, confirmLabel, destructive: true });
@@ -587,19 +645,52 @@ function DocumentsView({ workspaceId }: { workspaceId: string }) {
                 {selected.size > 0 ? (
                   <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-brand-subtle/40 px-4 py-2 text-sm">
                     <span className="font-medium">{selected.size} selected</span>
-                    <Button
-                      variant="soft"
-                      size="sm"
-                      onClick={() =>
-                        exportArchive(
-                          { document_ids: [...selected], include_versions: true },
-                          `${selected.size} documents`,
-                        )
-                      }
-                    >
-                      <FileArchive aria-hidden="true" />
-                      Export
-                    </Button>
+                    {inTrash ? (
+                      <>
+                        <Button variant="soft" size="sm" onClick={restoreSelected}>
+                          <RotateCcw aria-hidden="true" />
+                          Restore
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={deleteSelected}
+                        >
+                          <Trash2 aria-hidden="true" />
+                          Delete forever…
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button variant="soft" size="sm" onClick={() => setMovingSelected(true)}>
+                          <FolderInput aria-hidden="true" />
+                          Move…
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            exportArchive(
+                              { document_ids: [...selected], include_versions: true },
+                              `${selected.size} documents`,
+                            )
+                          }
+                        >
+                          <FileArchive aria-hidden="true" />
+                          Export
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={trashSelected}
+                        >
+                          <Trash2 aria-hidden="true" />
+                          Move to Trash
+                        </Button>
+                      </>
+                    )}
                     <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())}>
                       <X aria-hidden="true" />
                       Clear
@@ -785,9 +876,33 @@ function DocumentsView({ workspaceId }: { workspaceId: string }) {
           }}
         />
       ) : null}
+      {movingSelected ? (
+        <FolderPickerDialog
+          title={`Move ${plural(selected.size)}`}
+          folders={folders}
+          current={sharedFolder(listItems.filter((document) => selected.has(document.id)))}
+          top="Unfiled"
+          submitLabel="Move"
+          onClose={() => setMovingSelected(false)}
+          onSubmit={(folderId) =>
+            actOnSelected(
+              (documentId) =>
+                mutations.update.mutateAsync({ documentId, changes: { folder_id: folderId } }),
+              (count) => `Moved ${plural(count)}.`,
+              "Couldn’t move some documents",
+            )
+          }
+        />
+      ) : null}
       {confirmDialog}
     </div>
   );
+}
+
+/** The folder every given document is in, or null when they're spread across folders. */
+function sharedFolder(documents: readonly DocumentSummary[]): string | null {
+  const folderIds = new Set(documents.map((document) => document.folder_id));
+  return folderIds.size === 1 ? ([...folderIds][0] ?? null) : null;
 }
 
 function emptyTitle(location: DocumentsLocation): string {

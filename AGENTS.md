@@ -74,7 +74,8 @@ Module design: grep `^## `/`^### ` in `docs/architecture.md` and read only that 
 - Forms: React Hook Form + Yup schema in `lib/` mirroring API rules; server errors via
   `setError("root.server", …)` and `FormAlert`.
 - Controls: `Select`, `DatePicker`, `AmountInput` (`SelectField`, `DateField`, `AmountField`);
-  never native `<select>` or `type="date"`. Money via `formatMoney`.
+  never native `<select>` or `type="date"`. Money via `formatMoney`. Modals: `useModalDialog`
+  with `Dialog`/`DialogHeader`/`DialogFormActions` (`ui/dialog`), or `DialogShell` for forms.
 - One primary action per view; extra "add" actions in a `Menu`; secondary buttons `soft`/`ghost`.
 - No `any`, unsafe `as`, or unexplained suppressions. Accessible: semantic HTML, labels,
   keyboard, `focus-visible:ring-2 focus-visible:ring-ring`, `aria-hidden` on decorative icons.

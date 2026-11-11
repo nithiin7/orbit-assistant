@@ -358,14 +358,6 @@ export function formatTimeRange(start: string, end: string, timeZone: string): s
     : format.formatRange(new Date(start), new Date(end));
 }
 
-export function formatTime(instant: string, timeZone: string): string {
-  return new Intl.DateTimeFormat(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone,
-  }).format(new Date(instant));
-}
-
 /** A one-line "when" for an item: "All day", "Due", or a time range on the viewer's clock. */
 export function describeWhen(item: CalendarItem, timeZone: string): string {
   if (item.kind === "task" && item.due) return "Due";

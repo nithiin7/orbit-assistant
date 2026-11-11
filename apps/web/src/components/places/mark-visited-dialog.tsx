@@ -8,6 +8,7 @@ import { describeApiError } from "@/api/client";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
+import { Dialog } from "@/components/ui/dialog";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { countryName } from "@/lib/places";
 
@@ -43,10 +44,10 @@ export function MarkVisitedDialog({
   }
 
   return (
-    <dialog
+    <Dialog
       {...dialogProps}
       aria-labelledby={`${id}-heading`}
-      className="dialog-motion dialog-pop mx-auto mt-[12vh] w-[calc(100%-2rem)] max-w-sm rounded-2xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
+      className="mt-[12vh] max-w-sm rounded-2xl"
     >
       <div className="space-y-4 p-5">
         <div className="flex items-start justify-between gap-3">
@@ -93,6 +94,6 @@ export function MarkVisitedDialog({
           </Button>
         </div>
       </div>
-    </dialog>
+    </Dialog>
   );
 }

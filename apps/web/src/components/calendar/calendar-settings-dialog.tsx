@@ -2,7 +2,6 @@
 
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { CalendarPreferences, CalendarPreferencesRequest } from "@orbit/contracts";
-import { X } from "lucide-react";
 import Link from "next/link";
 import { useId } from "react";
 import { useForm } from "react-hook-form";
@@ -12,6 +11,7 @@ import { describeApiError } from "@/api/client";
 import { FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogHeader } from "@/components/ui/dialog";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { CALENDAR_VIEWS } from "@/lib/calendar";
 
@@ -109,30 +109,17 @@ export function CalendarSettingsDialog({ preferences, timeZone, onSave, onClose 
   }
 
   return (
-    <dialog
+    <Dialog
       {...dialogProps}
       aria-labelledby={`${id}-heading`}
-      className="dialog-motion dialog-pop mx-auto mt-[8vh] max-h-[84vh] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
+      className="mt-[8vh] max-h-[84vh] max-w-md overflow-y-auto"
     >
       <form
         noValidate
         onSubmit={(event) => void handleSubmit(save)(event)}
         className="space-y-4 p-5"
       >
-        <div className="flex items-start justify-between gap-4">
-          <h2 id={`${id}-heading`} className="text-base font-semibold">
-            Calendar settings
-          </h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="-mt-1.5 -mr-1.5 size-8"
-            aria-label="Close"
-            onClick={close}
-          >
-            <X aria-hidden="true" />
-          </Button>
-        </div>
+        <DialogHeader titleId={`${id}-heading`} title="Calendar settings" onClose={close} />
         <div className="grid gap-4 sm:grid-cols-2">
           <SelectField
             control={control}
@@ -201,6 +188,6 @@ export function CalendarSettingsDialog({ preferences, timeZone, onSave, onClose 
           </Button>
         </div>
       </form>
-    </dialog>
+    </Dialog>
   );
 }

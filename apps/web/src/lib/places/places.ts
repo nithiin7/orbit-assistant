@@ -38,11 +38,6 @@ export function placesHref(view: PlacesView): string {
   return view === "overview" ? "/places" : `/places?view=${view}`;
 }
 
-/** Where a search hit for a place opens: the list it's in. */
-export function placeHref(place: Pick<Place, "status">): string {
-  return placesHref(place.status === "visited" ? "visited" : "wishlist");
-}
-
 export const STATUS_LABELS: Readonly<Record<PlaceStatus, string>> = {
   visited: "Been there",
   want_to_visit: "Want to go",
