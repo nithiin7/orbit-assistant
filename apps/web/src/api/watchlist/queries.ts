@@ -12,8 +12,10 @@ export const watchlistKeys = {
   all: (workspaceId: string | null) => ["workspaces", workspaceId, "watchlist"] as const,
   items: (workspaceId: string | null) => [...watchlistKeys.all(workspaceId), "items"] as const,
   lookup: (workspaceId: string | null) => [...watchlistKeys.all(workspaceId), "lookup"] as const,
-  search: (workspaceId: string | null, q: string) =>
-    [...watchlistKeys.all(workspaceId), "search", q] as const,
+  suggestions: (workspaceId: string | null) =>
+    [...watchlistKeys.all(workspaceId), "suggestions"] as const,
+  search: (workspaceId: string | null, q: string, kind = "all", language: string | null = null) =>
+    [...watchlistKeys.all(workspaceId), "search", q, kind, language] as const,
   poster: (workspaceId: string | null, itemId: string, version: string) =>
     [...watchlistKeys.all(workspaceId), "poster", itemId, version] as const,
   searchPoster: (workspaceId: string | null, path: string) =>

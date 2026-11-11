@@ -24,11 +24,69 @@ export const KIND_LABELS: Record<WatchKind, string> = { movie: "Movie", series: 
 
 export type KindFilter = WatchKind | "all";
 
-/** The Watchlist's sections: an overview, then one per status. */
-export type WatchView = "overview" | WatchStatus;
+/** Search narrowing in the Add dialog: a kind, and the language a title was made in. */
+export type TitleSearchFilters = { kind: KindFilter; language: string | null };
+
+/** Original languages offered when searching (ISO 639-1), common ones on TMDB. */
+const SEARCH_LANGUAGE_CODES = [
+  "ar",
+  "bn",
+  "da",
+  "de",
+  "en",
+  "es",
+  "fa",
+  "fr",
+  "he",
+  "hi",
+  "id",
+  "it",
+  "ja",
+  "kn",
+  "ko",
+  "ml",
+  "mr",
+  "nl",
+  "no",
+  "pa",
+  "pl",
+  "pt",
+  "ru",
+  "sv",
+  "ta",
+  "te",
+  "th",
+  "tl",
+  "tr",
+  "zh",
+] as const;
+
+const languageNames = new Intl.DisplayNames(["en"], { type: "language" });
+
+/** "Korean" for `ko`; the code itself if the browser doesn't know it. */
+export function languageName(code: string): string {
+  try {
+    return languageNames.of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+export const ANY_LANGUAGE = "any";
+
+export const SEARCH_LANGUAGES: readonly { value: string; label: string }[] = [
+  { value: ANY_LANGUAGE, label: "Any language" },
+  ...SEARCH_LANGUAGE_CODES.map((code) => ({ value: code, label: languageName(code) })).sort(
+    (a, b) => a.label.localeCompare(b.label),
+  ),
+];
+
+/** The Watchlist's sections: an overview, suggestions, then one per status. */
+export type WatchView = "overview" | "suggestions" | WatchStatus;
 
 export const WATCH_VIEWS: readonly { value: WatchView; label: string }[] = [
   { value: "overview", label: "Up next" },
+  { value: "suggestions", label: "For you" },
   { value: "want", label: STATUS_LABELS.want },
   { value: "watching", label: STATUS_LABELS.watching },
   { value: "watched", label: STATUS_LABELS.watched },
@@ -40,6 +98,10 @@ export function parseWatchView(params: URLSearchParams): WatchView {
   return WATCH_VIEWS.find((option) => option.value === view)?.value ?? "overview";
 }
 
+export function isStatusView(view: WatchView): view is WatchStatus {
+  return (STATUSES as readonly string[]).includes(view);
+}
+
 export function watchlistHref(view: WatchView): string {
   return view === "overview" ? "/watchlist" : `/watchlist?view=${view}`;
 }
@@ -49,22 +111,48 @@ export function watchTitleHref(itemId: string): string {
   return `/watchlist?title=${encodeURIComponent(itemId)}`;
 }
 
+/** "default" is the status's own order: queue order, or most recently finished for Watched. */
+export type TitleSort = "default" | "title";
+
+export function sortOptions(status: WatchStatus): readonly { value: TitleSort; label: string }[] {
+  return [
+    { value: "default", label: status === "watched" ? "Recently finished" : "Queue order" },
+    { value: "title", label: "Name (A–Z)" },
+  ];
+}
+
+const byName = new Intl.Collator(undefined, { sensitivity: "base", numeric: true });
+
+/** Whether a title is of the chosen kind. */
+export function matchesKind(item: { kind: WatchKind }, kind: KindFilter): boolean {
+  return kind === "all" || item.kind === kind;
+}
+
 /**
- * The titles in one status, filtered by kind and platform. Watched titles come most recently
- * finished first; the rest keep the queue order the API returns.
+ * The titles in one status, filtered by kind and platform. By default watched titles come most
+ * recently finished first and the rest keep the queue order the API returns; `sort: "title"`
+ * orders them by name instead (ignoring case and accents, "Alien 3" before "Alien 10").
  */
 export function titlesIn(
   items: readonly WatchItem[],
   status: WatchStatus,
-  { kind = "all", platform = null }: { kind?: KindFilter; platform?: string | null } = {},
+  {
+    kind = "all",
+    platform = null,
+    sort = "default",
+  }: { kind?: KindFilter; platform?: string | null; sort?: TitleSort } = {},
 ): WatchItem[] {
   const matching = items.filter(
     (item) =>
       item.status === status &&
-      (kind === "all" || item.kind === kind) &&
+      matchesKind(item, kind) &&
       (platform === null || item.platform === platform),
   );
-  if (status === "watched") {
+  if (sort === "title") {
+    matching.sort(
+      (a, b) => byName.compare(a.title, b.title) || (a.release_year ?? 0) - (b.release_year ?? 0),
+    );
+  } else if (status === "watched") {
     matching.sort((a, b) => (b.finished_at ?? "").localeCompare(a.finished_at ?? ""));
   }
   return matching;
@@ -98,6 +186,17 @@ export function formatRuntime(minutes: number): string {
   const rest = minutes % 60;
   if (hours === 0) return `${rest}m`;
   return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
+}
+
+/** "Similar to “Dune” and “Saga”", from the titles a suggestion was recommended from. */
+export function becauseLine(titles: readonly string[]): string | null {
+  if (titles.length === 0) return null;
+  const quoted = titles.map((title) => `“${title}”`);
+  const list =
+    quoted.length === 1
+      ? quoted[0]
+      : `${quoted.slice(0, -1).join(", ")} and ${quoted.at(-1) ?? ""}`;
+  return `Similar to ${list}`;
 }
 
 /** "S2 · E5". */

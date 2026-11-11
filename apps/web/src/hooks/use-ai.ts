@@ -19,6 +19,7 @@ import type {
   AiProviderList,
   AiSettings,
   AiUsage,
+  AiWatchPicks,
   AiWorkoutSuggestion,
   CreateAiProviderRequest,
   TestAiProviderRequest,
@@ -45,6 +46,7 @@ import {
   dismissInsight,
   estimateFood,
   insightsOptions,
+  pickWatchSuggestions,
   renameConversation,
   runAssist,
   streamAiMessage,
@@ -356,6 +358,13 @@ export function useSuggestFoods(workspaceId: string) {
   const { withToken } = useAuth();
   return useMutation<AiFoodIdeas, Error, string>({
     mutationFn: (cuisine) => withToken((t) => suggestFoods(t, workspaceId, { cuisine })),
+  });
+}
+
+export function usePickWatchSuggestions(workspaceId: string) {
+  const { withToken } = useAuth();
+  return useMutation<AiWatchPicks, Error, void>({
+    mutationFn: () => withToken((t) => pickWatchSuggestions(t, workspaceId)),
   });
 }
 

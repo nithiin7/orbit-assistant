@@ -1,4 +1,11 @@
-import type { TitleMatch, WatchItem, WatchlistLookup } from "@orbit/contracts";
+import type {
+  AiSettings,
+  AiWatchPicks,
+  TitleMatch,
+  WatchItem,
+  WatchlistLookup,
+  WatchSuggestion,
+} from "@orbit/contracts";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -127,6 +134,7 @@ describe("WatchlistPanel", () => {
       release_year: 2021,
       overview: "Spice.",
       poster_path: null,
+      original_language: "en",
       existing_id: null,
     };
     const added: unknown[] = [];
@@ -161,6 +169,40 @@ describe("WatchlistPanel", () => {
     );
     expect(added).toEqual([{ kind: "movie", source_id: 438631, status: "watched", notes: "" }]);
     expect(within(dialog).getByText(/not endorsed or certified by TMDB/)).toBeInTheDocument();
+  });
+
+  it("narrows a search by type and original language", async () => {
+    const user = userEvent.setup();
+    const dark: TitleMatch = {
+      source_id: 70523,
+      kind: "series",
+      title: "Dark",
+      release_year: 2017,
+      overview: "",
+      poster_path: null,
+      original_language: "de",
+      existing_id: null,
+    };
+    mockApi({
+      ...session,
+      ...itemsRoute([title({ id: "t-old", title: "Old favorite" })]).route,
+      ...lookup({ configured: true, enabled: true }),
+      [`GET ${WL}/search`]: json({ results: [dark] }),
+    });
+
+    await renderSignedIn(<WatchlistPanel />);
+    await user.click(await screen.findByRole("button", { name: "Add title" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add to watchlist" });
+    await user.click(within(dialog).getByRole("radio", { name: "Series" }));
+    await user.click(within(dialog).getByRole("combobox", { name: "Original language" }));
+    await user.click(await screen.findByRole("option", { name: "German" }));
+    await user.type(
+      within(dialog).getByRole("combobox", { name: "Search movies and series" }),
+      "dark",
+    );
+
+    const option = await within(dialog).findByRole("option", { name: /Dark/ });
+    expect(option).toHaveTextContent("Series · 2017 · German");
   });
 
   it("logs episodes from Continue watching and cheers the finale", async () => {
@@ -314,6 +356,140 @@ describe("WatchlistPanel", () => {
 
     const sheet = await screen.findByRole("dialog", { name: "Arrival" });
     expect(within(sheet).getByText("Linguists and aliens.")).toBeInTheDocument();
+  });
+
+  it("filters Up next by type", async () => {
+    const user = userEvent.setup();
+    mockApi({
+      ...session,
+      ...itemsRoute([
+        title({ id: "t-a", title: "Arrival" }),
+        title({ id: "t-d", title: "Dark", kind: "series", position: 1 }),
+      ]).route,
+    });
+
+    await renderSignedIn(<WatchlistPanel />);
+    const queue = await screen.findByRole("list", { name: "Next in your queue" });
+    await user.click(screen.getByRole("radio", { name: "Series" }));
+    expect(within(queue).getByRole("button", { name: /^Dark/ })).toBeInTheDocument();
+    expect(within(queue).queryByRole("button", { name: /^Arrival/ })).not.toBeInTheDocument();
+  });
+
+  it("sorts a status by name", async () => {
+    const user = userEvent.setup();
+    search = new URLSearchParams("view=want");
+    mockApi({
+      ...session,
+      ...itemsRoute([
+        title({ id: "t-z", title: "Zodiac" }),
+        title({ id: "t-a", title: "Arrival", position: 1 }),
+        title({ id: "t-d", title: "Dark", kind: "series", position: 2 }),
+      ]).route,
+    });
+
+    await renderSignedIn(<WatchlistPanel />);
+    const list = await screen.findByRole("list", { name: "Want to watch" });
+    const order = () =>
+      within(list)
+        .getAllByRole("listitem")
+        .map((item) => (item.textContent ?? "").match(/Zodiac|Arrival|Dark/)?.[0]);
+    expect(order()).toEqual(["Zodiac", "Arrival", "Dark"]);
+
+    await user.click(screen.getByRole("combobox", { name: "Sort titles" }));
+    await user.click(await screen.findByRole("option", { name: "Name (A–Z)" }));
+    expect(order()).toEqual(["Arrival", "Dark", "Zodiac"]);
+    // The queue's front isn't marked while sorted by name.
+    expect(within(list).queryByText("Up next")).not.toBeInTheDocument();
+  });
+
+  it("explains that suggestions need title lookup", async () => {
+    search = new URLSearchParams("view=suggestions");
+    mockApi({
+      ...session,
+      ...itemsRoute([title({ id: "t-a", title: "Arrival" })]).route,
+      ...lookup({ configured: false, enabled: false }),
+    });
+
+    await renderSignedIn(<WatchlistPanel />);
+    expect(
+      await screen.findByRole("link", { name: /Get posters and details automatically/ }),
+    ).toHaveAttribute("href", "/settings/watchlist");
+  });
+
+  it("suggests titles, picks some with AI, and adds one to Want to watch", async () => {
+    const user = userEvent.setup();
+    search = new URLSearchParams("view=suggestions");
+    const store = itemsRoute([title({ id: "t-dune", title: "Dune", looked_up: true })]);
+    const suggestion = (
+      source_id: number,
+      name: string,
+      kind: WatchSuggestion["kind"] = "movie",
+    ): WatchSuggestion => ({
+      source_id,
+      kind,
+      title: name,
+      release_year: 2016,
+      overview: `About ${name}.`,
+      poster_path: null,
+      because: ["Dune"],
+    });
+    const arrival = suggestion(10, "Arrival");
+    const dark = suggestion(12, "Dark", "series");
+    const picks: AiWatchPicks = {
+      picks: [{ suggestion: dark, reason: "Twisty, like the shows you finish." }],
+      provider_name: "Local",
+      model: "llama3",
+      processing: "local",
+    };
+    const ai: AiSettings = {
+      server_enabled: true,
+      enabled: true,
+      chat_provider_id: "p1",
+      chat_model: "llama3",
+      embedding_provider_id: null,
+      embedding_model: null,
+      fallback_provider_id: null,
+      fallback_model: null,
+      allow_cloud: false,
+      modules: ["watchlist"],
+      response_style: "balanced",
+      monthly_token_limit: null,
+      indexing_enabled: true,
+    };
+    const added: unknown[] = [];
+    mockApi({
+      ...session,
+      ...store.route,
+      ...lookup({ configured: true, enabled: true }),
+      "GET /api/v1/me/ai/settings": json(ai),
+      [`GET ${WL}/suggestions`]: json({ suggestions: [arrival, dark] }),
+      [`POST /api/v1/workspaces/${personal.id}/ai/watchlist/suggestions`]: json(picks),
+      [`POST ${WL}/items`]: (request: MockRequest) => {
+        added.push(request.body);
+        const item = title({ id: "t-arrival", title: "Arrival", looked_up: true, position: 1 });
+        store.set([...store.get(), item]);
+        return Response.json(item, { status: 201 });
+      },
+    });
+
+    await renderSignedIn(<WatchlistPanel />);
+    expect(await screen.findByText("Arrival")).toBeInTheDocument();
+    expect(screen.getAllByText("Similar to “Dune”")).toHaveLength(2);
+    expect(screen.getByText(/not endorsed or certified by TMDB/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Pick for me" }));
+    const picked = await screen.findByRole("region", { name: "Picked for you" });
+    expect(within(picked).getByText("Twisty, like the shows you finish.")).toBeInTheDocument();
+    expect(within(picked).getByText("Dark")).toBeInTheDocument();
+    // A pick isn't listed twice.
+    const more = screen.getByRole("region", { name: "More suggestions" });
+    expect(within(more).queryByText("Dark")).not.toBeInTheDocument();
+
+    await user.click(within(more).getByRole("button", { name: /Add “Arrival”/ }));
+    expect(
+      await within(more).findByRole("button", { name: "Added. Open “Arrival”" }),
+    ).toBeInTheDocument();
+    expect(added).toEqual([{ kind: "movie", source_id: 10, status: "want", notes: "" }]);
   });
 
   it("shows an error with a retry when the watchlist can't load", async () => {

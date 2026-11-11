@@ -4,16 +4,18 @@ import {
   CircleCheckBig,
   CirclePause,
   CirclePlay,
+  Lightbulb,
   type LucideIcon,
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 
-import { WATCH_VIEWS, watchlistHref, type WatchView } from "@/lib/watchlist";
+import { isStatusView, WATCH_VIEWS, watchlistHref, type WatchView } from "@/lib/watchlist";
 import { cn } from "@/utils/common";
 
 export const VIEW_ICONS: Record<WatchView, LucideIcon> = {
   overview: Sparkles,
+  suggestions: Lightbulb,
   want: Bookmark,
   watching: CirclePlay,
   watched: CircleCheckBig,
@@ -37,11 +39,11 @@ export function WatchlistNav({
         {WATCH_VIEWS.map((option) => {
           const Icon = VIEW_ICONS[option.value];
           const selected = view === option.value;
-          const count = option.value === "overview" || !counts ? null : counts[option.value];
+          const count = isStatusView(option.value) && counts ? counts[option.value] : null;
           return (
             <li
               key={option.value}
-              // The overview sits apart from the status lists.
+              // The overview and suggestions sit apart from the status lists.
               className={cn(
                 option.value === "want" &&
                   "@5xl/watchlist:mt-3 @5xl/watchlist:border-t @5xl/watchlist:pt-3",

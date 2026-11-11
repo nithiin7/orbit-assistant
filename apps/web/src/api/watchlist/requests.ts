@@ -4,7 +4,9 @@ import type {
   UpdateWatchItemRequest,
   WatchItem,
   WatchItems,
+  WatchKind,
   WatchlistLookup,
+  WatchSuggestions,
 } from "@orbit/contracts";
 
 import { request, send, type Signal, toQueryString, workspacePath } from "../client";
@@ -106,13 +108,16 @@ export function setWatchlistLookup(
 }
 
 /** Movies and series at TMDB matching `q`; only the phrase leaves the server. */
+/** TMDB matches for `q`; `kind` and `language` (original, ISO 639-1) narrow them. */
 export function searchTitles(
   token: string,
   workspaceId: string,
   q: string,
+  { kind = null, language = null }: { kind?: WatchKind | null; language?: string | null } = {},
   { signal }: Signal = {},
 ): Promise<TitleMatches> {
-  return request<TitleMatches>(watchlistPath(workspaceId, `/search${toQueryString({ q })}`), {
+  const query = toQueryString({ q, kind, language });
+  return request<TitleMatches>(watchlistPath(workspaceId, `/search${query}`), {
     token,
     signal,
   });
@@ -154,4 +159,13 @@ export function removeWatchlistKey(token: string, workspaceId: string): Promise<
     method: "DELETE",
     token,
   });
+}
+
+/** TMDB's recommendations for titles on the watchlist, minus those already added. */
+export function getWatchSuggestions(
+  token: string,
+  workspaceId: string,
+  { signal }: Signal = {},
+): Promise<WatchSuggestions> {
+  return request<WatchSuggestions>(watchlistPath(workspaceId, "/suggestions"), { token, signal });
 }

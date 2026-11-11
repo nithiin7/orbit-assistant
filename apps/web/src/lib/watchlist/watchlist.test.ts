@@ -2,6 +2,7 @@ import type { WatchItem } from "@orbit/contracts";
 import { describe, expect, it } from "vitest";
 
 import {
+  becauseLine,
   countByStatus,
   formatRuntime,
   metaLine,
@@ -66,6 +67,39 @@ describe("titlesIn", () => {
     ];
 
     expect(titlesIn(items, "watched").map((item) => item.id)).toEqual(["new", "old"]);
+  });
+
+  it("orders by name when asked, ignoring case and comparing numbers", () => {
+    const items = [
+      title("1", { title: "alien 10" }),
+      title("2", { title: "Zodiac", kind: "series" }),
+      title("3", { title: "Alien 3" }),
+      title("4", { title: "Élite", kind: "series" }),
+      title("5", { title: "Brazil", status: "watched", finished_at: "2026-11-01T00:00:00Z" }),
+      title("6", { title: "Amélie", status: "watched", finished_at: "2026-10-01T00:00:00Z" }),
+    ];
+    const names = (list: WatchItem[]) => list.map((item) => item.title);
+
+    expect(names(titlesIn(items, "want", { sort: "title" }))).toEqual([
+      "Alien 3",
+      "alien 10",
+      "Élite",
+      "Zodiac",
+    ]);
+    expect(names(titlesIn(items, "want", { sort: "title", kind: "series" }))).toEqual([
+      "Élite",
+      "Zodiac",
+    ]);
+    expect(names(titlesIn(items, "watched"))).toEqual(["Brazil", "Amélie"]);
+    expect(names(titlesIn(items, "watched", { sort: "title" }))).toEqual(["Amélie", "Brazil"]);
+  });
+});
+
+describe("becauseLine", () => {
+  it("names the titles a suggestion came from", () => {
+    expect(becauseLine([])).toBeNull();
+    expect(becauseLine(["Dune"])).toBe("Similar to “Dune”");
+    expect(becauseLine(["Dune", "Saga", "Dark"])).toBe("Similar to “Dune”, “Saga” and “Dark”");
   });
 });
 

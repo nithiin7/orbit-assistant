@@ -6,6 +6,7 @@ import type {
   UpdateWatchItemRequest,
   WatchItem,
   WatchlistLookup,
+  WatchSuggestion,
 } from "@orbit/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -14,6 +15,7 @@ import {
   deleteWatchItem,
   getSearchPoster,
   getWatchPoster,
+  getWatchSuggestions,
   logNextEpisode,
   moveWatchItemToTop,
   refreshWatchItem,
@@ -30,6 +32,7 @@ import {
 } from "@/api/watchlist";
 import { queryResource } from "@/hooks/query-resource";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
+import type { TitleSearchFilters } from "@/lib/watchlist";
 import { useAuth } from "@/providers/auth";
 
 const SEARCH_DELAY_MS = 300;
@@ -78,11 +81,16 @@ export function useWatchlistLookup(workspaceId: string) {
  * TMDB matches for `q`, searched once typing pauses. A new phrase cancels the wait for the old
  * one, so only the last pause reaches the server.
  */
-export function useTitleSearch(workspaceId: string, q: string, enabled: boolean) {
+export function useTitleSearch(
+  workspaceId: string,
+  q: string,
+  enabled: boolean,
+  { kind, language }: TitleSearchFilters = { kind: "all", language: null },
+) {
   const { withToken } = useAuth();
   const phrase = q.trim();
   return useQuery({
-    queryKey: watchlistKeys.search(workspaceId, phrase),
+    queryKey: watchlistKeys.search(workspaceId, phrase, kind, language),
     queryFn: async ({ signal }): Promise<TitleMatch[]> => {
       await new Promise<void>((resolve, reject) => {
         const timer = window.setTimeout(resolve, SEARCH_DELAY_MS);
@@ -92,7 +100,13 @@ export function useTitleSearch(workspaceId: string, q: string, enabled: boolean)
         });
       });
       const found = await withToken((token) =>
-        searchTitles(token, workspaceId, phrase, { signal }),
+        searchTitles(
+          token,
+          workspaceId,
+          phrase,
+          { kind: kind === "all" ? null : kind, language },
+          { signal },
+        ),
       );
       return found.results;
     },
@@ -100,6 +114,29 @@ export function useTitleSearch(workspaceId: string, q: string, enabled: boolean)
     staleTime: 5 * 60_000,
     retry: false,
   });
+}
+
+/**
+ * Titles to watch next, from TMDB's recommendations for the watchlist. Only asked for while
+ * lookup is on; kept a while, since each load makes several TMDB calls.
+ */
+export function useWatchSuggestions(workspaceId: string, enabled: boolean) {
+  const { withToken } = useAuth();
+  const query = useQuery({
+    queryKey: watchlistKeys.suggestions(workspaceId),
+    queryFn: async ({ signal }): Promise<WatchSuggestion[]> => {
+      const found = await withToken((token) => getWatchSuggestions(token, workspaceId, { signal }));
+      return found.suggestions;
+    },
+    enabled,
+    staleTime: 15 * 60_000,
+    retry: false,
+  });
+  return {
+    suggestions: queryResource(query, "Couldn’t load suggestions."),
+    reload: query.refetch,
+    isFetching: query.isFetching,
+  };
 }
 
 /** A title's poster, or `null` when it has none. Posters rarely change, so they stay cached. */

@@ -19,6 +19,7 @@ import type {
   AiSearchResults,
   AiSettings,
   AiUsage,
+  AiWatchPicks,
   AiWorkoutSuggestion,
   AiWorkoutSuggestionRequest,
   CreateAiProviderRequest,
@@ -186,6 +187,14 @@ export function suggestFoods(
   return request<AiFoodIdeas>(ai(workspaceId, "/health/food-ideas"), {
     method: "POST",
     body,
+    token,
+  });
+}
+
+/** AI's picks among the watchlist's suggestions, each with a reason. */
+export function pickWatchSuggestions(token: string, workspaceId: string): Promise<AiWatchPicks> {
+  return request<AiWatchPicks>(ai(workspaceId, "/watchlist/suggestions"), {
+    method: "POST",
     token,
   });
 }

@@ -28,10 +28,20 @@ import { describeApiError } from "@/api/client";
 import { FormAlert, FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { useTitleSearch, useWatchlistLookup } from "@/hooks/use-watchlist";
-import { KIND_LABELS, manualTitleSchema, optionalNumber, STATUS_LABELS } from "@/lib/watchlist";
+import {
+  ANY_LANGUAGE,
+  KIND_LABELS,
+  type KindFilter,
+  languageName,
+  manualTitleSchema,
+  optionalNumber,
+  SEARCH_LANGUAGES,
+  STATUS_LABELS,
+} from "@/lib/watchlist";
 import { cn } from "@/utils/common";
 
 import { ChoiceChips } from "./choice-chips";
@@ -152,6 +162,12 @@ export function AddTitleDialog({ workspaceId, onAdd, onOpen, onClose }: AddTitle
   );
 }
 
+const SEARCH_KINDS: readonly { value: KindFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "movie", label: "Movies" },
+  { value: "series", label: "Series" },
+];
+
 function TitleSearch({
   workspaceId,
   addAs,
@@ -174,7 +190,12 @@ function TitleSearch({
   const [added, setAdded] = useState<ReadonlyMap<string, string>>(new Map());
   const [adding, setAdding] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const search = useTitleSearch(workspaceId, query, true);
+  const [kind, setKind] = useState<KindFilter>("all");
+  const [language, setLanguage] = useState(ANY_LANGUAGE);
+  const search = useTitleSearch(workspaceId, query, true, {
+    kind,
+    language: language === ANY_LANGUAGE ? null : language,
+  });
   const results = search.data ?? [];
   const phrase = query.trim();
 
@@ -245,6 +266,30 @@ function TitleSearch({
             className="h-12 rounded-xl pl-10 text-base"
           />
         </div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <ChoiceChips
+            label="Search for"
+            hideLabel
+            size="sm"
+            value={kind}
+            options={SEARCH_KINDS}
+            onChange={(next) => {
+              setKind(next);
+              setActive(0);
+            }}
+          />
+          <Select
+            aria-label="Original language"
+            variant="ghost"
+            className="w-auto"
+            value={language}
+            options={SEARCH_LANGUAGES}
+            onValueChange={(next) => {
+              setLanguage(next);
+              setActive(0);
+            }}
+          />
+        </div>
         <AddAsChips value={addAs} onChange={onAddAs} />
         <FormAlert message={error} />
       </div>
@@ -280,7 +325,10 @@ function TitleSearch({
           <>
             {results.length === 0 ? (
               <p className="px-4 pt-6 pb-2 text-center text-sm text-muted-foreground">
-                No matches for “{phrase}”.
+                No matches for “{phrase}”
+                {kind !== "all" || language !== ANY_LANGUAGE
+                  ? ". Try another type or language."
+                  : "."}
               </p>
             ) : (
               <ul id={`${id}-results`} role="listbox" aria-label="Matches" className="space-y-0.5">
@@ -345,7 +393,13 @@ function ResultRow({
   onHover: () => void;
   onChoose: () => void;
 }) {
-  const meta = [KIND_LABELS[match.kind], match.release_year].filter(Boolean).join(" · ");
+  const meta = [
+    KIND_LABELS[match.kind],
+    match.release_year,
+    match.original_language ? languageName(match.original_language) : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   return (
     <li
       id={id}
@@ -419,7 +473,7 @@ function AddAsChips({
   );
 }
 
-function LookupHint({ configured }: { configured: boolean }) {
+export function LookupHint({ configured }: { configured: boolean }) {
   return (
     <Link
       href="/settings/watchlist"

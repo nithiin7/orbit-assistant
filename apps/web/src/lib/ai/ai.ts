@@ -27,6 +27,7 @@ export const AI_MODULES: readonly { value: AiModule; label: string; sensitive: b
   { value: "documents", label: "Documents", sensitive: true },
   { value: "finance", label: "Finance", sensitive: true },
   { value: "health", label: "Health and fitness", sensitive: true },
+  { value: "watchlist", label: "Watchlist (for suggestions)", sensitive: false },
 ];
 
 export const PROVIDER_KINDS: readonly {
