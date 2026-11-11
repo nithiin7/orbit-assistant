@@ -1863,8 +1863,8 @@ only (CHECK; cleared on moving to wishlist). One row per place, no visits table.
 ### Web
 
 `components/places/`, rail `?view=` Your world, Visited, Want to go. Flags from `flag-icons`
-(`country-flag.tsx`, lazy). `world-map.tsx` lazy-loads MapLibre and shapes, converts `oklch`
-tokens for theming; tests mock it (no WebGL in jsdom). Logic in `lib/places`; dashboard widget.
+(`country-flag.tsx`, lazy). `world-map.tsx` lazy-loads MapLibre and shapes, points MapLibre 6
+at its bundler-emitted worker (`setWorkerUrl`), converts `oklch` tokens for theming; tests mock it (no WebGL in jsdom). Logic in `lib/places`; dashboard widget.
 
 ### Backup and search
 
