@@ -47,6 +47,7 @@ from orbit_api.services.ai.providers import ProviderFactory
 from orbit_api.services.ai.retrieval import Retriever
 from orbit_api.services.ai.sources import SourceCatalog
 from orbit_api.services.ai.usage import UsageService
+from orbit_api.services.ai.watchlist_assist import WatchlistAssistService
 from orbit_api.services.calendar.service import CalendarService
 from orbit_api.services.documents.service import DocumentService
 from orbit_api.services.finance.service import FinanceService
@@ -108,6 +109,7 @@ class AiServices:
     assistant: AssistantService
     assist: AssistService
     health: HealthAssistService
+    watchlist: WatchlistAssistService
     insights: InsightService
 
 
@@ -243,5 +245,6 @@ def build_ai(
         assistant=assistant,
         assist=assist,
         health=health,
+        watchlist=WatchlistAssistService(config=config),
         insights=insights,
     )

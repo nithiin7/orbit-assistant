@@ -27,10 +27,12 @@ API_URL: Final = "https://api.themoviedb.org/3"
 IMAGE_URL: Final = "https://image.tmdb.org/t/p"
 TIMEOUT: Final = httpx2.Timeout(15.0, connect=5.0)
 SEARCH_LIMIT: Final = 12
+RECOMMENDATION_LIMIT: Final = 20
 MAX_IMAGE_BYTES: Final = 2 * 1024 * 1024
 _SIZES: Final[dict[PosterSize, str]] = {"thumbnail": "w92", "full": "w342"}
 _KINDS: Final[dict[str, WatchKind]] = {"movie": "movie", "tv": "series"}
 _PATHS: Final[dict[WatchKind, str]] = {"movie": "movie", "series": "tv"}
+LANGUAGE: Final = re.compile(r"[a-z]{2}")
 POSTER_PATH: Final = re.compile(r"/[A-Za-z0-9_-]{1,100}\.(?:jpg|jpeg|png)")
 
 type Json = dict[str, object]
@@ -83,30 +85,23 @@ class TmdbCatalog:
         """Check the key works. Raises `CatalogAuthError` if TMDB refuses it."""
         await self._get_json("/authentication", {})
 
-    async def search(self, query: str) -> list[TitleMatch]:
-        data = await self._get_json(
-            "/search/multi", {"query": query, "include_adult": "false", "page": "1"}
-        )
-        found: list[TitleMatch] = []
-        for row in _rows(data, "results"):
-            kind = _KINDS.get(str(row.get("media_type")))
-            source_id = row.get("id")
-            title = _text(row.get("title") or row.get("name"))
-            if kind is None or not isinstance(source_id, int) or not title:
-                continue
-            found.append(
-                TitleMatch(
-                    source_id=source_id,
-                    kind=kind,
-                    title=title[:300],
-                    release_year=_year(row.get("release_date") or row.get("first_air_date")),
-                    overview=_text(row.get("overview"))[:4000],
-                    poster_path=_poster_path(row.get("poster_path")),
-                )
-            )
-            if len(found) == SEARCH_LIMIT:
-                break
-        return found
+    async def search(
+        self, query: str, *, kind: WatchKind | None = None, language: str | None = None
+    ) -> list[TitleMatch]:
+        """Movies and series together, or one kind through its own endpoint (more of that
+        kind per page). A language keeps titles originally in it; display stays English."""
+        path = f"/search/{_PATHS[kind]}" if kind else "/search/multi"
+        data = await self._get_json(path, {"query": query, "include_adult": "false", "page": "1"})
+        narrowed = kind is not None or language is not None
+        found = _matches(data, kind, limit=RECOMMENDATION_LIMIT if narrowed else SEARCH_LIMIT)
+        if language is None:
+            return found
+        return [match for match in found if match.original_language == language]
+
+    async def recommendations(self, kind: WatchKind, source_id: int) -> list[TitleMatch]:
+        """Titles TMDB recommends to people who liked this one, of the same kind."""
+        data = await self._get_json(f"/{_PATHS[kind]}/{source_id}/recommendations", {"page": "1"})
+        return _matches(data, kind, limit=RECOMMENDATION_LIMIT)
 
     async def details(self, kind: WatchKind, source_id: int) -> TitleDetails:
         data = await self._get_json(f"/{_PATHS[kind]}/{source_id}", {})
@@ -187,6 +182,36 @@ class TmdbCatalog:
             raise CatalogError from None
 
 
+def _matches(
+    data: object, kind: WatchKind | None, *, limit: int = SEARCH_LIMIT
+) -> list[TitleMatch]:
+    """Result rows as matches. Without `kind`, each row's `media_type` decides it, and people
+    and other rows are skipped."""
+    found: list[TitleMatch] = []
+    for row in _rows(data, "results"):
+        row_kind: WatchKind | None = _KINDS.get(str(row.get("media_type"))) or kind
+        source_id = row.get("id")
+        title = _text(row.get("title") or row.get("name"))
+        if row_kind is None or not isinstance(source_id, int) or not title:
+            continue
+        if row.get("adult") is True:
+            continue
+        found.append(
+            TitleMatch(
+                source_id=source_id,
+                kind=row_kind,
+                title=title[:300],
+                release_year=_year(row.get("release_date") or row.get("first_air_date")),
+                overview=_text(row.get("overview"))[:4000],
+                poster_path=_poster_path(row.get("poster_path")),
+                original_language=_language(row.get("original_language")),
+            )
+        )
+        if len(found) == limit:
+            break
+    return found
+
+
 def _rows(value: object, key: str) -> list[Json]:
     rows = cast(Json, value).get(key) if isinstance(value, dict) else None
     if not isinstance(rows, list):
@@ -224,6 +249,10 @@ def _minutes(value: object) -> int | None:
     if isinstance(value, bool) or not isinstance(value, int):
         return None
     return value if 1 <= value <= 6000 else None
+
+
+def _language(value: object) -> str | None:
+    return value if isinstance(value, str) and LANGUAGE.fullmatch(value) else None
 
 
 def _poster_path(value: object) -> str | None:

@@ -21,6 +21,7 @@ import anyio
 from orbit_api.services.transactions import Transaction
 from orbit_api.services.watchlist.models import (
     CatalogError,
+    CatalogNotFoundError,
     DuplicateTitleError,
     InvalidWatchItemError,
     LookupState,
@@ -33,6 +34,7 @@ from orbit_api.services.watchlist.models import (
     WatchItemNotFoundError,
     WatchKind,
     WatchStatus,
+    WatchSuggestion,
 )
 from orbit_api.services.watchlist.progress import fits, is_finale, last_episode, next_episode
 from orbit_api.utils.changes import UNSET
@@ -40,6 +42,11 @@ from orbit_api.utils.clock import utc_now
 
 PosterSize = Literal["thumbnail", "full"]
 MAX_POSTER_BYTES = 2 * 1024 * 1024
+# Titles whose recommendations are asked for, and most suggestions returned.
+MAX_SEEDS = 6
+MAX_SUGGESTIONS = 24
+# A rating (1-10, half stars) at or above this marks a title the person liked.
+LIKED_RATING = 7
 
 
 class WatchItemRepository(Protocol):
@@ -98,9 +105,16 @@ class TitleCatalog(Protocol):
         """Check the key works; raises `CatalogAuthError` if the service refuses it."""
         ...
 
-    async def search(self, query: str) -> list[TitleMatch]: ...
+    async def search(
+        self, query: str, *, kind: WatchKind | None = None, language: str | None = None
+    ) -> list[TitleMatch]:
+        """Matches for `query`; only `kind` titles when given, and only titles originally in
+        `language` (ISO 639-1) when given."""
+        ...
 
     async def details(self, kind: WatchKind, source_id: int) -> TitleDetails: ...
+
+    async def recommendations(self, kind: WatchKind, source_id: int) -> list[TitleMatch]: ...
 
     async def poster(self, path: str, size: PosterSize) -> Poster: ...
 
@@ -176,13 +190,58 @@ class WatchlistService:
         return state
 
     async def search(
-        self, workspace_id: uuid.UUID, query: str
+        self,
+        workspace_id: uuid.UUID,
+        query: str,
+        *,
+        kind: WatchKind | None = None,
+        language: str | None = None,
     ) -> list[tuple[TitleMatch, uuid.UUID | None]]:
-        """Matching titles, each with the ID of the workspace's copy if it's already added."""
+        """Matching titles, each with the ID of the workspace's copy if it's already added.
+        `kind` and `language` (original language, ISO 639-1) narrow the results."""
         catalog = await self._require_catalog(workspace_id)
-        matches = await catalog.search(query)
+        matches = await catalog.search(query, kind=kind, language=language)
         added = await self._items.source_ids(workspace_id)
         return [(match, added.get((match.kind, match.source_id))) for match in matches]
+
+    async def suggestions(
+        self, workspace_id: uuid.UUID
+    ) -> tuple[list[WatchItem], list[WatchSuggestion]]:
+        """Titles to watch next, from the lookup service's recommendations for the titles the
+        workspace liked, is watching, or watched lately. Only those titles' IDs leave the
+        server. Titles already on the watchlist, dropped ones included, are left out.
+
+        Returns the watchlist too, so a caller can explain the picks without loading it again.
+        """
+        catalog = await self._require_catalog(workspace_id)
+        items = await self._items.all(workspace_id)
+        added = {(item.kind, item.source_id) for item in items if item.source_id is not None}
+        scores: dict[tuple[WatchKind, int], float] = {}
+        matches: dict[tuple[WatchKind, int], TitleMatch] = {}
+        because: dict[tuple[WatchKind, int], list[tuple[float, str]]] = {}
+        for seed, weight in _seeds(items):
+            assert seed.source_id is not None
+            try:
+                found = await catalog.recommendations(seed.kind, seed.source_id)
+            except CatalogNotFoundError:
+                continue  # Gone from the service; the others still count.
+            for rank, match in enumerate(found):
+                key = (match.kind, match.source_id)
+                if key in added:
+                    continue
+                # Earlier results and better-liked seeds count for more.
+                score = weight * (1 - rank / (len(found) + 1))
+                scores[key] = scores.get(key, 0) + score
+                matches.setdefault(key, match)
+                because.setdefault(key, []).append((score, seed.title))
+        ranked = sorted(scores, key=lambda key: (-scores[key], matches[key].title.casefold()))
+        return items, [
+            WatchSuggestion(
+                match=matches[key],
+                because=tuple(title for _, title in sorted(because[key], reverse=True)[:3]),
+            )
+            for key in ranked[:MAX_SUGGESTIONS]
+        ]
 
     async def search_poster(self, workspace_id: uuid.UUID, path: str) -> Poster:
         """A search result's poster thumbnail, fetched through the server."""
@@ -419,6 +478,27 @@ class WatchlistService:
         await self._items.save(updated)
         await self._transaction.commit()
         return updated
+
+
+def _seeds(items: Sequence[WatchItem]) -> list[tuple[WatchItem, float]]:
+    """The looked-up titles that best show the person's taste, each with a weight: liked ones
+    first, then what they're watching, then what they finished lately, then the front of the
+    queue. Dropped titles and ones rated low never seed."""
+
+    def weight(item: WatchItem) -> float | None:
+        if item.source_id is None or item.status == "dropped":
+            return None
+        if item.rating is not None:
+            return item.rating / 10 if item.rating >= LIKED_RATING else None
+        return {"watching": 0.65, "watched": 0.55, "want": 0.4}[item.status]
+
+    def recency(item: WatchItem) -> str:
+        return (item.finished_at or item.started_at or item.updated_at).isoformat()
+
+    weighted = [(item, w) for item in items if (w := weight(item)) is not None]
+    weighted.sort(key=lambda pair: recency(pair[0]), reverse=True)
+    weighted.sort(key=lambda pair: pair[1], reverse=True)
+    return weighted[:MAX_SEEDS]
 
 
 def _with_status(item: WatchItem, status: WatchStatus, now: datetime) -> WatchItem:

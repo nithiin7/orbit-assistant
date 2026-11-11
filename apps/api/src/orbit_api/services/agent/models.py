@@ -22,7 +22,8 @@ AGENT_MODULES: Final[tuple[AgentModule, ...]] = get_args(AgentModule)
 DEFAULT_AGENT_MODULES: Final[frozenset[AgentModule]] = frozenset(
     {"tasks", "notes", "calendar", "reminders", "habits"}
 )
-assert set(AI_MODULES) <= set(AGENT_MODULES)
+# The agent has no watchlist tools, so the AI layer's watchlist permission has no agent twin.
+assert set(AI_MODULES) - {"watchlist"} <= set(AGENT_MODULES)
 
 # 0 read only · 1 suggest · 2 approval required · 3 limited autonomy. There is no level above 3.
 AutonomyLevel = Literal["read_only", "suggest", "approval", "limited"]

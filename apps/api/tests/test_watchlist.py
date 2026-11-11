@@ -1,4 +1,5 @@
 import json
+import re
 from collections.abc import Callable, Iterator
 from typing import Any
 
@@ -22,6 +23,7 @@ from orbit_api.services.watchlist.models import (
 )
 from orbit_api.services.watchlist.progress import fits, is_finale, last_episode, next_episode
 from orbit_api.services.watchlist.service import PosterSize
+from tests.ai_fakes import FakeProviderFactory, FakeState
 from tests.support import FAST_PASSWORD_HASHER, bearer, query, sign_up
 
 WORKSPACES = "/api/v1/workspaces"
@@ -38,13 +40,21 @@ class FakeCatalog:
         self.searches: list[str] = []
         self.keys: list[str] = []
         self.fail = False
+        # Titles by TMDB ID for `details` (default "Dune"/"Saga"), and recommendations by ID.
+        self.titles: dict[int, str] = {}
+        self.recommended: dict[int, list[TitleMatch]] = {}
+        self.recommendation_calls: list[tuple[WatchKind, int]] = []
+        self.search_filters: list[tuple[WatchKind | None, str | None]] = []
 
     async def verify(self) -> None:
         if self.keys[-1] != GOOD_KEY:
             raise CatalogAuthError
 
-    async def search(self, query: str) -> list[TitleMatch]:
+    async def search(
+        self, query: str, *, kind: WatchKind | None = None, language: str | None = None
+    ) -> list[TitleMatch]:
         self.searches.append(query)
+        self.search_filters.append((kind, language))
         if self.fail:
             raise CatalogError
         return [
@@ -75,7 +85,7 @@ class FakeCatalog:
             return TitleDetails(
                 source_id=source_id,
                 kind="movie",
-                title="Dune",
+                title=self.titles.get(source_id, "Dune"),
                 release_year=2021,
                 overview="Spice.",
                 genres=("Science Fiction", "Adventure"),
@@ -86,7 +96,7 @@ class FakeCatalog:
         return TitleDetails(
             source_id=source_id,
             kind="series",
-            title="Saga",
+            title=self.titles.get(source_id, "Saga"),
             release_year=2011,
             overview="",
             genres=("Drama",),
@@ -94,6 +104,14 @@ class FakeCatalog:
             season_episodes=(2, 3),
             poster_path=None,
         )
+
+    async def recommendations(self, kind: WatchKind, source_id: int) -> list[TitleMatch]:
+        self.recommendation_calls.append((kind, source_id))
+        if self.fail:
+            raise CatalogError
+        if source_id not in self.recommended:
+            raise CatalogNotFoundError
+        return self.recommended[source_id]
 
     async def poster(self, path: str, size: PosterSize) -> Poster:
         if self.fail:
@@ -121,11 +139,17 @@ def catalog() -> FakeCatalog:
 
 
 @pytest.fixture
-def app(migrated_settings: Settings, catalog: FakeCatalog) -> FastAPI:
+def ai() -> FakeProviderFactory:
+    return FakeProviderFactory(FakeState())
+
+
+@pytest.fixture
+def app(migrated_settings: Settings, catalog: FakeCatalog, ai: FakeProviderFactory) -> FastAPI:
     """Two local accounts are needed to test isolation, so registration is explicitly open."""
     app = create_app(migrated_settings.model_copy(update={"local_open_registration": True}))
     app.state.password_hasher = FAST_PASSWORD_HASHER
     app.state.tmdb = FakeCatalogs(catalog)
+    app.state.ai_providers = ai
     return app
 
 
@@ -373,6 +397,7 @@ def test_searches_and_adds_looked_up_titles(
         ("series", "Saga", None),
     ]
     assert catalog.searches == ["dune"]
+    assert catalog.search_filters == [(None, None)]
 
     item = add(client, wl, ada, source_id=438631, platform="Max", recommended_by="Sam")
     assert item["title"] == "Dune"
@@ -429,6 +454,18 @@ def test_series_progress_follows_known_seasons(client: TestClient, wl: str, ada:
     assert restarted["progress"] is None
     watched = client.patch(url, json={"status": "watched"}, headers=ada).json()
     assert watched["progress"] == {"season": 2, "episode": 3}
+
+
+def test_search_can_narrow_by_kind_and_language(
+    client: TestClient, wl: str, ada: Headers, catalog: FakeCatalog
+) -> None:
+    enable_lookup(client, wl, ada)
+    params = {"q": "dark", "kind": "series", "language": "de"}
+    assert client.get(f"{wl}/search", params=params, headers=ada).status_code == 200
+    assert catalog.search_filters == [("series", "de")]
+    for bad in ({"kind": "anime"}, {"language": "German"}, {"language": "DE"}):
+        response = client.get(f"{wl}/search", params={"q": "dark", **bad}, headers=ada)
+        assert response.status_code == 422
 
 
 def test_refreshes_looked_up_titles(client: TestClient, wl: str, ada: Headers) -> None:
@@ -505,6 +542,124 @@ def _tmdb(
 ) -> tuple[TmdbClient, TmdbCatalog]:
     client = TmdbClient(transport=httpx2.MockTransport(handler))
     return client, client.catalog(key)
+
+
+# Suggestions
+
+
+def match(source_id: int, title: str, kind: WatchKind = "movie") -> TitleMatch:
+    return TitleMatch(source_id, kind, title, 2020, f"About {title}.", None)
+
+
+def seed_watchlist(client: TestClient, wl: str, ada: Headers, catalog: FakeCatalog) -> None:
+    """Dune rated highly, Saga in progress, Flop rated low, Gone dropped, and one manual title."""
+    enable_lookup(client, wl, ada)
+    catalog.titles.update({1: "Dune", 2: "Saga", 3: "Flop", 4: "Gone"})
+    dune = add(client, wl, ada, source_id=1)
+    client.patch(f"{wl}/items/{dune['id']}", json={"status": "watched", "rating": 9}, headers=ada)
+    add(client, wl, ada, kind="series", source_id=2, status="watching")
+    flop = add(client, wl, ada, source_id=3)
+    client.patch(f"{wl}/items/{flop['id']}", json={"status": "watched", "rating": 3}, headers=ada)
+    add(client, wl, ada, source_id=4, status="dropped")
+    add(client, wl, ada, title="Home movie", notes="Private note")
+    catalog.recommended = {
+        1: [match(10, "Arrival"), match(2, "Saga", "series"), match(11, "Sicario")],
+        2: [match(12, "Dark", "series"), match(10, "Arrival"), match(4, "Gone")],
+        3: [match(13, "Worse")],
+        4: [match(14, "Never")],
+    }
+
+
+def test_suggests_titles_from_liked_and_current_titles(
+    client: TestClient, wl: str, ada: Headers, grace: Headers, catalog: FakeCatalog
+) -> None:
+    url = f"{wl}/suggestions"
+    assert client.get(url, headers=ada).status_code == 409  # No TMDB key yet.
+    seed_watchlist(client, wl, ada, catalog)
+
+    suggestions = client.get(url, headers=ada).json()["suggestions"]
+    # Arrival comes from both seeds; titles already added (Saga, dropped Gone) never return, and
+    # low-rated or dropped titles don't seed.
+    assert [(s["title"], s["because"]) for s in suggestions] == [
+        ("Arrival", ["Dune", "Saga"]),
+        ("Dark", ["Saga"]),
+        ("Sicario", ["Dune"]),
+    ]
+    assert sorted(catalog.recommendation_calls) == [("movie", 1), ("series", 2)]
+
+    # A title that vanished from TMDB is skipped; another person can't ask for this list.
+    catalog.recommended.pop(2)
+    assert [s["title"] for s in client.get(url, headers=ada).json()["suggestions"]] == [
+        "Arrival",
+        "Sicario",
+    ]
+    assert client.get(url, headers=grace).status_code == 404
+    catalog.fail = True
+    assert client.get(url, headers=ada).status_code == 503
+
+
+def test_suggestions_are_empty_without_looked_up_titles(
+    client: TestClient, wl: str, ada: Headers, catalog: FakeCatalog
+) -> None:
+    enable_lookup(client, wl, ada)
+    add(client, wl, ada, title="Typed in")
+    assert client.get(f"{wl}/suggestions", headers=ada).json() == {"suggestions": []}
+    assert catalog.recommendation_calls == []
+
+
+AI_SETTINGS = "/api/v1/me/ai/settings"
+
+
+def enable_ai(client: TestClient, headers: Headers) -> None:
+    provider = client.post(
+        "/api/v1/me/ai/providers", json={"name": "Local", "kind": "ollama"}, headers=headers
+    ).json()
+    settings = {"enabled": True, "chat_provider_id": provider["id"], "chat_model": "chat-model"}
+    assert client.patch(AI_SETTINGS, json=settings, headers=headers).status_code == 200
+
+
+def test_ai_picks_among_suggestions_with_reasons(
+    client: TestClient, wl: str, ada: Headers, catalog: FakeCatalog, ai: FakeProviderFactory
+) -> None:
+    url = wl.replace("/watchlist", "/ai/watchlist/suggestions")
+    seed_watchlist(client, wl, ada, catalog)
+    assert client.post(url, headers=ada).status_code == 409  # AI is off.
+    enable_ai(client, ada)
+    # New AI settings may read the watchlist by default; without it, nothing is sent anywhere.
+    assert "watchlist" in client.get(AI_SETTINGS, headers=ada).json()["modules"]
+    client.patch(AI_SETTINGS, json={"modules": ["notes"]}, headers=ada)
+    assert client.post(url, headers=ada).status_code == 403
+    assert catalog.recommendation_calls == []
+    client.patch(AI_SETTINGS, json={"modules": ["watchlist"]}, headers=ada)
+
+    def choose(request: Any) -> str:
+        prompt = request.messages[-1].content
+        refs = dict(re.findall(r"^(C\d+): (\w+)", prompt, re.M))
+        by_title = {title: ref for ref, title in refs.items()}
+        return json.dumps(
+            {
+                "picks": [
+                    {"ref": by_title["Dark"], "reason": "  Like   Saga. "},
+                    {"ref": "C99", "reason": "Made up"},
+                    {"ref": by_title["Dark"], "reason": "Again"},
+                    {"ref": by_title["Arrival"].lower()},
+                ]
+            }
+        )
+
+    ai.state.script = choose
+    result = client.post(url, headers=ada).json()
+    assert [(p["suggestion"]["title"], p["reason"]) for p in result["picks"]] == [
+        ("Dark", "Like Saga."),
+        ("Arrival", ""),
+    ]
+    assert result["processing"] == "local"
+    prompt = ai.state.last_prompt()
+    assert "Dune (movie; 2021; Science Fiction, Adventure): watched, rated 4.5 of 5" in prompt
+    assert "Private note" not in prompt
+
+    ai.state.script = lambda request: json.dumps({"picks": [{"ref": "C99"}]})
+    assert client.post(url, headers=ada).status_code == 502
 
 
 def _json(data: object, status_code: int = 200) -> httpx2.Response:
@@ -627,3 +782,60 @@ async def test_tmdb_verify_reports_refused_keys() -> None:
     with pytest.raises(CatalogAuthError):
         await client.catalog("bad").verify()
     await client.aclose()
+
+
+@pytest.mark.anyio
+async def test_tmdb_recommendations_keep_the_kind_asked_for() -> None:
+    seen: list[httpx2.Request] = []
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        seen.append(request)
+        return _json(
+            {
+                "results": [
+                    {"id": 5, "name": "Dark", "first_air_date": "2017-12-01"},
+                    {"id": 6, "name": "Adult", "adult": True},
+                    {"id": 7, "media_type": "tv", "name": "Typed"},
+                ]
+            }
+        )
+
+    client, catalog = _tmdb(handler)
+    found = await catalog.recommendations("series", 1399)
+    await client.aclose()
+
+    assert found == [
+        TitleMatch(5, "series", "Dark", 2017, "", None),
+        TitleMatch(7, "series", "Typed", None, "", None),
+    ]
+    assert seen[0].url.path == "/3/tv/1399/recommendations"
+
+
+@pytest.mark.anyio
+async def test_tmdb_search_by_kind_and_original_language() -> None:
+    seen: list[httpx2.Request] = []
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        seen.append(request)
+        return _json(
+            {
+                "results": [
+                    {"id": 1, "name": "Dark", "original_language": "de"},
+                    {"id": 2, "name": "Dark Matter", "original_language": "en"},
+                    {"id": 3, "name": "Odd", "original_language": "DEU"},
+                ]
+            }
+        )
+
+    client, catalog = _tmdb(handler)
+    german = await catalog.search("dark", kind="series", language="de")
+    every = await catalog.search("dark", kind="movie")
+    await client.aclose()
+
+    assert german == [TitleMatch(1, "series", "Dark", None, "", None, "de")]
+    assert [(m.kind, m.original_language) for m in every] == [
+        ("movie", "de"),
+        ("movie", "en"),
+        ("movie", None),
+    ]
+    assert [r.url.path for r in seen] == ["/3/search/tv", "/3/search/movie"]

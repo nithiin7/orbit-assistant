@@ -22,6 +22,8 @@ from orbit_api.schemas.watchlist import (
     WatchlistKeyRequest,
     WatchlistLookupRequest,
     WatchlistLookupResponse,
+    WatchSuggestionResponse,
+    WatchSuggestionsResponse,
 )
 from orbit_api.services.ai.models import CredentialsUnavailableError
 from orbit_api.services.watchlist.models import (
@@ -54,7 +56,7 @@ _LOOKUP: dict[int | str, dict[str, Any]] = {
 
 
 @contextmanager
-def _errors() -> Generator[None]:
+def watchlist_errors() -> Generator[None]:
     """Map service errors to safe HTTP responses."""
     try:
         yield
@@ -125,7 +127,7 @@ async def update_lookup(
 ) -> WatchlistLookupResponse:
     """With lookup on, this workspace sends search phrases and TMDB IDs to TMDB. Posters are
     downloaded by the server, never by the browser."""
-    with _errors():
+    with watchlist_errors():
         return WatchlistLookupResponse.of(await watchlist.set_lookup(workspace.id, body.enabled))
 
 
@@ -143,7 +145,7 @@ async def save_lookup_key(
 ) -> WatchlistLookupResponse:
     """Checks the key with TMDB, stores it encrypted, and turns lookup on. The key is never
     returned."""
-    with _errors():
+    with watchlist_errors():
         return WatchlistLookupResponse.of(await watchlist.save_key(workspace.id, body.api_key))
 
 
@@ -161,11 +163,28 @@ async def search_titles(
     workspace: WorkspaceDep,
     watchlist: WatchlistServiceDep,
 ) -> TitleMatchesResponse:
-    """Only the search phrase leaves the server."""
-    with _errors():
-        found = await watchlist.search(workspace.id, params.q)
+    """Only the search phrase leaves the server. `kind` searches one kind's endpoint;
+    `language` is applied by Orbit to TMDB's results."""
+    with watchlist_errors():
+        found = await watchlist.search(
+            workspace.id, params.q, kind=params.kind, language=params.language
+        )
     return TitleMatchesResponse(
         results=[TitleMatchResponse.of(match, existing) for match, existing in found]
+    )
+
+
+@router.get("/suggestions", summary="Suggest titles to watch next", responses=_LOOKUP)
+async def suggest_titles(
+    workspace: WorkspaceDep, watchlist: WatchlistServiceDep
+) -> WatchSuggestionsResponse:
+    """TMDB's recommendations for the titles this workspace liked, is watching, or watched
+    lately, minus titles already on the watchlist. Only those titles' TMDB IDs leave the server.
+    """
+    with watchlist_errors():
+        _, suggestions = await watchlist.suggestions(workspace.id)
+    return WatchSuggestionsResponse(
+        suggestions=[WatchSuggestionResponse.of(suggestion) for suggestion in suggestions]
     )
 
 
@@ -182,7 +201,7 @@ async def search_poster(
 ) -> Response:
     """Fetched through the server, so the browser never contacts TMDB."""
     try:
-        with _errors():
+        with watchlist_errors():
             poster = await watchlist.search_poster(workspace.id, params.path)
     except HTTPException as error:
         if error.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT:
@@ -214,7 +233,7 @@ async def add_item(
 ) -> WatchItemResponse:
     """With `source_id`, the title, details, and poster come from TMDB; otherwise from the
     request."""
-    with _errors():
+    with watchlist_errors():
         if body.source_id is not None:
             item = await watchlist.add_from_lookup(
                 workspace.id, body.kind, body.source_id, body.to_draft()
@@ -228,7 +247,7 @@ async def add_item(
 async def get_item(
     item_id: ItemId, workspace: WorkspaceDep, watchlist: WatchlistServiceDep
 ) -> WatchItemResponse:
-    with _errors():
+    with watchlist_errors():
         return WatchItemResponse.of(await watchlist.get(workspace.id, item_id))
 
 
@@ -239,7 +258,7 @@ async def update_item(
     workspace: WorkspaceDep,
     watchlist: WatchlistServiceDep,
 ) -> WatchItemResponse:
-    with _errors():
+    with watchlist_errors():
         return WatchItemResponse.of(
             await watchlist.update(workspace.id, item_id, body.to_changes())
         )
@@ -251,7 +270,7 @@ async def next_episode(
 ) -> WatchItemResponse:
     """Starts the series if it hasn't started; logging its last known episode marks it
     watched."""
-    with _errors():
+    with watchlist_errors():
         return WatchItemResponse.of(await watchlist.next_episode(workspace.id, item_id))
 
 
@@ -259,7 +278,7 @@ async def next_episode(
 async def move_to_top(
     item_id: ItemId, workspace: WorkspaceDep, watchlist: WatchlistServiceDep
 ) -> WatchItemResponse:
-    with _errors():
+    with watchlist_errors():
         return WatchItemResponse.of(await watchlist.move_to_top(workspace.id, item_id))
 
 
@@ -268,7 +287,7 @@ async def refresh_item(
     item_id: ItemId, workspace: WorkspaceDep, watchlist: WatchlistServiceDep
 ) -> WatchItemResponse:
     """For a series that gained a season. Only for titles added from a search."""
-    with _errors():
+    with watchlist_errors():
         return WatchItemResponse.of(await watchlist.refresh(workspace.id, item_id))
 
 
@@ -284,7 +303,7 @@ async def refresh_item(
 async def get_poster(
     item_id: ItemId, workspace: WorkspaceDep, watchlist: WatchlistServiceDep
 ) -> Response:
-    with _errors():
+    with watchlist_errors():
         poster = await watchlist.poster(workspace.id, item_id)
     if poster is None:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -296,6 +315,6 @@ async def delete_item(
     item_id: ItemId, workspace: WorkspaceDep, watchlist: WatchlistServiceDep
 ) -> Response:
     """Permanently remove a title and its poster."""
-    with _errors():
+    with watchlist_errors():
         await watchlist.delete(workspace.id, item_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

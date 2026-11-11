@@ -16,6 +16,7 @@ from pydantic import (
 
 from orbit_api.schemas.common import Name, TimeZoneName, single_line
 from orbit_api.schemas.fitness import NutrientsModel
+from orbit_api.schemas.watchlist import WatchSuggestionResponse
 from orbit_api.services.ai.assist import AssistKind, AssistResult
 from orbit_api.services.ai.configuration import ConnectionTest, ResolvedProvider
 from orbit_api.services.ai.health_assist import (
@@ -51,6 +52,7 @@ from orbit_api.services.ai.models import (
     UsageSummary,
 )
 from orbit_api.services.ai.providers import KIND_CAPABILITIES, base_url_of, processing_of
+from orbit_api.services.ai.watchlist_assist import WatchPicks
 from orbit_api.services.fitness.models import TemplateCategory
 
 ModelName = Annotated[
@@ -140,7 +142,7 @@ class UpdateAiSettingsRequest(BaseModel):
     fallback_provider_id: uuid.UUID | None = None
     fallback_model: ModelName | None = None
     allow_cloud: bool | None = None
-    modules: list[AiModule] | None = Field(default=None, max_length=8)
+    modules: list[AiModule] | None = Field(default=None, max_length=9)
     response_style: ResponseStyle | None = None
     monthly_token_limit: int | None = Field(default=None, ge=1000, le=10**10)
     indexing_enabled: bool | None = None
@@ -775,6 +777,35 @@ class AiSuggestedExerciseResponse(BaseModel):
     target_distance_m: int | None
     rest_seconds: int | None
     notes: str
+
+
+class AiWatchPickResponse(BaseModel):
+    suggestion: WatchSuggestionResponse
+    reason: str = Field(description="Why it suits the person, in one sentence; may be empty.")
+
+
+class AiWatchPicksResponse(BaseModel):
+    """Titles chosen from the watchlist's TMDB suggestions, best first. Nothing is saved."""
+
+    picks: list[AiWatchPickResponse]
+    provider_name: str
+    model: str
+    processing: Processing
+
+    @classmethod
+    def of(cls, result: WatchPicks) -> "AiWatchPicksResponse":
+        p = result.provenance
+        return cls(
+            picks=[
+                AiWatchPickResponse(
+                    suggestion=WatchSuggestionResponse.of(pick.suggestion), reason=pick.reason
+                )
+                for pick in result.picks
+            ],
+            provider_name=p.provider_name,
+            model=p.model,
+            processing=_processing(p),
+        )
 
 
 class AiWorkoutSuggestionResponse(BaseModel):

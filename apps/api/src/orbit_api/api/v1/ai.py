@@ -18,7 +18,13 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from orbit_api.api.auth import CurrentUserDep, WorkspaceDep
-from orbit_api.api.dependencies import AiServicesDep, WorkspaceServiceDep, build_ai_for
+from orbit_api.api.dependencies import (
+    AiServicesDep,
+    WatchlistServiceDep,
+    WorkspaceServiceDep,
+    build_ai_for,
+)
+from orbit_api.api.v1.watchlist import watchlist_errors
 from orbit_api.schemas.ai import (
     AiAssistRequest,
     AiAssistResponse,
@@ -49,6 +55,7 @@ from orbit_api.schemas.ai import (
     AiTurnStarted,
     AiUsageParams,
     AiUsageResponse,
+    AiWatchPicksResponse,
     AiWorkoutSuggestionRequest,
     AiWorkoutSuggestionResponse,
     CreateAiProviderRequest,
@@ -541,6 +548,33 @@ async def suggest_workout(
             workspace.id, user.id, body.focus, _zone(body.timezone, user.timezone)
         )
     return AiWorkoutSuggestionResponse.of(result)
+
+
+# Watchlist helpers
+
+
+@router.post(
+    "/watchlist/suggestions",
+    summary="Pick watchlist suggestions with AI",
+    responses={409: {"description": "AI or title lookup is off."}},
+)
+async def pick_watch_suggestions(
+    workspace: WorkspaceDep,
+    user: CurrentUserDep,
+    ai: AiServicesDep,
+    watchlist: WatchlistServiceDep,
+) -> AiWatchPicksResponse:
+    """Chooses among the watchlist's TMDB suggestions and says why each suits the person.
+    Sends the watchlist's titles, genres, statuses, and ratings (not notes) to the AI
+    provider, so it needs permission to read Watchlist. Nothing is saved."""
+    with _errors():
+        # Checked first, so a person without AI doesn't spend TMDB calls.
+        await ai.watchlist.require_permission(user.id)
+    with watchlist_errors():
+        items, candidates = await watchlist.suggestions(workspace.id)
+    with _errors():
+        result = await ai.watchlist.pick(workspace.id, user.id, items, candidates)
+    return AiWatchPicksResponse.of(result)
 
 
 # Semantic search

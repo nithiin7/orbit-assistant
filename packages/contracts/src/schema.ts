@@ -1061,9 +1061,31 @@ export interface paths {
         };
         /**
          * Find a movie or series at TMDB
-         * @description Only the search phrase leaves the server.
+         * @description Only the search phrase leaves the server. `kind` searches one kind's endpoint;
+         *     `language` is applied by Orbit to TMDB's results.
          */
         get: operations["search_titles_api_v1_workspaces__workspace_id__watchlist_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/watchlist/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Suggest titles to watch next
+         * @description TMDB's recommendations for the titles this workspace liked, is watching, or watched
+         *     lately, minus titles already on the watchlist. Only those titles' TMDB IDs leave the server.
+         */
+        get: operations["suggest_titles_api_v1_workspaces__workspace_id__watchlist_suggestions_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6319,6 +6341,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/ai/watchlist/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pick watchlist suggestions with AI
+         * @description Chooses among the watchlist's TMDB suggestions and says why each suits the person.
+         *     Sends the watchlist's titles, genres, statuses, and ratings (not notes) to the AI
+         *     provider, so it needs permission to read Watchlist. Nothing is saved.
+         */
+        post: operations["pick_watch_suggestions_api_v1_workspaces__workspace_id__ai_watchlist_suggestions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/ai/search": {
         parameters: {
             query?: never;
@@ -8133,7 +8177,7 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health";
+            module: "tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "watchlist";
             /** Title */
             title: string;
             /** Body */
@@ -8372,7 +8416,7 @@ export interface components {
              * Modules
              * @description Modules AI may read.
              */
-            modules: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health")[];
+            modules: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "watchlist")[];
             /**
              * Response Style
              * @enum {string}
@@ -8450,6 +8494,32 @@ export interface components {
             monthly_token_limit: number | null;
             /** Near Limit */
             near_limit: boolean;
+        };
+        /** AiWatchPickResponse */
+        AiWatchPickResponse: {
+            suggestion: components["schemas"]["WatchSuggestionResponse"];
+            /**
+             * Reason
+             * @description Why it suits the person, in one sentence; may be empty.
+             */
+            reason: string;
+        };
+        /**
+         * AiWatchPicksResponse
+         * @description Titles chosen from the watchlist's TMDB suggestions, best first. Nothing is saved.
+         */
+        AiWatchPicksResponse: {
+            /** Picks */
+            picks: components["schemas"]["AiWatchPickResponse"][];
+            /** Provider Name */
+            provider_name: string;
+            /** Model */
+            model: string;
+            /**
+             * Processing
+             * @enum {string}
+             */
+            processing: "local" | "cloud";
         };
         /** AiWorkoutSuggestionRequest */
         AiWorkoutSuggestionRequest: {
@@ -18036,6 +18106,11 @@ export interface components {
              */
             poster_path: string | null;
             /**
+             * Original Language
+             * @description ISO 639-1 code of the language it was made in, when known.
+             */
+            original_language: string | null;
+            /**
              * Existing Id
              * @description The watchlist's copy of this title, if it's already added.
              */
@@ -18371,7 +18446,7 @@ export interface components {
             /** Allow Cloud */
             allow_cloud?: boolean | null;
             /** Modules */
-            modules?: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health")[] | null;
+            modules?: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "watchlist")[] | null;
             /** Response Style */
             response_style?: ("concise" | "balanced" | "detailed") | null;
             /** Monthly Token Limit */
@@ -19319,6 +19394,44 @@ export interface components {
              * @description Every title, in position order.
              */
             items: components["schemas"]["WatchItemResponse"][];
+        };
+        /**
+         * WatchSuggestionResponse
+         * @description A title recommended from the watchlist, not on it yet. Add it with `lookup` set to its
+         *     `source_id` and `kind`.
+         */
+        WatchSuggestionResponse: {
+            /** Source Id */
+            source_id: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "movie" | "series";
+            /** Title */
+            title: string;
+            /** Release Year */
+            release_year: number | null;
+            /** Overview */
+            overview: string;
+            /**
+             * Poster Path
+             * @description Fetch the thumbnail from `/watchlist/search/poster?path=`.
+             */
+            poster_path: string | null;
+            /**
+             * Because
+             * @description Watchlist titles it was recommended from, strongest first (at most 3).
+             */
+            because: string[];
+        };
+        /** WatchSuggestionsResponse */
+        WatchSuggestionsResponse: {
+            /**
+             * Suggestions
+             * @description Strongest first. Empty when no looked-up title can seed recommendations.
+             */
+            suggestions: components["schemas"]["WatchSuggestionResponse"][];
         };
         /** WatchlistKeyRequest */
         WatchlistKeyRequest: {
@@ -22773,6 +22886,10 @@ export interface operations {
         parameters: {
             query: {
                 q: string;
+                /** @description Only movies, or only series. */
+                kind?: ("movie" | "series") | null;
+                /** @description Only titles originally in this language (ISO 639-1, such as `ko`). */
+                language?: string | null;
             };
             header?: never;
             path: {
@@ -22789,6 +22906,65 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TitleMatchesResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or title does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Title lookup is off for this workspace or server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description TMDB couldn't be reached. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    suggest_titles_api_v1_workspaces__workspace_id__watchlist_suggestions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchSuggestionsResponse"];
                 };
             };
             /** @description Not signed in. */
@@ -42955,12 +43131,64 @@ export interface operations {
             };
         };
     };
+    pick_watch_suggestions_api_v1_workspaces__workspace_id__ai_watchlist_suggestions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiWatchPicksResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description AI or title lookup is off. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     semantic_search_api_v1_workspaces__workspace_id__ai_search_get: {
         parameters: {
             query: {
                 q: string;
                 /** @description Repeat to search some modules only. */
-                module?: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health")[];
+                module?: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "watchlist")[];
                 date_from?: string | null;
                 date_to?: string | null;
                 limit?: number;

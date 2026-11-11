@@ -132,7 +132,14 @@ def test_ai_is_off_by_default_and_refuses_until_enabled(
     assert settings["enabled"] is False and settings["server_enabled"] is True
     assert settings["allow_cloud"] is False
     # Sensitive modules are off until chosen.
-    assert set(settings["modules"]) == {"tasks", "notes", "calendar", "reminders", "habits"}
+    assert set(settings["modules"]) == {
+        "tasks",
+        "notes",
+        "calendar",
+        "reminders",
+        "habits",
+        "watchlist",
+    }
     response = client.post(f"{ws}/ai/messages", json={"content": "hi"}, headers=ada)
     assert response.status_code == 409
     assert client.get(f"{ws}/ai/insights", headers=ada).status_code == 409

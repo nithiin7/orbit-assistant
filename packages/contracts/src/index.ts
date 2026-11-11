@@ -66,6 +66,8 @@ export type UpdateWatchItemRequest = Schemas["UpdateWatchItemRequest"];
 export type WatchlistLookup = Schemas["WatchlistLookupResponse"];
 export type TitleMatch = Schemas["TitleMatchResponse"];
 export type TitleMatches = Schemas["TitleMatchesResponse"];
+export type WatchSuggestion = Schemas["WatchSuggestionResponse"];
+export type WatchSuggestions = Schemas["WatchSuggestionsResponse"];
 
 export type Bookmark = Schemas["BookmarkResponse"];
 export type BookmarkKind = Bookmark["kind"];
@@ -646,6 +648,8 @@ export type AiFoodEstimateRequest = Schemas["AiFoodEstimateRequest"];
 export type AiFoodEstimate = Schemas["AiFoodEstimateResponse"];
 export type AiFoodIdeasRequest = Schemas["AiFoodIdeasRequest"];
 export type AiFoodIdeas = Schemas["AiFoodIdeasResponse"];
+export type AiWatchPick = Schemas["AiWatchPickResponse"];
+export type AiWatchPicks = Schemas["AiWatchPicksResponse"];
 export type AiFoodDraft = Schemas["AiFoodDraftResponse"];
 export type AiWorkoutSuggestionRequest = Schemas["AiWorkoutSuggestionRequest"];
 export type AiWorkoutSuggestion = Schemas["AiWorkoutSuggestionResponse"];

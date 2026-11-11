@@ -4269,7 +4269,7 @@
           "watchlist"
         ],
         "summary": "Find a movie or series at TMDB",
-        "description": "Only the search phrase leaves the server.",
+        "description": "Only the search phrase leaves the server. `kind` searches one kind's endpoint;\n`language` is applied by Orbit to TMDB's results.",
         "operationId": "search_titles_api_v1_workspaces__workspace_id__watchlist_search_get",
         "security": [
           {
@@ -4297,6 +4297,47 @@
               "maxLength": 100,
               "title": "Q"
             }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "movie",
+                    "series"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only movies, or only series.",
+              "title": "Kind"
+            },
+            "description": "Only movies, or only series."
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z]{2}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only titles originally in this language (ISO 639-1, such as `ko`).",
+              "title": "Language"
+            },
+            "description": "Only titles originally in this language (ISO 639-1, such as `ko`)."
           }
         ],
         "responses": {
@@ -4306,6 +4347,67 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TitleMatchesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or title does not exist or is not accessible."
+          },
+          "409": {
+            "description": "Title lookup is off for this workspace or server."
+          },
+          "503": {
+            "description": "TMDB couldn't be reached."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/watchlist/suggestions": {
+      "get": {
+        "tags": [
+          "watchlist"
+        ],
+        "summary": "Suggest titles to watch next",
+        "description": "TMDB's recommendations for the titles this workspace liked, is watching, or watched\nlately, minus titles already on the watchlist. Only those titles' TMDB IDs leave the server.",
+        "operationId": "suggest_titles_api_v1_workspaces__workspace_id__watchlist_suggestions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WatchSuggestionsResponse"
                 }
               }
             }
@@ -33761,6 +33863,64 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/ai/watchlist/suggestions": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Pick watchlist suggestions with AI",
+        "description": "Chooses among the watchlist's TMDB suggestions and says why each suits the person.\nSends the watchlist's titles, genres, statuses, and ratings (not notes) to the AI\nprovider, so it needs permission to read Watchlist. Nothing is saved.",
+        "operationId": "pick_watch_suggestions_api_v1_workspaces__workspace_id__ai_watchlist_suggestions_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiWatchPicksResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace (or record) does not exist or is not accessible."
+          },
+          "409": {
+            "description": "AI or title lookup is off."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/ai/search": {
       "get": {
         "tags": [
@@ -33811,7 +33971,8 @@
                   "habits",
                   "documents",
                   "finance",
-                  "health"
+                  "health",
+                  "watchlist"
                 ],
                 "type": "string"
               },
@@ -39490,7 +39651,8 @@
               "habits",
               "documents",
               "finance",
-              "health"
+              "health",
+              "watchlist"
             ],
             "title": "Module"
           },
@@ -40144,7 +40306,8 @@
                 "habits",
                 "documents",
                 "finance",
-                "health"
+                "health",
+                "watchlist"
               ]
             },
             "type": "array",
@@ -40389,6 +40552,60 @@
           "near_limit"
         ],
         "title": "AiUsageResponse"
+      },
+      "AiWatchPickResponse": {
+        "properties": {
+          "suggestion": {
+            "$ref": "#/components/schemas/WatchSuggestionResponse"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "description": "Why it suits the person, in one sentence; may be empty."
+          }
+        },
+        "type": "object",
+        "required": [
+          "suggestion",
+          "reason"
+        ],
+        "title": "AiWatchPickResponse"
+      },
+      "AiWatchPicksResponse": {
+        "properties": {
+          "picks": {
+            "items": {
+              "$ref": "#/components/schemas/AiWatchPickResponse"
+            },
+            "type": "array",
+            "title": "Picks"
+          },
+          "provider_name": {
+            "type": "string",
+            "title": "Provider Name"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "processing": {
+            "type": "string",
+            "enum": [
+              "local",
+              "cloud"
+            ],
+            "title": "Processing"
+          }
+        },
+        "type": "object",
+        "required": [
+          "picks",
+          "provider_name",
+          "model",
+          "processing"
+        ],
+        "title": "AiWatchPicksResponse",
+        "description": "Titles chosen from the watchlist's TMDB suggestions, best first. Nothing is saved."
       },
       "AiWorkoutSuggestionRequest": {
         "properties": {
@@ -63569,6 +63786,18 @@
             "title": "Poster Path",
             "description": "Fetch the thumbnail from `/watchlist/search/poster?path=`."
           },
+          "original_language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Language",
+            "description": "ISO 639-1 code of the language it was made in, when known."
+          },
           "existing_id": {
             "anyOf": [
               {
@@ -63591,6 +63820,7 @@
           "release_year",
           "overview",
           "poster_path",
+          "original_language",
           "existing_id"
         ],
         "title": "TitleMatchResponse"
@@ -64665,11 +64895,12 @@
                     "habits",
                     "documents",
                     "finance",
-                    "health"
+                    "health",
+                    "watchlist"
                   ]
                 },
                 "type": "array",
-                "maxItems": 8
+                "maxItems": 9
               },
               {
                 "type": "null"
@@ -68784,6 +69015,90 @@
           "items"
         ],
         "title": "WatchItemsResponse"
+      },
+      "WatchSuggestionResponse": {
+        "properties": {
+          "source_id": {
+            "type": "integer",
+            "title": "Source Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "movie",
+              "series"
+            ],
+            "title": "Kind"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "release_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Year"
+          },
+          "overview": {
+            "type": "string",
+            "title": "Overview"
+          },
+          "poster_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poster Path",
+            "description": "Fetch the thumbnail from `/watchlist/search/poster?path=`."
+          },
+          "because": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Because",
+            "description": "Watchlist titles it was recommended from, strongest first (at most 3)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_id",
+          "kind",
+          "title",
+          "release_year",
+          "overview",
+          "poster_path",
+          "because"
+        ],
+        "title": "WatchSuggestionResponse",
+        "description": "A title recommended from the watchlist, not on it yet. Add it with `lookup` set to its\n`source_id` and `kind`."
+      },
+      "WatchSuggestionsResponse": {
+        "properties": {
+          "suggestions": {
+            "items": {
+              "$ref": "#/components/schemas/WatchSuggestionResponse"
+            },
+            "type": "array",
+            "title": "Suggestions",
+            "description": "Strongest first. Empty when no looked-up title can seed recommendations."
+          }
+        },
+        "type": "object",
+        "required": [
+          "suggestions"
+        ],
+        "title": "WatchSuggestionsResponse"
       },
       "WatchlistKeyRequest": {
         "properties": {

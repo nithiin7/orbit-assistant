@@ -9,12 +9,21 @@ from typing import Final, Literal, get_args
 # Modules whose data the assistant may read, each switched on or off by the user. Health and
 # finance are sensitive and off by default; documents too, since they often hold identity and
 # insurance papers.
+# `watchlist` is read only by watchlist suggestions; the assistant doesn't answer from it.
 AiModule = Literal[
-    "tasks", "notes", "calendar", "reminders", "habits", "documents", "finance", "health"
+    "tasks",
+    "notes",
+    "calendar",
+    "reminders",
+    "habits",
+    "documents",
+    "finance",
+    "health",
+    "watchlist",
 ]
 AI_MODULES: Final[tuple[AiModule, ...]] = get_args(AiModule)
 DEFAULT_MODULES: Final[frozenset[AiModule]] = frozenset(
-    {"tasks", "notes", "calendar", "reminders", "habits"}
+    {"tasks", "notes", "calendar", "reminders", "habits", "watchlist"}
 )
 
 ProviderKind = Literal["openai", "anthropic", "gemini", "ollama", "openai_compatible"]

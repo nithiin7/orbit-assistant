@@ -106,6 +106,17 @@ class TitleMatch:
     overview: str
     # The lookup service's poster path, such as `/abc123.jpg`.
     poster_path: str | None
+    # ISO 639-1 code of the language it was made in, such as `ko`, when known.
+    original_language: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class WatchSuggestion:
+    """A title the lookup service recommends from titles already on the watchlist."""
+
+    match: TitleMatch
+    # The watchlist titles it was recommended from, strongest first.
+    because: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)

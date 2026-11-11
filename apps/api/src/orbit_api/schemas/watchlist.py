@@ -26,6 +26,7 @@ from orbit_api.services.watchlist.models import (
     WatchItem,
     WatchKind,
     WatchStatus,
+    WatchSuggestion,
 )
 from orbit_api.utils.changes import UNSET
 
@@ -250,6 +251,12 @@ class TitleSearchParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     q: str = Field(min_length=1, max_length=100)
+    kind: WatchKind | None = Field(default=None, description="Only movies, or only series.")
+    language: str | None = Field(
+        default=None,
+        pattern=r"^[a-z]{2}$",
+        description="Only titles originally in this language (ISO 639-1, such as `ko`).",
+    )
 
 
 class PosterParams(BaseModel):
@@ -270,6 +277,9 @@ class TitleMatchResponse(BaseModel):
     poster_path: str | None = Field(
         description="Fetch the thumbnail from `/watchlist/search/poster?path=`."
     )
+    original_language: str | None = Field(
+        description="ISO 639-1 code of the language it was made in, when known."
+    )
     existing_id: uuid.UUID | None = Field(
         description="The watchlist's copy of this title, if it's already added."
     )
@@ -283,9 +293,46 @@ class TitleMatchResponse(BaseModel):
             release_year=match.release_year,
             overview=match.overview,
             poster_path=match.poster_path,
+            original_language=match.original_language,
             existing_id=existing_id,
         )
 
 
 class TitleMatchesResponse(BaseModel):
     results: list[TitleMatchResponse]
+
+
+class WatchSuggestionResponse(BaseModel):
+    """A title recommended from the watchlist, not on it yet. Add it with `lookup` set to its
+    `source_id` and `kind`."""
+
+    source_id: int
+    kind: WatchKind
+    title: str
+    release_year: int | None
+    overview: str
+    poster_path: str | None = Field(
+        description="Fetch the thumbnail from `/watchlist/search/poster?path=`."
+    )
+    because: list[str] = Field(
+        description="Watchlist titles it was recommended from, strongest first (at most 3)."
+    )
+
+    @classmethod
+    def of(cls, suggestion: WatchSuggestion) -> "WatchSuggestionResponse":
+        match = suggestion.match
+        return cls(
+            source_id=match.source_id,
+            kind=match.kind,
+            title=match.title,
+            release_year=match.release_year,
+            overview=match.overview,
+            poster_path=match.poster_path,
+            because=list(suggestion.because),
+        )
+
+
+class WatchSuggestionsResponse(BaseModel):
+    suggestions: list[WatchSuggestionResponse] = Field(
+        description="Strongest first. Empty when no looked-up title can seed recommendations."
+    )
