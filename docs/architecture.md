@@ -1511,7 +1511,8 @@ days)`; needing nothing = skipped; mid-week schedule change splits the week.
   plain FKs that clear on delete (service checks workspace). Edits replace the step list by ID.
 - `routine_sessions`/`routine_session_steps` copy steps at start, so past sessions never change.
   Session `active` → `completed`|`abandoned`; partial unique index allows one active session
-  (second start 409).
+  (second start 409). Settling the last pending step (with at least one completed) finishes the
+  session as `completed`; notes stay editable after.
 - Completing a step linked to a yes/no habit logs that habit for the session's day in the same
   transaction unless already logged; other kinds and tasks are left to the user.
 

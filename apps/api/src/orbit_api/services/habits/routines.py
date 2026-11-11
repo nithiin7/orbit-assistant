@@ -9,6 +9,8 @@
 - Completing a step linked to a yes-or-no habit also completes that habit for the session's
   day (unless that day is already logged). Steps linked to other kinds of habit, and tasks, are
   left for the user to update, since there's no single right value to record.
+- A session finishes (`completed`) by itself once no step is pending and at least one was
+  completed, so a routine whose steps are all done counts as done for its day.
 - Reminder times work as for habits: on the routine's weekdays, skipping days that already have
   a completed session, and cancelled while the routine is paused or archived.
 """
@@ -47,6 +49,11 @@ from orbit_api.services.reminders.service import DEFAULT_TIMEZONE
 from orbit_api.services.transactions import ConflictError, Transaction
 from orbit_api.utils.changes import UNSET, Change
 from orbit_api.utils.clock import utc_now
+
+
+def _all_done(steps: Sequence[SessionStep]) -> bool:
+    """No step is left pending and at least one was completed (not all skipped)."""
+    return all(s.status != "pending" for s in steps) and any(s.status == "completed" for s in steps)
 
 
 class RoutineStore(HabitStore, Protocol):
@@ -258,9 +265,15 @@ class RoutineService:
         session = replace(
             session, steps=tuple(changed if s.id == step_id else s for s in session.steps)
         )
+        finished = _all_done(session.steps)
+        if finished:
+            session = replace(session, status="completed", finished_at=now)
         await self._store.save_session(session)
         if status == "completed" and step.habit_id is not None:
             await self._complete_habit(workspace_id, step.habit_id, session.day)
+        if finished:
+            routine = await self._require(workspace_id, routine_id)
+            await self._habits.reminders.sync_routine(routine)
         await self._transaction.commit()
         return session
 
