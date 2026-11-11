@@ -276,6 +276,7 @@ users ──< workspaces ──< tasks, reminders, finance_*, note*, calendar_*,
   │                      (owner_id → users.id, workspace_id → workspaces.id, ON DELETE CASCADE)
   ├──< notifications      (in-app inbox, per recipient)
   ├── user_avatars        (1:1)
+  ├── user_covers         (1:1)
   ├── dashboard_layouts   (1:1)
   ├── local_credentials   (local mode: email + Argon2id hash, 1:1)
   └──< local_sessions     (local mode: SHA-256 of the bearer token, expiry)
@@ -291,6 +292,10 @@ users ──< workspaces ──< tasks, reminders, finance_*, note*, calendar_*,
   256 px; `PUT /api/v1/me/avatar` takes raw bytes, detects PNG/JPEG/WebP by signature (never SVG,
   never the declared type), max 512 KB. `GET` serves with `nosniff` and a locked-down CSP, or 204
   if none. The web fetches it as a blob (bearer token needed) and uses an object URL.
+- **`user_covers`:** the profile cover photo, same rules through the same repository and
+  service with its own table and a 1.5 MB limit (`/api/v1/me/cover`). The browser keeps the
+  photo's shape, crops taller than 4:3 around the middle, and scales to at most 1600 px wide.
+  Shown on `/profile` in place of the store banner; not in backups (belongs to the account).
 - **Extensibility:** user data carries a non-null `workspace_id` FK. Shared workspaces would add
   `workspace_members` and change only the authorization check; the API already reports
   `role` (`owner`).
@@ -1895,6 +1900,7 @@ Achievements, XP store, Collection).
 Level n starts at 50·n·(n-1) XP. Purchases spend the balance (earned − spent), never lower the
 level; items may need a minimum level. Item looks in `components/achievements/cosmetics.tsx`,
 keyed by item key (frames show on every avatar; confetti in celebrations incl. habit toast).
+A cover photo (`user_covers`), when set, replaces the equipped banner on the profile hero.
 
 ## Health and fitness
 
