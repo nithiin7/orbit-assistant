@@ -6,6 +6,7 @@
 import type {
   ActivityKind,
   ActivityRequest,
+  AiWorkoutSuggestion,
   Equipment,
   Exercise,
   ExerciseCategory,
@@ -17,13 +18,14 @@ import type {
   FitnessProfile,
   FitnessProfileRequest,
   FitnessSection,
-  Food,
   FoodRequest,
   MealType,
   Measurement,
   MeasurementRequest,
   Muscle,
+  Portion,
   PortionRequest,
+  SavedMealRequest,
   UnitSystem,
   WorkoutTemplate,
   WorkoutTemplateCategory,
@@ -105,6 +107,12 @@ export type ProfileFormValues = {
   fatTarget: string;
   fiberTarget: string;
   waterTarget: string;
+  /** Daily steps. Blank uses the default goal. */
+  stepsTarget: string;
+  /** Daily active minutes. */
+  activeTarget: string;
+  /** Nightly sleep, in hours. */
+  sleepTarget: string;
   quickAmounts: string;
   hiddenSections: FitnessSection[];
 };
@@ -182,6 +190,9 @@ export const profileSchema = object({
     1,
     WATER_TARGET_MAX_ML,
   ),
+  stepsTarget: optionalNumber("Enter 1 to 200,000 steps, or leave it blank.", 1, 200_000),
+  activeTarget: optionalNumber("Enter 1 to 1,440 minutes, or leave it blank.", 1, 1440),
+  sleepTarget: optionalNumber("Enter 1 to 24 hours, or leave it blank.", 1, 24),
   quickAmounts: string()
     .defined()
     .test("amounts", "List up to six amounts, separated by commas.", (value, context) => {
@@ -218,6 +229,9 @@ export function toProfileFormValues(profile: FitnessProfile): ProfileFormValues 
     fatTarget: gramsInput(t.fat_mg),
     fiberTarget: gramsInput(t.fiber_mg),
     waterTarget: waterInput(t.water_ml, profile.water_unit),
+    stepsTarget: t.steps == null ? "" : String(t.steps),
+    activeTarget: t.active_s == null ? "" : String(Math.round(t.active_s / 60)),
+    sleepTarget: t.sleep_s == null ? "" : String(Math.round(t.sleep_s / 360) / 10),
     quickAmounts: profile.water_quick_amounts_ml
       .map((ml) => waterInput(ml, profile.water_unit))
       .join(", "),
@@ -227,6 +241,12 @@ export function toProfileFormValues(profile: FitnessProfile): ProfileFormValues 
 
 function positiveOrNull(value: number | null): number | null {
   return value !== null && value > 0 ? value : null;
+}
+
+/** A typed number times `scale`, rounded, or `null` when blank or not positive. */
+function scaledOrNull(value: string, scale: number): number | null {
+  const number = parseDecimal(value);
+  return number !== null && number > 0 ? Math.round(number * scale) : null;
 }
 
 export function toProfileRequest(values: ProfileFormValues): FitnessProfileRequest {
@@ -246,6 +266,9 @@ export function toProfileRequest(values: ProfileFormValues): FitnessProfileReque
       fat_mg: positiveOrNull(parseGrams(values.fatTarget)),
       fiber_mg: positiveOrNull(parseGrams(values.fiberTarget)),
       water_ml: positiveOrNull(parseWater(values.waterTarget, values.waterUnit)),
+      steps: scaledOrNull(values.stepsTarget, 1),
+      active_s: scaledOrNull(values.activeTarget, 60),
+      sleep_s: scaledOrNull(values.sleepTarget, 3600),
     },
     water_quick_amounts_ml: values.quickAmounts
       .split(",")
@@ -412,6 +435,27 @@ export function toTemplateFormValues(template: WorkoutTemplate, units: Units): T
 
 function optionalInt(value: string): number | null {
   return value.trim() === "" ? null : Number(value);
+}
+
+/** An AI-suggested workout as a template the person can save, keeping its plan and notes. */
+export function suggestionTemplateRequest(suggestion: AiWorkoutSuggestion): WorkoutTemplateRequest {
+  return {
+    name: suggestion.name,
+    category: suggestion.category,
+    description: suggestion.description,
+    notes: suggestion.notes,
+    exercises: suggestion.exercises.map((item) => ({
+      exercise_id: item.exercise_id,
+      sets: item.sets,
+      target_reps_min: item.target_reps_min,
+      target_reps_max: item.target_reps_max,
+      target_weight_g: null,
+      target_duration_s: item.target_duration_s,
+      target_distance_m: item.target_distance_m,
+      rest_seconds: item.rest_seconds,
+      notes: item.notes,
+    })),
+  };
 }
 
 export function toTemplateRequest(
@@ -602,7 +646,7 @@ export function newFoodValues(): FoodFormValues {
   };
 }
 
-export function toFoodFormValues(food: Food, units: Units): FoodFormValues {
+export function toFoodFormValues(food: FoodRequest, units: Units): FoodFormValues {
   const n = food.nutrients;
   return {
     name: food.name,
@@ -622,6 +666,26 @@ export function toFoodRequest(values: FoodFormValues, units: Units): FoodRequest
     serving_quantity_milli: parseQuantity(values.servingQuantity) ?? 1000,
     serving_unit: values.servingUnit,
     nutrients: toNutrients(values, units),
+  };
+}
+
+export type MealNameFormValues = { name: string };
+
+export const mealNameSchema = object({
+  name: singleLineText(NAME_MAX).required("Name the meal, such as “Rice combo”."),
+});
+
+/** A saved meal holding copies of these portions (their nutrients are kept as logged). */
+export function toSavedMealRequest(name: string, portions: readonly Portion[]): SavedMealRequest {
+  return {
+    name: name.trim(),
+    items: portions.map((portion) => ({
+      quantity_milli: portion.quantity_milli,
+      food_id: null,
+      name: portion.name,
+      serving_unit: portion.serving_unit,
+      nutrients: portion.nutrients,
+    })),
   };
 }
 

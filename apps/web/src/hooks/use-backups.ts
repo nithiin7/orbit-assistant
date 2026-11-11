@@ -22,6 +22,7 @@ import {
   exportModule,
   inspectUpload,
   restoreUpload,
+  revealBackupsFolder,
   updateBackupSettings,
   uploadBackup,
   verifyBackup,
@@ -78,6 +79,12 @@ export function useUpdateBackupSettings() {
 export function useDeleteBackup() {
   return useBackupMutation((token, workspaceId, backupId: string) =>
     deleteBackup(token, workspaceId, backupId),
+  );
+}
+
+export function useRevealBackupsFolder() {
+  return useBackupMutation((token, workspaceId, _: void) =>
+    revealBackupsFolder(token, workspaceId),
   );
 }
 

@@ -23,6 +23,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from orbit_api.api.ai_actions import ModuleActionExecutor, ModuleActionValidator
 from orbit_api.repositories.agent import SqlAgentStore
 from orbit_api.repositories.agent_services import ToolInputs
+from orbit_api.services.agent.engine import run_link
 from orbit_api.services.agent.models import (
     AgentModule,
     InvalidToolCallError,
@@ -701,6 +702,7 @@ def build_tools(deps: ToolDeps) -> ToolRegistry:
                 scheduled_for=ctx.now,
                 created_at=ctx.now,
                 read_at=None,
+                link=None if ctx.execution_id is None else run_link(ctx.execution_id),
             )
         )
         return ToolOutput(text=f"Sent you a notification: {args.title}", data={"count": 1})

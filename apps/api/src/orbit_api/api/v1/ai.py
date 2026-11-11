@@ -18,7 +18,15 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from orbit_api.api.auth import CurrentUserDep, WorkspaceDep
-from orbit_api.api.dependencies import AiServicesDep, WorkspaceServiceDep, build_ai_for
+from orbit_api.api.dependencies import (
+    AiServicesDep,
+    InvestmentServiceDep,
+    WatchlistServiceDep,
+    WorkspaceServiceDep,
+    build_ai_for,
+)
+from orbit_api.api.v1.commitments import local_today
+from orbit_api.api.v1.watchlist import watchlist_errors
 from orbit_api.schemas.ai import (
     AiAssistRequest,
     AiAssistResponse,
@@ -27,12 +35,18 @@ from orbit_api.schemas.ai import (
     AiConversationDetailResponse,
     AiConversationListResponse,
     AiConversationResponse,
+    AiFoodEstimateRequest,
+    AiFoodEstimateResponse,
+    AiFoodIdeasRequest,
+    AiFoodIdeasResponse,
     AiIndexActionResponse,
     AiIndexResponse,
     AiInsightListResponse,
     AiInsightResponse,
     AiMessageResponse,
     AiModelListResponse,
+    AiPortfolioReviewRequest,
+    AiPortfolioReviewResponse,
     AiProposalResponse,
     AiProviderListResponse,
     AiProviderResponse,
@@ -45,6 +59,9 @@ from orbit_api.schemas.ai import (
     AiTurnStarted,
     AiUsageParams,
     AiUsageResponse,
+    AiWatchPicksResponse,
+    AiWorkoutSuggestionRequest,
+    AiWorkoutSuggestionResponse,
     CreateAiProviderRequest,
     DismissAiInsightRequest,
     RenameAiConversationRequest,
@@ -63,6 +80,7 @@ from orbit_api.services.ai.assistant import (
     viewer_for,
 )
 from orbit_api.services.ai.configuration import ProviderChanges, ProviderDraft, SettingsChanges
+from orbit_api.services.ai.health_assist import EmptyLibraryError
 from orbit_api.services.ai.indexing import permitted_types
 from orbit_api.services.ai.models import (
     AiDisabledError,
@@ -79,6 +97,7 @@ from orbit_api.services.ai.models import (
     SourceNotFoundError,
     UsageLimitReachedError,
 )
+from orbit_api.services.ai.portfolio_review import EmptyPortfolioError
 from orbit_api.services.ai.providers import (
     ProviderError,
     ProviderRequestError,
@@ -149,6 +168,16 @@ def _errors() -> Generator[None]:
         ) from None
     except SourceNotFoundError:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That record wasn't found.") from None
+    except EmptyLibraryError:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "Add some exercises to your library first.",
+        ) from None
+    except EmptyPortfolioError:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "Add a holding or a deposit in this currency first.",
+        ) from None
     except (UnsupportedCapabilityError, ProviderRequestError) as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, exc.message) from None
     except ProviderError as exc:
@@ -488,6 +517,109 @@ async def assist(
             _zone(body.timezone, user.timezone),
         )
     return AiAssistResponse.of(result)
+
+
+# Health helpers
+
+
+@router.post("/health/food-estimate", summary="Estimate a food's nutrients")
+async def estimate_food(
+    body: AiFoodEstimateRequest, workspace: WorkspaceDep, user: CurrentUserDep, ai: AiServicesDep
+) -> AiFoodEstimateResponse:
+    """Estimated nutrients for one serving, to review in the food form. Sends only the text
+    typed, so it needs AI on but not permission to read Health. Nothing is saved."""
+    with _errors():
+        result = await ai.health.estimate_food(workspace.id, user.id, body.description)
+    return AiFoodEstimateResponse.of(result)
+
+
+@router.post("/health/food-ideas", summary="Suggest common foods of a cuisine")
+async def food_ideas(
+    body: AiFoodIdeasRequest, workspace: WorkspaceDep, user: CurrentUserDep, ai: AiServicesDep
+) -> AiFoodIdeasResponse:
+    """Everyday foods of a region or cuisine with estimated nutrients. Sends only the cuisine
+    typed. Nothing is saved until the person adds the foods."""
+    with _errors():
+        result = await ai.health.food_ideas(workspace.id, user.id, body.cuisine)
+    return AiFoodIdeasResponse.of(result)
+
+
+@router.post("/health/workout-suggestion", summary="Suggest a workout")
+async def suggest_workout(
+    body: AiWorkoutSuggestionRequest,
+    workspace: WorkspaceDep,
+    user: CurrentUserDep,
+    ai: AiServicesDep,
+) -> AiWorkoutSuggestionResponse:
+    """A workout from the person's own exercise library, shaped by their active goals and
+    recent workouts. Needs permission to read Health. Nothing is saved."""
+    with _errors():
+        result = await ai.health.suggest_workout(
+            workspace.id, user.id, body.focus, _zone(body.timezone, user.timezone)
+        )
+    return AiWorkoutSuggestionResponse.of(result)
+
+
+# Watchlist helpers
+
+
+@router.post(
+    "/watchlist/suggestions",
+    summary="Pick watchlist suggestions with AI",
+    responses={409: {"description": "AI or title lookup is off."}},
+)
+async def pick_watch_suggestions(
+    workspace: WorkspaceDep,
+    user: CurrentUserDep,
+    ai: AiServicesDep,
+    watchlist: WatchlistServiceDep,
+) -> AiWatchPicksResponse:
+    """Chooses among the watchlist's TMDB suggestions and says why each suits the person.
+    Sends the watchlist's titles, genres, statuses, and ratings (not notes) to the AI
+    provider, so it needs permission to read Watchlist. Nothing is saved."""
+    with _errors():
+        # Checked first, so a person without AI doesn't spend TMDB calls.
+        await ai.watchlist.require_permission(user.id)
+    with watchlist_errors():
+        items, candidates = await watchlist.suggestions(workspace.id)
+    with _errors():
+        result = await ai.watchlist.pick(workspace.id, user.id, items, candidates)
+    return AiWatchPicksResponse.of(result)
+
+
+# Finance helpers
+
+
+@router.post(
+    "/finance/portfolio-review",
+    summary="Review the investment portfolio with AI",
+    responses={
+        409: {"description": "AI is off or not set up."},
+        422: {"description": "Nothing is held in the currency."},
+    },
+)
+async def review_portfolio(
+    body: AiPortfolioReviewRequest,
+    workspace: WorkspaceDep,
+    user: CurrentUserDep,
+    ai: AiServicesDep,
+    investments: InvestmentServiceDep,
+) -> AiPortfolioReviewResponse:
+    """What looks good in the portfolio, what needs attention, and a word on each holding.
+    Orbit measures allocation, concentration, and overlap itself; the provider sees holdings'
+    names, categories, weights, and returns (never amounts, folios, or notes), so it needs
+    permission to read Finance. Nothing is saved."""
+    with _errors():
+        await ai.portfolio.require_permission(user.id)
+    today = local_today(user, None)
+    book = await investments.book(workspace.id, today)
+    summary = await investments.portfolio(workspace.id, body.currency, today)
+    sips = await investments.sip_plans(workspace.id, today)
+    with _errors():
+        result = await ai.portfolio.review(
+            workspace.id, user.id, summary, book.holdings, book.deposits, sips, body.focus
+        )
+    return AiPortfolioReviewResponse.of(body.currency, result)
 
 
 # Semantic search

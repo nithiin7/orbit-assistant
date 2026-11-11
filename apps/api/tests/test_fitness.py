@@ -167,6 +167,20 @@ class TestProfile:
             body = {"date_of_birth": bad}
             assert client.put(f"{fit}/profile", json=body, headers=ada).status_code == 422
 
+    def test_activity_targets_round_trip_and_validate(
+        self, client: TestClient, fit: str, ada: Headers
+    ) -> None:
+        targets = ok(client.get(f"{fit}/profile", headers=ada))["targets"]
+        assert (targets["steps"], targets["active_s"], targets["sleep_s"]) == (None, None, None)
+        body = {"targets": {"steps": 8000, "active_s": 1800, "sleep_s": 27_000}}
+        saved = ok(client.put(f"{fit}/profile", json=body, headers=ada))["targets"]
+        assert (saved["steps"], saved["active_s"], saved["sleep_s"]) == (8000, 1800, 27_000)
+        again = ok(client.get(f"{fit}/profile", headers=ada))["targets"]
+        assert again["steps"] == 8000 and again["sleep_s"] == 27_000
+        for bad in ({"steps": 0}, {"active_s": 30}, {"sleep_s": 90_000}):
+            response = client.put(f"{fit}/profile", json={"targets": bad}, headers=ada)
+            assert response.status_code == 422
+
 
 class TestExercises:
     def test_builtins_are_created_once(self, client: TestClient, fit: str, ada: Headers) -> None:

@@ -208,6 +208,15 @@ class TargetsModel(BaseModel):
     fat_mg: Annotated[int, Field(ge=1, le=2_000_000)] | None = None
     fiber_mg: Annotated[int, Field(ge=1, le=2_000_000)] | None = None
     water_ml: Annotated[int, Field(ge=1, le=20_000)] | None = None
+    steps: Annotated[int, Field(ge=1, le=200_000)] | None = Field(
+        default=None, description="Daily steps."
+    )
+    active_s: Annotated[int, Field(ge=60, le=86_400)] | None = Field(
+        default=None, description="Daily active time (walks, runs, rides, swims, cardio)."
+    )
+    sleep_s: Annotated[int, Field(ge=3_600, le=86_400)] | None = Field(
+        default=None, description="Nightly sleep."
+    )
 
     @classmethod
     def of(cls, targets: Targets) -> "TargetsModel":
@@ -218,6 +227,9 @@ class TargetsModel(BaseModel):
             fat_mg=targets.fat_mg,
             fiber_mg=targets.fiber_mg,
             water_ml=targets.water_ml,
+            steps=targets.steps,
+            active_s=targets.active_s,
+            sleep_s=targets.sleep_s,
         )
 
     def to_targets(self) -> Targets:
@@ -228,6 +240,9 @@ class TargetsModel(BaseModel):
             fat_mg=self.fat_mg,
             fiber_mg=self.fiber_mg,
             water_ml=self.water_ml,
+            steps=self.steps,
+            active_s=self.active_s,
+            sleep_s=self.sleep_s,
         )
 
 

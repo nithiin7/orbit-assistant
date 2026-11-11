@@ -18,7 +18,13 @@ from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
 from orbit_api.api.auth import CurrentUserDep, WorkspaceDep
-from orbit_api.api.dependencies import ArchiveStoreDep, BackupServiceDep, SettingsDep
+from orbit_api.api.dependencies import (
+    ArchiveStoreDep,
+    BackupServiceDep,
+    FileRevealerDep,
+    SettingsDep,
+    exposes_local_paths,
+)
 from orbit_api.schemas.backup import (
     ArchivePasswordRequest,
     BackupOverviewResponse,
@@ -47,6 +53,7 @@ from orbit_api.services.backup.models import (
 )
 from orbit_api.services.backup.service import ApplyRequest, ExportFile, SettingsChanges
 from orbit_api.system.archive import remove_file
+from orbit_api.system.file_manager import FileManagerUnavailableError
 
 _RESPONSES: dict[int | str, dict[str, Any]] = {
     401: {"description": "Not signed in."},
@@ -100,9 +107,44 @@ def _attachment(export: ExportFile) -> FileResponse:
 
 @router.get("/backups", summary="Backups, automatic backup settings, and recent uploads")
 async def backup_overview(
-    workspace: WorkspaceDep, backups: BackupServiceDep
+    workspace: WorkspaceDep,
+    backups: BackupServiceDep,
+    archives: ArchiveStoreDep,
+    settings: SettingsDep,
 ) -> BackupOverviewResponse:
-    return BackupOverviewResponse.of(await backups.overview(workspace.id))
+    folder = str(archives.workspace_folder(workspace.id)) if exposes_local_paths(settings) else None
+    return BackupOverviewResponse.of(await backups.overview(workspace.id), folder=folder)
+
+
+@router.post(
+    "/backups/reveal",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Open the backups folder in the file manager",
+    responses={
+        404: {"description": "Not available in cloud mode or in production."},
+        503: {"description": "No file manager could be opened on the API's machine."},
+    },
+)
+async def reveal_backups_folder(
+    workspace: WorkspaceDep,
+    archives: ArchiveStoreDep,
+    settings: SettingsDep,
+    revealer: FileRevealerDep,
+) -> Response:
+    """Opens this workspace's backup folder in Finder, File Explorer, or the desktop file
+    manager on the machine running the API, which in local mode is the user's own computer.
+    The folder comes from the server's settings and the workspace ID, never from the request."""
+    if not exposes_local_paths(settings):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "There is no local backups folder to open.")
+    folder = await archives.ensure_workspace_folder(workspace.id)
+    try:
+        await anyio.to_thread.run_sync(revealer.open_folder, folder)
+    except FileManagerUnavailableError:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "Could not open a file manager on the machine running the Orbit API.",
+        ) from None
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(

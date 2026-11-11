@@ -250,6 +250,32 @@ describe("HabitsWidget", () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith("/habits?routine=r-morning"));
     expect(sent(api, "POST", "/routines/r-morning/sessions")).toHaveLength(1);
   });
+
+  it("shows a routine finished today as done", async () => {
+    const finished = {
+      id: "s1",
+      routine_id: "r-morning",
+      day: today,
+      routine_name: "Morning",
+      status: "completed",
+      started_at: "2030-01-14T07:00:00Z",
+      finished_at: "2030-01-14T07:10:00Z",
+      notes: "",
+      note_id: null,
+      steps: [],
+    };
+    mockApi({
+      ...session,
+      [`GET ${WS}/habits/today`]: json({ day: today, habits: [], week: [], upcoming: [] }),
+      [`GET ${WS}/routines`]: json({
+        routines: [{ ...routine, last_session: finished, sessions_completed: 1 }],
+      }),
+    });
+    await renderSignedIn(<HabitsWidget />);
+    expect(await screen.findByText("Completed today")).toBeInTheDocument();
+    expect(screen.getByText("Done")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Start Morning" })).not.toBeInTheDocument();
+  });
 });
 
 describe("WaterWidget", () => {

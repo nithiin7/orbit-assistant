@@ -1,7 +1,7 @@
 "use client";
 
 import type { HabitProgress, HabitToday, LogHabitRequest, Routine } from "@orbit/contracts";
-import { CalendarCheck, LayoutTemplate, Play, Sparkles } from "lucide-react";
+import { CalendarCheck, Check, LayoutTemplate, PartyPopper, Play, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/empty-state";
@@ -15,6 +15,7 @@ import {
   type HabitTemplate,
   heatLevel,
   isRemaining,
+  routineDoneOn,
   routineMinutes,
   STARTER_TEMPLATE_IDS,
 } from "@/lib/habits";
@@ -181,9 +182,10 @@ export function HabitTodayView({
           />
           <p className="mt-2 text-sm text-muted-foreground">
             {finished ? (
-              <span aria-hidden="true" className="mr-1.5 inline-block animate-check-pop">
-                🎉
-              </span>
+              <PartyPopper
+                aria-hidden="true"
+                className="mr-1.5 inline-block size-4 animate-check-pop align-[-0.125em] text-success"
+              />
             ) : null}
             {encouragement(done.length, due)}
           </p>
@@ -262,6 +264,11 @@ export function HabitTodayView({
                     >
                       Continue
                     </Link>
+                  ) : routineDoneOn(routine, today.day) ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success">
+                      <Check className="size-3.5" strokeWidth={3} aria-hidden="true" />
+                      Done
+                    </span>
                   ) : (
                     <Button
                       variant="soft"

@@ -145,6 +145,7 @@ async def test_a_concurrently_created_default_list_is_used(
         id=uuid.uuid4(),
         workspace_id=WORKSPACE,
         name=DEFAULT_LIST_NAME,
+        icon="basket",
         is_default=True,
         created_at=clock.now,
         updated_at=clock.now,
@@ -170,11 +171,24 @@ async def test_renaming_to_the_same_name_writes_nothing(
     created = await service.create_list(WORKSPACE, "Electronics")
     clock.advance()
 
-    assert await service.rename_list(WORKSPACE, created.id, "Electronics") == created
+    assert await service.update_list(WORKSPACE, created.id, name="Electronics") == created
+    assert await service.update_list(WORKSPACE, created.id, icon="basket") == created
     assert transaction.commits == 1
 
-    renamed = await service.rename_list(WORKSPACE, created.id, "Gadgets")
-    assert (renamed.name, renamed.updated_at) == ("Gadgets", clock.now)
+    renamed = await service.update_list(WORKSPACE, created.id, name="Gadgets")
+    assert (renamed.name, renamed.icon, renamed.updated_at) == ("Gadgets", "basket", clock.now)
+
+
+async def test_changing_the_icon_keeps_the_name(
+    service: ShoppingService, transaction: FakeTransaction, clock: Clock
+) -> None:
+    created = await service.create_list(WORKSPACE, "Pets", "paw")
+    assert created.icon == "paw"
+    clock.advance()
+
+    changed = await service.update_list(WORKSPACE, created.id, icon="gift")
+    assert (changed.name, changed.icon, changed.updated_at) == ("Pets", "gift", clock.now)
+    assert transaction.commits == 2
 
 
 async def test_items_can_only_be_added_to_lists_in_the_workspace(

@@ -13,9 +13,10 @@ import {
   useNotificationMutations,
   useUnreadCount,
 } from "@/hooks/use-notifications";
-import { formatReceived } from "@/lib/reminders";
+import { formatReceived, notificationHref } from "@/lib/reminders";
 import { useWorkspaces } from "@/providers/workspace";
 import { cn } from "@/utils/common";
+import { markdownToPlainText } from "@/utils/markdown";
 
 const PANEL_WIDTH = 352;
 
@@ -146,6 +147,14 @@ function NotificationPanel({ onNavigate }: { onNavigate: () => void }) {
       );
   };
 
+  // Opening a notification reads it; failures here are quiet, since the page is already opening.
+  const open = (notification: Notification) => {
+    if (notification.read_at === null) {
+      setRead.mutateAsync({ notification, read: true }).catch(() => undefined);
+    }
+    onNavigate();
+  };
+
   const markAll = () => {
     setError(null);
     readAll
@@ -201,6 +210,7 @@ function NotificationPanel({ onNavigate }: { onNavigate: () => void }) {
               <NotificationRow
                 key={notification.id}
                 notification={notification}
+                onOpen={open}
                 onToggleRead={toggleRead}
               />
             ))}
@@ -223,13 +233,17 @@ function NotificationPanel({ onNavigate }: { onNavigate: () => void }) {
 
 function NotificationRow({
   notification,
+  onOpen,
   onToggleRead,
 }: {
   notification: Notification;
+  onOpen: (notification: Notification) => void;
   onToggleRead: (notification: Notification) => void;
 }) {
-  const { state } = useWorkspaces();
+  const { state, switchWorkspace } = useWorkspaces();
   const isUnread = notification.read_at === null;
+  const href = notificationHref(notification);
+  const preview = notification.body ? markdownToPlainText(notification.body) : "";
   // Notifications come from every workspace; name the workspace when it isn't the active one.
   const workspace =
     state.status === "ready" && state.active.id !== notification.workspace_id
@@ -237,7 +251,13 @@ function NotificationRow({
       : undefined;
 
   return (
-    <li className={cn("flex items-start gap-3 px-4 py-3", isUnread && "bg-brand-subtle/40")}>
+    <li
+      className={cn(
+        "relative flex items-start gap-3 px-4 py-3",
+        isUnread && "bg-brand-subtle/40",
+        href && "transition-colors hover:bg-muted/60 has-[a:focus-visible]:bg-muted/60",
+      )}
+    >
       <span
         aria-hidden="true"
         className={cn(
@@ -248,11 +268,25 @@ function NotificationRow({
       <div className="min-w-0 flex-1 space-y-0.5">
         <p className={cn("text-sm break-words", isUnread && "font-medium")}>
           {isUnread ? <span className="sr-only">Unread: </span> : null}
-          {notification.title}
+          {href ? (
+            // The link covers the whole row; the read toggle sits above it.
+            <Link
+              href={href}
+              onClick={() => {
+                if (workspace) switchWorkspace(notification.workspace_id);
+                onOpen(notification);
+              }}
+              className="rounded-sm outline-none after:absolute after:inset-0 focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {notification.title}
+            </Link>
+          ) : (
+            notification.title
+          )}
         </p>
-        {notification.body ? (
-          <p className="line-clamp-2 text-xs break-words whitespace-pre-line text-muted-foreground">
-            {notification.body}
+        {preview ? (
+          <p className="line-clamp-3 text-xs break-words whitespace-pre-line text-muted-foreground">
+            {preview}
           </p>
         ) : null}
         <p className="text-xs text-muted-foreground">
@@ -263,7 +297,7 @@ function NotificationRow({
       <Button
         variant="ghost"
         size="sm"
-        className="h-7 shrink-0 px-2 text-xs"
+        className="relative z-10 h-7 shrink-0 px-2 text-xs"
         aria-label={`Mark “${notification.title}” as ${isUnread ? "read" : "unread"}`}
         onClick={() => onToggleRead(notification)}
       >

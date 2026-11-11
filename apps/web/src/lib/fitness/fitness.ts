@@ -451,3 +451,34 @@ export function formatGoalValue(
 export function formatPercent(fraction: number): string {
   return `${Math.round(fraction * 100)}%`;
 }
+
+export type FoodSort = "most-used" | "name-asc" | "name-desc";
+
+export const FOOD_SORTS: readonly Option<FoodSort>[] = [
+  { value: "most-used", label: "Most used" },
+  { value: "name-asc", label: "Name A–Z" },
+  { value: "name-desc", label: "Name Z–A" },
+];
+
+/** Whether a saved food or meal name matches the search box (case- and accent-insensitive). */
+export function matchesName(name: string, query: string): boolean {
+  const needle = fold(query.trim());
+  return needle === "" || fold(name).includes(needle);
+}
+
+function fold(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+}
+
+/** Saved foods in the chosen order; "most used" keeps the API's order. */
+export function sortFoods<T extends { name: string }>(foods: readonly T[], sort: FoodSort): T[] {
+  if (sort === "most-used") return [...foods];
+  const direction = sort === "name-asc" ? 1 : -1;
+  return [...foods].sort(
+    (a, b) =>
+      direction * a.name.localeCompare(b.name, undefined, { sensitivity: "base", numeric: true }),
+  );
+}

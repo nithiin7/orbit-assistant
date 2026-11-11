@@ -1,7 +1,19 @@
 "use client";
 
-import { Check, ChevronsUpDown, Layers, LogOut, RotateCw, Settings } from "lucide-react";
+import {
+  Check,
+  ChevronsUpDown,
+  Layers,
+  LogOut,
+  Moon,
+  PanelLeft,
+  RotateCw,
+  Settings,
+  Sun,
+  Trophy,
+} from "lucide-react";
 import Link from "next/link";
+import { useTheme } from "next-themes";
 import {
   type CSSProperties,
   type KeyboardEvent,
@@ -32,7 +44,7 @@ type WorkspaceSwitcherProps = {
 
 /**
  * Shows the user's photo and the active workspace, and opens the personal menu: switch or manage
- * workspaces, open settings, or sign out. It sits at the foot of the sidebar, so the menu opens
+ * workspaces, open settings, customize the sidebar, switch light and dark mode, or sign out. It sits at the foot of the sidebar, so the menu opens
  * upward. Follows the ARIA menu pattern: arrow keys,
  * Home/End, and Escape. The menu uses fixed positioning so the collapsed sidebar's overflow
  * can't clip it.
@@ -41,6 +53,7 @@ export function WorkspaceSwitcher({ collapsible = false, onNavigate }: Workspace
   const { state, switchWorkspace, refresh } = useWorkspaces();
   const { signOut } = useAuth();
   const user = useCurrentUser();
+  const { resolvedTheme, setTheme } = useTheme();
   const [position, setPosition] = useState<CSSProperties | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -249,6 +262,16 @@ export function WorkspaceSwitcher({ collapsible = false, onNavigate }: Workspace
           </Link>
           <div role="separator" className="-mx-1 my-1 h-px bg-border" />
           <Link
+            href="/profile"
+            role="menuitem"
+            tabIndex={-1}
+            onClick={follow}
+            className={itemClassName}
+          >
+            <Trophy className="size-4 text-muted-foreground" aria-hidden="true" />
+            Profile & achievements
+          </Link>
+          <Link
             href="/settings"
             role="menuitem"
             tabIndex={-1}
@@ -258,6 +281,34 @@ export function WorkspaceSwitcher({ collapsible = false, onNavigate }: Workspace
             <Settings className="size-4 text-muted-foreground" aria-hidden="true" />
             Settings
           </Link>
+          <Link
+            href="/settings/appearance#appearance-sidebar"
+            role="menuitem"
+            tabIndex={-1}
+            onClick={follow}
+            className={itemClassName}
+          >
+            <PanelLeft className="size-4 text-muted-foreground" aria-hidden="true" />
+            Customize sidebar
+          </Link>
+          <button
+            type="button"
+            role="menuitem"
+            tabIndex={-1}
+            onClick={() => {
+              setTheme(resolvedTheme === "dark" ? "light" : "dark");
+              close();
+            }}
+            className={itemClassName}
+          >
+            {resolvedTheme === "dark" ? (
+              <Sun className="size-4 text-muted-foreground" aria-hidden="true" />
+            ) : (
+              <Moon className="size-4 text-muted-foreground" aria-hidden="true" />
+            )}
+            {resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
+          </button>
+          <div role="separator" className="-mx-1 my-1 h-px bg-border" />
           <button
             type="button"
             role="menuitem"

@@ -17,27 +17,25 @@ export function AppShellSkeleton({ label = "Checking your session…" }: { label
         aria-hidden="true"
         className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar md:flex sidebar-collapsed:w-14"
       >
-        <div className="flex h-14 shrink-0 items-center px-4">
+        <div className="flex h-14 shrink-0 items-center justify-between pr-2 pl-4">
           <Wordmark textClassName="sidebar-collapsed:opacity-0" />
+          <Skeleton className="size-9 sidebar-collapsed:hidden" />
         </div>
-        <div className="px-2 pb-2">
-          <Skeleton className="h-9" />
+        <div className="flex gap-1 px-2 pb-2 sidebar-collapsed:flex-col">
+          <Skeleton className="h-9 flex-1" />
+          <Skeleton className="size-9" />
         </div>
         <div className="flex-1 space-y-1 px-2 py-2">
           {Array.from({ length: 7 }, (_, index) => (
-            <div key={index} className="flex h-9 items-center gap-3 px-2">
+            <div key={index} className="flex h-8 items-center gap-3 px-2">
               <Skeleton className="size-5 shrink-0" />
               <Skeleton className="h-4 flex-1 sidebar-collapsed:hidden" />
             </div>
           ))}
         </div>
-        <div className="shrink-0 space-y-2 border-t border-sidebar-border p-2">
-          <Skeleton className="h-11" />
-          <div className="flex gap-1 sidebar-collapsed:flex-col">
-            <Skeleton className="size-9" />
-            <Skeleton className="size-9" />
-            <Skeleton className="size-9" />
-          </div>
+        <div className="flex shrink-0 gap-1 p-2 sidebar-collapsed:flex-col-reverse">
+          <Skeleton className="h-12 flex-1" />
+          <Skeleton className="size-9 self-center" />
         </div>
       </div>
       <div aria-hidden="true" className="flex min-w-0 flex-1 flex-col">

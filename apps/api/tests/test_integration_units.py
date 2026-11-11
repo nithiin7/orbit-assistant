@@ -242,7 +242,12 @@ class _Noop:
         return None
 
     async def notify(
-        self, user_id: uuid.UUID, workspace_id: uuid.UUID, title: str, body: str
+        self,
+        user_id: uuid.UUID,
+        workspace_id: uuid.UUID,
+        title: str,
+        body: str,
+        link: str | None = None,
     ) -> None:
         return None
 

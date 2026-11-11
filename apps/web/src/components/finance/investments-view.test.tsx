@@ -290,7 +290,10 @@ describe("Investments", () => {
     const funds = screen.getByRole("tab", { name: /^Mutual funds/ });
     expect(funds).toHaveFocus();
     expect(funds).toHaveAttribute("aria-selected", "true");
+    // Left from the first section wraps to the last, AI review; once more is Activity.
     await userEvent.keyboard("{ArrowLeft}{ArrowLeft}");
+    expect(screen.getByRole("tab", { name: "AI review" })).toHaveAttribute("aria-selected", "true");
+    await userEvent.keyboard("{ArrowLeft}");
     expect(screen.getByRole("tab", { name: "Activity" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tabpanel")).toHaveTextContent("Recent activity");
   });

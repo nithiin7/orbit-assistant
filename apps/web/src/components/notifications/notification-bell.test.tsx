@@ -23,6 +23,7 @@ function notification(overrides: Partial<Notification> & Pick<Notification, "id"
     scheduled_for: "2030-01-15T08:00:00Z",
     created_at: "2030-01-15T08:00:00Z",
     read_at: null,
+    link: null,
     ...overrides,
   } satisfies Notification;
 }
@@ -116,6 +117,65 @@ describe("NotificationBell", () => {
       expect(screen.getByRole("button", { name: "Mark all read" })).toBeDisabled(),
     );
     expect(api.mock.calls.some(([, init]) => init?.method === "POST")).toBe(true);
+  });
+
+  it("opens a notification's page as plain text, reading it and switching workspace", async () => {
+    const brief = notification({
+      id: "n4",
+      title: "Your day",
+      workspace_id: lab.id,
+      reminder_id: null,
+      body: "## Today\n- **Standup** at 9\n- Pay [rent](/finance)",
+      link: "/automation?tab=activity&run=e1",
+    });
+    let patched = false;
+    mockApi({
+      ...session,
+      [`GET ${NOTIFICATIONS}/unread-count`]: json({ unread: 1 }),
+      [`GET ${NOTIFICATIONS}`]: json({ notifications: [brief], total: 1, unread: 1 }),
+      [`PATCH ${NOTIFICATIONS}/n4`]: (request: MockRequest) => {
+        patched = true;
+        expect(request.body).toEqual({ read: true });
+        return Response.json({ ...brief, read_at: "2030-01-15T10:00:00Z" });
+      },
+    });
+    const user = userEvent.setup();
+    await renderSignedIn(<NotificationBell />);
+    await user.click(await screen.findByRole("button", { name: "Notifications, 1 unread" }));
+
+    const link = await screen.findByRole("link", { name: "Your day" });
+    expect(link).toHaveAttribute("href", "/automation?tab=activity&run=e1");
+    const row = screen.getByRole("listitem");
+    expect(row).toHaveTextContent("Today • Standup at 9 • Pay rent");
+    expect(row).not.toHaveTextContent("**");
+
+    await user.click(link);
+    await waitFor(() => expect(patched).toBe(true));
+    expect(localStorage.getItem(`orbit:workspace:${ada.id}`)).toBe(lab.id);
+    expect(screen.queryByRole("region", { name: "Notifications" })).not.toBeInTheDocument();
+  });
+
+  it("links old reminder notifications to Reminders and ignores links that leave the app", async () => {
+    const outside = notification({
+      id: "n5",
+      title: "Odd",
+      reminder_id: null,
+      link: "https://example.com",
+    });
+    mockApi({
+      ...session,
+      [`GET ${NOTIFICATIONS}/unread-count`]: json({ unread: 2 }),
+      [`GET ${NOTIFICATIONS}`]: json({ notifications: [dentist, outside], total: 2, unread: 2 }),
+    });
+    const user = userEvent.setup();
+    await renderSignedIn(<NotificationBell />);
+    await user.click(await screen.findByRole("button", { name: "Notifications, 2 unread" }));
+
+    expect(await screen.findByRole("link", { name: "Call the dentist" })).toHaveAttribute(
+      "href",
+      "/reminders",
+    );
+    expect(screen.queryByRole("link", { name: "Odd" })).not.toBeInTheDocument();
   });
 
   it("shows an empty inbox and closes with Escape, returning focus to the bell", async () => {

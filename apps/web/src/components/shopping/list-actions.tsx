@@ -9,16 +9,16 @@ import { Menu, type MenuItem } from "@/components/ui/menu";
 
 type ListActionsProps = {
   list: ShoppingListOverview;
-  onRename: () => void;
+  onEdit: () => void;
   /** Resolves once the deletion has finished or failed; the page reports errors. */
   onDelete: (list: ShoppingListOverview) => Promise<void>;
 };
 
 /**
- * Rename and delete for the selected list, in a menu so the page keeps one primary action. The
+ * Edit and delete for the selected list, in a menu so the page keeps one primary action. The
  * default list can be renamed but not deleted. Deleting asks for confirmation in place.
  */
-export function ListActions({ list, onRename, onDelete }: ListActionsProps) {
+export function ListActions({ list, onEdit, onDelete }: ListActionsProps) {
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const confirmRef = useRef<HTMLButtonElement>(null);
@@ -72,7 +72,7 @@ export function ListActions({ list, onRename, onDelete }: ListActionsProps) {
   }
 
   const items: MenuItem[] = [
-    { id: "rename", label: "Rename list", icon: Pencil, onSelect: onRename },
+    { id: "rename", label: "Edit list", icon: Pencil, onSelect: onEdit },
     ...(list.is_default
       ? []
       : [

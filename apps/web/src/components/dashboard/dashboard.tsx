@@ -23,6 +23,7 @@ import {
 import { HabitsWidget } from "@/components/habits/habits-widget";
 import { NotesWidget } from "@/components/notes/notes-widget";
 import { PageHeader } from "@/components/page-header";
+import { PlacesWidget } from "@/components/places/places-widget";
 import { ReminderOverview } from "@/components/reminders/reminder-overview";
 import { SetupCard } from "@/components/setup/setup-card";
 import { ShoppingOverview } from "@/components/shopping/shopping-overview";
@@ -70,6 +71,7 @@ const widgetComponents: Record<WidgetId, ComponentType> = {
   documents: DocumentsWidget,
   shopping: ShoppingOverview,
   watchlist: WatchlistWidget,
+  places: PlacesWidget,
   cash_flow: CashFlowWidget,
   upcoming_payments: UpcomingPaymentsWidget,
   budget: BudgetWidget,

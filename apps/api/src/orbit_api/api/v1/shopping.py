@@ -18,6 +18,7 @@ from orbit_api.schemas.shopping import (
     ShoppingListResponse,
     ShoppingListsResponse,
     UpdateItemRequest,
+    UpdateShoppingListRequest,
 )
 from orbit_api.services.shopping.models import (
     DefaultListError,
@@ -65,18 +66,19 @@ async def list_lists(
 async def create_list(
     body: ShoppingListRequest, workspace: WorkspaceDep, shopping: ShoppingServiceDep
 ) -> ShoppingListResponse:
-    return ShoppingListResponse.of(await shopping.create_list(workspace.id, body.name))
+    return ShoppingListResponse.of(await shopping.create_list(workspace.id, body.name, body.icon))
 
 
-@router.patch("/lists/{list_id}", summary="Rename a shopping list")
-async def rename_list(
+@router.patch("/lists/{list_id}", summary="Rename a shopping list or change its icon")
+async def update_list(
     list_id: ListId,
-    body: ShoppingListRequest,
+    body: UpdateShoppingListRequest,
     workspace: WorkspaceDep,
     shopping: ShoppingServiceDep,
 ) -> ShoppingListResponse:
     try:
-        return ShoppingListResponse.of(await shopping.rename_list(workspace.id, list_id, body.name))
+        updated = await shopping.update_list(workspace.id, list_id, name=body.name, icon=body.icon)
+        return ShoppingListResponse.of(updated)
     except ShoppingListNotFoundError:
         raise list_not_found() from None
 

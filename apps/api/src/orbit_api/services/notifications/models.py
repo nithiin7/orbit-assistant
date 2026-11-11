@@ -21,6 +21,9 @@ class Notification:
     scheduled_for: datetime
     created_at: datetime
     read_at: datetime | None
+    # Where opening the notification goes: an in-app path such as `/automation?tab=activity`,
+    # or `None` when there is nothing to open.
+    link: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

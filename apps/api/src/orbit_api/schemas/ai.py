@@ -15,8 +15,18 @@ from pydantic import (
 )
 
 from orbit_api.schemas.common import Name, TimeZoneName, single_line
+from orbit_api.schemas.fitness import NutrientsModel
+from orbit_api.schemas.investments import SliceResponse
+from orbit_api.schemas.watchlist import WatchSuggestionResponse
 from orbit_api.services.ai.assist import AssistKind, AssistResult
 from orbit_api.services.ai.configuration import ConnectionTest, ResolvedProvider
+from orbit_api.services.ai.health_assist import (
+    FoodDraftSuggestion,
+    FoodEstimate,
+    FoodIdeas,
+    Provenance,
+    WorkoutIdea,
+)
 from orbit_api.services.ai.models import (
     ActionKind,
     AiModule,
@@ -42,7 +52,17 @@ from orbit_api.services.ai.models import (
     UsageOperation,
     UsageSummary,
 )
+from orbit_api.services.ai.portfolio_review import (
+    PortfolioFacts,
+    PortfolioReview,
+    Priority,
+    Verdict,
+)
 from orbit_api.services.ai.providers import KIND_CAPABILITIES, base_url_of, processing_of
+from orbit_api.services.ai.watchlist_assist import WatchPicks
+from orbit_api.services.finance.money import Currency
+from orbit_api.services.fitness.models import TemplateCategory
+from orbit_api.services.investments.models import HoldingKind
 
 ModelName = Annotated[
     str,
@@ -131,7 +151,7 @@ class UpdateAiSettingsRequest(BaseModel):
     fallback_provider_id: uuid.UUID | None = None
     fallback_model: ModelName | None = None
     allow_cloud: bool | None = None
-    modules: list[AiModule] | None = Field(default=None, max_length=8)
+    modules: list[AiModule] | None = Field(default=None, max_length=9)
     response_style: ResponseStyle | None = None
     monthly_token_limit: int | None = Field(default=None, ge=1000, le=10**10)
     indexing_enabled: bool | None = None
@@ -659,3 +679,306 @@ class AiIndexResponse(BaseModel):
 
 class AiIndexActionResponse(BaseModel):
     affected: int
+
+
+# Health helpers
+
+
+HealthPrompt = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=200),
+    AfterValidator(single_line),
+]
+
+
+def _processing(provenance: Provenance) -> Processing:
+    return "local" if provenance.processing == "local" else "cloud"
+
+
+class AiFoodEstimateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    description: HealthPrompt = Field(
+        description='The food and, optionally, the serving, as typed ("masala dosa, 1 piece").'
+    )
+
+
+class AiFoodIdeasRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    cuisine: HealthPrompt = Field(description='A region or cuisine ("Kerala", "Mexican").')
+
+
+class AiWorkoutSuggestionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    focus: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, max_length=200),
+        AfterValidator(single_line),
+    ] = Field(default="", description="What the workout should be like, in the person's words.")
+    timezone: TimeZoneName | None = None
+
+
+class AiFoodDraftResponse(BaseModel):
+    """A food for the person to review and save; nothing is saved by the AI."""
+
+    name: str
+    serving_quantity_milli: int
+    serving_unit: str
+    nutrients: NutrientsModel = Field(description="Estimated, for one serving.")
+    note: str
+
+    @classmethod
+    def of(cls, food: FoodDraftSuggestion) -> "AiFoodDraftResponse":
+        return cls(
+            name=food.name,
+            serving_quantity_milli=food.serving_quantity_milli,
+            serving_unit=food.serving_unit,
+            nutrients=NutrientsModel.of(food.nutrients),
+            note=food.note,
+        )
+
+
+class AiFoodEstimateResponse(BaseModel):
+    food: AiFoodDraftResponse
+    provider_name: str
+    model: str
+    processing: Processing
+
+    @classmethod
+    def of(cls, result: FoodEstimate) -> "AiFoodEstimateResponse":
+        p = result.provenance
+        return cls(
+            food=AiFoodDraftResponse.of(result.food),
+            provider_name=p.provider_name,
+            model=p.model,
+            processing=_processing(p),
+        )
+
+
+class AiFoodIdeasResponse(BaseModel):
+    cuisine: str
+    foods: list[AiFoodDraftResponse]
+    provider_name: str
+    model: str
+    processing: Processing
+
+    @classmethod
+    def of(cls, result: FoodIdeas) -> "AiFoodIdeasResponse":
+        provenance = result.provenance
+        return cls(
+            cuisine=result.cuisine,
+            foods=[AiFoodDraftResponse.of(f) for f in result.foods],
+            provider_name=provenance.provider_name,
+            model=provenance.model,
+            processing=_processing(provenance),
+        )
+
+
+class AiSuggestedExerciseResponse(BaseModel):
+    exercise_id: uuid.UUID
+    exercise_name: str
+    sets: int
+    target_reps_min: int | None
+    target_reps_max: int | None
+    target_duration_s: int | None
+    target_distance_m: int | None
+    rest_seconds: int | None
+    notes: str
+
+
+class AiWatchPickResponse(BaseModel):
+    suggestion: WatchSuggestionResponse
+    reason: str = Field(description="Why it suits the person, in one sentence; may be empty.")
+
+
+class AiWatchPicksResponse(BaseModel):
+    """Titles chosen from the watchlist's TMDB suggestions, best first. Nothing is saved."""
+
+    picks: list[AiWatchPickResponse]
+    provider_name: str
+    model: str
+    processing: Processing
+
+    @classmethod
+    def of(cls, result: WatchPicks) -> "AiWatchPicksResponse":
+        p = result.provenance
+        return cls(
+            picks=[
+                AiWatchPickResponse(
+                    suggestion=WatchSuggestionResponse.of(pick.suggestion), reason=pick.reason
+                )
+                for pick in result.picks
+            ],
+            provider_name=p.provider_name,
+            model=p.model,
+            processing=_processing(p),
+        )
+
+
+class AiWorkoutSuggestionResponse(BaseModel):
+    """A workout draft from the person's own exercises, to save as a template or discard."""
+
+    name: str
+    category: TemplateCategory
+    description: str
+    notes: str
+    exercises: list[AiSuggestedExerciseResponse]
+    provider_name: str
+    model: str
+    processing: Processing
+
+    @classmethod
+    def of(cls, result: WorkoutIdea) -> "AiWorkoutSuggestionResponse":
+        w, p = result.workout, result.provenance
+        return cls(
+            name=w.name,
+            category=w.category,
+            description=w.description,
+            notes=w.notes,
+            exercises=[
+                AiSuggestedExerciseResponse(
+                    exercise_id=e.exercise.id,
+                    exercise_name=e.exercise.details.name,
+                    sets=e.plan.sets,
+                    target_reps_min=e.plan.target_reps_min,
+                    target_reps_max=e.plan.target_reps_max,
+                    target_duration_s=e.plan.target_duration_s,
+                    target_distance_m=e.plan.target_distance_m,
+                    rest_seconds=e.plan.rest_seconds,
+                    notes=e.plan.notes,
+                )
+                for e in w.exercises
+            ],
+            provider_name=p.provider_name,
+            model=p.model,
+            processing=_processing(p),
+        )
+
+
+class AiPortfolioReviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    currency: Currency = Field(description="The currency whose holdings and deposits to review.")
+    focus: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, max_length=300),
+        AfterValidator(single_line),
+    ] = Field(
+        default="",
+        description="The person's own context, such as their horizon or appetite for risk.",
+    )
+
+
+class AiPortfolioOverlapResponse(BaseModel):
+    category: str
+    funds: int
+
+
+class AiPortfolioFactsResponse(BaseModel):
+    """Measured by Orbit, not the model. Shares are percentages with two decimals."""
+
+    holdings: int
+    deposits: int
+    allocation: list[SliceResponse]
+    return_percent: str | None
+    largest_holding: str | None
+    largest_share: str | None
+    top_five_share: str | None
+    cash_share: str | None
+    fund_houses: int
+    overlaps: list[AiPortfolioOverlapResponse]
+    active_sips: int
+    unpriced: int
+
+    @classmethod
+    def of(cls, facts: PortfolioFacts) -> "AiPortfolioFactsResponse":
+        return cls(
+            holdings=facts.holdings,
+            deposits=facts.deposits,
+            allocation=[SliceResponse.of(entry) for entry in facts.allocation],
+            return_percent=facts.return_percent,
+            largest_holding=facts.largest_holding,
+            largest_share=facts.largest_share,
+            top_five_share=facts.top_five_share,
+            cash_share=facts.cash_share,
+            fund_houses=facts.fund_houses,
+            overlaps=[
+                AiPortfolioOverlapResponse(category=o.category, funds=o.funds)
+                for o in facts.overlaps
+            ],
+            active_sips=facts.active_sips,
+            unpriced=facts.unpriced,
+        )
+
+
+class AiPortfolioStrengthResponse(BaseModel):
+    title: str
+    detail: str
+
+
+class AiPortfolioImprovementResponse(BaseModel):
+    title: str
+    detail: str
+    action: str = Field(description="One concrete next step; may be empty.")
+    priority: Priority
+
+
+class AiPortfolioHoldingNoteResponse(BaseModel):
+    holding_id: uuid.UUID
+    name: str
+    kind: HoldingKind
+    verdict: Verdict
+    note: str
+
+
+class AiPortfolioReviewResponse(BaseModel):
+    """An AI review of one currency's portfolio, most pressing improvements first. Nothing is
+    saved."""
+
+    currency: Currency
+    score: int | None = Field(description="0 to 100, the model's judgment; null when it gave none.")
+    headline: str
+    summary: str
+    strengths: list[AiPortfolioStrengthResponse]
+    improvements: list[AiPortfolioImprovementResponse]
+    holdings: list[AiPortfolioHoldingNoteResponse]
+    facts: AiPortfolioFactsResponse
+    provider_name: str
+    model: str
+    processing: Processing
+
+    @classmethod
+    def of(cls, currency: Currency, result: PortfolioReview) -> "AiPortfolioReviewResponse":
+        p = result.provenance
+        return cls(
+            currency=currency,
+            score=result.score,
+            headline=result.headline,
+            summary=result.summary,
+            strengths=[
+                AiPortfolioStrengthResponse(title=s.title, detail=s.detail)
+                for s in result.strengths
+            ],
+            improvements=[
+                AiPortfolioImprovementResponse(
+                    title=i.title, detail=i.detail, action=i.action, priority=i.priority
+                )
+                for i in result.improvements
+            ],
+            holdings=[
+                AiPortfolioHoldingNoteResponse(
+                    holding_id=n.holding.holding.id,
+                    name=n.holding.holding.name,
+                    kind=n.holding.holding.kind,
+                    verdict=n.verdict,
+                    note=n.note,
+                )
+                for n in result.holdings
+            ],
+            facts=AiPortfolioFactsResponse.of(result.facts),
+            provider_name=p.provider_name,
+            model=p.model,
+            processing=_processing(p),
+        )

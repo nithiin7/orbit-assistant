@@ -109,6 +109,9 @@ class Targets:
     fat_mg: int | None = None
     fiber_mg: int | None = None
     water_ml: int | None = None
+    steps: int | None = None
+    active_s: int | None = None
+    sleep_s: int | None = None
 
 
 @dataclass(frozen=True, slots=True)

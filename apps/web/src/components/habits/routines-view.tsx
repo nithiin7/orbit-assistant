@@ -32,10 +32,16 @@ import { Menu } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import type { Resource } from "@/hooks/query-resource";
-import { describeWeekdays, formatMinutes, habitsHref, routineMinutes } from "@/lib/habits";
+import {
+  describeWeekdays,
+  formatMinutes,
+  habitsHref,
+  routineDoneOn,
+  routineMinutes,
+} from "@/lib/habits";
 import { noteHref } from "@/lib/note-links";
 import { cn } from "@/utils/common";
-import { formatCalendarDate } from "@/utils/dates";
+import { formatCalendarDate, localDateString } from "@/utils/dates";
 
 import { HabitTile, ProgressBar } from "./habit-icon";
 import { ViewError } from "./view-error";
@@ -112,6 +118,11 @@ export function RoutineListView({
               >
                 Continue
               </Link>
+            ) : routine.status === "active" && routineDoneOn(routine, localDateString()) ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success">
+                <Check className="size-3.5" strokeWidth={3} aria-hidden="true" />
+                Done today
+              </span>
             ) : routine.status === "active" ? (
               <Button
                 size="sm"
@@ -144,12 +155,18 @@ type RoutineDetailProps = {
   onStatus: (status: "active" | "paused" | "archived") => void;
   onDelete: () => void;
   onStart: () => Promise<unknown>;
-  onStep: (session: RoutineSession, stepId: string, status: RoutineStepStatus) => Promise<unknown>;
+  onStep: (
+    session: RoutineSession,
+    stepId: string,
+    status: RoutineStepStatus,
+  ) => Promise<RoutineSession>;
   onFinish: (
     session: RoutineSession,
     status: "completed" | "abandoned",
     notes: string,
   ) => Promise<unknown>;
+  /** Save a session's notes without changing its status (it may have finished already). */
+  onNotes: (session: RoutineSession, notes: string) => Promise<unknown>;
   onNote: (session: RoutineSession) => Promise<{ id: string }>;
   onOpenNote: (noteId: string) => void;
 };
@@ -177,10 +194,12 @@ function RoutineDetail({
   onStart,
   onStep,
   onFinish,
+  onNotes,
   onNote,
   onOpenNote,
 }: RoutineDetailProps & { routine: Routine }) {
   const session = routine.active_session;
+  const doneToday = !session && routineDoneOn(routine, localDateString());
   return (
     <div className="space-y-6">
       <Link
@@ -251,11 +270,21 @@ function RoutineDetail({
 
       <div className="grid gap-6 @4xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="min-w-0 space-y-6">
+          {doneToday ? (
+            <p
+              role="status"
+              className="flex items-center gap-2 rounded-xl border border-success/40 bg-success/5 px-4 py-3 text-sm font-medium"
+            >
+              <Check className="size-4 text-success" strokeWidth={3} aria-hidden="true" />
+              Completed today. Nice work.
+            </p>
+          ) : null}
           {session ? (
             <SessionRunner
               session={session}
               onStep={onStep}
               onFinish={onFinish}
+              onNotes={onNotes}
               onNote={onNote}
               onOpenNote={onOpenNote}
             />
@@ -305,12 +334,14 @@ function SessionRunner({
   session,
   onStep,
   onFinish,
+  onNotes,
   onNote,
   onOpenNote,
 }: {
   session: RoutineSession;
   onStep: RoutineDetailProps["onStep"];
   onFinish: RoutineDetailProps["onFinish"];
+  onNotes: RoutineDetailProps["onNotes"];
   onNote: RoutineDetailProps["onNote"];
   onOpenNote: RoutineDetailProps["onOpenNote"];
 }) {
@@ -325,6 +356,14 @@ function SessionRunner({
       await action();
     } catch {
       setError("Couldn’t save that. Try again.");
+    }
+  }
+
+  // Settling the last step finishes the session on the server; keep any notes typed so far.
+  async function settle(stepId: string, status: RoutineStepStatus) {
+    const next = await onStep(session, stepId, status);
+    if (next.status !== "active" && notes.trim() && notes !== session.notes) {
+      await onNotes(next, notes);
     }
   }
 
@@ -356,7 +395,7 @@ function SessionRunner({
               }
               onClick={() =>
                 void attempt(() =>
-                  onStep(session, step.id, step.status === "completed" ? "pending" : "completed"),
+                  settle(step.id, step.status === "completed" ? "pending" : "completed"),
                 )
               }
               className={cn(
@@ -394,7 +433,7 @@ function SessionRunner({
                 variant="ghost"
                 size="sm"
                 aria-label={`Skip ${step.name}`}
-                onClick={() => void attempt(() => onStep(session, step.id, "skipped"))}
+                onClick={() => void attempt(() => settle(step.id, "skipped"))}
               >
                 <SkipForward aria-hidden="true" />
               </Button>

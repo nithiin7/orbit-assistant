@@ -97,6 +97,11 @@ export function verifyBackup(
   );
 }
 
+/** Open this workspace's backup folder in the file manager on the API's machine (local mode). */
+export function revealBackupsFolder(token: string, workspaceId: string): Promise<void> {
+  return request<void>(backups(workspaceId, "/reveal"), { method: "POST", token });
+}
+
 export function deleteBackup(token: string, workspaceId: string, backupId: string) {
   return request<void>(backups(workspaceId, `/${encodeURIComponent(backupId)}`), {
     method: "DELETE",

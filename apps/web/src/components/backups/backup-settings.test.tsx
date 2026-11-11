@@ -71,6 +71,8 @@ function overview(overrides: Partial<BackupOverview> = {}): BackupOverview {
     total_bytes: 0,
     last_success_at: null,
     running: false,
+    folder: null,
+    can_reveal_folder: false,
     modules: [
       { module: "tasks", label: "Tasks", formats: ["json", "csv"] },
       { module: "calendar", label: "Calendar", formats: ["json", "ics"] },
@@ -192,6 +194,38 @@ describe("Backup & restore", () => {
     expect(within(history).getByText("Automatic")).toBeInTheDocument();
     expect(within(history).getAllByText("42 records · 3 files")).toHaveLength(2);
     expect(screen.getByText("Automatic backups are off.")).toBeInTheDocument();
+  });
+
+  it("shows where backups are kept and opens the folder", async () => {
+    const user = userEvent.setup();
+    const folder = `/Users/ada/.orbit/backups/${personal.id}`;
+    const api = mockApi({
+      ...session,
+      [`GET ${WS}/backups`]: json(overview({ folder, can_reveal_folder: true })),
+      [`POST ${WS}/backups/reveal`]: status(204),
+    });
+    await renderSignedIn(<BackupSettings />);
+
+    const location = await screen.findByRole("region", { name: "Where backups are kept" });
+    expect(within(location).getByText(folder)).toBeInTheDocument();
+    await user.click(within(location).getByRole("button", { name: /Show in|Open folder/ }));
+
+    expect(
+      await within(location).findByText("Opened on the computer running the Orbit API."),
+    ).toBeInTheDocument();
+    expect(
+      api.mock.calls.some(
+        ([url, init]) => String(url).endsWith("/backups/reveal") && init?.method === "POST",
+      ),
+    ).toBe(true);
+  });
+
+  it("hides the backup folder when the API doesn't share it", async () => {
+    mockApi({ ...session, [`GET ${WS}/backups`]: json(overview()) });
+    await renderSignedIn(<BackupSettings />);
+
+    expect(await screen.findByText("Last successful backup")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Where backups are kept" })).toBeNull();
   });
 
   it("explains an empty history and shows load errors", async () => {

@@ -443,6 +443,13 @@ function RoutinePage({
           body: { status, notes },
         })
       }
+      onNotes={(session, notes) =>
+        mutations.updateSession.mutateAsync({
+          routineId,
+          sessionId: session.id,
+          body: { notes },
+        })
+      }
       onNote={(session) => mutations.createNote.mutateAsync({ routineId, sessionId: session.id })}
       onOpenNote={(noteId) => router.push(noteHref(noteId))}
     />

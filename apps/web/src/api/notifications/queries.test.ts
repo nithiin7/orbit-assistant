@@ -15,6 +15,7 @@ function notification(id: string, readAt: string | null = null): Notification {
     scheduled_for: "2030-01-15T08:00:00Z",
     created_at: "2030-01-15T08:00:00Z",
     read_at: readAt,
+    link: null,
   };
 }
 

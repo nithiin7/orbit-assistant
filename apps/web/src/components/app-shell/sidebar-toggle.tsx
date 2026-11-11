@@ -7,6 +7,7 @@ import { useIsMac } from "@/components/shortcut-hint";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
 import { readSidebarCollapsed } from "@/lib/sidebar-preference";
+import { cn } from "@/utils/common";
 import {
   isEditableTarget,
   isMacPlatform,
@@ -22,7 +23,7 @@ const DESKTOP_QUERY = "(min-width: 48rem)";
 const SHORTCUT_KEY = "b";
 
 /** Collapses or expands the desktop sidebar; also bound to Cmd+B on macOS and Ctrl+B elsewhere. */
-export function SidebarToggle() {
+export function SidebarToggle({ className }: { className?: string }) {
   const collapsed = useSidebarCollapsed();
   const isMac = useIsMac();
   const label = collapsed ? "Expand sidebar" : "Collapse sidebar";
@@ -50,7 +51,7 @@ export function SidebarToggle() {
         aria-controls="sidebar"
         aria-keyshortcuts={modKeyShortcut(SHORTCUT_KEY, isMac)}
         onClick={() => setSidebarCollapsed(!collapsed)}
-        className="text-muted-foreground hover:text-foreground"
+        className={cn("text-muted-foreground hover:text-foreground", className)}
       >
         <Icon aria-hidden="true" />
       </Button>

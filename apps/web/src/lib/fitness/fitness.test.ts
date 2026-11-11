@@ -7,9 +7,11 @@ import {
   formatGoalValue,
   formatRecord,
   IMPERIAL_UNITS,
+  matchesName,
   METRIC_UNITS,
   parseFitnessLocation,
   share,
+  sortFoods,
 } from "./fitness";
 import {
   entrySchema,
@@ -256,6 +258,9 @@ describe("forms", () => {
         fat_mg: null,
         fiber_mg: null,
         water_ml: 2366,
+        steps: 8000,
+        active_s: 45 * 60,
+        sleep_s: 7.5 * 3600,
       },
       water_quick_amounts_ml: [237, 473],
       hidden_sections: [],
@@ -264,9 +269,21 @@ describe("forms", () => {
     const values = toProfileFormValues(profile);
     expect(values.height).toBe("70");
     expect(values.waterTarget).toBe("80");
+    expect([values.stepsTarget, values.activeTarget, values.sleepTarget]).toEqual([
+      "8000",
+      "45",
+      "7.5",
+    ]);
     expect(toProfileRequest(values)).toMatchObject({
       height_mm: 1778,
-      targets: { energy_cal: 2_000_000, protein_mg: 150_000, water_ml: 2366 },
+      targets: {
+        energy_cal: 2_000_000,
+        protein_mg: 150_000,
+        water_ml: 2366,
+        steps: 8000,
+        active_s: 2700,
+        sleep_s: 27_000,
+      },
       water_quick_amounts_ml: [237, 473],
     });
   });
@@ -311,6 +328,14 @@ describe("forms", () => {
     await expect(profileSchema.validate({ ...metric, waterTarget: "30000" })).rejects.toThrow(
       "Enter up to 20,000 ml, or leave it blank.",
     );
+    expect(toProfileRequest(metric).targets).toMatchObject({
+      steps: null,
+      active_s: null,
+      sleep_s: null,
+    });
+    await expect(profileSchema.validate({ ...metric, sleepTarget: "30" })).rejects.toThrow(
+      "Enter 1 to 24 hours, or leave it blank.",
+    );
     await expect(profileSchema.validate({ ...metric, energyTarget: "25000" })).rejects.toThrow(
       "Enter up to 20,000 kcal, or leave it blank.",
     );
@@ -327,5 +352,33 @@ describe("forms", () => {
         "Asia/Kolkata",
       ),
     ).toEqual({ started_at: "2026-01-01T01:30:00.000Z", ended_at: "2026-01-01T02:15:00.000Z" });
+  });
+});
+
+describe("saved food search and sort", () => {
+  const foods = [
+    { name: "Oats" },
+    { name: "banana" },
+    { name: "Crème fraîche" },
+    { name: "Egg 10" },
+    { name: "Egg 2" },
+  ];
+
+  it("match names ignoring case, accents, and outer spaces", () => {
+    expect(matchesName("Crème fraîche", " CREME ")).toBe(true);
+    expect(matchesName("Oats", "")).toBe(true);
+    expect(matchesName("Oats", "rice")).toBe(false);
+  });
+
+  it("sort by name either way, or keep the most-used order", () => {
+    expect(sortFoods(foods, "most-used").map((f) => f.name)).toEqual(foods.map((f) => f.name));
+    expect(sortFoods(foods, "name-asc").map((f) => f.name)).toEqual([
+      "banana",
+      "Crème fraîche",
+      "Egg 2",
+      "Egg 10",
+      "Oats",
+    ]);
+    expect(sortFoods(foods, "name-desc").map((f) => f.name)[0]).toBe("Oats");
   });
 });

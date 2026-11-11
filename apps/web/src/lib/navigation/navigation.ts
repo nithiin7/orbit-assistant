@@ -9,10 +9,12 @@ import {
   HeartPulse,
   LayoutDashboard,
   type LucideIcon,
+  MapPinned,
   NotebookPen,
   Repeat2,
   Settings,
   ShoppingCart,
+  Trophy,
   Wallet,
   Workflow,
 } from "lucide-react";
@@ -130,6 +132,13 @@ export const navItems: readonly NavItem[] = [
     group: "library",
   },
   {
+    title: "Places",
+    href: "/places",
+    icon: MapPinned,
+    description: "Where you’ve been and where you want to go, on a map of your world.",
+    group: "library",
+  },
+  {
     title: "Assistant",
     href: "/assistant",
     icon: Bot,
@@ -142,6 +151,13 @@ export const navItems: readonly NavItem[] = [
     icon: Workflow,
     description: "Your personal agent, workflows, and approvals.",
     group: "ai",
+  },
+  {
+    title: "Profile",
+    href: "/profile",
+    icon: Trophy,
+    description: "Your achievements, level, and the XP store.",
+    group: "system",
   },
   {
     title: "Settings",
@@ -157,6 +173,16 @@ export const sidebarSections = navGroups
   .map((group) => ({ ...group, items: navItems.filter((item) => item.group === group.id) }))
   .filter((section) => section.items.length > 0);
 
+/** A stable key for a link, used by the sidebar preference: the route without its slash. */
+export function navItemKey(item: Pick<NavItem, "href">): string {
+  return item.href === "/" ? "dashboard" : item.href.slice(1);
+}
+
+/** Every link can be hidden from the sidebar except the dashboard, Orbit's home. */
+export function canHideNavItem(item: Pick<NavItem, "group">): boolean {
+  return item.group !== "home";
+}
+
 /** Routes with their own page; every other item is rendered by the `[section]` placeholder. */
 const dedicatedRoutes: ReadonlySet<string> = new Set([
   "/",
@@ -171,8 +197,10 @@ const dedicatedRoutes: ReadonlySet<string> = new Set([
   "/documents",
   "/watchlist",
   "/saved",
+  "/places",
   "/assistant",
   "/automation",
+  "/profile",
   "/settings",
 ]);
 

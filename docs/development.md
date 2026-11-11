@@ -127,6 +127,14 @@ Market data (see [architecture.md](architecture.md#valuation-strategy)):
 | `ORBIT_MARKET_DATA_ENABLED`       | `true`  | Server-wide kill switch for live prices (mfapi.in and Yahoo Finance); workspaces opt in under Settings → Finance |
 | `ORBIT_MARKET_DATA_REFRESH_HOURS` | `6`     | How often the worker refreshes every holding's price while market data is on (1 to 168)                          |
 
+Places (see [architecture.md](architecture.md#places)):
+
+| Variable                    | Default                                         | Purpose                                                                                           |
+| --------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `ORBIT_ONLINE_MAPS_ENABLED` | `true`                                          | Server-wide kill switch for map tiles and place search; workspaces opt in under Settings → Places |
+| `ORBIT_MAP_STYLE_URL`       | `https://tiles.openfreemap.org/styles/positron` | MapLibre style the browser loads tiles from while online maps are on                              |
+| `ORBIT_GEOCODER_URL`        | `https://nominatim.openstreetmap.org`           | Nominatim-compatible geocoder for place search; requests are spaced a second apart and cached     |
+
 Automation (see [architecture.md](architecture.md#personal-agent-and-automation)):
 
 | Variable              | Default | Purpose                                                                                                   |
@@ -178,8 +186,8 @@ pnpm dev:api        # logs "Storage mode: local. Using the SQLite database at �
 The simplest way to back up a workspace is **Settings → Backup & restore**: a backup is a
 checksummed ZIP of the workspace's records and files, read from one consistent snapshot while
 the API keeps running, optionally password-encrypted, and restorable into this or another Orbit
-installation (local or cloud). Automatic daily, weekly, or monthly backups can run too. Stored backups live in `ORBIT_BACKUPS_PATH`; download copies to keep
-them on another disk.
+installation (local or cloud). Automatic daily, weekly, or monthly backups can run too. Stored backups live in `ORBIT_BACKUPS_PATH`; in local mode the Backup page shows that folder
+and opens it. Download copies to keep them on another disk.
 
 To back up a whole installation (every account and workspace) instead, copy the database and
 the files together. SQLite runs in WAL mode, so recent writes may sit in `orbit.sqlite3-wal`
@@ -536,6 +544,29 @@ Test a message without committing:
 ```bash
 echo "feat(web): add task list" | pnpm exec commitlint
 ```
+
+### Releases
+
+Releases are automatic, driven by the commit messages that reach `main`
+([`release.yml`](../.github/workflows/release.yml), using
+[release-please](https://github.com/googleapis/release-please)):
+
+1. Each push to `main` opens or updates a **release pull request** that bumps the version and
+   adds a `CHANGELOG.md` entry: `fix` bumps the patch (`0.1.0` → `0.1.1`), `feat` the minor
+   (`0.2.0`), and a breaking change (`feat!:` or a `BREAKING CHANGE:` footer) the major
+   (`1.0.0`). `docs`, `chore`, `ci`, and the like alone don't start a release.
+2. Merging it tags `vX.Y.Z`, creates the GitHub release, and the tag publishes container images
+   ([Using the published images](deployment.md#using-the-published-images)).
+
+One version covers the repository: the root `package.json`, `apps/web/package.json`,
+`apps/api/package.json`, `apps/api/pyproject.toml` (and `uv.lock`), tracked in
+`.release-please-manifest.json`. Don't edit these versions or the changelog by hand. After a
+release, merge `main` back into `dev`.
+
+For the release pull request to run CI and the tag to publish images, add a fine-grained
+personal access token (this repository; contents and pull requests: read and write) as the
+`RELEASE_PLEASE_TOKEN` Actions secret. Without it the workflow falls back to `GITHUB_TOKEN`,
+whose events start no other workflows.
 
 ## Dependencies
 

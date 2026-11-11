@@ -15,6 +15,7 @@ from orbit_api.services.shopping.models import (
     ShoppingItem,
     ShoppingItemNotFoundError,
     ShoppingList,
+    ShoppingListIcon,
     ShoppingListNotFoundError,
     ShoppingListOverview,
 )
@@ -25,6 +26,7 @@ def _to_list(model: ShoppingListModel) -> ShoppingList:
         id=model.id,
         workspace_id=model.workspace_id,
         name=model.name,
+        icon=cast(ShoppingListIcon, model.icon),
         is_default=model.is_default,
         created_at=model.created_at,
         updated_at=model.updated_at,
@@ -58,6 +60,7 @@ class SqlShoppingListRepository:
                 id=shopping_list.id,
                 workspace_id=shopping_list.workspace_id,
                 name=shopping_list.name,
+                icon=shopping_list.icon,
                 is_default=shopping_list.is_default,
                 created_at=shopping_list.created_at,
                 updated_at=shopping_list.updated_at,
@@ -100,6 +103,7 @@ class SqlShoppingListRepository:
         if model is None:
             raise ShoppingListNotFoundError
         model.name = shopping_list.name
+        model.icon = shopping_list.icon
         model.updated_at = shopping_list.updated_at
         await flush(self._session)
 

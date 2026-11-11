@@ -1,6 +1,6 @@
 {
   "name": "orbit",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Orbit — an open-source, privacy-first personal assistant.",
   "license": "Apache-2.0",

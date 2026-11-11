@@ -10,9 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from orbit_api.config import Settings
 from orbit_api.db.database import Database
 from orbit_api.repositories.accounts import SqlAccountRepository, SqlLocalAuthRepository
+from orbit_api.repositories.achievements import SqlAchievementMetrics, SqlAchievementRecords
 from orbit_api.repositories.agent_services import AgentServices, build_agent
 from orbit_api.repositories.ai_services import AiServices, build_ai
-from orbit_api.repositories.avatars import SqlAvatarRepository
+from orbit_api.repositories.avatars import SqlAvatarRepository, SqlCoverRepository
 from orbit_api.repositories.backup import build_backup_service
 from orbit_api.repositories.bookmarks import SqlBookmarkRepository, SqlBookmarkSettings
 from orbit_api.repositories.budgets import build_budget_service
@@ -39,6 +40,7 @@ from orbit_api.repositories.investments import (
 )
 from orbit_api.repositories.notes import build_attachment_service, build_note_service
 from orbit_api.repositories.notifications import SqlNotificationRepository
+from orbit_api.repositories.places import SqlPlaceRepository, SqlPlaceSettings
 from orbit_api.repositories.planning import build_planning_service
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.search.history import build_search_history
@@ -49,7 +51,8 @@ from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.repositories.watchlist import SqlLookupSettings, SqlWatchItemRepository
 from orbit_api.repositories.workspaces import SqlWorkspaceRepository
 from orbit_api.services.accounts.service import AccountService
-from orbit_api.services.avatars.service import AvatarService
+from orbit_api.services.achievements.service import AchievementService
+from orbit_api.services.avatars.service import MAX_COVER_BYTES, AvatarService
 from orbit_api.services.backup.service import BackupService
 from orbit_api.services.bookmarks.service import BookmarkService, LinkFetcher
 from orbit_api.services.budgets.service import BudgetService
@@ -71,6 +74,7 @@ from orbit_api.services.networth.service import NetWorthService
 from orbit_api.services.notes.attachments import AttachmentService
 from orbit_api.services.notes.service import NoteService
 from orbit_api.services.notifications.service import NotificationService
+from orbit_api.services.places.service import Geocoder, PlaceService
 from orbit_api.services.planning.service import PlanningService
 from orbit_api.services.reminders.service import ReminderService
 from orbit_api.services.search.history import SearchHistoryService
@@ -82,6 +86,7 @@ from orbit_api.services.watchlist.service import TitleCatalogs, WatchlistService
 from orbit_api.services.workspaces.service import WorkspaceService
 from orbit_api.system.attachment_store import FileAttachmentStore
 from orbit_api.system.backup_store import FileArchiveStore
+from orbit_api.system.file_manager import FileRevealer
 from orbit_api.system.secrets import FernetSecretBox
 
 
@@ -102,6 +107,20 @@ def get_app_settings(request: Request) -> Settings:
 
 
 SettingsDep = Annotated[Settings, Depends(get_app_settings)]
+
+
+def exposes_local_paths(settings: Settings) -> bool:
+    """Whether the API may share and open folders on its own machine: only in local mode, which
+    runs on the user's own computer. A production server keeps its filesystem layout to itself,
+    and has no desktop to open."""
+    return settings.storage_mode == "local" and not settings.is_production
+
+
+def get_file_revealer(request: Request) -> FileRevealer:
+    return request.app.state.file_revealer
+
+
+FileRevealerDep = Annotated[FileRevealer, Depends(get_file_revealer)]
 
 
 def get_password_hasher(request: Request) -> PasswordHasher:
@@ -156,6 +175,24 @@ def get_avatar_service(session: SessionDep) -> AvatarService:
 
 
 AvatarServiceDep = Annotated[AvatarService, Depends(get_avatar_service)]
+
+
+def get_cover_service(session: SessionDep) -> AvatarService:
+    return AvatarService(
+        SqlCoverRepository(session), SqlTransaction(session), max_bytes=MAX_COVER_BYTES
+    )
+
+
+CoverServiceDep = Annotated[AvatarService, Depends(get_cover_service)]
+
+
+def get_achievement_service(session: SessionDep) -> AchievementService:
+    return AchievementService(
+        SqlAchievementRecords(session), SqlAchievementMetrics(session), SqlTransaction(session)
+    )
+
+
+AchievementServiceDep = Annotated[AchievementService, Depends(get_achievement_service)]
 
 
 def get_dashboard_service(session: SessionDep) -> DashboardService:
@@ -310,6 +347,21 @@ def get_watchlist_service(
 
 
 WatchlistServiceDep = Annotated[WatchlistService, Depends(get_watchlist_service)]
+
+
+def get_place_service(request: Request, session: SessionDep, settings: SettingsDep) -> PlaceService:
+    # Tests replace the geocoder with a fake.
+    geocoder: Geocoder = getattr(request.app.state, "geocoder")  # noqa: B009 - untyped State
+    return PlaceService(
+        SqlPlaceRepository(session),
+        SqlPlaceSettings(session),
+        SqlTransaction(session),
+        geocoder,
+        online_maps_allowed=settings.online_maps_enabled,
+    )
+
+
+PlaceServiceDep = Annotated[PlaceService, Depends(get_place_service)]
 
 
 def get_archive_store(settings: SettingsDep) -> FileArchiveStore:

@@ -26,6 +26,7 @@ Module = Literal[
     "search",
     "watchlist",
     "bookmarks",
+    "places",
 ]
 
 MODULES: Final[tuple[Module, ...]] = (
@@ -42,6 +43,7 @@ MODULES: Final[tuple[Module, ...]] = (
     "search",
     "watchlist",
     "bookmarks",
+    "places",
 )
 
 MODULE_LABELS: Final[dict[Module, str]] = {
@@ -58,6 +60,7 @@ MODULE_LABELS: Final[dict[Module, str]] = {
     "search": "Saved searches",
     "watchlist": "Watchlist",
     "bookmarks": "Saved",
+    "places": "Places",
 }
 
 _PREFIXES: Final[tuple[tuple[str, Module], ...]] = (
@@ -90,6 +93,8 @@ _EXACT: Final[dict[str, Module]] = {
     "bookmark_collections": "bookmarks",
     "bookmark_previews": "bookmarks",
     "bookmark_settings": "bookmarks",
+    "places": "places",
+    "place_settings": "places",
 }
 
 # Tables a backup leaves out, and why. Credentials and tokens never leave the server; derived
@@ -100,7 +105,11 @@ EXCLUDED_TABLES: Final[dict[str, str]] = {
     "local_credentials": "password hashes never leave the server",
     "local_sessions": "sign-in tokens never leave the server",
     "user_avatars": "the profile photo belongs to the account",
+    "user_covers": "the profile cover photo belongs to the account",
     "dashboard_layouts": "a per-person preference, not workspace data",
+    "achievement_unlocks": "achievements belong to the person, not the workspace",
+    "reward_purchases": "XP store purchases belong to the person, not the workspace",
+    "reward_equips": "worn store items belong to the person, not the workspace",
     "calendar_preferences": "a per-person preference, not workspace data",
     "ai_providers": "encrypted provider API keys never leave the server",
     "ai_settings": "per-person AI settings refer to providers, which aren't backed up",

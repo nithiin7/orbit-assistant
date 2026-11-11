@@ -33,6 +33,7 @@ import {
   Plus,
   RefreshCw,
   RotateCcw,
+  Sparkles,
   Tag,
   Trash2,
   TrendingDown,
@@ -46,6 +47,7 @@ import { Button } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type Resource } from "@/hooks/query-resource";
+import { useReviewPortfolio } from "@/hooks/use-ai";
 import {
   useDeposits,
   useHoldings,
@@ -89,6 +91,7 @@ import {
 } from "./investment-dialogs";
 import { Figure, FreshnessBadge, Gain, InlineSelect, ProportionBars } from "./investment-parts";
 import { LoadError, Panel } from "./panel";
+import { PortfolioReview } from "./portfolio-review";
 import { RowActions } from "./row-actions";
 import { StatGrid, StatTile } from "./stat-tile";
 import { CurrencySwitcher, ViewHeader } from "./view-header";
@@ -102,7 +105,7 @@ const RANGES: { value: Range; label: string }[] = [
 ];
 
 /** The view's tabs: a summary, one per kind of holding, deposits, and activity. */
-type Section = "overview" | HoldingKind | "deposits" | "activity";
+type Section = "overview" | HoldingKind | "deposits" | "activity" | "review";
 
 const SECTIONS: readonly { id: Section; label: string }[] = [
   { id: "overview", label: "Overview" },
@@ -111,6 +114,7 @@ const SECTIONS: readonly { id: Section; label: string }[] = [
   { id: "etf", label: "ETFs" },
   { id: "deposits", label: "Deposits" },
   { id: "activity", label: "Activity" },
+  { id: "review", label: "AI review" },
 ];
 
 const SECTION_ICONS: Record<Section, LucideIcon> = {
@@ -120,6 +124,7 @@ const SECTION_ICONS: Record<Section, LucideIcon> = {
   etf: Boxes,
   deposits: PiggyBank,
   activity: History,
+  review: Sparkles,
 };
 
 /** Each kind of holding as its tab names it, and as one of it is called. */
@@ -157,6 +162,8 @@ export function InvestmentsView({ workspaceId, accounts, onAnnounce }: FinanceDa
   const [range, setRange] = useState<Range>("ytd");
   const [section, setSection] = useState<Section>("overview");
   const tabsId = useId();
+  // Here rather than in the review tab, so a review survives moving between tabs.
+  const review = useReviewPortfolio(workspaceId);
 
   const accountsState = investmentAccounts.state;
   if (accountsState.status === "error") {
@@ -444,6 +451,8 @@ export function InvestmentsView({ workspaceId, accounts, onAnnounce }: FinanceDa
               }
             />
           </>
+        ) : section === "review" ? (
+          <PortfolioReview currency={currency} review={review} />
         ) : (
           <ActivityPanel
             workspaceId={workspaceId}

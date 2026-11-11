@@ -16,3 +16,7 @@ uv.lock
 # Generated API contract
 packages/contracts/openapi.json
 packages/contracts/src/schema.ts
+
+# Written by release-please on each release
+CHANGELOG.md
+.release-please-manifest.json

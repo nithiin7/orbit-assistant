@@ -546,16 +546,21 @@ class TestRoutines:
         assert done["steps"][0]["status"] == "completed"
         # Completing the step completed its habit for the day.
         assert detail(client, habits, ada, habit)["state"] == "completed"
-        client.patch(
+        assert done["status"] == "active"
+        # Settling the last pending step finishes the session by itself.
+        last = client.patch(
             f"{base}/{session['id']}/steps/{run['id']}", json={"status": "skipped"}, headers=ada
+        ).json()
+        assert last["status"] == "completed" and last["finished_at"] is not None
+        undo = client.patch(
+            f"{base}/{session['id']}/steps/{run['id']}", json={"status": "pending"}, headers=ada
         )
+        assert undo.status_code == 409
 
-        # Editing the routine doesn't change the session.
+        # Editing the routine doesn't change the session; notes stay editable.
         client.patch(f"{routines}/{routine['id']}", json={"name": "Dawn", "steps": []}, headers=ada)
         finished = client.patch(
-            f"{base}/{session['id']}",
-            json={"status": "completed", "notes": "Felt good"},
-            headers=ada,
+            f"{base}/{session['id']}", json={"notes": "Felt good"}, headers=ada
         ).json()
         assert finished["status"] == "completed" and finished["finished_at"] is not None
         assert finished["routine_name"] == "Morning"
@@ -575,6 +580,22 @@ class TestRoutines:
             f"{base}/{second['id']}", json={"status": "abandoned"}, headers=ada
         )
         assert abandoned.json()["status"] == "abandoned"
+
+    def test_all_skipped_session_stays_active(
+        self, client: TestClient, routines: str, ada: Headers
+    ) -> None:
+        routine = client.post(
+            routines, json={"name": "Evening", "steps": [{"name": "Read"}]}, headers=ada
+        ).json()
+        base = f"{routines}/{routine['id']}/sessions"
+        session = client.post(base, json={}, headers=ada).json()
+        step = session["steps"][0]["id"]
+        skipped = client.patch(
+            f"{base}/{session['id']}/steps/{step}", json={"status": "skipped"}, headers=ada
+        ).json()
+        assert skipped["status"] == "active"
+        result = client.get(f"{routines}/{routine['id']}", headers=ada).json()
+        assert result["sessions_completed"] == 0 and result["active_session"] is not None
 
     def test_session_note(self, client: TestClient, routines: str, ada: Headers) -> None:
         routine = client.post(routines, json={"name": "Study"}, headers=ada).json()

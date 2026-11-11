@@ -23,3 +23,17 @@ export function putMyAvatar(token: string, image: Blob): Promise<void> {
 export function deleteMyAvatar(token: string): Promise<void> {
   return request<void>("/api/v1/me/avatar", { method: "DELETE", token });
 }
+
+/** The signed-in user's profile cover photo, or `null` when none is set. */
+export async function getMyCover(token: string, { signal }: Signal = {}): Promise<Blob | null> {
+  const response = await send("/api/v1/me/cover", { token, signal });
+  return response.status === 204 ? null : response.blob();
+}
+
+export function putMyCover(token: string, image: Blob): Promise<void> {
+  return request<void>("/api/v1/me/cover", { method: "PUT", body: image, token });
+}
+
+export function deleteMyCover(token: string): Promise<void> {
+  return request<void>("/api/v1/me/cover", { method: "DELETE", token });
+}

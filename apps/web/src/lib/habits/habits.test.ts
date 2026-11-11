@@ -12,6 +12,7 @@ import {
   isRemaining,
   newHabitValues,
   parseHabitLocation,
+  routineDoneOn,
   toCreateHabitRequest,
   toHabitFormValues,
   toUpdateHabitRequest,
@@ -65,6 +66,18 @@ describe("targets and progress", () => {
     expect(heatLevel({ day: "", due: 0, completed: 0, extra: 1 })).toBe(2);
     expect(heatLevel({ day: "", due: 4, completed: 4, extra: 0 })).toBe(4);
     expect(heatLevel({ day: "", due: 3, completed: 1, extra: 0 })).toBe(1);
+  });
+});
+
+describe("routineDoneOn", () => {
+  const last = (status: "active" | "completed" | "abandoned", day: string) => ({
+    last_session: { status, day },
+  });
+  it("is done only when the latest session completed that day", () => {
+    expect(routineDoneOn(last("completed", "2030-01-14"), "2030-01-14")).toBe(true);
+    expect(routineDoneOn(last("completed", "2030-01-13"), "2030-01-14")).toBe(false);
+    expect(routineDoneOn(last("abandoned", "2030-01-14"), "2030-01-14")).toBe(false);
+    expect(routineDoneOn({ last_session: null }, "2030-01-14")).toBe(false);
   });
 });
 

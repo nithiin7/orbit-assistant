@@ -1038,6 +1038,7 @@ class InvestmentService:
                 scheduled_for=now,
                 created_at=now,
                 read_at=None,
+                link="/finance?view=investments",
             )
         )
 

@@ -204,7 +204,11 @@ export function BarChart({
     <figure>
       <div className="flex h-32 items-end gap-1" aria-hidden="true">
         {bars.map((bar, i) => (
-          <div key={`${bar.label}-${i}`} className="flex flex-1 flex-col items-center gap-1">
+          // Full height, so each bar's percentage height has something to be a percentage of.
+          <div
+            key={`${bar.label}-${i}`}
+            className="flex h-full flex-1 flex-col items-center justify-end gap-1"
+          >
             <div
               className="w-full max-w-8 rounded-t bg-brand/80"
               style={{ height: `${Math.max(bar.value > 0 ? 4 : 0, (bar.value / max) * 100)}%` }}

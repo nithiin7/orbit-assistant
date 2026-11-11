@@ -42,6 +42,14 @@ class FileArchiveStore:
     def _backup(self, workspace_id: uuid.UUID, backup_id: uuid.UUID) -> Path:
         return self._root / str(workspace_id) / f"{backup_id}{SUFFIX}"
 
+    def workspace_folder(self, workspace_id: uuid.UUID) -> Path:
+        """The folder holding a workspace's stored backups (it may not exist yet)."""
+        return self._root / str(workspace_id)
+
+    async def ensure_workspace_folder(self, workspace_id: uuid.UUID) -> Path:
+        """The workspace's backup folder, created (`0700`) if missing."""
+        return await anyio.to_thread.run_sync(self._directory, str(workspace_id))
+
     def _upload(self, workspace_id: uuid.UUID, upload_id: uuid.UUID) -> Path:
         return self._root / "uploads" / str(workspace_id) / str(upload_id)
 

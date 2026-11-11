@@ -1,6 +1,11 @@
 "use client";
 
-import type { UpdateWatchItemRequest, WatchItem, WatchStatus } from "@orbit/contracts";
+import type {
+  CreateWatchItemRequest,
+  UpdateWatchItemRequest,
+  WatchItem,
+  WatchStatus,
+} from "@orbit/contracts";
 import { Clapperboard, Dices, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -13,6 +18,7 @@ import { FormAlert } from "@/components/form-field";
 import { useCelebration } from "@/components/habits/celebration";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWatchlist, useWatchlistMutations } from "@/hooks/use-watchlist";
 import {
@@ -21,8 +27,10 @@ import {
   type KindFilter,
   parseWatchView,
   platformsOf,
+  sortOptions,
   STATUS_LABELS,
   titlesIn,
+  type TitleSort,
   WATCH_VIEWS,
   watchlistHref,
   type WatchView,
@@ -32,6 +40,7 @@ import { isEditableTarget } from "@/utils/keyboard";
 
 import { AddTitleDialog } from "./add-title-dialog";
 import { ChoiceChips } from "./choice-chips";
+import { SuggestionsView } from "./suggestions-view";
 import { ContinueCard, type TitleActions, TitleCard } from "./title-card";
 import { TitleSheet } from "./title-sheet";
 import { TonightDialog } from "./tonight-dialog";
@@ -98,7 +107,9 @@ function WatchlistView({ workspaceId }: { workspaceId: string }) {
   const params = useSearchParams();
   const router = useRouter();
   const view = parseWatchView(params);
+  // Type and sort carry across views.
   const [kind, setKind] = useState<KindFilter>("all");
+  const [sort, setSort] = useState<TitleSort>("default");
   const [platform, setPlatform] = useState(ALL_PLATFORMS);
   const [dialog, setDialog] = useState<Dialog | null>(null);
   // `?title=<id>` (from search) opens that title's sheet, once per link.
@@ -236,6 +247,23 @@ function WatchlistView({ workspaceId }: { workspaceId: string }) {
     </>
   );
 
+  const kindFilter = (
+    <ChoiceChips
+      label="Type"
+      hideLabel
+      size="sm"
+      value={kind}
+      options={KIND_FILTERS}
+      onChange={setKind}
+    />
+  );
+
+  async function add(body: CreateWatchItemRequest) {
+    const item = await mutations.add.mutateAsync(body);
+    setAnnouncement(`Added “${item.title}” to ${STATUS_LABELS[item.status]}.`);
+    return item;
+  }
+
   let body;
   if (items.status === "loading") body = <GridSkeleton />;
   else if (items.status === "error") {
@@ -255,7 +283,24 @@ function WatchlistView({ workspaceId }: { workspaceId: string }) {
     );
   } else if (view === "overview") {
     body = (
-      <Overview workspaceId={workspaceId} items={items.data} actions={actions} pending={pending} />
+      <Overview
+        workspaceId={workspaceId}
+        items={items.data}
+        kind={kind}
+        kindFilter={kindFilter}
+        actions={actions}
+        pending={pending}
+      />
+    );
+  } else if (view === "suggestions") {
+    body = (
+      <SuggestionsView
+        workspaceId={workspaceId}
+        kind={kind}
+        kindFilter={kindFilter}
+        onAdd={add}
+        onOpen={(itemId) => setDialog({ kind: "title", id: itemId })}
+      />
     );
   } else {
     const all = items.data;
@@ -264,20 +309,14 @@ function WatchlistView({ workspaceId }: { workspaceId: string }) {
     const shown = titlesIn(all, view, {
       kind,
       platform: activePlatform === ALL_PLATFORMS ? null : activePlatform,
+      sort,
     });
     const filtered = kind !== "all" || activePlatform !== ALL_PLATFORMS;
 
     body = (
       <div className="space-y-5">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <ChoiceChips
-            label="Type"
-            hideLabel
-            size="sm"
-            value={kind}
-            options={KIND_FILTERS}
-            onChange={setKind}
-          />
+          {kindFilter}
           {platforms.length > 1 ? (
             <ChoiceChips
               label="Platform"
@@ -291,6 +330,14 @@ function WatchlistView({ workspaceId }: { workspaceId: string }) {
               ]}
             />
           ) : null}
+          <Select
+            aria-label="Sort titles"
+            variant="ghost"
+            className="ml-auto w-auto"
+            value={sort}
+            onValueChange={setSort}
+            options={sortOptions(view)}
+          />
         </div>
         {shown.length === 0 ? (
           <div className="rounded-xl border border-dashed px-4 py-10 text-center">
@@ -308,7 +355,7 @@ function WatchlistView({ workspaceId }: { workspaceId: string }) {
             items={shown}
             actions={actions}
             pending={pending}
-            markFirst={view === "want" && !filtered}
+            markFirst={view === "want" && !filtered && sort === "default"}
           />
         )}
       </div>
@@ -335,11 +382,7 @@ function WatchlistView({ workspaceId }: { workspaceId: string }) {
       {dialog?.kind === "add" ? (
         <AddTitleDialog
           workspaceId={workspaceId}
-          onAdd={async (body) => {
-            const item = await mutations.add.mutateAsync(body);
-            setAnnouncement(`Added “${item.title}” to ${STATUS_LABELS[item.status]}.`);
-            return item;
-          }}
+          onAdd={add}
           onOpen={(itemId) => setDialog({ kind: "title", id: itemId })}
           onClose={() => setDialog((current) => (current?.kind === "add" ? null : current))}
         />
@@ -456,18 +499,22 @@ const OVERVIEW_LIMIT = 6;
 function Overview({
   workspaceId,
   items,
+  kind,
+  kindFilter,
   actions,
   pending,
 }: {
   workspaceId: string;
   items: readonly WatchItem[];
+  kind: KindFilter;
+  kindFilter: ReactNode;
   actions: TitleActions;
   pending: ReadonlySet<string>;
 }) {
   const id = useId();
-  const watching = titlesIn(items, "watching");
-  const queue = titlesIn(items, "want");
-  const recent = titlesIn(items, "watched");
+  const watching = titlesIn(items, "watching", { kind });
+  const queue = titlesIn(items, "want", { kind });
+  const recent = titlesIn(items, "watched", { kind });
 
   function heading(key: string, title: string, view: WatchStatus, total: number) {
     return (
@@ -489,6 +536,7 @@ function Overview({
 
   return (
     <div className="space-y-8">
+      {kindFilter}
       <section aria-labelledby={`${id}-continue`} className="space-y-3">
         <h3 id={`${id}-continue`} className="text-sm font-semibold">
           Continue watching
@@ -507,7 +555,9 @@ function Overview({
           </ul>
         ) : (
           <p className="rounded-xl border border-dashed px-4 py-5 text-sm text-pretty text-muted-foreground">
-            Nothing in progress. Start something from your queue, or let “Watch tonight” choose.
+            {kind === "all"
+              ? "Nothing in progress. Start something from your queue, or let “Watch tonight” choose."
+              : `No ${kind === "movie" ? "movies" : "series"} in progress.`}
           </p>
         )}
       </section>

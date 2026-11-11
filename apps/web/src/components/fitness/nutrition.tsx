@@ -1,7 +1,7 @@
 "use client";
 
 import { yupResolver } from "@hookform/resolvers/yup";
-import type { Food, FoodEntry, MealType, SavedMeal } from "@orbit/contracts";
+import type { Food, FoodEntry, MealType, Portion, SavedMeal } from "@orbit/contracts";
 import {
   ChevronLeft,
   ChevronRight,
@@ -9,9 +9,11 @@ import {
   Pencil,
   Plus,
   Save,
+  Search,
+  Sparkles,
   Trash2,
 } from "lucide-react";
-import { useId, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import { Controller, useForm, type UseFormRegisterReturn, useWatch } from "react-hook-form";
 
 import { describeApiError } from "@/api/client";
@@ -30,7 +32,10 @@ import { DateField, FormAlert, FormField, SelectField } from "@/components/form-
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DatePicker } from "@/components/ui/date-picker";
+import { Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
+import { Select } from "@/components/ui/select";
+import { useAiReady, useEstimateFood } from "@/hooks/use-ai";
 import {
   useFitnessAction,
   useFoods,
@@ -39,29 +44,38 @@ import {
   useNutritionHistory,
   useUnits,
 } from "@/hooks/use-fitness";
+import { processingLabel } from "@/lib/ai";
 import {
   energyInput,
   type EntryFormValues,
   entrySchema,
+  FOOD_SORTS,
   type FoodFormValues,
   foodSchema,
+  type FoodSort,
   formatEnergy,
   formatGrams,
   formatQuantity,
   gramsInput,
+  matchesName,
+  type MealNameFormValues,
+  mealNameSchema,
   MEALS,
   newEntryValues,
   newFoodValues,
   parseQuantity,
   quantityInput,
   share,
+  sortFoods,
   toFoodFormValues,
   toFoodRequest,
   toPortionRequest,
+  toSavedMealRequest,
   type Units,
 } from "@/lib/fitness";
 import { addDays } from "@/utils/dates";
 
+import { FoodIdeasDialog } from "./food-ideas";
 import { BarChart, Loaded, Meter, Section, shortDate } from "./shared";
 
 export function NutritionView({ workspaceId, today }: { workspaceId: string; today: string }) {
@@ -72,6 +86,10 @@ export function NutritionView({ workspaceId, today }: { workspaceId: string; tod
   const { confirm, confirmDialog } = useConfirm();
   const [adding, setAdding] = useState<{ meal: MealType; entry: FoodEntry | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** The meal being named: a new one from logged entries, or a saved one to rename. */
+  const [naming, setNaming] = useState<{ meal: SavedMeal | null; portions: Portion[] } | null>(
+    null,
+  );
 
   const act = (call: (token: string) => Promise<unknown>) => {
     setError(null);
@@ -85,22 +103,6 @@ export function NutritionView({ workspaceId, today }: { workspaceId: string; tod
       destructive: true,
     });
     if (ok) act((token) => deleteFoodEntry(token, workspaceId, entry.id));
-  }
-
-  function saveAsMeal(meal: MealType, entries: FoodEntry[]) {
-    const name = `${MEALS.find((m) => m.value === meal)?.label ?? "Meal"} (${shortDate(day)})`;
-    act((token) =>
-      saveMeal(token, workspaceId, null, {
-        name,
-        items: entries.map((e) => ({
-          quantity_milli: e.portion.quantity_milli,
-          food_id: null,
-          name: e.portion.name,
-          serving_unit: e.portion.serving_unit,
-          nutrients: e.portion.nutrients,
-        })),
-      }),
-    );
   }
 
   return (
@@ -129,7 +131,9 @@ export function NutritionView({ workspaceId, today }: { workspaceId: string; tod
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => saveAsMeal(meal.value, entries)}
+                            onClick={() =>
+                              setNaming({ meal: null, portions: entries.map((e) => e.portion) })
+                            }
                           >
                             <Save aria-hidden="true" />
                             Save as meal
@@ -236,6 +240,7 @@ export function NutritionView({ workspaceId, today }: { workspaceId: string; tod
                 units={units}
                 act={act}
                 confirm={confirm}
+                onRename={(meal) => setNaming({ meal, portions: meal.items })}
               />
               <NutritionHistory workspaceId={workspaceId} today={today} units={units} />
             </div>
@@ -251,6 +256,14 @@ export function NutritionView({ workspaceId, today }: { workspaceId: string; tod
           editing={adding.entry}
           units={units}
           onClose={() => setAdding(null)}
+        />
+      ) : null}
+      {naming ? (
+        <MealNameDialog
+          workspaceId={workspaceId}
+          editing={naming.meal}
+          portions={naming.portions}
+          onClose={() => setNaming(null)}
         />
       ) : null}
       {confirmDialog}
@@ -310,14 +323,17 @@ function SavedMeals({
   units,
   act,
   confirm,
+  onRename,
 }: {
   workspaceId: string;
   day: string;
   units: Units;
   act: Act;
   confirm: Confirm;
+  onRename: (meal: SavedMeal) => void;
 }) {
   const meals = useMeals(workspaceId);
+  const [query, setQuery] = useState("");
   async function remove(meal: SavedMeal) {
     const ok = await confirm({
       title: `Delete ${meal.name}?`,
@@ -332,45 +348,60 @@ function SavedMeals({
         {({ meals: list }) =>
           list.length === 0 ? (
             <p className="text-xs text-muted-foreground">
-              Use “Save as meal” on a meal you eat often.
+              Use “Save as meal” on foods you often eat together, then name it, such as “Rice
+              combo”.
             </p>
           ) : (
-            <ul className="space-y-2">
-              {list.map((meal) => (
-                <li key={meal.id} className="flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm">{meal.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {meal.items.length} items ·{" "}
-                      {formatEnergy(meal.totals.energy_cal, units.energy_unit)}
-                    </p>
-                  </div>
-                  <Menu
-                    variant="soft"
-                    size="sm"
-                    align="end"
-                    aria-label={`Log ${meal.name}`}
-                    items={[
-                      ...MEALS.map((option) => ({
-                        id: option.value,
-                        label: `Log to ${option.label}`,
-                        onSelect: () =>
-                          act((token) => logMeal(token, workspaceId, meal.id, day, option.value)),
-                      })),
-                      {
-                        id: "delete",
-                        label: "Delete meal",
-                        icon: Trash2,
-                        destructive: true,
-                        onSelect: () => void remove(meal),
-                      },
-                    ]}
-                  >
-                    Log
-                  </Menu>
-                </li>
-              ))}
-            </ul>
+            <div className="space-y-3">
+              {list.length > 3 ? (
+                <SearchBox label="Search saved meals" value={query} onChange={setQuery} />
+              ) : null}
+              <FilteredList
+                items={list.filter((meal) => matchesName(meal.name, query))}
+                noun="meals"
+                className="space-y-2"
+                render={(meal) => (
+                  <li key={meal.id} className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm">{meal.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {meal.items.length} items ·{" "}
+                        {formatEnergy(meal.totals.energy_cal, units.energy_unit)}
+                      </p>
+                    </div>
+                    <Menu
+                      variant="soft"
+                      size="sm"
+                      align="end"
+                      aria-label={`Log ${meal.name}`}
+                      items={[
+                        ...MEALS.map((option) => ({
+                          id: option.value,
+                          label: `Log to ${option.label}`,
+                          onSelect: () =>
+                            act((token) => logMeal(token, workspaceId, meal.id, day, option.value)),
+                        })),
+                        {
+                          id: "rename",
+                          label: "Rename",
+                          icon: Pencil,
+                          onSelect: () => onRename(meal),
+                        },
+                        {
+                          id: "delete",
+                          label: "Delete meal",
+                          icon: Trash2,
+                          destructive: true,
+                          onSelect: () => void remove(meal),
+                        },
+                      ]}
+                    >
+                      Log
+                    </Menu>
+                  </li>
+                )}
+              />
+            </div>
           )
         }
       </Loaded>
@@ -424,6 +455,9 @@ function SavedFoods({
 }) {
   const foods = useFoods(workspaceId);
   const [editing, setEditing] = useState<Food | "new" | null>(null);
+  const [browsing, setBrowsing] = useState(false);
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<FoodSort>("most-used");
   async function remove(food: Food) {
     const ok = await confirm({
       title: `Delete ${food.name}?`,
@@ -436,57 +470,87 @@ function SavedFoods({
   return (
     <Section
       title="Saved foods"
-      description="Foods you eat often, with their nutrients per serving. Most used first."
+      description="Foods you eat often, with their nutrients per serving."
       action={
-        <Button variant="soft" size="sm" onClick={() => setEditing("new")}>
-          <Plus aria-hidden="true" />
-          New food
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setBrowsing(true)}>
+            Food ideas
+          </Button>
+          <Button variant="soft" size="sm" onClick={() => setEditing("new")}>
+            <Plus aria-hidden="true" />
+            New food
+          </Button>
+        </div>
       }
     >
       <Loaded resource={foods.state} reload={foods.reload} skeleton="h-16">
         {({ foods: list }) =>
           list.length === 0 ? (
             <p className="text-xs text-muted-foreground">
-              No saved foods. Enter nutrients by hand; Orbit doesn’t use a food database.
+              No saved foods. Add your own, or start from Food ideas: common foods of a cuisine with
+              typical nutrients.
             </p>
           ) : (
-            <ul className="grid gap-2 @3xl:grid-cols-2">
-              {list.map((food) => (
-                <li
-                  key={food.id}
-                  className="flex items-center justify-between gap-2 rounded-lg border p-2.5"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm">{food.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatQuantity(food.serving_quantity_milli)} {food.serving_unit} ·{" "}
-                      {formatEnergy(food.nutrients.energy_cal, units.energy_unit)} ·{" "}
-                      {formatGrams(food.nutrients.protein_mg)} protein
-                    </p>
-                  </div>
-                  <Menu
-                    variant="ghost"
-                    size="icon"
-                    chevron={false}
-                    align="end"
-                    aria-label={`Actions for ${food.name}`}
-                    items={[
-                      { id: "edit", label: "Edit", icon: Pencil, onSelect: () => setEditing(food) },
-                      {
-                        id: "delete",
-                        label: "Delete",
-                        icon: Trash2,
-                        destructive: true,
-                        onSelect: () => void remove(food),
-                      },
-                    ]}
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <SearchBox label="Search saved foods" value={query} onChange={setQuery} />
+                <Select
+                  aria-label="Sort saved foods"
+                  variant="ghost"
+                  className="w-auto"
+                  value={sort}
+                  onValueChange={setSort}
+                  options={FOOD_SORTS}
+                />
+              </div>
+              <FilteredList
+                items={sortFoods(
+                  list.filter((food) => matchesName(food.name, query)),
+                  sort,
+                )}
+                noun="foods"
+                className="grid gap-2 @3xl:grid-cols-2"
+                render={(food) => (
+                  <li
+                    key={food.id}
+                    className="flex items-center justify-between gap-2 rounded-lg border p-2.5"
                   >
-                    <MoreHorizontal aria-hidden="true" />
-                  </Menu>
-                </li>
-              ))}
-            </ul>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm">{food.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatQuantity(food.serving_quantity_milli)} {food.serving_unit} ·{" "}
+                        {formatEnergy(food.nutrients.energy_cal, units.energy_unit)} ·{" "}
+                        {formatGrams(food.nutrients.protein_mg)} protein
+                      </p>
+                    </div>
+                    <Menu
+                      variant="ghost"
+                      size="icon"
+                      chevron={false}
+                      align="end"
+                      aria-label={`Actions for ${food.name}`}
+                      items={[
+                        {
+                          id: "edit",
+                          label: "Edit",
+                          icon: Pencil,
+                          onSelect: () => setEditing(food),
+                        },
+                        {
+                          id: "delete",
+                          label: "Delete",
+                          icon: Trash2,
+                          destructive: true,
+                          onSelect: () => void remove(food),
+                        },
+                      ]}
+                    >
+                      <MoreHorizontal aria-hidden="true" />
+                    </Menu>
+                  </li>
+                )}
+              />
+            </div>
           )
         }
       </Loaded>
@@ -498,7 +562,135 @@ function SavedFoods({
           onClose={() => setEditing(null)}
         />
       ) : null}
+      {browsing ? (
+        <FoodIdeasDialog
+          workspaceId={workspaceId}
+          units={units}
+          savedNames={
+            new Set(
+              foods.state.status === "success"
+                ? foods.state.data.foods.map((food) => food.name.toLocaleLowerCase())
+                : [],
+            )
+          }
+          onClose={() => setBrowsing(false)}
+        />
+      ) : null}
     </Section>
+  );
+}
+
+function SearchBox({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const id = useId();
+  return (
+    <div className="relative min-w-0 flex-1 basis-48">
+      <Search
+        className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+        aria-hidden="true"
+      />
+      <label htmlFor={id} className="sr-only">
+        {label}
+      </label>
+      <Input
+        id={id}
+        type="search"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder="Search by name"
+        className="pl-9"
+        autoComplete="off"
+      />
+    </div>
+  );
+}
+
+/** A list after search, with a line saying so when nothing matches. */
+function FilteredList<T extends { id: string }>({
+  items,
+  noun,
+  className,
+  render,
+}: {
+  items: readonly T[];
+  noun: string;
+  className: string;
+  render: (item: T) => ReactNode;
+}) {
+  if (items.length === 0) {
+    return <p className="text-xs text-muted-foreground">No saved {noun} match your search.</p>;
+  }
+  return <ul className={className}>{items.map(render)}</ul>;
+}
+
+function MealNameDialog({
+  workspaceId,
+  editing,
+  portions,
+  onClose,
+}: {
+  workspaceId: string;
+  editing: SavedMeal | null;
+  portions: Portion[];
+  onClose: () => void;
+}) {
+  const run = useFitnessAction(workspaceId);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<MealNameFormValues>({
+    resolver: yupResolver(mealNameSchema),
+    defaultValues: { name: editing?.name ?? "" },
+  });
+
+  async function save(values: MealNameFormValues, close: () => void) {
+    try {
+      await run((token) =>
+        saveMeal(
+          token,
+          workspaceId,
+          editing?.id ?? null,
+          toSavedMealRequest(values.name, portions),
+        ),
+      );
+      close();
+    } catch (reason) {
+      setError("root.server", { message: describeApiError(reason, "Couldn’t save the meal.") });
+    }
+  }
+
+  return (
+    <DialogShell
+      title={editing ? "Rename meal" : "Save as meal"}
+      description={
+        editing
+          ? undefined
+          : `${portions.length} ${portions.length === 1 ? "food" : "foods"}, logged together from any meal.`
+      }
+      busy={isSubmitting}
+      onClose={onClose}
+      onSubmit={(event, close) => void handleSubmit((values) => save(values, close))(event)}
+      submitLabel={editing ? "Rename" : "Save meal"}
+    >
+      <FormField
+        label="Name"
+        placeholder="Rice combo"
+        autoFocus
+        autoComplete="off"
+        {...register("name")}
+        error={errors.name?.message}
+      />
+      <FormAlert message={errors.root?.server?.message ?? null} />
+    </DialogShell>
   );
 }
 
@@ -549,15 +741,46 @@ function FoodDialog({
   onClose: () => void;
 }) {
   const run = useFitnessAction(workspaceId);
+  const aiReady = useAiReady();
+  const estimate = useEstimateFood(workspaceId);
   const {
     register,
     handleSubmit,
     setError,
+    setValue,
+    getValues,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<FoodFormValues>({
     resolver: yupResolver(foodSchema),
     defaultValues: editing ? toFoodFormValues(editing, units) : newFoodValues(),
   });
+
+  /** Fill the serving and nutrients with an AI estimate; the person reviews before saving. */
+  function estimateNutrients() {
+    const { name, servingQuantity, servingUnit } = getValues();
+    if (!name.trim()) {
+      setError("name", { message: "Name the food to estimate it, such as “masala dosa”." });
+      return;
+    }
+    const serving = `${servingQuantity.trim()} ${servingUnit.trim()}`.trim();
+    estimate.mutate(serving ? `${name.trim()}, ${serving}` : name.trim(), {
+      onSuccess: ({ food }) => {
+        const values = toFoodFormValues(food, units);
+        const fields = [
+          "servingQuantity",
+          "servingUnit",
+          "energy",
+          "protein",
+          "carbs",
+          "fat",
+          "fiber",
+        ] as const;
+        for (const field of fields) setValue(field, values[field], { shouldDirty: true });
+        clearErrors();
+      },
+    });
+  }
 
   async function save(values: FoodFormValues, close: () => void) {
     try {
@@ -601,6 +824,31 @@ function FoodDialog({
           error={errors.servingUnit?.message}
         />
       </div>
+      {aiReady ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="soft"
+            size="sm"
+            onClick={estimateNutrients}
+            disabled={estimate.isPending}
+          >
+            <Sparkles aria-hidden="true" />
+            {estimate.isPending ? "Estimating…" : "Estimate with AI"}
+          </Button>
+          <p className="text-xs text-muted-foreground">Sends only the name and serving.</p>
+        </div>
+      ) : null}
+      {estimate.data ? (
+        <p role="status" className="rounded-lg bg-muted p-2.5 text-xs text-muted-foreground">
+          Estimated by {estimate.data.provider_name} ({processingLabel(estimate.data.processing)}
+          ). {estimate.data.food.note} Check the numbers before saving.
+        </p>
+      ) : null}
+      <FormAlert
+        message={
+          estimate.isError ? describeApiError(estimate.error, "Couldn’t estimate this food.") : null
+        }
+      />
       <NutrientInputs
         fields={{
           energy: register("energy"),

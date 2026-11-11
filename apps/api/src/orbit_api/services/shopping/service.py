@@ -15,12 +15,14 @@ from datetime import datetime
 from typing import Protocol
 
 from orbit_api.services.shopping.models import (
+    DEFAULT_LIST_ICON,
     DefaultListError,
     ItemChanges,
     ItemDraft,
     ShoppingItem,
     ShoppingItemNotFoundError,
     ShoppingList,
+    ShoppingListIcon,
     ShoppingListNotFoundError,
     ShoppingListOverview,
 )
@@ -111,8 +113,10 @@ class ShoppingService:
             await self._transaction.rollback()
         return await self._lists.overview(workspace_id)
 
-    async def create_list(self, workspace_id: uuid.UUID, name: str) -> ShoppingList:
-        shopping_list = self._new_list(workspace_id, name, is_default=False)
+    async def create_list(
+        self, workspace_id: uuid.UUID, name: str, icon: ShoppingListIcon = DEFAULT_LIST_ICON
+    ) -> ShoppingList:
+        shopping_list = self._new_list(workspace_id, name, is_default=False, icon=icon)
         await self._lists.add(shopping_list)
         await self._transaction.commit()
         return shopping_list
@@ -123,16 +127,27 @@ class ShoppingService:
             raise ShoppingListNotFoundError
         return shopping_list
 
-    async def rename_list(
-        self, workspace_id: uuid.UUID, list_id: uuid.UUID, name: str
+    async def update_list(
+        self,
+        workspace_id: uuid.UUID,
+        list_id: uuid.UUID,
+        *,
+        name: str | None = None,
+        icon: ShoppingListIcon | None = None,
     ) -> ShoppingList:
+        """Rename a list or change its icon; `None` keeps the current value."""
         shopping_list = await self.get_list(workspace_id, list_id)
-        if shopping_list.name == name:
+        changed = replace(
+            shopping_list,
+            name=shopping_list.name if name is None else name,
+            icon=shopping_list.icon if icon is None else icon,
+        )
+        if changed == shopping_list:
             return shopping_list
-        renamed = replace(shopping_list, name=name, updated_at=self._clock())
-        await self._lists.save(renamed)
+        changed = replace(changed, updated_at=self._clock())
+        await self._lists.save(changed)
         await self._transaction.commit()
-        return renamed
+        return changed
 
     async def delete_list(self, workspace_id: uuid.UUID, list_id: uuid.UUID) -> None:
         shopping_list = await self.get_list(workspace_id, list_id)
@@ -221,12 +236,20 @@ class ShoppingService:
             raise ShoppingItemNotFoundError
         await self._transaction.commit()
 
-    def _new_list(self, workspace_id: uuid.UUID, name: str, *, is_default: bool) -> ShoppingList:
+    def _new_list(
+        self,
+        workspace_id: uuid.UUID,
+        name: str,
+        *,
+        is_default: bool,
+        icon: ShoppingListIcon = DEFAULT_LIST_ICON,
+    ) -> ShoppingList:
         now = self._clock()
         return ShoppingList(
             id=uuid.uuid4(),
             workspace_id=workspace_id,
             name=name,
+            icon=icon,
             is_default=is_default,
             created_at=now,
             updated_at=now,

@@ -1,5 +1,10 @@
 """ORM models. Importing this package registers every table on `Base.metadata`."""
 
+from orbit_api.db.models.achievements import (
+    AchievementUnlockModel,
+    RewardEquipModel,
+    RewardPurchaseModel,
+)
 from orbit_api.db.models.agent import (
     AgentApprovalModel,
     AgentExecutionModel,
@@ -20,7 +25,7 @@ from orbit_api.db.models.ai import (
     AiSettingsModel,
     AiUsageModel,
 )
-from orbit_api.db.models.avatars import UserAvatarModel
+from orbit_api.db.models.avatars import UserAvatarModel, UserCoverModel
 from orbit_api.db.models.backup import BackupModel, BackupSettingsModel, BackupUploadModel
 from orbit_api.db.models.bookmarks import (
     BookmarkCollectionModel,
@@ -129,6 +134,7 @@ from orbit_api.db.models.notes import (
     NoteTagModel,
     NoteTaskLinkModel,
 )
+from orbit_api.db.models.places import PlaceModel, PlaceSettingsModel
 from orbit_api.db.models.reminders import (
     NotificationModel,
     ReminderModel,
@@ -142,6 +148,7 @@ from orbit_api.db.models.watchlist import WatchItemModel, WatchlistSettingsModel
 from orbit_api.db.models.workspaces import WorkspaceModel
 
 __all__ = [
+    "AchievementUnlockModel",
     "AgentApprovalModel",
     "AgentExecutionModel",
     "AgentExecutionStepModel",
@@ -245,9 +252,13 @@ __all__ = [
     "NoteTagModel",
     "NoteTaskLinkModel",
     "NotificationModel",
+    "PlaceModel",
+    "PlaceSettingsModel",
     "RecentSearchModel",
     "ReminderModel",
     "ReminderOccurrenceModel",
+    "RewardEquipModel",
+    "RewardPurchaseModel",
     "RoutineModel",
     "RoutineSessionModel",
     "RoutineSessionStepModel",
@@ -258,6 +269,7 @@ __all__ = [
     "TaskListModel",
     "TaskModel",
     "UserAvatarModel",
+    "UserCoverModel",
     "UserModel",
     "WatchItemModel",
     "WatchlistSettingsModel",

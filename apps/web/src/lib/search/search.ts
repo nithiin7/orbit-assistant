@@ -14,6 +14,7 @@ import { financeViewHref } from "@/lib/finance-views";
 import { fitnessHref } from "@/lib/fitness";
 import { habitsHref } from "@/lib/habits";
 import { notesHref } from "@/lib/notes";
+import { countryName, placesHref } from "@/lib/places";
 import { watchTitleHref } from "@/lib/watchlist";
 import { formatCalendarDate } from "@/utils/dates";
 
@@ -36,6 +37,7 @@ export const SEARCH_MODULES: readonly Labelled<UniversalSearchModule>[] = [
   { value: "health", label: "Health" },
   { value: "watchlist", label: "Watchlist" },
   { value: "bookmarks", label: "Saved" },
+  { value: "places", label: "Places" },
 ];
 
 export const ENTITY_LABELS: Readonly<Record<SearchEntityType, string>> = {
@@ -63,6 +65,7 @@ export const ENTITY_LABELS: Readonly<Record<SearchEntityType, string>> = {
   measurement: "Body measurement",
   watch_item: "Watchlist",
   bookmark: "Saved link",
+  place: "Place",
 };
 
 export function moduleLabel(module: UniversalSearchModule): string {
@@ -80,7 +83,7 @@ export function hitTitle(hit: Pick<UniversalSearchHit, "title" | "entity_type">)
  * drawers, and dialogs. Finance records without their own page open their view.
  */
 export function searchResultHref(
-  hit: Pick<UniversalSearchHit, "entity_type" | "id" | "day">,
+  hit: Pick<UniversalSearchHit, "entity_type" | "id" | "day" | "status">,
 ): string {
   const id = encodeURIComponent(hit.id);
   switch (hit.entity_type) {
@@ -131,6 +134,8 @@ export function searchResultHref(
       return watchTitleHref(hit.id);
     case "bookmark":
       return bookmarkHref(hit.id);
+    case "place":
+      return placesHref(hit.status === "visited" ? "visited" : "wishlist");
   }
 }
 
@@ -179,6 +184,8 @@ export function describeHit(hit: UniversalSearchHit): string[] {
     else if (key === "location" || key === "year") facts.push(value);
     else if (key === "platform") facts.push(`On ${value}`);
     else if (key === "url") facts.push(hostOf(value));
+    else if (key === "locality") facts.push(value);
+    else if (key === "country") facts.push(countryName(value));
     else if (key in DETAIL_LABELS) facts.push(`${DETAIL_LABELS[key]}: ${value}`);
     else facts.push(humanize(value));
   }
@@ -297,6 +304,7 @@ const MODULE_FILTERS: Readonly<Record<UniversalSearchModule, readonly ModuleFilt
   health: [],
   watchlist: [],
   bookmarks: [],
+  places: [],
 };
 
 export function moduleFilters(module: UniversalSearchModule | null): readonly ModuleFilter[] {

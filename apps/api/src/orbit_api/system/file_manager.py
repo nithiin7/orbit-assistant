@@ -15,6 +15,10 @@ class FileRevealer(Protocol):
         """Show `path` in the file manager: selected if it exists, else its folder."""
         ...
 
+    def open_folder(self, folder: Path) -> None:
+        """Open `folder` itself in the file manager, showing what's inside."""
+        ...
+
 
 class SystemFileRevealer:
     """Launches Finder, File Explorer, or the desktop's default file manager.
@@ -31,14 +35,27 @@ class SystemFileRevealer:
             command = ["explorer", f"/select,{path}"] if exists else ["explorer", str(path.parent)]
         else:
             command = ["xdg-open", str(path.parent)]
-        try:
-            # Fire and forget: the file manager outlives the request and its output is unused.
-            subprocess.Popen(
-                command,
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                start_new_session=True,
-            )
-        except OSError as exc:
-            raise FileManagerUnavailableError from exc
+        _launch(command)
+
+    def open_folder(self, folder: Path) -> None:
+        if sys.platform == "darwin":
+            command = ["open", str(folder)]
+        elif sys.platform == "win32":
+            command = ["explorer", str(folder)]
+        else:
+            command = ["xdg-open", str(folder)]
+        _launch(command)
+
+
+def _launch(command: list[str]) -> None:
+    try:
+        # Fire and forget: the file manager outlives the request and its output is unused.
+        subprocess.Popen(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except OSError as exc:
+        raise FileManagerUnavailableError from exc

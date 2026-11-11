@@ -48,6 +48,7 @@ EXPORT_FORMATS: Final[dict[Module, tuple[ExportFormat, ...]]] = {
     "search": ("json",),
     "watchlist": ("json", "csv"),
     "bookmarks": ("json", "csv"),
+    "places": ("json", "csv"),
 }
 
 _UNSAFE_NAME = re.compile(r'[\x00-\x1f\x7f/\\:*?"<>|]')

@@ -5,9 +5,15 @@ import type {
   AiConversation,
   AiConversationDetail,
   AiConversationList,
+  AiFoodEstimate,
+  AiFoodEstimateRequest,
+  AiFoodIdeas,
+  AiFoodIdeasRequest,
   AiIndexStatus,
   AiInsightList,
   AiModelList,
+  AiPortfolioReview,
+  AiPortfolioReviewRequest,
   AiProposal,
   AiProvider,
   AiProviderList,
@@ -15,6 +21,9 @@ import type {
   AiSearchResults,
   AiSettings,
   AiUsage,
+  AiWatchPicks,
+  AiWorkoutSuggestion,
+  AiWorkoutSuggestionRequest,
   CreateAiProviderRequest,
   TestAiProviderRequest,
   UpdateAiProviderRequest,
@@ -156,6 +165,65 @@ export function runAssist(
   body: AiAssistRequest,
 ): Promise<AiAssistResult> {
   return request<AiAssistResult>(ai(workspaceId, "/assist"), { method: "POST", body, token });
+}
+
+// Health helpers: drafts only; the person saves them through the fitness routes.
+
+export function estimateFood(
+  token: string,
+  workspaceId: string,
+  body: AiFoodEstimateRequest,
+): Promise<AiFoodEstimate> {
+  return request<AiFoodEstimate>(ai(workspaceId, "/health/food-estimate"), {
+    method: "POST",
+    body,
+    token,
+  });
+}
+
+export function suggestFoods(
+  token: string,
+  workspaceId: string,
+  body: AiFoodIdeasRequest,
+): Promise<AiFoodIdeas> {
+  return request<AiFoodIdeas>(ai(workspaceId, "/health/food-ideas"), {
+    method: "POST",
+    body,
+    token,
+  });
+}
+
+/** AI's review of one currency's investments: strengths, improvements, and holding notes. */
+export function reviewPortfolio(
+  token: string,
+  workspaceId: string,
+  body: AiPortfolioReviewRequest,
+): Promise<AiPortfolioReview> {
+  return request<AiPortfolioReview>(ai(workspaceId, "/finance/portfolio-review"), {
+    method: "POST",
+    body,
+    token,
+  });
+}
+
+/** AI's picks among the watchlist's suggestions, each with a reason. */
+export function pickWatchSuggestions(token: string, workspaceId: string): Promise<AiWatchPicks> {
+  return request<AiWatchPicks>(ai(workspaceId, "/watchlist/suggestions"), {
+    method: "POST",
+    token,
+  });
+}
+
+export function suggestWorkout(
+  token: string,
+  workspaceId: string,
+  body: AiWorkoutSuggestionRequest,
+): Promise<AiWorkoutSuggestion> {
+  return request<AiWorkoutSuggestion>(ai(workspaceId, "/health/workout-suggestion"), {
+    method: "POST",
+    body,
+    token,
+  });
 }
 
 export function semanticSearch(

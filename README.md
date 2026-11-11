@@ -47,6 +47,7 @@ with an optional AI assistant that only sees what you allow.
 | 💪 **Health**           | Workout logging, personal records, body measurements, nutrition, and goals               |
 | 🎬 **Watchlist**        | Movies and series to watch, episode tracking, ratings, and a "watch tonight" picker      |
 | 🔖 **Saved**            | Links you come back to, plus reels, videos, and articles to get to later, in collections |
+| 🗺️ **Places**           | Where you've been and want to go, on a world map that tallies countries and continents   |
 | 🔍 **Search**           | One search across every module, from anywhere with <kbd>Cmd/Ctrl</kbd>+<kbd>K</kbd>      |
 | ✨ **AI assistant**     | Chat with your data, summaries and drafts, and automations you approve                   |
 | 🔗 **Integrations**     | Google and Microsoft calendars, mail, and files                                          |

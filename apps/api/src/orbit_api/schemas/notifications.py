@@ -12,15 +12,18 @@ PAGE_MAX_SIZE = 100
 
 class NotificationResponse(BaseModel):
     id: uuid.UUID
-    workspace_id: uuid.UUID = Field(description="The workspace the reminder belongs to.")
+    workspace_id: uuid.UUID = Field(description="The workspace it came from.")
     reminder_id: uuid.UUID | None = Field(
         description="The reminder that fired, or `null` once it has been deleted."
     )
     title: str
-    body: str = Field(description="The reminder's description when it fired; may be empty.")
+    body: str = Field(description="The message; may be empty, and may use Markdown.")
     scheduled_for: datetime = Field(description="When the reminder was scheduled to fire.")
     created_at: datetime = Field(description="When the notification was delivered.")
     read_at: datetime | None = Field(description="When it was first read, or `null` if unread.")
+    link: str | None = Field(
+        description="The in-app path opening it goes to, such as `/automation?tab=activity`."
+    )
 
     @classmethod
     def of(cls, notification: Notification) -> "NotificationResponse":
@@ -33,6 +36,7 @@ class NotificationResponse(BaseModel):
             scheduled_for=notification.scheduled_for,
             created_at=notification.created_at,
             read_at=notification.read_at,
+            link=notification.link,
         )
 
 

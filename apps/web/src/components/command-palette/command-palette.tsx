@@ -25,6 +25,7 @@ import {
   Hourglass,
   ListTodo,
   type LucideIcon,
+  MapPinned,
   Monitor,
   Moon,
   NotebookPen,
@@ -285,6 +286,7 @@ const SEARCH_ICONS: Record<UniversalSearchModule, LucideIcon> = {
   health: HeartPulse,
   watchlist: Clapperboard,
   bookmarks: BookmarkIcon,
+  places: MapPinned,
 };
 
 /** A saved link's address from its search hit, if it's one Orbit will open. */

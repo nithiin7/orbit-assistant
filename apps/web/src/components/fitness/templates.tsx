@@ -15,6 +15,7 @@ import {
   Pencil,
   Play,
   Plus,
+  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
@@ -38,6 +39,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
 import { Textarea } from "@/components/ui/textarea";
+import { useAiReady } from "@/hooks/use-ai";
 import { useExercises, useFitnessAction, useTemplates, useUnits } from "@/hooks/use-fitness";
 import {
   builtinsByKey,
@@ -60,6 +62,7 @@ import {
 } from "@/lib/fitness";
 
 import { ExercisePicker, Loaded } from "./shared";
+import { WorkoutSuggestionDialog } from "./workout-suggestion";
 import { useStartWorkout } from "./workouts";
 
 export function TemplatesView({
@@ -79,6 +82,9 @@ export function TemplatesView({
   const { confirm, confirmDialog } = useConfirm();
   const [editing, setEditing] = useState<WorkoutTemplate | "new" | null>(null);
   const [scheduling, setScheduling] = useState<WorkoutTemplate | null>(null);
+  const [suggesting, setSuggesting] = useState(false);
+  // Suggestions read goals and workouts, so they need permission to read Health.
+  const aiReady = useAiReady("health");
   const [showArchived, setShowArchived] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -114,6 +120,12 @@ export function TemplatesView({
           <Plus aria-hidden="true" />
           New template
         </Button>
+        {aiReady ? (
+          <Button variant="soft" onClick={() => setSuggesting(true)}>
+            <Sparkles aria-hidden="true" />
+            Suggest with AI
+          </Button>
+        ) : null}
         <Button
           variant={showArchived ? "soft" : "ghost"}
           aria-pressed={showArchived}
@@ -254,6 +266,13 @@ export function TemplatesView({
           editing={editing === "new" ? null : editing}
           units={units}
           onClose={() => setEditing(null)}
+        />
+      ) : null}
+      {suggesting ? (
+        <WorkoutSuggestionDialog
+          workspaceId={workspaceId}
+          units={units}
+          onClose={() => setSuggesting(false)}
         />
       ) : null}
       {scheduling ? (

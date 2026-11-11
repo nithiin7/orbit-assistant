@@ -48,6 +48,7 @@ from orbit_api.db.models import (
     NoteModel,
     NoteTagAssignmentModel,
     NoteTagModel,
+    PlaceModel,
     ReminderModel,
     RoutineModel,
     RoutineStepModel,
@@ -893,6 +894,33 @@ WATCH_ITEM = EntitySource(
 )
 
 
+# Places
+
+PLACE = EntitySource(
+    module="places",
+    entity_type="place",
+    table=PlaceModel,
+    id=PlaceModel.id,
+    title=PlaceModel.name,
+    updated_at=PlaceModel.updated_at,
+    created_at=PlaceModel.created_at,
+    status=PlaceModel.status,
+    scope=_workspace(PlaceModel),
+    day=PlaceModel.visited_on,
+    fields=(
+        text_field("locality", "metadata", PlaceModel.locality),
+        text_field("note", "description", PlaceModel.note),
+    ),
+    columns={
+        "place_locality": PlaceModel.locality,
+        "place_country": PlaceModel.country_code,
+    },
+    describe=lambda row, _c: Description(
+        details=details(("locality", row["place_locality"]), ("country", row["place_country"]))
+    ),
+)
+
+
 SOURCES: Final[dict[UniversalModule, tuple[EntitySource, ...]]] = {
     "tasks": (TASK,),
     "notes": (NOTE,),
@@ -915,4 +943,5 @@ SOURCES: Final[dict[UniversalModule, tuple[EntitySource, ...]]] = {
     "health": (EXERCISE, WORKOUT, WORKOUT_TEMPLATE, FITNESS_GOAL, MEASUREMENT),
     "watchlist": (WATCH_ITEM,),
     "bookmarks": (BOOKMARK,),
+    "places": (PLACE,),
 }

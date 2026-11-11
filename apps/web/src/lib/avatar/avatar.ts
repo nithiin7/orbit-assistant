@@ -22,6 +22,35 @@ export function centerSquare(width: number, height: number): Square {
 
 /** Crop and resize an image file into a small WebP (or JPEG where WebP can't be encoded). */
 export async function prepareAvatar(file: File): Promise<Blob> {
+  const bitmap = await readImage(file);
+  const { x, y, side } = centerSquare(bitmap.width, bitmap.height);
+  return drawAndEncode(bitmap, { x, y, width: side, height: side }, AVATAR_SIZE, AVATAR_SIZE);
+}
+
+/** Cover photos keep their shape and are scaled down to at most this many pixels wide. */
+export const COVER_MAX_WIDTH = 1600;
+/** Taller photos are cropped (around the middle) to this width-to-height ratio at most. */
+const COVER_MIN_RATIO = 4 / 3;
+
+/** The cover's crop from a `width` × `height` image and its output size. */
+export function coverFit(width: number, height: number) {
+  const cropHeight = Math.min(height, Math.round(width / COVER_MIN_RATIO));
+  const scale = Math.min(1, COVER_MAX_WIDTH / width);
+  return {
+    crop: { x: 0, y: Math.floor((height - cropHeight) / 2), width, height: cropHeight },
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(cropHeight * scale)),
+  };
+}
+
+/** Resize a cover photo into a WebP (or JPEG) small enough to store. */
+export async function prepareCover(file: File): Promise<Blob> {
+  const bitmap = await readImage(file);
+  const { crop, width, height } = coverFit(bitmap.width, bitmap.height);
+  return drawAndEncode(bitmap, crop, width, height);
+}
+
+async function readImage(file: File): Promise<ImageBitmap> {
   if (!file.type.startsWith("image/")) {
     throw new AvatarImageError("Choose an image file, such as a PNG or JPEG.");
   }
@@ -29,24 +58,29 @@ export async function prepareAvatar(file: File): Promise<Blob> {
     throw new AvatarImageError("Choose an image smaller than 25 MB.");
   }
 
-  let bitmap: ImageBitmap;
   try {
-    bitmap = await createImageBitmap(file);
+    return await createImageBitmap(file);
   } catch {
     throw new AvatarImageError("This image couldn’t be read. Try a PNG or JPEG.");
   }
+}
 
+async function drawAndEncode(
+  bitmap: ImageBitmap,
+  crop: { x: number; y: number; width: number; height: number },
+  width: number,
+  height: number,
+): Promise<Blob> {
   const canvas = document.createElement("canvas");
-  canvas.width = AVATAR_SIZE;
-  canvas.height = AVATAR_SIZE;
+  canvas.width = width;
+  canvas.height = height;
   const context = canvas.getContext("2d");
   if (!context) {
     bitmap.close();
     throw new AvatarImageError("Your browser couldn’t process this image.");
   }
-  const { x, y, side } = centerSquare(bitmap.width, bitmap.height);
   context.imageSmoothingQuality = "high";
-  context.drawImage(bitmap, x, y, side, side, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
+  context.drawImage(bitmap, crop.x, crop.y, crop.width, crop.height, 0, 0, width, height);
   bitmap.close();
 
   // Browsers that can't encode WebP silently fall back to PNG, so check what came back.

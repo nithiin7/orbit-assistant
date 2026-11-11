@@ -39,13 +39,16 @@ from orbit_api.services.ai.assist import AssistService
 from orbit_api.services.ai.assistant import AssistantService, Grounder
 from orbit_api.services.ai.configuration import AiConfigService
 from orbit_api.services.ai.context import ContextBuilder, Sources
+from orbit_api.services.ai.health_assist import HealthAssistService
 from orbit_api.services.ai.indexing import IndexService
 from orbit_api.services.ai.insights import InsightService
 from orbit_api.services.ai.models import ActionKind, ActionResult, InvalidActionError
+from orbit_api.services.ai.portfolio_review import PortfolioReviewService
 from orbit_api.services.ai.providers import ProviderFactory
 from orbit_api.services.ai.retrieval import Retriever
 from orbit_api.services.ai.sources import SourceCatalog
 from orbit_api.services.ai.usage import UsageService
+from orbit_api.services.ai.watchlist_assist import WatchlistAssistService
 from orbit_api.services.calendar.service import CalendarService
 from orbit_api.services.documents.service import DocumentService
 from orbit_api.services.finance.service import FinanceService
@@ -106,6 +109,9 @@ class AiServices:
     proposals: ProposalService
     assistant: AssistantService
     assist: AssistService
+    health: HealthAssistService
+    watchlist: WatchlistAssistService
+    portfolio: PortfolioReviewService
     insights: InsightService
 
 
@@ -220,6 +226,13 @@ def build_ai(
         proposals=proposals,
         clock=clock,
     )
+    health = HealthAssistService(
+        config=config,
+        library=fitness.library,
+        workouts=fitness.workouts,
+        goals=fitness.tracking,
+        clock=clock,
+    )
     insights = InsightService(context, SqlDismissalRepository(session), transaction)
     return AiServices(
         modules=modules,
@@ -233,5 +246,8 @@ def build_ai(
         proposals=proposals,
         assistant=assistant,
         assist=assist,
+        health=health,
+        watchlist=WatchlistAssistService(config=config),
+        portfolio=PortfolioReviewService(config=config),
         insights=insights,
     )

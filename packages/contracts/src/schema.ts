@@ -226,6 +226,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/cover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the signed-in user's profile cover photo */
+        get: operations["get_cover_api_v1_me_cover_get"];
+        /**
+         * Set the signed-in user's profile cover photo
+         * @description The request body is the image itself. Its format is detected from the file, not from
+         *     the declared content type.
+         */
+        put: operations["put_cover_api_v1_me_cover_put"];
+        post?: never;
+        /** Remove the signed-in user's profile cover photo */
+        delete: operations["delete_cover_api_v1_me_cover_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/dashboard": {
         parameters: {
             query?: never;
@@ -243,6 +266,101 @@ export interface paths {
         post?: never;
         /** Reset the signed-in user's dashboard to the default layout */
         delete: operations["delete_dashboard_api_v1_me_dashboard_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/achievements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get achievements, XP, and the store
+         * @description Read-only: achievements newly reached stay locked until a check.
+         */
+        get: operations["get_achievements_api_v1_me_achievements_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/achievements/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unlock achievements the user has reached
+         * @description Counts the user's data and unlocks whatever it now reaches, listing those in
+         *     `new_unlocks`. Safe to repeat: an achievement unlocks once.
+         */
+        post: operations["check_achievements_api_v1_me_achievements_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/achievements/store/purchases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Buy a store item with XP */
+        post: operations["buy_reward_api_v1_me_achievements_store_purchases_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/achievements/store/equipped": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Wear an owned item
+         * @description Replaces whatever was worn in the item's slot.
+         */
+        put: operations["equip_reward_api_v1_me_achievements_store_equipped_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/achievements/store/unequip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Take off the item in a slot */
+        post: operations["unequip_reward_api_v1_me_achievements_store_unequip_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -382,6 +500,28 @@ export interface paths {
          *     kept on the server until it's deleted; download it to keep a copy elsewhere.
          */
         post: operations["create_backup_api_v1_workspaces__workspace_id__backups_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/backups/reveal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open the backups folder in the file manager
+         * @description Opens this workspace's backup folder in Finder, File Explorer, or the desktop file
+         *     manager on the machine running the API, which in local mode is the user's own computer.
+         *     The folder comes from the server's settings and the workspace ID, never from the request.
+         */
+        post: operations["reveal_backups_folder_api_v1_workspaces__workspace_id__backups_reveal_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -768,8 +908,8 @@ export interface paths {
         delete: operations["delete_list_api_v1_workspaces__workspace_id__shopping_lists__list_id__delete"];
         options?: never;
         head?: never;
-        /** Rename a shopping list */
-        patch: operations["rename_list_api_v1_workspaces__workspace_id__shopping_lists__list_id__patch"];
+        /** Rename a shopping list or change its icon */
+        patch: operations["update_list_api_v1_workspaces__workspace_id__shopping_lists__list_id__patch"];
         trace?: never;
     };
     "/api/v1/workspaces/{workspace_id}/shopping/lists/{list_id}/restock": {
@@ -944,9 +1084,31 @@ export interface paths {
         };
         /**
          * Find a movie or series at TMDB
-         * @description Only the search phrase leaves the server.
+         * @description Only the search phrase leaves the server. `kind` searches one kind's endpoint;
+         *     `language` is applied by Orbit to TMDB's results.
          */
         get: operations["search_titles_api_v1_workspaces__workspace_id__watchlist_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/watchlist/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Suggest titles to watch next
+         * @description TMDB's recommendations for the titles this workspace liked, is watching, or watched
+         *     lately, minus titles already on the watchlist. Only those titles' TMDB IDs leave the server.
+         */
+        get: operations["suggest_titles_api_v1_workspaces__workspace_id__watchlist_suggestions_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1272,6 +1434,85 @@ export interface paths {
         head?: never;
         /** Rename or recolor a bookmark collection */
         patch: operations["update_collection_api_v1_workspaces__workspace_id__bookmarks_collections__collection_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/places/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the Places settings */
+        get: operations["get_settings_api_v1_workspaces__workspace_id__places_settings_get"];
+        /**
+         * Change the Places settings
+         * @description With online maps on, the browser loads map tiles from the map server (which sees the
+         *     areas viewed), and place search sends the search phrase to the geocoder.
+         */
+        put: operations["update_settings_api_v1_workspaces__workspace_id__places_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/places/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Look up a place by name
+         * @description Sends only the search phrase to the geocoder. Results aren't saved; pick one to add it.
+         */
+        post: operations["search_places_api_v1_workspaces__workspace_id__places_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/places/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List places */
+        get: operations["list_places_api_v1_workspaces__workspace_id__places_items_get"];
+        put?: never;
+        /** Add a place */
+        post: operations["create_place_api_v1_workspaces__workspace_id__places_items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/places/items/{place_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a place */
+        get: operations["get_place_api_v1_workspaces__workspace_id__places_items__place_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete a place */
+        delete: operations["delete_place_api_v1_workspaces__workspace_id__places_items__place_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update a place */
+        patch: operations["update_place_api_v1_workspaces__workspace_id__places_items__place_id__patch"];
         trace?: never;
     };
     "/api/v1/workspaces/{workspace_id}/reminders": {
@@ -6060,6 +6301,114 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/ai/health/food-estimate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Estimate a food's nutrients
+         * @description Estimated nutrients for one serving, to review in the food form. Sends only the text
+         *     typed, so it needs AI on but not permission to read Health. Nothing is saved.
+         */
+        post: operations["estimate_food_api_v1_workspaces__workspace_id__ai_health_food_estimate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/ai/health/food-ideas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Suggest common foods of a cuisine
+         * @description Everyday foods of a region or cuisine with estimated nutrients. Sends only the cuisine
+         *     typed. Nothing is saved until the person adds the foods.
+         */
+        post: operations["food_ideas_api_v1_workspaces__workspace_id__ai_health_food_ideas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/ai/health/workout-suggestion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Suggest a workout
+         * @description A workout from the person's own exercise library, shaped by their active goals and
+         *     recent workouts. Needs permission to read Health. Nothing is saved.
+         */
+        post: operations["suggest_workout_api_v1_workspaces__workspace_id__ai_health_workout_suggestion_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/ai/watchlist/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pick watchlist suggestions with AI
+         * @description Chooses among the watchlist's TMDB suggestions and says why each suits the person.
+         *     Sends the watchlist's titles, genres, statuses, and ratings (not notes) to the AI
+         *     provider, so it needs permission to read Watchlist. Nothing is saved.
+         */
+        post: operations["pick_watch_suggestions_api_v1_workspaces__workspace_id__ai_watchlist_suggestions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/ai/finance/portfolio-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Review the investment portfolio with AI
+         * @description What looks good in the portfolio, what needs attention, and a word on each holding.
+         *     Orbit measures allocation, concentration, and overlap itself; the provider sees holdings'
+         *     names, categories, weights, and returns (never amounts, folios, or notes), so it needs
+         *     permission to read Finance. Nothing is saved.
+         */
+        post: operations["review_portfolio_api_v1_workspaces__workspace_id__ai_finance_portfolio_review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/ai/search": {
         parameters: {
             query?: never;
@@ -6756,6 +7105,66 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** AchievementLevelResponse */
+        AchievementLevelResponse: {
+            /** Level */
+            level: number;
+            /** Floor Xp */
+            floor_xp: number;
+            /** Next Xp */
+            next_xp: number;
+        };
+        /** AchievementProfileResponse */
+        AchievementProfileResponse: {
+            /** Earned Xp */
+            earned_xp: number;
+            /** Spent Xp */
+            spent_xp: number;
+            /** Balance */
+            balance: number;
+            level: components["schemas"]["AchievementLevelResponse"];
+            /** Achievements */
+            achievements: components["schemas"]["AchievementResponse"][];
+            /** Store */
+            store: components["schemas"]["RewardItemResponse"][];
+            equipped: components["schemas"]["EquippedRewardsResponse"];
+            /**
+             * New Unlocks
+             * @description Achievements unlocked by this request, for a celebration.
+             */
+            new_unlocks: string[];
+        };
+        /** AchievementResponse */
+        AchievementResponse: {
+            /** Key */
+            key: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /**
+             * Area
+             * @enum {string}
+             */
+            area: "tasks" | "habits" | "notes" | "shopping" | "reminders" | "calendar" | "documents" | "places" | "watchlist" | "saved" | "finance" | "health" | "orbit";
+            /**
+             * Tier
+             * @enum {string}
+             */
+            tier: "easy" | "medium" | "hard" | "legendary";
+            /** Xp */
+            xp: number;
+            /** Current */
+            current: number;
+            /** Target */
+            target: number;
+            /** Secret */
+            secret: boolean;
+            /** Unlocked At */
+            unlocked_at: string | null;
+            /** Earned Xp */
+            earned_xp: number | null;
         };
         /** ActiveSessionResponse */
         ActiveSessionResponse: {
@@ -7714,6 +8123,67 @@ export interface components {
              */
             updated_at: string;
         };
+        /**
+         * AiFoodDraftResponse
+         * @description A food for the person to review and save; nothing is saved by the AI.
+         */
+        AiFoodDraftResponse: {
+            /** Name */
+            name: string;
+            /** Serving Quantity Milli */
+            serving_quantity_milli: number;
+            /** Serving Unit */
+            serving_unit: string;
+            /** @description Estimated, for one serving. */
+            nutrients: components["schemas"]["NutrientsModel"];
+            /** Note */
+            note: string;
+        };
+        /** AiFoodEstimateRequest */
+        AiFoodEstimateRequest: {
+            /**
+             * Description
+             * @description The food and, optionally, the serving, as typed ("masala dosa, 1 piece").
+             */
+            description: string;
+        };
+        /** AiFoodEstimateResponse */
+        AiFoodEstimateResponse: {
+            food: components["schemas"]["AiFoodDraftResponse"];
+            /** Provider Name */
+            provider_name: string;
+            /** Model */
+            model: string;
+            /**
+             * Processing
+             * @enum {string}
+             */
+            processing: "local" | "cloud";
+        };
+        /** AiFoodIdeasRequest */
+        AiFoodIdeasRequest: {
+            /**
+             * Cuisine
+             * @description A region or cuisine ("Kerala", "Mexican").
+             */
+            cuisine: string;
+        };
+        /** AiFoodIdeasResponse */
+        AiFoodIdeasResponse: {
+            /** Cuisine */
+            cuisine: string;
+            /** Foods */
+            foods: components["schemas"]["AiFoodDraftResponse"][];
+            /** Provider Name */
+            provider_name: string;
+            /** Model */
+            model: string;
+            /**
+             * Processing
+             * @enum {string}
+             */
+            processing: "local" | "cloud";
+        };
         /** AiIndexActionResponse */
         AiIndexActionResponse: {
             /** Affected */
@@ -7753,7 +8223,7 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health";
+            module: "tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "watchlist";
             /** Title */
             title: string;
             /** Body */
@@ -7820,6 +8290,141 @@ export interface components {
             chat: boolean;
             /** Embeddings */
             embeddings: boolean;
+        };
+        /**
+         * AiPortfolioFactsResponse
+         * @description Measured by Orbit, not the model. Shares are percentages with two decimals.
+         */
+        AiPortfolioFactsResponse: {
+            /** Holdings */
+            holdings: number;
+            /** Deposits */
+            deposits: number;
+            /** Allocation */
+            allocation: components["schemas"]["SliceResponse"][];
+            /** Return Percent */
+            return_percent: string | null;
+            /** Largest Holding */
+            largest_holding: string | null;
+            /** Largest Share */
+            largest_share: string | null;
+            /** Top Five Share */
+            top_five_share: string | null;
+            /** Cash Share */
+            cash_share: string | null;
+            /** Fund Houses */
+            fund_houses: number;
+            /** Overlaps */
+            overlaps: components["schemas"]["AiPortfolioOverlapResponse"][];
+            /** Active Sips */
+            active_sips: number;
+            /** Unpriced */
+            unpriced: number;
+        };
+        /** AiPortfolioHoldingNoteResponse */
+        AiPortfolioHoldingNoteResponse: {
+            /**
+             * Holding Id
+             * Format: uuid
+             */
+            holding_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "mutual_fund" | "stock" | "etf";
+            /**
+             * Verdict
+             * @enum {string}
+             */
+            verdict: "keep" | "watch" | "review";
+            /** Note */
+            note: string;
+        };
+        /** AiPortfolioImprovementResponse */
+        AiPortfolioImprovementResponse: {
+            /** Title */
+            title: string;
+            /** Detail */
+            detail: string;
+            /**
+             * Action
+             * @description One concrete next step; may be empty.
+             */
+            action: string;
+            /**
+             * Priority
+             * @enum {string}
+             */
+            priority: "high" | "medium" | "low";
+        };
+        /** AiPortfolioOverlapResponse */
+        AiPortfolioOverlapResponse: {
+            /** Category */
+            category: string;
+            /** Funds */
+            funds: number;
+        };
+        /** AiPortfolioReviewRequest */
+        AiPortfolioReviewRequest: {
+            /**
+             * Currency
+             * @description The currency whose holdings and deposits to review.
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Focus
+             * @description The person's own context, such as their horizon or appetite for risk.
+             * @default
+             */
+            focus: string;
+        };
+        /**
+         * AiPortfolioReviewResponse
+         * @description An AI review of one currency's portfolio, most pressing improvements first. Nothing is
+         *     saved.
+         */
+        AiPortfolioReviewResponse: {
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Score
+             * @description 0 to 100, the model's judgment; null when it gave none.
+             */
+            score: number | null;
+            /** Headline */
+            headline: string;
+            /** Summary */
+            summary: string;
+            /** Strengths */
+            strengths: components["schemas"]["AiPortfolioStrengthResponse"][];
+            /** Improvements */
+            improvements: components["schemas"]["AiPortfolioImprovementResponse"][];
+            /** Holdings */
+            holdings: components["schemas"]["AiPortfolioHoldingNoteResponse"][];
+            facts: components["schemas"]["AiPortfolioFactsResponse"];
+            /** Provider Name */
+            provider_name: string;
+            /** Model */
+            model: string;
+            /**
+             * Processing
+             * @enum {string}
+             */
+            processing: "local" | "cloud";
+        };
+        /** AiPortfolioStrengthResponse */
+        AiPortfolioStrengthResponse: {
+            /** Title */
+            title: string;
+            /** Detail */
+            detail: string;
         };
         /** AiProposalResponse */
         AiProposalResponse: {
@@ -7992,7 +8597,7 @@ export interface components {
              * Modules
              * @description Modules AI may read.
              */
-            modules: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health")[];
+            modules: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "watchlist")[];
             /**
              * Response Style
              * @enum {string}
@@ -8002,6 +8607,30 @@ export interface components {
             monthly_token_limit: number | null;
             /** Indexing Enabled */
             indexing_enabled: boolean;
+        };
+        /** AiSuggestedExerciseResponse */
+        AiSuggestedExerciseResponse: {
+            /**
+             * Exercise Id
+             * Format: uuid
+             */
+            exercise_id: string;
+            /** Exercise Name */
+            exercise_name: string;
+            /** Sets */
+            sets: number;
+            /** Target Reps Min */
+            target_reps_min: number | null;
+            /** Target Reps Max */
+            target_reps_max: number | null;
+            /** Target Duration S */
+            target_duration_s: number | null;
+            /** Target Distance M */
+            target_distance_m: number | null;
+            /** Rest Seconds */
+            rest_seconds: number | null;
+            /** Notes */
+            notes: string;
         };
         /** AiUsageLineResponse */
         AiUsageLineResponse: {
@@ -8046,6 +8675,71 @@ export interface components {
             monthly_token_limit: number | null;
             /** Near Limit */
             near_limit: boolean;
+        };
+        /** AiWatchPickResponse */
+        AiWatchPickResponse: {
+            suggestion: components["schemas"]["WatchSuggestionResponse"];
+            /**
+             * Reason
+             * @description Why it suits the person, in one sentence; may be empty.
+             */
+            reason: string;
+        };
+        /**
+         * AiWatchPicksResponse
+         * @description Titles chosen from the watchlist's TMDB suggestions, best first. Nothing is saved.
+         */
+        AiWatchPicksResponse: {
+            /** Picks */
+            picks: components["schemas"]["AiWatchPickResponse"][];
+            /** Provider Name */
+            provider_name: string;
+            /** Model */
+            model: string;
+            /**
+             * Processing
+             * @enum {string}
+             */
+            processing: "local" | "cloud";
+        };
+        /** AiWorkoutSuggestionRequest */
+        AiWorkoutSuggestionRequest: {
+            /**
+             * Focus
+             * @description What the workout should be like, in the person's words.
+             * @default
+             */
+            focus: string;
+            /** Timezone */
+            timezone?: string | null;
+        };
+        /**
+         * AiWorkoutSuggestionResponse
+         * @description A workout draft from the person's own exercises, to save as a template or discard.
+         */
+        AiWorkoutSuggestionResponse: {
+            /** Name */
+            name: string;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "push" | "pull" | "legs" | "upper" | "lower" | "full_body" | "cardio" | "mobility" | "other";
+            /** Description */
+            description: string;
+            /** Notes */
+            notes: string;
+            /** Exercises */
+            exercises: components["schemas"]["AiSuggestedExerciseResponse"][];
+            /** Provider Name */
+            provider_name: string;
+            /** Model */
+            model: string;
+            /**
+             * Processing
+             * @enum {string}
+             */
+            processing: "local" | "cloud";
         };
         /** ApproveAgentActionRequest */
         ApproveAgentActionRequest: {
@@ -8286,6 +8980,16 @@ export interface components {
             running: boolean;
             /** Modules */
             modules: components["schemas"]["ExportModuleInfo"][];
+            /**
+             * Folder
+             * @description The folder on the API's machine holding this workspace's backups. Only in local mode, outside production.
+             */
+            folder: string | null;
+            /**
+             * Can Reveal Folder
+             * @description Whether the API can open that folder in the file manager.
+             */
+            can_reveal_folder: boolean;
         };
         /** BackupResponse */
         BackupResponse: {
@@ -10090,6 +10794,43 @@ export interface components {
             tags?: string[];
         };
         /**
+         * CreatePlaceRequest
+         * @description Add a place. A name and a country are enough to shade the country on the map; a location
+         *     adds a pin.
+         */
+        CreatePlaceRequest: {
+            /** Name */
+            name: string;
+            /** Country Code */
+            country_code: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "visited" | "want_to_visit";
+            /**
+             * Locality
+             * @default
+             */
+            locality: string;
+            location?: components["schemas"]["PlaceLocation"] | null;
+            /**
+             * Visited On
+             * @description Visited places only.
+             */
+            visited_on?: string | null;
+            /**
+             * Favorite
+             * @default false
+             */
+            favorite: boolean;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+        };
+        /**
          * CreateRecurringPaymentRequest
          * @description Track a subscription or a recurring bill. Its due dates repeat from `next_due_date`.
          */
@@ -10472,7 +11213,7 @@ export interface components {
              * Id
              * @enum {string}
              */
-            id: "today" | "quick_actions" | "attention" | "workspace" | "status" | "tasks" | "reminders" | "calendar" | "habits" | "notes" | "documents" | "shopping" | "watchlist" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "savings_goals" | "workouts" | "water" | "nutrition" | "weight" | "fitness_goals" | "modules";
+            id: "today" | "quick_actions" | "attention" | "workspace" | "status" | "tasks" | "reminders" | "calendar" | "habits" | "notes" | "documents" | "shopping" | "watchlist" | "places" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "savings_goals" | "workouts" | "water" | "nutrition" | "weight" | "fitness_goals" | "modules";
             /**
              * Size
              * @description `half` widgets sit side by side on wide screens.
@@ -11194,6 +11935,20 @@ export interface components {
             /** Deleted */
             deleted: number;
         };
+        /**
+         * EquippedRewardsResponse
+         * @description The item key worn in each slot; empty slots are null.
+         */
+        EquippedRewardsResponse: {
+            /** Frame */
+            frame: string | null;
+            /** Banner */
+            banner: string | null;
+            /** Title */
+            title: string | null;
+            /** Confetti */
+            confetti: string | null;
+        };
         /** EventDetailResponse */
         EventDetailResponse: {
             /**
@@ -11497,7 +12252,7 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks";
+            module: "tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks" | "places";
             /** Label */
             label: string;
             /** Formats */
@@ -11506,7 +12261,7 @@ export interface components {
         /** ExportModuleRequest */
         ExportModuleRequest: {
             /** Module */
-            module: ("tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks") | null;
+            module: ("tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks" | "places") | null;
             /**
              * Format
              * @enum {string}
@@ -14285,7 +15040,7 @@ export interface components {
             /**
              * Workspace Id
              * Format: uuid
-             * @description The workspace the reminder belongs to.
+             * @description The workspace it came from.
              */
             workspace_id: string;
             /**
@@ -14297,7 +15052,7 @@ export interface components {
             title: string;
             /**
              * Body
-             * @description The reminder's description when it fired; may be empty.
+             * @description The message; may be empty, and may use Markdown.
              */
             body: string;
             /**
@@ -14317,6 +15072,11 @@ export interface components {
              * @description When it was first read, or `null` if unread.
              */
             read_at: string | null;
+            /**
+             * Link
+             * @description The in-app path opening it goes to, such as `/automation?tab=activity`.
+             */
+            link: string | null;
         };
         /** NutrientsModel */
         NutrientsModel: {
@@ -14823,6 +15583,121 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /**
+         * PlaceLocation
+         * @description Where to pin a place on the map.
+         */
+        PlaceLocation: {
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+        };
+        /** PlaceMatchResponse */
+        PlaceMatchResponse: {
+            /** Name */
+            name: string;
+            /** Locality */
+            locality: string;
+            /** Country Code */
+            country_code: string;
+            location: components["schemas"]["PlaceLocation"];
+            /**
+             * Label
+             * @description The full address, to tell matches apart.
+             */
+            label: string;
+        };
+        /** PlaceMatchesResponse */
+        PlaceMatchesResponse: {
+            /** Matches */
+            matches: components["schemas"]["PlaceMatchResponse"][];
+        };
+        /** PlaceResponse */
+        PlaceResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Locality
+             * @description The city or region. Empty when not given.
+             */
+            locality: string;
+            /**
+             * Country Code
+             * @description ISO 3166-1 alpha-2, upper case.
+             */
+            country_code: string;
+            /** @description Where to pin it; places added without place search have none. */
+            location: components["schemas"]["PlaceLocation"] | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "visited" | "want_to_visit";
+            /**
+             * Visited On
+             * @description When the visit was; visited places only.
+             */
+            visited_on: string | null;
+            /** Favorite */
+            favorite: boolean;
+            /**
+             * Note
+             * @description Empty when not given.
+             */
+            note: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** PlaceSearchRequest */
+        PlaceSearchRequest: {
+            /** Query */
+            query: string;
+        };
+        /** PlaceSettingsRequest */
+        PlaceSettingsRequest: {
+            /** Online Maps */
+            online_maps: boolean;
+        };
+        /** PlaceSettingsResponse */
+        PlaceSettingsResponse: {
+            /**
+             * Online Maps
+             * @description Whether the map loads tiles from the internet and place search is on.
+             */
+            online_maps: boolean;
+            /**
+             * Online Maps Allowed
+             * @description Whether this server allows online maps.
+             */
+            online_maps_allowed: boolean;
+            /**
+             * Map Style Url
+             * @description The MapLibre style to load while online maps are on; otherwise null.
+             */
+            map_style_url: string | null;
+        };
+        /** PlacesResponse */
+        PlacesResponse: {
+            /**
+             * Places
+             * @description Every place, newest first.
+             */
+            places: components["schemas"]["PlaceResponse"][];
         };
         /** PlanResponse */
         PlanResponse: {
@@ -15860,6 +16735,33 @@ export interface components {
              */
             dry_run: boolean;
         };
+        /** RewardItemRequest */
+        RewardItemRequest: {
+            /** Item Key */
+            item_key: string;
+        };
+        /** RewardItemResponse */
+        RewardItemResponse: {
+            /** Key */
+            key: string;
+            /**
+             * Slot
+             * @enum {string}
+             */
+            slot: "frame" | "banner" | "title" | "confetti";
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Cost */
+            cost: number;
+            /** Min Level */
+            min_level: number;
+            /** Owned */
+            owned: boolean;
+            /** Equipped */
+            equipped: boolean;
+        };
         /** RoutineDetailResponse */
         RoutineDetailResponse: {
             /**
@@ -16066,12 +16968,12 @@ export interface components {
              * Module
              * @description Repeat to search only some modules.
              */
-            module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks")[];
+            module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places")[];
             /**
              * Type
              * @description Repeat to search only some record types.
              */
-            type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark")[];
+            type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place")[];
             /**
              * Date From
              * @description The record's own date: due date, event, transaction, …
@@ -16227,7 +17129,7 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks";
+            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places";
             /**
              * Total
              * @description Matches under every filter except the module filter.
@@ -16670,6 +17572,11 @@ export interface components {
             /** Name */
             name: string;
             /**
+             * Icon
+             * @enum {string}
+             */
+            icon: "basket" | "cart" | "apple" | "carrot" | "coffee" | "pill" | "home" | "gift" | "shirt" | "paw" | "baby" | "wrench";
+            /**
              * Is Default
              * @description The workspace's default list, which cannot be deleted.
              */
@@ -16696,6 +17603,12 @@ export interface components {
         ShoppingListRequest: {
             /** Name */
             name: string;
+            /**
+             * Icon
+             * @default basket
+             * @enum {string}
+             */
+            icon: "basket" | "cart" | "apple" | "carrot" | "coffee" | "pill" | "home" | "gift" | "shirt" | "paw" | "baby" | "wrench";
         };
         /** ShoppingListResponse */
         ShoppingListResponse: {
@@ -16711,6 +17624,11 @@ export interface components {
             workspace_id: string;
             /** Name */
             name: string;
+            /**
+             * Icon
+             * @enum {string}
+             */
+            icon: "basket" | "cart" | "apple" | "carrot" | "coffee" | "pill" | "home" | "gift" | "shirt" | "paw" | "baby" | "wrench";
             /**
              * Is Default
              * @description The workspace's default list, which cannot be deleted.
@@ -17076,6 +17994,21 @@ export interface components {
             fiber_mg?: number | null;
             /** Water Ml */
             water_ml?: number | null;
+            /**
+             * Steps
+             * @description Daily steps.
+             */
+            steps?: number | null;
+            /**
+             * Active S
+             * @description Daily active time (walks, runs, rides, swims, cardio).
+             */
+            active_s?: number | null;
+            /**
+             * Sleep S
+             * @description Nightly sleep.
+             */
+            sleep_s?: number | null;
         };
         /** TaskListDetailResponse */
         TaskListDetailResponse: {
@@ -17359,6 +18292,11 @@ export interface components {
              */
             poster_path: string | null;
             /**
+             * Original Language
+             * @description ISO 639-1 code of the language it was made in, when known.
+             */
+            original_language: string | null;
+            /**
              * Existing Id
              * @description The watchlist's copy of this title, if it's already added.
              */
@@ -17488,18 +18426,26 @@ export interface components {
              */
             months: components["schemas"]["MonthCashFlowResponse"][];
         };
+        /** UnequipRewardRequest */
+        UnequipRewardRequest: {
+            /**
+             * Slot
+             * @enum {string}
+             */
+            slot: "frame" | "banner" | "title" | "confetti";
+        };
         /** UniversalSearchHitResponse */
         UniversalSearchHitResponse: {
             /**
              * Module
              * @enum {string}
              */
-            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks";
+            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places";
             /**
              * Entity Type
              * @enum {string}
              */
-            entity_type: "task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark";
+            entity_type: "task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place";
             /**
              * Id
              * Format: uuid
@@ -17591,7 +18537,7 @@ export interface components {
              * Unavailable
              * @description Modules that couldn't be searched.
              */
-            unavailable: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks")[];
+            unavailable: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places")[];
         };
         /** UnreadCountResponse */
         UnreadCountResponse: {
@@ -17686,7 +18632,7 @@ export interface components {
             /** Allow Cloud */
             allow_cloud?: boolean | null;
             /** Modules */
-            modules?: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health")[] | null;
+            modules?: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "watchlist")[] | null;
             /** Response Style */
             response_style?: ("concise" | "balanced" | "detailed") | null;
             /** Monthly Token Limit */
@@ -18177,6 +19123,29 @@ export interface components {
             status?: ("confirmed" | "cancelled") | null;
         };
         /**
+         * UpdatePlaceRequest
+         * @description Change some of a place's fields. Omitted fields keep their values; `location: null`
+         *     removes the pin and `visited_on: null` clears the date. Moving a place to `want_to_visit`
+         *     clears its date.
+         */
+        UpdatePlaceRequest: {
+            /** Name */
+            name?: string | null;
+            /** Locality */
+            locality?: string | null;
+            /** Country Code */
+            country_code?: string | null;
+            location?: components["schemas"]["PlaceLocation"] | null;
+            /** Status */
+            status?: ("visited" | "want_to_visit") | null;
+            /** Visited On */
+            visited_on?: string | null;
+            /** Favorite */
+            favorite?: boolean | null;
+            /** Note */
+            note?: string | null;
+        };
+        /**
          * UpdateProfileRequest
          * @description Change some profile fields. Omitted fields keep their values; `timezone: null` clears
          *     the time zone preference.
@@ -18325,6 +19294,16 @@ export interface components {
              * @enum {string}
              */
             status: "pending" | "completed" | "skipped";
+        };
+        /**
+         * UpdateShoppingListRequest
+         * @description Rename a list or change its icon. Omitted fields keep their values.
+         */
+        UpdateShoppingListRequest: {
+            /** Name */
+            name?: string | null;
+            /** Icon */
+            icon?: ("basket" | "cart" | "apple" | "carrot" | "coffee" | "pill" | "home" | "gift" | "shirt" | "paw" | "baby" | "wrench") | null;
         };
         /**
          * UpdateSipPlanRequest
@@ -18601,6 +19580,44 @@ export interface components {
              * @description Every title, in position order.
              */
             items: components["schemas"]["WatchItemResponse"][];
+        };
+        /**
+         * WatchSuggestionResponse
+         * @description A title recommended from the watchlist, not on it yet. Add it with `lookup` set to its
+         *     `source_id` and `kind`.
+         */
+        WatchSuggestionResponse: {
+            /** Source Id */
+            source_id: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "movie" | "series";
+            /** Title */
+            title: string;
+            /** Release Year */
+            release_year: number | null;
+            /** Overview */
+            overview: string;
+            /**
+             * Poster Path
+             * @description Fetch the thumbnail from `/watchlist/search/poster?path=`.
+             */
+            poster_path: string | null;
+            /**
+             * Because
+             * @description Watchlist titles it was recommended from, strongest first (at most 3).
+             */
+            because: string[];
+        };
+        /** WatchSuggestionsResponse */
+        WatchSuggestionsResponse: {
+            /**
+             * Suggestions
+             * @description Strongest first. Empty when no looked-up title can seed recommendations.
+             */
+            suggestions: components["schemas"]["WatchSuggestionResponse"][];
         };
         /** WatchlistKeyRequest */
         WatchlistKeyRequest: {
@@ -19251,6 +20268,112 @@ export interface operations {
             };
         };
     };
+    get_cover_api_v1_me_cover_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The cover photo. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": string;
+                    "image/jpeg": string;
+                    "image/webp": string;
+                };
+            };
+            /** @description No cover photo is set. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    put_cover_api_v1_me_cover_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "image/png": string;
+                "image/jpeg": string;
+                "image/webp": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The image is larger than 1536 KB. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The image is not a PNG, JPEG, or WebP file. */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_cover_api_v1_me_cover_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     get_dashboard_api_v1_me_dashboard_get: {
         parameters: {
             query?: never;
@@ -19347,6 +20470,208 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    get_achievements_api_v1_me_achievements_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AchievementProfileResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    check_achievements_api_v1_me_achievements_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AchievementProfileResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    buy_reward_api_v1_me_achievements_store_purchases_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RewardItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AchievementProfileResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No store item has that key. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already owned, not owned, level too low, or not enough XP. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    equip_reward_api_v1_me_achievements_store_equipped_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RewardItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AchievementProfileResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No store item has that key. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already owned, not owned, level too low, or not enough XP. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unequip_reward_api_v1_me_achievements_store_unequip_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnequipRewardRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AchievementProfileResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
@@ -19807,6 +21132,56 @@ export interface operations {
             };
             /** @description The backup failed; the failure is recorded in the history. */
             500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reveal_backups_folder_api_v1_workspaces__workspace_id__backups_reveal_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not available in cloud mode or in production. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description No file manager could be opened on the API's machine. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -21159,7 +22534,7 @@ export interface operations {
             };
         };
     };
-    rename_list_api_v1_workspaces__workspace_id__shopping_lists__list_id__patch: {
+    update_list_api_v1_workspaces__workspace_id__shopping_lists__list_id__patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -21172,7 +22547,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ShoppingListRequest"];
+                "application/json": components["schemas"]["UpdateShoppingListRequest"];
             };
         };
         responses: {
@@ -21803,6 +23178,10 @@ export interface operations {
         parameters: {
             query: {
                 q: string;
+                /** @description Only movies, or only series. */
+                kind?: ("movie" | "series") | null;
+                /** @description Only titles originally in this language (ISO 639-1, such as `ko`). */
+                language?: string | null;
             };
             header?: never;
             path: {
@@ -21819,6 +23198,65 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TitleMatchesResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or title does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Title lookup is off for this workspace or server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description TMDB couldn't be reached. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    suggest_titles_api_v1_workspaces__workspace_id__watchlist_suggestions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WatchSuggestionsResponse"];
                 };
             };
             /** @description Not signed in. */
@@ -23139,6 +24577,407 @@ export interface operations {
             };
             /** @description The name is taken. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_settings_api_v1_workspaces__workspace_id__places_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaceSettingsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or place is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_settings_api_v1_workspaces__workspace_id__places_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaceSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaceSettingsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or place is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description This server doesn't allow online maps. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_places_api_v1_workspaces__workspace_id__places_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaceSearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaceMatchesResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or place is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Online maps are off for this workspace. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The geocoder failed. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_places_api_v1_workspaces__workspace_id__places_items_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlacesResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or place is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_place_api_v1_workspaces__workspace_id__places_items_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePlaceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaceResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or place is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_place_api_v1_workspaces__workspace_id__places_items__place_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The place's ID. */
+                place_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaceResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or place is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_place_api_v1_workspaces__workspace_id__places_items__place_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The place's ID. */
+                place_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or place is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_place_api_v1_workspaces__workspace_id__places_items__place_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The place's ID. */
+                place_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePlaceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaceResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or place is not accessible. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -39157,9 +40996,9 @@ export interface operations {
         parameters: {
             query: {
                 /** @description Repeat to search only some modules. */
-                module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks")[];
+                module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places")[];
                 /** @description Repeat to search only some record types. */
-                type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark")[];
+                type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place")[];
                 /** @description The record's own date: due date, event, transaction, … */
                 date_from?: string | null;
                 date_to?: string | null;
@@ -41437,12 +43276,265 @@ export interface operations {
             };
         };
     };
+    estimate_food_api_v1_workspaces__workspace_id__ai_health_food_estimate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiFoodEstimateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiFoodEstimateResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    food_ideas_api_v1_workspaces__workspace_id__ai_health_food_ideas_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiFoodIdeasRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiFoodIdeasResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    suggest_workout_api_v1_workspaces__workspace_id__ai_health_workout_suggestion_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiWorkoutSuggestionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiWorkoutSuggestionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pick_watch_suggestions_api_v1_workspaces__workspace_id__ai_watchlist_suggestions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiWatchPicksResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description AI or title lookup is off. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_portfolio_api_v1_workspaces__workspace_id__ai_finance_portfolio_review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiPortfolioReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiPortfolioReviewResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description AI is off or not set up. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Nothing is held in the currency. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     semantic_search_api_v1_workspaces__workspace_id__ai_search_get: {
         parameters: {
             query: {
                 q: string;
                 /** @description Repeat to search some modules only. */
-                module?: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health")[];
+                module?: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "watchlist")[];
                 date_from?: string | null;
                 date_to?: string | null;
                 limit?: number;

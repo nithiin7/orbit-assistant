@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 
 import { cn } from "@/utils/common";
 
@@ -40,8 +41,8 @@ function position(rect: DOMRect, side: Side): CSSProperties {
 
 /**
  * Lightweight tooltip for icon-only controls. Shows on hover (after a short delay) and on keyboard
- * focus, and hides on Escape, blur, pointer leave, or press. It is fixed-positioned so scrolling or
- * clipping containers such as the sidebar do not cut it off.
+ * focus, and hides on Escape, blur, pointer leave, or press. It is fixed-positioned in a portal so
+ * scrolling or clipping containers such as the sidebar do not cut it off or move it.
  */
 export function Tooltip({
   label,
@@ -100,19 +101,24 @@ export function Tooltip({
       onBlur={hide}
     >
       {children}
-      {style && !disabled ? (
-        <span
-          aria-hidden="true"
-          style={style}
-          className={cn(
-            "pointer-events-none fixed z-50 rounded-md bg-foreground px-2 py-1 text-xs font-medium whitespace-nowrap text-background shadow-elevation-2",
-            "animate-tooltip-in",
-          )}
-        >
-          {label}
-          {shortcut ? <span className="ml-2 opacity-60">{shortcut}</span> : null}
-        </span>
-      ) : null}
+      {/* Portaled to the body: a container-query or transformed ancestor would otherwise become
+          the containing block of this fixed element and shift it away from its trigger. */}
+      {style && !disabled
+        ? createPortal(
+            <span
+              aria-hidden="true"
+              style={style}
+              className={cn(
+                "pointer-events-none fixed z-50 rounded-md bg-foreground px-2 py-1 text-xs font-medium whitespace-nowrap text-background shadow-elevation-2",
+                "animate-tooltip-in",
+              )}
+            >
+              {label}
+              {shortcut ? <span className="ml-2 opacity-60">{shortcut}</span> : null}
+            </span>,
+            document.body,
+          )
+        : null}
     </span>
   );
 }
