@@ -28,8 +28,6 @@ import { multiLineText } from "@/utils/validation";
 export const DEFAULT_THRESHOLDS: readonly number[] = [50, 75, 90, 100];
 export const MAX_THRESHOLDS = 6;
 export const MAX_THRESHOLD_PERCENT = 200;
-/** A custom period can be at most this many days, like the API's limit. */
-export const MAX_CUSTOM_DAYS = 366;
 
 export const UTILIZATION_LABELS: Readonly<Record<UtilizationStatus, string>> = {
   on_track: "On track",

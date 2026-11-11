@@ -315,11 +315,6 @@ export function describeTrigger(trigger: AgentTrigger): string {
   }
 }
 
-/** Whether the workflow needs Orbit (the API or a worker) running to start on its own. */
-export function runsOnItsOwn(trigger: AgentTrigger): boolean {
-  return trigger.kind !== "manual";
-}
-
 export function formatDuration(start: string | null, end: string | null): string | null {
   if (!start || !end) return null;
   const seconds = Math.max(0, Math.round((Date.parse(end) - Date.parse(start)) / 1000));

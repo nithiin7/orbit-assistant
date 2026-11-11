@@ -314,13 +314,6 @@ export function linkedRecordHref(link: Pick<DocumentLink, "kind" | "id" | "detai
   }
 }
 
-/** A document's amount for display, if it has one. */
-export function documentAmount(document: Pick<DocumentRecord, "amount" | "currency">) {
-  return document.amount !== null && document.currency
-    ? formatMoney(document.amount, document.currency)
-    : null;
-}
-
 // The details form
 
 export const TITLE_MAX_LENGTH = 200;

@@ -25,10 +25,6 @@ export function priorityLabel(priority: TaskPriority): string {
   return PRIORITIES.find((item) => item.value === priority)?.label ?? priority;
 }
 
-export function isTaskPriority(value: string): value is TaskPriority {
-  return PRIORITIES.some((item) => item.value === value);
-}
-
 export type StatusFilter = TaskStatus | "all";
 export type TaskSort = NonNullable<TaskListQuery["sort"]>;
 
@@ -43,10 +39,6 @@ export const SORTS: readonly Option<TaskSort>[] = [
   { value: "priority", label: "Priority" },
   { value: "created_at", label: "Newest" },
 ];
-
-export function isTaskSort(value: string): value is TaskSort {
-  return SORTS.some((item) => item.value === value);
-}
 
 /** Every list, tasks on no list, or one list's ID. */
 export type ListFilter = "all" | "none" | (string & {});

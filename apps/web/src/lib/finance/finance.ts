@@ -63,10 +63,6 @@ export function numberLocale(currency: Currency): string {
   return CURRENCY_LOCALES[currency] ?? "en-US";
 }
 
-export function isCurrency(value: string): value is Currency {
-  return value in CURRENCY_EXPONENTS;
-}
-
 /** Minor units as plain decimal text in the major unit: 123450 INR is `"1234.50"`. */
 export function toDecimalString(amount: number, currency: Currency): string {
   const exponent = CURRENCY_EXPONENTS[currency];
@@ -215,10 +211,6 @@ export const TRANSACTION_TYPES: readonly Option<FinanceTransactionType>[] = [
 
 export function transactionTypeLabel(type: FinanceTransactionType): string {
   return TRANSACTION_TYPES.find((item) => item.value === type)?.label ?? type;
-}
-
-export function isTransactionType(value: string): value is FinanceTransactionType {
-  return TRANSACTION_TYPES.some((item) => item.value === value);
 }
 
 /** The category type a transaction type takes, or `null` for transfers, which have none. */

@@ -14,7 +14,6 @@ import type {
 import { boolean, mixed, number, object, ref, string } from "yup";
 
 import { type Option } from "@/utils/common";
-import { singleLineText } from "@/utils/validation";
 
 /** The API's minimum for new backup passwords. */
 export const MIN_PASSWORD_LENGTH = 10;
@@ -172,10 +171,4 @@ export const backupSettingsSchema = object({
   confirm: string()
     .defined()
     .oneOf([ref("password")], "The passwords don’t match."),
-});
-
-export const restoreSchema = object({
-  strategy: mixed<RestoreStrategy>().oneOf(["new_workspace", "into_empty", "replace"]).defined(),
-  workspaceName: singleLineText(WORKSPACE_NAME_MAX_LENGTH),
-  confirmName: string().defined(),
 });
