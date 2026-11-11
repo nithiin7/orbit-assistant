@@ -1,7 +1,7 @@
 "use client";
 
 import type { HabitProgress, LogHabitRequest, Routine } from "@orbit/contracts";
-import { Play, Sparkles } from "lucide-react";
+import { Check, Play, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -14,7 +14,7 @@ import {
   useRoutineList,
   useRoutineMutations,
 } from "@/hooks/use-habits";
-import { habitsHref, isRemaining } from "@/lib/habits";
+import { habitsHref, isRemaining, routineDoneOn } from "@/lib/habits";
 import { WEEKDAYS } from "@/lib/reminders";
 import { dayOfWeek } from "@/utils/dates";
 
@@ -145,7 +145,9 @@ export function HabitsWidget() {
                           <span className="block text-xs text-muted-foreground">
                             {routine.active_session
                               ? "In progress"
-                              : `${routine.steps.length} steps · about ${routine.estimated_minutes} min`}
+                              : routineDoneOn(routine, data.day)
+                                ? "Completed today"
+                                : `${routine.steps.length} steps · about ${routine.estimated_minutes} min`}
                           </span>
                         </Link>
                         {routine.active_session ? (
@@ -155,6 +157,11 @@ export function HabitsWidget() {
                           >
                             Continue
                           </Link>
+                        ) : routineDoneOn(routine, data.day) ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success">
+                            <Check className="size-3.5" strokeWidth={3} aria-hidden="true" />
+                            Done
+                          </span>
                         ) : (
                           <Button
                             variant="soft"

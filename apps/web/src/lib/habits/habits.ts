@@ -14,6 +14,7 @@ import type {
   HabitSchedule,
   HabitScheduleType,
   Routine,
+  RoutineSession,
   UpdateHabitRequest,
   Weekday,
 } from "@orbit/contracts";
@@ -283,6 +284,14 @@ export function cheerFor(
         : `${habit.name} is done for today.`,
     big: false,
   };
+}
+
+/** Whether the routine's latest session finished (`completed`) on `day`: done for that day. */
+export function routineDoneOn(
+  routine: { last_session: Pick<RoutineSession, "status" | "day"> | null },
+  day: string,
+): boolean {
+  return routine.last_session?.status === "completed" && routine.last_session.day === day;
 }
 
 export function routineMinutes(routine: Pick<Routine, "estimated_minutes">): string | null {

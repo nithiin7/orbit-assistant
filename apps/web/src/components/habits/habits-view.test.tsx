@@ -349,4 +349,32 @@ describe("HabitsPanel: routines", () => {
       ]);
     });
   });
+
+  it("keeps typed notes when the last step finishes the session", async () => {
+    const user = userEvent.setup();
+    navigation.params = new URLSearchParams("routine=r-morning");
+    const session_ = routine.active_session;
+    const finished = session_ && {
+      ...session_,
+      status: "completed" as const,
+      finished_at: "2030-01-14T07:05:00Z",
+    };
+    const api = mockApi({
+      ...session,
+      [`GET ${WS}/routines/r-morning`]: json(routine),
+      [`GET ${WS}/routines/r-morning/sessions`]: json({ sessions: [], total: 0 }),
+      [`PATCH ${WS}/routines/r-morning/sessions/s1/steps/st-water`]: json(finished),
+      [`PATCH ${WS}/routines/r-morning/sessions/s1`]: json({ ...finished, notes: "Calm start" }),
+    });
+    await renderSignedIn(<HabitsPanel />);
+    await user.type(await screen.findByLabelText(/How did it go/), "Calm start");
+    await user.click(screen.getByRole("button", { name: "Complete Glass of water" }));
+    await waitFor(() => {
+      const patches = api.mock.calls.filter(([, init]) => init?.method === "PATCH");
+      expect(patches.map(([, init]) => JSON.parse(String(init?.body)) as unknown)).toEqual([
+        { status: "completed" },
+        { notes: "Calm start" },
+      ]);
+    });
+  });
 });
