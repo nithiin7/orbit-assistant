@@ -8,21 +8,19 @@ alwaysApply: false
 
 Extends the core rule and `AGENTS.md`.
 
-- Next.js 16 App Router: async `params` typed with generated `PageProps`. Bundled docs for this
-  version are in `apps/web/node_modules/next/dist/docs/`; check them for unfamiliar APIs.
-- Server Components by default; `"use client"` only for state, effects, handlers, or browser
-  APIs.
-- Routes in `src/app/`, components in `src/components/` (`ui/` = shadcn/ui-compatible
-  primitives), feature logic in `src/lib/`, shared helpers in `src/utils/`. App-wide context lives in `src/providers/`, data
-  hooks in `src/hooks/`; dependencies point components → hooks → providers → api/lib → utils. Navigation is defined in `src/lib/navigation/navigation.ts`.
+- Next.js 16 App Router: async `params` typed with generated `PageProps`; version docs in
+  `apps/web/node_modules/next/dist/docs/`.
+- Server Components by default; `"use client"` only for state, effects, handlers, browser APIs.
+- `src/app/` routes, `src/components/` (`ui/` = shadcn/ui-compatible primitives), `src/hooks/`,
+  `src/providers/`, `src/api/` and `src/lib/` (feature logic), `src/utils/` (generic).
+  Dependencies point components → hooks → providers → api/lib → utils. Navigation:
+  `src/lib/navigation/navigation.ts`.
 - Call the API through `src/api/` with `import type` from `@orbit/contracts`.
-- No `any`, unsafe `as`, or unexplained suppressions. Explicit prop and return types on
-  exported APIs.
-- Loading, error, empty, and success states for data-driven views.
-- Accessible: semantic HTML, labelled controls, keyboard support, visible focus
-  (`focus-visible:ring-2 focus-visible:ring-ring`).
-- Tailwind with tokens from `src/styles/` (colors in `tokens.css`); `cn()` from `src/utils/common/common.ts`.
-- Only `NEXT_PUBLIC_*` env vars reach the browser, so never put secrets there. Validate in
-  `src/lib/env/env.ts`.
-- Verify: `pnpm lint:web`, `pnpm --filter @orbit/web typecheck`, `pnpm test:web`,
-  `pnpm build`.
+- No `any`, unsafe `as`, or unexplained suppressions; explicit types on exported APIs.
+- Loading, error, empty, and success states for data views. Accessible: semantic HTML, labels,
+  keyboard, `focus-visible:ring-2 focus-visible:ring-ring`.
+- Tailwind with `src/styles/` tokens (colors in `tokens.css`); `cn()` from
+  `src/utils/common/common.ts`.
+- Only `NEXT_PUBLIC_*` reaches the browser; validate in `src/lib/env/env.ts`.
+- Verify (AGENTS.md "Verification scope"): small: related tests, lint on changed files,
+  `pnpm --filter @orbit/web typecheck`; large: add `pnpm test:web` and `pnpm build`.

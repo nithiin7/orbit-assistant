@@ -5,26 +5,24 @@ description: "Next.js frontend conventions for apps/web"
 
 # Frontend (`apps/web`)
 
-Follows the shared rules in `AGENTS.md`. Frontend specifics:
+Follows `AGENTS.md`. Specifics:
 
-- Next.js 16 App Router. Pages receive async `params` typed with the generated `PageProps`
-  (`next typegen`, run by `pnpm --filter @orbit/web typecheck`). Docs for the installed version
-  are in `apps/web/node_modules/next/dist/docs/`.
-- Server Components by default. Add `"use client"` only for state, effects, event handlers, or
-  browser APIs, and keep client components small.
-- Layout: routes in `src/app/`, components in `src/components/` (`ui/` = small
-  shadcn/ui-compatible primitives), feature logic in `src/lib/`, shared helpers in `src/utils/`. App-wide context lives in `src/providers/`, data
-  hooks in `src/hooks/`; dependencies point components → hooks → providers → api/lib. Navigation items come from
+- Next.js 16 App Router: async `params` typed with generated `PageProps` (`next typegen`, run by
+  `pnpm --filter @orbit/web typecheck`); version docs in `apps/web/node_modules/next/dist/docs/`.
+- Server Components by default; `"use client"` only for state, effects, handlers, or browser
+  APIs; keep client components small.
+- `src/app/` routes, `src/components/` (`ui/` = shadcn/ui-compatible primitives), `src/hooks/`,
+  `src/providers/`, `src/api/` and `src/lib/` (feature logic), `src/utils/` (generic).
+  Dependencies point components → hooks → providers → api/lib. Navigation:
   `src/lib/navigation/navigation.ts`.
-- Data access goes through typed helpers in `src/api/`, using `import type` from
-  `@orbit/contracts`. Don't call `fetch` against the API directly from components.
-- Every data-driven view handles loading, error, empty, and success states.
-- Accessibility: semantic elements, labelled controls, keyboard support, visible focus
-  (`focus-visible:ring-2 focus-visible:ring-ring`), `aria-hidden="true"` on decorative icons.
-- Styling: Tailwind utilities with the tokens in `src/styles/` (colors in `tokens.css`), combined with `cn()`
-  from `src/utils/common/common.ts`. Prettier sorts classes. Keep the warm, calm style.
-- Imports use the `@/` alias for `src/`. ESLint enforces sorted imports and type-only imports.
-- Public config is read and validated in `src/lib/env/env.ts`. Only `NEXT_PUBLIC_*` values, never
-  secrets.
-- Verify with `pnpm lint:web`, `pnpm --filter @orbit/web typecheck`, `pnpm test:web`, and
-  `pnpm build`.
+- Data access only through `src/api/` helpers with `import type` from `@orbit/contracts`; no
+  direct `fetch` from components.
+- Data views handle loading, error, empty, and success states.
+- Accessible: semantic elements, labels, keyboard, `focus-visible:ring-2 focus-visible:ring-ring`,
+  `aria-hidden="true"` on decorative icons.
+- Tailwind with `src/styles/` tokens (colors in `tokens.css`) and `cn()` from
+  `src/utils/common/common.ts`; Prettier sorts classes. Keep the warm, calm style.
+- `@/` alias for `src/`; ESLint enforces sorted and type-only imports.
+- Public config validated in `src/lib/env/env.ts`; only `NEXT_PUBLIC_*`, never secrets.
+- Verify (AGENTS.md "Verification scope"): small: related tests, lint on changed files,
+  `pnpm --filter @orbit/web typecheck`; large: add `pnpm test:web` and `pnpm build`.
