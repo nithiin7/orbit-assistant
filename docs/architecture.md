@@ -1728,17 +1728,35 @@ store); `position` (queue order).
   token). Verified via TMDB `/authentication`, stored Fernet-encrypted in `watchlist_settings` with
   the AI key (`ORBIT_AI_SECRET_KEY` or `ai-secret.key`), never returned. `PUT …/lookup`
   pauses/resumes; `DELETE …/lookup/key` forgets.
-- `GET …/watchlist/search?q=` sends only the phrase. Adding a match fetches details and a `w342`
+- `GET …/watchlist/search?q=&kind=&language=` sends only the phrase. `kind` uses
+  `/search/{movie,tv}` (≤ 20) instead of `/search/multi` (≤ 12); `language` (ISO 639-1) keeps
+  results whose `original_language` matches, filtered by Orbit (display stays English). Adding a match fetches details and a `w342`
   poster once; a failed poster download is skipped, not a failed add. `POST …/items/{id}/refresh`
   refetches (new seasons).
 - Browser never contacts TMDB: `GET …/items/{id}/poster`; thumbnails via
   `GET …/watchlist/search/poster?path=` (path validated). Adapter `providers/media/tmdb.py` (shared
   client, catalog per key). UI shows TMDB's required attribution.
 
+### Suggestions
+
+- `GET …/watchlist/suggestions` (lookup on): seeds are up to 6 looked-up titles, liked first
+  (rating ≥ 7, weight rating/10), then watching, watched, queued; dropped and low-rated titles
+  never seed. Sends only their TMDB IDs (`/{movie,tv}/{id}/recommendations`). Results are scored
+  by seed weight and rank, summed across seeds, minus anything on the watchlist (dropped too);
+  ≤ 24, each with up to 3 `because` titles. Not cached server-side.
+- `POST …/ai/watchlist/suggestions` (`services/ai/watchlist_assist.py`): needs AI on and the
+  `watchlist` AI module; checked before any TMDB call. The model sees the watchlist (title, kind,
+  year, genres, status, rating; never notes, platform, recommended by) and the candidates by
+  reference (`C1…`), and returns ≤ 8 refs with a reason. Unknown or repeated refs are dropped, so
+  every pick is a real TMDB title. Nothing is saved; adding uses `POST …/items` with `source_id`.
+
 ### Web
 
-`components/watchlist/`, rail `?view=` **Up next** plus one per status; "Watch tonight" suggests
-by time and genre; manual entry always possible. Logic in `lib/watchlist`.
+`components/watchlist/`, rail `?view=` **Up next**, **For you** (suggestions, "Pick for me" when
+AI may read the watchlist), then one per status. A type filter (all, movies, series) applies to
+every view; status views also sort by queue order (watched: recently finished) or name.
+"Watch tonight" suggests by time and genre; manual entry always possible. Logic in
+`lib/watchlist`.
 
 ### Backup
 
@@ -1748,7 +1766,8 @@ Module `watchlist`: `watch_items` + posters (`FILE_COLUMNS`), JSON/CSV export.
 ### Limitations
 
 Universal search covers title, platform, recommended by, notes, overview (opens
-`/watchlist?title=<id>`); optional dashboard widget. No agent tool, no per-episode history or
+`/watchlist?title=<id>`); optional dashboard widget. The agent has no watchlist tools (its modules
+deliberately omit the AI `watchlist` module). No per-episode history or
 rewatch log (refinishing replaces `finished_at`), no poster uploads.
 
 ## Saved links
@@ -2259,7 +2278,8 @@ shared `httpx2.AsyncClient`, no vendor SDKs, built only by `providers/ai/registr
 
 ### Configuration, credentials, and consent
 
-- `ai_settings` (per person): defaults off; tasks, notes, calendar, reminders, habits readable;
+- `ai_settings` (per person): defaults off; tasks, notes, calendar, reminders, habits, watchlist
+  readable (watchlist only by watchlist suggestions; settings saved before it existed lack it);
   documents, finance, health off; `allow_cloud` off; optional fallback, monthly token limit,
   keep-index flag.
 - `ai_providers` (per person): optional user-entered prices (no shipped price list); Fernet API
