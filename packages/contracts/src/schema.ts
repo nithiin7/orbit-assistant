@@ -6363,6 +6363,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/ai/finance/portfolio-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Review the investment portfolio with AI
+         * @description What looks good in the portfolio, what needs attention, and a word on each holding.
+         *     Orbit measures allocation, concentration, and overlap itself; the provider sees holdings'
+         *     names, categories, weights, and returns (never amounts, folios, or notes), so it needs
+         *     permission to read Finance. Nothing is saved.
+         */
+        post: operations["review_portfolio_api_v1_workspaces__workspace_id__ai_finance_portfolio_review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/ai/search": {
         parameters: {
             query?: never;
@@ -8244,6 +8267,141 @@ export interface components {
             chat: boolean;
             /** Embeddings */
             embeddings: boolean;
+        };
+        /**
+         * AiPortfolioFactsResponse
+         * @description Measured by Orbit, not the model. Shares are percentages with two decimals.
+         */
+        AiPortfolioFactsResponse: {
+            /** Holdings */
+            holdings: number;
+            /** Deposits */
+            deposits: number;
+            /** Allocation */
+            allocation: components["schemas"]["SliceResponse"][];
+            /** Return Percent */
+            return_percent: string | null;
+            /** Largest Holding */
+            largest_holding: string | null;
+            /** Largest Share */
+            largest_share: string | null;
+            /** Top Five Share */
+            top_five_share: string | null;
+            /** Cash Share */
+            cash_share: string | null;
+            /** Fund Houses */
+            fund_houses: number;
+            /** Overlaps */
+            overlaps: components["schemas"]["AiPortfolioOverlapResponse"][];
+            /** Active Sips */
+            active_sips: number;
+            /** Unpriced */
+            unpriced: number;
+        };
+        /** AiPortfolioHoldingNoteResponse */
+        AiPortfolioHoldingNoteResponse: {
+            /**
+             * Holding Id
+             * Format: uuid
+             */
+            holding_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "mutual_fund" | "stock" | "etf";
+            /**
+             * Verdict
+             * @enum {string}
+             */
+            verdict: "keep" | "watch" | "review";
+            /** Note */
+            note: string;
+        };
+        /** AiPortfolioImprovementResponse */
+        AiPortfolioImprovementResponse: {
+            /** Title */
+            title: string;
+            /** Detail */
+            detail: string;
+            /**
+             * Action
+             * @description One concrete next step; may be empty.
+             */
+            action: string;
+            /**
+             * Priority
+             * @enum {string}
+             */
+            priority: "high" | "medium" | "low";
+        };
+        /** AiPortfolioOverlapResponse */
+        AiPortfolioOverlapResponse: {
+            /** Category */
+            category: string;
+            /** Funds */
+            funds: number;
+        };
+        /** AiPortfolioReviewRequest */
+        AiPortfolioReviewRequest: {
+            /**
+             * Currency
+             * @description The currency whose holdings and deposits to review.
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Focus
+             * @description The person's own context, such as their horizon or appetite for risk.
+             * @default
+             */
+            focus: string;
+        };
+        /**
+         * AiPortfolioReviewResponse
+         * @description An AI review of one currency's portfolio, most pressing improvements first. Nothing is
+         *     saved.
+         */
+        AiPortfolioReviewResponse: {
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Score
+             * @description 0 to 100, the model's judgment; null when it gave none.
+             */
+            score: number | null;
+            /** Headline */
+            headline: string;
+            /** Summary */
+            summary: string;
+            /** Strengths */
+            strengths: components["schemas"]["AiPortfolioStrengthResponse"][];
+            /** Improvements */
+            improvements: components["schemas"]["AiPortfolioImprovementResponse"][];
+            /** Holdings */
+            holdings: components["schemas"]["AiPortfolioHoldingNoteResponse"][];
+            facts: components["schemas"]["AiPortfolioFactsResponse"];
+            /** Provider Name */
+            provider_name: string;
+            /** Model */
+            model: string;
+            /**
+             * Processing
+             * @enum {string}
+             */
+            processing: "local" | "cloud";
+        };
+        /** AiPortfolioStrengthResponse */
+        AiPortfolioStrengthResponse: {
+            /** Title */
+            title: string;
+            /** Detail */
+            detail: string;
         };
         /** AiProposalResponse */
         AiProposalResponse: {
@@ -43180,6 +43338,60 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    review_portfolio_api_v1_workspaces__workspace_id__ai_finance_portfolio_review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiPortfolioReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiPortfolioReviewResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description AI is off or not set up. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Nothing is held in the currency. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

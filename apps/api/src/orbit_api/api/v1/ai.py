@@ -20,10 +20,12 @@ from pydantic import BaseModel
 from orbit_api.api.auth import CurrentUserDep, WorkspaceDep
 from orbit_api.api.dependencies import (
     AiServicesDep,
+    InvestmentServiceDep,
     WatchlistServiceDep,
     WorkspaceServiceDep,
     build_ai_for,
 )
+from orbit_api.api.v1.commitments import local_today
 from orbit_api.api.v1.watchlist import watchlist_errors
 from orbit_api.schemas.ai import (
     AiAssistRequest,
@@ -43,6 +45,8 @@ from orbit_api.schemas.ai import (
     AiInsightResponse,
     AiMessageResponse,
     AiModelListResponse,
+    AiPortfolioReviewRequest,
+    AiPortfolioReviewResponse,
     AiProposalResponse,
     AiProviderListResponse,
     AiProviderResponse,
@@ -93,6 +97,7 @@ from orbit_api.services.ai.models import (
     SourceNotFoundError,
     UsageLimitReachedError,
 )
+from orbit_api.services.ai.portfolio_review import EmptyPortfolioError
 from orbit_api.services.ai.providers import (
     ProviderError,
     ProviderRequestError,
@@ -167,6 +172,11 @@ def _errors() -> Generator[None]:
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_CONTENT,
             "Add some exercises to your library first.",
+        ) from None
+    except EmptyPortfolioError:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "Add a holding or a deposit in this currency first.",
         ) from None
     except (UnsupportedCapabilityError, ProviderRequestError) as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, exc.message) from None
@@ -575,6 +585,41 @@ async def pick_watch_suggestions(
     with _errors():
         result = await ai.watchlist.pick(workspace.id, user.id, items, candidates)
     return AiWatchPicksResponse.of(result)
+
+
+# Finance helpers
+
+
+@router.post(
+    "/finance/portfolio-review",
+    summary="Review the investment portfolio with AI",
+    responses={
+        409: {"description": "AI is off or not set up."},
+        422: {"description": "Nothing is held in the currency."},
+    },
+)
+async def review_portfolio(
+    body: AiPortfolioReviewRequest,
+    workspace: WorkspaceDep,
+    user: CurrentUserDep,
+    ai: AiServicesDep,
+    investments: InvestmentServiceDep,
+) -> AiPortfolioReviewResponse:
+    """What looks good in the portfolio, what needs attention, and a word on each holding.
+    Orbit measures allocation, concentration, and overlap itself; the provider sees holdings'
+    names, categories, weights, and returns (never amounts, folios, or notes), so it needs
+    permission to read Finance. Nothing is saved."""
+    with _errors():
+        await ai.portfolio.require_permission(user.id)
+    today = local_today(user, None)
+    book = await investments.book(workspace.id, today)
+    summary = await investments.portfolio(workspace.id, body.currency, today)
+    sips = await investments.sip_plans(workspace.id, today)
+    with _errors():
+        result = await ai.portfolio.review(
+            workspace.id, user.id, summary, book.holdings, book.deposits, sips, body.focus
+        )
+    return AiPortfolioReviewResponse.of(body.currency, result)
 
 
 # Semantic search

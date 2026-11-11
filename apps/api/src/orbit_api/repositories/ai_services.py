@@ -43,6 +43,7 @@ from orbit_api.services.ai.health_assist import HealthAssistService
 from orbit_api.services.ai.indexing import IndexService
 from orbit_api.services.ai.insights import InsightService
 from orbit_api.services.ai.models import ActionKind, ActionResult, InvalidActionError
+from orbit_api.services.ai.portfolio_review import PortfolioReviewService
 from orbit_api.services.ai.providers import ProviderFactory
 from orbit_api.services.ai.retrieval import Retriever
 from orbit_api.services.ai.sources import SourceCatalog
@@ -110,6 +111,7 @@ class AiServices:
     assist: AssistService
     health: HealthAssistService
     watchlist: WatchlistAssistService
+    portfolio: PortfolioReviewService
     insights: InsightService
 
 
@@ -246,5 +248,6 @@ def build_ai(
         assist=assist,
         health=health,
         watchlist=WatchlistAssistService(config=config),
+        portfolio=PortfolioReviewService(config=config),
         insights=insights,
     )

@@ -16,6 +16,7 @@ from pydantic import (
 
 from orbit_api.schemas.common import Name, TimeZoneName, single_line
 from orbit_api.schemas.fitness import NutrientsModel
+from orbit_api.schemas.investments import SliceResponse
 from orbit_api.schemas.watchlist import WatchSuggestionResponse
 from orbit_api.services.ai.assist import AssistKind, AssistResult
 from orbit_api.services.ai.configuration import ConnectionTest, ResolvedProvider
@@ -51,9 +52,17 @@ from orbit_api.services.ai.models import (
     UsageOperation,
     UsageSummary,
 )
+from orbit_api.services.ai.portfolio_review import (
+    PortfolioFacts,
+    PortfolioReview,
+    Priority,
+    Verdict,
+)
 from orbit_api.services.ai.providers import KIND_CAPABILITIES, base_url_of, processing_of
 from orbit_api.services.ai.watchlist_assist import WatchPicks
+from orbit_api.services.finance.money import Currency
 from orbit_api.services.fitness.models import TemplateCategory
+from orbit_api.services.investments.models import HoldingKind
 
 ModelName = Annotated[
     str,
@@ -842,6 +851,133 @@ class AiWorkoutSuggestionResponse(BaseModel):
                 )
                 for e in w.exercises
             ],
+            provider_name=p.provider_name,
+            model=p.model,
+            processing=_processing(p),
+        )
+
+
+class AiPortfolioReviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    currency: Currency = Field(description="The currency whose holdings and deposits to review.")
+    focus: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, max_length=300),
+        AfterValidator(single_line),
+    ] = Field(
+        default="",
+        description="The person's own context, such as their horizon or appetite for risk.",
+    )
+
+
+class AiPortfolioOverlapResponse(BaseModel):
+    category: str
+    funds: int
+
+
+class AiPortfolioFactsResponse(BaseModel):
+    """Measured by Orbit, not the model. Shares are percentages with two decimals."""
+
+    holdings: int
+    deposits: int
+    allocation: list[SliceResponse]
+    return_percent: str | None
+    largest_holding: str | None
+    largest_share: str | None
+    top_five_share: str | None
+    cash_share: str | None
+    fund_houses: int
+    overlaps: list[AiPortfolioOverlapResponse]
+    active_sips: int
+    unpriced: int
+
+    @classmethod
+    def of(cls, facts: PortfolioFacts) -> "AiPortfolioFactsResponse":
+        return cls(
+            holdings=facts.holdings,
+            deposits=facts.deposits,
+            allocation=[SliceResponse.of(entry) for entry in facts.allocation],
+            return_percent=facts.return_percent,
+            largest_holding=facts.largest_holding,
+            largest_share=facts.largest_share,
+            top_five_share=facts.top_five_share,
+            cash_share=facts.cash_share,
+            fund_houses=facts.fund_houses,
+            overlaps=[
+                AiPortfolioOverlapResponse(category=o.category, funds=o.funds)
+                for o in facts.overlaps
+            ],
+            active_sips=facts.active_sips,
+            unpriced=facts.unpriced,
+        )
+
+
+class AiPortfolioStrengthResponse(BaseModel):
+    title: str
+    detail: str
+
+
+class AiPortfolioImprovementResponse(BaseModel):
+    title: str
+    detail: str
+    action: str = Field(description="One concrete next step; may be empty.")
+    priority: Priority
+
+
+class AiPortfolioHoldingNoteResponse(BaseModel):
+    holding_id: uuid.UUID
+    name: str
+    kind: HoldingKind
+    verdict: Verdict
+    note: str
+
+
+class AiPortfolioReviewResponse(BaseModel):
+    """An AI review of one currency's portfolio, most pressing improvements first. Nothing is
+    saved."""
+
+    currency: Currency
+    score: int | None = Field(description="0 to 100, the model's judgment; null when it gave none.")
+    headline: str
+    summary: str
+    strengths: list[AiPortfolioStrengthResponse]
+    improvements: list[AiPortfolioImprovementResponse]
+    holdings: list[AiPortfolioHoldingNoteResponse]
+    facts: AiPortfolioFactsResponse
+    provider_name: str
+    model: str
+    processing: Processing
+
+    @classmethod
+    def of(cls, currency: Currency, result: PortfolioReview) -> "AiPortfolioReviewResponse":
+        p = result.provenance
+        return cls(
+            currency=currency,
+            score=result.score,
+            headline=result.headline,
+            summary=result.summary,
+            strengths=[
+                AiPortfolioStrengthResponse(title=s.title, detail=s.detail)
+                for s in result.strengths
+            ],
+            improvements=[
+                AiPortfolioImprovementResponse(
+                    title=i.title, detail=i.detail, action=i.action, priority=i.priority
+                )
+                for i in result.improvements
+            ],
+            holdings=[
+                AiPortfolioHoldingNoteResponse(
+                    holding_id=n.holding.holding.id,
+                    name=n.holding.holding.name,
+                    kind=n.holding.holding.kind,
+                    verdict=n.verdict,
+                    note=n.note,
+                )
+                for n in result.holdings
+            ],
+            facts=AiPortfolioFactsResponse.of(result.facts),
             provider_name=p.provider_name,
             model=p.model,
             processing=_processing(p),

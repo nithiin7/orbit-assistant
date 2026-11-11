@@ -33921,6 +33921,67 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/ai/finance/portfolio-review": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Review the investment portfolio with AI",
+        "description": "What looks good in the portfolio, what needs attention, and a word on each holding.\nOrbit measures allocation, concentration, and overlap itself; the provider sees holdings'\nnames, categories, weights, and returns (never amounts, folios, or notes), so it needs\npermission to read Finance. Nothing is saved.",
+        "operationId": "review_portfolio_api_v1_workspaces__workspace_id__ai_finance_portfolio_review_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiPortfolioReviewRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiPortfolioReviewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace (or record) does not exist or is not accessible."
+          },
+          "409": {
+            "description": "AI is off or not set up."
+          },
+          "422": {
+            "description": "Nothing is held in the currency."
+          }
+        }
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/ai/search": {
       "get": {
         "tags": [
@@ -39850,6 +39911,360 @@
           "embeddings"
         ],
         "title": "AiModelResponse"
+      },
+      "AiPortfolioFactsResponse": {
+        "properties": {
+          "holdings": {
+            "type": "integer",
+            "title": "Holdings"
+          },
+          "deposits": {
+            "type": "integer",
+            "title": "Deposits"
+          },
+          "allocation": {
+            "items": {
+              "$ref": "#/components/schemas/SliceResponse"
+            },
+            "type": "array",
+            "title": "Allocation"
+          },
+          "return_percent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Percent"
+          },
+          "largest_holding": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Largest Holding"
+          },
+          "largest_share": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Largest Share"
+          },
+          "top_five_share": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top Five Share"
+          },
+          "cash_share": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cash Share"
+          },
+          "fund_houses": {
+            "type": "integer",
+            "title": "Fund Houses"
+          },
+          "overlaps": {
+            "items": {
+              "$ref": "#/components/schemas/AiPortfolioOverlapResponse"
+            },
+            "type": "array",
+            "title": "Overlaps"
+          },
+          "active_sips": {
+            "type": "integer",
+            "title": "Active Sips"
+          },
+          "unpriced": {
+            "type": "integer",
+            "title": "Unpriced"
+          }
+        },
+        "type": "object",
+        "required": [
+          "holdings",
+          "deposits",
+          "allocation",
+          "return_percent",
+          "largest_holding",
+          "largest_share",
+          "top_five_share",
+          "cash_share",
+          "fund_houses",
+          "overlaps",
+          "active_sips",
+          "unpriced"
+        ],
+        "title": "AiPortfolioFactsResponse",
+        "description": "Measured by Orbit, not the model. Shares are percentages with two decimals."
+      },
+      "AiPortfolioHoldingNoteResponse": {
+        "properties": {
+          "holding_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Holding Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "mutual_fund",
+              "stock",
+              "etf"
+            ],
+            "title": "Kind"
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "keep",
+              "watch",
+              "review"
+            ],
+            "title": "Verdict"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "holding_id",
+          "name",
+          "kind",
+          "verdict",
+          "note"
+        ],
+        "title": "AiPortfolioHoldingNoteResponse"
+      },
+      "AiPortfolioImprovementResponse": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action",
+            "description": "One concrete next step; may be empty."
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "title": "Priority"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "detail",
+          "action",
+          "priority"
+        ],
+        "title": "AiPortfolioImprovementResponse"
+      },
+      "AiPortfolioOverlapResponse": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "funds": {
+            "type": "integer",
+            "title": "Funds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "funds"
+        ],
+        "title": "AiPortfolioOverlapResponse"
+      },
+      "AiPortfolioReviewRequest": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency",
+            "description": "The currency whose holdings and deposits to review."
+          },
+          "focus": {
+            "type": "string",
+            "maxLength": 300,
+            "title": "Focus",
+            "description": "The person's own context, such as their horizon or appetite for risk.",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "currency"
+        ],
+        "title": "AiPortfolioReviewRequest"
+      },
+      "AiPortfolioReviewResponse": {
+        "properties": {
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score",
+            "description": "0 to 100, the model's judgment; null when it gave none."
+          },
+          "headline": {
+            "type": "string",
+            "title": "Headline"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "strengths": {
+            "items": {
+              "$ref": "#/components/schemas/AiPortfolioStrengthResponse"
+            },
+            "type": "array",
+            "title": "Strengths"
+          },
+          "improvements": {
+            "items": {
+              "$ref": "#/components/schemas/AiPortfolioImprovementResponse"
+            },
+            "type": "array",
+            "title": "Improvements"
+          },
+          "holdings": {
+            "items": {
+              "$ref": "#/components/schemas/AiPortfolioHoldingNoteResponse"
+            },
+            "type": "array",
+            "title": "Holdings"
+          },
+          "facts": {
+            "$ref": "#/components/schemas/AiPortfolioFactsResponse"
+          },
+          "provider_name": {
+            "type": "string",
+            "title": "Provider Name"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "processing": {
+            "type": "string",
+            "enum": [
+              "local",
+              "cloud"
+            ],
+            "title": "Processing"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "score",
+          "headline",
+          "summary",
+          "strengths",
+          "improvements",
+          "holdings",
+          "facts",
+          "provider_name",
+          "model",
+          "processing"
+        ],
+        "title": "AiPortfolioReviewResponse",
+        "description": "An AI review of one currency's portfolio, most pressing improvements first. Nothing is\nsaved."
+      },
+      "AiPortfolioStrengthResponse": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "detail"
+        ],
+        "title": "AiPortfolioStrengthResponse"
       },
       "AiProposalResponse": {
         "properties": {
