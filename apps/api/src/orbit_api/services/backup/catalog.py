@@ -105,6 +105,7 @@ EXCLUDED_TABLES: Final[dict[str, str]] = {
     "local_credentials": "password hashes never leave the server",
     "local_sessions": "sign-in tokens never leave the server",
     "user_avatars": "the profile photo belongs to the account",
+    "user_covers": "the profile cover photo belongs to the account",
     "dashboard_layouts": "a per-person preference, not workspace data",
     "achievement_unlocks": "achievements belong to the person, not the workspace",
     "reward_purchases": "XP store purchases belong to the person, not the workspace",

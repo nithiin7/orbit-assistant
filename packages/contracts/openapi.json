@@ -505,6 +505,121 @@
         ]
       }
     },
+    "/api/v1/me/cover": {
+      "get": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Get the signed-in user's profile cover photo",
+        "operationId": "get_cover_api_v1_me_cover_get",
+        "responses": {
+          "200": {
+            "description": "The cover photo.",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "204": {
+            "description": "No cover photo is set."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Set the signed-in user's profile cover photo",
+        "description": "The request body is the image itself. Its format is detected from the file, not from\nthe declared content type.",
+        "operationId": "put_cover_api_v1_me_cover_put",
+        "requestBody": {
+          "content": {
+            "image/png": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/jpeg": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/webp": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "413": {
+            "description": "The image is larger than 1536 KB."
+          },
+          "415": {
+            "description": "The image is not a PNG, JPEG, or WebP file."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Remove the signed-in user's profile cover photo",
+        "operationId": "delete_cover_api_v1_me_cover_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/me/dashboard": {
       "get": {
         "tags": [

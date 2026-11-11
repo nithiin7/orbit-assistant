@@ -3,10 +3,17 @@ import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type * as AvatarModule from "@/lib/avatar";
 import { ada, json, mockApi, type MockRequest, personal, status } from "@/test/api-mock";
 import { renderSignedIn } from "@/test/session";
 
 import { ProfilePanel } from "./profile-view";
+
+// jsdom's FileReader can't read the fetch mock's blobs; images load as a fixed data URL.
+vi.mock("@/lib/avatar", async (importOriginal) => ({
+  ...(await importOriginal<typeof AvatarModule>()),
+  readAsDataUrl: vi.fn(async (blob: Blob) => `data:${blob.type};base64,AAAA`),
+}));
 
 let search = new URLSearchParams();
 
@@ -20,6 +27,7 @@ const session = {
   "GET /api/v1/auth/config": json({ provider: "local", registration_open: false }),
   "GET /api/v1/me": json(ada),
   "GET /api/v1/me/avatar": status(204),
+  "GET /api/v1/me/cover": status(204),
   "GET /api/v1/workspaces": json({ workspaces: [personal] }),
 };
 const BASE = "/api/v1/me/achievements";
@@ -100,6 +108,31 @@ describe("ProfilePanel", () => {
     // Secrets stay out of "next up".
     expect(within(next).queryByText("Secret achievement")).not.toBeInTheDocument();
     expect(screen.getByText(/You can afford 1 item/)).toBeInTheDocument();
+  });
+
+  it("shows the cover photo in place of the banner, and removes it", async () => {
+    const methods: string[] = [];
+    mockApi({
+      ...session,
+      [`GET ${BASE}`]: json(PROFILE),
+      "GET /api/v1/me/cover": () =>
+        new Response(new Blob(["cover"], { type: "image/webp" }), { status: 200 }),
+      "DELETE /api/v1/me/cover": (request) => {
+        methods.push(request.method);
+        return status(204)(request);
+      },
+    });
+    await renderSignedIn(<ProfilePanel />);
+
+    await screen.findByRole("heading", { level: 1, name: "Ada" });
+    await vi.waitFor(() => expect(document.querySelector("img[src^='data:']")).not.toBeNull());
+
+    await userEvent.click(screen.getByRole("button", { name: /Cover/ }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Remove cover photo" }));
+
+    expect(await screen.findByText("Cover photo removed.")).toBeInTheDocument();
+    expect(methods).toEqual(["DELETE"]);
+    expect(document.querySelector("img[src^='data:']")).toBeNull();
   });
 
   it("filters achievements by tier and status", async () => {

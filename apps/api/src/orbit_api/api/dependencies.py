@@ -13,7 +13,7 @@ from orbit_api.repositories.accounts import SqlAccountRepository, SqlLocalAuthRe
 from orbit_api.repositories.achievements import SqlAchievementMetrics, SqlAchievementRecords
 from orbit_api.repositories.agent_services import AgentServices, build_agent
 from orbit_api.repositories.ai_services import AiServices, build_ai
-from orbit_api.repositories.avatars import SqlAvatarRepository
+from orbit_api.repositories.avatars import SqlAvatarRepository, SqlCoverRepository
 from orbit_api.repositories.backup import build_backup_service
 from orbit_api.repositories.bookmarks import SqlBookmarkRepository, SqlBookmarkSettings
 from orbit_api.repositories.budgets import build_budget_service
@@ -52,7 +52,7 @@ from orbit_api.repositories.watchlist import SqlLookupSettings, SqlWatchItemRepo
 from orbit_api.repositories.workspaces import SqlWorkspaceRepository
 from orbit_api.services.accounts.service import AccountService
 from orbit_api.services.achievements.service import AchievementService
-from orbit_api.services.avatars.service import AvatarService
+from orbit_api.services.avatars.service import MAX_COVER_BYTES, AvatarService
 from orbit_api.services.backup.service import BackupService
 from orbit_api.services.bookmarks.service import BookmarkService, LinkFetcher
 from orbit_api.services.budgets.service import BudgetService
@@ -175,6 +175,15 @@ def get_avatar_service(session: SessionDep) -> AvatarService:
 
 
 AvatarServiceDep = Annotated[AvatarService, Depends(get_avatar_service)]
+
+
+def get_cover_service(session: SessionDep) -> AvatarService:
+    return AvatarService(
+        SqlCoverRepository(session), SqlTransaction(session), max_bytes=MAX_COVER_BYTES
+    )
+
+
+CoverServiceDep = Annotated[AvatarService, Depends(get_cover_service)]
 
 
 def get_achievement_service(session: SessionDep) -> AchievementService:

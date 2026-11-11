@@ -1,15 +1,21 @@
-"""The signed-in user's profile, profile photo, and dashboard layout."""
+"""The signed-in user's profile, profile and cover photos, and dashboard layout."""
 
+import uuid
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 
 from orbit_api.api.auth import CurrentUserDep
-from orbit_api.api.dependencies import AccountServiceDep, AvatarServiceDep, DashboardServiceDep
+from orbit_api.api.dependencies import (
+    AccountServiceDep,
+    AvatarServiceDep,
+    CoverServiceDep,
+    DashboardServiceDep,
+)
 from orbit_api.schemas.dashboard import DashboardLayoutRequest, DashboardLayoutResponse
 from orbit_api.schemas.users import UpdateProfileRequest, UserProfile
 from orbit_api.services.avatars.models import AvatarTooLargeError, UnsupportedImageError
-from orbit_api.services.avatars.service import MAX_AVATAR_BYTES
+from orbit_api.services.avatars.service import MAX_AVATAR_BYTES, MAX_COVER_BYTES, AvatarService
 from orbit_api.services.dashboard.models import DuplicateWidgetError
 
 router = APIRouter(
@@ -53,18 +59,7 @@ async def update_profile(
     },
 )
 async def get_avatar(user: CurrentUserDep, avatars: AvatarServiceDep) -> Response:
-    avatar = await avatars.get(user.id)
-    if avatar is None:
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
-    return Response(
-        content=avatar.data,
-        media_type=avatar.content_type,
-        headers={
-            "Cache-Control": "private, no-cache",
-            "X-Content-Type-Options": "nosniff",
-            "Content-Security-Policy": "default-src 'none'",
-        },
-    )
+    return await _get_image(user.id, avatars)
 
 
 @router.put(
@@ -80,16 +75,7 @@ async def get_avatar(user: CurrentUserDep, avatars: AvatarServiceDep) -> Respons
 async def put_avatar(request: Request, user: CurrentUserDep, avatars: AvatarServiceDep) -> Response:
     """The request body is the image itself. Its format is detected from the file, not from
     the declared content type."""
-    data = await _read_body(request, limit=MAX_AVATAR_BYTES)
-    try:
-        await avatars.replace(user.id, data)
-    except AvatarTooLargeError:
-        raise _too_large() from None
-    except UnsupportedImageError:
-        raise HTTPException(
-            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, "Use a PNG, JPEG, or WebP image."
-        ) from None
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return await _put_image(request, user.id, avatars)
 
 
 @router.delete(
@@ -99,6 +85,45 @@ async def put_avatar(request: Request, user: CurrentUserDep, avatars: AvatarServ
 )
 async def delete_avatar(user: CurrentUserDep, avatars: AvatarServiceDep) -> Response:
     await avatars.remove(user.id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get(
+    "/cover",
+    summary="Get the signed-in user's profile cover photo",
+    response_class=Response,
+    responses={
+        200: {"content": _IMAGE_CONTENT, "description": "The cover photo."},
+        204: {"description": "No cover photo is set."},
+    },
+)
+async def get_cover(user: CurrentUserDep, covers: CoverServiceDep) -> Response:
+    return await _get_image(user.id, covers)
+
+
+@router.put(
+    "/cover",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Set the signed-in user's profile cover photo",
+    openapi_extra={"requestBody": {"required": True, "content": _IMAGE_CONTENT}},
+    responses={
+        413: {"description": f"The image is larger than {MAX_COVER_BYTES // 1024} KB."},
+        415: {"description": "The image is not a PNG, JPEG, or WebP file."},
+    },
+)
+async def put_cover(request: Request, user: CurrentUserDep, covers: CoverServiceDep) -> Response:
+    """The request body is the image itself. Its format is detected from the file, not from
+    the declared content type."""
+    return await _put_image(request, user.id, covers)
+
+
+@router.delete(
+    "/cover",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Remove the signed-in user's profile cover photo",
+)
+async def delete_cover(user: CurrentUserDep, covers: CoverServiceDep) -> Response:
+    await covers.remove(user.id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -146,21 +171,49 @@ async def delete_dashboard(user: CurrentUserDep, dashboard: DashboardServiceDep)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+async def _get_image(user_id: uuid.UUID, images: AvatarService) -> Response:
+    image = await images.get(user_id)
+    if image is None:
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return Response(
+        content=image.data,
+        media_type=image.content_type,
+        headers={
+            "Cache-Control": "private, no-cache",
+            "X-Content-Type-Options": "nosniff",
+            "Content-Security-Policy": "default-src 'none'",
+        },
+    )
+
+
+async def _put_image(request: Request, user_id: uuid.UUID, images: AvatarService) -> Response:
+    data = await _read_body(request, limit=images.max_bytes)
+    try:
+        await images.replace(user_id, data)
+    except AvatarTooLargeError:
+        raise _too_large(images.max_bytes) from None
+    except UnsupportedImageError:
+        raise HTTPException(
+            status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, "Use a PNG, JPEG, or WebP image."
+        ) from None
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 async def _read_body(request: Request, *, limit: int) -> bytes:
     """Read the body, stopping as soon as it exceeds `limit` rather than buffering it all."""
     declared = request.headers.get("content-length")
     if declared is not None and declared.isdigit() and int(declared) > limit:
-        raise _too_large()
+        raise _too_large(limit)
     body = bytearray()
     async for chunk in request.stream():
         body.extend(chunk)
         if len(body) > limit:
-            raise _too_large()
+            raise _too_large(limit)
     return bytes(body)
 
 
-def _too_large() -> HTTPException:
+def _too_large(limit: int) -> HTTPException:
     return HTTPException(
         status.HTTP_413_CONTENT_TOO_LARGE,
-        f"The photo must be smaller than {MAX_AVATAR_BYTES // 1024} KB.",
+        f"The photo must be smaller than {limit // 1024} KB.",
     )

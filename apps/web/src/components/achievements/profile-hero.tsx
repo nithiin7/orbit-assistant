@@ -1,17 +1,23 @@
 "use client";
 
 import type { AchievementProfile } from "@orbit/contracts";
-import { Gem, Sparkles, Trophy } from "lucide-react";
+import { Gem, ImagePlus, Sparkles, Trash2, Trophy } from "lucide-react";
+import { type ChangeEvent, useRef, useState } from "react";
 
+import { describeApiError } from "@/api/client";
 import { bannerStyle } from "@/components/achievements/cosmetics";
 import { UserAvatar } from "@/components/avatar/user-avatar";
+import { Menu } from "@/components/ui/menu";
+import { useProfileCover } from "@/hooks/use-profile-cover";
 import { isUnlocked, levelPercent, rewardName } from "@/lib/achievements";
+import { AvatarImageError } from "@/lib/avatar";
 import { useCurrentUser } from "@/providers/auth";
 import { cn } from "@/utils/common";
 
-/** The top of the profile: banner, framed photo, name and title, level, and XP. */
+/** The top of the profile: cover or banner, framed photo, name and title, level, and XP. */
 export function ProfileHero({ profile }: { profile: AchievementProfile }) {
   const user = useCurrentUser();
+  const cover = useProfileCover();
   const banner = bannerStyle(profile.equipped.banner);
   const title = rewardName(profile, profile.equipped.title);
   const unlocked = profile.achievements.filter(isUnlocked).length;
@@ -23,12 +29,24 @@ export function ProfileHero({ profile }: { profile: AchievementProfile }) {
       aria-labelledby="profile-name"
       className="overflow-hidden rounded-2xl border bg-card shadow-elevation-1"
     >
-      <div
-        aria-hidden="true"
-        className={cn("relative h-32 @3xl/profile:h-44", banner.drift && "animate-drift")}
-        style={banner.style}
-      >
-        <div className="absolute inset-0 bg-linear-to-t from-card/70 via-transparent to-transparent" />
+      <div className="relative">
+        {/* A cover photo, when set, replaces the banner bought in the store. */}
+        <div
+          aria-hidden="true"
+          className={cn(
+            "relative h-32 overflow-hidden @3xl/profile:h-44",
+            !cover.url && banner.drift && "animate-drift",
+          )}
+          style={cover.url ? undefined : banner.style}
+        >
+          {cover.url ? (
+            // A data URL from the API; next/image can't optimize it.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={cover.url} alt="" className="size-full object-cover" />
+          ) : null}
+          <div className="absolute inset-0 bg-linear-to-t from-card/70 via-transparent to-transparent" />
+        </div>
+        <CoverMenu cover={cover} />
       </div>
 
       <div className="relative px-5 pb-6 @3xl/profile:px-8">
@@ -99,6 +117,99 @@ export function ProfileHero({ profile }: { profile: AchievementProfile }) {
         </dl>
       </div>
     </section>
+  );
+}
+
+/** Upload, change, or remove the cover photo, from the corner of the banner. */
+function CoverMenu({ cover }: { cover: ReturnType<typeof useProfileCover> }) {
+  const input = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function run(action: () => Promise<unknown>, done: string, failed: string) {
+    setError(null);
+    setMessage(null);
+    try {
+      await action();
+      setMessage(done);
+    } catch (reason) {
+      setError(
+        reason instanceof AvatarImageError ? reason.message : describeApiError(reason, failed),
+      );
+    }
+  }
+
+  function onChoose(event: ChangeEvent<HTMLInputElement>) {
+    const target = event.currentTarget;
+    const file = target.files?.[0];
+    // Clear the input so choosing the same file again still fires a change.
+    target.value = "";
+    if (!file) return;
+    void run(
+      () => cover.upload(file),
+      "Cover photo updated.",
+      "Couldn’t upload the cover photo. Try again.",
+    );
+  }
+
+  return (
+    <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
+      <input
+        ref={input}
+        type="file"
+        accept="image/*"
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
+        onChange={onChoose}
+      />
+      <Menu
+        variant="outline"
+        size="sm"
+        align="end"
+        className="bg-card/85 backdrop-blur-sm"
+        items={[
+          {
+            id: "upload",
+            label: cover.url ? "Change cover photo" : "Upload cover photo",
+            icon: ImagePlus,
+            disabled: cover.busy,
+            onSelect: () => input.current?.click(),
+          },
+          ...(cover.url
+            ? [
+                {
+                  id: "remove",
+                  label: "Remove cover photo",
+                  icon: Trash2,
+                  destructive: true,
+                  disabled: cover.busy,
+                  onSelect: () =>
+                    void run(
+                      () => cover.remove(),
+                      "Cover photo removed.",
+                      "Couldn’t remove the cover photo. Try again.",
+                    ),
+                },
+              ]
+            : []),
+        ]}
+      >
+        <ImagePlus aria-hidden="true" />
+        {cover.busy ? "Saving…" : "Cover"}
+      </Menu>
+      {error ? (
+        <p
+          role="alert"
+          className="max-w-xs rounded-md border border-destructive/30 bg-card px-3 py-2 text-sm text-destructive shadow-elevation-1"
+        >
+          {error}
+        </p>
+      ) : null}
+      <p role="status" className="sr-only">
+        {message}
+      </p>
+    </div>
   );
 }
 

@@ -25,7 +25,7 @@ from orbit_api.db.models.ai import (
     AiSettingsModel,
     AiUsageModel,
 )
-from orbit_api.db.models.avatars import UserAvatarModel
+from orbit_api.db.models.avatars import UserAvatarModel, UserCoverModel
 from orbit_api.db.models.backup import BackupModel, BackupSettingsModel, BackupUploadModel
 from orbit_api.db.models.bookmarks import (
     BookmarkCollectionModel,
@@ -269,6 +269,7 @@ __all__ = [
     "TaskListModel",
     "TaskModel",
     "UserAvatarModel",
+    "UserCoverModel",
     "UserModel",
     "WatchItemModel",
     "WatchlistSettingsModel",

@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { AvatarImageError, centerSquare, prepareAvatar, readAsDataUrl } from "./avatar";
+import {
+  AvatarImageError,
+  centerSquare,
+  coverFit,
+  prepareAvatar,
+  prepareCover,
+  readAsDataUrl,
+} from "./avatar";
 
 describe("centerSquare", () => {
   it.each([
@@ -18,6 +25,40 @@ describe("prepareAvatar", () => {
     const file = new File(["%PDF"], "cv.pdf", { type: "application/pdf" });
 
     await expect(prepareAvatar(file)).rejects.toThrow(AvatarImageError);
+  });
+});
+
+describe("coverFit", () => {
+  it("scales a wide photo down to the cover width, keeping its shape", () => {
+    expect(coverFit(4000, 1000)).toEqual({
+      crop: { x: 0, y: 0, width: 4000, height: 1000 },
+      width: 1600,
+      height: 400,
+    });
+  });
+
+  it("crops a tall photo around its middle", () => {
+    expect(coverFit(3000, 4000)).toEqual({
+      crop: { x: 0, y: 875, width: 3000, height: 2250 },
+      width: 1600,
+      height: 1200,
+    });
+  });
+
+  it("never enlarges a small photo", () => {
+    expect(coverFit(800, 200)).toEqual({
+      crop: { x: 0, y: 0, width: 800, height: 200 },
+      width: 800,
+      height: 200,
+    });
+  });
+});
+
+describe("prepareCover", () => {
+  it("rejects files that aren't images", async () => {
+    const file = new File(["%PDF"], "cv.pdf", { type: "application/pdf" });
+
+    await expect(prepareCover(file)).rejects.toThrow(AvatarImageError);
   });
 });
 

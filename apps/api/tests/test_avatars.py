@@ -1,10 +1,15 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from orbit_api.services.avatars.service import MAX_AVATAR_BYTES, detect_image_type
+from orbit_api.services.avatars.service import (
+    MAX_AVATAR_BYTES,
+    MAX_COVER_BYTES,
+    detect_image_type,
+)
 from tests.support import bearer, sign_up
 
 AVATAR = "/api/v1/me/avatar"
+COVER = "/api/v1/me/cover"
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
 JPEG = b"\xff\xd8\xff\xe0" + b"\x00" * 64
 WEBP = b"RIFF\x24\x00\x00\x00WEBPVP8 " + b"\x00" * 64
@@ -84,3 +89,59 @@ def test_photos_are_private_to_their_owner(client: TestClient) -> None:
     assert client.get(AVATAR, headers=grace).status_code == 204
     client.delete(AVATAR, headers=grace)
     assert client.get(AVATAR, headers=ada).content == JPEG
+
+
+# Cover photos share the photo rules, with their own table and a larger limit.
+
+
+def test_set_and_remove_cover_apart_from_the_photo(client: TestClient) -> None:
+    ada = bearer(sign_up(client))
+    assert client.get(COVER, headers=ada).status_code == 204
+
+    response = client.put(COVER, content=JPEG, headers={**ada, "Content-Type": "image/jpeg"})
+
+    assert response.status_code == 204
+    cover = client.get(COVER, headers=ada)
+    assert cover.content == JPEG
+    assert cover.headers["content-type"] == "image/jpeg"
+    assert cover.headers["x-content-type-options"] == "nosniff"
+    assert client.get(AVATAR, headers=ada).status_code == 204
+
+    assert client.delete(COVER, headers=ada).status_code == 204
+    assert client.get(COVER, headers=ada).status_code == 204
+
+
+def test_cover_allows_more_than_a_photo_up_to_its_own_limit(client: TestClient) -> None:
+    ada = bearer(sign_up(client))
+    wide = PNG + b"\x00" * MAX_AVATAR_BYTES
+    oversized = PNG + b"\x00" * MAX_COVER_BYTES
+
+    assert (
+        client.put(COVER, content=wide, headers={**ada, "Content-Type": "image/png"}).status_code
+        == 204
+    )
+    response = client.put(COVER, content=oversized, headers={**ada, "Content-Type": "image/png"})
+    assert response.status_code == 413
+    assert response.json() == {
+        "detail": f"The photo must be smaller than {MAX_COVER_BYTES // 1024} KB."
+    }
+    assert client.get(COVER, headers=ada).content == wide
+
+
+def test_cover_rejects_files_that_are_not_supported_images(client: TestClient) -> None:
+    ada = bearer(sign_up(client))
+
+    response = client.put(COVER, content=b"GIF89a", headers={**ada, "Content-Type": "image/png"})
+
+    assert response.status_code == 415
+    assert client.get(COVER, headers=ada).status_code == 204
+
+
+def test_covers_are_private_to_their_owner(client: TestClient) -> None:
+    ada = bearer(sign_up(client, email="ada@example.com"))
+    grace = bearer(sign_up(client, email="grace@example.com"))
+    client.put(COVER, content=WEBP, headers={**ada, "Content-Type": "image/webp"})
+
+    assert client.get(COVER, headers=grace).status_code == 204
+    client.delete(COVER, headers=grace)
+    assert client.get(COVER, headers=ada).content == WEBP

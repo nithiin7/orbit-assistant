@@ -1,4 +1,5 @@
-"""Profile photos. The web app resizes photos before upload; the API checks what it stores."""
+"""Profile and cover photos. The web app resizes photos before upload; the API checks what it
+stores."""
 
 import uuid
 from datetime import UTC, datetime
@@ -14,6 +15,8 @@ from orbit_api.services.transactions import Transaction
 
 # Far above a 256px photo (tens of KB), and small enough to store inline in the database.
 MAX_AVATAR_BYTES = 512 * 1024
+# A wide cover photo resized to at most 1600px (a few hundred KB as WebP), with headroom.
+MAX_COVER_BYTES = 1536 * 1024
 
 
 class AvatarRepository(Protocol):
@@ -37,15 +40,25 @@ def detect_image_type(data: bytes) -> AvatarContentType | None:
 
 
 class AvatarService:
-    def __init__(self, avatars: AvatarRepository, transaction: Transaction) -> None:
+    """One stored image per user: the profile photo, or (with its own repository and limit) the
+    cover photo."""
+
+    def __init__(
+        self,
+        avatars: AvatarRepository,
+        transaction: Transaction,
+        *,
+        max_bytes: int = MAX_AVATAR_BYTES,
+    ) -> None:
         self._avatars = avatars
         self._transaction = transaction
+        self.max_bytes = max_bytes
 
     async def get(self, user_id: uuid.UUID) -> Avatar | None:
         return await self._avatars.get(user_id)
 
     async def replace(self, user_id: uuid.UUID, data: bytes) -> Avatar:
-        if len(data) > MAX_AVATAR_BYTES:
+        if len(data) > self.max_bytes:
             raise AvatarTooLargeError
         content_type = detect_image_type(data)
         if content_type is None:
