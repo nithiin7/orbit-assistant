@@ -690,7 +690,8 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
       ) : (
         // Browsing: the rail beside a list that uses the rest of the page.
         <div className="grid gap-6 @5xl/notes:grid-cols-[13rem_minmax(0,1fr)] @7xl/notes:grid-cols-[14rem_minmax(0,1fr)]">
-          <aside className="hidden min-w-0 @5xl/notes:sticky @5xl/notes:top-6 @5xl/notes:block @5xl/notes:max-h-[calc(100dvh-3rem)] @5xl/notes:self-start @5xl/notes:overflow-y-auto">
+          {/* Padded inside its scroll box so focus rings at the edges are not clipped. */}
+          <aside className="hidden min-w-0 @5xl/notes:sticky @5xl/notes:top-6 @5xl/notes:-m-1 @5xl/notes:block @5xl/notes:max-h-[calc(100dvh-3rem)] @5xl/notes:self-start @5xl/notes:overflow-y-auto @5xl/notes:p-1">
             {rail}
           </aside>
 

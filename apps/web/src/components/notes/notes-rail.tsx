@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
 import { useNoteOrganizer } from "@/hooks/use-notes";
 import {
@@ -143,17 +142,7 @@ export function NotesRail({
       </ul>
 
       <section aria-labelledby={foldersHeading} className="space-y-1">
-        <RailHeading id={foldersHeading} title="Folders">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7"
-            aria-label="New folder"
-            onClick={() => setDialog({ kind: "new-folder", parent: null })}
-          >
-            <FolderPlus className="size-4" aria-hidden="true" />
-          </Button>
-        </RailHeading>
+        <RailHeading id={foldersHeading} title="Folders" />
         {rows.length === 0 ? (
           <p className="px-3 py-1 text-xs text-muted-foreground">
             Folders group related notes. Notes without one stay in the Inbox.
@@ -237,6 +226,14 @@ export function NotesRail({
             })}
           </ul>
         )}
+        <button
+          type="button"
+          onClick={() => setDialog({ kind: "new-folder", parent: null })}
+          className="flex h-8 w-full items-center gap-2.5 rounded-lg px-3 text-left font-medium text-muted-foreground transition-colors duration-150 outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <FolderPlus className="size-4 shrink-0" aria-hidden="true" />
+          New folder
+        </button>
       </section>
 
       <section aria-labelledby={tagsHeading} className="space-y-1">
