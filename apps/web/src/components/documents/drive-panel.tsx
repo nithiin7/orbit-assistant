@@ -105,6 +105,7 @@ export function DrivePanel({
         key={connection.id}
         connection={connection}
         importFolderId={target === NO_FOLDER ? null : target}
+        folders={folders}
       />
     </section>
   );

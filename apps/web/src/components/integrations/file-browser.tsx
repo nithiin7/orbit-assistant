@@ -1,6 +1,6 @@
 "use client";
 
-import type { IntegrationConnection, RemoteFile } from "@orbit/contracts";
+import type { DocumentFolder, IntegrationConnection, RemoteFile } from "@orbit/contracts";
 import {
   ChevronRight,
   CircleCheck,
@@ -10,7 +10,9 @@ import {
   FileSpreadsheet,
   FileText,
   Folder,
+  FolderInput,
   type LucideIcon,
+  MoreHorizontal,
   Presentation,
   Search,
 } from "lucide-react";
@@ -18,8 +20,10 @@ import Link from "next/link";
 import { type FormEvent, useState } from "react";
 
 import { describeApiError } from "@/api/client";
+import { FolderPickerDialog } from "@/components/notes/organize-dialogs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Menu } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConnectionMutations, useRemoteFiles } from "@/hooks/use-integrations";
 import { capabilityName, formatFileSize, linkedRecordHref } from "@/lib/integrations";
@@ -41,14 +45,17 @@ function fileIcon(mimeType: string): { icon: LucideIcon; tone: string } {
 
 /**
  * Browse and search the account's files, and import chosen ones into Documents (into
- * `importFolderId` when given). Orbit keeps a copy; the file at the provider is never changed.
+ * `importFolderId` when given). With `folders`, each file can also be imported straight into
+ * a folder picked for it. Orbit keeps a copy; the file at the provider is never changed.
  */
 export function FileBrowser({
   connection,
   importFolderId = null,
+  folders,
 }: {
   connection: IntegrationConnection;
   importFolderId?: string | null;
+  folders?: readonly DocumentFolder[];
 }) {
   const [path, setPath] = useState<Crumb[]>([]);
   const [draft, setDraft] = useState("");
@@ -134,6 +141,7 @@ export function FileBrowser({
               connection={connection}
               file={file}
               importFolderId={importFolderId}
+              folders={folders}
               onOpen={() => setPath([...path, { id: file.id, name: file.name }])}
             />
           ))}
@@ -147,15 +155,18 @@ function FileRow({
   connection,
   file,
   importFolderId,
+  folders,
   onOpen,
 }: {
   connection: IntegrationConnection;
   file: RemoteFile;
   importFolderId: string | null;
+  folders: readonly DocumentFolder[] | undefined;
   onOpen: () => void;
 }) {
   const actions = useConnectionMutations(connection.id);
   const [error, setError] = useState<string | null>(null);
+  const [choosingFolder, setChoosingFolder] = useState(false);
   const imported = file.imported;
   const fail = (fallback: string) => (cause: unknown) =>
     setError(describeApiError(cause, fallback));
@@ -244,22 +255,59 @@ function FileRow({
           </Link>
         </div>
       ) : (
-        <Button
-          size="sm"
-          variant="soft"
-          disabled={actions.importFile.isPending}
-          onClick={() => {
-            setError(null);
-            actions.importFile.mutate(
-              { fileId: file.id, folderId: importFolderId },
-              { onError: fail("Couldn’t import this file.") },
-            );
-          }}
-        >
-          Import
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            size="sm"
+            variant="soft"
+            disabled={actions.importFile.isPending}
+            onClick={() => {
+              setError(null);
+              actions.importFile.mutate(
+                { fileId: file.id, folderId: importFolderId },
+                { onError: fail("Couldn’t import this file.") },
+              );
+            }}
+          >
+            Import
+          </Button>
+          {folders ? (
+            <Menu
+              aria-label={`More import options for “${file.name}”`}
+              variant="ghost"
+              size="icon"
+              chevron={false}
+              align="end"
+              className="size-8"
+              items={[
+                {
+                  id: "import-to",
+                  label: "Import to folder…",
+                  icon: FolderInput,
+                  disabled: actions.importFile.isPending,
+                  onSelect: () => setChoosingFolder(true),
+                },
+              ]}
+            >
+              <MoreHorizontal aria-hidden="true" />
+            </Menu>
+          ) : null}
+        </div>
       )}
       {openAtProvider}
+      {choosingFolder && folders ? (
+        <FolderPickerDialog
+          title={`Import “${file.name}”`}
+          folders={folders}
+          current={importFolderId}
+          top="No folder"
+          submitLabel="Import"
+          onClose={() => setChoosingFolder(false)}
+          onSubmit={(folderId) => {
+            setError(null);
+            return actions.importFile.mutateAsync({ fileId: file.id, folderId });
+          }}
+        />
+      ) : null}
     </li>
   );
 }
