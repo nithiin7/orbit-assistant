@@ -12,6 +12,8 @@ import type {
   AiIndexStatus,
   AiInsightList,
   AiModelList,
+  AiPortfolioReview,
+  AiPortfolioReviewRequest,
   AiProposal,
   AiProvider,
   AiProviderList,
@@ -185,6 +187,19 @@ export function suggestFoods(
   body: AiFoodIdeasRequest,
 ): Promise<AiFoodIdeas> {
   return request<AiFoodIdeas>(ai(workspaceId, "/health/food-ideas"), {
+    method: "POST",
+    body,
+    token,
+  });
+}
+
+/** AI's review of one currency's investments: strengths, improvements, and holding notes. */
+export function reviewPortfolio(
+  token: string,
+  workspaceId: string,
+  body: AiPortfolioReviewRequest,
+): Promise<AiPortfolioReview> {
+  return request<AiPortfolioReview>(ai(workspaceId, "/finance/portfolio-review"), {
     method: "POST",
     body,
     token,

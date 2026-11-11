@@ -14,6 +14,8 @@ import type {
   AiModel,
   AiModelList,
   AiModule,
+  AiPortfolioReview,
+  AiPortfolioReviewRequest,
   AiProposal,
   AiProvider,
   AiProviderList,
@@ -48,6 +50,7 @@ import {
   insightsOptions,
   pickWatchSuggestions,
   renameConversation,
+  reviewPortfolio,
   runAssist,
   streamAiMessage,
   suggestFoods,
@@ -365,6 +368,15 @@ export function usePickWatchSuggestions(workspaceId: string) {
   const { withToken } = useAuth();
   return useMutation<AiWatchPicks, Error, void>({
     mutationFn: () => withToken((t) => pickWatchSuggestions(t, workspaceId)),
+  });
+}
+
+/** Reviews the portfolio in one currency. Nothing is saved, so the result lives as long as the
+ * component holding this hook. */
+export function useReviewPortfolio(workspaceId: string) {
+  const { withToken } = useAuth();
+  return useMutation<AiPortfolioReview, Error, AiPortfolioReviewRequest>({
+    mutationFn: (body) => withToken((t) => reviewPortfolio(t, workspaceId, body)),
   });
 }
 
