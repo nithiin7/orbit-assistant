@@ -1,12 +1,13 @@
 # Changelog
 
-All notable changes to Orbit are recorded here. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Orbit uses
-[Semantic Versioning](https://semver.org/).
+All notable changes to Orbit are recorded here. Orbit uses
+[Semantic Versioning](https://semver.org/). Each release's entry is written by the
+[Release workflow](.github/workflows/release.yml) from the Conventional Commit messages since
+the previous release.
 
-## [Unreleased]
+## 0.1.0
 
-Orbit has not had a tagged release yet. This section is the draft of the first one, `0.1.0`.
+The baseline every package started from (not tagged). Releases above it are generated.
 
 ### Added
 

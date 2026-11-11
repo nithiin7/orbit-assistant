@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "8470a2e3269c50df5b05d843dd2c82747b0ebb69",
+  "include-component-in-tag": false,
+  "include-v-in-tag": true,
+  "packages": {
+    ".": {
+      "release-type": "node",
+      "package-name": "orbit",
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        { "type": "json", "path": "apps/web/package.json", "jsonpath": "$.version" },
+        { "type": "json", "path": "apps/api/package.json", "jsonpath": "$.version" },
+        { "type": "toml", "path": "apps/api/pyproject.toml", "jsonpath": "$.project.version" }
+      ]
+    }
+  }
+}

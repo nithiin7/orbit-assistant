@@ -545,6 +545,29 @@ Test a message without committing:
 echo "feat(web): add task list" | pnpm exec commitlint
 ```
 
+### Releases
+
+Releases are automatic, driven by the commit messages that reach `main`
+([`release.yml`](../.github/workflows/release.yml), using
+[release-please](https://github.com/googleapis/release-please)):
+
+1. Each push to `main` opens or updates a **release pull request** that bumps the version and
+   adds a `CHANGELOG.md` entry: `fix` bumps the patch (`0.1.0` → `0.1.1`), `feat` the minor
+   (`0.2.0`), and a breaking change (`feat!:` or a `BREAKING CHANGE:` footer) the major
+   (`1.0.0`). `docs`, `chore`, `ci`, and the like alone don't start a release.
+2. Merging it tags `vX.Y.Z`, creates the GitHub release, and the tag publishes container images
+   ([Using the published images](deployment.md#using-the-published-images)).
+
+One version covers the repository: the root `package.json`, `apps/web/package.json`,
+`apps/api/package.json`, `apps/api/pyproject.toml` (and `uv.lock`), tracked in
+`.release-please-manifest.json`. Don't edit these versions or the changelog by hand. After a
+release, merge `main` back into `dev`.
+
+For the release pull request to run CI and the tag to publish images, add a fine-grained
+personal access token (this repository; contents and pull requests: read and write) as the
+`RELEASE_PLEASE_TOKEN` Actions secret. Without it the workflow falls back to `GITHUB_TOKEN`,
+whose events start no other workflows.
+
 ## Dependencies
 
 - JS: `pnpm --filter @orbit/web add <pkg>` (or `add -D` for dev dependencies). Versions are

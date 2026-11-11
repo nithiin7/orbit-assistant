@@ -1,0 +1,59 @@
+name: Release
+
+# Conventional Commits on main drive the version: `fix` bumps the patch, `feat` the minor, and
+# `!` or a `BREAKING CHANGE:` footer the major. release-please keeps one release pull request
+# open with the bumped versions and changelog; merging it tags `vX.Y.Z` and creates the GitHub
+# release, and the tag starts the Containers workflow to publish images.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release pull request and tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          # Events made with GITHUB_TOKEN start no workflows, so with it alone the release pull
+          # request gets no CI and the tag publishes no images. Add a fine-grained token with
+          # contents and pull-requests write access as the RELEASE_PLEASE_TOKEN secret.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      # The release bumps the API's version in pyproject.toml; CI installs with UV_LOCKED=1, so
+      # uv.lock must follow on the release branch.
+      - if: steps.release.outputs.prs_created == 'true'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - if: steps.release.outputs.prs_created == 'true'
+        uses: astral-sh/setup-uv@v7
+
+      - name: Refresh uv.lock on the release branch
+        if: steps.release.outputs.prs_created == 'true'
+        run: |
+          uv lock
+          if git diff --quiet uv.lock; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: refresh uv.lock for the release"
+          git push
+
+      - if: steps.release.outputs.release_created == 'true'
+        run: echo "Released ${{ steps.release.outputs.tag_name }}." >> "$GITHUB_STEP_SUMMARY"

@@ -16,7 +16,11 @@ test("a new person walks through the setup guide and finishes", async ({ page })
   await expect(page.getByRole("heading", { name: "Make it feel right" })).toBeVisible();
   await page.getByRole("button", { name: "Continue" }).click();
   for (const area of ["Money", "Health", "Google or Microsoft", "AI assistant"]) {
-    await page.getByRole("checkbox", { name: new RegExp(area) }).uncheck();
+    // The checkbox is visually hidden inside its card, which takes the click instead; a direct
+    // `uncheck()` waits forever on the card intercepting the pointer.
+    const checkbox = page.getByRole("checkbox", { name: new RegExp(area) });
+    await page.locator("label").filter({ has: checkbox }).click();
+    await expect(checkbox).not.toBeChecked();
   }
   await page.getByRole("button", { name: "Continue" }).click();
   await page.getByRole("button", { name: "Go to the dashboard" }).click();
