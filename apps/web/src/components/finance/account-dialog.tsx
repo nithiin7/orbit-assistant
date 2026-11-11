@@ -2,14 +2,13 @@
 
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { FinanceAccount, UpdateFinanceAccountRequest } from "@orbit/contracts";
-import { X } from "lucide-react";
 import { useId } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
 import { AmountField, FormAlert, FormField, SelectField } from "@/components/form-field";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogFormActions, DialogHeader } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useFinanceMutations } from "@/hooks/use-finance";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
@@ -105,37 +104,28 @@ export function AccountDialog({ workspaceId, account, onSaved, onClose }: Accoun
   }
 
   return (
-    <dialog
+    <Dialog
       {...dialogProps}
       aria-labelledby={`${id}-heading`}
-      className="dialog-motion dialog-pop mx-auto mt-[8vh] max-h-[86vh] w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
+      className="mt-[8vh] max-h-[86vh] max-w-lg overflow-y-auto"
     >
       <form
         noValidate
         onSubmit={(event) => void handleSubmit(save)(event)}
         className="space-y-4 p-5"
       >
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h2 id={`${id}-heading`} className="text-base font-semibold">
-              {account ? "Edit account" : "Add an account"}
-            </h2>
+        <DialogHeader
+          titleId={`${id}-heading`}
+          title={account ? "Edit account" : "Add an account"}
+          description={
             <p className="text-xs text-muted-foreground">
               {account
                 ? `${accountTypeLabel(account.type)} in ${account.currency}.`
                 : "Tracked by hand. Orbit never asks for bank logins."}
             </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="-mt-1.5 -mr-1.5 size-8"
-            aria-label="Close"
-            onClick={close}
-          >
-            <X aria-hidden="true" />
-          </Button>
-        </div>
+          }
+          onClose={close}
+        />
 
         <FormField
           label="Name"
@@ -185,15 +175,12 @@ export function AccountDialog({ workspaceId, account, onSaved, onClose }: Accoun
 
         <FormAlert message={errors.root?.server?.message ?? null} />
 
-        <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
-          <Button variant="ghost" disabled={saving} onClick={close}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={saving}>
-            {saving ? "Saving…" : account ? "Save changes" : "Add account"}
-          </Button>
-        </div>
+        <DialogFormActions
+          busy={saving}
+          onCancel={close}
+          submitLabel={account ? "Save changes" : "Add account"}
+        />
       </form>
-    </dialog>
+    </Dialog>
   );
 }

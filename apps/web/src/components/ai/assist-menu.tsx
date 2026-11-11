@@ -1,14 +1,15 @@
 "use client";
 
 import type { AiAssistResult, AiModule } from "@orbit/contracts";
-import { CircleAlert, Cloud, HardDrive, Sparkles, X } from "lucide-react";
+import { CircleAlert, Cloud, HardDrive, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import { Answer, Sources } from "@/components/assistant/answer";
 import { ProposalCard } from "@/components/assistant/proposal-card";
-import { Button, type ButtonProps } from "@/components/ui/button";
+import { type ButtonProps } from "@/components/ui/button";
+import { Dialog, DialogCloseButton } from "@/components/ui/dialog";
 import { Menu } from "@/components/ui/menu";
 import { useAiSettings, useAssist } from "@/hooks/use-ai";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
@@ -105,11 +106,11 @@ function AssistDialog({
   }, [action.kind, end, mutate, start, targetId]);
 
   return (
-    <dialog
+    <Dialog
       {...dialogProps}
       aria-labelledby={`${id}-heading`}
       aria-busy={assist.isPending}
-      className="dialog-motion dialog-pop mx-auto mt-[8vh] max-h-[84vh] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
+      className="mt-[8vh] max-h-[84vh] max-w-xl overflow-y-auto"
     >
       <div className="space-y-4 p-5">
         <div className="flex items-start justify-between gap-4">
@@ -120,15 +121,7 @@ function AssistDialog({
             </h2>
             <p className="text-xs text-muted-foreground">{action.description}</p>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="-mt-1.5 -mr-1.5 size-8"
-            aria-label="Close"
-            onClick={close}
-          >
-            <X aria-hidden="true" />
-          </Button>
+          <DialogCloseButton onClick={close} />
         </div>
         {assist.isPending ? (
           <p role="status" className="text-sm text-muted-foreground">
@@ -143,7 +136,7 @@ function AssistDialog({
           <AssistResultView id={id} result={assist.data} />
         ) : null}
       </div>
-    </dialog>
+    </Dialog>
   );
 }
 

@@ -7,6 +7,7 @@ import { useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
+import { DialogShell } from "@/components/dialog-shell";
 import { AmountField, DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Textarea } from "@/components/ui/textarea";
 import { useCommitmentMutations } from "@/hooks/use-commitments";
@@ -30,7 +31,6 @@ import { localDateString } from "@/utils/dates";
 import { browserTimeZone } from "@/utils/time-zones";
 
 import { ReminderFields } from "./commitment-parts";
-import { DialogShell } from "./dialog-shell";
 
 type Values = InferType<typeof loanSchema>;
 

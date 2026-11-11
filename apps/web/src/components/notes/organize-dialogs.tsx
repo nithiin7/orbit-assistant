@@ -4,7 +4,7 @@ import type { FolderDeleteMode, NoteFolder } from "@orbit/contracts";
 import { useId, useState } from "react";
 
 import { describeApiError } from "@/api/client";
-import { DialogShell } from "@/components/finance/dialog-shell";
+import { DialogShell } from "@/components/dialog-shell";
 import { FormAlert } from "@/components/form-field";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";

@@ -6,7 +6,7 @@ import { useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import { saveTemplate } from "@/api/fitness";
-import { DialogShell } from "@/components/finance/dialog-shell";
+import { DialogShell } from "@/components/dialog-shell";
 import { FormAlert, FormField } from "@/components/form-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

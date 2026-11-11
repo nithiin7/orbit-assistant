@@ -3,6 +3,7 @@
 import { type ReactNode, useCallback, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogFooter } from "@/components/ui/dialog";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 
 export type ConfirmOptions = {
@@ -33,12 +34,12 @@ export function ConfirmDialog({
   });
 
   return (
-    <dialog
+    <Dialog
       {...dialogProps}
       role="alertdialog"
       aria-labelledby={`${id}-heading`}
       aria-describedby={description ? `${id}-description` : undefined}
-      className="dialog-motion dialog-pop mx-auto mt-[10vh] w-[calc(100%-2rem)] max-w-sm rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
+      className="mt-[10vh] max-w-sm"
     >
       <div className="space-y-4 p-5">
         <div className="space-y-1.5">
@@ -51,7 +52,7 @@ export function ConfirmDialog({
             </p>
           ) : null}
         </div>
-        <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
+        <DialogFooter>
           <Button variant="ghost" autoFocus onClick={close}>
             Cancel
           </Button>
@@ -64,9 +65,9 @@ export function ConfirmDialog({
           >
             {confirmLabel}
           </Button>
-        </div>
+        </DialogFooter>
       </div>
-    </dialog>
+    </Dialog>
   );
 }
 

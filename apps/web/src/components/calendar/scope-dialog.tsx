@@ -4,6 +4,7 @@ import type { CalendarEditScope } from "@orbit/contracts";
 import { type ReactNode, useCallback, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { cn } from "@/utils/common";
 
@@ -36,11 +37,7 @@ function ScopeDialog({
   const verb = action === "delete" ? "Delete" : "Change";
 
   return (
-    <dialog
-      {...dialogProps}
-      aria-labelledby={`${id}-title`}
-      className="dialog-motion dialog-pop m-auto w-[calc(100%-2rem)] max-w-sm rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
-    >
+    <Dialog {...dialogProps} aria-labelledby={`${id}-title`} className="m-auto max-w-sm">
       <form
         className="space-y-4 p-5"
         onSubmit={(event) => {
@@ -86,7 +83,7 @@ function ScopeDialog({
           </Button>
         </div>
       </form>
-    </dialog>
+    </Dialog>
   );
 }
 

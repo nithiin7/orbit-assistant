@@ -27,6 +27,7 @@ import type { InferType } from "yup";
 import { describeApiError } from "@/api/client";
 import { FormAlert, FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogFormActions } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -95,10 +96,10 @@ export function AddTitleDialog({ workspaceId, onAdd, onOpen, onClose }: AddTitle
   }
 
   return (
-    <dialog
+    <Dialog
       {...dialogProps}
       aria-labelledby={`${id}-heading`}
-      className="dialog-motion dialog-pop mx-auto mt-[8vh] w-[calc(100%-2rem)] max-w-xl overflow-hidden rounded-2xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
+      className="mt-[8vh] max-w-xl overflow-hidden rounded-2xl"
     >
       <div className="flex items-center justify-between gap-4 border-b px-5 py-4">
         <h2 id={`${id}-heading`} className="text-base font-semibold">
@@ -158,7 +159,7 @@ export function AddTitleDialog({ workspaceId, onAdd, onOpen, onClose }: AddTitle
           />
         </div>
       )}
-    </dialog>
+    </Dialog>
   );
 }
 
@@ -570,14 +571,12 @@ function ManualTitleForm({
         />
       </div>
       <FormAlert message={errors.root?.server?.message ?? null} />
-      <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
-        <Button variant="ghost" disabled={isSubmitting} onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Adding…" : "Add to watchlist"}
-        </Button>
-      </div>
+      <DialogFormActions
+        busy={isSubmitting}
+        onCancel={onCancel}
+        submitLabel="Add to watchlist"
+        busyLabel="Adding…"
+      />
     </form>
   );
 }

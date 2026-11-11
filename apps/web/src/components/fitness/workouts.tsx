@@ -10,8 +10,8 @@ import { useForm } from "react-hook-form";
 
 import { describeApiError } from "@/api/client";
 import { logWorkout, startWorkout } from "@/api/fitness";
+import { DialogShell } from "@/components/dialog-shell";
 import { EmptyState } from "@/components/empty-state";
-import { DialogShell } from "@/components/finance/dialog-shell";
 import { DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

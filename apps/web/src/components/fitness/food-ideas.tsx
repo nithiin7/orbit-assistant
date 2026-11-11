@@ -6,7 +6,7 @@ import { type KeyboardEvent, useId, useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import { saveFood } from "@/api/fitness";
-import { DialogShell } from "@/components/finance/dialog-shell";
+import { DialogShell } from "@/components/dialog-shell";
 import { FormAlert } from "@/components/form-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

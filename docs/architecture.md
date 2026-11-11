@@ -41,6 +41,9 @@ Browser ──► apps/web (Next.js, :3000) ──HTTP/JSON──► apps/api (F
 - `Select`, date picker, and money input are custom controls in `src/components/ui/`; popups use
   the Popover API so they sit above modal dialogs. Money groups per currency: lakhs/crores for
   INR, thousands otherwise.
+- Modals are native `<dialog>`s opened by `useModalDialog`. `Dialog`, `DialogHeader`, and
+  `DialogFormActions` (`src/components/ui/dialog.tsx`) give them one frame, heading, and action
+  row; `DialogShell` (`src/components/dialog-shell.tsx`) composes them for plain form dialogs.
 
 ## Shared API contract
 

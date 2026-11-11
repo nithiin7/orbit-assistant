@@ -54,6 +54,7 @@ import {
 
 import { useQuickCapture } from "@/components/notes/quick-capture";
 import { useQuickActions } from "@/components/quick-actions/quick-actions";
+import { Dialog } from "@/components/ui/dialog";
 import { Kbd } from "@/components/ui/kbd";
 import { useBookmarkMutations } from "@/hooks/use-bookmarks";
 import { useCalendarCommands } from "@/hooks/use-calendar-commands";
@@ -618,10 +619,10 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
   return (
     <CommandPaletteContext.Provider value={contextValue}>
       {children}
-      <dialog
+      <Dialog
         ref={dialogRef}
         aria-label="Command palette"
-        className="dialog-motion dialog-pop mx-auto mt-[12vh] w-[calc(100%-2rem)] max-w-lg overflow-hidden rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
+        className="mt-[12vh] max-w-lg overflow-hidden"
         onClose={() => {
           setIsOpen(false);
           returnFocusRef.current?.focus();
@@ -771,7 +772,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
             Close
           </span>
         </footer>
-      </dialog>
+      </Dialog>
     </CommandPaletteContext.Provider>
   );
 }

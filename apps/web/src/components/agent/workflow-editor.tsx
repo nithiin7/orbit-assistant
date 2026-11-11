@@ -17,7 +17,7 @@ import { useId } from "react";
 import { type Control, Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 
 import { describeApiError } from "@/api/client";
-import { DialogShell } from "@/components/finance/dialog-shell";
+import { DialogShell } from "@/components/dialog-shell";
 import { FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";

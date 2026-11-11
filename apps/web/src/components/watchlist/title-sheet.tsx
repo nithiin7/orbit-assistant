@@ -11,6 +11,7 @@ import { describeApiError } from "@/api/client";
 import { FormAlert, FormField } from "@/components/form-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
@@ -87,10 +88,10 @@ export function TitleSheet({
   ].filter(Boolean);
 
   return (
-    <dialog
+    <Dialog
       {...dialogProps}
       aria-labelledby={`${id}-heading`}
-      className="dialog-motion dialog-pop mx-auto mt-[6vh] mb-[6vh] w-[calc(100%-2rem)] max-w-3xl rounded-2xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
+      className="mt-[6vh] mb-[6vh] max-w-3xl rounded-2xl"
     >
       <div className="@container/sheet">
         <div className="relative grid gap-5 p-5 @xl/sheet:grid-cols-[11rem_1fr] @xl/sheet:gap-6">
@@ -215,7 +216,7 @@ export function TitleSheet({
           </div>
         </div>
       </div>
-    </dialog>
+    </Dialog>
   );
 }
 

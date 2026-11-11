@@ -2,13 +2,12 @@
 
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { ShoppingListIcon } from "@orbit/contracts";
-import { X } from "lucide-react";
 import { useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { describeApiError } from "@/api/client";
 import { FormAlert, FormField } from "@/components/form-field";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogFormActions, DialogHeader } from "@/components/ui/dialog";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { listSchema, SHOPPING_LIST_ICONS } from "@/lib/shopping";
 import { cn } from "@/utils/common";
@@ -64,31 +63,14 @@ export function ListNameDialog({
   }
 
   return (
-    <dialog
-      {...dialogProps}
-      aria-labelledby={`${id}-heading`}
-      className="dialog-motion dialog-pop mx-auto mt-[10vh] w-[calc(100%-2rem)] max-w-sm rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
-    >
+    <Dialog {...dialogProps} aria-labelledby={`${id}-heading`} className="mt-[10vh] max-w-sm">
       <form
         noValidate
         // Called here, not during render: `save` closes the dialog through a ref.
         onSubmit={(event) => void handleSubmit(save)(event)}
         className="space-y-4 p-5"
       >
-        <div className="flex items-start justify-between gap-4">
-          <h2 id={`${id}-heading`} className="text-base font-semibold">
-            {title}
-          </h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="-mt-1.5 -mr-1.5 size-8"
-            aria-label="Close"
-            onClick={close}
-          >
-            <X aria-hidden="true" />
-          </Button>
-        </div>
+        <DialogHeader titleId={`${id}-heading`} title={title} onClose={close} />
 
         <FormField
           label="List name"
@@ -107,16 +89,9 @@ export function ListNameDialog({
 
         <FormAlert message={errors.root?.server?.message ?? null} />
 
-        <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
-          <Button variant="ghost" disabled={saving} onClick={close}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={saving}>
-            {saving ? "Saving…" : submitLabel}
-          </Button>
-        </div>
+        <DialogFormActions busy={saving} onCancel={close} submitLabel={submitLabel} />
       </form>
-    </dialog>
+    </Dialog>
   );
 }
 

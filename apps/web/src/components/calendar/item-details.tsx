@@ -27,6 +27,7 @@ import { EventWorkout } from "@/components/fitness/event-workout";
 import { FormAlert } from "@/components/form-field";
 import { ExternalOrigin } from "@/components/integrations/external-origin";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCalendarEvent } from "@/hooks/use-calendar";
@@ -93,10 +94,10 @@ export function ItemDetails(props: ItemDetailsProps) {
 
   const { item } = props;
   return (
-    <dialog
+    <Dialog
       {...dialogProps}
       aria-labelledby={`${id}-title`}
-      className="dialog-motion dialog-pop mx-auto mt-[8vh] max-h-[84vh] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
+      className="mt-[8vh] max-h-[84vh] max-w-md overflow-y-auto"
     >
       <div className="space-y-4 p-5">
         <div className="flex items-start justify-between gap-3">
@@ -142,7 +143,7 @@ export function ItemDetails(props: ItemDetailsProps) {
 
         <FormAlert message={error} />
       </div>
-    </dialog>
+    </Dialog>
   );
 }
 

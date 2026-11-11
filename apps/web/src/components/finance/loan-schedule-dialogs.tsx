@@ -6,13 +6,12 @@ import { useForm } from "react-hook-form";
 import { object, string } from "yup";
 
 import { describeApiError } from "@/api/client";
+import { DialogShell } from "@/components/dialog-shell";
 import { AmountField, DateField, FormAlert, FormField } from "@/components/form-field";
 import { useCommitmentMutations } from "@/hooks/use-commitments";
 import { formatRate, parseComponent, parseRate } from "@/lib/commitments";
 import { formatMoney, parseAmount, toDecimalString } from "@/lib/finance";
 import { formatCalendarDate } from "@/utils/dates";
-
-import { DialogShell } from "./dialog-shell";
 
 const AMOUNT_HINT = "Enter an amount, such as 1250 or 1,250.50.";
 

@@ -13,6 +13,7 @@ import {
 
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { useNoteList } from "@/hooks/use-notes";
@@ -44,11 +45,7 @@ function PickerFrame({
   const id = useId();
   const { close, dialogProps } = useModalDialog({ onClose });
   return (
-    <dialog
-      {...dialogProps}
-      aria-labelledby={id}
-      className="dialog-motion dialog-pop mx-auto mt-[12vh] w-[calc(100%-2rem)] max-w-md overflow-hidden rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
-    >
+    <Dialog {...dialogProps} aria-labelledby={id} className="mt-[12vh] max-w-md overflow-hidden">
       <div className="flex items-center justify-between gap-4 border-b px-4 py-3">
         <h2 id={id} className="text-sm font-semibold">
           {title}
@@ -58,7 +55,7 @@ function PickerFrame({
         </Button>
       </div>
       {children(close)}
-    </dialog>
+    </Dialog>
   );
 }
 

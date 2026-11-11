@@ -11,6 +11,7 @@ import { describeApiError } from "@/api/client";
 import { FormAlert } from "@/components/form-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogHeader } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useFinanceMutations } from "@/hooks/use-finance";
@@ -81,29 +82,20 @@ export function CategoriesDialog({
   const alert = errors.root?.server?.message ?? error;
 
   return (
-    <dialog
+    <Dialog
       {...dialogProps}
       aria-labelledby={`${id}-heading`}
-      className="dialog-motion dialog-pop mx-auto mt-[6vh] max-h-[88vh] w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-xl border bg-popover p-0 text-popover-foreground shadow-elevation-3"
+      className="mt-[6vh] max-h-[88vh] max-w-lg overflow-y-auto"
     >
       <div className="space-y-4 p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h2 id={`${id}-heading`} className="text-base font-semibold">
-              Categories
-            </h2>
+        <DialogHeader
+          titleId={`${id}-heading`}
+          title="Categories"
+          description={
             <p className="text-xs text-muted-foreground">Built-in categories can’t be deleted.</p>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="-mt-1.5 -mr-1.5 size-8"
-            aria-label="Close"
-            onClick={close}
-          >
-            <X aria-hidden="true" />
-          </Button>
-        </div>
+          }
+          onClose={close}
+        />
 
         <form
           noValidate
@@ -185,6 +177,6 @@ export function CategoriesDialog({
           );
         })}
       </div>
-    </dialog>
+    </Dialog>
   );
 }

@@ -6,6 +6,7 @@ import { type Control, useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
+import { DialogShell } from "@/components/dialog-shell";
 import { AmountField, DateField, FormAlert, SelectField } from "@/components/form-field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCommitmentMutations } from "@/hooks/use-commitments";
@@ -14,8 +15,6 @@ import { parseComponent, paymentSchema } from "@/lib/commitments";
 import { formatMoney, parseAmount, payingAccounts, toDecimalString } from "@/lib/finance";
 import { cn } from "@/utils/common";
 import { addDays, formatCalendarDate, localDateString } from "@/utils/dates";
-
-import { DialogShell } from "./dialog-shell";
 
 /** What is being paid: one loan installment, or one subscription or bill occurrence. */
 export type PaymentTarget =

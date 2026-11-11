@@ -14,7 +14,7 @@ import { useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
-import { DialogShell } from "@/components/finance/dialog-shell";
+import { DialogShell } from "@/components/dialog-shell";
 import { DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
