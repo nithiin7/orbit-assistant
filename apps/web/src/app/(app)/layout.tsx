@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { AchievementWatcher } from "@/components/achievements/achievement-watcher";
 import { AppShell } from "@/components/app-shell/app-shell";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { SetupRedirect } from "@/components/setup/setup-redirect";
@@ -8,7 +9,7 @@ import { WorkspaceProvider } from "@/providers/workspace";
 
 /**
  * Every route in this group requires a signed-in user and has an active workspace. A new user
- * goes to the setup guide first.
+ * goes to the setup guide first. Achievements are checked as they use the app.
  */
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -17,6 +18,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <AvatarProvider>
           <WorkspaceProvider>
             <AppShell>{children}</AppShell>
+            <AchievementWatcher />
           </WorkspaceProvider>
         </AvatarProvider>
       </SetupRedirect>

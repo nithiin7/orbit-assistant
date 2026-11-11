@@ -14,6 +14,7 @@ import {
   Repeat2,
   Settings,
   ShoppingCart,
+  Trophy,
   Wallet,
   Workflow,
 } from "lucide-react";
@@ -152,6 +153,13 @@ export const navItems: readonly NavItem[] = [
     group: "ai",
   },
   {
+    title: "Profile",
+    href: "/profile",
+    icon: Trophy,
+    description: "Your achievements, level, and the XP store.",
+    group: "system",
+  },
+  {
     title: "Settings",
     href: "/settings",
     icon: Settings,
@@ -192,6 +200,7 @@ const dedicatedRoutes: ReadonlySet<string> = new Set([
   "/places",
   "/assistant",
   "/automation",
+  "/profile",
   "/settings",
 ]);
 

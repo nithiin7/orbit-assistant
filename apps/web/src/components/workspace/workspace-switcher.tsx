@@ -10,6 +10,7 @@ import {
   RotateCw,
   Settings,
   Sun,
+  Trophy,
 } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
@@ -260,6 +261,16 @@ export function WorkspaceSwitcher({ collapsible = false, onNavigate }: Workspace
             Manage workspaces
           </Link>
           <div role="separator" className="-mx-1 my-1 h-px bg-border" />
+          <Link
+            href="/profile"
+            role="menuitem"
+            tabIndex={-1}
+            onClick={follow}
+            className={itemClassName}
+          >
+            <Trophy className="size-4 text-muted-foreground" aria-hidden="true" />
+            Profile & achievements
+          </Link>
           <Link
             href="/settings"
             role="menuitem"

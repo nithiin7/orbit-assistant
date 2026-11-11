@@ -3,33 +3,11 @@
 import { X } from "lucide-react";
 import { useRef, useState } from "react";
 
+import { ConfettiBurst } from "@/components/achievements/cosmetics";
 import { Button } from "@/components/ui/button";
+import { useEquippedRewards } from "@/hooks/use-achievements";
 import type { Cheer } from "@/lib/habits";
 import { cn } from "@/utils/common";
-
-/** Where each piece flies, and its color. Written out in full so Tailwind sees every class. */
-const CONFETTI = [
-  "[--confetti-x:-72px] [--confetti-y:-64px] bg-event-rose",
-  "[--confetti-x:-44px] [--confetti-y:-92px] bg-event-amber delay-75",
-  "[--confetti-x:-12px] [--confetti-y:-104px] bg-event-blue",
-  "[--confetti-x:20px] [--confetti-y:-96px] bg-event-green delay-75",
-  "[--confetti-x:52px] [--confetti-y:-80px] bg-event-violet",
-  "[--confetti-x:80px] [--confetti-y:-56px] bg-event-orange delay-100",
-  "[--confetti-x:-96px] [--confetti-y:-28px] bg-event-teal delay-100",
-  "[--confetti-x:100px] [--confetti-y:-24px] bg-event-rose delay-75",
-] as const;
-
-/** Extra pieces for big moments: a streak milestone or a finished day. */
-const CONFETTI_BIG = [
-  "[--confetti-x:-128px] [--confetti-y:-88px] bg-event-amber delay-150",
-  "[--confetti-x:-84px] [--confetti-y:-128px] bg-event-green delay-200",
-  "[--confetti-x:-32px] [--confetti-y:-140px] bg-event-rose delay-150",
-  "[--confetti-x:36px] [--confetti-y:-136px] bg-event-violet delay-200",
-  "[--confetti-x:88px] [--confetti-y:-120px] bg-event-blue delay-150",
-  "[--confetti-x:132px] [--confetti-y:-80px] bg-event-teal delay-200",
-  "[--confetti-x:-148px] [--confetti-y:-40px] bg-event-orange delay-300",
-  "[--confetti-x:150px] [--confetti-y:-36px] bg-event-amber delay-300",
-] as const;
 
 type Shown = Cheer & { id: number };
 
@@ -61,6 +39,8 @@ export function useCelebration() {
 }
 
 function CelebrationToast({ shown, onDismiss }: { shown: Shown | null; onDismiss: () => void }) {
+  // The confetti style bought in the XP store, if any.
+  const confetti = useEquippedRewards()?.confetti ?? null;
   return (
     // The live region stays mounted so screen readers announce each new cheer.
     <div
@@ -76,14 +56,7 @@ function CelebrationToast({ shown, onDismiss }: { shown: Shown | null; onDismiss
             shown.big && "border-success/40",
           )}
         >
-          <span aria-hidden="true" className="absolute top-1/2 left-1/2">
-            {[...CONFETTI, ...(shown.big ? CONFETTI_BIG : [])].map((piece) => (
-              <span
-                key={piece}
-                className={cn("absolute size-2 animate-confetti rounded-[2px]", piece)}
-              />
-            ))}
-          </span>
+          <ConfettiBurst style={confetti} big={shown.big} />
           <span
             aria-hidden="true"
             className={cn(

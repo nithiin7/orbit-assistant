@@ -11,6 +11,35 @@
   --animate-confetti: confetti 1100ms var(--ease-out-soft) both;
   /* Activity rings sweep in from empty; each arc sets --ring-offset, its final dash offset. */
   --animate-ring-fill: ring-fill 900ms var(--ease-out-soft) both;
+  /* Achievement cosmetics: a slowly turning frame, a drifting banner, a sheen on rare badges. */
+  --animate-spin-slow: spin-slow 9s linear infinite;
+  --animate-drift: drift 16s ease-in-out infinite alternate;
+  --animate-shine: shine 3.2s ease-in-out infinite;
+
+  @keyframes spin-slow {
+    to {
+      rotate: 360deg;
+    }
+  }
+
+  @keyframes drift {
+    from {
+      background-position: 0% 50%;
+    }
+    to {
+      background-position: 100% 50%;
+    }
+  }
+
+  @keyframes shine {
+    0%,
+    60% {
+      transform: translateX(-120%) skewX(-20deg);
+    }
+    100% {
+      transform: translateX(220%) skewX(-20deg);
+    }
+  }
 
   @keyframes ring-fill {
     from {
