@@ -1,15 +1,20 @@
 "use client";
 
-import { Clapperboard, ExternalLink, KeyRound, ShieldCheck } from "lucide-react";
+import { Clapperboard, ExternalLink, KeyRound } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import { useConfirm } from "@/components/confirm-dialog";
 import { FormAlert } from "@/components/form-field";
+import {
+  PrivacyNote,
+  SettingsCard,
+  SettingsLoading,
+  SettingsSwitch,
+} from "@/components/settings/settings-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
 import { useActiveWorkspaceId } from "@/hooks/use-calendar";
 import { useWatchlistLookup } from "@/hooks/use-watchlist";
 import { settingsSectionsClassName } from "@/lib/settings";
@@ -36,12 +41,7 @@ function LookupSettings({ workspaceId }: { workspaceId: string }) {
     return <FormAlert message="Couldn’t load watchlist settings. Refresh to try again." />;
   }
   if (!lookup) {
-    return (
-      <div aria-busy="true">
-        <span className="sr-only">Loading watchlist settings…</span>
-        <Skeleton className="h-48 w-full rounded-2xl" />
-      </div>
-    );
+    return <SettingsLoading label="Loading watchlist settings…" className="h-48" />;
   }
 
   async function run(action: () => Promise<unknown>, fallback: string) {
@@ -57,116 +57,87 @@ function LookupSettings({ workspaceId }: { workspaceId: string }) {
 
   return (
     <div className={settingsSectionsClassName}>
-      <section
-        aria-labelledby={`${id}-title`}
-        className="rounded-2xl border bg-card shadow-elevation-1"
+      <SettingsCard
+        titleId={`${id}-title`}
+        icon={Clapperboard}
+        title="Title lookup"
+        description="Search The Movie Database (TMDB) when adding titles, for posters, runtimes, genres, and episode counts. For this workspace."
       >
-        <header className="flex items-start gap-3 border-b px-4 py-4 sm:px-5">
-          <span
-            aria-hidden="true"
-            className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-subtle text-brand"
-          >
-            <Clapperboard className="size-4.5" />
-          </span>
-          <div className="min-w-0 flex-1 space-y-0.5">
-            <h2 id={`${id}-title`} className="text-base font-semibold">
-              Title lookup
-            </h2>
-            <p className="text-sm text-pretty text-muted-foreground">
-              Search The Movie Database (TMDB) when adding titles, for posters, runtimes, genres,
-              and episode counts. For this workspace.
+        {lookup.configured ? (
+          <SettingsSwitch
+            label="Look up titles"
+            hint="Off, you can still add titles by hand. Posters you already have stay."
+            checked={lookup.enabled}
+            disabled={toggle.isPending}
+            onCheckedChange={(checked) =>
+              void run(() => toggle.mutateAsync(checked), "Couldn’t save. Try again.")
+            }
+          />
+        ) : null}
+
+        {lookup.configured && !replacing ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-muted/50 px-3.5 py-3">
+            <p className="flex items-center gap-2 text-sm">
+              <KeyRound aria-hidden="true" className="size-4 text-muted-foreground" />
+              <span>
+                <span className="font-medium">TMDB key saved</span>
+                <span className="text-muted-foreground"> · stored encrypted</span>
+              </span>
             </p>
-          </div>
-        </header>
-
-        <div className="space-y-5 px-4 py-5 sm:px-5">
-          {lookup.configured ? (
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-0.5">
-                <label htmlFor={`${id}-enabled`} className="text-sm font-medium">
-                  Look up titles
-                </label>
-                <p id={`${id}-enabled-hint`} className="text-xs text-pretty text-muted-foreground">
-                  Off, you can still add titles by hand. Posters you already have stay.
-                </p>
-              </div>
-              <Switch
-                id={`${id}-enabled`}
-                checked={lookup.enabled}
-                disabled={toggle.isPending}
-                aria-describedby={`${id}-enabled-hint`}
-                onCheckedChange={(checked) =>
-                  void run(() => toggle.mutateAsync(checked), "Couldn’t save. Try again.")
+            <div className="flex gap-1">
+              <Button variant="ghost" size="sm" onClick={() => setReplacing(true)}>
+                Replace
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={removeKey.isPending}
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() =>
+                  void confirm({
+                    title: "Remove the TMDB key?",
+                    description:
+                      "Title lookup turns off. Titles and posters you’ve already added stay.",
+                    confirmLabel: "Remove key",
+                    destructive: true,
+                  }).then(async (ok) => {
+                    if (ok) {
+                      await run(
+                        () => removeKey.mutateAsync(),
+                        "Couldn’t remove the key. Try again.",
+                      );
+                    }
+                  })
                 }
-              />
+              >
+                Remove
+              </Button>
             </div>
-          ) : null}
+          </div>
+        ) : null}
 
-          {lookup.configured && !replacing ? (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-muted/50 px-3.5 py-3">
-              <p className="flex items-center gap-2 text-sm">
-                <KeyRound aria-hidden="true" className="size-4 text-muted-foreground" />
-                <span>
-                  <span className="font-medium">TMDB key saved</span>
-                  <span className="text-muted-foreground"> · stored encrypted</span>
-                </span>
-              </p>
-              <div className="flex gap-1">
-                <Button variant="ghost" size="sm" onClick={() => setReplacing(true)}>
-                  Replace
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={removeKey.isPending}
-                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() =>
-                    void confirm({
-                      title: "Remove the TMDB key?",
-                      description:
-                        "Title lookup turns off. Titles and posters you’ve already added stay.",
-                      confirmLabel: "Remove key",
-                      destructive: true,
-                    }).then(async (ok) => {
-                      if (ok) {
-                        await run(
-                          () => removeKey.mutateAsync(),
-                          "Couldn’t remove the key. Try again.",
-                        );
-                      }
-                    })
-                  }
-                >
-                  Remove
-                </Button>
-              </div>
-            </div>
-          ) : null}
+        {showKeyForm ? (
+          <KeyForm
+            replacing={replacing}
+            saving={saveKey.isPending}
+            onCancel={replacing ? () => setReplacing(false) : null}
+            onSave={(apiKey) =>
+              run(async () => {
+                await saveKey.mutateAsync(apiKey);
+                setReplacing(false);
+              }, "Couldn’t save the key. Try again.")
+            }
+          />
+        ) : null}
 
-          {showKeyForm ? (
-            <KeyForm
-              replacing={replacing}
-              saving={saveKey.isPending}
-              onCancel={replacing ? () => setReplacing(false) : null}
-              onSave={(apiKey) =>
-                run(async () => {
-                  await saveKey.mutateAsync(apiKey);
-                  setReplacing(false);
-                }, "Couldn’t save the key. Try again.")
-              }
-            />
-          ) : null}
+        <FormAlert message={error} />
 
-          <FormAlert message={error} />
-
-          <p className="flex items-start gap-2 text-xs text-pretty text-muted-foreground">
-            <ShieldCheck aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
-            Only what you search for and TMDB’s own IDs are sent to TMDB. Posters are downloaded by
-            your Orbit server, so your browser never contacts TMDB. This product uses the TMDB API
-            but is not endorsed or certified by TMDB.
-          </p>
-        </div>
-      </section>
+        <PrivacyNote>
+          Only what you search for and TMDB’s own IDs are sent to TMDB. Posters are downloaded by
+          your Orbit server, so your browser never contacts TMDB. This product uses the TMDB API but
+          is not endorsed or certified by TMDB.
+        </PrivacyNote>
+      </SettingsCard>
       {confirmDialog}
     </div>
   );
