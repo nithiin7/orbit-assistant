@@ -2,6 +2,7 @@ import type {
   Exercise,
   FitnessOverview,
   FitnessProfile,
+  Food,
   Workout,
   WorkoutExercise,
   WorkoutSet,
@@ -11,7 +12,8 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { STARTER_TEMPLATES } from "@/lib/fitness";
+import { hourIn } from "@/lib/dashboard";
+import { mealAt, STARTER_TEMPLATES } from "@/lib/fitness";
 import { ada, json, mockApi, personal, status } from "@/test/api-mock";
 import { renderSignedIn } from "@/test/session";
 
@@ -153,8 +155,25 @@ function session(units: Partial<FitnessProfile> = {}) {
     [`GET ${WS}/templates`]: json({ templates: [] }),
     [`GET ${WS}/exercises`]: json({ exercises: [] }),
     [`GET ${WS}/sessions/active`]: json({ session: null }),
+    [`GET ${WS}/foods`]: json({ foods: [] }),
   };
 }
+
+const oats: Food = {
+  id: "food-oats",
+  name: "Oats",
+  serving_quantity_milli: 40_000,
+  serving_unit: "g",
+  nutrients: {
+    energy_cal: 150_000,
+    protein_mg: 5000,
+    carbs_mg: 27_000,
+    fat_mg: 3000,
+    fiber_mg: null,
+  },
+  use_count: 12,
+  last_used_at: null,
+};
 
 function builtin(key: string): Exercise {
   return {
@@ -236,6 +255,58 @@ describe("HealthPanel: overview", () => {
     await waitFor(() => {
       const call = api.mock.calls.find(([, init]) => init?.method === "POST");
       expect(JSON.parse(String(call?.[1]?.body))).toMatchObject({ amount_ml: 250 });
+    });
+  });
+});
+
+describe("HealthPanel: quick food", () => {
+  const entry = json({ id: "e1" }, 201);
+
+  it("logs one serving of a saved food in one tap, to the meal for the time of day", async () => {
+    const user = userEvent.setup();
+    const api = mockApi({
+      ...session(),
+      [`GET ${WS}/overview`]: json(overview()),
+      [`GET ${WS}/foods`]: json({ foods: [oats] }),
+      [`POST ${WS}/food-entries`]: entry,
+    });
+    await renderSignedIn(<HealthPanel />);
+    await user.click(await screen.findByRole("button", { name: "Add one serving of Oats" }));
+    await waitFor(() => {
+      const call = api.mock.calls.find(
+        ([url, init]) => init?.method === "POST" && String(url).endsWith("/food-entries"),
+      );
+      expect(JSON.parse(String(call?.[1]?.body))).toMatchObject({
+        meal: mealAt(hourIn("UTC")),
+        portion: { food_id: "food-oats", quantity_milli: 40_000 },
+      });
+    });
+    expect(await screen.findByRole("status")).toHaveTextContent(/Added Oats to/);
+  });
+
+  it("opens the add-food dialog from the Log menu without leaving Today", async () => {
+    const user = userEvent.setup();
+    const api = mockApi({
+      ...session(),
+      [`GET ${WS}/overview`]: json(overview()),
+      [`POST ${WS}/food-entries`]: entry,
+    });
+    await renderSignedIn(<HealthPanel />);
+    await user.click(await screen.findByRole("button", { name: "Log" }));
+    await user.click(screen.getByRole("menuitem", { name: "Food" }));
+    expect(navigation.push).not.toHaveBeenCalled();
+
+    const dialog = await screen.findByRole("dialog", { name: "Add food" });
+    await user.type(within(dialog).getByRole("textbox", { name: "Food" }), "Toast");
+    await user.type(within(dialog).getByRole("textbox", { name: /Calories|Energy/ }), "120");
+    await user.click(within(dialog).getByRole("button", { name: "Add" }));
+    await waitFor(() => {
+      const call = api.mock.calls.find(
+        ([url, init]) => init?.method === "POST" && String(url).endsWith("/food-entries"),
+      );
+      expect(JSON.parse(String(call?.[1]?.body))).toMatchObject({
+        portion: { food_id: null, name: "Toast" },
+      });
     });
   });
 });

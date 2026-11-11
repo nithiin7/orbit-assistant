@@ -865,7 +865,8 @@ function FoodDialog({
   );
 }
 
-function FoodEntryDialog({
+/** Add a food entry (or edit one): a saved food by amount, or one typed in with its nutrients. */
+export function FoodEntryDialog({
   workspaceId,
   day,
   meal,
