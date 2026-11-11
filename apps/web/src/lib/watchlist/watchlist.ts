@@ -269,13 +269,13 @@ export function ratingLabel(rating: number): string {
 export function finishedCheer(item: WatchItem): Cheer {
   return item.kind === "series"
     ? {
-        emoji: "🍿",
+        icon: "popcorn",
         title: `Finished ${item.title}`,
         message: "Every episode, done. Give it a rating while it's fresh.",
         big: true,
       }
     : {
-        emoji: "🎬",
+        icon: "film",
         title: `Watched ${item.title}`,
         message: "Give it a rating while it's fresh.",
         big: false,

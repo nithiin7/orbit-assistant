@@ -13,6 +13,7 @@ import {
   Plus,
   Target,
   Trash2,
+  Trophy,
   Zap,
 } from "lucide-react";
 import { useState } from "react";
@@ -153,7 +154,7 @@ export function ActivityView({ workspaceId, today }: { workspaceId: string; toda
     if (closed.length === 0) return;
     if (allClosed) {
       celebrate({
-        emoji: "🏆",
+        icon: "trophy",
         title: "All rings closed!",
         message: "Every goal met for the day. Brilliant.",
         big: true,
@@ -162,7 +163,7 @@ export function ActivityView({ workspaceId, today }: { workspaceId: string; toda
     }
     const names = closed.map((key) => RINGS[key].label).join(" and ");
     celebrate({
-      emoji: closed.includes("sleep") ? "🌙" : "🎉",
+      icon: closed.includes("sleep") ? "moon" : "party",
       title: `${names} ring closed!`,
       message: "Nice work. Keep the others going.",
       big: false,
@@ -329,9 +330,9 @@ function TodayCard({
         {allClosed ? (
           <span
             aria-hidden="true"
-            className="absolute inset-0 flex animate-check-pop items-center justify-center text-3xl"
+            className="absolute inset-0 flex animate-check-pop items-center justify-center text-success"
           >
-            🏆
+            <Trophy className="size-8" />
           </span>
         ) : null}
       </div>

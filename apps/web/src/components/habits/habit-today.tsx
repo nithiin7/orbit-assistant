@@ -1,7 +1,7 @@
 "use client";
 
 import type { HabitProgress, HabitToday, LogHabitRequest, Routine } from "@orbit/contracts";
-import { CalendarCheck, Check, LayoutTemplate, Play, Sparkles } from "lucide-react";
+import { CalendarCheck, Check, LayoutTemplate, PartyPopper, Play, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/empty-state";
@@ -182,9 +182,10 @@ export function HabitTodayView({
           />
           <p className="mt-2 text-sm text-muted-foreground">
             {finished ? (
-              <span aria-hidden="true" className="mr-1.5 inline-block animate-check-pop">
-                🎉
-              </span>
+              <PartyPopper
+                aria-hidden="true"
+                className="mr-1.5 inline-block size-4 animate-check-pop align-[-0.125em] text-success"
+              />
             ) : null}
             {encouragement(done.length, due)}
           </p>

@@ -232,17 +232,33 @@ export function heatLevel(day: HabitHeatmapDay): 0 | 1 | 2 | 3 | 4 {
 
 // Celebrations
 
+/** The icon shown beside a cheer; the toast maps each to a lucide icon. */
+export type CheerIcon =
+  | "party"
+  | "sparkles"
+  | "strength"
+  | "star"
+  | "thumbs-up"
+  | "trophy"
+  | "flame"
+  | "moon"
+  | "popcorn"
+  | "film";
+
 /** What to say when a habit's day is done: louder for milestones and a finished day. */
-export type Cheer = { emoji: string; title: string; message: string; big: boolean };
+export type Cheer = { icon: CheerIcon; title: string; message: string; big: boolean };
 
-const FIRST_CHEER = { emoji: "🎉", title: "Yay, target met!" };
+const FIRST_CHEER: { icon: CheerIcon; title: string } = {
+  icon: "party",
+  title: "Yay, target met!",
+};
 
-const CHEERS: readonly { emoji: string; title: string }[] = [
+const CHEERS: readonly { icon: CheerIcon; title: string }[] = [
   FIRST_CHEER,
-  { emoji: "✨", title: "Nailed it!" },
-  { emoji: "💪", title: "Way to show up!" },
-  { emoji: "🌟", title: "Another one done!" },
-  { emoji: "👏", title: "Done and dusted!" },
+  { icon: "sparkles", title: "Nailed it!" },
+  { icon: "strength", title: "Way to show up!" },
+  { icon: "star", title: "Another one done!" },
+  { icon: "thumbs-up", title: "Done and dusted!" },
 ];
 
 /** Streak lengths worth a bigger cheer. */
@@ -261,7 +277,7 @@ export function cheerFor(
   const { habit, current_streak: streak, streak_unit: unit } = result;
   if (allDone) {
     return {
-      emoji: "🏆",
+      icon: "trophy",
       title: "All done for today!",
       message: "Every habit for today is checked off. See you tomorrow.",
       big: true,
@@ -269,7 +285,7 @@ export function cheerFor(
   }
   if (STREAK_MILESTONES.has(streak)) {
     return {
-      emoji: "🔥",
+      icon: "flame",
       title: `${streak}-${unit} streak!`,
       message: `${habit.name}, ${describeStreak(streak, unit)} running. Keep it alive.`,
       big: true,
