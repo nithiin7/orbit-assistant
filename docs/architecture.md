@@ -1032,6 +1032,15 @@ nothing about holdings or values.
 - `lib/investments` parses units/prices as strings (`parseUnits`), never floats. Queries under
   `["workspaces", id, "finance", "investments", …]`; changes also refetch reminders. Charts use
   `--chart-1`.
+- **AI review** tab (`portfolio-review.tsx`): `POST …/ai/finance/portfolio-review`
+  (`services/ai/portfolio_review.py`) with the currency and optional context (horizon, risk).
+  Needs AI on and the `finance` AI module, else the tab links to Settings → AI. Orbit measures
+  the facts (allocation, largest and top-five shares, overlapping fund categories, fund houses,
+  active SIPs, unpriced holdings) and returns them beside the model's score (0 to 100, or null),
+  headline, summary, strengths, improvements (high priority first), and per-holding verdicts
+  (`keep`/`watch`/`review`, by `H1…` reference; unknown refs dropped). The model sees names,
+  kinds, categories, fund houses, weights, and returns; never amounts, folios, ISINs, account
+  names, or notes. Nothing is saved; the result lives in the Investments view while it's open.
 
 ### Investment limitations
 
@@ -2280,7 +2289,7 @@ shared `httpx2.AsyncClient`, no vendor SDKs, built only by `providers/ai/registr
 
 - `ai_settings` (per person): defaults off; tasks, notes, calendar, reminders, habits, watchlist
   readable (watchlist only by watchlist suggestions; settings saved before it existed lack it);
-  documents, finance, health off; `allow_cloud` off; optional fallback, monthly token limit,
+  documents, finance (also gates the portfolio review), health off; `allow_cloud` off; optional fallback, monthly token limit,
   keep-index flag.
 - `ai_providers` (per person): optional user-entered prices (no shipped price list); Fernet API
   key, never returned (`has_api_key`) or logged. Key `ORBIT_AI_SECRET_KEY`, or local-mode `0600`
