@@ -1712,7 +1712,9 @@ Under `/api/v1/workspaces/{workspace_id}`; CRUD for `/documents`, `/document-fol
 - `components/documents/`; state in the URL; rail with views, folder tree, categories, tags.
 - Uploads one at a time with per-file status (`fetch` has no upload progress).
 - Code: `src/api/documents`, `src/hooks/use-documents.ts`, `use-document-commands.ts`,
-  `src/lib/documents`; folder trees shared with notes in `src/utils/folders`.
+  `src/lib/documents`; folder trees shared with notes in `src/utils/folders`, the rail's tree,
+  rail entries, and folder dialogs in `src/components/folders/`, tree state in
+  `src/hooks/use-folder-tree.ts`.
 
 ### Document limitations
 

@@ -15,12 +15,12 @@ import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
 import { DialogShell } from "@/components/dialog-shell";
+import { FolderDeleteChoices } from "@/components/folders/folder-dialogs";
 import { DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useDocumentList, useLinkCandidates } from "@/hooks/use-documents";
 import { categorySchema, LINK_KINDS, newDocumentSchema, renewSchema } from "@/lib/documents";
-import { cn } from "@/utils/common";
 import { buildFolderTree, flattenFolders, folderSubtree } from "@/utils/folders";
 
 import { CATEGORY_ICONS, FileIcon, LINK_ICONS } from "./document-meta";
@@ -339,7 +339,6 @@ export function DeleteDocumentFolderDialog({
   const [target, setTarget] = useState(targets[0]?.value ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const name = useId();
   const targetId = useId();
   return (
     <DialogShell
@@ -372,31 +371,7 @@ export function DeleteDocumentFolderDialog({
         );
       }}
     >
-      <fieldset className="space-y-2">
-        <legend className="mb-2 text-sm font-medium">What happens to what’s inside?</legend>
-        {FOLDER_DELETE_CHOICES.map((choice) => (
-          <label
-            key={choice.value}
-            className={cn(
-              "flex cursor-pointer gap-3 rounded-lg border p-3 transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring",
-              mode === choice.value ? "border-brand/50 bg-brand-subtle/50" : "hover:bg-accent/40",
-            )}
-          >
-            <input
-              type="radio"
-              name={name}
-              value={choice.value}
-              checked={mode === choice.value}
-              onChange={() => setMode(choice.value)}
-              className="mt-0.5 accent-[var(--brand)]"
-            />
-            <span>
-              <span className="block text-sm font-medium">{choice.label}</span>
-              <span className="block text-xs text-muted-foreground">{choice.description}</span>
-            </span>
-          </label>
-        ))}
-      </fieldset>
+      <FolderDeleteChoices choices={FOLDER_DELETE_CHOICES} value={mode} onChange={setMode} />
       {mode === "folder" ? (
         <div className="space-y-1.5">
           <label htmlFor={targetId} className="text-sm font-medium">

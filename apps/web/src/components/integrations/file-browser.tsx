@@ -20,7 +20,7 @@ import Link from "next/link";
 import { type FormEvent, useState } from "react";
 
 import { describeApiError } from "@/api/client";
-import { FolderPickerDialog } from "@/components/notes/organize-dialogs";
+import { FolderPickerDialog } from "@/components/folders/folder-dialogs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";

@@ -9,11 +9,8 @@ import type {
 import {
   Archive,
   CalendarClock,
-  ChevronRight,
   Clock,
   Cloud,
-  Folder,
-  FolderOpen,
   FolderPlus,
   Hash,
   Hourglass,
@@ -26,18 +23,18 @@ import {
   Star,
   Trash2,
 } from "lucide-react";
-import { type ReactNode, useId, useState } from "react";
+import { useId, useState } from "react";
 
-import { NameDialog } from "@/components/notes/organize-dialogs";
-import { FolderPickerDialog } from "@/components/notes/organize-dialogs";
+import { FolderPickerDialog, NameDialog } from "@/components/folders/folder-dialogs";
+import { FolderTree, RailButton, RailHeading } from "@/components/folders/folder-rail";
 import { Button } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
 import { useDocumentOrganizer } from "@/hooks/use-documents";
+import { useFolderTree } from "@/hooks/use-folder-tree";
 import { useConnectionsWith } from "@/hooks/use-integrations";
 import { DOCUMENT_VIEWS, type DocumentsLocation, type DocumentView } from "@/lib/documents";
 import { capabilityName } from "@/lib/integrations";
-import { cn } from "@/utils/common";
-import { buildFolderTree, folderAncestors, folderSubtree, visibleFolders } from "@/utils/folders";
+import { folderAncestors, folderSubtree } from "@/utils/folders";
 
 import { CategoryDialog, DeleteDocumentFolderDialog } from "./document-dialogs";
 import { CATEGORY_ICONS } from "./document-meta";
@@ -112,14 +109,10 @@ export function DocumentsRail({
 }: DocumentsRailProps) {
   const organizer = useDocumentOrganizer(workspaceId);
   // The open folder's ancestors start expanded, so it's visible after a reload.
-  const [expanded, setExpanded] = useState<ReadonlySet<string>>(
-    () => new Set(location.folderId ? folderAncestors(folders, location.folderId) : []),
+  const { rows, expanded, parents, toggle, expand } = useFolderTree(folders, () =>
+    location.folderId ? folderAncestors(folders, location.folderId) : [],
   );
   const [dialog, setDialog] = useState<RailDialog | null>(null);
-  const rows = visibleFolders(buildFolderTree(folders), expanded);
-  const parents = new Set(
-    folders.flatMap((folder) => (folder.parent_id ? [folder.parent_id] : [])),
-  );
   const foldersHeading = useId();
   const categoriesHeading = useId();
   const tagsHeading = useId();
@@ -128,14 +121,6 @@ export function DocumentsRail({
   const narrowed = Boolean(
     location.folderId || location.categoryId || location.tag || location.driveId,
   );
-
-  const toggle = (folderId: string) =>
-    setExpanded((current) => {
-      const next = new Set(current);
-      if (next.has(folderId)) next.delete(folderId);
-      else next.add(folderId);
-      return next;
-    });
 
   const documentsInside = (folder: DocumentFolder) => {
     const ids = folderSubtree(folders, folder.id);
@@ -150,6 +135,7 @@ export function DocumentsRail({
         {DOCUMENT_VIEWS.map(({ id, label }) => (
           <li key={id}>
             <RailButton
+              noun="document"
               selected={!narrowed && location.view === id}
               icon={VIEW_ICONS[id]}
               label={label}
@@ -173,94 +159,45 @@ export function DocumentsRail({
             <FolderPlus className="size-4" aria-hidden="true" />
           </Button>
         </RailHeading>
-        {rows.length === 0 ? (
-          <p className="px-3 py-1 text-xs text-muted-foreground">
-            Folders hold documents however you like, such as by person or by year.
-          </p>
-        ) : (
-          <ul className="space-y-0.5">
-            {rows.map(({ folder, depth }) => {
-              const open = expanded.has(folder.id);
-              const selected = location.folderId === folder.id;
-              const hasChildren = parents.has(folder.id);
-              return (
-                <li
-                  key={folder.id}
-                  className="group/folder relative flex items-center"
-                  style={{ paddingLeft: `${depth * 0.875}rem` }}
-                >
-                  <button
-                    type="button"
-                    aria-label={`${open ? "Collapse" : "Expand"} “${folder.name}”`}
-                    aria-expanded={open}
-                    onClick={() => toggle(folder.id)}
-                    className={cn(
-                      "flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
-                      !hasChildren && "invisible",
-                    )}
-                    tabIndex={hasChildren ? 0 : -1}
-                  >
-                    <ChevronRight
-                      className={cn(
-                        "size-3.5 transition-transform duration-150",
-                        open && "rotate-90",
-                      )}
-                      aria-hidden="true"
-                    />
-                  </button>
-                  <RailButton
-                    selected={selected}
-                    icon={selected || open ? FolderOpen : Folder}
-                    label={folder.name}
-                    count={folder.document_count}
-                    onClick={() => onNavigate({ folderId: folder.id })}
-                    className="pr-9 pl-1.5"
-                  />
-                  <div className="absolute right-0.5 opacity-0 transition-opacity group-focus-within/folder:opacity-100 group-hover/folder:opacity-100 pointer-coarse:opacity-100">
-                    <Menu
-                      aria-label={`Actions for “${folder.name}”`}
-                      variant="ghost"
-                      size="icon"
-                      chevron={false}
-                      align="end"
-                      className="size-7"
-                      items={[
-                        {
-                          id: "new",
-                          label: "New subfolder",
-                          onSelect: () => setDialog({ kind: "new-folder", parent: folder }),
-                        },
-                        {
-                          id: "rename",
-                          label: "Rename",
-                          onSelect: () => setDialog({ kind: "rename-folder", folder }),
-                        },
-                        {
-                          id: "move",
-                          label: "Move to…",
-                          onSelect: () => setDialog({ kind: "move-folder", folder }),
-                        },
-                        {
-                          id: "export",
-                          label: "Export folder",
-                          onSelect: () => onExport({ folderId: folder.id }, folder.name),
-                        },
-                        {
-                          id: "delete",
-                          label: "Delete…",
-                          destructive: true,
-                          onSelect: () => setDialog({ kind: "delete-folder", folder }),
-                        },
-                      ]}
-                    >
-                      <MoreHorizontal aria-hidden="true" />
-                    </Menu>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        <FolderTree
+          rows={rows}
+          expanded={expanded}
+          parents={parents}
+          onToggle={toggle}
+          selectedId={location.folderId}
+          count={(folder) => folder.document_count}
+          noun="document"
+          onOpen={(folder) => onNavigate({ folderId: folder.id })}
+          menuItems={(folder) => [
+            {
+              id: "new",
+              label: "New subfolder",
+              onSelect: () => setDialog({ kind: "new-folder", parent: folder }),
+            },
+            {
+              id: "rename",
+              label: "Rename",
+              onSelect: () => setDialog({ kind: "rename-folder", folder }),
+            },
+            {
+              id: "move",
+              label: "Move to…",
+              onSelect: () => setDialog({ kind: "move-folder", folder }),
+            },
+            {
+              id: "export",
+              label: "Export folder",
+              onSelect: () => onExport({ folderId: folder.id }, folder.name),
+            },
+            {
+              id: "delete",
+              label: "Delete…",
+              destructive: true,
+              onSelect: () => setDialog({ kind: "delete-folder", folder }),
+            },
+          ]}
+          empty="Folders hold documents however you like, such as by person or by year."
+        />
       </section>
 
       <section aria-labelledby={categoriesHeading} className="space-y-1">
@@ -279,6 +216,7 @@ export function DocumentsRail({
           {categories.map((category) => (
             <li key={category.id} className="group/category relative">
               <RailButton
+                noun="document"
                 selected={location.categoryId === category.id}
                 icon={CATEGORY_ICONS[category.icon]}
                 label={category.name}
@@ -343,6 +281,7 @@ export function DocumentsRail({
             {tags.map((tag) => (
               <li key={tag.name}>
                 <RailButton
+                  noun="document"
                   selected={location.tag?.toLocaleLowerCase() === tag.name.toLocaleLowerCase()}
                   icon={Hash}
                   label={tag.name}
@@ -365,6 +304,7 @@ export function DocumentsRail({
               return (
                 <li key={drive.id}>
                   <RailButton
+                    noun="document"
                     selected={location.driveId === drive.id}
                     icon={Cloud}
                     label={shared ? `${name} · ${drive.account_email}` : name}
@@ -391,7 +331,7 @@ export function DocumentsRail({
               parent_id: dialog.parent?.id ?? null,
             });
             const parent = dialog.parent;
-            if (parent) setExpanded((current) => new Set([...current, parent.id]));
+            if (parent) expand(parent.id);
             onAnnounce(`Created folder “${created.name}”.`);
           }}
         />
@@ -467,66 +407,5 @@ export function DocumentsRail({
         />
       ) : null}
     </nav>
-  );
-}
-
-function RailHeading({ id, title, children }: { id: string; title: string; children?: ReactNode }) {
-  return (
-    <div className="flex h-7 items-center justify-between pr-0.5 pl-3">
-      <h2 id={id} className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-        {title}
-      </h2>
-      {children}
-    </div>
-  );
-}
-
-function RailButton({
-  selected,
-  icon: Icon,
-  label,
-  count,
-  onClick,
-  tone,
-  className,
-}: {
-  selected: boolean;
-  icon: LucideIcon;
-  label: string;
-  count: number | null;
-  onClick: () => void;
-  tone?: "danger";
-  className?: string;
-}) {
-  return (
-    <button
-      type="button"
-      aria-current={selected ? "page" : undefined}
-      onClick={onClick}
-      className={cn(
-        "flex h-8 w-full min-w-0 items-center gap-2.5 rounded-lg px-3 text-left font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        selected
-          ? "bg-brand-subtle text-brand"
-          : "text-muted-foreground hover:bg-accent hover:text-foreground",
-        className,
-      )}
-    >
-      <Icon className="size-4 shrink-0" aria-hidden="true" />
-      <span className="min-w-0 flex-1 truncate">{label}</span>
-      {count === null || count === 0 ? null : (
-        <>
-          <span
-            aria-hidden="true"
-            className={cn(
-              "text-xs tabular-nums",
-              tone === "danger" ? "font-semibold text-destructive" : "text-muted-foreground",
-            )}
-          >
-            {count}
-          </span>
-          <span className="sr-only">, {count === 1 ? "1 document" : `${count} documents`}</span>
-        </>
-      )}
-    </button>
   );
 }
