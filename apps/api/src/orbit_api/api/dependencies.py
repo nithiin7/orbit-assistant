@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from orbit_api.config import Settings
 from orbit_api.db.database import Database
 from orbit_api.repositories.accounts import SqlAccountRepository, SqlLocalAuthRepository
+from orbit_api.repositories.achievements import SqlAchievementMetrics, SqlAchievementRecords
 from orbit_api.repositories.agent_services import AgentServices, build_agent
 from orbit_api.repositories.ai_services import AiServices, build_ai
 from orbit_api.repositories.avatars import SqlAvatarRepository
@@ -50,6 +51,7 @@ from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.repositories.watchlist import SqlLookupSettings, SqlWatchItemRepository
 from orbit_api.repositories.workspaces import SqlWorkspaceRepository
 from orbit_api.services.accounts.service import AccountService
+from orbit_api.services.achievements.service import AchievementService
 from orbit_api.services.avatars.service import AvatarService
 from orbit_api.services.backup.service import BackupService
 from orbit_api.services.bookmarks.service import BookmarkService, LinkFetcher
@@ -173,6 +175,15 @@ def get_avatar_service(session: SessionDep) -> AvatarService:
 
 
 AvatarServiceDep = Annotated[AvatarService, Depends(get_avatar_service)]
+
+
+def get_achievement_service(session: SessionDep) -> AchievementService:
+    return AchievementService(
+        SqlAchievementRecords(session), SqlAchievementMetrics(session), SqlTransaction(session)
+    )
+
+
+AchievementServiceDep = Annotated[AchievementService, Depends(get_achievement_service)]
 
 
 def get_dashboard_service(session: SessionDep) -> DashboardService:

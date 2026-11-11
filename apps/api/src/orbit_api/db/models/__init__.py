@@ -1,5 +1,10 @@
 """ORM models. Importing this package registers every table on `Base.metadata`."""
 
+from orbit_api.db.models.achievements import (
+    AchievementUnlockModel,
+    RewardEquipModel,
+    RewardPurchaseModel,
+)
 from orbit_api.db.models.agent import (
     AgentApprovalModel,
     AgentExecutionModel,
@@ -143,6 +148,7 @@ from orbit_api.db.models.watchlist import WatchItemModel, WatchlistSettingsModel
 from orbit_api.db.models.workspaces import WorkspaceModel
 
 __all__ = [
+    "AchievementUnlockModel",
     "AgentApprovalModel",
     "AgentExecutionModel",
     "AgentExecutionStepModel",
@@ -251,6 +257,8 @@ __all__ = [
     "RecentSearchModel",
     "ReminderModel",
     "ReminderOccurrenceModel",
+    "RewardEquipModel",
+    "RewardPurchaseModel",
     "RoutineModel",
     "RoutineSessionModel",
     "RoutineSessionStepModel",

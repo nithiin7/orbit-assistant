@@ -248,6 +248,101 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/achievements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get achievements, XP, and the store
+         * @description Read-only: achievements newly reached stay locked until a check.
+         */
+        get: operations["get_achievements_api_v1_me_achievements_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/achievements/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unlock achievements the user has reached
+         * @description Counts the user's data and unlocks whatever it now reaches, listing those in
+         *     `new_unlocks`. Safe to repeat: an achievement unlocks once.
+         */
+        post: operations["check_achievements_api_v1_me_achievements_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/achievements/store/purchases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Buy a store item with XP */
+        post: operations["buy_reward_api_v1_me_achievements_store_purchases_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/achievements/store/equipped": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Wear an owned item
+         * @description Replaces whatever was worn in the item's slot.
+         */
+        put: operations["equip_reward_api_v1_me_achievements_store_equipped_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/achievements/store/unequip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Take off the item in a slot */
+        post: operations["unequip_reward_api_v1_me_achievements_store_unequip_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/notifications": {
         parameters: {
             query?: never;
@@ -6921,6 +7016,66 @@ export interface components {
              */
             updated_at: string;
         };
+        /** AchievementLevelResponse */
+        AchievementLevelResponse: {
+            /** Level */
+            level: number;
+            /** Floor Xp */
+            floor_xp: number;
+            /** Next Xp */
+            next_xp: number;
+        };
+        /** AchievementProfileResponse */
+        AchievementProfileResponse: {
+            /** Earned Xp */
+            earned_xp: number;
+            /** Spent Xp */
+            spent_xp: number;
+            /** Balance */
+            balance: number;
+            level: components["schemas"]["AchievementLevelResponse"];
+            /** Achievements */
+            achievements: components["schemas"]["AchievementResponse"][];
+            /** Store */
+            store: components["schemas"]["RewardItemResponse"][];
+            equipped: components["schemas"]["EquippedRewardsResponse"];
+            /**
+             * New Unlocks
+             * @description Achievements unlocked by this request, for a celebration.
+             */
+            new_unlocks: string[];
+        };
+        /** AchievementResponse */
+        AchievementResponse: {
+            /** Key */
+            key: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /**
+             * Area
+             * @enum {string}
+             */
+            area: "tasks" | "habits" | "notes" | "shopping" | "reminders" | "calendar" | "documents" | "places" | "watchlist" | "saved" | "finance" | "health" | "orbit";
+            /**
+             * Tier
+             * @enum {string}
+             */
+            tier: "easy" | "medium" | "hard" | "legendary";
+            /** Xp */
+            xp: number;
+            /** Current */
+            current: number;
+            /** Target */
+            target: number;
+            /** Secret */
+            secret: boolean;
+            /** Unlocked At */
+            unlocked_at: string | null;
+            /** Earned Xp */
+            earned_xp: number | null;
+        };
         /** ActiveSessionResponse */
         ActiveSessionResponse: {
             session: components["schemas"]["SessionResponse"] | null;
@@ -11528,6 +11683,20 @@ export interface components {
         EmptyTrashResponse: {
             /** Deleted */
             deleted: number;
+        };
+        /**
+         * EquippedRewardsResponse
+         * @description The item key worn in each slot; empty slots are null.
+         */
+        EquippedRewardsResponse: {
+            /** Frame */
+            frame: string | null;
+            /** Banner */
+            banner: string | null;
+            /** Title */
+            title: string | null;
+            /** Confetti */
+            confetti: string | null;
         };
         /** EventDetailResponse */
         EventDetailResponse: {
@@ -16310,6 +16479,33 @@ export interface components {
              */
             dry_run: boolean;
         };
+        /** RewardItemRequest */
+        RewardItemRequest: {
+            /** Item Key */
+            item_key: string;
+        };
+        /** RewardItemResponse */
+        RewardItemResponse: {
+            /** Key */
+            key: string;
+            /**
+             * Slot
+             * @enum {string}
+             */
+            slot: "frame" | "banner" | "title" | "confetti";
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Cost */
+            cost: number;
+            /** Min Level */
+            min_level: number;
+            /** Owned */
+            owned: boolean;
+            /** Equipped */
+            equipped: boolean;
+        };
         /** RoutineDetailResponse */
         RoutineDetailResponse: {
             /**
@@ -17952,6 +18148,14 @@ export interface components {
              * @description Oldest first, one per month, including months without transactions.
              */
             months: components["schemas"]["MonthCashFlowResponse"][];
+        };
+        /** UnequipRewardRequest */
+        UnequipRewardRequest: {
+            /**
+             * Slot
+             * @enum {string}
+             */
+            slot: "frame" | "banner" | "title" | "confetti";
         };
         /** UniversalSearchHitResponse */
         UniversalSearchHitResponse: {
@@ -19835,6 +20039,208 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    get_achievements_api_v1_me_achievements_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AchievementProfileResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    check_achievements_api_v1_me_achievements_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AchievementProfileResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    buy_reward_api_v1_me_achievements_store_purchases_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RewardItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AchievementProfileResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No store item has that key. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already owned, not owned, level too low, or not enough XP. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    equip_reward_api_v1_me_achievements_store_equipped_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RewardItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AchievementProfileResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No store item has that key. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already owned, not owned, level too low, or not enough XP. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unequip_reward_api_v1_me_achievements_store_unequip_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnequipRewardRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AchievementProfileResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

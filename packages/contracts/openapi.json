@@ -605,6 +605,226 @@
         ]
       }
     },
+    "/api/v1/me/achievements": {
+      "get": {
+        "tags": [
+          "achievements"
+        ],
+        "summary": "Get achievements, XP, and the store",
+        "description": "Read-only: achievements newly reached stay locked until a check.",
+        "operationId": "get_achievements_api_v1_me_achievements_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AchievementProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/achievements/check": {
+      "post": {
+        "tags": [
+          "achievements"
+        ],
+        "summary": "Unlock achievements the user has reached",
+        "description": "Counts the user's data and unlocks whatever it now reaches, listing those in\n`new_unlocks`. Safe to repeat: an achievement unlocks once.",
+        "operationId": "check_achievements_api_v1_me_achievements_check_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AchievementProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/achievements/store/purchases": {
+      "post": {
+        "tags": [
+          "achievements"
+        ],
+        "summary": "Buy a store item with XP",
+        "operationId": "buy_reward_api_v1_me_achievements_store_purchases_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RewardItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AchievementProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "No store item has that key."
+          },
+          "409": {
+            "description": "Already owned, not owned, level too low, or not enough XP."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/achievements/store/equipped": {
+      "put": {
+        "tags": [
+          "achievements"
+        ],
+        "summary": "Wear an owned item",
+        "description": "Replaces whatever was worn in the item's slot.",
+        "operationId": "equip_reward_api_v1_me_achievements_store_equipped_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RewardItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AchievementProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "No store item has that key."
+          },
+          "409": {
+            "description": "Already owned, not owned, level too low, or not enough XP."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/achievements/store/unequip": {
+      "post": {
+        "tags": [
+          "achievements"
+        ],
+        "summary": "Take off the item in a slot",
+        "operationId": "unequip_reward_api_v1_me_achievements_store_unequip_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnequipRewardRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AchievementProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/me/notifications": {
       "get": {
         "tags": [
@@ -36341,6 +36561,184 @@
         ],
         "title": "AccountResponse"
       },
+      "AchievementLevelResponse": {
+        "properties": {
+          "level": {
+            "type": "integer",
+            "title": "Level"
+          },
+          "floor_xp": {
+            "type": "integer",
+            "title": "Floor Xp"
+          },
+          "next_xp": {
+            "type": "integer",
+            "title": "Next Xp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "level",
+          "floor_xp",
+          "next_xp"
+        ],
+        "title": "AchievementLevelResponse"
+      },
+      "AchievementProfileResponse": {
+        "properties": {
+          "earned_xp": {
+            "type": "integer",
+            "title": "Earned Xp"
+          },
+          "spent_xp": {
+            "type": "integer",
+            "title": "Spent Xp"
+          },
+          "balance": {
+            "type": "integer",
+            "title": "Balance"
+          },
+          "level": {
+            "$ref": "#/components/schemas/AchievementLevelResponse"
+          },
+          "achievements": {
+            "items": {
+              "$ref": "#/components/schemas/AchievementResponse"
+            },
+            "type": "array",
+            "title": "Achievements"
+          },
+          "store": {
+            "items": {
+              "$ref": "#/components/schemas/RewardItemResponse"
+            },
+            "type": "array",
+            "title": "Store"
+          },
+          "equipped": {
+            "$ref": "#/components/schemas/EquippedRewardsResponse"
+          },
+          "new_unlocks": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "New Unlocks",
+            "description": "Achievements unlocked by this request, for a celebration."
+          }
+        },
+        "type": "object",
+        "required": [
+          "earned_xp",
+          "spent_xp",
+          "balance",
+          "level",
+          "achievements",
+          "store",
+          "equipped",
+          "new_unlocks"
+        ],
+        "title": "AchievementProfileResponse"
+      },
+      "AchievementResponse": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "area": {
+            "type": "string",
+            "enum": [
+              "tasks",
+              "habits",
+              "notes",
+              "shopping",
+              "reminders",
+              "calendar",
+              "documents",
+              "places",
+              "watchlist",
+              "saved",
+              "finance",
+              "health",
+              "orbit"
+            ],
+            "title": "Area"
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "easy",
+              "medium",
+              "hard",
+              "legendary"
+            ],
+            "title": "Tier"
+          },
+          "xp": {
+            "type": "integer",
+            "title": "Xp"
+          },
+          "current": {
+            "type": "integer",
+            "title": "Current"
+          },
+          "target": {
+            "type": "integer",
+            "title": "Target"
+          },
+          "secret": {
+            "type": "boolean",
+            "title": "Secret"
+          },
+          "unlocked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unlocked At"
+          },
+          "earned_xp": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Earned Xp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "title",
+          "description",
+          "area",
+          "tier",
+          "xp",
+          "current",
+          "target",
+          "secret",
+          "unlocked_at",
+          "earned_xp"
+        ],
+        "title": "AchievementResponse"
+      },
       "ActiveSessionResponse": {
         "properties": {
           "session": {
@@ -47615,6 +48013,63 @@
           "deleted"
         ],
         "title": "EmptyTrashResponse"
+      },
+      "EquippedRewardsResponse": {
+        "properties": {
+          "frame": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frame"
+          },
+          "banner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Banner"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "confetti": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confetti"
+          }
+        },
+        "type": "object",
+        "required": [
+          "frame",
+          "banner",
+          "title",
+          "confetti"
+        ],
+        "title": "EquippedRewardsResponse",
+        "description": "The item key worn in each slot; empty slots are null."
       },
       "EventDetailResponse": {
         "properties": {
@@ -59071,6 +59526,76 @@
         "type": "object",
         "title": "RestoreUploadRequest"
       },
+      "RewardItemRequest": {
+        "properties": {
+          "item_key": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Item Key"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "item_key"
+        ],
+        "title": "RewardItemRequest"
+      },
+      "RewardItemResponse": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "slot": {
+            "type": "string",
+            "enum": [
+              "frame",
+              "banner",
+              "title",
+              "confetti"
+            ],
+            "title": "Slot"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "cost": {
+            "type": "integer",
+            "title": "Cost"
+          },
+          "min_level": {
+            "type": "integer",
+            "title": "Min Level"
+          },
+          "owned": {
+            "type": "boolean",
+            "title": "Owned"
+          },
+          "equipped": {
+            "type": "boolean",
+            "title": "Equipped"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "slot",
+          "name",
+          "description",
+          "cost",
+          "min_level",
+          "owned",
+          "equipped"
+        ],
+        "title": "RewardItemResponse"
+      },
       "RoutineDetailResponse": {
         "properties": {
           "id": {
@@ -63328,6 +63853,26 @@
           "months"
         ],
         "title": "TrendResponse"
+      },
+      "UnequipRewardRequest": {
+        "properties": {
+          "slot": {
+            "type": "string",
+            "enum": [
+              "frame",
+              "banner",
+              "title",
+              "confetti"
+            ],
+            "title": "Slot"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "slot"
+        ],
+        "title": "UnequipRewardRequest"
       },
       "UniversalSearchHitResponse": {
         "properties": {

@@ -3084,6 +3084,41 @@ No reverse geocoding (picking a spot on the map), no import (for example Google 
 places), no trips or repeat visits, no agent tool. Small countries missing from the 1:50m
 shapes, and places without a pin, still count in the tally but can't be seen on the offline map.
 
+## Achievements and the XP store
+
+Per person, like the profile photo: routes live under `/me/achievements` and act on the session
+user only. The web page is `/profile` (side rail: Overview, Achievements, XP store, Collection).
+
+### Data
+
+- The achievements (44, in easy, medium, hard, and legendary tiers) and the store's items (frames,
+  banners, titles, confetti) are a catalog in code: `services/achievements/catalog.py`. Keys are
+  stored, so never rename or reuse one; retire it instead.
+- `achievement_unlocks` (user, key, XP earned, when), `reward_purchases` (user, key, price paid),
+  and `reward_equips` (user, slot, item; a composite foreign key to the purchase). Migration 0034
+  only adds these tables. Backups leave them out: they belong to the person, not the workspace.
+
+### How unlocking works
+
+There is no event stream. `SqlAchievementMetrics` counts the user's data with plain SQL (tasks
+completed, the longest run of days with a habit done, countries visited, workouts, and so on)
+across workspaces they own, and health tables only for their own `user_id`. `POST /check` unlocks
+every achievement whose metric reaches its target and returns the profile with `new_unlocks`;
+`GET` is read-only. An unlock is permanent and keeps the XP it earned. Concurrent checks are safe:
+the primary key rejects a duplicate and the losing request reports nothing new.
+
+The web `AchievementWatcher` (mounted in the signed-in layout) checks once on sign-in and again
+1.2 s after any successful mutation, except the achievement mutations themselves
+(`ACHIEVEMENT_MUTATION_KEY`), and shows an unlock toast.
+
+### Levels and XP
+
+Level n starts at 50·n·(n-1) XP (0, 100, 300, 600, …). Store purchases spend the balance
+(earned minus spent) but never lower the level. Items can require a minimum level. Worn items show
+on the avatar (frames) everywhere, on the profile (banner, title), and in celebrations (confetti,
+including the habit toast). Their looks live in `components/achievements/cosmetics.tsx`, keyed by
+item key.
+
 ## Health and fitness
 
 A personal wellness tracker: workouts, an exercise library and templates, body measurements and
