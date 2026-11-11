@@ -43,6 +43,8 @@ class ShoppingListModel(Base):
         ForeignKey("workspaces.id", ondelete="CASCADE"), index=True
     )
     name: Mapped[str] = mapped_column(String(100))
+    # One of `ShoppingListIcon`; the API checks the value.
+    icon: Mapped[str] = mapped_column(String(16), default="basket", server_default="basket")
     is_default: Mapped[bool]
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now, onupdate=utc_now)

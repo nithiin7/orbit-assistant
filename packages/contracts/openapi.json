@@ -3353,8 +3353,8 @@
         "tags": [
           "shopping"
         ],
-        "summary": "Rename a shopping list",
-        "operationId": "rename_list_api_v1_workspaces__workspace_id__shopping_lists__list_id__patch",
+        "summary": "Rename a shopping list or change its icon",
+        "operationId": "update_list_api_v1_workspaces__workspace_id__shopping_lists__list_id__patch",
         "security": [
           {
             "HTTPBearer": []
@@ -3389,7 +3389,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ShoppingListRequest"
+                "$ref": "#/components/schemas/UpdateShoppingListRequest"
               }
             }
           }
@@ -61835,6 +61835,24 @@
             "type": "string",
             "title": "Name"
           },
+          "icon": {
+            "type": "string",
+            "enum": [
+              "basket",
+              "cart",
+              "apple",
+              "carrot",
+              "coffee",
+              "pill",
+              "home",
+              "gift",
+              "shirt",
+              "paw",
+              "baby",
+              "wrench"
+            ],
+            "title": "Icon"
+          },
           "is_default": {
             "type": "boolean",
             "title": "Is Default",
@@ -61865,6 +61883,7 @@
           "id",
           "workspace_id",
           "name",
+          "icon",
           "is_default",
           "created_at",
           "updated_at",
@@ -61880,6 +61899,25 @@
             "maxLength": 100,
             "minLength": 1,
             "title": "Name"
+          },
+          "icon": {
+            "type": "string",
+            "enum": [
+              "basket",
+              "cart",
+              "apple",
+              "carrot",
+              "coffee",
+              "pill",
+              "home",
+              "gift",
+              "shirt",
+              "paw",
+              "baby",
+              "wrench"
+            ],
+            "title": "Icon",
+            "default": "basket"
           }
         },
         "additionalProperties": false,
@@ -61905,6 +61943,24 @@
             "type": "string",
             "title": "Name"
           },
+          "icon": {
+            "type": "string",
+            "enum": [
+              "basket",
+              "cart",
+              "apple",
+              "carrot",
+              "coffee",
+              "pill",
+              "home",
+              "gift",
+              "shirt",
+              "paw",
+              "baby",
+              "wrench"
+            ],
+            "title": "Icon"
+          },
           "is_default": {
             "type": "boolean",
             "title": "Is Default",
@@ -61926,6 +61982,7 @@
           "id",
           "workspace_id",
           "name",
+          "icon",
           "is_default",
           "created_at",
           "updated_at"
@@ -67796,6 +67853,52 @@
           "status"
         ],
         "title": "UpdateSessionStepRequest"
+      },
+      "UpdateShoppingListRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "basket",
+                  "cart",
+                  "apple",
+                  "carrot",
+                  "coffee",
+                  "pill",
+                  "home",
+                  "gift",
+                  "shirt",
+                  "paw",
+                  "baby",
+                  "wrench"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateShoppingListRequest",
+        "description": "Rename a list or change its icon. Omitted fields keep their values."
       },
       "UpdateSipPlanRequest": {
         "properties": {

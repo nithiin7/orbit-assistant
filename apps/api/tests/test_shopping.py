@@ -115,6 +115,7 @@ def test_create_rename_and_delete_lists(client: TestClient, ada: Headers, shop: 
     assert renamed.status_code == 200
     assert renamed.json()["name"] == "Weekly shop"
     assert renamed.json()["is_default"] is True
+    assert renamed.json()["icon"] == "basket"
 
     assert client.delete(f"{shop}/lists/{gifts['id']}", headers=ada).status_code == 204
     assert [entry["name"] for entry in lists(client, shop, ada)] == ["Weekly shop", "Electronics"]
@@ -153,6 +154,8 @@ def test_deleting_a_list_deletes_its_items(
         {"name": "x" * 101},
         {"name": "Tab\there"},
         {"name": "Gifts", "is_default": True},
+        {"name": "Gifts", "icon": "rocket"},
+        {"name": "Gifts", "icon": None},
         {"name": "Gifts", "workspace_id": "00000000-0000-0000-0000-000000000001"},
     ],
 )
@@ -163,6 +166,24 @@ def test_list_input_is_validated(
 
     assert client.post(f"{shop}/lists", json=body, headers=ada).status_code == 422
     assert client.patch(f"{shop}/lists/{default['id']}", json=body, headers=ada).status_code == 422
+
+
+def test_lists_have_an_icon(client: TestClient, ada: Headers, shop: str) -> None:
+    assert groceries(client, shop, ada)["icon"] == "basket"
+    assert create_list(client, shop, ada, "Electronics")["icon"] == "basket"
+
+    response = client.post(f"{shop}/lists", json={"name": "Pets", "icon": "paw"}, headers=ada)
+    assert response.status_code == 201
+    pets = response.json()
+    assert pets["icon"] == "paw"
+
+    changed = client.patch(f"{shop}/lists/{pets['id']}", json={"icon": "gift"}, headers=ada)
+    assert changed.status_code == 200
+    assert (changed.json()["name"], changed.json()["icon"]) == ("Pets", "gift")
+
+    renamed = client.patch(f"{shop}/lists/{pets['id']}", json={"name": "Dog"}, headers=ada)
+    assert (renamed.json()["name"], renamed.json()["icon"]) == ("Dog", "gift")
+    assert {entry["name"]: entry["icon"] for entry in lists(client, shop, ada)}["Dog"] == "gift"
 
 
 def test_list_counts_follow_item_status(client: TestClient, ada: Headers, shop: str) -> None:

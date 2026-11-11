@@ -22,6 +22,7 @@ from orbit_api.services.shopping.models import (
     ItemStatus,
     ShoppingItem,
     ShoppingList,
+    ShoppingListIcon,
     ShoppingListOverview,
 )
 from orbit_api.utils.changes import UNSET
@@ -78,6 +79,7 @@ class ShoppingListResponse(BaseModel):
     id: uuid.UUID
     workspace_id: uuid.UUID
     name: str
+    icon: ShoppingListIcon
     is_default: bool = Field(description="The workspace's default list, which cannot be deleted.")
     created_at: datetime
     updated_at: datetime
@@ -88,6 +90,7 @@ class ShoppingListResponse(BaseModel):
             id=shopping_list.id,
             workspace_id=shopping_list.workspace_id,
             name=shopping_list.name,
+            icon=shopping_list.icon,
             is_default=shopping_list.is_default,
             created_at=shopping_list.created_at,
             updated_at=shopping_list.updated_at,
@@ -117,6 +120,25 @@ class ShoppingListRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: Name
+    icon: ShoppingListIcon = "basket"
+
+
+class UpdateShoppingListRequest(BaseModel):
+    """Rename a list or change its icon. Omitted fields keep their values."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: Name | None = None
+    icon: ShoppingListIcon | None = None
+
+    @model_validator(mode="after")
+    def _check_fields(self) -> Self:
+        if not self.model_fields_set:
+            raise ValueError("include at least one field to change")
+        for name in ("name", "icon"):
+            if name in self.model_fields_set and getattr(self, name) is None:
+                raise ValueError(f"{name} cannot be null")
+        return self
 
 
 class BulkChangeResponse(BaseModel):

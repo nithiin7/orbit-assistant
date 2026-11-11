@@ -885,8 +885,8 @@ export interface paths {
         delete: operations["delete_list_api_v1_workspaces__workspace_id__shopping_lists__list_id__delete"];
         options?: never;
         head?: never;
-        /** Rename a shopping list */
-        patch: operations["rename_list_api_v1_workspaces__workspace_id__shopping_lists__list_id__patch"];
+        /** Rename a shopping list or change its icon */
+        patch: operations["update_list_api_v1_workspaces__workspace_id__shopping_lists__list_id__patch"];
         trace?: never;
     };
     "/api/v1/workspaces/{workspace_id}/shopping/lists/{list_id}/restock": {
@@ -17316,6 +17316,11 @@ export interface components {
             /** Name */
             name: string;
             /**
+             * Icon
+             * @enum {string}
+             */
+            icon: "basket" | "cart" | "apple" | "carrot" | "coffee" | "pill" | "home" | "gift" | "shirt" | "paw" | "baby" | "wrench";
+            /**
              * Is Default
              * @description The workspace's default list, which cannot be deleted.
              */
@@ -17342,6 +17347,12 @@ export interface components {
         ShoppingListRequest: {
             /** Name */
             name: string;
+            /**
+             * Icon
+             * @default basket
+             * @enum {string}
+             */
+            icon: "basket" | "cart" | "apple" | "carrot" | "coffee" | "pill" | "home" | "gift" | "shirt" | "paw" | "baby" | "wrench";
         };
         /** ShoppingListResponse */
         ShoppingListResponse: {
@@ -17357,6 +17368,11 @@ export interface components {
             workspace_id: string;
             /** Name */
             name: string;
+            /**
+             * Icon
+             * @enum {string}
+             */
+            icon: "basket" | "cart" | "apple" | "carrot" | "coffee" | "pill" | "home" | "gift" | "shirt" | "paw" | "baby" | "wrench";
             /**
              * Is Default
              * @description The workspace's default list, which cannot be deleted.
@@ -19017,6 +19033,16 @@ export interface components {
              * @enum {string}
              */
             status: "pending" | "completed" | "skipped";
+        };
+        /**
+         * UpdateShoppingListRequest
+         * @description Rename a list or change its icon. Omitted fields keep their values.
+         */
+        UpdateShoppingListRequest: {
+            /** Name */
+            name?: string | null;
+            /** Icon */
+            icon?: ("basket" | "cart" | "apple" | "carrot" | "coffee" | "pill" | "home" | "gift" | "shirt" | "paw" | "baby" | "wrench") | null;
         };
         /**
          * UpdateSipPlanRequest
@@ -22103,7 +22129,7 @@ export interface operations {
             };
         };
     };
-    rename_list_api_v1_workspaces__workspace_id__shopping_lists__list_id__patch: {
+    update_list_api_v1_workspaces__workspace_id__shopping_lists__list_id__patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -22116,7 +22142,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ShoppingListRequest"];
+                "application/json": components["schemas"]["UpdateShoppingListRequest"];
             };
         };
         responses: {

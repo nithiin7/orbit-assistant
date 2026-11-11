@@ -8,6 +8,22 @@ from typing import Literal
 from orbit_api.utils.changes import UNSET, Change
 
 ItemStatus = Literal["needed", "purchased"]
+# The icons a list can show. The web app maps each to a picture; new lists use `basket`.
+ShoppingListIcon = Literal[
+    "basket",
+    "cart",
+    "apple",
+    "carrot",
+    "coffee",
+    "pill",
+    "home",
+    "gift",
+    "shirt",
+    "paw",
+    "baby",
+    "wrench",
+]
+DEFAULT_LIST_ICON: ShoppingListIcon = "basket"
 
 
 @dataclass(frozen=True, slots=True)
@@ -15,6 +31,7 @@ class ShoppingList:
     id: uuid.UUID
     workspace_id: uuid.UUID
     name: str
+    icon: ShoppingListIcon
     is_default: bool
     created_at: datetime
     updated_at: datetime
