@@ -98,13 +98,18 @@ class TrackingService:
             raise FitnessNotFoundError("Activity")
         updated = replace(activity, details=draft, updated_at=self._clock())
         await self._store.put_activity(updated)
+        before = activity.details
+        if (before.kind, before.day) != (draft.kind, draft.day):
+            await self._contributions.activity(owner, before.kind, before.day)
         await self._contributions.activity(owner, draft.kind, draft.day)
         await self._transaction.commit()
         return updated
 
     async def delete_activity(self, owner: Owner, activity_id: uuid.UUID) -> None:
-        if not await self._store.delete_activity(owner, activity_id):
+        activity = await self._store.get_activity(owner, activity_id)
+        if activity is None or not await self._store.delete_activity(owner, activity_id):
             raise FitnessNotFoundError("Activity")
+        await self._contributions.activity(owner, activity.details.kind, activity.details.day)
         await self._transaction.commit()
 
     # Goals

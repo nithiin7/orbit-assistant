@@ -7,15 +7,17 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Annotated, Any
 
-from fastapi import APIRouter, HTTPException, Path, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response, status
 
 from orbit_api.api.auth import CurrentUserDep, WorkspaceDep
 from orbit_api.api.dependencies import (
     HabitServiceDep,
     NoteServiceDep,
     RoutineServiceDep,
+    SessionDep,
     TaskServiceDep,
 )
+from orbit_api.repositories.fitness import build_health_linked_habits
 from orbit_api.schemas.calendar import CalendarDate, LinkedNoteResponse
 from orbit_api.schemas.habits import (
     CreateHabitCategoryRequest,
@@ -69,6 +71,7 @@ from orbit_api.services.habits.models import (
     SessionNotFoundError,
     TooManyHabitCategoriesError,
 )
+from orbit_api.services.habits.service import HabitService
 from orbit_api.services.notes.models import NoteDraft
 from orbit_api.utils.changes import UNSET
 
@@ -88,6 +91,14 @@ HabitId = Annotated[uuid.UUID, Path(description="The habit's ID.")]
 RoutineId = Annotated[uuid.UUID, Path(description="The routine's ID.")]
 SessionId = Annotated[uuid.UUID, Path(description="The session's ID.")]
 Day = Annotated[CalendarDate, Path(description="A local date, such as `2026-11-02`.")]
+
+
+def _linked_habits(session: SessionDep, user: CurrentUserDep) -> HabitService:
+    """Habits whose links to the signed-in person's Health records apply when logging."""
+    return build_health_linked_habits(session, user.id)
+
+
+LinkedHabitServiceDep = Annotated[HabitService, Depends(_linked_habits)]
 _INVALID: dict[int | str, dict[str, Any]] = {
     422: {"description": "Invalid fields, or a linked item doesn't exist in this workspace."}
 }
@@ -323,20 +334,22 @@ async def log_day(
     day: Day,
     body: LogHabitRequest,
     workspace: WorkspaceDep,
-    habits: HabitServiceDep,
+    habits: LinkedHabitServiceDep,
 ) -> HabitProgressResponse:
     """Complete, record progress on, or skip one local date. Replaces that day's entry; there is
-    never more than one. Days in the future or outside the habit's dates are refused."""
+    never more than one. Days in the future or outside the habit's dates are refused. An amount
+    habit linked to your steps or water is logged into Health, which then sets the day; Health
+    is never lowered from here."""
     with _errors():
         result = await habits.log(workspace.id, habit_id, day, body.to_draft())
     return HabitProgressResponse.of(result)
 
 
-@router.delete("/{habit_id}/log/{day}", summary="Undo a day")
+@router.delete("/{habit_id}/log/{day}", summary="Undo a day", responses=_INVALID)
 async def unlog_day(
-    habit_id: HabitId, day: Day, workspace: WorkspaceDep, habits: HabitServiceDep
+    habit_id: HabitId, day: Day, workspace: WorkspaceDep, habits: LinkedHabitServiceDep
 ) -> HabitProgressResponse:
-    """Idempotent."""
+    """Idempotent. A day that comes from your Health records is refused; undo it in Health."""
     with _errors():
         result = await habits.unlog(workspace.id, habit_id, day)
     return HabitProgressResponse.of(result)

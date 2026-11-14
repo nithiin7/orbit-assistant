@@ -2,8 +2,10 @@
 another module's data or runs its own scheduler.
 
 - **Habits.** A habit can be linked to one kind of record: workouts, water, or one kind of
-  activity. With `contributes` on (it's off by default), saving such a record records the day's
-  total on the habit through `HabitService.contribute`, in the same transaction:
+  activity. With `contributes` on (it's off by default), Health is the source of that habit's
+  days: saving or deleting such a record sets the day on the habit to Health's total through
+  `HabitService.contribute` (or clears it through `HabitService.withdraw` when nothing is left),
+  in the same transaction:
 
   - yes-or-no habits: a completed workout; the water target met (any water without a target);
     an entry of that activity kind;
@@ -11,9 +13,11 @@ another module's data or runs its own scheduler.
   - amount habits: the number of workouts; the water total in the profile's water unit; steps,
     distance (in km or mi), sleep hours, or cardio minutes.
 
-  Contributions only raise a day (never lower or remove it, and never touch a skipped day), and
-  the habit log keeps one entry per day, so nothing is counted twice. Completing a habit never
-  creates a health record.
+  A skipped day is never touched, and the habit log keeps one entry per day, so nothing is
+  counted twice. The other way round, `HabitHealth` lets an amount habit linked to steps or
+  water be logged from Habits: the difference is added to Health as a new entry, and the habit
+  then takes Health's total. Health is never lowered from Habits, and completing a habit linked
+  to workouts never creates a workout.
 - **Calendar.** Scheduling a workout creates an ordinary calendar event (its alerts are the
   reminders) and links it, optionally to a template; an existing event can be linked instead,
   so there's never a second event for the same workout. Starting a workout from the event
@@ -22,6 +26,7 @@ another module's data or runs its own scheduler.
 """
 
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import Protocol
@@ -29,10 +34,13 @@ from typing import Protocol
 from orbit_api.services.calendar.models import CalendarRange, DateWindow
 from orbit_api.services.fitness.calculations import (
     DISTANCE_ACTIVITIES,
+    WATER_UNIT_ML,
     distance_in_unit,
     water_in_unit,
 )
 from orbit_api.services.fitness.models import (
+    Activity,
+    ActivityDraft,
     ActivityKind,
     FitnessNotFoundError,
     HabitLink,
@@ -45,9 +53,12 @@ from orbit_api.services.fitness.models import (
     Owner,
     ProfileDraft,
     ScheduledWorkout,
+    WaterEntry,
 )
 from orbit_api.services.fitness.store import FitnessStore
+from orbit_api.services.habits.models import Habit, InvalidLogError
 from orbit_api.services.transactions import Transaction
+from orbit_api.utils.clock import utc_now
 
 # A contribution: `None` completes the day; a number records progress toward the target.
 type Contribution = float | None
@@ -57,6 +68,8 @@ class HabitRecorder(Protocol):
     async def contribute(
         self, workspace_id: uuid.UUID, habit_id: uuid.UUID, day: date, value: float | None
     ) -> bool: ...
+
+    async def withdraw(self, workspace_id: uuid.UUID, habit_id: uuid.UUID, day: date) -> bool: ...
 
 
 class CalendarReader(Protocol):
@@ -116,17 +129,18 @@ class Contributions:
         self._habits = habits
 
     async def workouts(self, owner: Owner, day: date) -> None:
-        await self._apply(owner, "workout", None, day)
+        await self.apply(owner, "workout", None, day)
 
     async def water(self, owner: Owner, day: date) -> None:
-        await self._apply(owner, "water", None, day)
+        await self.apply(owner, "water", None, day)
 
     async def activity(self, owner: Owner, kind: ActivityKind, day: date) -> None:
-        await self._apply(owner, "activity", kind, day)
+        await self.apply(owner, "activity", kind, day)
 
-    async def _apply(
+    async def apply(
         self, owner: Owner, source: HabitSource, kind: ActivityKind | None, day: date
     ) -> None:
+        """Set the day on every habit that takes it from this kind of record."""
         links = [
             link
             for link in await self._store.habit_links(owner, source)
@@ -134,32 +148,126 @@ class Contributions:
         ]
         if not links:
             return
-        records = await self._records(owner, source, kind, day)
-        stored = await self._store.get_profile(owner)
-        profile = stored.settings if stored is not None else ProfileDraft()
+        records = await day_records(self._store, owner, source, kind, day)
+        profile = await _profile(self._store, owner)
         for link in links:
             write, value = contribution(link.habit_kind, source, kind, records, profile)
             if write:
                 await self._habits.contribute(owner.workspace_id, link.habit_id, day, value)
+            else:
+                await self._habits.withdraw(owner.workspace_id, link.habit_id, day)
 
-    async def _records(
-        self, owner: Owner, source: HabitSource, kind: ActivityKind | None, day: date
-    ) -> DayRecords:
-        if source == "workout":
-            sessions = await self._store.sessions(
-                owner, start=day, end=day, statuses=("completed",)
-            )
-            return DayRecords(count=len(sessions), seconds=sum(s.duration_s or 0 for s in sessions))
-        if source == "water":
-            entries = await self._store.water_entries(owner, day, day)
-            return DayRecords(count=len(entries), water_ml=sum(e.amount_ml for e in entries))
-        activities = await self._store.activities(owner, day, day, kind)
-        return DayRecords(
-            count=len(activities),
-            seconds=sum(a.details.duration_s or 0 for a in activities),
-            steps=sum(a.details.steps or 0 for a in activities),
-            distance_m=sum(a.details.distance_m or 0 for a in activities),
+
+async def day_records(
+    store: FitnessStore, owner: Owner, source: HabitSource, kind: ActivityKind | None, day: date
+) -> DayRecords:
+    if source == "workout":
+        sessions = await store.sessions(owner, start=day, end=day, statuses=("completed",))
+        return DayRecords(count=len(sessions), seconds=sum(s.duration_s or 0 for s in sessions))
+    if source == "water":
+        entries = await store.water_entries(owner, day, day)
+        return DayRecords(count=len(entries), water_ml=sum(e.amount_ml for e in entries))
+    activities = await store.activities(owner, day, day, kind)
+    return DayRecords(
+        count=len(activities),
+        seconds=sum(a.details.duration_s or 0 for a in activities),
+        steps=sum(a.details.steps or 0 for a in activities),
+        distance_m=sum(a.details.distance_m or 0 for a in activities),
+    )
+
+
+async def _profile(store: FitnessStore, owner: Owner) -> ProfileDraft:
+    stored = await store.get_profile(owner)
+    return stored.settings if stored is not None else ProfileDraft()
+
+
+# The most one Health entry can hold (mirrors the tables' check constraints).
+MAX_STEPS_ENTRY = 200_000
+MAX_WATER_ENTRY_ML = 10_000
+
+
+class HabitHealth:
+    """The Habits side of a link, for one person: a linked habit's days come from their Health
+    records, and an amount habit linked to steps or water can be logged into Health."""
+
+    def __init__(
+        self, store: FitnessStore, user_id: uuid.UUID, clock: Callable[[], datetime] = utc_now
+    ) -> None:
+        self._store = store
+        self._user_id = user_id
+        self._clock = clock
+
+    async def holds(self, habit: Habit, day: date) -> bool:
+        """Whether the habit takes this day from Health records that exist."""
+        link = await self._link(habit)
+        if link is None:
+            return False
+        owner = self._owner(habit)
+        records = await day_records(self._store, owner, link.source, link.activity_kind, day)
+        return records.count > 0
+
+    async def write(self, habits: HabitRecorder, habit: Habit, day: date, value: float) -> bool:
+        """Make Health's total for the day `value` (in the habit's unit) by adding the
+        difference, then set every habit linked to it. Returns `False`, writing nothing, when
+        the habit doesn't take an amount from Health. Doesn't commit."""
+        link = await self._link(habit)
+        if link is None or habit.kind != "numeric":
+            return False
+        steps = link.source == "activity" and link.activity_kind == "steps"
+        if not steps and link.source != "water":
+            return False
+        owner = self._owner(habit)
+        records = await day_records(self._store, owner, link.source, link.activity_kind, day)
+        now = self._clock()
+        if steps:
+            wanted, held = round(value), records.steps
+            _check_raise(wanted, held, MAX_STEPS_ENTRY, f"{held:,} steps")
+            if wanted > held:
+                draft = ActivityDraft(day=day, kind="steps", steps=wanted - held)
+                await self._store.put_activity(
+                    Activity(
+                        id=uuid.uuid4(),
+                        owner=owner,
+                        details=draft,
+                        source="manual",
+                        created_at=now,
+                        updated_at=now,
+                    )
+                )
+        else:
+            unit = (await _profile(self._store, owner)).water_unit
+            wanted, held = round(value * WATER_UNIT_ML[unit]), records.water_ml
+            shown = f"{water_in_unit(held, unit):g} {habit.unit}".strip()
+            _check_raise(wanted, held, MAX_WATER_ENTRY_ML, shown)
+            if wanted > held:
+                await self._store.add_water_entry(
+                    WaterEntry(
+                        id=uuid.uuid4(),
+                        owner=owner,
+                        day=day,
+                        amount_ml=wanted - held,
+                        created_at=now,
+                    )
+                )
+        await Contributions(self._store, habits).apply(owner, link.source, link.activity_kind, day)
+        return True
+
+    def _owner(self, habit: Habit) -> Owner:
+        return Owner(workspace_id=habit.workspace_id, user_id=self._user_id)
+
+    async def _link(self, habit: Habit) -> HabitLink | None:
+        links = await self._store.habit_links(self._owner(habit))
+        return next((k for k in links if k.habit_id == habit.id and k.contributes), None)
+
+
+def _check_raise(wanted: int, held: int, most: int, shown: str) -> None:
+    if wanted < held:
+        raise InvalidLogError(
+            f"Health already has {shown} on this day. Change or remove entries in Health "
+            "to lower it."
         )
+    if wanted - held > most:
+        raise InvalidLogError("That's more than one Health entry can hold. Log it in Health.")
 
 
 class IntegrationService:

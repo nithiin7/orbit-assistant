@@ -43,7 +43,11 @@ from orbit_api.repositories.calendar import build_calendar_service
 from orbit_api.repositories.habits import build_habit_service
 from orbit_api.repositories.transaction import SqlTransaction, flush
 from orbit_api.services.fitness.body import BodyService, PhotoFiles
-from orbit_api.services.fitness.integrations import Contributions, IntegrationService
+from orbit_api.services.fitness.integrations import (
+    Contributions,
+    HabitHealth,
+    IntegrationService,
+)
 from orbit_api.services.fitness.models import (
     Activity,
     ActivityDraft,
@@ -91,6 +95,7 @@ from orbit_api.services.fitness.overview import Fitness
 from orbit_api.services.fitness.service import FitnessService, normalize_name
 from orbit_api.services.fitness.tracking import TrackingService
 from orbit_api.services.fitness.workouts import WorkoutService
+from orbit_api.services.habits.service import HabitService
 
 E = FitnessExerciseModel
 S = FitnessSessionModel
@@ -1537,6 +1542,12 @@ def build_fitness(
         tracking=TrackingService(store, contributions, transaction, **timing),
         integrations=IntegrationService(store, build_calendar_service(session), transaction),
     )
+
+
+def build_health_linked_habits(session: AsyncSession, user_id: uuid.UUID) -> HabitService:
+    """A habit service for one person whose habits linked to Health take their days from that
+    person's records, and log amounts into them."""
+    return build_habit_service(session, health=HabitHealth(SqlFitnessStore(session), user_id))
 
 
 async def referenced_photo_blob_ids(session: AsyncSession) -> set[uuid.UUID]:
