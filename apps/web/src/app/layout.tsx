@@ -11,9 +11,35 @@ import { QueryProvider } from "@/providers/query";
 import { ThemeProvider } from "@/providers/theme";
 import { fontVariables } from "@/styles/fonts";
 
+const DESCRIPTION =
+  "Orbit is an open-source, privacy-first personal assistant you host yourself: tasks, notes, calendar, habits, health, finance, and more, in one place.";
+
 export const metadata: Metadata = {
   title: { default: "Orbit", template: "%s · Orbit" },
-  description: "Orbit is an open-source, privacy-first personal assistant.",
+  description: DESCRIPTION,
+  applicationName: "Orbit",
+  keywords: [
+    "personal assistant",
+    "self-hosted",
+    "privacy-first",
+    "open source",
+    "tasks",
+    "notes",
+    "habits",
+    "personal finance",
+  ],
+  openGraph: {
+    type: "website",
+    siteName: "Orbit",
+    title: { default: "Orbit", template: "%s · Orbit" },
+    description: DESCRIPTION,
+  },
+  twitter: {
+    card: "summary",
+    title: { default: "Orbit", template: "%s · Orbit" },
+    description: DESCRIPTION,
+  },
+  formatDetection: { telephone: false, email: false, address: false },
 };
 
 export const viewport: Viewport = {

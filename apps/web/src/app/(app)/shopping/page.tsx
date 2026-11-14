@@ -3,7 +3,10 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/page-header";
 import { ShoppingPanel } from "@/components/shopping/shopping-view";
 
-export const metadata: Metadata = { title: "Shopping" };
+export const metadata: Metadata = {
+  title: "Shopping",
+  description: "Shopping lists you can check off as you go.",
+};
 
 export default function ShoppingPage() {
   return (

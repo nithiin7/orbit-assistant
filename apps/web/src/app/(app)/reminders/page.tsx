@@ -3,7 +3,10 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/page-header";
 import { RemindersPanel } from "@/components/reminders/reminders-view";
 
-export const metadata: Metadata = { title: "Reminders" };
+export const metadata: Metadata = {
+  title: "Reminders",
+  description: "Upcoming and past reminders, with in-app notifications when they're due.",
+};
 
 export default function RemindersPage() {
   return (

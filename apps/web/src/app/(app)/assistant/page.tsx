@@ -3,7 +3,11 @@ import { Suspense } from "react";
 
 import { AssistantView } from "@/components/assistant/assistant-view";
 
-export const metadata: Metadata = { title: "Assistant" };
+export const metadata: Metadata = {
+  title: "Assistant",
+  description:
+    "Chat with Orbit's optional AI assistant about your tasks, notes, money, and plans, using only the data you allow.",
+};
 
 /**
  * A full-width chat, without the usual page header. The open conversation (and a question from

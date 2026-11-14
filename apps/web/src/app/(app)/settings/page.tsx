@@ -5,7 +5,10 @@ import { SettingsMenu } from "@/components/settings/settings-menu";
 import { SettingsPanelView } from "@/components/settings/settings-panel-view";
 import { findSettingsPanel } from "@/lib/settings";
 
-export const metadata: Metadata = { title: "Settings" };
+export const metadata: Metadata = {
+  title: "Settings",
+  description: "Your account, workspaces, appearance, and other preferences.",
+};
 
 const accountPanel = findSettingsPanel("account");
 
