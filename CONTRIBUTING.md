@@ -35,6 +35,8 @@ Thanks for your interest in Orbit! This guide explains how to propose changes.
 6. **Add a changelog entry** under Unreleased in [CHANGELOG.md](CHANGELOG.md) for anything
    someone running Orbit would notice.
 7. **Open a pull request** against `main` and fill in the template. CI must pass before merge.
+   The PR description workflow fills the Summary (while its placeholder is untouched) and the
+   Changes list from your commits, and refreshes the list on each push.
 
 ## Commit messages
 
