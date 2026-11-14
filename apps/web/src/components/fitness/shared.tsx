@@ -1,7 +1,16 @@
 "use client";
 
 import type { Exercise, ExerciseCategory, FitnessLinkedRecord } from "@orbit/contracts";
-import { Check, FileLock2, Link2, NotebookPen, Plus, Search, X } from "lucide-react";
+import {
+  Check,
+  FileLock2,
+  Link2,
+  type LucideIcon,
+  NotebookPen,
+  Plus,
+  Search,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 
@@ -27,12 +36,15 @@ import { ViewError } from "../habits/view-error";
 export function Section({
   title,
   description,
+  icon: Icon,
   action,
   children,
   className,
 }: {
   title: string;
   description?: string;
+  /** Marks the section as a heading over a list (a meal over its foods), set apart from it. */
+  icon?: LucideIcon;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -44,11 +56,21 @@ export function Section({
       className={cn("space-y-3 rounded-xl border bg-card p-4", className)}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="space-y-0.5">
-          <h2 id={id} className="text-sm font-semibold">
-            {title}
-          </h2>
-          {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
+        <div className="flex min-w-0 items-center gap-2.5">
+          {Icon ? (
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-subtle text-brand">
+              <Icon aria-hidden="true" className="size-4" />
+            </span>
+          ) : null}
+          <div className="space-y-0.5">
+            <h2
+              id={id}
+              className={cn("font-semibold", Icon ? "text-base tracking-tight" : "text-sm")}
+            >
+              {title}
+            </h2>
+            {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
+          </div>
         </div>
         {action}
       </div>

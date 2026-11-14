@@ -5,13 +5,19 @@ import type { Food, FoodEntry, MealType, Portion, SavedMeal } from "@orbit/contr
 import {
   ChevronLeft,
   ChevronRight,
+  Coffee,
+  Cookie,
+  type LucideIcon,
+  Moon,
   MoreHorizontal,
   Pencil,
   Plus,
   Save,
   Search,
   Sparkles,
+  Sun,
   Trash2,
+  Utensils,
 } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { Controller, useForm, type UseFormRegisterReturn, useWatch } from "react-hook-form";
@@ -78,6 +84,14 @@ import { addDays } from "@/utils/dates";
 import { FoodIdeasDialog } from "./food-ideas";
 import { BarChart, Loaded, Meter, Section, shortDate } from "./shared";
 
+const MEAL_ICONS: Record<MealType, LucideIcon> = {
+  breakfast: Coffee,
+  lunch: Sun,
+  dinner: Moon,
+  snack: Cookie,
+  other: Utensils,
+};
+
 export function NutritionView({ workspaceId, today }: { workspaceId: string; today: string }) {
   const units = useUnits(workspaceId);
   const [day, setDay] = useState(today);
@@ -120,6 +134,7 @@ export function NutritionView({ workspaceId, today }: { workspaceId: string; tod
                   <Section
                     key={meal.value}
                     title={meal.label}
+                    icon={MEAL_ICONS[meal.value]}
                     description={
                       totals && entries.length > 0
                         ? `${formatEnergy(totals.energy_cal, units.energy_unit)} · ${formatGrams(totals.protein_mg)} protein`
