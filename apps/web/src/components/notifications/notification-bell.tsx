@@ -4,6 +4,7 @@ import type { Notification } from "@orbit/contracts";
 import { Bell, BellRing, CheckCheck } from "lucide-react";
 import Link from "next/link";
 import { type CSSProperties, useCallback, useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { describeApiError } from "@/api/client";
 import { Button } from "@/components/ui/button";
@@ -109,25 +110,30 @@ export function NotificationBell({ placement = "sidebar" }: NotificationBellProp
         {unread ? `${unread} unread ${unread === 1 ? "notification" : "notifications"}` : ""}
       </span>
 
-      {open ? (
-        <div
-          ref={panelRef}
-          id={panelId}
-          role="region"
-          aria-label="Notifications"
-          tabIndex={-1}
-          style={position}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              event.preventDefault();
-              close();
-            }
-          }}
-          className="fixed z-50 flex max-h-[min(32rem,80vh)] animate-tooltip-in flex-col overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-elevation-3 outline-none motion-reduce:animate-none"
-        >
-          <NotificationPanel onNavigate={() => close(false)} />
-        </div>
-      ) : null}
+      {/* Portaled to the body: inside the sticky sidebar (its own stacking context), sticky page
+          content such as a view's side rail would paint over the panel. */}
+      {open
+        ? createPortal(
+            <div
+              ref={panelRef}
+              id={panelId}
+              role="region"
+              aria-label="Notifications"
+              tabIndex={-1}
+              style={position}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  close();
+                }
+              }}
+              className="fixed z-50 flex max-h-[min(32rem,80vh)] animate-tooltip-in flex-col overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-elevation-3 outline-none motion-reduce:animate-none"
+            >
+              <NotificationPanel onNavigate={() => close(false)} />
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 }
