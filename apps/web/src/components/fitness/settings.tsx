@@ -324,7 +324,7 @@ function HabitLinks({ workspaceId }: { workspaceId: string }) {
   return (
     <Section
       title="Linked habits"
-      description="Relate a habit to workouts, water, or an activity. With “Count toward the habit” on, records you save from then on add progress to that day of the habit; nothing is lowered or undone, and checking off a habit never creates a record."
+      description="Relate a habit to workouts, water, or an activity. With “Sync with Health” on, Health is the habit’s source: each day of the habit shows that day’s records, as you add, change, or remove them. Logging an amount habit linked to steps or water from Habits adds it here too; checking off a workout habit never creates a workout."
     >
       <Loaded resource={links.state} reload={links.reload} skeleton="h-16">
         {({ links: list }) =>
@@ -359,7 +359,7 @@ function HabitLinks({ workspaceId }: { workspaceId: string }) {
                           })
                         }
                       />
-                      Count toward the habit
+                      Sync with Health
                     </label>
                     <Button
                       variant="ghost"

@@ -5,7 +5,10 @@ import Link from "next/link";
 import { StatusPage } from "@/components/status-page";
 import { buttonVariants } from "@/components/ui/button";
 
-export const metadata: Metadata = { title: "Page not found" };
+export const metadata: Metadata = {
+  title: "Page not found",
+  description: "This page doesn't exist in Orbit.",
+};
 
 /** Rendered outside the app shell, so it works whether or not anyone is signed in. */
 export default function NotFound() {

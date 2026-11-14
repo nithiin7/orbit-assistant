@@ -3,7 +3,10 @@ import { Suspense } from "react";
 
 import { CalendarPanel } from "@/components/calendar/calendar-view";
 
-export const metadata: Metadata = { title: "Calendar" };
+export const metadata: Metadata = {
+  title: "Calendar",
+  description: "Your events by day, week, and month, with reminders.",
+};
 
 /** The view and date live in the URL, read on the client. */
 export default function CalendarPage() {

@@ -1051,7 +1051,7 @@ class TestHabitIntegration:
         )
         assert ok(client.get(f"{fit}/sessions", headers=ada))["sessions"] == []
 
-    def test_water_raises_a_numeric_habit_but_never_lowers_or_unskips(
+    def test_water_sets_a_numeric_habit_to_healths_total_but_never_unskips(
         self, client: TestClient, ws: str, fit: str, ada: Headers
     ) -> None:
         ok(client.put(f"{fit}/profile", json={"water_unit": "l"}, headers=ada))
@@ -1067,8 +1067,12 @@ class TestHabitIntegration:
         assert habit_log(client, habit) == [(0.75, 0)]
         client.post(f"{fit}/water", json={"day": TODAY, "amount_ml": 500}, headers=ada)
         assert habit_log(client, habit) == [(1.25, 0)]
+        # Health is the source: removing water lowers the day, and removing the rest clears it.
         client.delete(f"{fit}/water/{day['entries'][0]['id']}", headers=ada)
-        assert habit_log(client, habit) == [(1.25, 0)]
+        assert habit_log(client, habit) == [(0.5, 0)]
+        left = ok(client.get(f"{fit}/water", params={"date": TODAY}, headers=ada))["entries"]
+        client.delete(f"{fit}/water/{left[0]['id']}", headers=ada)
+        assert habit_log(client, habit) == []
 
         yesterday = (today() - timedelta(days=1)).isoformat()
         client.put(
@@ -1105,6 +1109,68 @@ class TestHabitIntegration:
             f"{fit}/activities", json={"day": TODAY, "kind": "steps", "steps": 9000}, headers=ada
         )
         assert habit_log(client, habit) == [(9000.0, 0)]
+
+    def test_a_linked_steps_habit_is_one_record_with_health(
+        self, client: TestClient, ws: str, fit: str, ada: Headers
+    ) -> None:
+        habit = make_habit(client, ws, ada, name="Steps", kind="numeric", unit="steps", target=8000)
+        client.put(
+            f"{fit}/habit-links",
+            json={
+                "habit_id": habit["id"],
+                "source": "activity",
+                "activity_kind": "steps",
+                "contributes": True,
+            },
+            headers=ada,
+        )
+        log_url = f"{ws}/habits/{habit['id']}/log/{TODAY}"
+
+        def steps_entries() -> list[int]:
+            listed = ok(client.get(f"{fit}/activities", headers=ada))["activities"]
+            return sorted(a["steps"] for a in listed if a["kind"] == "steps")
+
+        # Logging the habit records the steps in Health; the habit takes Health's total.
+        progress = ok(client.put(log_url, json={"status": "progress", "value": 3000}, headers=ada))
+        assert progress["log"]["value"] == 3000
+        assert steps_entries() == [3000]
+
+        # Steps added in Health show on the habit, and logging more adds only the difference.
+        client.post(
+            f"{fit}/activities", json={"day": TODAY, "kind": "steps", "steps": 2000}, headers=ada
+        )
+        assert habit_log(client, habit) == [(5000.0, 0)]
+        ok(client.put(log_url, json={"status": "completed"}, headers=ada))
+        assert steps_entries() == [2000, 3000, 3000]
+        assert habit_log(client, habit) == [(8000.0, 0)]
+
+        # Health is never lowered from Habits, and a day from Health is undone there.
+        lower = client.put(log_url, json={"status": "progress", "value": 100}, headers=ada)
+        assert lower.status_code == 422 and "8,000 steps" in lower.json()["detail"]
+        assert client.delete(log_url, headers=ada).status_code == 422
+
+        # Deleting and moving entries in Health updates the habit.
+        listed = ok(client.get(f"{fit}/activities", headers=ada))["activities"]
+        for activity in listed:
+            client.delete(f"{fit}/activities/{activity['id']}", headers=ada)
+        assert habit_log(client, habit) == []
+        assert client.delete(log_url, headers=ada).status_code == 200
+
+    def test_logging_a_skipped_linked_day_unskips_it(
+        self, client: TestClient, ws: str, fit: str, ada: Headers
+    ) -> None:
+        habit = make_habit(client, ws, ada, name="Water", kind="numeric", unit="ml", target=2000)
+        client.put(
+            f"{fit}/habit-links",
+            json={"habit_id": habit["id"], "source": "water", "contributes": True},
+            headers=ada,
+        )
+        log_url = f"{ws}/habits/{habit['id']}/log/{TODAY}"
+        ok(client.put(log_url, json={"status": "skipped"}, headers=ada))
+        ok(client.put(log_url, json={"status": "progress", "value": 500}, headers=ada))
+        assert habit_log(client, habit) == [(500.0, 0)]
+        water = ok(client.get(f"{fit}/water", params={"date": TODAY}, headers=ada))
+        assert water["total_ml"] == 500
 
     def test_invalid_links(self, client: TestClient, ws: str, fit: str, ada: Headers) -> None:
         habit = make_habit(client, ws, ada)

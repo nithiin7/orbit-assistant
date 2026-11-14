@@ -262,6 +262,7 @@ class NutritionService:
         if entry is None:
             raise FitnessNotFoundError("Water entry")
         await self._store.delete_water_entry(owner, entry_id)
+        await self._contributions.water(owner, entry.day)
         await self._transaction.commit()
         return await self.water_day(owner, entry.day)
 

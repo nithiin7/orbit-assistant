@@ -291,6 +291,16 @@ def check_reminder_times(times: Sequence[ReminderTime]) -> None:
         raise InvalidHabitError("Two reminders can't share a time.")
 
 
+class HealthSource(Protocol):
+    """Health records a habit can take its days from (`fitness.integrations.HabitHealth`)."""
+
+    async def holds(self, habit: Habit, day: date) -> bool: ...
+
+    async def write(
+        self, habits: "HabitService", habit: Habit, day: date, value: float
+    ) -> bool: ...
+
+
 class HabitService:
     def __init__(
         self,
@@ -299,10 +309,12 @@ class HabitService:
         occurrences: OccurrenceScheduler,
         transaction: Transaction,
         clock: Callable[[], datetime] = utc_now,
+        health: HealthSource | None = None,
     ) -> None:
         self._store = store
         self._transaction = transaction
         self._clock = clock
+        self._health = health
         self.reminders = HabitReminders(store, reminders, occurrences, clock)
 
     # Categories
@@ -558,18 +570,51 @@ class HabitService:
         self, workspace_id: uuid.UUID, habit_id: uuid.UUID, day: date, draft: LogDraft
     ) -> HabitProgress:
         habit = await self._require_habit(workspace_id, habit_id)
-        await self.record(habit, day, draft)
+        if not await self._log_into_health(habit, day, draft):
+            await self.record(habit, day, draft)
         await self._transaction.commit()
         return await self._progress_on(habit, day)
 
-    async def record(self, habit: Habit, day: date, draft: LogDraft) -> None:
-        """Record the day without committing, and re-point the habit's reminders."""
-        now = self._clock()
-        today = today_in(habit.timezone, now)
+    async def _log_into_health(self, habit: Habit, day: date, draft: LogDraft) -> bool:
+        """Log an amount into Health when the habit takes its days from there; Health then sets
+        the day. Returns whether it did."""
+        if self._health is None or draft.status == "skipped":
+            return False
+        value = draft.value
+        if draft.status == "completed" and value is None:
+            value = habit.daily_target
+        if value is None:
+            return False
+        self._check_day(habit, day)
+        logs = (await self._store.logs(habit.workspace_id, [habit.id], day, day)).get(habit.id, [])
+        skipped = bool(logs) and logs[0].skipped
+        if skipped:
+            # Health leaves skipped days alone; logging an amount un-skips the day first.
+            await self._store.delete_log(habit.workspace_id, habit.id, day)
+        if not await self._health.write(self, habit, day, value):
+            if skipped:
+                await self._store.put_log(logs[0])
+            return False
+        if draft.note:
+            await self._keep_note(habit, day, draft.note)
+        return True
+
+    async def _keep_note(self, habit: Habit, day: date, note: str) -> None:
+        logs = (await self._store.logs(habit.workspace_id, [habit.id], day, day)).get(habit.id, [])
+        if logs and logs[0].note != note:
+            await self._store.put_log(replace(logs[0], note=note, updated_at=self._clock()))
+
+    def _check_day(self, habit: Habit, day: date) -> None:
+        today = today_in(habit.timezone, self._clock())
         if day > today:
             raise InvalidLogError("You can't log a day that hasn't happened yet.")
         if day < habit.start_date or (habit.end_date is not None and day > habit.end_date):
             raise InvalidLogError("That day is outside the habit's dates.")
+
+    async def record(self, habit: Habit, day: date, draft: LogDraft) -> None:
+        """Record the day without committing, and re-point the habit's reminders."""
+        now = self._clock()
+        self._check_day(habit, day)
         existing = (await self._store.logs(habit.workspace_id, [habit.id], day, day)).get(
             habit.id, []
         )
@@ -607,11 +652,10 @@ class HabitService:
     async def contribute(
         self, workspace_id: uuid.UUID, habit_id: uuid.UUID, day: date, value: float | None
     ) -> bool:
-        """Record progress that a linked health record contributes, without committing: `None`
-        completes the day, a value records progress toward the target. Contributions only ever
-        raise a day: a skipped day, a completed one, or one with as much progress is left as it
-        is, and nothing is ever lowered or removed. Days the habit can't record (paused,
-        archived, outside its dates, or in the future) are left alone. Returns whether it
+        """Set the day from the linked health records' total, without committing: `None`
+        completes the day, a value records that progress toward the target (raising or lowering
+        it, since Health is the source). A skipped day is left as it is, as are days the habit
+        can't record (paused, archived, outside its dates, or in the future). Returns whether it
         wrote."""
         habit = await self._store.get_habit(workspace_id, habit_id)
         if habit is None or habit.status != "active":
@@ -620,7 +664,7 @@ class HabitService:
         current = existing[0] if existing else None
         if current is not None:
             done = current.value >= current.target
-            if current.skipped or done or (value is not None and current.value >= value):
+            if current.skipped or (value is None and done) or current.value == value:
                 return False
         note = current.note if current else ""
         draft = (
@@ -634,9 +678,27 @@ class HabitService:
             return False
         return True
 
+    async def withdraw(self, workspace_id: uuid.UUID, habit_id: uuid.UUID, day: date) -> bool:
+        """Clear a day whose linked health records are gone, without committing. A skipped
+        day, or a habit that isn't active, is left as it is. Returns whether it wrote."""
+        habit = await self._store.get_habit(workspace_id, habit_id)
+        if habit is None or habit.status != "active":
+            return False
+        existing = (await self._store.logs(workspace_id, [habit_id], day, day)).get(habit_id, [])
+        if not existing or existing[0].skipped:
+            return False
+        await self._store.delete_log(workspace_id, habit_id, day)
+        await self.reminders.sync_habit(habit)
+        return True
+
     async def unlog(self, workspace_id: uuid.UUID, habit_id: uuid.UUID, day: date) -> HabitProgress:
-        """Undo the day's entry. Idempotent."""
+        """Undo the day's entry. Idempotent. A day that comes from Health records is undone
+        there instead."""
         habit = await self._require_habit(workspace_id, habit_id)
+        if self._health is not None and await self._health.holds(habit, day):
+            raise InvalidLogError(
+                "This day comes from your Health records. Remove the entries in Health to undo it."
+            )
         await self._store.delete_log(workspace_id, habit_id, day)
         await self.reminders.sync_habit(habit)
         await self._transaction.commit()

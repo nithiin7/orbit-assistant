@@ -68,7 +68,10 @@ export function TransactionDialog({
   // Archived accounts take no new transactions, but one already used here stays selectable.
   const current = new Set([transaction?.account_id, transaction?.to_account_id]);
   const usable = accounts.filter((account) => !account.archived || current.has(account.id));
-  const firstAccount = usable.find((account) => !account.archived);
+  // New transactions start on the default account, or else the first open one.
+  const firstAccount =
+    usable.find((account) => account.is_default && !account.archived) ??
+    usable.find((account) => !account.archived);
 
   const {
     register,

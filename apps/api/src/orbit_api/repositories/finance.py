@@ -22,6 +22,7 @@ from sqlalchemy import (
     or_,
     select,
     union_all,
+    update,
 )
 from sqlalchemy import cast as sql_cast
 from sqlalchemy.exc import IntegrityError
@@ -94,6 +95,7 @@ def _to_account(model: FinanceAccountModel) -> Account:
         archived_at=model.archived_at,
         created_at=model.created_at,
         updated_at=model.updated_at,
+        is_default=model.is_default,
     )
 
 
@@ -141,6 +143,7 @@ class SqlFinanceAccountRepository:
                 currency=account.currency,
                 opening_balance=account.opening_balance,
                 notes=account.notes,
+                is_default=account.is_default,
                 archived_at=account.archived_at,
                 created_at=account.created_at,
                 updated_at=account.updated_at,
@@ -210,6 +213,14 @@ class SqlFinanceAccountRepository:
         model.notes = account.notes
         model.archived_at = account.archived_at
         model.updated_at = account.updated_at
+        if account.is_default and not model.is_default:
+            # Clear the previous default first, so the one-default index never sees two.
+            await self._session.execute(
+                update(_Account)
+                .where(_Account.workspace_id == account.workspace_id, _Account.is_default)
+                .values(is_default=False)
+            )
+        model.is_default = account.is_default
         await flush(self._session)
 
     async def _get_model(

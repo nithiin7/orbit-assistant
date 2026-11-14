@@ -137,6 +137,10 @@ class AccountResponse(BaseModel):
         "Positive is money held, negative is money owed."
     )
     notes: str
+    is_default: bool = Field(
+        description="New transactions start on this account. At most one per workspace, and "
+        "never an archived account."
+    )
     archived: bool = Field(description="Archived accounts take no new transactions.")
     archived_at: datetime | None
     created_at: datetime
@@ -155,6 +159,7 @@ class AccountResponse(BaseModel):
             opening_balance=account.opening_balance,
             balance=view.balance,
             notes=account.notes,
+            is_default=account.is_default,
             archived=account.archived_at is not None,
             archived_at=account.archived_at,
             created_at=account.created_at,

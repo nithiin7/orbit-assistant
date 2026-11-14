@@ -5,7 +5,10 @@ import { InboxButton } from "@/components/integrations/inbox-sheet";
 import { PageHeader } from "@/components/page-header";
 import { TasksPanel } from "@/components/tasks/tasks-view";
 
-export const metadata: Metadata = { title: "Tasks" };
+export const metadata: Metadata = {
+  title: "Tasks",
+  description: "Plan and finish your tasks, with lists, due dates, priorities, and reminders.",
+};
 
 export default function TasksPage() {
   return (

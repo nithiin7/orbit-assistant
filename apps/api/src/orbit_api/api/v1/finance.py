@@ -168,6 +168,39 @@ async def restore_account(
         raise account_not_found() from None
 
 
+@router.post(
+    "/accounts/{account_id}/default",
+    summary="Make an account the default",
+    responses={422: {"description": "The account is archived."}},
+)
+async def set_default_account(
+    account_id: AccountId, workspace: WorkspaceDep, finance: FinanceServiceDep
+) -> AccountResponse:
+    """New transactions start on this account. Replaces the workspace's previous default.
+    Idempotent."""
+    try:
+        return AccountResponse.of(
+            await finance.set_default_account(workspace.id, account_id, is_default=True)
+        )
+    except AccountNotFoundError:
+        raise account_not_found() from None
+    except InvalidTransactionError as error:
+        raise invalid(error) from None
+
+
+@router.delete("/accounts/{account_id}/default", summary="Stop an account being the default")
+async def clear_default_account(
+    account_id: AccountId, workspace: WorkspaceDep, finance: FinanceServiceDep
+) -> AccountResponse:
+    """Idempotent."""
+    try:
+        return AccountResponse.of(
+            await finance.set_default_account(workspace.id, account_id, is_default=False)
+        )
+    except AccountNotFoundError:
+        raise account_not_found() from None
+
+
 # Categories
 
 

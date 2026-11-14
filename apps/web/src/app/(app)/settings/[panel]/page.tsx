@@ -13,8 +13,11 @@ export function generateStaticParams() {
 
 export async function generateMetadata(props: PageProps<"/settings/[panel]">): Promise<Metadata> {
   const { panel } = await props.params;
-  const title = findSettingsPanel(panel)?.title;
-  return { title: title ? `${title} settings` : undefined };
+  const found = findSettingsPanel(panel);
+  return {
+    title: found ? `${found.title} settings` : undefined,
+    description: found?.description,
+  };
 }
 
 export default async function SettingsPanelPage(props: PageProps<"/settings/[panel]">) {

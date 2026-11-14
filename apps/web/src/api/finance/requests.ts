@@ -78,6 +78,19 @@ export function archiveFinanceAccount(
   });
 }
 
+/** Makes the account the one new transactions start on (replacing any other), or stops it. */
+export function setDefaultFinanceAccount(
+  token: string,
+  workspaceId: string,
+  accountId: string,
+  isDefault: boolean,
+): Promise<FinanceAccount> {
+  return request<FinanceAccount>(itemPath(workspaceId, "accounts", accountId, "/default"), {
+    method: isDefault ? "POST" : "DELETE",
+    token,
+  });
+}
+
 // Categories
 
 export function listFinanceCategories(

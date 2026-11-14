@@ -17,7 +17,8 @@ export function generateStaticParams() {
 
 export async function generateMetadata(props: PageProps<"/[section]">): Promise<Metadata> {
   const { section } = await props.params;
-  return { title: findSection(section)?.title };
+  const item = findSection(section);
+  return { title: item?.title, description: item?.description };
 }
 
 export default async function SectionPage(props: PageProps<"/[section]">) {

@@ -182,6 +182,43 @@ def test_investing_is_a_transfer_not_spending(client: TestClient, ada: Headers, 
     assert totals == [{"currency": "INR", "assets": 500_000, "liabilities": 0}]
 
 
+def test_one_account_is_the_default_until_archived(
+    client: TestClient, ada: Headers, grace: Headers, fin: str
+) -> None:
+    bank = open_account(client, fin, ada)
+    cash = open_account(client, fin, ada, name="Cash", type="cash")
+    assert bank["is_default"] is False
+
+    def defaults() -> list[str]:
+        listed = client.get(f"{fin}/accounts", headers=ada).json()["accounts"]
+        return [a["name"] for a in listed if a["is_default"]]
+
+    made = client.post(f"{fin}/accounts/{bank['id']}/default", headers=ada)
+    assert made.status_code == 200 and made.json()["is_default"] is True
+    assert client.post(f"{fin}/accounts/{bank['id']}/default", headers=ada).status_code == 200
+    assert defaults() == ["HDFC Savings"]
+
+    # Choosing another replaces it.
+    client.post(f"{fin}/accounts/{cash['id']}/default", headers=ada)
+    assert defaults() == ["Cash"]
+
+    # Archiving clears it, and an archived account can't become the default.
+    client.post(f"{fin}/accounts/{cash['id']}/archive", headers=ada)
+    assert defaults() == []
+    refused = client.post(f"{fin}/accounts/{cash['id']}/default", headers=ada)
+    assert refused.status_code == 422
+
+    client.post(f"{fin}/accounts/{bank['id']}/default", headers=ada)
+    cleared = client.delete(f"{fin}/accounts/{bank['id']}/default", headers=ada)
+    assert cleared.status_code == 200 and cleared.json()["is_default"] is False
+    assert defaults() == []
+
+    # Another workspace's account can't be touched.
+    other = finance_url(client, grace)
+    assert client.post(f"{other}/accounts/{bank['id']}/default", headers=grace).status_code == 404
+    assert client.post(f"{fin}/accounts/{uuid.uuid4()}/default", headers=ada).status_code == 404
+
+
 def test_archived_accounts_keep_history_but_take_no_new_transactions(
     client: TestClient, ada: Headers, fin: str
 ) -> None:

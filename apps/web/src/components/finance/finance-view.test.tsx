@@ -37,6 +37,7 @@ function account(overrides: Partial<FinanceAccount> & Pick<FinanceAccount, "id" 
     opening_balance: 0,
     balance: 0,
     notes: "",
+    is_default: false,
     archived: false,
     archived_at: null,
     created_at: STAMP,
@@ -277,6 +278,61 @@ describe("FinancePanel", () => {
     expect(pocket).toHaveTextContent(/Pocket cash.*Balance₹5,000.00.*10% of your money/);
     expect(screen.getByRole("list", { name: "Cards" })).toHaveTextContent(
       /Amex.*Owed₹3,000.00.*100% of everything you owe/,
+    );
+  });
+
+  it("starts new transactions on the default account", async () => {
+    const user = userEvent.setup();
+    const posted: unknown[] = [];
+    const cash = account({ id: "acc-cash", name: "Pocket cash", type: "cash", is_default: true });
+    mockApi({
+      ...session,
+      ...finance([bank, cash, card]),
+      [`POST ${FINANCE}/transactions`]: ({ body }: MockRequest) => {
+        posted.push(body);
+        return Response.json(transaction({ id: "t-new", description: "Tea" }), { status: 201 });
+      },
+    });
+    await renderSignedIn(<FinancePanel />);
+
+    await record(user, "Expense");
+    const dialog = screen.getByRole("dialog", { name: "Record a transaction" });
+    await user.type(within(dialog).getByRole("textbox", { name: "Amount (INR)" }), "20");
+    await user.type(within(dialog).getByRole("textbox", { name: "Description" }), "Tea");
+    await chooseOption(
+      user,
+      within(dialog).getByRole("combobox", { name: "Category" }),
+      "Groceries",
+    );
+    await user.click(within(dialog).getByRole("button", { name: "Record" }));
+
+    await waitFor(() => expect(posted).toHaveLength(1));
+    expect(posted[0]).toMatchObject({ account_id: cash.id });
+  });
+
+  it("makes an account the default from its menu", async () => {
+    const user = userEvent.setup();
+    const made: string[] = [];
+    mockApi({
+      ...session,
+      ...finance(),
+      [`POST ${FINANCE}/accounts/acc-bank/default`]: () => {
+        made.push("acc-bank");
+        return Response.json({ ...bank, is_default: true });
+      },
+    });
+    await renderSignedIn(<FinancePanel />);
+    await user.click(await screen.findByRole("button", { name: "Accounts" }));
+
+    const banks = await screen.findByRole("list", { name: "Bank and cash" });
+    await user.click(
+      within(banks).getByRole("button", { name: "More actions for “HDFC Savings”" }),
+    );
+    await user.click(await screen.findByRole("menuitem", { name: /Make default/ }));
+
+    await waitFor(() => expect(made).toEqual(["acc-bank"]));
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "“HDFC Savings” is now the default account.",
     );
   });
 

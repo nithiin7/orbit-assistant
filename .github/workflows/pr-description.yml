@@ -1,0 +1,112 @@
+name: PR description
+
+# Fills in a pull request's description from its commits, and keeps it current as commits are
+# pushed. Only the parts between the `pr-description` markers are rewritten:
+#
+# - Summary: while the template's placeholder is untouched, the commit message bodies (or the
+#   commit subjects when there are none). Once you edit the summary yourself, it's left alone.
+# - Changes: one line per commit (merge commits left out), always rewritten.
+#
+# Release and Dependabot pull requests write their own descriptions and are skipped.
+#
+# `pull_request_target` runs in the base repository, so the token can edit pull requests from
+# forks too. It is safe here: the job never checks out or runs the pull request's code; it only
+# reads commit messages through the API.
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pr-description-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  describe:
+    name: Describe from commits
+    if: >-
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      !startsWith(github.event.pull_request.head.ref, 'release-please--')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/github-script@v8
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const commits = await github.paginate(github.rest.pulls.listCommits, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              per_page: 100,
+            });
+            // Merge commits add nothing a reader needs.
+            const own = commits.filter((c) => c.parents.length < 2);
+            const lines = own.map((c) => {
+              const [subject, ...rest] = c.commit.message.split("\n");
+              return { sha: c.sha.slice(0, 7), subject: subject.trim(), body: rest.join("\n").trim() };
+            });
+            // Drop trailers (Co-Authored-By, Signed-off-by, ...) from bodies.
+            const trailer = /^[A-Za-z-]+: .+$/;
+            const bodyOf = (text) =>
+              text
+                .split("\n")
+                .filter((line) => !trailer.test(line.trim()))
+                .join("\n")
+                .trim();
+
+            const changes =
+              lines.length > 0
+                ? lines.map((l) => `- ${l.subject} (${l.sha})`).join("\n")
+                : "- No commits yet.";
+            const bodies = lines.map((l) => bodyOf(l.body)).filter(Boolean);
+            const summary =
+              bodies.length > 0
+                ? bodies.join("\n\n")
+                : lines.map((l) => l.subject).join("; ") || pr.title;
+
+            const block = (name, content) =>
+              `<!-- pr-description:${name}:start -->\n${content}\n<!-- pr-description:${name}:end -->`;
+            const marked = (name) =>
+              new RegExp(
+                `<!-- pr-description:${name}:start -->[\\s\\S]*?<!-- pr-description:${name}:end -->`,
+              );
+
+            const placeholder =
+              /<!-- What does this change do, and why\?[^>]*-->/;
+            let body = pr.body ?? "";
+
+            if (body.trim() === "") {
+              body = `## Summary\n\n${block("summary", summary)}\n\n## Changes\n\n${block("changes", changes)}\n`;
+            } else {
+              // Summary: fill the untouched template placeholder, or refresh our own block.
+              if (marked("summary").test(body)) {
+                body = body.replace(marked("summary"), block("summary", summary));
+              } else if (placeholder.test(body)) {
+                body = body.replace(placeholder, block("summary", summary));
+              }
+              // Changes: refresh our block, fill the template's empty list, or add a section.
+              if (marked("changes").test(body)) {
+                body = body.replace(marked("changes"), block("changes", changes));
+              } else if (/## Changes\s*\n\s*-\s*\n/.test(body)) {
+                body = body.replace(/## Changes\s*\n\s*-\s*\n/, `## Changes\n\n${block("changes", changes)}\n\n`);
+              } else {
+                body = `${body.trimEnd()}\n\n## Changes\n\n${block("changes", changes)}\n`;
+              }
+            }
+
+            if (body !== (pr.body ?? "")) {
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                body,
+              });
+              core.info(`Updated the description from ${lines.length} commit(s).`);
+            } else {
+              core.info("The description is already current.");
+            }

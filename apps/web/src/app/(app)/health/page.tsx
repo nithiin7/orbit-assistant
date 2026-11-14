@@ -6,7 +6,10 @@ import { HealthPanel } from "@/components/fitness/health-view";
 import { PageHeader } from "@/components/page-header";
 import { ASSIST_ACTIONS } from "@/lib/ai";
 
-export const metadata: Metadata = { title: "Health" };
+export const metadata: Metadata = {
+  title: "Health",
+  description: "Track workouts, activity, steps, nutrition, water, sleep, and body measurements.",
+};
 
 /** The view, workout, exercise, or goal lives in the URL, read on the client. */
 export default function HealthPage() {
