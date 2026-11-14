@@ -711,6 +711,9 @@ account, category, or transaction ID is 404, and referencing one in a transactio
 - `GET /accounts`: active first, derived balances, per-currency `totals`. `POST /accounts`
   `currency` defaults INR; `PATCH` only `name`, `opening_balance`, `notes`.
   `POST /accounts/{id}/archive` (idempotent) and `/restore`. No account delete.
+  `POST`/`DELETE /accounts/{id}/default` sets or clears the workspace's one default account
+  (`is_default`, partial unique index; archiving clears it; archived → 422). The transaction
+  dialog preselects it.
 - `GET /categories` lists income then expense, seeding defaults; `POST` 409 on duplicate name;
   `DELETE` only own, unused.
 - `GET /transactions`: `date_from`, `date_to`, `type` (repeatable), `account_id` (either side),
@@ -2015,11 +2018,16 @@ when both plausible, with a caveat label. Body fat never estimated.
 ### Integration behavior
 
 - **Habits**: `fitness_habit_links` (one per habit) to workouts, water, or an activity kind; only
-  with **Count toward the habit** (default off), via `HabitService.contribute` in the same
-  transaction. Yes/no habits: completed workout, water target reached (any water if none), or an
-  entry. Duration/amount habits get minutes, counts, water in profile unit, steps, km/mi, hours.
-  Only raises a day (skipped, done, or higher days untouched; deletes keep it); one log per day
-  prevents double counting. Habits never create health records.
+  with **Sync with Health** (`contributes`, default off) is Health the habit's source. Saving,
+  editing, or deleting a record sets the day to Health's total via `HabitService.contribute`
+  (raise or lower) or clears it via `HabitService.withdraw`, in the same transaction. Yes/no
+  habits: completed workout, water target reached (any water if none), or an entry.
+  Duration/amount habits get minutes, counts, water in profile unit, steps, km/mi, hours.
+  Skipped days are untouched; one log per day prevents double counting. The other way
+  (`HabitHealth`, wired into the habit log routes per signed-in person): logging an amount habit
+  linked to steps or water adds the difference to Health as a new entry, then syncs; a lower
+  value is refused (422, Health is never lowered from Habits), as is undoing a day that has
+  Health records. Workout and other activity links never create health records.
 - **Calendar**: `POST …/fitness/schedule` creates an ordinary event via `CalendarService` (alerts
   are managed reminders) linked in `fitness_workout_events` (keyed by event);
   `PUT …/schedule/{event}` marks an existing event. Deleting the event unlinks, keeps workouts.
@@ -2051,7 +2059,8 @@ reference.
 ### Health limitations
 
 - No device, app, food-database, or barcode integrations; no medical features; AI only drafts.
-- Habit contributions apply only after linking and never lower a day.
+- Habit sync applies only after linking, to records saved from then on; only steps and water
+  can be logged from Habits.
 - Only body-weight and strength goals self-track (not workouts per week).
 - Rest timer browser-only, no end notification. No exercise media; fixed muscle list.
 - Photos share `ORBIT_ATTACHMENT_MAX_BYTES`, not resized. Documents don't show their fitness links.

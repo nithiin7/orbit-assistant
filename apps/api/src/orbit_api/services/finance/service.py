@@ -238,14 +238,28 @@ class FinanceService:
         archiving an archived account keeps its original archive time."""
         account = await self._get_account(workspace_id, account_id)
         if account.archived_at is None:
+            # An archived account takes no new transactions, so it can't stay the default.
             await self._save_account_if_changed(
-                account, replace(account, archived_at=self._clock())
+                account, replace(account, archived_at=self._clock(), is_default=False)
             )
         return await self.account(workspace_id, account_id)
 
     async def restore_account(self, workspace_id: uuid.UUID, account_id: uuid.UUID) -> AccountView:
         account = await self._get_account(workspace_id, account_id)
         await self._save_account_if_changed(account, replace(account, archived_at=None))
+        return await self.account(workspace_id, account_id)
+
+    async def set_default_account(
+        self, workspace_id: uuid.UUID, account_id: uuid.UUID, is_default: bool
+    ) -> AccountView:
+        """Make the account the one new transactions start on, replacing any other default, or
+        stop it being the default. Idempotent."""
+        account = await self._get_account(workspace_id, account_id)
+        if is_default and account.archived_at is not None:
+            raise InvalidTransactionError(
+                "An archived account can't be the default. Restore it first."
+            )
+        await self._save_account_if_changed(account, replace(account, is_default=is_default))
         return await self.account(workspace_id, account_id)
 
     # Categories

@@ -62,6 +62,8 @@ class Account:
     archived_at: datetime | None
     created_at: datetime
     updated_at: datetime
+    # Preselected for new transactions; at most one per workspace, never an archived one.
+    is_default: bool = False
 
     @property
     def account_class(self) -> AccountClass:

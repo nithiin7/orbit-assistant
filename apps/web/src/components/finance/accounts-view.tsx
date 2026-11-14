@@ -14,6 +14,8 @@ import {
   PiggyBank,
   Plus,
   Smartphone,
+  Star,
+  StarOff,
   Wallet,
 } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
@@ -70,7 +72,7 @@ export function AccountsView({
   onEditAccount,
   onAnnounce,
 }: AccountsViewProps) {
-  const { archiveAccount } = useFinanceMutations(workspaceId);
+  const { archiveAccount, setDefaultAccount } = useFinanceMutations(workspaceId);
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showLoans, setShowLoans] = useState(false);
@@ -91,6 +93,22 @@ export function AccountsView({
       onAnnounce(value ? `Archived “${account.name}”.` : `Restored “${account.name}”.`);
     } catch (reason) {
       setError(describeApiError(reason, "Couldn’t change the account. Try again."));
+    }
+    setPending(null);
+  };
+
+  const setDefault = async (account: FinanceAccount, value: boolean) => {
+    setError(null);
+    setPending(account.id);
+    try {
+      await setDefaultAccount.mutateAsync({ id: account.id, isDefault: value });
+      onAnnounce(
+        value
+          ? `“${account.name}” is now the default account.`
+          : `“${account.name}” is no longer the default account.`,
+      );
+    } catch (reason) {
+      setError(describeApiError(reason, "Couldn’t change the default account. Try again."));
     }
     setPending(null);
   };
@@ -170,6 +188,20 @@ export function AccountsView({
           icon: Pencil,
           onSelect: () => onEditAccount(account),
         },
+        account.is_default
+          ? {
+              id: "default",
+              label: "Remove as default",
+              icon: StarOff,
+              onSelect: () => void setDefault(account, false),
+            }
+          : {
+              id: "default",
+              label: "Make default",
+              description: "New transactions start on it",
+              icon: Star,
+              onSelect: () => void setDefault(account, true),
+            },
         {
           id: "archive",
           label: "Archive",
@@ -357,9 +389,16 @@ function AccountCard({
           >
             {account.name}
           </button>
-          <p className="truncate text-xs text-muted-foreground">
-            {accountTypeLabel(account.type)}
-            {showCurrency ? ` · ${account.currency}` : null}
+          <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="truncate">
+              {accountTypeLabel(account.type)}
+              {showCurrency ? ` · ${account.currency}` : null}
+            </span>
+            {account.is_default ? (
+              <Chip tone="brand" icon={Star} className="h-5">
+                Default
+              </Chip>
+            ) : null}
           </p>
         </div>
         <div className="-mt-1 -mr-1 shrink-0">{actions}</div>

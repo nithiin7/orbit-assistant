@@ -16,6 +16,7 @@ function account(overrides: Partial<FinanceAccount>): FinanceAccount {
     opening_balance: 0,
     balance: 0,
     notes: "",
+    is_default: false,
     archived: false,
     archived_at: null,
     created_at: STAMP,

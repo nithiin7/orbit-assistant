@@ -16,6 +16,8 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    false,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -46,6 +48,14 @@ class FinanceAccountModel(Base):
         # The target of the transactions' composite foreign keys, which keep a transaction in
         # its accounts' workspace and currency.
         UniqueConstraint("id", "workspace_id", "currency"),
+        # At most one default account per workspace.
+        Index(
+            "uq_finance_accounts_default_workspace",
+            "workspace_id",
+            unique=True,
+            sqlite_where=text("is_default"),
+            postgresql_where=text("is_default"),
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
@@ -57,6 +67,8 @@ class FinanceAccountModel(Base):
     currency: Mapped[str] = mapped_column(String(3))
     opening_balance: Mapped[int] = mapped_column(BigInteger)
     notes: Mapped[str] = mapped_column(Text)
+    # Preselected for new transactions. Never an archived account.
+    is_default: Mapped[bool] = mapped_column(default=False, server_default=false())
     archived_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now, onupdate=utc_now)

@@ -43,6 +43,7 @@ const bank: FinanceAccount = {
   opening_balance: 0,
   balance: 50_000_000,
   notes: "",
+  is_default: false,
   archived: false,
   archived_at: null,
   created_at: STAMP,

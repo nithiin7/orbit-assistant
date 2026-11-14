@@ -35,6 +35,7 @@ import {
   financeTransactionsOptions,
   financeTrendOptions,
   monthlySummaryOptions,
+  setDefaultFinanceAccount,
   spendingOptions,
   updateFinanceAccount,
   updateFinanceTransaction,
@@ -204,6 +205,11 @@ export function useFinanceMutations(workspaceId: string) {
       withToken((token) => archiveFinanceAccount(token, workspaceId, id, archived)),
     onSuccess: refetchFinance,
   });
+  const setDefaultAccount = useMutation({
+    mutationFn: ({ id, isDefault }: { id: string; isDefault: boolean }) =>
+      withToken((token) => setDefaultFinanceAccount(token, workspaceId, id, isDefault)),
+    onSuccess: refetchFinance,
+  });
   const createCategory = useMutation({
     mutationFn: (body: CreateFinanceCategoryRequest) =>
       withToken((token) => createFinanceCategory(token, workspaceId, body)),
@@ -222,6 +228,7 @@ export function useFinanceMutations(workspaceId: string) {
     createAccount,
     updateAccount,
     archiveAccount,
+    setDefaultAccount,
     createCategory,
     deleteCategory,
   };

@@ -1664,6 +1664,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/finance/accounts/{account_id}/default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Make an account the default
+         * @description New transactions start on this account. Replaces the workspace's previous default.
+         *     Idempotent.
+         */
+        post: operations["set_default_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__default_post"];
+        /**
+         * Stop an account being the default
+         * @description Idempotent.
+         */
+        delete: operations["clear_default_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__default_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/finance/categories": {
         parameters: {
             query?: never;
@@ -3799,13 +3824,15 @@ export interface paths {
         /**
          * Record a day
          * @description Complete, record progress on, or skip one local date. Replaces that day's entry; there is
-         *     never more than one. Days in the future or outside the habit's dates are refused.
+         *     never more than one. Days in the future or outside the habit's dates are refused. An amount
+         *     habit linked to your steps or water is logged into Health, which then sets the day; Health
+         *     is never lowered from here.
          */
         put: operations["log_day_api_v1_workspaces__workspace_id__habits__habit_id__log__day__put"];
         post?: never;
         /**
          * Undo a day
-         * @description Idempotent.
+         * @description Idempotent. A day that comes from your Health records is refused; undo it in Health.
          */
         delete: operations["unlog_day_api_v1_workspaces__workspace_id__habits__habit_id__log__day__delete"];
         options?: never;
@@ -7088,6 +7115,11 @@ export interface components {
             balance: number;
             /** Notes */
             notes: string;
+            /**
+             * Is Default
+             * @description New transactions start on this account. At most one per workspace, and never an archived account.
+             */
+            is_default: boolean;
             /**
              * Archived
              * @description Archived accounts take no new transactions.
@@ -25581,6 +25613,98 @@ export interface operations {
             };
         };
     };
+    set_default_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__default_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account's ID. */
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The account is archived. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    clear_default_account_api_v1_workspaces__workspace_id__finance_accounts__account_id__default_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account's ID. */
+                account_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_categories_api_v1_workspaces__workspace_id__finance_categories_get: {
         parameters: {
             query?: never;
@@ -34040,14 +34164,12 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Validation Error */
+            /** @description Invalid fields, or a linked item doesn't exist in this workspace. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
+                content?: never;
             };
         };
     };
