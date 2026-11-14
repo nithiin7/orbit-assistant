@@ -5,6 +5,22 @@ All notable changes to Orbit are recorded here. Orbit uses
 [Release workflow](.github/workflows/release.yml) from the Conventional Commit messages since
 the previous release.
 
+## [1.1.0](https://github.com/nithiin7/orbit-assistant/compare/v1.0.0...v1.1.0) (2026-11-14)
+
+
+### Features
+
+* **api:** add a default finance account for new transactions ([bf9a72a](https://github.com/nithiin7/orbit-assistant/commit/bf9a72ab1c818d815ee665e40ec561891e3d7e9f))
+* **api:** make Health the source of linked habits ([86cc4b7](https://github.com/nithiin7/orbit-assistant/commit/86cc4b7040412ae012b8c1a71e213a18f07490a0))
+* merge health into one db, ui fixes and improvements ([0e425e3](https://github.com/nithiin7/orbit-assistant/commit/0e425e3aec34ebf94022abef52892e3b8a2e7443))
+* **web:** add page descriptions and social metadata ([26c3d9f](https://github.com/nithiin7/orbit-assistant/commit/26c3d9fb3d94a257e5b8c40ae2e8f648b53ff884))
+* **web:** set meal headings apart from foods in nutrition ([1bc18ca](https://github.com/nithiin7/orbit-assistant/commit/1bc18ca818392bd7e9507037ca49a8c1bf562d16))
+
+
+### Bug Fixes
+
+* **web:** keep the notifications panel above page content ([26e84f8](https://github.com/nithiin7/orbit-assistant/commit/26e84f8dc031a43fa174d9d5237eb18fd9544e5f))
+
 ## [1.0.0](https://github.com/nithiin7/orbit-assistant/compare/v1.0.0...v1.0.0) (2026-11-11)
 
 
