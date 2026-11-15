@@ -198,6 +198,9 @@ class AiMessageModel(Base):
     input_tokens: Mapped[int | None] = mapped_column(Integer)
     output_tokens: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
+    # 'text' (typed) or 'voice' (spoken, then transcribed); checked by the code, since adding a
+    # check constraint would rebuild the table on SQLite. Audio itself is never stored.
+    input_mode: Mapped[str] = mapped_column(String(8), default="text", server_default="text")
 
 
 class AiActionProposalModel(Base):
@@ -243,7 +246,10 @@ class AiUsageModel(Base):
     __tablename__ = "ai_usage"
     __table_args__ = (
         CheckConstraint(f"provider_kind IN ({PROVIDER_KINDS})", name="provider_kind"),
-        CheckConstraint("operation IN ('chat', 'assist', 'embedding', 'test')", name="operation"),
+        CheckConstraint(
+            "operation IN ('chat', 'assist', 'embedding', 'test', 'transcription', 'speech')",
+            name="operation",
+        ),
         CheckConstraint("processing IN ('local', 'cloud')", name="processing"),
         Index("ix_ai_usage_user_created", "user_id", "created_at"),
     )

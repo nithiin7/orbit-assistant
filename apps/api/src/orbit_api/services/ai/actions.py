@@ -194,6 +194,11 @@ class ProposalService:
             await self._transaction.commit()
         return await self._get(workspace_id, user_id, proposal_id)
 
+    async def get(
+        self, workspace_id: uuid.UUID, user_id: uuid.UUID, proposal_id: uuid.UUID
+    ) -> Proposal:
+        return await self._get(workspace_id, user_id, proposal_id)
+
     async def reject(
         self, workspace_id: uuid.UUID, user_id: uuid.UUID, proposal_id: uuid.UUID
     ) -> Proposal:

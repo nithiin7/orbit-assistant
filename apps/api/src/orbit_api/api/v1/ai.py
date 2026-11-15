@@ -184,6 +184,10 @@ def _errors() -> Generator[None]:
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, exc.message) from None
 
 
+# For routes built on the AI layer (voice).
+ai_errors = _errors
+
+
 def _zone(requested: str | None, profile: str | None) -> str:
     return requested or profile or "UTC"
 
@@ -411,6 +415,7 @@ async def send_message(
             body.conversation_id,
             body.content,
             _zone(body.timezone, user.timezone),
+            body.input_mode,
         )
     return StreamingResponse(
         _stream(request, turn),

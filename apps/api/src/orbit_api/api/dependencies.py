@@ -48,6 +48,7 @@ from orbit_api.repositories.search.providers import build_universal_search
 from orbit_api.repositories.shopping import SqlShoppingItemRepository, SqlShoppingListRepository
 from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import SqlTransaction
+from orbit_api.repositories.voice import VoiceServices, build_voice
 from orbit_api.repositories.watchlist import SqlLookupSettings, SqlWatchItemRepository
 from orbit_api.repositories.workspaces import SqlWorkspaceRepository
 from orbit_api.services.accounts.service import AccountService
@@ -82,6 +83,7 @@ from orbit_api.services.search.service import SearchService
 from orbit_api.services.search.universal import UniversalSearchService
 from orbit_api.services.shopping.service import ShoppingService
 from orbit_api.services.tasks.service import TaskService
+from orbit_api.services.voice.models import AudioProviderFactory
 from orbit_api.services.watchlist.service import TitleCatalogs, WatchlistService
 from orbit_api.services.workspaces.service import WorkspaceService
 from orbit_api.system.attachment_store import FileAttachmentStore
@@ -552,3 +554,13 @@ def build_agent_for(session: AsyncSession, state: object) -> AgentServices:
 
 
 AgentServicesDep = Annotated[AgentServices, Depends(get_agent_services)]
+
+
+def get_voice_services(request: Request, session: SessionDep, ai: AiServicesDep) -> VoiceServices:
+    """The voice services on the request's session (the AI services' too), over the app's
+    speech adapters; tests replace those with fakes."""
+    factory: AudioProviderFactory = getattr(request.app.state, "voice_providers")  # noqa: B009 - untyped State
+    return build_voice(session, ai.config, factory)
+
+
+VoiceServicesDep = Annotated[VoiceServices, Depends(get_voice_services)]

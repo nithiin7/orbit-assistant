@@ -49,6 +49,7 @@ from orbit_api.repositories.investments import (
 from orbit_api.repositories.notifications import SqlNotificationRepository
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.transaction import SqlTransaction
+from orbit_api.repositories.voice import SqlVoiceHistoryRepository
 from orbit_api.services.agent.automation import AutomationService
 from orbit_api.services.agent.engine import LEASE
 from orbit_api.services.ai.indexing import IndexRun, permitted_types
@@ -62,6 +63,7 @@ from orbit_api.services.reminders.delivery import (
     ReminderFollowUp,
 )
 from orbit_api.services.reminders.models import ClaimedOccurrence, OccurrenceStatus, Reminder
+from orbit_api.services.voice.service import purge_spoken_history
 from orbit_api.system.attachment_store import FileAttachmentStore
 from orbit_api.system.backup_store import FileArchiveStore
 
@@ -80,6 +82,8 @@ DEFAULT_BUDGET_INTERVAL = timedelta(minutes=5)
 # How often the worker looks for unreferenced files, and how old one must be to be deleted: an
 # upload writes its file a moment before its metadata commits, so younger files are left alone.
 DEFAULT_SWEEP_INTERVAL = timedelta(hours=6)
+# How often spoken conversations past their owner's retention are deleted.
+DEFAULT_VOICE_PURGE_INTERVAL = timedelta(hours=1)
 SWEEP_MIN_AGE = timedelta(hours=1)
 # Synchronization runs taken per check, and how often imported files are checked for changes.
 INTEGRATION_BATCH = 10
@@ -221,6 +225,7 @@ class ReminderWorker:
         self._files = files
         self._sweep_interval = sweep_interval
         self._swept_at: datetime | None = None
+        self._voice_purged_at: datetime | None = None
         self._snapshot_interval = snapshot_interval
         self._snapshots_checked_at: datetime | None = None
         self._budget_interval = budget_interval
@@ -341,6 +346,28 @@ class ReminderWorker:
         except Exception:
             # Deliberate boundary: housekeeping must never stop reminder delivery.
             logger.exception("Sweeping unreferenced files failed; retrying later.")
+
+    async def purge_voice_history(self) -> int:
+        """Delete spoken conversations older than their owner's voice retention."""
+        async with self._database.session() as session:
+            removed = await purge_spoken_history(
+                SqlVoiceHistoryRepository(session), SqlTransaction(session), self._clock()
+            )
+        if removed:
+            logger.info("Deleted %d spoken conversation(s) past retention.", removed)
+        return removed
+
+    async def _maybe_purge_voice_history(self) -> None:
+        now = self._clock()
+        last = self._voice_purged_at
+        if last is not None and now - last < DEFAULT_VOICE_PURGE_INTERVAL:
+            return
+        self._voice_purged_at = now
+        try:
+            await self.purge_voice_history()
+        except Exception:
+            # Deliberate boundary: housekeeping must never stop reminder delivery.
+            logger.exception("Deleting expired voice history failed; retrying later.")
 
     async def index_ai(self) -> IndexRun:
         """Reconcile and index a batch for every workspace whose owner has AI indexing on.
@@ -689,6 +716,7 @@ class ReminderWorker:
             await self._maybe_take_snapshots()
             await self._maybe_check_budgets()
             await self._maybe_sweep_files()
+            await self._maybe_purge_voice_history()
             await self._maybe_index_ai()
             await self._maybe_sync_integrations()
             await self._maybe_run_backups()

@@ -37,6 +37,7 @@ from orbit_api.services.ai.models import (
     Citation,
     Conversation,
     ConversationNotFoundError,
+    InputMode,
     Message,
     MessageStatus,
     Processing,
@@ -269,6 +270,7 @@ class AssistantService:
         conversation_id: uuid.UUID | None,
         question: str,
         timezone: str,
+        input_mode: InputMode = "text",
     ) -> Turn:
         settings = await self._config.require_enabled(user_id)
         provider = await self._config.chat_provider(settings, workspace_id, "chat")
@@ -290,7 +292,9 @@ class AssistantService:
             previous = await self._conversations.messages(conversation.id)
             conversation = replace(conversation, updated_at=now)
             await self._conversations.save(conversation)
-        await self._conversations.add_message(_message(conversation, "user", question, now=now))
+        await self._conversations.add_message(
+            _message(conversation, "user", question, now=now, input_mode=input_mode)
+        )
         await self._transaction.commit()
         history = fit_history(
             [
@@ -454,6 +458,7 @@ def _message(
     status: MessageStatus = "complete",
     provider: ResolvedProvider | None = None,
     usage: TokenUsage | None = None,
+    input_mode: InputMode = "text",
 ) -> Message:
     processing: Processing | None = provider.processing if provider else None
     return Message(
@@ -469,4 +474,5 @@ def _message(
         processing=processing,
         usage=usage or TokenUsage(),
         created_at=now,
+        input_mode=input_mode,
     )

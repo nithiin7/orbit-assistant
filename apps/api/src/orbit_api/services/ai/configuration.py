@@ -388,6 +388,18 @@ class AiConfigService:
             return None
         return resolved if resolved.provider.capabilities.embeddings else None
 
+    async def audio_connection(
+        self, settings: AiSettings, provider_id: uuid.UUID
+    ) -> tuple[ProviderConnection, str | None, Processing]:
+        """A provider connection for speech (transcription or text-to-speech), its key, and
+        whether it runs locally, under the same cloud consent as chat. Voice builds its own
+        audio adapter: the chat interface has no audio calls."""
+        connection = await self._get(settings.user_id, provider_id)
+        processing = processing_of(connection.kind, base_url_of(connection))
+        if processing == "cloud" and not settings.allow_cloud:
+            raise CloudProcessingNotAllowedError
+        return connection, self._key_of(connection), processing
+
     async def _resolve_provider(
         self,
         settings: AiSettings,

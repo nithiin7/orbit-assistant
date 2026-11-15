@@ -36,6 +36,7 @@ from orbit_api.services.ai.models import (
     Conversation,
     IndexStatus,
     IndexSummary,
+    InputMode,
     Insight,
     InsightKind,
     Message,
@@ -418,6 +419,7 @@ class AiMessageResponse(BaseModel):
     input_tokens: int | None
     output_tokens: int | None
     created_at: datetime
+    input_mode: InputMode = Field(description="`voice` when the question was spoken.")
 
     @classmethod
     def of(cls, message: Message) -> "AiMessageResponse":
@@ -433,6 +435,7 @@ class AiMessageResponse(BaseModel):
             input_tokens=message.usage.input_tokens,
             output_tokens=message.usage.output_tokens,
             created_at=message.created_at,
+            input_mode=message.input_mode,
         )
 
 
@@ -476,6 +479,11 @@ class SendAiMessageRequest(BaseModel):
     )
     timezone: TimeZoneName | None = Field(
         default=None, description="The viewer's zone for 'today'; defaults to the profile's."
+    )
+    input_mode: InputMode = Field(
+        default_factory=lambda: "text",
+        description="`voice` when the question was spoken and transcribed; it is answered the "
+        "same way and saved as the question's origin.",
     )
 
 

@@ -577,6 +577,14 @@ class AgentService:
             raise AgentDisabledError
         return await self._engine.approve(approval, execution)
 
+    async def approval(
+        self, workspace_id: uuid.UUID, user_id: uuid.UUID, approval_id: uuid.UUID
+    ) -> Approval:
+        approval = await self._repository.get_approval(workspace_id, user_id, approval_id)
+        if approval is None:
+            raise ApprovalNotFoundError
+        return approval
+
     async def reject(
         self, workspace_id: uuid.UUID, user_id: uuid.UUID, approval_id: uuid.UUID
     ) -> Approval:

@@ -6553,6 +6553,144 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/voice/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Voice settings and where speech is processed */
+        get: operations["get_voice_settings_api_v1_me_voice_settings_get"];
+        /** Replace voice settings */
+        put: operations["update_voice_settings_api_v1_me_voice_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/voice/providers/{provider_id}/voices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A provider's voices, if it lists them */
+        get: operations["list_provider_voices_api_v1_me_voice_providers__provider_id__voices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/voice/transcriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Transcribe one utterance
+         * @description With the person's transcription provider. The audio is sent to it and discarded.
+         */
+        post: operations["transcribe_api_v1_workspaces__workspace_id__voice_transcriptions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/voice/speech": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Speak a sentence (streamed audio)
+         * @description The provider is asked first, so refusals are ordinary errors; then the audio streams.
+         */
+        post: operations["speak_api_v1_workspaces__workspace_id__voice_speech_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/voice/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check the voice providers answer
+         * @description Speaks a short phrase and transcribes it with the configured providers.
+         */
+        post: operations["test_voice_api_v1_workspaces__workspace_id__voice_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/voice/confirmations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Answer a pending action by voice
+         * @description The transcript is read on the server: only a short, clear yes approves, and only actions
+         *     voice may approve (new records, low risk, not proposed from untrusted content); others are
+         *     left for the screen. Approval runs through the same checks as a click.
+         */
+        post: operations["confirm_api_v1_workspaces__workspace_id__voice_confirmations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/voice/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete spoken conversations
+         * @description Deletes the person's conversations in this workspace that include a spoken question,
+         *     with their answers and proposals. Typed-only conversations are kept.
+         */
+        delete: operations["clear_voice_history_api_v1_workspaces__workspace_id__voice_history_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/integrations/providers": {
         parameters: {
             query?: never;
@@ -8308,6 +8446,12 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /**
+             * Input Mode
+             * @description `voice` when the question was spoken.
+             * @enum {string}
+             */
+            input_mode: "text" | "voice";
         };
         /** AiModelListResponse */
         AiModelListResponse: {
@@ -8674,7 +8818,7 @@ export interface components {
              * Operation
              * @enum {string}
              */
-            operation: "chat" | "assist" | "embedding" | "test";
+            operation: "chat" | "assist" | "embedding" | "test" | "transcription" | "speech";
             /** Requests */
             requests: number;
             /** Failures */
@@ -17251,6 +17395,12 @@ export interface components {
              * @description The viewer's zone for 'today'; defaults to the profile's.
              */
             timezone?: string | null;
+            /**
+             * Input Mode
+             * @description `voice` when the question was spoken and transcribed; it is answered the same way and saved as the question's origin.
+             * @enum {string}
+             */
+            input_mode?: "text" | "voice";
         };
         /** SessionExerciseResponse */
         SessionExerciseResponse: {
@@ -17828,6 +17978,11 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** SpeakVoiceRequest */
+        SpeakVoiceRequest: {
+            /** Text */
+            text: string;
         };
         /** SpendingResponse */
         SpendingResponse: {
@@ -19423,6 +19578,52 @@ export interface components {
             notes?: string | null;
         };
         /**
+         * UpdateVoiceSettingsRequest
+         * @description Replaces the settings. Provider engines need a provider and model (and a voice for
+         *     speech); browser engines ignore them.
+         */
+        UpdateVoiceSettingsRequest: {
+            /**
+             * Stt Engine
+             * @enum {string}
+             */
+            stt_engine: "browser" | "provider";
+            /** Stt Provider Id */
+            stt_provider_id: string | null;
+            /** Stt Model */
+            stt_model: string | null;
+            /**
+             * Tts Engine
+             * @enum {string}
+             */
+            tts_engine: "browser" | "provider";
+            /** Tts Provider Id */
+            tts_provider_id: string | null;
+            /** Tts Model */
+            tts_model: string | null;
+            /** Tts Voice */
+            tts_voice: string | null;
+            /** Recognition Language */
+            recognition_language: string;
+            /** Response Language */
+            response_language: string | null;
+            /**
+             * Listening Mode
+             * @enum {string}
+             */
+            listening_mode: "continuous" | "push_to_talk";
+            /** Silence Ms */
+            silence_ms: number;
+            /** Sensitivity */
+            sensitivity: number;
+            /** Auto Speak */
+            auto_speak: boolean;
+            /** Speaking Rate */
+            speaking_rate: number;
+            /** History Days */
+            history_days: number | null;
+        };
+        /**
          * UpdateWatchItemRequest
          * @description Change some of a title's fields. Omitted fields keep their values; `null` clears an
          *     optional one. Moving to `watched` fills in a series' last episode when the seasons are
@@ -19515,6 +19716,196 @@ export interface components {
             level: "checksum" | "full";
             /** Message */
             message: string;
+        };
+        /**
+         * VoiceConfirmationRequest
+         * @description A spoken reply to one pending action, checked on the server. For a proposal, name the
+         *     conversation it was proposed in; for an agent approval, send the `arguments_hash` that was
+         *     read out, so only that exact action can run.
+         */
+        VoiceConfirmationRequest: {
+            /**
+             * Target
+             * @enum {string}
+             */
+            target: "proposal" | "agent_approval";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Transcript */
+            transcript: string;
+            /** Conversation Id */
+            conversation_id?: string | null;
+            /** Arguments Hash */
+            arguments_hash?: string | null;
+            /** Timezone */
+            timezone?: string | null;
+        };
+        /** VoiceConfirmationResponse */
+        VoiceConfirmationResponse: {
+            /**
+             * Outcome
+             * @description `approved` or `rejected` ran the decision; `unclear` and `needs_screen` changed nothing; `not_pending` means it was already decided.
+             * @enum {string}
+             */
+            outcome: "approved" | "rejected" | "unclear" | "needs_screen" | "not_pending";
+            /**
+             * Reply
+             * @description How the transcript was read.
+             * @enum {string}
+             */
+            reply: "confirm" | "reject" | "unclear";
+            /**
+             * Message
+             * @description A short sentence to speak back.
+             */
+            message: string;
+            proposal: components["schemas"]["AiProposalResponse"] | null;
+            approval: components["schemas"]["AgentApprovalResponse"] | null;
+        };
+        /** VoiceHistoryClearResponse */
+        VoiceHistoryClearResponse: {
+            /**
+             * Removed
+             * @description Conversations deleted.
+             */
+            removed: number;
+        };
+        /** VoiceOptionListResponse */
+        VoiceOptionListResponse: {
+            /**
+             * Voices
+             * @description Empty when the provider doesn't list its voices: type a voice name.
+             */
+            voices: components["schemas"]["VoiceOptionResponse"][];
+        };
+        /** VoiceOptionResponse */
+        VoiceOptionResponse: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** VoiceProviderResponse */
+        VoiceProviderResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "openai" | "anthropic" | "gemini" | "ollama" | "openai_compatible";
+            /**
+             * Processing
+             * @enum {string}
+             */
+            processing: "local" | "cloud";
+        };
+        /** VoiceSettingsResponse */
+        VoiceSettingsResponse: {
+            /**
+             * Stt Engine
+             * @enum {string}
+             */
+            stt_engine: "browser" | "provider";
+            /** Stt Provider Id */
+            stt_provider_id: string | null;
+            /** Stt Model */
+            stt_model: string | null;
+            /**
+             * Tts Engine
+             * @enum {string}
+             */
+            tts_engine: "browser" | "provider";
+            /** Tts Provider Id */
+            tts_provider_id: string | null;
+            /** Tts Model */
+            tts_model: string | null;
+            /** Tts Voice */
+            tts_voice: string | null;
+            /** Recognition Language */
+            recognition_language: string;
+            /** Response Language */
+            response_language: string | null;
+            /**
+             * Listening Mode
+             * @enum {string}
+             */
+            listening_mode: "continuous" | "push_to_talk";
+            /** Silence Ms */
+            silence_ms: number;
+            /** Sensitivity */
+            sensitivity: number;
+            /** Auto Speak */
+            auto_speak: boolean;
+            /**
+             * Speaking Rate
+             * @description Percent of normal speed.
+             */
+            speaking_rate: number;
+            /**
+             * History Days
+             * @description Spoken conversations are deleted this long after their last message; `null` keeps them until deleted.
+             */
+            history_days: number | null;
+            /** Updated At */
+            updated_at: string | null;
+            /**
+             * Server Enabled
+             * @description Whether AI is allowed on this server.
+             */
+            server_enabled: boolean;
+            /**
+             * Ai Enabled
+             * @description Whether AI is on for this person.
+             */
+            ai_enabled: boolean;
+            /** Allow Cloud */
+            allow_cloud: boolean;
+            /** Stt Processing */
+            stt_processing: ("local" | "cloud" | "browser") | null;
+            /** Tts Processing */
+            tts_processing: ("local" | "cloud" | "browser") | null;
+            /**
+             * Providers
+             * @description The person's AI providers that can transcribe or speak.
+             */
+            providers: components["schemas"]["VoiceProviderResponse"][];
+            /**
+             * Stores Audio
+             * @description Always false: Orbit never stores audio.
+             */
+            stores_audio: boolean;
+        };
+        /** VoiceTestResponse */
+        VoiceTestResponse: {
+            /** Ok */
+            ok: boolean;
+            /** Message */
+            message: string;
+            /** Transcription Ms */
+            transcription_ms: number | null;
+            /** Speech Ms */
+            speech_ms: number | null;
+        };
+        /** VoiceTranscriptResponse */
+        VoiceTranscriptResponse: {
+            /** Text */
+            text: string;
+            /** Language */
+            language: string | null;
+            /**
+             * Duration Ms
+             * @description How long the provider took.
+             */
+            duration_ms: number;
         };
         /** WatchItemResponse */
         WatchItemResponse: {
@@ -43948,6 +44339,392 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AiIndexActionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_voice_settings_api_v1_me_voice_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceSettingsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_voice_settings_api_v1_me_voice_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateVoiceSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceSettingsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_provider_voices_api_v1_me_voice_providers__provider_id__voices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceOptionListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transcribe_api_v1_workspaces__workspace_id__voice_transcriptions_post: {
+        parameters: {
+            query?: {
+                /** @description Overrides the recognition language for this utterance. */
+                language?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        /** @description One utterance, typed by `Content-Type` (`audio/webm`, `audio/ogg`, `audio/wav`, `audio/mpeg`, `audio/mp4`). */
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceTranscriptResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description AI is off, transcription isn't set up, or cloud isn't allowed. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The recording is too large. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The audio is empty or not a supported type. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The monthly AI limit has been reached. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    speak_api_v1_workspaces__workspace_id__voice_speech_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpeakVoiceRequest"];
+            };
+        };
+        responses: {
+            /** @description MP3 audio as it's generated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "audio/mpeg": unknown;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description AI is off, speech isn't set up, or cloud isn't allowed. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The monthly AI limit has been reached. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    test_voice_api_v1_workspaces__workspace_id__voice_test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceTestResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_api_v1_workspaces__workspace_id__voice_confirmations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceConfirmationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceConfirmationResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The approval changed, expired, or was already decided. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clear_voice_history_api_v1_workspaces__workspace_id__voice_history_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceHistoryClearResponse"];
                 };
             };
             /** @description Not signed in. */

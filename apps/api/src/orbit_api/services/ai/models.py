@@ -48,7 +48,9 @@ SOURCE_MODULE: Final[dict[SourceType, AiModule]] = {
 }
 
 IndexStatus = Literal["pending", "indexed", "failed", "skipped"]
-UsageOperation = Literal["chat", "assist", "embedding", "test"]
+UsageOperation = Literal["chat", "assist", "embedding", "test", "transcription", "speech"]
+# How a question was asked: typed, or spoken and transcribed.
+InputMode = Literal["text", "voice"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -312,6 +314,7 @@ class Message:
     processing: Processing | None
     usage: TokenUsage
     created_at: datetime
+    input_mode: InputMode = "text"
 
 
 # Actions

@@ -32,6 +32,7 @@ from orbit_api.api.v1 import (
     shopping,
     storage,
     tasks,
+    voice,
     watchlist,
     workspaces,
 )
@@ -71,6 +72,8 @@ router.include_router(storage.router)
 router.include_router(agent.router)
 router.include_router(ai.me_router)
 router.include_router(ai.router)
+router.include_router(voice.me_router)
+router.include_router(voice.router)
 router.include_router(integrations.router)
 router.include_router(integrations.oauth_router)
 router.include_router(integrations.webhook_router)

@@ -17,12 +17,13 @@ habits and routines; documents vault; health and fitness (per person); saved lin
 maps and Nominatim); achievements and XP store (`/profile`, per person); dashboard; universal
 search (SQL, no index); AI layer (off by default; OpenAI, Anthropic, Gemini, Ollama,
 OpenAI-compatible); Google and Microsoft integrations; backup and restore; personal agent with
-approval-gated workflows.
+approval-gated workflows; voice conversations in the assistant (browser or OpenAI-style speech;
+no audio stored; spoken approval only for new, low-risk records).
 
 **Not built; never claim or build on unless asked:** OCR, encryption at rest by Orbit,
 push/email/SMS notifications, email sending, bank or broker feeds, auto-created transactions
 (except auto-debit SIP installments), recurring tasks, CalDAV or `.ics`/CSV/Markdown import,
-voice, multi-device sync, shared workspaces, an event bus, any vector DB, agent tools that
+wake words or always-on listening, stored audio, multi-device sync, shared workspaces, an event bus, any vector DB, agent tools that
 delete, pay, send, share, or change permissions.
 
 Module design: grep `^## `/`^### ` in `docs/architecture.md` and read only that section.

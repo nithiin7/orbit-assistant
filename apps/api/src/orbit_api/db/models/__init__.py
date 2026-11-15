@@ -144,6 +144,7 @@ from orbit_api.db.models.search import RecentSearchModel, SavedSearchModel
 from orbit_api.db.models.shopping import ShoppingItemModel, ShoppingListModel
 from orbit_api.db.models.tasks import TaskListModel, TaskModel
 from orbit_api.db.models.users import LocalCredentialModel, LocalSessionModel, UserModel
+from orbit_api.db.models.voice import VoiceSettingsModel
 from orbit_api.db.models.watchlist import WatchItemModel, WatchlistSettingsModel
 from orbit_api.db.models.workspaces import WorkspaceModel
 
@@ -271,6 +272,7 @@ __all__ = [
     "UserAvatarModel",
     "UserCoverModel",
     "UserModel",
+    "VoiceSettingsModel",
     "WatchItemModel",
     "WatchlistSettingsModel",
     "WorkspaceModel",

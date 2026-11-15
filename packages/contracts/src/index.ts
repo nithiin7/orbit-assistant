@@ -781,3 +781,21 @@ export type AgentApprovalList = Schemas["AgentApprovalListResponse"];
 export type AgentMemory = Schemas["AgentMemoryResponse"];
 export type AgentMemoryList = Schemas["AgentMemoryListResponse"];
 export type AgentMemoryCategory = AgentMemory["category"];
+
+// Voice
+export type VoiceSettings = Schemas["VoiceSettingsResponse"];
+export type UpdateVoiceSettingsRequest = Schemas["UpdateVoiceSettingsRequest"];
+export type VoiceProvider = Schemas["VoiceProviderResponse"];
+export type VoiceSpeechEngine = VoiceSettings["stt_engine"];
+export type VoiceListeningMode = VoiceSettings["listening_mode"];
+export type VoiceProcessing = NonNullable<VoiceSettings["stt_processing"]>;
+export type VoiceOption = Schemas["VoiceOptionResponse"];
+export type VoiceOptionList = Schemas["VoiceOptionListResponse"];
+export type VoiceTranscript = Schemas["VoiceTranscriptResponse"];
+export type SpeakVoiceRequest = Schemas["SpeakVoiceRequest"];
+export type VoiceTest = Schemas["VoiceTestResponse"];
+export type VoiceConfirmationRequest = Schemas["VoiceConfirmationRequest"];
+export type VoiceConfirmation = Schemas["VoiceConfirmationResponse"];
+export type VoiceConfirmationOutcome = VoiceConfirmation["outcome"];
+export type VoiceHistoryClear = Schemas["VoiceHistoryClearResponse"];
+export type AiInputMode = AiMessage["input_mode"];

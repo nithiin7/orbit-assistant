@@ -134,6 +134,7 @@ EXCLUDED_TABLES: Final[dict[str, str]] = {
     "backup_settings": "set again in the restored workspace",
     "backup_uploads": "staging state",
     "watchlist_settings": "the encrypted TMDB key never leaves the server",
+    "voice_settings": "per-person voice settings refer to AI providers, which aren't backed up",
 }
 
 # Columns that name a file in the attachment store: `(table, column)`. The file is stored as

@@ -3030,6 +3030,156 @@ refetch every five seconds.
 - Agent configuration, workflows, and memory aren't backed up.
 - Tested on SQLite; no agent-specific PostgreSQL tests.
 
+## Voice conversations
+
+Talking to the [assistant](#assistant-and-rag-orchestration) instead of typing. Voice adds speech
+around the existing assistant and owns no conversation, retrieval, or action logic: a transcript
+is sent to `POST …/ai/messages` like a typed question (`input_mode: "voice"`), so routing, RAG,
+citations, proposals, usage, history, and permissions are the assistant's. Off unless AI is on.
+
+### What was reused, and what wasn't built
+
+- **Reused:** the assistant stream and conversation history (voice and typed turns share one
+  conversation; switching keeps context), `useAssistantChat.send` (with an `onEvent` tap),
+  proposal approval (`ProposalService`) and agent approval (`AgentService.approve` with
+  `arguments_hash`), the person's AI providers (connection, Fernet key, cloud consent,
+  monthly limit, `ai_usage`), endpoint checks, `read_body`.
+- **Rejected:** OpenAI Realtime speech-to-speech. It would answer from the model alone, bypassing
+  Orbit's grounding, citations, action fencing, and approvals; Realtime as transcription only adds
+  WebRTC and ephemeral-key plumbing for little gain over per-utterance transcription. Revisit only
+  if turn latency must drop below what sentence-streamed speech gives.
+- **Not built:** wake words, always-on or background listening, speaker identification, stored
+  audio, a voice-only assistant or retrieval pipeline.
+
+### Layout
+
+API: `services/voice/` (`models` settings and `AudioProvider` protocol, `service` settings,
+transcription, speech, test, history; `confirmation` reply classifier; `approvals` spoken answers),
+`providers/voice/` (`openai_audio.py`, `registry.py`), `repositories/voice.py`,
+`schemas/voice.py`, `api/v1/voice.py`, migration `0039`. Web: `lib/voice/` (VAD, sentence splitter,
+playback queue, browser engines, device preferences), `api/voice/`, `hooks/use-voice.ts`,
+`hooks/use-voice-conversation.ts` (orchestration), `components/voice/` (panel, orb),
+`components/settings/voice-settings.tsx`.
+
+### Providers and capabilities
+
+| Half        | Engine                                       | Where it runs                                                                                                | Streaming                                          |
+| ----------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| Recognition | Browser (`SpeechRecognition`)                | Browser vendor: Chrome/Edge send audio to Google/Microsoft; Safari may stay on device; Firefox has none      | Partial and final results                          |
+| Recognition | Provider: `POST {base}/audio/transcriptions` | OpenAI (cloud), or an OpenAI-compatible server (whisper.cpp server, Speaches/faster-whisper, LocalAI: local) | Per utterance (final only)                         |
+| Speech      | Browser (`speechSynthesis`)                  | Device voices (`localService`) or the vendor's network voices, labelled                                      | Sentence by sentence                               |
+| Speech      | Provider: `POST {base}/audio/speech` (MP3)   | OpenAI, or a compatible server (Kokoro-FastAPI, Speaches, LocalAI)                                           | Sentence by sentence; bytes proxied as they arrive |
+
+Only `openai` and `openai_compatible` provider kinds are offered (others have no such API).
+Voices come from `GET {base}/audio/voices` where a server lists them; otherwise (OpenAI) the
+person types a voice name: no voice identifiers are hard-coded. Language: BCP 47 tags (Indian
+English and Hindi first) or `auto`; Whisper gets the ISO 639-1 code (`en-IN` → `en`) or none to
+detect, which handles Hindi–English code-switching best.
+
+### Session lifecycle and turn-taking
+
+`useVoiceConversation` runs one session per panel (the panel is keyed by workspace):
+
+1. **Start:** `getUserMedia` with echo cancellation, noise suppression, auto gain; a level meter
+   (`AnalyserNode`, read every 50 ms); recognition or a `MediaRecorder` per utterance.
+2. **Listen:** energy VAD (`lib/voice/vad.ts`) with an adaptive noise floor, sensitivity 1-10, and
+   a configurable end-of-speech silence (300-5,000 ms). Continuous mode ends an utterance on
+   silence (hard cap 30 s); push-to-talk records while held, then shows the transcript for
+   correction before sending.
+3. **Answer:** the transcript goes to the assistant; deltas pass through `SentenceSplitter`
+   (citations, Markdown, code, and URLs removed; short sentences joined, long ones split at 280
+   chars) into `SpeechQueue`, which prepares up to two chunks ahead and plays strictly in order.
+4. **Interrupt:** speech detected while Orbit answers (or **Interrupt**) bumps the generation,
+   cancels playback, aborts in-flight audio fetches, and aborts the stream (the API keeps the
+   partial answer as `stopped`). Events and audio of an older generation are dropped, so stale
+   chunks never play after a newer answer starts. A new turn waits for the previous stream to
+   settle, so answers never overlap. Browser recognition results heard while Orbit speaks are
+   ignored unless the person interrupted (Orbit hearing itself).
+5. **End:** stops tracks (microphone indicator off), closes the audio context, aborts recognition
+   and recording, cancels speech and the stream. Also on unmount (navigation, sign-out, workspace
+   switch).
+
+Recovery: a track that ends (device unplugged) reopens the default microphone (`reconnecting`);
+a missing saved device falls back to the default; offline shows `reconnecting` until online; a
+hidden tab mutes the microphone until the person turns it back on. States: idle, connecting,
+listening, processing, speaking, interrupted, reconnecting, error, shown as text (status region)
+and color; the animation is decorative and stops with reduced motion.
+
+### Spoken confirmation
+
+Voice never approves by itself. After an answer, one pending proposal is read back ("I've
+prepared this: …. Shall I go ahead?"); several are left for the screen. Replies before the
+question finished playing are ignored. `POST …/voice/confirmations` reads the reply on the server:
+
+- `classify_reply`: a yes only if every word is agreement (English, romanized and Devanagari
+  Hindi) with at least one core word, at most six words, no question mark; a no likewise; anything
+  else (both, a longer sentence, unrelated speech) is `unclear` and changes nothing. Two unclear
+  replies leave it on screen.
+- Voice may approve only `create_task`, `create_reminder`, `create_event`, `create_note` not
+  proposed while reading records, and agent approvals with risk `low` and no untrusted context.
+  Others return `needs_screen` (rejecting by voice is always allowed).
+- Proposals must belong to the named conversation; agent approvals need the `arguments_hash`
+  read out. Approval then runs through the existing services: permissions, expiry, policy, and the
+  hash are checked again, and the conditional `pending → executing` update runs it at most once.
+
+Agent capabilities stay where they are: multi-step requests go to the agent from Automation; the
+voice confirmation endpoint accepts its approvals with the same rules.
+
+### Security and privacy
+
+- Provider keys stay on the server; the browser only talks to Orbit's API with its session.
+  Transcription and speech are workspace routes (`WorkspaceDep`) for usage attribution and
+  isolation; settings are per person under `/me/voice`.
+- Cloud providers need **allow cloud** in AI settings (409 otherwise), like chat. The UI labels
+  where each half runs (this browser, your server, the cloud).
+- Audio is never stored or logged: it's streamed through to the provider and discarded.
+  Uploads: `audio/webm|ogg|wav|mpeg|mp4`, ≤ 10 MB; speech text ≤ 2,000 chars.
+- Transcripts are ordinary messages; retrieved content stays fenced as untrusted, and voice
+  can't widen what the assistant reads or does.
+- Retention: `voice_settings.history_days` deletes whole conversations that contain a spoken
+  question (worker, hourly); **Clear voice history** deletes them now. Typed-only conversations
+  follow the assistant's policy (kept until deleted).
+- `voice_settings` excluded from backups (refers to providers); RLS enabled on PostgreSQL.
+
+### Data model
+
+`voice_settings` (per person): engines, provider/model/voice choices (cleared when the provider
+is deleted), languages, listening mode, silence, sensitivity, auto-speak, speaking rate, history
+days. `ai_messages.input_mode` (`text` | `voice`, plain `ADD COLUMN`). `ai_usage.operation` gains
+`transcription` and `speech` (SQLite rebuilds `ai_usage` only). Device choices (microphone,
+speaker, volume, browser voice) live in the browser (`orbit:voice-device`).
+
+### API
+
+`GET|PUT /me/voice/settings` (also reports processing locations and audio-capable providers),
+`GET /me/voice/providers/{id}/voices`. Workspace `…/voice/`: `POST transcriptions` (raw audio
+body, `?language=`), `POST speech` (streamed MP3), `POST test` (speaks, then transcribes),
+`POST confirmations`, `DELETE history`. `POST …/ai/messages` accepts `input_mode`.
+
+### Browser compatibility
+
+Chrome and Edge: everything, including speaker selection. Safari: recognition (`webkit` prefix)
+and synthesis, MP4 recording, no speaker selection. Firefox: no browser recognition (choose a
+provider), synthesis and recording work. All need a secure context (https or localhost); without
+a microphone or support, the panel explains why and typing stays available.
+
+### Performance and measurement
+
+The panel shows measured times for the current session: microphone ready, end of speech → first
+words, end of speech → first audio, and interruption → audio stopped, with turn and failure
+counts. Latency is not claimed beyond what is measured there; it depends mostly on the chat model
+and speech provider.
+
+### Known limitations
+
+- Provider transcription is per utterance (no partial text); the VAD may clip the first ~100 ms
+  of speech, as recording starts at speech onset.
+- Browser recognition can't use Orbit's echo-cancelled stream; while Orbit speaks, only a
+  detected interruption lets results through.
+- The spoken answer language picks the voice; the assistant answers in the question's language.
+- Agent runs aren't started from the voice panel; approvals for them can be answered by voice.
+- Not tested against live providers in CI (fakes only); e2e fakes browser speech engines.
+
 ## Configuration
 
 | App | Source                                                    | Validation                                    | Visibility  |
@@ -3114,7 +3264,7 @@ behind the same chunk store for large cloud indexes.
 ### Evolution
 
 In place: tasks, reminders (database-backed worker), finance phases 1–4, notes, calendar, habits,
-documents, health, dashboard, AI layer, integrations, and backup. Next: more modules on the same pattern, then
+documents, health, dashboard, AI layer, voice, integrations, and backup. Next: more modules on the same pattern, then
 optional sync and extension points, leaving the boundaries above intact.
 
 ## Continuous integration

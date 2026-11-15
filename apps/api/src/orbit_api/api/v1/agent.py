@@ -129,6 +129,10 @@ def _errors() -> Generator[None]:
         ) from None
 
 
+# For routes that act on agent approvals (voice).
+agent_errors = _errors
+
+
 # The agent
 
 
