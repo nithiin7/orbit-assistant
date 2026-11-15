@@ -14,6 +14,7 @@ import { FinanceSettings } from "./finance-settings";
 import { PlacesSettings } from "./places-settings";
 import { SavedSettings } from "./saved-settings";
 import { StorageSettings } from "./storage-settings";
+import { VoiceSettingsPanel } from "./voice-settings";
 import { WatchlistSettings } from "./watchlist-settings";
 import { WorkspaceSettings } from "./workspace-settings";
 
@@ -26,6 +27,7 @@ const panelContent: Readonly<Record<string, ReactNode>> = {
   saved: <SavedSettings />,
   places: <PlacesSettings />,
   ai: <AiSettingsPanel />,
+  voice: <VoiceSettingsPanel />,
   integrations: <IntegrationsSettings />,
   backup: <BackupSettings />,
   storage: <StorageSettings />,

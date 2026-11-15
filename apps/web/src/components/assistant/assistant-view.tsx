@@ -7,6 +7,7 @@ import {
   CircleAlert,
   Cloud,
   HardDrive,
+  Mic,
   PanelLeft,
   Sparkles,
   Square,
@@ -27,6 +28,7 @@ import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { VoicePanel } from "@/components/voice/voice-panel";
 import {
   type PendingTurn,
   useAiSettings,
@@ -36,6 +38,8 @@ import {
   useConversations,
   useUpdateAiSettings,
 } from "@/hooks/use-ai";
+import { useActiveWorkspaceId } from "@/hooks/use-calendar";
+import { useVoiceSettings } from "@/hooks/use-voice";
 import {
   chatModelOptions,
   chatModelValue,
@@ -192,6 +196,7 @@ function Chat({
 }) {
   const detail = useConversation(conversationId);
   const chat = useAssistantChat(conversationId, onConversation);
+  const [voiceMode, setVoiceMode] = useState(false);
   const sentInitial = useRef(false);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -211,12 +216,15 @@ function Chat({
   const messages = detail.status === "success" ? detail.data.messages : [];
   const proposals = detail.status === "success" ? detail.data.proposals : [];
   const empty = conversationId === null && chat.pending === null;
-  const composer = (
+  const composer = voiceMode ? (
+    <Voice conversationId={conversationId} chat={chat} onUseText={() => setVoiceMode(false)} />
+  ) : (
     <Composer
       settings={settings}
       streaming={chat.streaming}
       onSend={(text) => void chat.send(text)}
       onStop={chat.stop}
+      onVoice={() => setVoiceMode(true)}
     />
   );
 
@@ -265,6 +273,40 @@ function Chat({
       </div>
       <div ref={endRef} />
     </section>
+  );
+}
+
+/**
+ * Voice in place of the composer, over the same chat. Keyed by workspace, so switching
+ * workspaces ends the voice session and releases the microphone.
+ */
+function Voice({
+  conversationId,
+  chat,
+  onUseText,
+}: {
+  conversationId: string | null;
+  chat: ReturnType<typeof useAssistantChat>;
+  onUseText: () => void;
+}) {
+  const settings = useVoiceSettings();
+  const workspaceId = useActiveWorkspaceId();
+  if (settings.status === "loading") return <Skeleton className="h-72 w-full rounded-3xl" />;
+  if (settings.status === "error") {
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        {settings.message}
+      </p>
+    );
+  }
+  return (
+    <VoicePanel
+      key={workspaceId ?? "none"}
+      settings={settings.data}
+      conversationId={conversationId}
+      chat={chat}
+      onUseText={onUseText}
+    />
   );
 }
 
@@ -350,18 +392,26 @@ function AssistantTurn({ children }: { children: ReactNode }) {
   );
 }
 
-function UserTurn({ text }: { text: string }) {
+function UserTurn({ text, spoken = false }: { text: string; spoken?: boolean }) {
   return (
-    <li className="flex justify-end">
+    <li className="flex flex-col items-end gap-1">
       <p className="max-w-[85%] rounded-3xl bg-muted px-4 py-2.5 text-sm whitespace-pre-wrap">
         {text}
       </p>
+      {spoken ? (
+        <span className="flex items-center gap-1 pr-2 text-xs text-muted-foreground">
+          <Mic className="size-3" aria-hidden="true" />
+          Spoken
+        </span>
+      ) : null}
     </li>
   );
 }
 
 function MessageItem({ message, proposals }: { message: AiMessage; proposals: AiProposal[] }) {
-  if (message.role === "user") return <UserTurn text={message.content} />;
+  if (message.role === "user") {
+    return <UserTurn text={message.content} spoken={message.input_mode === "voice"} />;
+  }
   const own = proposals.filter((p) => p.message_id === message.id);
   return (
     <li>
@@ -459,11 +509,13 @@ function Composer({
   streaming,
   onSend,
   onStop,
+  onVoice,
 }: {
   settings: AiSettings;
   streaming: boolean;
   onSend: (text: string) => void;
   onStop: () => void;
+  onVoice: () => void;
 }) {
   const [text, setText] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -508,6 +560,17 @@ function Composer({
       />
       <div className="flex items-center justify-between gap-2">
         <ModelPicker settings={settings} disabled={streaming} />
+        <span className="flex-1" />
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="rounded-full"
+          onClick={onVoice}
+          aria-label="Talk with voice"
+        >
+          <Mic aria-hidden="true" />
+        </Button>
         {streaming ? (
           <Button
             type="button"

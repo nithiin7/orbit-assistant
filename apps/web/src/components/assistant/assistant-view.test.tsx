@@ -110,6 +110,7 @@ const saved = (content: string, proposals: AiProposal[] = []): AiConversationDet
       input_tokens: null,
       output_tokens: null,
       created_at: "2026-11-02T10:00:00Z",
+      input_mode: "text",
     },
     {
       id: "m2",
@@ -123,6 +124,7 @@ const saved = (content: string, proposals: AiProposal[] = []): AiConversationDet
       input_tokens: 10,
       output_tokens: 5,
       created_at: "2026-11-02T10:00:01Z",
+      input_mode: "text",
     },
   ],
   proposals,

@@ -10,6 +10,7 @@ import type {
   AiFoodEstimate,
   AiFoodIdeas,
   AiIndexStatus,
+  AiInputMode,
   AiInsight,
   AiModel,
   AiModelList,
@@ -37,6 +38,7 @@ import {
   aiModelsOptions,
   aiProvidersOptions,
   aiSettingsOptions,
+  type AiStreamEvent,
   aiUsageOptions,
   changeAiIndex,
   conversationOptions,
@@ -228,7 +230,18 @@ export function useAssistantChat(
   const abortRef = useRef<AbortController | null>(null);
 
   const send = useCallback(
-    async (question: string) => {
+    async (
+      question: string,
+      {
+        inputMode = "text",
+        onEvent,
+      }: {
+        /** `voice` when the question was spoken and transcribed. */
+        inputMode?: AiInputMode;
+        /** Sees each streamed event too (voice speaks the answer as it arrives). */
+        onEvent?: (event: AiStreamEvent) => void;
+      } = {},
+    ) => {
       if (!workspaceId) return;
       const controller = new AbortController();
       abortRef.current = controller;
@@ -247,8 +260,14 @@ export function useAssistantChat(
           streamAiMessage(
             token,
             workspaceId,
-            { content: question, conversation_id: conversationId, timezone },
+            {
+              content: question,
+              conversation_id: conversationId,
+              timezone,
+              input_mode: inputMode,
+            },
             (event) => {
+              onEvent?.(event);
               switch (event.type) {
                 case "start":
                   target = event.data.conversation.id;

@@ -1,5 +1,6 @@
 import {
   Archive,
+  AudioLines,
   Bookmark,
   Bot,
   Clapperboard,
@@ -71,6 +72,13 @@ export const settingsPanels: readonly SettingsPanel[] = [
     title: "Places",
     description: "Online maps and place search.",
     icon: MapPinned,
+    group: "general",
+  },
+  {
+    slug: "voice",
+    title: "Voice",
+    description: "Talking with Orbit: speech, languages, and privacy.",
+    icon: AudioLines,
     group: "general",
   },
   {
