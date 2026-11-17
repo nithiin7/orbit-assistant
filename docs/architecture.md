@@ -2160,6 +2160,127 @@ the only creation path for dashboard and palette, reusing module dialogs; no new
 - `components/tasks/task-overview.tsx` is unused, pending removal.
 - Widgets only component-tested; e2e loads the dashboard without exercising widgets.
 
+## Daily briefing (phases 22.1 and 22.2)
+
+A structured, provider-independent snapshot of one person's day in a workspace, at
+`/api/v1/workspaces/{workspace_id}/briefings`. The snapshot is deterministic; an optional
+AI-written summary (22.2) only restates it. There is no briefing page: the summary lives in the
+dashboard's greeting (see [Briefing on the dashboard](#briefing-on-the-dashboard)).
+
+### Briefing domain
+
+`services/briefings/` keeps four concerns apart:
+
+- `aggregation.py` (`BriefingAggregator`) reads each module through its own service, behind
+  `Protocol` sources, and normalizes the answers. It repeats no module rule: occurrences come
+  from the calendar's recurrence expansion (all-day by date, timed by instant, DST-safe
+  `window_instants`), payment statuses from commitments, utilization from budgets (basis
+  points, integer minor units), habit states and streaks from habits. Health is read as the
+  person (`Owner(workspace, user)`), and only workout names, times, and goal pace, never
+  measurements, weights, nutrition, or session notes. Documents contribute titles and their
+  expiry (lapsed, or within 30 days) and renewal (within the horizon) dates, never details or
+  files; shopping contributes lists with something to buy and their counts, never items;
+  investments contribute active SIPs' next installments and open deposits maturing within the
+  horizon (or already matured), with the plan's amount and the module's projected maturity.
+- `insights.py` counts the finished sections and orders the `critical`/`warning` items into
+  an attention list. Severity comes only from module statuses: overdue or exceeded money is
+  `critical`; late work, due-today high priority, conflicts, near budgets, and overdue
+  reminders are `warning`.
+- `service.py` (`BriefingService`) prepares, keeps, regenerates, and lists briefings.
+- Delivery (notifications, a narrative) is a later phase.
+
+Sources load one after another on the request's session. One that fails is logged with its
+traceback, rolled back, reported in `content.unavailable` and `sources`, and the briefing is
+stored as `partial`; the rest still load. Lists hold at most 10 items with complete `total`s,
+and every sort ends on a stable key. An undated task is never urgent, an unscheduled or
+paused habit is never listed (so never "missed"), and reminders already shown by their task,
+calendar event, payment, habit, document, or deposit are counted in `represented_elsewhere`
+instead of listed (a task's reminder time shows on the task). Notes are those linked to
+today's tasks and events (one batched `NoteService.linked_to` read) plus up to three pinned
+notes, titles only.
+
+### Briefing persistence
+
+`daily_briefings` (migration 0040, RLS on PostgreSQL) holds one row per workspace, user, local
+date, and time zone (unique key; the time zone was added in 0042, which rebuilds the table on
+SQLite and keeps every row). The same date is a different day elsewhere, so opening the briefing
+in a second time zone prepares its own; both stay in history. Each row holds the snapshot as
+JSON (`content`, encoded and validated with pydantic's `TypeAdapter` over the snapshot
+dataclasses), its `summary` for cheap history, `status`, `revision`, `format_version`, and
+timestamps. The snapshot stores references, titles, times,
+states, and module-computed figures; descriptions and note content are never copied.
+
+- `GET /today` returns today's stored briefing (in the requested time zone, else the
+  user's, else UTC), preparing it on the day's first request. Concurrent first requests both
+  aggregate; the unique key lets one insert win and the others return it.
+- `POST /today/regenerate` replaces today's snapshot and adds one to `revision` in a single
+  `UPDATE`. Earlier days can't be regenerated: they are history, kept as prepared.
+- `GET /{date}` returns a stored briefing: `?timezone=` picks one, else the date's most
+  recently prepared (404 if none). Nothing is prepared for other days. `POST
+/{date}/narrative` takes the same `?timezone=`.
+- `GET /` lists history newest first (`limit` 1–100, `offset`), without content.
+
+Briefings and their settings are excluded from backups (derived snapshots, and a per-person
+preference).
+
+### Briefing settings and scheduled preparation
+
+`briefing_settings` (migration 0041, one row per workspace and person, RLS on PostgreSQL):
+`horizon_days` (1–14, default 7; savings-goal target dates still look 30 days ahead),
+`hidden_sources` (modules left out: never read, reported with status `off`, never as
+unavailable), and `prepare_at` (a local time in the person's time zone preference, else UTC).
+`GET`/`PUT /briefings/settings`; changes apply to the next briefing prepared.
+
+The existing worker (`ReminderWorker.prepare_briefings`, every 5 minutes) prepares today's
+briefing for each person whose `prepare_at` has passed and who has none yet, only in workspaces
+they own, each in its own session; the unique key makes repeats and concurrent workers
+harmless. It needs the attachment store (fitness reads through it), so it runs wherever the
+worker has `files`. No notification is sent.
+
+### Briefing summary (AI)
+
+`POST /briefings/{date}/narrative` (`services/briefings/narrative.py`) asks the person's chat
+provider for a headline, two to four sentences, and up to three priorities, from the stored
+snapshot alone, and keeps it on the row (`narrative`, cleared when the snapshot is
+regenerated). It is gated like every AI feature (`ai_errors`: AI on, provider set, cloud consent,
+monthly limit) and sends only sources whose AI module is allowed (payments, budgets, and goals
+and investments need `finance`; routines need `habits`; documents need `documents`; shopping
+has no AI permission and is never sent). If none is allowed, it is refused with 403 before any
+call. Items go to the model as numbered, escaped records with no money amounts (names, statuses,
+dates, and percentages instead), no health measurements, and titles only for notes. Priorities
+must cite a given record; others are dropped, and their titles come from the snapshot.
+
+### Briefing agent tool
+
+`get_daily_briefing` (read, low risk, `module=None` because it spans modules) returns today's
+stored snapshot as the same escaped records, limited to modules both the agent and Settings → AI
+may read. It never prepares a briefing: that would write, and a module failing during a fresh
+read would roll back the run's own pending records.
+
+### Briefing on the dashboard
+
+The Today widget (`components/dashboard/today-widget.tsx`, `day-summary.tsx`) keeps its live
+details (the overview's stat tiles and next event) whatever happens to the summary. With AI on
+and a chat model chosen (`useAiReady`), `useDailySummary` asks for today's briefing (preparing
+it on the day's first visit) and, when it has no summary, writes one once per briefing revision
+per visit, showing "Summarizing your day…" meanwhile. The summary then shows above the details:
+the headline and sentences, up to three focus cards linking to their records (by `ref.key`
+through `briefingItemHrefs`), and at-a-glance chips counted from the briefing's own summary. A
+menu refreshes it (regenerate, then rewrite) or opens the briefing settings. With AI off nothing
+is requested, so no briefing is prepared. A failed summary is a quiet note with a retry; it is
+never retried on its own. The snapshot isn't refreshed on a timer, so the summary describes the
+day as of when it was prepared, as its footer says.
+
+### Briefing limitations
+
+- Stock and fund prices, net worth, and shopping items aren't included; investments are
+  limited to SIP installments and deposit maturities.
+- Calendar alerts and habit reminders are treated as shown whenever the calendar or habits
+  source loaded, even for an event beyond the horizon.
+- Scheduled preparation doesn't notify or write the summary; the dashboard writes it on the
+  first visit after.
+- Briefing history and past dates are API-only (`GET /`, `GET /{date}`); the web shows today's.
+
 ## Universal search
 
 Command palette results plus a `/search` page (module tabs, filters, paging, recent and saved

@@ -14,11 +14,12 @@ notifications (DB-backed worker); finance (ledger, commitments, investments, bud
 plans, auto-debit SIPs; opt-in prices from mfapi.in and Yahoo); notes; calendar (RFC 5545);
 habits and routines; documents vault; health and fitness (per person); saved links (`/saved`,
 "bookmarks" in code; opt-in previews); watchlist (opt-in TMDB); places (world map; opt-in online
-maps and Nominatim); achievements and XP store (`/profile`, per person); dashboard; universal
-search (SQL, no index); AI layer (off by default; OpenAI, Anthropic, Gemini, Ollama,
-OpenAI-compatible); Google and Microsoft integrations; backup and restore; personal agent with
-approval-gated workflows; voice conversations in the assistant (browser or OpenAI-style speech;
-no audio stored; spoken approval only for new, low-risk records).
+maps and Nominatim); achievements and XP store (`/profile`, per person); dashboard; daily
+briefing (structured API; AI summary in the dashboard greeting); universal search (SQL, no
+index); AI layer (off by default; OpenAI, Anthropic, Gemini, Ollama, OpenAI-compatible); Google
+and Microsoft integrations; backup and restore; personal agent with approval-gated workflows;
+voice conversations in the assistant (browser or OpenAI-style speech; no audio stored; spoken
+approval only for new, low-risk records).
 
 **Not built; never claim or build on unless asked:** OCR, encryption at rest by Orbit,
 push/email/SMS notifications, email sending, bank or broker feeds, auto-created transactions
