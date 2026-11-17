@@ -48,6 +48,10 @@ class OllamaProvider:
         }
         if request.json_mode:
             body["format"] = "json"
+            # Thinking models (gemma, qwen, deepseek-r1…) otherwise spend `num_predict` on hidden
+            # reasoning and can return empty content; a JSON reply needs the answer, not the
+            # reasoning. Models without thinking ignore it.
+            body["think"] = False
         return body
 
     async def complete(self, request: ChatRequest) -> Completion:

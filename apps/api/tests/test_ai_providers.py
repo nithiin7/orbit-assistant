@@ -4,6 +4,7 @@ listing, capability gaps, and error mapping that never leaks keys."""
 import json
 import uuid
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import UTC, datetime
 
 import httpx2
@@ -209,6 +210,24 @@ async def test_ollama_streams_ndjson_and_lists_models() -> None:
     assert chunks[-1].usage is not None and chunks[-1].usage.output_tokens == 2
     models = await adapter.list_models()
     assert [(m.id, m.embeddings) for m in models] == [("llama3", False), ("nomic-embed-text", True)]
+
+
+async def test_ollama_asks_for_json_without_thinking() -> None:
+    """A thinking model can spend its whole token budget reasoning and answer with nothing, so
+    JSON requests turn thinking off; ordinary chat leaves the model's default alone."""
+    bodies: list[dict[str, object]] = []
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        bodies.append(json.loads(request.content))
+        return httpx2.Response(200, json={"message": {"content": '{"ok": true}'}, "done": True})
+
+    adapter = provider("ollama", handler)
+    completion = await adapter.complete(replace(REQUEST, json_mode=True, max_tokens=900))
+    await adapter.complete(REQUEST)
+
+    assert completion.text == '{"ok": true}'
+    assert (bodies[0]["format"], bodies[0]["think"]) == ("json", False)
+    assert "think" not in bodies[1] and "format" not in bodies[1]
 
 
 @pytest.mark.parametrize(
