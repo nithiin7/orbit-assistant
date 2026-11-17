@@ -171,6 +171,19 @@ class NoteRef:
 
 
 @dataclass(frozen=True, slots=True)
+class LinkedNoteMatch:
+    """A note linked to some of the given tasks or calendar events: enough to show and open
+    it, never its content."""
+
+    id: uuid.UUID
+    title: str
+    note_type: NoteType
+    updated_at: datetime
+    task_ids: tuple[uuid.UUID, ...]
+    event_ids: tuple[uuid.UUID, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class NoteConnections:
     # Notes this note's content links to, and notes whose content links to it. Trashed notes
     # are left out of both.

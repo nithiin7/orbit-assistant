@@ -107,6 +107,8 @@ EXCLUDED_TABLES: Final[dict[str, str]] = {
     "user_avatars": "the profile photo belongs to the account",
     "user_covers": "the profile cover photo belongs to the account",
     "dashboard_layouts": "a per-person preference, not workspace data",
+    "daily_briefings": "derived snapshots of other records; prepared again after a restore",
+    "briefing_settings": "a per-person preference, not workspace data",
     "achievement_unlocks": "achievements belong to the person, not the workspace",
     "reward_purchases": "XP store purchases belong to the person, not the workspace",
     "reward_equips": "worn store items belong to the person, not the workspace",

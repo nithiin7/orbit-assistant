@@ -145,3 +145,30 @@ async def test_signing_out_one_device_leaves_the_other_signed_in(
 
     assert (await http.get("/api/v1/me", headers=phone)).status_code == 401
     assert (await http.get("/api/v1/me", headers=laptop)).status_code == 200
+
+
+@pytest.mark.anyio
+async def test_concurrent_first_briefings_from_two_devices_are_one_briefing(
+    http: httpx.AsyncClient,
+) -> None:
+    laptop, phone, ws = await _devices(http)
+    url = f"{ws}/briefings/today"
+
+    responses = await asyncio.gather(
+        *(http.get(url, params={"timezone": "UTC"}, headers=h) for h in [laptop, phone] * 3)
+    )
+
+    assert [r.status_code for r in responses] == [200] * 6, [r.text for r in responses]
+    assert len({r.json()["id"] for r in responses}) == 1
+    history = (await http.get(f"{ws}/briefings", headers=laptop)).json()
+    assert history["total"] == 1
+
+    regenerated = await asyncio.gather(
+        *(
+            http.post(f"{url}/regenerate", json={"timezone": "UTC"}, headers=h)
+            for h in [laptop, phone]
+        )
+    )
+
+    assert [r.status_code for r in regenerated] == [200, 200]
+    assert (await http.get(url, params={"timezone": "UTC"}, headers=phone)).json()["revision"] == 3

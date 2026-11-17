@@ -33,6 +33,7 @@ from orbit_api.db.models.bookmarks import (
     BookmarkPreviewModel,
     BookmarkSettingsModel,
 )
+from orbit_api.db.models.briefings import BriefingSettingsModel, DailyBriefingModel
 from orbit_api.db.models.budgets import (
     FinanceBudgetAlertModel,
     FinanceBudgetModel,
@@ -173,6 +174,7 @@ __all__ = [
     "BookmarkModel",
     "BookmarkPreviewModel",
     "BookmarkSettingsModel",
+    "BriefingSettingsModel",
     "CalendarCategoryModel",
     "CalendarEventAlertModel",
     "CalendarEventExceptionModel",
@@ -180,6 +182,7 @@ __all__ = [
     "CalendarEventNoteModel",
     "CalendarEventTaskModel",
     "CalendarPreferencesModel",
+    "DailyBriefingModel",
     "DashboardLayoutModel",
     "DocumentCategoryModel",
     "DocumentFolderModel",

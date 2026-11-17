@@ -9,6 +9,7 @@ from orbit_api.api.v1 import (
     auth,
     backups,
     bookmarks,
+    briefings,
     budgets,
     calendar,
     commitments,
@@ -67,6 +68,7 @@ router.include_router(habits.routines_router)
 router.include_router(documents.router)
 router.include_router(fitness.router)
 router.include_router(dashboard.router)
+router.include_router(briefings.router)
 router.include_router(search.router)
 router.include_router(storage.router)
 router.include_router(agent.router)

@@ -16,6 +16,7 @@ from orbit_api.repositories.ai_services import AiServices, build_ai
 from orbit_api.repositories.avatars import SqlAvatarRepository, SqlCoverRepository
 from orbit_api.repositories.backup import build_backup_service
 from orbit_api.repositories.bookmarks import SqlBookmarkRepository, SqlBookmarkSettings
+from orbit_api.repositories.briefings import build_briefing_service
 from orbit_api.repositories.budgets import build_budget_service
 from orbit_api.repositories.calendar import (
     build_calendar_preference_service,
@@ -56,6 +57,7 @@ from orbit_api.services.achievements.service import AchievementService
 from orbit_api.services.avatars.service import MAX_COVER_BYTES, AvatarService
 from orbit_api.services.backup.service import BackupService
 from orbit_api.services.bookmarks.service import BookmarkService, LinkFetcher
+from orbit_api.services.briefings.service import BriefingService
 from orbit_api.services.budgets.service import BudgetService
 from orbit_api.services.calendar.service import CalendarPreferenceService, CalendarService
 from orbit_api.services.commitments.service import CommitmentService
@@ -453,6 +455,14 @@ def get_daily_overview_service(
 
 
 DailyOverviewServiceDep = Annotated[DailyOverviewService, Depends(get_daily_overview_service)]
+
+
+def get_briefing_service(session: SessionDep, store: AttachmentStoreDep) -> BriefingService:
+    """Briefings compose the modules' own services; only the snapshots have a repository."""
+    return build_briefing_service(session, store)
+
+
+BriefingServiceDep = Annotated[BriefingService, Depends(get_briefing_service)]
 
 
 def get_search_service(

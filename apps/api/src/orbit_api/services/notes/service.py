@@ -38,6 +38,7 @@ from orbit_api.services.notes.models import (
     FolderNotFoundError,
     FolderUsage,
     JournalChangeError,
+    LinkedNoteMatch,
     LinkedTaskNotFoundError,
     Note,
     NoteChanges,
@@ -133,6 +134,13 @@ class NoteRepository(Protocol):
     async def task_ids(self, workspace_id: uuid.UUID, note_id: uuid.UUID) -> list[uuid.UUID]: ...
 
     async def tasks(self, workspace_id: uuid.UUID, note_id: uuid.UUID) -> list[Task]: ...
+
+    async def linked_to(
+        self,
+        workspace_id: uuid.UUID,
+        task_ids: Sequence[uuid.UUID],
+        event_ids: Sequence[uuid.UUID],
+    ) -> list[LinkedNoteMatch]: ...
 
     async def link_task(
         self, workspace_id: uuid.UUID, note_id: uuid.UUID, task_id: uuid.UUID, at: datetime
@@ -281,6 +289,18 @@ class NoteService:
 
     async def counts(self, workspace_id: uuid.UUID) -> NoteCounts:
         return await self._notes.counts(workspace_id)
+
+    async def linked_to(
+        self,
+        workspace_id: uuid.UUID,
+        task_ids: Sequence[uuid.UUID],
+        event_ids: Sequence[uuid.UUID],
+    ) -> list[LinkedNoteMatch]:
+        """Active notes (not archived or trashed) linked to any of the tasks or calendar events,
+        most recently edited first, in one read."""
+        if not task_ids and not event_ids:
+            return []
+        return await self._notes.linked_to(workspace_id, task_ids, event_ids)
 
     async def update(
         self, workspace_id: uuid.UUID, note_id: uuid.UUID, changes: NoteChanges

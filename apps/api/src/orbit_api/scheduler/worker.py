@@ -33,6 +33,7 @@ from orbit_api.repositories.agent_services import build_agent
 from orbit_api.repositories.ai import SqlAiSettingsRepository
 from orbit_api.repositories.ai_services import build_ai
 from orbit_api.repositories.backup import SqlBackupRecords, build_backup_service
+from orbit_api.repositories.briefings import SqlBriefingSettings, build_briefing_service
 from orbit_api.repositories.budgets import build_budget_service
 from orbit_api.repositories.calendar import build_calendar_service
 from orbit_api.repositories.commitments import build_commitment_service
@@ -95,6 +96,9 @@ BACKUP_HOUSEKEEPING_INTERVAL = timedelta(hours=1)
 # How often the worker looks for auto-debit SIP installments that are due. A NAV is published
 # the evening of its date, so an installment is recorded within this long of it appearing.
 DEFAULT_SIP_INTERVAL = timedelta(minutes=15)
+# How often the worker looks for briefings whose preparation time has come. A briefing is
+# prepared once a day, so this bounds how late after the chosen time it appears.
+DEFAULT_BRIEFING_INTERVAL = timedelta(minutes=5)
 # Agent executions advanced per poll, and how often old agent history is purged.
 AGENT_BATCH = 5
 AGENT_PURGE_INTERVAL = timedelta(hours=1)
@@ -206,8 +210,11 @@ class ReminderWorker:
         agents: AgentJobs | None = None,
         market: MarketData | None = None,
         sip_interval: timedelta = DEFAULT_SIP_INTERVAL,
+        briefing_interval: timedelta = DEFAULT_BRIEFING_INTERVAL,
     ) -> None:
         self._database = database
+        self._briefing_interval = briefing_interval
+        self._briefings_checked_at: datetime | None = None
         self._market = market
         self._prices_refreshed_at: datetime | None = None
         self._sip_interval = sip_interval
@@ -320,6 +327,45 @@ class ReminderWorker:
         except Exception:
             # Deliberate boundary: budgets must never stop reminder delivery.
             logger.exception("Checking budgets failed; retrying later.")
+
+    async def prepare_briefings(self) -> int:
+        """Prepare today's briefing for everyone whose chosen time has come and who has none
+        yet, each in its own session, so one person's failure never stops another's; return
+        how many were prepared. Needs the attachment store, which fitness reads through."""
+        if self._files is None:
+            return 0
+        async with self._database.session() as session:
+            scheduled = await SqlBriefingSettings(session).scheduled()
+        prepared = 0
+        for entry in scheduled:
+            async with self._database.session() as session:
+                try:
+                    service = build_briefing_service(session, self._files, self._clock)
+                    prepared += await service.prepare_if_due(entry)
+                except Exception:
+                    # Deliberate boundary: one briefing failing must not stop the others; the
+                    # next check retries it. IDs only: briefings hold personal data.
+                    await session.rollback()
+                    logger.exception(
+                        "Preparing the briefing for %s in %s failed.",
+                        entry.user_id,
+                        entry.workspace_id,
+                    )
+        if prepared:
+            logger.info("Prepared %d daily briefing(s).", prepared)
+        return prepared
+
+    async def _maybe_prepare_briefings(self) -> None:
+        now = self._clock()
+        last = self._briefings_checked_at
+        if last is not None and now - last < self._briefing_interval:
+            return
+        self._briefings_checked_at = now
+        try:
+            await self.prepare_briefings()
+        except Exception:
+            # Deliberate boundary: briefings must never stop reminder delivery.
+            logger.exception("Preparing briefings failed; retrying later.")
 
     async def sweep_files(self) -> int:
         """Delete stored files that no note attachment, document version, or progress photo
@@ -715,6 +761,7 @@ class ReminderWorker:
                 continue  # More may be due: drain the backlog before sleeping.
             await self._maybe_take_snapshots()
             await self._maybe_check_budgets()
+            await self._maybe_prepare_briefings()
             await self._maybe_sweep_files()
             await self._maybe_purge_voice_history()
             await self._maybe_index_ai()

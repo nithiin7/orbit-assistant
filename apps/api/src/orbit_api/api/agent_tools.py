@@ -275,6 +275,7 @@ class ToolDeps:
     start_workflow: StartWorkflow
     workflow_title: WorkflowTitle
     mail: MailReader | None
+    briefing_today: Callable[[ToolContext], Awaitable[str]]
     validator: ModuleActionValidator = field(default_factory=ModuleActionValidator)
 
 
@@ -540,6 +541,7 @@ def build_tools(deps: ToolDeps) -> ToolRegistry:
             *_document_tools(deps),
             *_finance_tools(deps),
             *_health_tools(deps),
+            *_briefing_tools(deps),
             *_mail_tools(deps),
             *_memory_and_workflow_tools(deps),
         ]
@@ -1293,6 +1295,32 @@ def _health_tools(deps: ToolDeps) -> list[Tool]:
     return tools
 
 
+def _briefing_tools(deps: ToolDeps) -> list[Tool]:
+    """The daily briefing."""
+    tools: list[Tool] = []
+    add = _adder(tools)
+
+    async def briefing(args: NoArgs, ctx: ToolContext) -> ToolOutput:
+        return ToolOutput(text=(await deps.briefing_today(ctx))[:MAX_TEXT], data={"count": 1})
+
+    add(
+        _spec(
+            "get_daily_briefing",
+            "Daily briefing",
+            "Today's prepared briefing: schedule, tasks, reminders, payments and budgets "
+            "(without amounts), habits, workouts, and linked notes. Only the modules both the "
+            "agent and Settings → AI may read are included.",
+            # It spans modules: the reader checks each module's permission itself.
+            None,
+            "read",
+            "low",
+            NoArgs,
+        ),
+        _Read("Read today's briefing", NoArgs, briefing),
+    )
+    return tools
+
+
 def _mail_tools(deps: ToolDeps) -> list[Tool]:
     """Mail (read only)."""
     tools: list[Tool] = []
@@ -1456,5 +1484,6 @@ def tool_factory(inputs: ToolInputs) -> ToolRegistry:
             start_workflow=inputs.start_workflow,
             workflow_title=inputs.workflow_title,
             mail=inputs.mail,
+            briefing_today=inputs.briefing_today,
         )
     )
