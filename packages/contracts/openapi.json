@@ -50184,7 +50184,7 @@
               "$ref": "#/components/schemas/DashboardWidgetModel"
             },
             "type": "array",
-            "maxItems": 25,
+            "maxItems": 23,
             "title": "Widgets",
             "description": "The widgets to show, in order. Each widget may appear once; an empty list is an empty dashboard."
           },
@@ -50257,7 +50257,6 @@
               "quick_actions",
               "attention",
               "workspace",
-              "status",
               "tasks",
               "reminders",
               "calendar",
@@ -50276,8 +50275,7 @@
               "water",
               "nutrition",
               "weight",
-              "fitness_goals",
-              "modules"
+              "fitness_goals"
             ],
             "title": "Id"
           },

@@ -12398,7 +12398,7 @@ export interface components {
              * Id
              * @enum {string}
              */
-            id: "today" | "quick_actions" | "attention" | "workspace" | "status" | "tasks" | "reminders" | "calendar" | "habits" | "notes" | "documents" | "shopping" | "watchlist" | "places" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "savings_goals" | "workouts" | "water" | "nutrition" | "weight" | "fitness_goals" | "modules";
+            id: "today" | "quick_actions" | "attention" | "workspace" | "tasks" | "reminders" | "calendar" | "habits" | "notes" | "documents" | "shopping" | "watchlist" | "places" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "savings_goals" | "workouts" | "water" | "nutrition" | "weight" | "fitness_goals";
             /**
              * Size
              * @description `half` widgets sit side by side on wide screens.
