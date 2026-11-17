@@ -11,24 +11,31 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useBriefingSettings, useDailySummary } from "@/hooks/use-briefing";
 import { useTodayOverview } from "@/hooks/use-today-overview";
 import { calendarHref } from "@/lib/calendar";
 import { firstName, formatDayHeading, greeting, hourIn } from "@/lib/dashboard";
 import { useCurrentUser } from "@/providers/auth";
 import { cn } from "@/utils/common";
 
+import { BriefingSettingsDialog } from "./briefing-settings-dialog";
+import { DaySummary, SummaryFailed, SummaryWriting } from "./day-summary";
+
 /**
  * The top of the dashboard: a greeting, today's date in the user's time zone, and what today
- * holds across modules, each linking to where to act on it.
+ * holds across modules, each linking to where to act on it. With AI on, today's briefing is
+ * summarized above the details: a message while it's written, then the summary itself.
  */
 export function TodayWidget() {
   const user = useCurrentUser();
   const { resource, reload, refreshing, timeZone } = useTodayOverview();
+  const daily = useDailySummary();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const name = firstName(user.display_name);
   const hello = `${greeting(hourIn(timeZone))}${name ? `, ${name}` : ""}`;
 
@@ -61,6 +68,19 @@ export function TodayWidget() {
           </Button>
         </div>
 
+        {daily.summary.status === "writing" ? <SummaryWriting /> : null}
+        {daily.summary.status === "ready" ? (
+          <DaySummary
+            briefing={daily.summary.briefing}
+            timeZone={timeZone}
+            onRefresh={daily.refresh}
+            onSettings={() => setSettingsOpen(true)}
+          />
+        ) : null}
+        {daily.summary.status === "failed" ? (
+          <SummaryFailed message={daily.summary.message} onRetry={daily.retry} />
+        ) : null}
+
         {resource.status === "loading" ? (
           <div className="@container mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <span className="sr-only">Loading today’s overview…</span>
@@ -79,7 +99,31 @@ export function TodayWidget() {
           <TodayContent overview={resource.data} timeZone={timeZone} />
         )}
       </Card>
+      {settingsOpen ? (
+        <BriefingSettings timeZone={timeZone} onClose={() => setSettingsOpen(false)} />
+      ) : null}
     </section>
+  );
+}
+
+/** The briefing's settings, once they've loaded. */
+function BriefingSettings({ timeZone, onClose }: { timeZone: string; onClose: () => void }) {
+  const { resource, save } = useBriefingSettings();
+  if (resource.status === "error") {
+    return (
+      <p role="alert" className="mt-2 text-sm text-destructive">
+        {resource.message}
+      </p>
+    );
+  }
+  if (resource.status !== "success") return null;
+  return (
+    <BriefingSettingsDialog
+      settings={resource.data}
+      timeZone={timeZone}
+      onSave={save}
+      onClose={onClose}
+    />
   );
 }
 
