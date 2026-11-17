@@ -12,7 +12,7 @@ DASHBOARD = "/api/v1/me/dashboard"
 LAYOUT: list[dict[str, Any]] = [
     {"id": "tasks", "size": "half"},
     {"id": "shopping", "size": "half"},
-    {"id": "modules", "size": "full"},
+    {"id": "watchlist", "size": "full"},
 ]
 
 

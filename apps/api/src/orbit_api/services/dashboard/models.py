@@ -10,7 +10,6 @@ WidgetId = Literal[
     "quick_actions",
     "attention",
     "workspace",
-    "status",
     "tasks",
     "reminders",
     "calendar",
@@ -30,7 +29,6 @@ WidgetId = Literal[
     "nutrition",
     "weight",
     "fitness_goals",
-    "modules",
 ]
 # `half` widgets sit side by side on wide screens.
 WidgetSize = Literal["half", "full"]
