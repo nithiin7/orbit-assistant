@@ -509,6 +509,33 @@ def test_title_without_poster_returns_no_content(client: TestClient, wl: str, ad
     assert client.get(f"{wl}/items/{item['id']}/poster", headers=ada).status_code == 204
 
 
+def test_missing_poster_file_is_downloaded_again(
+    client: TestClient,
+    wl: str,
+    ada: Headers,
+    catalog: FakeCatalog,
+    migrated_settings: Settings,
+) -> None:
+    enable_lookup(client, wl, ada)
+    item = add(client, wl, ada, source_id=438631)
+    url = f"{wl}/items/{item['id']}/poster"
+    for file in migrated_settings.attachments_dir.rglob("*"):
+        if file.is_file():
+            file.unlink()
+
+    # With lookup off, the title shows no poster rather than failing.
+    assert client.put(f"{wl}/lookup", json={"enabled": False}, headers=ada).status_code == 200
+    assert client.get(url, headers=ada).status_code == 204
+
+    # With lookup on, the poster is fetched again and stored for next time.
+    assert client.put(f"{wl}/lookup", json={"enabled": True}, headers=ada).status_code == 200
+    restored = client.get(url, headers=ada)
+    assert restored.status_code == 200
+    assert restored.content == JPEG
+    catalog.fail = True
+    assert client.get(url, headers=ada).content == JPEG
+
+
 # Progress rules
 
 

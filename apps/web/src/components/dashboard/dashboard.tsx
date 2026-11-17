@@ -52,9 +52,7 @@ import { cn } from "@/utils/common";
 
 import { HiddenAmountsProvider } from "./amount-visibility";
 import { AttentionWidget } from "./attention-widget";
-import { ModulesWidget } from "./modules-widget";
 import { QuickActionsWidget } from "./quick-actions-widget";
-import { StatusWidget } from "./status-widget";
 import { TodayWidget } from "./today-widget";
 
 const widgetComponents: Record<WidgetId, ComponentType> = {
@@ -62,7 +60,6 @@ const widgetComponents: Record<WidgetId, ComponentType> = {
   quick_actions: QuickActionsWidget,
   attention: AttentionWidget,
   workspace: WorkspaceOverview,
-  status: StatusWidget,
   tasks: TaskWidget,
   reminders: ReminderOverview,
   calendar: CalendarWidget,
@@ -82,7 +79,6 @@ const widgetComponents: Record<WidgetId, ComponentType> = {
   nutrition: NutritionWidget,
   weight: WeightWidget,
   fitness_goals: FitnessGoalsWidget,
-  modules: ModulesWidget,
 };
 
 // Narrow widgets share a row: two on laptops, three on very wide screens. Wide ones fill it.

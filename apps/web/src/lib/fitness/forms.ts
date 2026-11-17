@@ -502,6 +502,40 @@ export const CIRCUMFERENCE_LABELS: Record<CircumferenceField, string> = {
   neck: "Neck",
 };
 
+/** A value a measurement entry can hold. */
+export type MeasuredField = "weight_g" | "body_fat_pct" | "height_mm" | `${CircumferenceField}_mm`;
+
+export type MeasurementTrend = {
+  value: number;
+  day: string;
+  /** The entry before the latest that recorded this value, to show the change since. */
+  previous: { value: number; day: string } | null;
+  /** The earliest entry that recorded this value. */
+  first: { value: number; day: string } | null;
+};
+
+/**
+ * The latest recorded value of one field, with the one before it and the first, from entries
+ * ordered oldest first. `null` when no entry recorded it.
+ */
+export function measurementTrend(
+  entries: readonly Measurement[],
+  field: MeasuredField,
+): MeasurementTrend | null {
+  const recorded = entries.flatMap((entry) => {
+    const value = entry[field];
+    return value === null ? [] : [{ value, day: entry.day }];
+  });
+  const latest = recorded[recorded.length - 1];
+  if (!latest) return null;
+  const earlier = recorded.length > 1;
+  return {
+    ...latest,
+    previous: earlier ? (recorded[recorded.length - 2] ?? null) : null,
+    first: earlier ? (recorded[0] ?? null) : null,
+  };
+}
+
 export type MeasurementFormValues = {
   day: string;
   weight: string;

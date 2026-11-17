@@ -3,11 +3,12 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
+import { METRIC_UNITS } from "@/lib/fitness";
 import { ada, json, mockApi, type MockRequest, personal, status } from "@/test/api-mock";
 import { chooseOption } from "@/test/controls";
 import { renderSignedIn } from "@/test/session";
 
-import { NutritionView } from "./nutrition";
+import { FoodEntryDialog, NutritionView } from "./nutrition";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: vi.fn(), push: vi.fn(), back: vi.fn() }),
@@ -129,14 +130,15 @@ describe("NutritionView", () => {
     if (!section) throw new Error("Saved foods section missing");
     await within(section).findByText("Oats");
     const list = () => within(section).getByRole("list");
-    expect(names(list())).toEqual(["Oats", "Banana", "Crème fraîche"]);
+    // Saved foods start A–Z.
+    expect(names(list())).toEqual(["Banana", "Crème fraîche", "Oats"]);
 
     await chooseOption(
       user,
       within(section).getByRole("combobox", { name: "Sort saved foods" }),
-      "Name A–Z",
+      "Most used",
     );
-    expect(names(list())).toEqual(["Banana", "Crème fraîche", "Oats"]);
+    expect(names(list())).toEqual(["Oats", "Banana", "Crème fraîche"]);
     await chooseOption(
       user,
       within(section).getByRole("combobox", { name: "Sort saved foods" }),
@@ -311,5 +313,87 @@ describe("NutritionView", () => {
         },
       }),
     );
+  });
+});
+
+describe("FoodEntryDialog", () => {
+  it("lists saved foods A–Z, searches them, and logs the one picked", async () => {
+    const api = mockApi(
+      routes({
+        foods: [food("f1", "Oats"), food("f2", "Banana"), food("f3", "Crème fraîche")],
+        extra: {
+          [`POST ${WS}/food-entries`]: () => Response.json({}, { status: 201 }),
+        },
+      }),
+    );
+    const user = userEvent.setup();
+    await renderSignedIn(
+      <FoodEntryDialog
+        workspaceId={personal.id}
+        day={TODAY}
+        meal="lunch"
+        editing={null}
+        units={METRIC_UNITS}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const dialog = await screen.findByRole("dialog", { name: "Add food" });
+    const picker = await within(dialog).findByRole("list", { name: "Saved foods" });
+    expect(
+      within(picker)
+        .getAllByRole("button")
+        .map((b) => b.textContent),
+    ).toEqual([
+      expect.stringContaining("Banana"),
+      expect.stringContaining("Crème fraîche"),
+      expect.stringContaining("Oats"),
+    ]);
+
+    // Submitting before choosing asks for a food.
+    await user.click(within(dialog).getByRole("button", { name: "Add" }));
+    expect(await within(dialog).findByText("Choose a food, or type it in.")).toBeInTheDocument();
+
+    await user.type(within(dialog).getByRole("searchbox", { name: "Search saved foods" }), "oat");
+    expect(within(picker).getAllByRole("button")).toHaveLength(1);
+    await user.keyboard("{Enter}");
+
+    expect(within(dialog).queryByRole("list", { name: "Saved foods" })).not.toBeInTheDocument();
+    expect(within(dialog).getByText("Oats")).toBeInTheDocument();
+    const amount = within(dialog).getByRole("textbox", { name: "How much (g)" });
+    await user.clear(amount);
+    await user.type(amount, "50");
+    await user.click(within(dialog).getByRole("button", { name: "Add" }));
+
+    await waitFor(() => {
+      const call = api.mock.calls.find(
+        ([url, init]) => init?.method === "POST" && String(url).endsWith("/food-entries"),
+      );
+      expect(JSON.parse(String(call?.[1]?.body))).toMatchObject({
+        meal: "lunch",
+        portion: { food_id: "f1", quantity_milli: 50_000 },
+      });
+    });
+  });
+
+  it("switches to typing a food in", async () => {
+    mockApi(routes({ foods: [food("f1", "Oats")] }));
+    const user = userEvent.setup();
+    await renderSignedIn(
+      <FoodEntryDialog
+        workspaceId={personal.id}
+        day={TODAY}
+        meal="lunch"
+        editing={null}
+        units={METRIC_UNITS}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const dialog = await screen.findByRole("dialog", { name: "Add food" });
+    await within(dialog).findByRole("list", { name: "Saved foods" });
+    await user.click(within(dialog).getByRole("button", { name: "Type it in" }));
+    expect(within(dialog).queryByRole("list", { name: "Saved foods" })).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("textbox", { name: "Food" })).toBeInTheDocument();
   });
 });

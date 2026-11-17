@@ -20,6 +20,7 @@ import {
   localEnd,
   loggedTimes,
   measurementSchema,
+  measurementTrend,
   newEntryValues,
   newGoalValues,
   newMeasurementValues,
@@ -398,5 +399,45 @@ describe("mealAt", () => {
       "dinner",
       "snack",
     ]);
+  });
+});
+
+describe("measurementTrend", () => {
+  const entry = (day: string, weight_g: number | null, waist_mm: number | null = null) => ({
+    id: day,
+    day,
+    weight_g,
+    body_fat_pct: null,
+    height_mm: null,
+    waist_mm,
+    chest_mm: null,
+    hips_mm: null,
+    arm_mm: null,
+    thigh_mm: null,
+    neck_mm: null,
+    note: "",
+    updated_at: `${day}T00:00:00Z`,
+  });
+
+  it("finds the latest, previous, and first recorded values, skipping entries without it", () => {
+    const list = [
+      entry("2030-01-01", 80_000),
+      entry("2030-01-05", null, 850),
+      entry("2030-01-08", 79_000),
+      entry("2030-01-12", 78_500),
+    ];
+    expect(measurementTrend(list, "weight_g")).toEqual({
+      value: 78_500,
+      day: "2030-01-12",
+      previous: { value: 79_000, day: "2030-01-08" },
+      first: { value: 80_000, day: "2030-01-01" },
+    });
+    expect(measurementTrend(list, "waist_mm")).toEqual({
+      value: 850,
+      day: "2030-01-05",
+      previous: null,
+      first: null,
+    });
+    expect(measurementTrend(list, "neck_mm")).toBeNull();
   });
 });

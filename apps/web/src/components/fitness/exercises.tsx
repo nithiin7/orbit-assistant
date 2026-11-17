@@ -54,6 +54,7 @@ import {
 } from "@/lib/fitness";
 import { cn } from "@/utils/common";
 
+import { ExerciseIcon } from "./exercise-icon";
 import { LineChart, Loaded, Section, shortDate } from "./shared";
 
 type Filter<T extends string> = T | "all";
@@ -159,19 +160,22 @@ export function ExercisesView({ workspaceId }: { workspaceId: string }) {
                 >
                   <Link
                     href={fitnessHref({ kind: "exercise", id: exercise.id })}
-                    className="min-w-0 flex-1 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex min-w-0 flex-1 items-center gap-3 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <p className="flex items-center gap-2 truncate text-sm font-medium">
-                      {exercise.name}
-                      {exercise.is_custom ? <Badge variant="outline">Custom</Badge> : null}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {labelOf(EXERCISE_CATEGORIES, exercise.category)} ·{" "}
-                      {labelOf(EQUIPMENT, exercise.equipment)}
-                      {exercise.primary_muscles.length > 0
-                        ? ` · ${exercise.primary_muscles.map((m) => labelOf(MUSCLES, m)).join(", ")}`
-                        : ""}
-                    </p>
+                    <ExerciseIcon exercise={exercise} />
+                    <span className="min-w-0">
+                      <span className="flex items-center gap-2 truncate text-sm font-medium">
+                        {exercise.name}
+                        {exercise.is_custom ? <Badge variant="outline">Custom</Badge> : null}
+                      </span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {labelOf(EXERCISE_CATEGORIES, exercise.category)} ·{" "}
+                        {labelOf(EQUIPMENT, exercise.equipment)}
+                        {exercise.primary_muscles.length > 0
+                          ? ` · ${exercise.primary_muscles.map((m) => labelOf(MUSCLES, m)).join(", ")}`
+                          : ""}
+                      </span>
+                    </span>
                   </Link>
                   <Menu
                     variant="ghost"
@@ -397,12 +401,17 @@ export function ExerciseDetail({
           return (
             <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-semibold">{exercise.name}</h2>
-                <p className="text-sm text-muted-foreground">
-                  {labelOf(EXERCISE_CATEGORIES, exercise.category)} ·{" "}
-                  {labelOf(EXERCISE_TYPES, exercise.exercise_type)} ·{" "}
-                  {labelOf(EQUIPMENT, exercise.equipment)}
-                </p>
+                <div className="flex items-center gap-3">
+                  <ExerciseIcon exercise={exercise} size="lg" />
+                  <div className="min-w-0">
+                    <h2 className="text-lg font-semibold">{exercise.name}</h2>
+                    <p className="text-sm text-muted-foreground">
+                      {labelOf(EXERCISE_CATEGORIES, exercise.category)} ·{" "}
+                      {labelOf(EXERCISE_TYPES, exercise.exercise_type)} ·{" "}
+                      {labelOf(EQUIPMENT, exercise.equipment)}
+                    </p>
+                  </div>
+                </div>
                 {exercise.instructions ? (
                   <p className="mt-2 text-sm whitespace-pre-line">{exercise.instructions}</p>
                 ) : null}
