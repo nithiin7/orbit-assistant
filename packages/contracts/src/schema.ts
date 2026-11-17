@@ -5627,6 +5627,139 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/briefings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Earlier briefings, newest first
+         * @description The person's briefings in this workspace, without their content.
+         */
+        get: operations["history_api_v1_workspaces__workspace_id__briefings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/briefings/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * How your briefing is prepared
+         * @description Your settings in this workspace, or the defaults (7 days ahead, every module, prepared
+         *     when opened).
+         */
+        get: operations["get_settings_api_v1_workspaces__workspace_id__briefings_settings_get"];
+        /**
+         * Change how your briefing is prepared
+         * @description Applies from the next briefing prepared; regenerate today's to see it now. A
+         *     preparation time uses your time zone preference, else UTC.
+         */
+        put: operations["put_settings_api_v1_workspaces__workspace_id__briefings_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/briefings/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Today's briefing, prepared if there isn't one yet
+         * @description Today in the given time zone. The first request of the day prepares the briefing from
+         *     each module; later ones return that same snapshot until it is regenerated. A module that
+         *     can't be read is listed in `content.unavailable`, and the briefing is `partial`.
+         */
+        get: operations["today_api_v1_workspaces__workspace_id__briefings_today_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/briefings/today/regenerate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prepare today's briefing again
+         * @description Replace today's snapshot with one read from the records as they are now. Earlier days
+         *     can't be regenerated: they are kept as they were.
+         */
+        post: operations["regenerate_api_v1_workspaces__workspace_id__briefings_today_regenerate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/briefings/{briefing_date}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The briefing prepared for a date
+         * @description A stored briefing, exactly as it was prepared: the one for `timezone`, or without it the
+         *     date's most recently prepared. Nothing is prepared here; use `/today`.
+         */
+        get: operations["on_date_api_v1_workspaces__workspace_id__briefings__briefing_date__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/briefings/{briefing_date}/narrative": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write a summary of a briefing with AI
+         * @description A headline, a few sentences, and up to three priorities, written by your AI provider
+         *     from the stored snapshot alone. The provider sees only modules Settings → AI allows, and
+         *     never money amounts, health measurements, descriptions, or note content. The summary is
+         *     kept with the briefing until it is regenerated.
+         */
+        post: operations["narrate_api_v1_workspaces__workspace_id__briefings__briefing_date__narrative_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/search": {
         parameters: {
             query?: never;
@@ -9445,6 +9578,882 @@ export interface components {
              * @description Every bookmark, newest first.
              */
             bookmarks: components["schemas"]["BookmarkResponse"][];
+        };
+        /** BriefingAttentionItem */
+        BriefingAttentionItem: {
+            /** Key */
+            key: string;
+            /**
+             * Module
+             * @enum {string}
+             */
+            module: "tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments";
+            /** Title */
+            title: string;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+        };
+        /** BriefingBudgetItem */
+        BriefingBudgetItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Name */
+            name: string;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "overall" | "category";
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Period Start
+             * Format: date
+             */
+            period_start: string;
+            /**
+             * Period End
+             * Format: date
+             */
+            period_end: string;
+            /**
+             * Available
+             * @description Minor units.
+             */
+            available: number;
+            /** Spent */
+            spent: number;
+            /** Remaining */
+            remaining: number;
+            /**
+             * Utilization Bps
+             * @description Hundredths of a percent: 8750 is 87.5%.
+             */
+            utilization_bps: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "on_track" | "approaching" | "near" | "exceeded";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+        };
+        /** BriefingBudgets */
+        BriefingBudgets: {
+            /** Items */
+            items: components["schemas"]["BriefingBudgetItem"][];
+            /** Exceeded */
+            exceeded: number;
+            /** Approaching */
+            approaching: number;
+        };
+        /** BriefingConflict */
+        BriefingConflict: {
+            /**
+             * First
+             * @description An event's `ref.key`.
+             */
+            first: string;
+            /** Second */
+            second: string;
+            /**
+             * Start At
+             * Format: date-time
+             */
+            start_at: string;
+            /**
+             * End At
+             * Format: date-time
+             */
+            end_at: string;
+        };
+        /** BriefingContentResponse */
+        BriefingContentResponse: {
+            window: components["schemas"]["BriefingDayWindow"];
+            /** Horizon Days */
+            horizon_days: number;
+            summary: components["schemas"]["BriefingSummaryResponse"];
+            /** Sources */
+            sources: components["schemas"]["BriefingSourceState"][];
+            /** @description `null` when the source is unavailable. */
+            schedule: components["schemas"]["BriefingSchedule"] | null;
+            tasks: components["schemas"]["BriefingTasks"] | null;
+            deadlines: components["schemas"]["BriefingDeadlines"] | null;
+            reminders: components["schemas"]["BriefingReminders"] | null;
+            payments: components["schemas"]["BriefingPayments"] | null;
+            budgets: components["schemas"]["BriefingBudgets"] | null;
+            habits: components["schemas"]["BriefingHabits"] | null;
+            routines: components["schemas"]["BriefingRoutines"] | null;
+            health: components["schemas"]["BriefingHealth"] | null;
+            notes: components["schemas"]["BriefingNotes"] | null;
+            /** @description `null` when unavailable, left out, or in briefings prepared before it was added. */
+            documents: components["schemas"]["BriefingDocuments"] | null;
+            shopping: components["schemas"]["BriefingShopping"] | null;
+            investments: components["schemas"]["BriefingInvestments"] | null;
+            /** Unavailable */
+            unavailable: ("tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments")[];
+        };
+        /** BriefingDayWindow */
+        BriefingDayWindow: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Timezone */
+            timezone: string;
+            /**
+             * Start
+             * Format: date-time
+             * @description The day's first instant, in UTC.
+             */
+            start: string;
+            /**
+             * End
+             * Format: date-time
+             * @description The next day's first instant, in UTC (exclusive).
+             */
+            end: string;
+        };
+        /** BriefingDeadlines */
+        BriefingDeadlines: {
+            /** @description Open tasks due after today, within the horizon. */
+            tasks: components["schemas"]["BriefingTaskList"];
+            /** Savings Goals */
+            savings_goals: components["schemas"]["BriefingSavingsGoalItem"][];
+        };
+        /** BriefingDepositItem */
+        BriefingDepositItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Name */
+            name: string;
+            /** Institution */
+            institution: string;
+            /**
+             * Maturity Date
+             * Format: date
+             */
+            maturity_date: string;
+            /**
+             * Projected Maturity Amount
+             * @description Minor units.
+             */
+            projected_maturity_amount: number;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Matured
+             * @description Past its maturity date but still open.
+             */
+            matured: boolean;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+        };
+        /** BriefingDocumentItem */
+        BriefingDocumentItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Title */
+            title: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "expiry" | "renewal";
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Lapsed
+             * @description Expired, or its renewal date has passed.
+             */
+            lapsed: boolean;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+        };
+        /** BriefingDocuments */
+        BriefingDocuments: {
+            /**
+             * Items
+             * @description Expired first (most recent first), then expiring within 30 days and renewals within the horizon, soonest first.
+             */
+            items: components["schemas"]["BriefingDocumentItem"][];
+            /** Expired */
+            expired: number;
+            /** Expiring */
+            expiring: number;
+        };
+        /** BriefingEventItem */
+        BriefingEventItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Title */
+            title: string;
+            /** Location */
+            location: string;
+            /** All Day */
+            all_day: boolean;
+            /**
+             * Start At
+             * Format: date-time
+             */
+            start_at: string;
+            /**
+             * End At
+             * Format: date-time
+             */
+            end_at: string;
+            /**
+             * Local Start
+             * Format: date-time
+             * @description Wall-clock start in the event's time zone.
+             */
+            local_start: string;
+            /**
+             * Local End
+             * Format: date-time
+             */
+            local_end: string;
+            /** Event Timezone */
+            event_timezone: string;
+            /** Recurring */
+            recurring: boolean;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+        };
+        /** BriefingFitnessGoalItem */
+        BriefingFitnessGoalItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Name */
+            name: string;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "body_weight" | "strength" | "workout_frequency" | "running_distance" | "running_duration" | "nutrition" | "water" | "custom";
+            /**
+             * Pace
+             * @enum {string}
+             */
+            pace: "ahead" | "on_track" | "behind" | "no_target_date" | "reached";
+            /** Reached */
+            reached: boolean;
+            /** Target Date */
+            target_date: string | null;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+        };
+        /** BriefingHabitItem */
+        BriefingHabitItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Name */
+            name: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "boolean" | "numeric" | "duration";
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "completed" | "partial" | "skipped" | "missed" | "pending" | "open" | "bonus" | "unscheduled" | "paused" | "inactive";
+            /** Done */
+            done: boolean;
+            /** Current Streak */
+            current_streak: number;
+            /**
+             * Streak Unit
+             * @enum {string}
+             */
+            streak_unit: "day" | "week";
+            /** Week Done */
+            week_done: number;
+            /** Week Due */
+            week_due: number;
+        };
+        /** BriefingHabits */
+        BriefingHabits: {
+            /** Habits */
+            habits: components["schemas"]["BriefingHabitItem"][];
+            /** Remaining */
+            remaining: number;
+            /** Done */
+            done: number;
+        };
+        /** BriefingHealth */
+        BriefingHealth: {
+            /** Workouts */
+            workouts: components["schemas"]["BriefingWorkoutItem"][];
+            /** Goals */
+            goals: components["schemas"]["BriefingFitnessGoalItem"][];
+        };
+        /** BriefingHistoryResponse */
+        BriefingHistoryResponse: {
+            /** Items */
+            items: components["schemas"]["BriefingListingResponse"][];
+            /** Total */
+            total: number;
+        };
+        /** BriefingInvestments */
+        BriefingInvestments: {
+            /**
+             * Sips
+             * @description Installments due within the horizon.
+             */
+            sips: components["schemas"]["BriefingSipItem"][];
+            /**
+             * Deposits
+             * @description Open deposits maturing within the horizon, or already matured.
+             */
+            deposits: components["schemas"]["BriefingDepositItem"][];
+        };
+        /** BriefingListingResponse */
+        BriefingListingResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Timezone */
+            timezone: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "complete" | "partial";
+            /** Revision */
+            revision: number;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            summary: components["schemas"]["BriefingSummaryResponse"];
+        };
+        /** BriefingNarrativePriority */
+        BriefingNarrativePriority: {
+            /**
+             * Key
+             * @description The `ref.key` of the briefing item it's about.
+             */
+            key: string;
+            /** Title */
+            title: string;
+            /** Reason */
+            reason: string;
+        };
+        /** BriefingNarrativeResponse */
+        BriefingNarrativeResponse: {
+            /** Headline */
+            headline: string;
+            /** Summary */
+            summary: string;
+            /** Priorities */
+            priorities: components["schemas"]["BriefingNarrativePriority"][];
+            /**
+             * Modules
+             * @description The modules the provider was given; AI permissions left out the rest.
+             */
+            modules: ("tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments")[];
+            /** Provider Name */
+            provider_name: string;
+            /** Model */
+            model: string;
+            /**
+             * Processing
+             * @description `local` or `cloud`.
+             */
+            processing: string;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+        };
+        /** BriefingNoteItem */
+        BriefingNoteItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Title */
+            title: string;
+            /**
+             * Note Type
+             * @enum {string}
+             */
+            note_type: "note" | "quick" | "journal";
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "linked" | "pinned";
+            /**
+             * Linked To
+             * @description `ref.key`s of the items the note is linked to.
+             */
+            linked_to: string[];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** BriefingNotes */
+        BriefingNotes: {
+            /** Items */
+            items: components["schemas"]["BriefingNoteItem"][];
+        };
+        /** BriefingPaymentItem */
+        BriefingPaymentItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "loan" | "subscription" | "bill";
+            /** Name */
+            name: string;
+            /** Counterparty */
+            counterparty: string;
+            /**
+             * Amount
+             * @description Minor units.
+             */
+            amount: number;
+            /** Estimated */
+            estimated: boolean;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "upcoming" | "due" | "overdue" | "paid" | "skipped";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+        };
+        /** BriefingPayments */
+        BriefingPayments: {
+            /** Items */
+            items: components["schemas"]["BriefingPaymentItem"][];
+            /** Overdue */
+            overdue: number;
+            /** Due Today */
+            due_today: number;
+            /** Upcoming */
+            upcoming: number;
+        };
+        /** BriefingRegenerateRequest */
+        BriefingRegenerateRequest: {
+            /**
+             * Timezone
+             * @description Where today is. Defaults to the user's preference, else UTC.
+             */
+            timezone?: string | null;
+        };
+        /** BriefingReminderItem */
+        BriefingReminderItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Title */
+            title: string;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /**
+             * Bucket
+             * @enum {string}
+             */
+            bucket: "overdue" | "due_today" | "upcoming";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+            /** Task Id */
+            task_id: string | null;
+        };
+        /** BriefingReminders */
+        BriefingReminders: {
+            /** Items */
+            items: components["schemas"]["BriefingReminderItem"][];
+            /**
+             * Represented Elsewhere
+             * @description Reminders left out because their task, event, payment, or habit is shown.
+             */
+            represented_elsewhere: number;
+        };
+        /** BriefingResponse */
+        BriefingResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Timezone */
+            timezone: string;
+            /**
+             * Status
+             * @description `partial` when a source couldn't be read.
+             * @enum {string}
+             */
+            status: "complete" | "partial";
+            /** Revision */
+            revision: number;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            content: components["schemas"]["BriefingContentResponse"];
+            /** @description The AI-written summary, if one was asked for; cleared on regeneration. */
+            narrative: components["schemas"]["BriefingNarrativeResponse"] | null;
+        };
+        /** BriefingRoutineItem */
+        BriefingRoutineItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Name */
+            name: string;
+            /**
+             * Time Of Day
+             * @description Local time, HH:MM.
+             */
+            time_of_day: string | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "completed" | "in_progress" | "not_started";
+            /** Steps */
+            steps: number;
+            /** Estimated Minutes */
+            estimated_minutes: number;
+        };
+        /** BriefingRoutines */
+        BriefingRoutines: {
+            /** Routines */
+            routines: components["schemas"]["BriefingRoutineItem"][];
+        };
+        /** BriefingSavingsGoalItem */
+        BriefingSavingsGoalItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Name */
+            name: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /** Target Amount */
+            target_amount: number;
+            /** Saved */
+            saved: number;
+            /** Progress Bps */
+            progress_bps: number;
+            /**
+             * Target Date
+             * Format: date
+             */
+            target_date: string;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+        };
+        /** BriefingSchedule */
+        BriefingSchedule: {
+            /**
+             * Events
+             * @description Today's confirmed occurrences: all-day first, then by start.
+             */
+            events: components["schemas"]["BriefingEventItem"][];
+            /** Time Blocks */
+            time_blocks: components["schemas"]["BriefingTimeBlock"][];
+            /** Conflicts */
+            conflicts: components["schemas"]["BriefingConflict"][];
+            /**
+             * Upcoming
+             * @description Timed occurrences after today, within the horizon.
+             */
+            upcoming: components["schemas"]["BriefingEventItem"][];
+        };
+        /**
+         * BriefingSettingsBody
+         * @description How a person's briefing is prepared. Applies from the next briefing prepared.
+         */
+        BriefingSettingsBody: {
+            /**
+             * Horizon Days
+             * @description How many days ahead upcoming events, deadlines, and payments look.
+             */
+            horizon_days: number;
+            /**
+             * Hidden
+             * @description Modules left out of the briefing entirely.
+             */
+            hidden: ("tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments")[];
+            /**
+             * Prepare At
+             * @description Local time (your time zone preference) to prepare the briefing each day; `null` prepares it only when opened.
+             */
+            prepare_at: string | null;
+        };
+        /** BriefingShopping */
+        BriefingShopping: {
+            /**
+             * Lists
+             * @description Lists with items still to buy.
+             */
+            lists: components["schemas"]["BriefingShoppingListItem"][];
+            /** Needed */
+            needed: number;
+        };
+        /** BriefingShoppingListItem */
+        BriefingShoppingListItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Name */
+            name: string;
+            /** Needed */
+            needed: number;
+        };
+        /** BriefingSipItem */
+        BriefingSipItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Holding Name */
+            holding_name: string;
+            /**
+             * Amount
+             * @description Minor units.
+             */
+            amount: number;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Auto Debit */
+            auto_debit: boolean;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+        };
+        /** BriefingSourceRef */
+        BriefingSourceRef: {
+            /**
+             * Module
+             * @enum {string}
+             */
+            module: "tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments";
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "task" | "event" | "reminder" | "commitment" | "budget" | "savings_goal" | "habit" | "routine" | "workout" | "fitness_goal" | "note" | "document" | "shopping_list" | "sip" | "deposit";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Occurrence
+             * @description One occurrence of a repeating record: an event's original start (UTC, ISO 8601), or a payment's due date.
+             */
+            occurrence: string | null;
+            /**
+             * Key
+             * @description Stable across regenerations and unique within a briefing.
+             */
+            key: string;
+        };
+        /** BriefingSourceState */
+        BriefingSourceState: {
+            /**
+             * Module
+             * @enum {string}
+             */
+            module: "tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "empty" | "unavailable" | "off";
+            /** Items */
+            items: number;
+            /**
+             * Loaded At
+             * Format: date-time
+             */
+            loaded_at: string;
+        };
+        /** BriefingSummaryResponse */
+        BriefingSummaryResponse: {
+            /** Events */
+            events: number;
+            /** Conflicts */
+            conflicts: number;
+            /** Tasks Overdue */
+            tasks_overdue: number;
+            /** Tasks Due Today */
+            tasks_due_today: number;
+            /** Reminders Due */
+            reminders_due: number;
+            /** Payments Overdue */
+            payments_overdue: number;
+            /** Payments Due */
+            payments_due: number;
+            /** Budgets Exceeded */
+            budgets_exceeded: number;
+            /** Budgets Approaching */
+            budgets_approaching: number;
+            /** Habits Remaining */
+            habits_remaining: number;
+            /** Habits Done */
+            habits_done: number;
+            /** Workouts */
+            workouts: number;
+            /**
+             * Attention
+             * @description The most pressing items, critical first, at most 10.
+             */
+            attention: components["schemas"]["BriefingAttentionItem"][];
+        };
+        /** BriefingTaskItem */
+        BriefingTaskItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Title */
+            title: string;
+            /**
+             * Priority
+             * @enum {string}
+             */
+            priority: "none" | "low" | "medium" | "high";
+            /** Due Date */
+            due_date: string | null;
+            /** Completed At */
+            completed_at: string | null;
+            /** Scheduled Start */
+            scheduled_start: string | null;
+            /** Scheduled End */
+            scheduled_end: string | null;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+            /**
+             * Reminder At
+             * @description The task's reminder today, which isn't listed again under reminders.
+             */
+            reminder_at: string | null;
+        };
+        /** BriefingTaskList */
+        BriefingTaskList: {
+            /** Items */
+            items: components["schemas"]["BriefingTaskItem"][];
+            /**
+             * Total
+             * @description Every matching task; `items` holds at most 10.
+             */
+            total: number;
+        };
+        /** BriefingTasks */
+        BriefingTasks: {
+            overdue: components["schemas"]["BriefingTaskList"];
+            due_today: components["schemas"]["BriefingTaskList"];
+            /** @description Open high-priority tasks due later or without a due date. */
+            high_priority: components["schemas"]["BriefingTaskList"];
+            /** @description Completed since the start of yesterday. */
+            completed: components["schemas"]["BriefingTaskList"];
+        };
+        /** BriefingTimeBlock */
+        BriefingTimeBlock: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Title */
+            title: string;
+            /**
+             * Start At
+             * Format: date-time
+             */
+            start_at: string;
+            /**
+             * End At
+             * Format: date-time
+             */
+            end_at: string;
+            /** Completed */
+            completed: boolean;
+        };
+        /** BriefingWorkoutItem */
+        BriefingWorkoutItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Name */
+            name: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "scheduled" | "in_progress" | "completed";
+            /** Start At */
+            start_at: string | null;
+            /** End At */
+            end_at: string | null;
         };
         /** BudgetDetailResponse */
         BudgetDetailResponse: {
@@ -41437,6 +42446,357 @@ export interface operations {
             };
             /** @description The workspace does not exist or is not accessible. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    history_api_v1_workspaces__workspace_id__briefings_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BriefingHistoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_settings_api_v1_workspaces__workspace_id__briefings_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BriefingSettingsBody"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_settings_api_v1_workspaces__workspace_id__briefings_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BriefingSettingsBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BriefingSettingsBody"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    today_api_v1_workspaces__workspace_id__briefings_today_get: {
+        parameters: {
+            query?: {
+                /** @description Where today is. Defaults to the user's preference, else UTC. */
+                timezone?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BriefingResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    regenerate_api_v1_workspaces__workspace_id__briefings_today_regenerate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BriefingRegenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BriefingResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    on_date_api_v1_workspaces__workspace_id__briefings__briefing_date__get: {
+        parameters: {
+            query?: {
+                /** @description Which time zone's briefing for the date. Omit for the date's most recently prepared one. */
+                timezone?: string | null;
+            };
+            header?: never;
+            path: {
+                briefing_date: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BriefingResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No briefing was prepared for that date. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    narrate_api_v1_workspaces__workspace_id__briefings__briefing_date__narrative_post: {
+        parameters: {
+            query?: {
+                /** @description Which time zone's briefing for the date. Omit for the date's most recently prepared one. */
+                timezone?: string | null;
+            };
+            header?: never;
+            path: {
+                briefing_date: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BriefingResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description AI may not read any of the briefing's modules. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No briefing was prepared for that date. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description AI is off or not set up. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

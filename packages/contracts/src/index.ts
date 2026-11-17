@@ -105,6 +105,31 @@ export type DashboardWidget = Schemas["DashboardWidgetModel"];
 export type DashboardWidgetId = DashboardWidget["id"];
 export type DashboardWidgetSize = DashboardWidget["size"];
 export type DashboardDensity = DashboardLayout["density"];
+export type Briefing = Schemas["BriefingResponse"];
+export type BriefingContent = Schemas["BriefingContentResponse"];
+export type BriefingModule = BriefingContent["unavailable"][number];
+export type BriefingSeverity = Schemas["BriefingAttentionItem"]["severity"];
+export type BriefingSourceRef = Schemas["BriefingSourceRef"];
+export type BriefingTaskItem = Schemas["BriefingTaskItem"];
+export type BriefingEventItem = Schemas["BriefingEventItem"];
+export type BriefingReminderItem = Schemas["BriefingReminderItem"];
+export type BriefingPaymentItem = Schemas["BriefingPaymentItem"];
+export type BriefingBudgetItem = Schemas["BriefingBudgetItem"];
+export type BriefingHabitItem = Schemas["BriefingHabitItem"];
+export type BriefingRoutineItem = Schemas["BriefingRoutineItem"];
+export type BriefingWorkoutItem = Schemas["BriefingWorkoutItem"];
+export type BriefingNoteItem = Schemas["BriefingNoteItem"];
+export type BriefingHistory = Schemas["BriefingHistoryResponse"];
+export type BriefingListing = Schemas["BriefingListingResponse"];
+export type BriefingQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/briefings/today"]["get"]["parameters"]["query"]
+>;
+export type BriefingRegenerateRequest = Schemas["BriefingRegenerateRequest"];
+export type BriefingNarrative = Schemas["BriefingNarrativeResponse"];
+export type BriefingSettings = Schemas["BriefingSettingsBody"];
+export type BriefingHistoryQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/briefings"]["get"]["parameters"]["query"]
+>;
 export type TodayOverview = Schemas["TodayOverviewResponse"];
 export type TodayOverviewSection = TodayOverview["unavailable"][number];
 export type TodayOverviewQuery = NonNullable<

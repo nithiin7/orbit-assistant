@@ -30474,6 +30474,518 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/briefings": {
+      "get": {
+        "tags": [
+          "briefings"
+        ],
+        "summary": "Earlier briefings, newest first",
+        "description": "The person's briefings in this workspace, without their content.",
+        "operationId": "history_api_v1_workspaces__workspace_id__briefings_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 30,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BriefingHistoryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/briefings/settings": {
+      "get": {
+        "tags": [
+          "briefings"
+        ],
+        "summary": "How your briefing is prepared",
+        "description": "Your settings in this workspace, or the defaults (7 days ahead, every module, prepared\nwhen opened).",
+        "operationId": "get_settings_api_v1_workspaces__workspace_id__briefings_settings_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BriefingSettingsBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "briefings"
+        ],
+        "summary": "Change how your briefing is prepared",
+        "description": "Applies from the next briefing prepared; regenerate today's to see it now. A\npreparation time uses your time zone preference, else UTC.",
+        "operationId": "put_settings_api_v1_workspaces__workspace_id__briefings_settings_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BriefingSettingsBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BriefingSettingsBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/briefings/today": {
+      "get": {
+        "tags": [
+          "briefings"
+        ],
+        "summary": "Today's briefing, prepared if there isn't one yet",
+        "description": "Today in the given time zone. The first request of the day prepares the briefing from\neach module; later ones return that same snapshot until it is regenerated. A module that\ncan't be read is listed in `content.unavailable`, and the briefing is `partial`.",
+        "operationId": "today_api_v1_workspaces__workspace_id__briefings_today_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Where today is. Defaults to the user's preference, else UTC.",
+              "title": "Timezone"
+            },
+            "description": "Where today is. Defaults to the user's preference, else UTC."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BriefingResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/briefings/today/regenerate": {
+      "post": {
+        "tags": [
+          "briefings"
+        ],
+        "summary": "Prepare today's briefing again",
+        "description": "Replace today's snapshot with one read from the records as they are now. Earlier days\ncan't be regenerated: they are kept as they were.",
+        "operationId": "regenerate_api_v1_workspaces__workspace_id__briefings_today_regenerate_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BriefingRegenerateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BriefingResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/briefings/{briefing_date}": {
+      "get": {
+        "tags": [
+          "briefings"
+        ],
+        "summary": "The briefing prepared for a date",
+        "description": "A stored briefing, exactly as it was prepared: the one for `timezone`, or without it the\ndate's most recently prepared. Nothing is prepared here; use `/today`.",
+        "operationId": "on_date_api_v1_workspaces__workspace_id__briefings__briefing_date__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "briefing_date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Briefing Date"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Which time zone's briefing for the date. Omit for the date's most recently prepared one.",
+              "title": "Timezone"
+            },
+            "description": "Which time zone's briefing for the date. Omit for the date's most recently prepared one."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BriefingResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "No briefing was prepared for that date."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/briefings/{briefing_date}/narrative": {
+      "post": {
+        "tags": [
+          "briefings"
+        ],
+        "summary": "Write a summary of a briefing with AI",
+        "description": "A headline, a few sentences, and up to three priorities, written by your AI provider\nfrom the stored snapshot alone. The provider sees only modules Settings → AI allows, and\nnever money amounts, health measurements, descriptions, or note content. The summary is\nkept with the briefing until it is regenerated.",
+        "operationId": "narrate_api_v1_workspaces__workspace_id__briefings__briefing_date__narrative_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "briefing_date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Briefing Date"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Which time zone's briefing for the date. Omit for the date's most recently prepared one.",
+              "title": "Timezone"
+            },
+            "description": "Which time zone's briefing for the date. Omit for the date's most recently prepared one."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BriefingResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "No briefing was prepared for that date."
+          },
+          "409": {
+            "description": "AI is off or not set up."
+          },
+          "403": {
+            "description": "AI may not read any of the briefing's modules."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/search": {
       "get": {
         "tags": [
@@ -43075,6 +43587,2197 @@
           "bookmarks"
         ],
         "title": "BookmarksResponse"
+      },
+      "BriefingAttentionItem": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "module": {
+            "type": "string",
+            "enum": [
+              "tasks",
+              "calendar",
+              "reminders",
+              "payments",
+              "budgets",
+              "goals",
+              "habits",
+              "routines",
+              "health",
+              "notes",
+              "documents",
+              "shopping",
+              "investments"
+            ],
+            "title": "Module"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "warning",
+              "info"
+            ],
+            "title": "Severity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "module",
+          "title",
+          "severity"
+        ],
+        "title": "BriefingAttentionItem"
+      },
+      "BriefingBudgetItem": {
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/BriefingSourceRef"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "overall",
+              "category"
+            ],
+            "title": "Scope"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Period End"
+          },
+          "available": {
+            "type": "integer",
+            "title": "Available",
+            "description": "Minor units."
+          },
+          "spent": {
+            "type": "integer",
+            "title": "Spent"
+          },
+          "remaining": {
+            "type": "integer",
+            "title": "Remaining"
+          },
+          "utilization_bps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utilization Bps",
+            "description": "Hundredths of a percent: 8750 is 87.5%."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "on_track",
+              "approaching",
+              "near",
+              "exceeded"
+            ],
+            "title": "Status"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "warning",
+              "info"
+            ],
+            "title": "Severity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref",
+          "name",
+          "scope",
+          "currency",
+          "period_start",
+          "period_end",
+          "available",
+          "spent",
+          "remaining",
+          "utilization_bps",
+          "status",
+          "severity"
+        ],
+        "title": "BriefingBudgetItem"
+      },
+      "BriefingBudgets": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingBudgetItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "exceeded": {
+            "type": "integer",
+            "title": "Exceeded"
+          },
+          "approaching": {
+            "type": "integer",
+            "title": "Approaching"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "exceeded",
+          "approaching"
+        ],
+        "title": "BriefingBudgets"
+      },
+      "BriefingConflict": {
+        "properties": {
+          "first": {
+            "type": "string",
+            "title": "First",
+            "description": "An event's `ref.key`."
+          },
+          "second": {
+            "type": "string",
+            "title": "Second"
+          },
+          "start_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start At"
+          },
+          "end_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "first",
+          "second",
+          "start_at",
+          "end_at"
+        ],
+        "title": "BriefingConflict"
+      },
+      "BriefingContentResponse": {
+        "properties": {
+          "window": {
+            "$ref": "#/components/schemas/BriefingDayWindow"
+          },
+          "horizon_days": {
+            "type": "integer",
+            "title": "Horizon Days"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/BriefingSummaryResponse"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingSourceState"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "schedule": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BriefingSchedule"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "`null` when the source is unavailable."
+          },
+          "tasks": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BriefingTasks"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deadlines": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BriefingDeadlines"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reminders": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BriefingReminders"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "payments": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BriefingPayments"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "budgets": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BriefingBudgets"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "habits": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BriefingHabits"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "routines": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BriefingRoutines"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "health": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BriefingHealth"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BriefingNotes"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "documents": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BriefingDocuments"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "`null` when unavailable, left out, or in briefings prepared before it was added."
+          },
+          "shopping": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BriefingShopping"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "investments": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BriefingInvestments"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unavailable": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "tasks",
+                "calendar",
+                "reminders",
+                "payments",
+                "budgets",
+                "goals",
+                "habits",
+                "routines",
+                "health",
+                "notes",
+                "documents",
+                "shopping",
+                "investments"
+              ]
+            },
+            "type": "array",
+            "title": "Unavailable"
+          }
+        },
+        "type": "object",
+        "required": [
+          "window",
+          "horizon_days",
+          "summary",
+          "sources",
+          "schedule",
+          "tasks",
+          "deadlines",
+          "reminders",
+          "payments",
+          "budgets",
+          "habits",
+          "routines",
+          "health",
+          "notes",
+          "documents",
+          "shopping",
+          "investments",
+          "unavailable"
+        ],
+        "title": "BriefingContentResponse"
+      },
+      "BriefingDayWindow": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start",
+            "description": "The day's first instant, in UTC."
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End",
+            "description": "The next day's first instant, in UTC (exclusive)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "timezone",
+          "start",
+          "end"
+        ],
+        "title": "BriefingDayWindow"
+      },
+      "BriefingDeadlines": {
+        "properties": {
+          "tasks": {
+            "$ref": "#/components/schemas/BriefingTaskList",
+            "description": "Open tasks due after today, within the horizon."
+          },
+          "savings_goals": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingSavingsGoalItem"
+            },
+            "type": "array",
+            "title": "Savings Goals"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tasks",
+          "savings_goals"
+        ],
+        "title": "BriefingDeadlines"
+      },
+      "BriefingDepositItem": {
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/BriefingSourceRef"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "institution": {
+            "type": "string",
+            "title": "Institution"
+          },
+          "maturity_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Maturity Date"
+          },
+          "projected_maturity_amount": {
+            "type": "integer",
+            "title": "Projected Maturity Amount",
+            "description": "Minor units."
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "matured": {
+            "type": "boolean",
+            "title": "Matured",
+            "description": "Past its maturity date but still open."
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "warning",
+              "info"
+            ],
+            "title": "Severity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref",
+          "name",
+          "institution",
+          "maturity_date",
+          "projected_maturity_amount",
+          "currency",
+          "matured",
+          "severity"
+        ],
+        "title": "BriefingDepositItem"
+      },
+      "BriefingDocumentItem": {
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/BriefingSourceRef"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "expiry",
+              "renewal"
+            ],
+            "title": "Kind"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "lapsed": {
+            "type": "boolean",
+            "title": "Lapsed",
+            "description": "Expired, or its renewal date has passed."
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "warning",
+              "info"
+            ],
+            "title": "Severity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref",
+          "title",
+          "kind",
+          "date",
+          "lapsed",
+          "severity"
+        ],
+        "title": "BriefingDocumentItem"
+      },
+      "BriefingDocuments": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingDocumentItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Expired first (most recent first), then expiring within 30 days and renewals within the horizon, soonest first."
+          },
+          "expired": {
+            "type": "integer",
+            "title": "Expired"
+          },
+          "expiring": {
+            "type": "integer",
+            "title": "Expiring"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "expired",
+          "expiring"
+        ],
+        "title": "BriefingDocuments"
+      },
+      "BriefingEventItem": {
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/BriefingSourceRef"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "all_day": {
+            "type": "boolean",
+            "title": "All Day"
+          },
+          "start_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start At"
+          },
+          "end_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End At"
+          },
+          "local_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Local Start",
+            "description": "Wall-clock start in the event's time zone."
+          },
+          "local_end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Local End"
+          },
+          "event_timezone": {
+            "type": "string",
+            "title": "Event Timezone"
+          },
+          "recurring": {
+            "type": "boolean",
+            "title": "Recurring"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "warning",
+              "info"
+            ],
+            "title": "Severity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref",
+          "title",
+          "location",
+          "all_day",
+          "start_at",
+          "end_at",
+          "local_start",
+          "local_end",
+          "event_timezone",
+          "recurring",
+          "severity"
+        ],
+        "title": "BriefingEventItem"
+      },
+      "BriefingFitnessGoalItem": {
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/BriefingSourceRef"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "body_weight",
+              "strength",
+              "workout_frequency",
+              "running_distance",
+              "running_duration",
+              "nutrition",
+              "water",
+              "custom"
+            ],
+            "title": "Category"
+          },
+          "pace": {
+            "type": "string",
+            "enum": [
+              "ahead",
+              "on_track",
+              "behind",
+              "no_target_date",
+              "reached"
+            ],
+            "title": "Pace"
+          },
+          "reached": {
+            "type": "boolean",
+            "title": "Reached"
+          },
+          "target_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Date"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "warning",
+              "info"
+            ],
+            "title": "Severity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref",
+          "name",
+          "category",
+          "pace",
+          "reached",
+          "target_date",
+          "severity"
+        ],
+        "title": "BriefingFitnessGoalItem"
+      },
+      "BriefingHabitItem": {
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/BriefingSourceRef"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "boolean",
+              "numeric",
+              "duration"
+            ],
+            "title": "Kind"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "partial",
+              "skipped",
+              "missed",
+              "pending",
+              "open",
+              "bonus",
+              "unscheduled",
+              "paused",
+              "inactive"
+            ],
+            "title": "State"
+          },
+          "done": {
+            "type": "boolean",
+            "title": "Done"
+          },
+          "current_streak": {
+            "type": "integer",
+            "title": "Current Streak"
+          },
+          "streak_unit": {
+            "type": "string",
+            "enum": [
+              "day",
+              "week"
+            ],
+            "title": "Streak Unit"
+          },
+          "week_done": {
+            "type": "integer",
+            "title": "Week Done"
+          },
+          "week_due": {
+            "type": "integer",
+            "title": "Week Due"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref",
+          "name",
+          "kind",
+          "state",
+          "done",
+          "current_streak",
+          "streak_unit",
+          "week_done",
+          "week_due"
+        ],
+        "title": "BriefingHabitItem"
+      },
+      "BriefingHabits": {
+        "properties": {
+          "habits": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingHabitItem"
+            },
+            "type": "array",
+            "title": "Habits"
+          },
+          "remaining": {
+            "type": "integer",
+            "title": "Remaining"
+          },
+          "done": {
+            "type": "integer",
+            "title": "Done"
+          }
+        },
+        "type": "object",
+        "required": [
+          "habits",
+          "remaining",
+          "done"
+        ],
+        "title": "BriefingHabits"
+      },
+      "BriefingHealth": {
+        "properties": {
+          "workouts": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingWorkoutItem"
+            },
+            "type": "array",
+            "title": "Workouts"
+          },
+          "goals": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingFitnessGoalItem"
+            },
+            "type": "array",
+            "title": "Goals"
+          }
+        },
+        "type": "object",
+        "required": [
+          "workouts",
+          "goals"
+        ],
+        "title": "BriefingHealth"
+      },
+      "BriefingHistoryResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingListingResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "BriefingHistoryResponse"
+      },
+      "BriefingInvestments": {
+        "properties": {
+          "sips": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingSipItem"
+            },
+            "type": "array",
+            "title": "Sips",
+            "description": "Installments due within the horizon."
+          },
+          "deposits": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingDepositItem"
+            },
+            "type": "array",
+            "title": "Deposits",
+            "description": "Open deposits maturing within the horizon, or already matured."
+          }
+        },
+        "type": "object",
+        "required": [
+          "sips",
+          "deposits"
+        ],
+        "title": "BriefingInvestments"
+      },
+      "BriefingListingResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "complete",
+              "partial"
+            ],
+            "title": "Status"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/BriefingSummaryResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "date",
+          "timezone",
+          "status",
+          "revision",
+          "generated_at",
+          "summary"
+        ],
+        "title": "BriefingListingResponse"
+      },
+      "BriefingNarrativePriority": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key",
+            "description": "The `ref.key` of the briefing item it's about."
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "title",
+          "reason"
+        ],
+        "title": "BriefingNarrativePriority"
+      },
+      "BriefingNarrativeResponse": {
+        "properties": {
+          "headline": {
+            "type": "string",
+            "title": "Headline"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "priorities": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingNarrativePriority"
+            },
+            "type": "array",
+            "title": "Priorities"
+          },
+          "modules": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "tasks",
+                "calendar",
+                "reminders",
+                "payments",
+                "budgets",
+                "goals",
+                "habits",
+                "routines",
+                "health",
+                "notes",
+                "documents",
+                "shopping",
+                "investments"
+              ]
+            },
+            "type": "array",
+            "title": "Modules",
+            "description": "The modules the provider was given; AI permissions left out the rest."
+          },
+          "provider_name": {
+            "type": "string",
+            "title": "Provider Name"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "processing": {
+            "type": "string",
+            "title": "Processing",
+            "description": "`local` or `cloud`."
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "headline",
+          "summary",
+          "priorities",
+          "modules",
+          "provider_name",
+          "model",
+          "processing",
+          "generated_at"
+        ],
+        "title": "BriefingNarrativeResponse"
+      },
+      "BriefingNoteItem": {
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/BriefingSourceRef"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "note_type": {
+            "type": "string",
+            "enum": [
+              "note",
+              "quick",
+              "journal"
+            ],
+            "title": "Note Type"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "linked",
+              "pinned"
+            ],
+            "title": "Reason"
+          },
+          "linked_to": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Linked To",
+            "description": "`ref.key`s of the items the note is linked to."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref",
+          "title",
+          "note_type",
+          "reason",
+          "linked_to",
+          "updated_at"
+        ],
+        "title": "BriefingNoteItem"
+      },
+      "BriefingNotes": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingNoteItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "BriefingNotes"
+      },
+      "BriefingPaymentItem": {
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/BriefingSourceRef"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "loan",
+              "subscription",
+              "bill"
+            ],
+            "title": "Kind"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "counterparty": {
+            "type": "string",
+            "title": "Counterparty"
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount",
+            "description": "Minor units."
+          },
+          "estimated": {
+            "type": "boolean",
+            "title": "Estimated"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Due Date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "upcoming",
+              "due",
+              "overdue",
+              "paid",
+              "skipped"
+            ],
+            "title": "Status"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "warning",
+              "info"
+            ],
+            "title": "Severity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref",
+          "kind",
+          "name",
+          "counterparty",
+          "amount",
+          "estimated",
+          "currency",
+          "due_date",
+          "status",
+          "severity"
+        ],
+        "title": "BriefingPaymentItem"
+      },
+      "BriefingPayments": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingPaymentItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "overdue": {
+            "type": "integer",
+            "title": "Overdue"
+          },
+          "due_today": {
+            "type": "integer",
+            "title": "Due Today"
+          },
+          "upcoming": {
+            "type": "integer",
+            "title": "Upcoming"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "overdue",
+          "due_today",
+          "upcoming"
+        ],
+        "title": "BriefingPayments"
+      },
+      "BriefingRegenerateRequest": {
+        "properties": {
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone",
+            "description": "Where today is. Defaults to the user's preference, else UTC."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "BriefingRegenerateRequest"
+      },
+      "BriefingReminderItem": {
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/BriefingSourceRef"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          },
+          "bucket": {
+            "type": "string",
+            "enum": [
+              "overdue",
+              "due_today",
+              "upcoming"
+            ],
+            "title": "Bucket"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "warning",
+              "info"
+            ],
+            "title": "Severity"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref",
+          "title",
+          "at",
+          "bucket",
+          "severity",
+          "task_id"
+        ],
+        "title": "BriefingReminderItem"
+      },
+      "BriefingReminders": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingReminderItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "represented_elsewhere": {
+            "type": "integer",
+            "title": "Represented Elsewhere",
+            "description": "Reminders left out because their task, event, payment, or habit is shown."
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "represented_elsewhere"
+        ],
+        "title": "BriefingReminders"
+      },
+      "BriefingResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "complete",
+              "partial"
+            ],
+            "title": "Status",
+            "description": "`partial` when a source couldn't be read."
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "content": {
+            "$ref": "#/components/schemas/BriefingContentResponse"
+          },
+          "narrative": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BriefingNarrativeResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The AI-written summary, if one was asked for; cleared on regeneration."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "date",
+          "timezone",
+          "status",
+          "revision",
+          "generated_at",
+          "created_at",
+          "content",
+          "narrative"
+        ],
+        "title": "BriefingResponse"
+      },
+      "BriefingRoutineItem": {
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/BriefingSourceRef"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "time_of_day": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Of Day",
+            "description": "Local time, HH:MM."
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "in_progress",
+              "not_started"
+            ],
+            "title": "State"
+          },
+          "steps": {
+            "type": "integer",
+            "title": "Steps"
+          },
+          "estimated_minutes": {
+            "type": "integer",
+            "title": "Estimated Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref",
+          "name",
+          "time_of_day",
+          "state",
+          "steps",
+          "estimated_minutes"
+        ],
+        "title": "BriefingRoutineItem"
+      },
+      "BriefingRoutines": {
+        "properties": {
+          "routines": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingRoutineItem"
+            },
+            "type": "array",
+            "title": "Routines"
+          }
+        },
+        "type": "object",
+        "required": [
+          "routines"
+        ],
+        "title": "BriefingRoutines"
+      },
+      "BriefingSavingsGoalItem": {
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/BriefingSourceRef"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "target_amount": {
+            "type": "integer",
+            "title": "Target Amount"
+          },
+          "saved": {
+            "type": "integer",
+            "title": "Saved"
+          },
+          "progress_bps": {
+            "type": "integer",
+            "title": "Progress Bps"
+          },
+          "target_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Target Date"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "warning",
+              "info"
+            ],
+            "title": "Severity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref",
+          "name",
+          "currency",
+          "target_amount",
+          "saved",
+          "progress_bps",
+          "target_date",
+          "severity"
+        ],
+        "title": "BriefingSavingsGoalItem"
+      },
+      "BriefingSchedule": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingEventItem"
+            },
+            "type": "array",
+            "title": "Events",
+            "description": "Today's confirmed occurrences: all-day first, then by start."
+          },
+          "time_blocks": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingTimeBlock"
+            },
+            "type": "array",
+            "title": "Time Blocks"
+          },
+          "conflicts": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingConflict"
+            },
+            "type": "array",
+            "title": "Conflicts"
+          },
+          "upcoming": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingEventItem"
+            },
+            "type": "array",
+            "title": "Upcoming",
+            "description": "Timed occurrences after today, within the horizon."
+          }
+        },
+        "type": "object",
+        "required": [
+          "events",
+          "time_blocks",
+          "conflicts",
+          "upcoming"
+        ],
+        "title": "BriefingSchedule"
+      },
+      "BriefingSettingsBody": {
+        "properties": {
+          "horizon_days": {
+            "type": "integer",
+            "maximum": 14.0,
+            "minimum": 1.0,
+            "title": "Horizon Days",
+            "description": "How many days ahead upcoming events, deadlines, and payments look."
+          },
+          "hidden": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "tasks",
+                "calendar",
+                "reminders",
+                "payments",
+                "budgets",
+                "goals",
+                "habits",
+                "routines",
+                "health",
+                "notes",
+                "documents",
+                "shopping",
+                "investments"
+              ]
+            },
+            "type": "array",
+            "maxItems": 13,
+            "title": "Hidden",
+            "description": "Modules left out of the briefing entirely."
+          },
+          "prepare_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prepare At",
+            "description": "Local time (your time zone preference) to prepare the briefing each day; `null` prepares it only when opened."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "horizon_days",
+          "hidden",
+          "prepare_at"
+        ],
+        "title": "BriefingSettingsBody",
+        "description": "How a person's briefing is prepared. Applies from the next briefing prepared."
+      },
+      "BriefingShopping": {
+        "properties": {
+          "lists": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingShoppingListItem"
+            },
+            "type": "array",
+            "title": "Lists",
+            "description": "Lists with items still to buy."
+          },
+          "needed": {
+            "type": "integer",
+            "title": "Needed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lists",
+          "needed"
+        ],
+        "title": "BriefingShopping"
+      },
+      "BriefingShoppingListItem": {
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/BriefingSourceRef"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "needed": {
+            "type": "integer",
+            "title": "Needed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref",
+          "name",
+          "needed"
+        ],
+        "title": "BriefingShoppingListItem"
+      },
+      "BriefingSipItem": {
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/BriefingSourceRef"
+          },
+          "holding_name": {
+            "type": "string",
+            "title": "Holding Name"
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount",
+            "description": "Minor units."
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Due Date"
+          },
+          "auto_debit": {
+            "type": "boolean",
+            "title": "Auto Debit"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "warning",
+              "info"
+            ],
+            "title": "Severity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref",
+          "holding_name",
+          "amount",
+          "currency",
+          "due_date",
+          "auto_debit",
+          "severity"
+        ],
+        "title": "BriefingSipItem"
+      },
+      "BriefingSourceRef": {
+        "properties": {
+          "module": {
+            "type": "string",
+            "enum": [
+              "tasks",
+              "calendar",
+              "reminders",
+              "payments",
+              "budgets",
+              "goals",
+              "habits",
+              "routines",
+              "health",
+              "notes",
+              "documents",
+              "shopping",
+              "investments"
+            ],
+            "title": "Module"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "task",
+              "event",
+              "reminder",
+              "commitment",
+              "budget",
+              "savings_goal",
+              "habit",
+              "routine",
+              "workout",
+              "fitness_goal",
+              "note",
+              "document",
+              "shopping_list",
+              "sip",
+              "deposit"
+            ],
+            "title": "Type"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "occurrence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurrence",
+            "description": "One occurrence of a repeating record: an event's original start (UTC, ISO 8601), or a payment's due date."
+          },
+          "key": {
+            "type": "string",
+            "title": "Key",
+            "description": "Stable across regenerations and unique within a briefing."
+          }
+        },
+        "type": "object",
+        "required": [
+          "module",
+          "type",
+          "id",
+          "occurrence",
+          "key"
+        ],
+        "title": "BriefingSourceRef"
+      },
+      "BriefingSourceState": {
+        "properties": {
+          "module": {
+            "type": "string",
+            "enum": [
+              "tasks",
+              "calendar",
+              "reminders",
+              "payments",
+              "budgets",
+              "goals",
+              "habits",
+              "routines",
+              "health",
+              "notes",
+              "documents",
+              "shopping",
+              "investments"
+            ],
+            "title": "Module"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "empty",
+              "unavailable",
+              "off"
+            ],
+            "title": "Status"
+          },
+          "items": {
+            "type": "integer",
+            "title": "Items"
+          },
+          "loaded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Loaded At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "module",
+          "status",
+          "items",
+          "loaded_at"
+        ],
+        "title": "BriefingSourceState"
+      },
+      "BriefingSummaryResponse": {
+        "properties": {
+          "events": {
+            "type": "integer",
+            "title": "Events"
+          },
+          "conflicts": {
+            "type": "integer",
+            "title": "Conflicts"
+          },
+          "tasks_overdue": {
+            "type": "integer",
+            "title": "Tasks Overdue"
+          },
+          "tasks_due_today": {
+            "type": "integer",
+            "title": "Tasks Due Today"
+          },
+          "reminders_due": {
+            "type": "integer",
+            "title": "Reminders Due"
+          },
+          "payments_overdue": {
+            "type": "integer",
+            "title": "Payments Overdue"
+          },
+          "payments_due": {
+            "type": "integer",
+            "title": "Payments Due"
+          },
+          "budgets_exceeded": {
+            "type": "integer",
+            "title": "Budgets Exceeded"
+          },
+          "budgets_approaching": {
+            "type": "integer",
+            "title": "Budgets Approaching"
+          },
+          "habits_remaining": {
+            "type": "integer",
+            "title": "Habits Remaining"
+          },
+          "habits_done": {
+            "type": "integer",
+            "title": "Habits Done"
+          },
+          "workouts": {
+            "type": "integer",
+            "title": "Workouts"
+          },
+          "attention": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingAttentionItem"
+            },
+            "type": "array",
+            "title": "Attention",
+            "description": "The most pressing items, critical first, at most 10."
+          }
+        },
+        "type": "object",
+        "required": [
+          "events",
+          "conflicts",
+          "tasks_overdue",
+          "tasks_due_today",
+          "reminders_due",
+          "payments_overdue",
+          "payments_due",
+          "budgets_exceeded",
+          "budgets_approaching",
+          "habits_remaining",
+          "habits_done",
+          "workouts",
+          "attention"
+        ],
+        "title": "BriefingSummaryResponse"
+      },
+      "BriefingTaskItem": {
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/BriefingSourceRef"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "none",
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Priority"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "scheduled_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Start"
+          },
+          "scheduled_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled End"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "warning",
+              "info"
+            ],
+            "title": "Severity"
+          },
+          "reminder_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reminder At",
+            "description": "The task's reminder today, which isn't listed again under reminders."
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref",
+          "title",
+          "priority",
+          "due_date",
+          "completed_at",
+          "scheduled_start",
+          "scheduled_end",
+          "severity",
+          "reminder_at"
+        ],
+        "title": "BriefingTaskItem"
+      },
+      "BriefingTaskList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingTaskItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Every matching task; `items` holds at most 10."
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "BriefingTaskList"
+      },
+      "BriefingTasks": {
+        "properties": {
+          "overdue": {
+            "$ref": "#/components/schemas/BriefingTaskList"
+          },
+          "due_today": {
+            "$ref": "#/components/schemas/BriefingTaskList"
+          },
+          "high_priority": {
+            "$ref": "#/components/schemas/BriefingTaskList",
+            "description": "Open high-priority tasks due later or without a due date."
+          },
+          "completed": {
+            "$ref": "#/components/schemas/BriefingTaskList",
+            "description": "Completed since the start of yesterday."
+          }
+        },
+        "type": "object",
+        "required": [
+          "overdue",
+          "due_today",
+          "high_priority",
+          "completed"
+        ],
+        "title": "BriefingTasks"
+      },
+      "BriefingTimeBlock": {
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/BriefingSourceRef"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "start_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start At"
+          },
+          "end_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End At"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref",
+          "title",
+          "start_at",
+          "end_at",
+          "completed"
+        ],
+        "title": "BriefingTimeBlock"
+      },
+      "BriefingWorkoutItem": {
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/BriefingSourceRef"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "scheduled",
+              "in_progress",
+              "completed"
+            ],
+            "title": "State"
+          },
+          "start_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start At"
+          },
+          "end_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref",
+          "name",
+          "state",
+          "start_at",
+          "end_at"
+        ],
+        "title": "BriefingWorkoutItem"
       },
       "BudgetDetailResponse": {
         "properties": {
