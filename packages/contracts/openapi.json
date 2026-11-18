@@ -39772,7 +39772,11 @@
                 "documents",
                 "finance",
                 "health",
-                "mail"
+                "mail",
+                "shopping",
+                "places",
+                "saved",
+                "watchlist"
               ]
             },
             "type": "array",
@@ -40022,7 +40026,11 @@
                   "documents",
                   "finance",
                   "health",
-                  "mail"
+                  "mail",
+                  "shopping",
+                  "places",
+                  "saved",
+                  "watchlist"
                 ]
               },
               {
@@ -41727,7 +41735,16 @@
               "create_note",
               "append_to_note",
               "add_note_tags",
-              "update_document_details"
+              "update_document_details",
+              "add_shopping_item",
+              "create_habit",
+              "log_water",
+              "log_weight",
+              "log_activity",
+              "add_transaction",
+              "add_place",
+              "save_link",
+              "add_watch_item"
             ],
             "title": "Kind"
           },
@@ -42197,6 +42214,11 @@
           "indexing_enabled": {
             "type": "boolean",
             "title": "Indexing Enabled"
+          },
+          "auto_capture": {
+            "type": "boolean",
+            "title": "Auto Capture",
+            "description": "Add simple items the person typed without asking."
           }
         },
         "type": "object",
@@ -42213,7 +42235,8 @@
           "modules",
           "response_style",
           "monthly_token_limit",
-          "indexing_enabled"
+          "indexing_enabled",
+          "auto_capture"
         ],
         "title": "AiSettingsResponse"
       },
@@ -68843,7 +68866,11 @@
                     "documents",
                     "finance",
                     "health",
-                    "mail"
+                    "mail",
+                    "shopping",
+                    "places",
+                    "saved",
+                    "watchlist"
                   ]
                 },
                 "type": "array",
@@ -69199,6 +69226,17 @@
               }
             ],
             "title": "Indexing Enabled"
+          },
+          "auto_capture": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auto Capture"
           }
         },
         "additionalProperties": false,

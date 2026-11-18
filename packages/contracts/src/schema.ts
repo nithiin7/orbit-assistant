@@ -8117,7 +8117,7 @@ export interface components {
              */
             autonomy: "read_only" | "suggest" | "approval" | "limited";
             /** Modules */
-            modules: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail")[];
+            modules: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail" | "shopping" | "places" | "saved" | "watchlist")[];
             /** Tool Modes */
             tool_modes: {
                 [key: string]: "off" | "ask" | "auto";
@@ -8204,7 +8204,7 @@ export interface components {
             /** Description */
             description: string;
             /** Module */
-            module: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail") | null;
+            module: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail" | "shopping" | "places" | "saved" | "watchlist") | null;
             /**
              * Access
              * @enum {string}
@@ -8832,7 +8832,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "create_task" | "create_reminder" | "create_event" | "create_note" | "append_to_note" | "add_note_tags" | "update_document_details";
+            kind: "create_task" | "create_reminder" | "create_event" | "create_note" | "append_to_note" | "add_note_tags" | "update_document_details" | "add_shopping_item" | "create_habit" | "log_water" | "log_weight" | "log_activity" | "add_transaction" | "add_place" | "save_link" | "add_watch_item";
             /** Payload */
             payload: {
                 [key: string]: unknown;
@@ -9002,6 +9002,11 @@ export interface components {
             monthly_token_limit: number | null;
             /** Indexing Enabled */
             indexing_enabled: boolean;
+            /**
+             * Auto Capture
+             * @description Add simple items the person typed without asking.
+             */
+            auto_capture: boolean;
         };
         /** AiSuggestedExerciseResponse */
         AiSuggestedExerciseResponse: {
@@ -19938,7 +19943,7 @@ export interface components {
             /** Autonomy */
             autonomy?: ("read_only" | "suggest" | "approval" | "limited") | null;
             /** Modules */
-            modules?: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail")[] | null;
+            modules?: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail" | "shopping" | "places" | "saved" | "watchlist")[] | null;
             /** Tool Modes */
             tool_modes?: {
                 [key: string]: "off" | "ask" | "auto";
@@ -19997,6 +20002,8 @@ export interface components {
             monthly_token_limit?: number | null;
             /** Indexing Enabled */
             indexing_enabled?: boolean | null;
+            /** Auto Capture */
+            auto_capture?: boolean | null;
         };
         /**
          * UpdateAssetRequest
