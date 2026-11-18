@@ -45,7 +45,11 @@ from orbit_api.repositories.notifications import SqlNotificationRepository
 from orbit_api.repositories.places import SqlPlaceRepository, SqlPlaceSettings
 from orbit_api.repositories.planning import build_planning_service
 from orbit_api.repositories.push import build_push_service
-from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
+from orbit_api.repositories.reminders import (
+    SqlOccurrenceRepository,
+    SqlReminderRepository,
+    build_task_service,
+)
 from orbit_api.repositories.search.history import build_search_history
 from orbit_api.repositories.search.providers import build_universal_search
 from orbit_api.repositories.shopping import SqlShoppingItemRepository, SqlShoppingListRepository
@@ -211,7 +215,7 @@ DashboardServiceDep = Annotated[DashboardService, Depends(get_dashboard_service)
 
 
 def get_task_service(session: SessionDep) -> TaskService:
-    return TaskService(SqlTaskRepository(session), SqlTransaction(session))
+    return build_task_service(session, SqlTransaction(session))
 
 
 TaskServiceDep = Annotated[TaskService, Depends(get_task_service)]

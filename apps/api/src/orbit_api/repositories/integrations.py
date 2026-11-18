@@ -35,7 +35,11 @@ from orbit_api.repositories.notes import (
     SqlNoteTagRepository,
 )
 from orbit_api.repositories.notifications import SqlNotificationRepository
-from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
+from orbit_api.repositories.reminders import (
+    SqlOccurrenceRepository,
+    SqlReminderRepository,
+    build_task_service,
+)
 from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import SqlTransaction, flush
 from orbit_api.services.calendar.models import EventException
@@ -72,7 +76,6 @@ from orbit_api.services.integrations.tokens import TokenManager
 from orbit_api.services.notes.service import NoteService
 from orbit_api.services.notifications.models import Notification
 from orbit_api.services.reminders.service import ReminderService
-from orbit_api.services.tasks.service import TaskService
 from orbit_api.system.attachment_store import FileAttachmentStore
 from orbit_api.system.secrets import IntegrationSecretBox
 from orbit_api.utils.clock import utc_now
@@ -887,7 +890,7 @@ def build_integrations(
         store,
         tokens,
         connectors,
-        TaskService(SqlTaskRepository(session), deferred, clock),
+        build_task_service(session, deferred, clock),
         NoteService(
             SqlNoteRepository(session),
             SqlNoteFolderRepository(session),

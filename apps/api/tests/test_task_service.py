@@ -105,6 +105,18 @@ class FakeTasks:
         return True
 
 
+class FakeOccurrenceReminders:
+    async def move(
+        self,
+        workspace_id: uuid.UUID,
+        source_id: uuid.UUID,
+        target_id: uuid.UUID,
+        shift: timedelta,
+        now: datetime,
+    ) -> None:
+        raise NotImplementedError
+
+
 class Clock:
     def __init__(self) -> None:
         self.now = datetime(2026, 10, 29, 9, 0, tzinfo=UTC)
@@ -134,7 +146,7 @@ def transaction() -> FakeTransaction:
 
 @pytest.fixture
 def service(repository: FakeTasks, transaction: FakeTransaction, clock: Clock) -> TaskService:
-    return TaskService(repository, transaction, clock=clock)
+    return TaskService(repository, FakeOccurrenceReminders(), transaction, clock=clock)
 
 
 async def test_create_opens_a_task_in_the_workspace(

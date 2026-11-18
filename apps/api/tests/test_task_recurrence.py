@@ -2,6 +2,7 @@
 
 from collections.abc import Iterator
 from datetime import date
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -205,6 +206,124 @@ def test_the_next_occurrence_leaves_the_time_block_behind(
 
     [following] = open_tasks(client, tasks_url, ada)
     assert (following["scheduled_start"], following["scheduled_end"]) == (None, None)
+
+
+def far_off_task(client: TestClient, url: str, headers: Headers) -> dict[str, Any]:
+    """A weekly task due far enough ahead that its reminders are still to come."""
+    response = client.post(
+        url,
+        headers=headers,
+        json={
+            "title": "Pay the gardener",
+            "due_date": "2030-03-11",
+            "recurrence": {"frequency": "weekly", "interval": 1},
+        },
+    )
+    assert response.status_code == 201
+    return response.json()
+
+
+def add_reminder(
+    client: TestClient, tasks_url: str, headers: Headers, task_id: object, **fields: object
+) -> dict[str, Any]:
+    response = client.post(
+        tasks_url.removesuffix("/tasks") + "/reminders",
+        headers=headers,
+        json={
+            "title": "Pay the gardener tomorrow",
+            "task_id": task_id,
+            "start_date": "2030-03-10",
+            "time_of_day": "09:00",
+            "timezone": "UTC",
+            **fields,
+        },
+    )
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
+def get_reminder(
+    client: TestClient, tasks_url: str, headers: Headers, reminder: dict[str, Any]
+) -> dict[str, Any]:
+    url = f"{tasks_url.removesuffix('/tasks')}/reminders/{reminder['id']}"
+    return client.get(url, headers=headers).json()
+
+
+def test_a_one_time_reminder_moves_with_the_due_date(
+    client: TestClient, ada: Headers, tasks_url: str
+) -> None:
+    task = far_off_task(client, tasks_url, ada)
+    reminder = add_reminder(client, tasks_url, ada, task["id"])
+
+    complete(client, tasks_url, ada, task)
+
+    [following] = open_tasks(client, tasks_url, ada)
+    moved = get_reminder(client, tasks_url, ada, reminder)
+    assert moved["task"]["id"] == following["id"]
+    assert moved["task"]["status"] == "open"
+    assert moved["start_date"] == "2030-03-17"
+    assert moved["next_occurrence_at"].startswith("2030-03-17T09:00:00")
+
+
+def test_a_recurring_reminder_keeps_its_schedule_on_the_next_occurrence(
+    client: TestClient, ada: Headers, tasks_url: str
+) -> None:
+    task = far_off_task(client, tasks_url, ada)
+    reminder = add_reminder(client, tasks_url, ada, task["id"], recurrence={"frequency": "daily"})
+
+    complete(client, tasks_url, ada, task)
+
+    [following] = open_tasks(client, tasks_url, ada)
+    moved = get_reminder(client, tasks_url, ada, reminder)
+    assert moved["task"]["id"] == following["id"]
+    assert moved["start_date"] == reminder["start_date"]
+    assert moved["next_occurrence_at"] == reminder["next_occurrence_at"]
+
+
+def test_a_disabled_reminder_moves_without_being_scheduled(
+    client: TestClient, ada: Headers, tasks_url: str
+) -> None:
+    task = far_off_task(client, tasks_url, ada)
+    reminder = add_reminder(client, tasks_url, ada, task["id"], enabled=False)
+
+    complete(client, tasks_url, ada, task)
+
+    moved = get_reminder(client, tasks_url, ada, reminder)
+    assert (moved["start_date"], moved["enabled"]) == ("2030-03-17", False)
+    assert moved["next_occurrence_at"] is None
+
+
+def test_undoing_a_completion_takes_the_reminders_back(
+    client: TestClient, ada: Headers, tasks_url: str
+) -> None:
+    task = far_off_task(client, tasks_url, ada)
+    reminder = add_reminder(client, tasks_url, ada, task["id"])
+    complete(client, tasks_url, ada, task)
+    [following] = open_tasks(client, tasks_url, ada)
+    added_later = add_reminder(client, tasks_url, ada, following["id"], start_date="2030-03-16")
+
+    client.post(f"{tasks_url}/{task['id']}/reopen", headers=ada)
+
+    restored = get_reminder(client, tasks_url, ada, reminder)
+    assert restored["task"]["id"] == task["id"]
+    assert restored["start_date"] == "2030-03-10"
+    assert restored["next_occurrence_at"].startswith("2030-03-10T09:00:00")
+    kept = get_reminder(client, tasks_url, ada, added_later)
+    assert (kept["task"]["id"], kept["start_date"]) == (task["id"], "2030-03-09")
+
+
+def test_a_reminder_stays_on_a_task_that_does_not_repeat(
+    client: TestClient, ada: Headers, tasks_url: str
+) -> None:
+    created = client.post(
+        tasks_url, headers=ada, json={"title": "Once", "due_date": "2030-03-11"}
+    ).json()
+    reminder = add_reminder(client, tasks_url, ada, created["id"])
+
+    complete(client, tasks_url, ada, created)
+
+    kept = get_reminder(client, tasks_url, ada, reminder)
+    assert (kept["task"]["id"], kept["start_date"]) == (created["id"], "2030-03-10")
 
 
 def test_undoing_a_completion_takes_the_next_occurrence_back(

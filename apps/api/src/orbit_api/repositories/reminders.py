@@ -7,6 +7,7 @@ IDs from a request.
 """
 
 import uuid
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any, cast
 
@@ -32,6 +33,7 @@ from orbit_api.db.models import (
     TaskModel,
     WorkspaceModel,
 )
+from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import flush
 from orbit_api.services.reminders.models import (
     ClaimedOccurrence,
@@ -54,7 +56,11 @@ from orbit_api.services.reminders.recurrence import (
     recurrence_from_json,
     recurrence_to_json,
 )
+from orbit_api.services.reminders.task_series import SeriesReminders
 from orbit_api.services.tasks.models import TaskListColor, TaskStatus
+from orbit_api.services.tasks.service import TaskService
+from orbit_api.services.transactions import Transaction
+from orbit_api.utils.clock import utc_now
 
 _ACTIVE: tuple[OccurrenceStatus, ...] = ("pending", "processing")
 
@@ -222,6 +228,16 @@ class SqlReminderRepository:
             .with_for_update()
         )
         return _to_reminder(model) if model else None
+
+    async def for_task(self, workspace_id: uuid.UUID, task_id: uuid.UUID) -> list[Reminder]:
+        """The task's reminders, oldest first, locked for this transaction."""
+        models = await self._session.scalars(
+            select(ReminderModel)
+            .where(ReminderModel.workspace_id == workspace_id, ReminderModel.task_id == task_id)
+            .order_by(ReminderModel.created_at, ReminderModel.id)
+            .with_for_update()
+        )
+        return [_to_reminder(model) for model in models]
 
     async def view(
         self, workspace_id: uuid.UUID, reminder_id: uuid.UUID, now: datetime
@@ -510,3 +526,15 @@ class SqlOccurrenceRepository:
             .execution_options(synchronize_session=False)
         )
         return rows.first() is not None
+
+
+def build_task_service(
+    session: AsyncSession, transaction: Transaction, clock: Callable[[], datetime] = utc_now
+) -> TaskService:
+    """Tasks whose repeating series carry their reminders along, in `transaction`."""
+    return TaskService(
+        SqlTaskRepository(session),
+        SeriesReminders(SqlReminderRepository(session), SqlOccurrenceRepository(session)),
+        transaction,
+        clock,
+    )

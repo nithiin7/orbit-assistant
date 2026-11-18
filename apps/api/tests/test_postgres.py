@@ -25,9 +25,9 @@ from orbit_api.repositories.calendar import build_calendar_service
 from orbit_api.repositories.documents import build_document_service
 from orbit_api.repositories.fitness import build_fitness
 from orbit_api.repositories.habits import build_habit_service, build_routine_service
+from orbit_api.repositories.reminders import build_task_service
 from orbit_api.repositories.search.history import build_search_history
 from orbit_api.repositories.search.providers import build_universal_search
-from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.repositories.workspaces import SqlWorkspaceRepository
 from orbit_api.services.backup.service import ApplyRequest
@@ -74,7 +74,6 @@ from orbit_api.services.habits.schedule import HabitSchedule
 from orbit_api.services.search.history import DuplicateSavedSearchError
 from orbit_api.services.search.universal_models import SearchScope, UniversalQuery
 from orbit_api.services.tasks.models import TaskDraft
-from orbit_api.services.tasks.service import TaskService
 from orbit_api.system.attachment_store import FileAttachmentStore
 
 TEST_DATABASE_URL = os.environ.get("ORBIT_TEST_DATABASE_URL")
@@ -389,7 +388,7 @@ async def test_documents_on_postgres(cloud_settings: Settings, tmp_path: Path) -
             counts = await documents.counts(workspace_id, date(2030, 3, 1))
             assert (counts.all, counts.expiring_30, counts.total_bytes) == (1, 1, 2 * len(pdf) + 1)
 
-            tasks = TaskService(SqlTaskRepository(session), SqlTransaction(session))
+            tasks = build_task_service(session, SqlTransaction(session))
             task = await tasks.create(workspace_id, TaskDraft(title="Renew"))
             await documents.link(workspace_id, uploaded.id, LinkTarget("task", task.id))
             detail = await documents.detail(workspace_id, uploaded.id)
@@ -734,7 +733,7 @@ async def test_backup_and_restore_on_postgres(cloud_settings: Settings, tmp_path
                 {"id": workspace_id, "owner": user_id},
             )
             await session.commit()
-            tasks = TaskService(SqlTaskRepository(session), SqlTransaction(session))
+            tasks = build_task_service(session, SqlTransaction(session))
             await tasks.create(workspace_id, TaskDraft(title="On Postgres"))
             calendar = build_calendar_service(session)
             await calendar.create_event(

@@ -94,14 +94,29 @@ class TaskRepository(Protocol):
         ...
 
 
+class OccurrenceReminders(Protocol):
+    """Hands a repeating task's reminders from one occurrence to another."""
+
+    async def move(
+        self,
+        workspace_id: uuid.UUID,
+        source_id: uuid.UUID,
+        target_id: uuid.UUID,
+        shift: timedelta,
+        now: datetime,
+    ) -> None: ...
+
+
 class TaskService:
     def __init__(
         self,
         tasks: TaskRepository,
+        reminders: OccurrenceReminders,
         transaction: Transaction,
         clock: Callable[[], datetime] = utc_now,
     ) -> None:
         self._tasks = tasks
+        self._reminders = reminders
         self._transaction = transaction
         self._clock = clock
 
@@ -170,8 +185,8 @@ class TaskService:
     ) -> Task:
         """Mark the task completed. Completing a completed task keeps its completion time.
 
-        A repeating task hands its recurrence to a new open occurrence, in the same transaction.
-        `today` is the user's local date, and defaults to today's date in UTC.
+        A repeating task hands its recurrence and reminders to a new open occurrence, in the same
+        transaction. `today` is the user's local date, and defaults to today's date in UTC.
         """
         task = await self.get(workspace_id, task_id)
         if task.status == "completed":
@@ -183,30 +198,40 @@ class TaskService:
         await self._tasks.save(completed)
         if task.recurrence is not None and task.due_date is not None:
             due_date = next_due_date(task.recurrence, task.due_date, today or now.date())
-            await self._tasks.add(
-                replace(
-                    task,
-                    id=uuid.uuid4(),
-                    due_date=due_date,
-                    # A time block belongs to the occurrence it was planned for.
-                    scheduled_start=None,
-                    scheduled_end=None,
-                    created_at=now,
-                    updated_at=now,
-                )
+            following = replace(
+                task,
+                id=uuid.uuid4(),
+                due_date=due_date,
+                # A time block belongs to the occurrence it was planned for.
+                scheduled_start=None,
+                scheduled_end=None,
+                created_at=now,
+                updated_at=now,
+            )
+            await self._tasks.add(following)
+            await self._reminders.move(
+                workspace_id, task.id, following.id, due_date - task.due_date, now
             )
         await self._transaction.commit()
         return completed
 
     async def reopen(self, workspace_id: uuid.UUID, task_id: uuid.UUID) -> Task:
         """Reopen the task. Undoing the completion that created a next occurrence takes that
-        occurrence back, unless it has been edited since; then the series carries on from it."""
+        occurrence back, with its reminders, unless it has been edited since; then the series
+        carries on from it."""
         task = await self.get(workspace_id, task_id)
         if task.status == "open":
             return task
         now = self._clock()
         following = await self._untouched_next_occurrence(task)
         if following is not None:
+            # Deleting the occurrence would delete any reminder still attached to it.
+            shift = (
+                task.due_date - following.due_date
+                if task.due_date is not None and following.due_date is not None
+                else timedelta()
+            )
+            await self._reminders.move(workspace_id, following.id, task.id, shift, now)
             await self._tasks.delete(workspace_id, following.id)
         reopened = replace(
             task,

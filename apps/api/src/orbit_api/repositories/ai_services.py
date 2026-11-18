@@ -31,7 +31,11 @@ from orbit_api.repositories.finance import (
 from orbit_api.repositories.fitness import build_fitness
 from orbit_api.repositories.habits import build_habit_service
 from orbit_api.repositories.notes import build_note_service
-from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
+from orbit_api.repositories.reminders import (
+    SqlOccurrenceRepository,
+    SqlReminderRepository,
+    build_task_service,
+)
 from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.services.ai.actions import ActionExecutor, ActionValidator, ProposalService
@@ -126,7 +130,7 @@ def build_ai(
 ) -> AiServices:
     transaction = SqlTransaction(session)
     files = FileAttachmentStore(settings.attachments_dir)
-    tasks = TaskService(SqlTaskRepository(session), transaction, clock)
+    tasks = build_task_service(session, transaction, clock)
     notes = build_note_service(session)
     calendar = build_calendar_service(session, clock)
     reminders = ReminderService(

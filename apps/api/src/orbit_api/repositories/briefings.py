@@ -29,7 +29,11 @@ from orbit_api.repositories.goals import build_goal_service
 from orbit_api.repositories.habits import build_habit_service, build_routine_service
 from orbit_api.repositories.investments import build_investment_service
 from orbit_api.repositories.notes import build_note_service
-from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
+from orbit_api.repositories.reminders import (
+    SqlOccurrenceRepository,
+    SqlReminderRepository,
+    build_task_service,
+)
 from orbit_api.repositories.shopping import SqlShoppingItemRepository, SqlShoppingListRepository
 from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import SqlTransaction, flush
@@ -50,7 +54,6 @@ from orbit_api.services.briefings.models import (
 from orbit_api.services.briefings.service import BriefingService, ScheduledBriefing
 from orbit_api.services.reminders.service import ReminderService
 from orbit_api.services.shopping.service import ShoppingService
-from orbit_api.services.tasks.service import TaskService
 from orbit_api.system.attachment_store import FileAttachmentStore
 from orbit_api.utils.clock import utc_now
 
@@ -300,7 +303,7 @@ def build_briefing_service(
     now = clock or utc_now
     transaction = SqlTransaction(session)
     aggregator = BriefingAggregator(
-        tasks=TaskService(SqlTaskRepository(session), transaction, now),
+        tasks=build_task_service(session, transaction, now),
         calendar=build_calendar_service(session, clock),
         reminders=ReminderService(
             SqlReminderRepository(session),

@@ -32,7 +32,11 @@ from orbit_api.repositories.notes import (
     SqlNoteTagRepository,
 )
 from orbit_api.repositories.notifications import SqlNotificationRepository
-from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
+from orbit_api.repositories.reminders import (
+    SqlOccurrenceRepository,
+    SqlReminderRepository,
+    build_task_service,
+)
 from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.services.agent.automation import AutomationService
@@ -166,7 +170,7 @@ def build_agent(
     store = SqlAgentStore(session)
     notifications = SqlNotificationRepository(session)
     writes = WriteServices(
-        tasks=TaskService(SqlTaskRepository(session), deferred, clock),
+        tasks=build_task_service(session, deferred, clock),
         reminders=ReminderService(
             SqlReminderRepository(session),
             SqlOccurrenceRepository(session),
