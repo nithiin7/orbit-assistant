@@ -35222,6 +35222,210 @@
         }
       }
     },
+    "/api/v1/me/push": {
+      "get": {
+        "tags": [
+          "push"
+        ],
+        "summary": "Get push notification status and preferences",
+        "operationId": "get_push_status_api_v1_me_push_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/push/preferences": {
+      "put": {
+        "tags": [
+          "push"
+        ],
+        "summary": "Choose what push notifications to receive",
+        "operationId": "update_push_preferences_api_v1_me_push_preferences_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePushPreferencesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/push/subscriptions": {
+      "put": {
+        "tags": [
+          "push"
+        ],
+        "summary": "Turn push notifications on for this device",
+        "operationId": "save_push_subscription_api_v1_me_push_subscriptions_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushSubscriptionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "503": {
+            "description": "Push notifications aren't available on this server."
+          },
+          "422": {
+            "description": "The subscription isn't from a known browser push service."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/push/subscriptions/remove": {
+      "post": {
+        "tags": [
+          "push"
+        ],
+        "summary": "Turn push notifications off for this device",
+        "operationId": "remove_push_subscription_api_v1_me_push_subscriptions_remove_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemovePushSubscriptionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/push/test": {
+      "post": {
+        "tags": [
+          "push"
+        ],
+        "summary": "Send a test notification to your devices",
+        "operationId": "send_push_test_api_v1_me_push_test_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushTestResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "503": {
+            "description": "Push notifications aren't available on this server."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/me/voice/settings": {
       "get": {
         "tags": [
@@ -61890,6 +62094,101 @@
         "title": "ProgressModel",
         "description": "The last episode watched."
       },
+      "PushStatusResponse": {
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "title": "Available",
+            "description": "Whether this server can send push notifications."
+          },
+          "public_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Public Key",
+            "description": "The key browsers subscribe with."
+          },
+          "reminders": {
+            "type": "boolean",
+            "title": "Reminders",
+            "description": "Send a notification when a reminder is due."
+          },
+          "briefing": {
+            "type": "boolean",
+            "title": "Briefing",
+            "description": "Send a notification when the daily briefing is ready."
+          },
+          "show_details": {
+            "type": "boolean",
+            "title": "Show Details",
+            "description": "Include a reminder's title and message."
+          },
+          "devices": {
+            "type": "integer",
+            "title": "Devices",
+            "description": "How many devices have push turned on."
+          }
+        },
+        "type": "object",
+        "required": [
+          "available",
+          "public_key",
+          "reminders",
+          "briefing",
+          "show_details",
+          "devices"
+        ],
+        "title": "PushStatusResponse"
+      },
+      "PushSubscriptionRequest": {
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Endpoint"
+          },
+          "p256dh": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "P256Dh"
+          },
+          "auth": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Auth"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "endpoint",
+          "p256dh",
+          "auth"
+        ],
+        "title": "PushSubscriptionRequest"
+      },
+      "PushTestResponse": {
+        "properties": {
+          "sent": {
+            "type": "integer",
+            "title": "Sent",
+            "description": "How many devices' push services accepted the notification."
+          }
+        },
+        "type": "object",
+        "required": [
+          "sent"
+        ],
+        "title": "PushTestResponse"
+      },
       "QualityResponse": {
         "properties": {
           "estimated": {
@@ -63206,6 +63505,22 @@
           "imported"
         ],
         "title": "RemoteFileResponse"
+      },
+      "RemovePushSubscriptionRequest": {
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Endpoint"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "endpoint"
+        ],
+        "title": "RemovePushSubscriptionRequest"
       },
       "RenameAiConversationRequest": {
         "properties": {
@@ -71382,6 +71697,30 @@
         "type": "object",
         "title": "UpdateProfileRequest",
         "description": "Change some profile fields. Omitted fields keep their values; `timezone: null` clears\nthe time zone preference."
+      },
+      "UpdatePushPreferencesRequest": {
+        "properties": {
+          "reminders": {
+            "type": "boolean",
+            "title": "Reminders"
+          },
+          "briefing": {
+            "type": "boolean",
+            "title": "Briefing"
+          },
+          "show_details": {
+            "type": "boolean",
+            "title": "Show Details"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reminders",
+          "briefing",
+          "show_details"
+        ],
+        "title": "UpdatePushPreferencesRequest"
       },
       "UpdateRecurringPaymentRequest": {
         "properties": {

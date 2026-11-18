@@ -6687,6 +6687,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/push": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get push notification status and preferences */
+        get: operations["get_push_status_api_v1_me_push_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/push/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Choose what push notifications to receive */
+        put: operations["update_push_preferences_api_v1_me_push_preferences_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/push/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Turn push notifications on for this device */
+        put: operations["save_push_subscription_api_v1_me_push_subscriptions_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/push/subscriptions/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Turn push notifications off for this device */
+        post: operations["remove_push_subscription_api_v1_me_push_subscriptions_remove_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/push/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a test notification to your devices */
+        post: operations["send_push_test_api_v1_me_push_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/voice/settings": {
         parameters: {
             query?: never;
@@ -17214,6 +17299,56 @@ export interface components {
             /** Episode */
             episode: number;
         };
+        /** PushStatusResponse */
+        PushStatusResponse: {
+            /**
+             * Available
+             * @description Whether this server can send push notifications.
+             */
+            available: boolean;
+            /**
+             * Public Key
+             * @description The key browsers subscribe with.
+             */
+            public_key: string | null;
+            /**
+             * Reminders
+             * @description Send a notification when a reminder is due.
+             */
+            reminders: boolean;
+            /**
+             * Briefing
+             * @description Send a notification when the daily briefing is ready.
+             */
+            briefing: boolean;
+            /**
+             * Show Details
+             * @description Include a reminder's title and message.
+             */
+            show_details: boolean;
+            /**
+             * Devices
+             * @description How many devices have push turned on.
+             */
+            devices: number;
+        };
+        /** PushSubscriptionRequest */
+        PushSubscriptionRequest: {
+            /** Endpoint */
+            endpoint: string;
+            /** P256Dh */
+            p256dh: string;
+            /** Auth */
+            auth: string;
+        };
+        /** PushTestResponse */
+        PushTestResponse: {
+            /**
+             * Sent
+             * @description How many devices' push services accepted the notification.
+             */
+            sent: number;
+        };
         /** QualityResponse */
         QualityResponse: {
             /** Estimated */
@@ -17786,6 +17921,11 @@ export interface components {
             /** Url */
             url: string | null;
             imported: components["schemas"]["IntegrationLinkResponse"] | null;
+        };
+        /** RemovePushSubscriptionRequest */
+        RemovePushSubscriptionRequest: {
+            /** Endpoint */
+            endpoint: string;
         };
         /** RenameAiConversationRequest */
         RenameAiConversationRequest: {
@@ -20375,6 +20515,15 @@ export interface components {
             timezone?: string | null;
             /** Setup Status */
             setup_status?: ("pending" | "deferred" | "done") | null;
+        };
+        /** UpdatePushPreferencesRequest */
+        UpdatePushPreferencesRequest: {
+            /** Reminders */
+            reminders: boolean;
+            /** Briefing */
+            briefing: boolean;
+            /** Show Details */
+            show_details: boolean;
         };
         /**
          * UpdateRecurringPaymentRequest
@@ -45750,6 +45899,192 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    get_push_status_api_v1_me_push_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushStatusResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_push_preferences_api_v1_me_push_preferences_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePushPreferencesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushStatusResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_push_subscription_api_v1_me_push_subscriptions_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushSubscriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushStatusResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The subscription isn't from a known browser push service. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Push notifications aren't available on this server. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    remove_push_subscription_api_v1_me_push_subscriptions_remove_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RemovePushSubscriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushStatusResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_push_test_api_v1_me_push_test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushTestResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Push notifications aren't available on this server. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

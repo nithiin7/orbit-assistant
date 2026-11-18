@@ -830,3 +830,9 @@ export type VoiceConfirmation = Schemas["VoiceConfirmationResponse"];
 export type VoiceConfirmationOutcome = VoiceConfirmation["outcome"];
 export type VoiceHistoryClear = Schemas["VoiceHistoryClearResponse"];
 export type AiInputMode = AiMessage["input_mode"];
+
+// Push notifications
+export type PushStatus = Schemas["PushStatusResponse"];
+export type UpdatePushPreferencesRequest = Schemas["UpdatePushPreferencesRequest"];
+export type PushSubscriptionRequest = Schemas["PushSubscriptionRequest"];
+export type PushTestResult = Schemas["PushTestResponse"];
