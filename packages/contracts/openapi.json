@@ -2962,7 +2962,7 @@
           "tasks"
         ],
         "summary": "Complete a task",
-        "description": "Idempotent: completing a completed task keeps its original completion time.",
+        "description": "Idempotent: completing a completed task keeps its original completion time. Completing a\nrepeating task also creates its next occurrence.",
         "operationId": "complete_task_api_v1_workspaces__workspace_id__tasks__task_id__complete_post",
         "security": [
           {
@@ -2991,6 +2991,25 @@
               "format": "uuid",
               "title": "Workspace Id"
             }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The client's local date, which decides when a repeating task comes due next. Defaults to today's date in UTC.",
+              "title": "Today"
+            },
+            "description": "The client's local date, which decides when a repeating task comes due next. Defaults to today's date in UTC."
           }
         ],
         "responses": {
@@ -49911,6 +49930,17 @@
             ],
             "title": "List Id",
             "description": "A list in this workspace."
+          },
+          "recurrence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskRepeatBody"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How the task repeats. Needs a due date."
           }
         },
         "additionalProperties": false,
@@ -67017,6 +67047,35 @@
         ],
         "title": "TaskListsResponse"
       },
+      "TaskRepeatBody": {
+        "properties": {
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "daily",
+              "weekly",
+              "monthly",
+              "yearly"
+            ],
+            "title": "Frequency"
+          },
+          "interval": {
+            "type": "integer",
+            "maximum": 99.0,
+            "minimum": 1.0,
+            "title": "Interval",
+            "description": "Every this many days, weeks, months, or years.",
+            "default": 1
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "frequency"
+        ],
+        "title": "TaskRepeatBody",
+        "description": "How a task repeats, counted from its due date."
+      },
       "TaskResponse": {
         "properties": {
           "id": {
@@ -67120,6 +67179,17 @@
             "title": "List Id",
             "description": "The list the task is on, if any."
           },
+          "recurrence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskRepeatBody"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How the task repeats. Completing it creates the next occurrence, which takes over the repeat, so completed tasks have none."
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -67144,6 +67214,7 @@
           "scheduled_start",
           "scheduled_end",
           "list_id",
+          "recurrence",
           "created_at",
           "updated_at"
         ],
@@ -72247,6 +72318,17 @@
             ],
             "title": "List Id",
             "description": "Move the task to this list; `null` takes it off its list."
+          },
+          "recurrence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskRepeatBody"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How the task repeats; `null` stops it repeating."
           }
         },
         "additionalProperties": false,

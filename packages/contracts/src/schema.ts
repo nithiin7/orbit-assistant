@@ -801,7 +801,8 @@ export interface paths {
         put?: never;
         /**
          * Complete a task
-         * @description Idempotent: completing a completed task keeps its original completion time.
+         * @description Idempotent: completing a completed task keeps its original completion time. Completing a
+         *     repeating task also creates its next occurrence.
          */
         post: operations["complete_task_api_v1_workspaces__workspace_id__tasks__task_id__complete_post"];
         delete?: never;
@@ -12241,6 +12242,8 @@ export interface components {
              * @description A list in this workspace.
              */
             list_id?: string | null;
+            /** @description How the task repeats. Needs a due date. */
+            recurrence?: components["schemas"]["TaskRepeatBody"] | null;
         };
         /**
          * CreateTransactionRequest
@@ -19246,6 +19249,23 @@ export interface components {
             /** Lists */
             lists: components["schemas"]["TaskListDetailResponse"][];
         };
+        /**
+         * TaskRepeatBody
+         * @description How a task repeats, counted from its due date.
+         */
+        TaskRepeatBody: {
+            /**
+             * Frequency
+             * @enum {string}
+             */
+            frequency: "daily" | "weekly" | "monthly" | "yearly";
+            /**
+             * Interval
+             * @description Every this many days, weeks, months, or years.
+             * @default 1
+             */
+            interval: number;
+        };
         /** TaskResponse */
         TaskResponse: {
             /**
@@ -19297,6 +19317,8 @@ export interface components {
              * @description The list the task is on, if any.
              */
             list_id: string | null;
+            /** @description How the task repeats. Completing it creates the next occurrence, which takes over the repeat, so completed tasks have none. */
+            recurrence: components["schemas"]["TaskRepeatBody"] | null;
             /**
              * Created At
              * Format: date-time
@@ -20560,6 +20582,8 @@ export interface components {
              * @description Move the task to this list; `null` takes it off its list.
              */
             list_id?: string | null;
+            /** @description How the task repeats; `null` stops it repeating. */
+            recurrence?: components["schemas"]["TaskRepeatBody"] | null;
         };
         /**
          * UpdateTransactionRequest
@@ -23524,7 +23548,10 @@ export interface operations {
     };
     complete_task_api_v1_workspaces__workspace_id__tasks__task_id__complete_post: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description The client's local date, which decides when a repeating task comes due next. Defaults to today's date in UTC. */
+                today?: string | null;
+            };
             header?: never;
             path: {
                 /** @description The task's ID. */

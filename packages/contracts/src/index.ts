@@ -35,6 +35,12 @@ export type UpdateTaskRequest = Schemas["UpdateTaskRequest"];
 export type TaskListQuery = NonNullable<
   paths["/api/v1/workspaces/{workspace_id}/tasks"]["get"]["parameters"]["query"]
 >;
+/** How a task repeats, counted from its due date. */
+export type TaskRepeat = Schemas["TaskRepeatBody"];
+/** The client's local date, which decides when a repeating task comes due next. */
+export type CompleteTaskQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/tasks/{task_id}/complete"]["post"]["parameters"]["query"]
+>;
 export type TaskSummaryQuery = NonNullable<
   paths["/api/v1/workspaces/{workspace_id}/tasks/summary"]["get"]["parameters"]["query"]
 >;
