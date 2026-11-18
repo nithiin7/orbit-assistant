@@ -171,9 +171,12 @@ export function useTaskMutations(workspaceId: string) {
     },
     onSuccess: (updated, task) => {
       replaceCachedTask(queryClient, workspaceId, updated);
-      // Completing a repeating task adds its next occurrence; undoing that takes it away.
-      if (task.recurrence || updated.recurrence) refetchTasks();
-      else markTasksStale();
+      // Completing a repeating task adds its next occurrence and moves its reminders there;
+      // undoing that takes both back.
+      if (task.recurrence || updated.recurrence) {
+        refetchTasks();
+        void queryClient.invalidateQueries({ queryKey: reminderKeys.all(workspaceId) });
+      } else markTasksStale();
       refetchSummaries();
     },
     onError: (_error, task) => replaceCachedTask(queryClient, workspaceId, task),

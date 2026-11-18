@@ -1,8 +1,10 @@
 import type { Task } from "@orbit/contracts";
+import { useQuery } from "@tanstack/react-query";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { reminderKeys } from "@/api/reminders";
 import { ada, json, mockApi, type MockRequest, personal, status } from "@/test/api-mock";
 import { chooseOption } from "@/test/controls";
 import { renderSignedIn } from "@/test/session";
@@ -263,6 +265,36 @@ describe("TasksPanel", () => {
     );
     const completion = api.mock.calls.find(([url]) => String(url).includes("/complete"));
     expect(String(completion?.[0])).toContain(`today=${daysFromToday(0)}`);
+  });
+
+  it("refreshes reminders after completing a repeating task", async () => {
+    const user = userEvent.setup();
+    const weekly = { frequency: "weekly", interval: 1 } as const;
+    const loadReminders = vi.fn(() => Promise.resolve([]));
+    function ReminderQuery() {
+      useQuery({ queryKey: reminderKeys.all(personal.id), queryFn: loadReminders });
+      return null;
+    }
+    mockApi({
+      ...session,
+      [`GET ${TASKS}`]: json({ tasks: [{ ...plants, recurrence: weekly }], total: 1 }),
+      [`POST ${TASKS}/${plants.id}/complete`]: json({
+        ...plants,
+        status: "completed",
+        completed_at: "2026-10-29T10:00:00Z",
+      }),
+    });
+    await renderSignedIn(
+      <>
+        <TasksPanel />
+        <ReminderQuery />
+      </>,
+    );
+    await waitFor(() => expect(loadReminders).toHaveBeenCalledTimes(1));
+
+    await user.click(await screen.findByRole("checkbox", { name: "Water plants" }));
+
+    await waitFor(() => expect(loadReminders).toHaveBeenCalledTimes(2));
   });
 
   it("sets a task to repeat from the edit dialog", async () => {
