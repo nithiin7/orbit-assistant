@@ -31,6 +31,7 @@ const task = {
   scheduled_start: null,
   scheduled_end: null,
   list_id: null,
+  recurrence: null,
   created_at: "2030-06-01T00:00:00Z",
   updated_at: "2030-06-01T00:00:00Z",
 };

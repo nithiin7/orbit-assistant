@@ -1,6 +1,12 @@
 /** Task display rules, filters, and form schemas that mirror the API's. */
 
-import type { TaskListColor, TaskListQuery, TaskPriority, TaskStatus } from "@orbit/contracts";
+import type {
+  TaskListColor,
+  TaskListQuery,
+  TaskPriority,
+  TaskRepeat,
+  TaskStatus,
+} from "@orbit/contracts";
 import { mixed, object, string } from "yup";
 
 import { type Option } from "@/utils/common";
@@ -23,6 +29,56 @@ export const PRIORITIES: readonly Option<TaskPriority>[] = [
 
 export function priorityLabel(priority: TaskPriority): string {
   return PRIORITIES.find((item) => item.value === priority)?.label ?? priority;
+}
+
+const REPEAT_UNITS: Record<TaskRepeat["frequency"], string> = {
+  daily: "day",
+  weekly: "week",
+  monthly: "month",
+  yearly: "year",
+};
+
+/** "Every week", "Every 3 months". */
+export function repeatLabel({ frequency, interval }: TaskRepeat): string {
+  const unit = REPEAT_UNITS[frequency];
+  return interval === 1 ? `Every ${unit}` : `Every ${interval} ${unit}s`;
+}
+
+/** The repeat picker's value for no repeat. */
+export const NO_REPEAT = "none";
+
+const REPEAT_PRESETS: readonly TaskRepeat[] = [
+  { frequency: "daily", interval: 1 },
+  { frequency: "weekly", interval: 1 },
+  { frequency: "weekly", interval: 2 },
+  { frequency: "monthly", interval: 1 },
+  { frequency: "monthly", interval: 3 },
+  { frequency: "yearly", interval: 1 },
+];
+
+/** A repeat as the picker's value, such as `weekly:2`. */
+export function toRepeatValue(repeat: TaskRepeat | null): string {
+  return repeat ? `${repeat.frequency}:${repeat.interval}` : NO_REPEAT;
+}
+
+/** The picker's value as a repeat, or `null` for no repeat. */
+export function fromRepeatValue(value: string): TaskRepeat | null {
+  const [frequency, interval] = value.split(":");
+  const match = REPEAT_PRESETS.find((repeat) => repeat.frequency === frequency);
+  return match ? { frequency: match.frequency, interval: Number(interval) } : null;
+}
+
+/** The picker's choices, keeping a repeat set through the API that isn't one of the presets. */
+export function repeatOptions(current: TaskRepeat | null): Option<string>[] {
+  const presets = REPEAT_PRESETS.map(toRepeatValue);
+  const repeats =
+    current && !presets.includes(toRepeatValue(current))
+      ? [...REPEAT_PRESETS, current]
+      : REPEAT_PRESETS;
+  return [
+    { value: NO_REPEAT, label: "Does not repeat" },
+    ...repeats.map((repeat) => ({ value: toRepeatValue(repeat), label: repeatLabel(repeat) })),
+  ];
 }
 
 export type StatusFilter = TaskStatus | "all";
@@ -100,6 +156,12 @@ export const taskSchema = object({
   dueDate: dueDateField,
   priority: priorityField,
   list: listField,
+  repeat: string()
+    .defined()
+    .when("dueDate", {
+      is: "",
+      then: (field) => field.oneOf([NO_REPEAT], "Set a due date to repeat this task."),
+    }),
 });
 
 // Lists

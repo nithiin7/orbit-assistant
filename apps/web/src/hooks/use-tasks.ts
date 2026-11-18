@@ -155,7 +155,9 @@ export function useTaskMutations(workspaceId: string) {
   const toggle = useMutation({
     mutationFn: (task: Task) =>
       withToken((token) =>
-        (task.status === "open" ? completeTask : reopenTask)(token, workspaceId, task.id),
+        task.status === "open"
+          ? completeTask(token, workspaceId, task.id, { today: localDateString() })
+          : reopenTask(token, workspaceId, task.id),
       ),
     // Show the change immediately. The task stays in the list it's in until the list refetches.
     onMutate: async (task) => {
@@ -167,9 +169,11 @@ export function useTaskMutations(workspaceId: string) {
         completed_at: completing ? new Date().toISOString() : null,
       });
     },
-    onSuccess: (updated) => {
+    onSuccess: (updated, task) => {
       replaceCachedTask(queryClient, workspaceId, updated);
-      markTasksStale();
+      // Completing a repeating task adds its next occurrence; undoing that takes it away.
+      if (task.recurrence || updated.recurrence) refetchTasks();
+      else markTasksStale();
       refetchSummaries();
     },
     onError: (_error, task) => replaceCachedTask(queryClient, workspaceId, task),

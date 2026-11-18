@@ -48,6 +48,7 @@ function task(overrides: Partial<Task> & Pick<Task, "id" | "title">): Task {
     scheduled_start: null,
     scheduled_end: null,
     list_id: null,
+    recurrence: null,
     created_at: "2026-10-01T09:00:00Z",
     updated_at: "2026-10-01T09:00:00Z",
     ...overrides,
@@ -227,6 +228,66 @@ describe("TasksPanel", () => {
       expect(screen.getByRole("status")).toHaveTextContent("Completed “Pay rent”."),
     );
     expect(screen.getByRole("checkbox", { name: "Pay rent" })).toBeChecked();
+  });
+
+  it("shows the next occurrence after completing a repeating task", async () => {
+    const user = userEvent.setup();
+    const weekly = { frequency: "weekly", interval: 1 } as const;
+    const repeating = { ...plants, recurrence: weekly };
+    const next = task({
+      id: "t-plants-2",
+      title: "Water plants",
+      due_date: daysFromToday(7),
+      recurrence: weekly,
+    });
+    let tasks: Task[] = [repeating];
+    const api = mockApi({
+      ...session,
+      [`GET ${TASKS}`]: () => Response.json({ tasks, total: tasks.length }),
+      [`POST ${TASKS}/${plants.id}/complete`]: () => {
+        tasks = [next];
+        return Response.json({
+          ...plants,
+          status: "completed",
+          completed_at: "2026-10-29T10:00:00Z",
+        });
+      },
+    });
+    await renderSignedIn(<TasksPanel />);
+
+    expect(await screen.findByText("Every week")).toBeInTheDocument();
+    await user.click(await screen.findByRole("checkbox", { name: "Water plants" }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("checkbox", { name: "Water plants" })).not.toBeChecked(),
+    );
+    const completion = api.mock.calls.find(([url]) => String(url).includes("/complete"));
+    expect(String(completion?.[0])).toContain(`today=${daysFromToday(0)}`);
+  });
+
+  it("sets a task to repeat from the edit dialog", async () => {
+    const user = userEvent.setup();
+    const api = mockApi({
+      ...session,
+      [`GET ${TASKS}`]: json({ tasks: [plants], total: 1 }),
+      [`PATCH ${TASKS}/${plants.id}`]: json({
+        ...plants,
+        recurrence: { frequency: "monthly", interval: 1 },
+      }),
+    });
+    await renderSignedIn(<TasksPanel />);
+
+    await user.click(await screen.findByRole("button", { name: "Edit “Water plants”" }));
+    await user.click(screen.getByRole("combobox", { name: "Repeat" }));
+    await user.click(await screen.findByRole("option", { name: "Every month" }));
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => {
+      const patch = api.mock.calls.find(([, init]) => init?.method === "PATCH");
+      expect(JSON.parse(String(patch?.[1]?.body))).toEqual({
+        recurrence: { frequency: "monthly", interval: 1 },
+      });
+    });
   });
 
   it("undoes the completion and reports it when the API refuses", async () => {

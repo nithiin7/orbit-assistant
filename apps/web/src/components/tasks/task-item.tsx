@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/utils/common";
 
-import { DueDateLabel, PriorityBadge, TaskListBadge } from "./task-meta";
+import { DueDateLabel, PriorityBadge, RepeatBadge, TaskListBadge } from "./task-meta";
 
 type TaskItemProps = {
   task: Task;
@@ -90,13 +90,18 @@ export function TaskItem({
             </p>
           ) : null}
         </div>
-        {list || task.due_date || task.priority !== "none" || task.completed_at ? (
+        {list ||
+        task.due_date ||
+        task.recurrence ||
+        task.priority !== "none" ||
+        task.completed_at ? (
           <div className="flex shrink-0 flex-wrap items-center gap-1.5 @lg/rows:justify-end">
             {list ? <TaskListBadge name={list.name} color={list.color} /> : null}
             <PriorityBadge priority={task.priority} />
             {task.due_date ? (
               <DueDateLabel dueDate={task.due_date} today={today} muted={completed} />
             ) : null}
+            {task.recurrence ? <RepeatBadge repeat={task.recurrence} /> : null}
             {task.completed_at ? (
               <span className="text-xs text-muted-foreground">
                 Completed {completedFormat.format(new Date(task.completed_at))}

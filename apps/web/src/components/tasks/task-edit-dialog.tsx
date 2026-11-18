@@ -8,7 +8,7 @@ import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
 import { LinkedDocuments } from "@/components/documents/linked-documents";
-import { FormAlert, FormField } from "@/components/form-field";
+import { FormAlert, FormField, SelectField } from "@/components/form-field";
 import { TaskNotes } from "@/components/notes/task-notes";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -16,7 +16,13 @@ import { Dialog, DialogFormActions, DialogHeader } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea";
 import { useActiveWorkspaceId } from "@/hooks/use-calendar";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
-import { TASK_DESCRIPTION_MAX_LENGTH, taskSchema } from "@/lib/tasks";
+import {
+  fromRepeatValue,
+  repeatOptions,
+  TASK_DESCRIPTION_MAX_LENGTH,
+  taskSchema,
+  toRepeatValue,
+} from "@/lib/tasks";
 
 import { ListSelect, NO_LIST } from "./list-select";
 import { PrioritySelect } from "./priority-select";
@@ -52,6 +58,7 @@ export function TaskEditDialog({ task, lists, onSave, onClose }: TaskEditDialogP
       dueDate: task.due_date ?? "",
       priority: task.priority,
       list: task.list_id ?? NO_LIST,
+      repeat: toRepeatValue(task.recurrence),
     },
   });
   const { close, dialogProps } = useModalDialog({ onClose, dismissible: !saving });
@@ -66,6 +73,9 @@ export function TaskEditDialog({ task, lists, onSave, onClose }: TaskEditDialogP
     if (values.priority !== task.priority) changes.priority = values.priority;
     const listId = values.list === NO_LIST ? null : values.list;
     if (listId !== task.list_id) changes.list_id = listId;
+    if (values.repeat !== toRepeatValue(task.recurrence)) {
+      changes.recurrence = fromRepeatValue(values.repeat);
+    }
     if (Object.keys(changes).length === 0) {
       close();
       return;
@@ -164,6 +174,15 @@ export function TaskEditDialog({ task, lists, onSave, onClose }: TaskEditDialogP
               <PrioritySelect id={`${id}-priority`} value={field.value} onChange={field.onChange} />
             )}
           />
+          {/* The next occurrence carries the repeat once a task is completed. */}
+          {task.status === "open" ? (
+            <SelectField
+              control={control}
+              name="repeat"
+              label="Repeat"
+              options={repeatOptions(task.recurrence)}
+            />
+          ) : null}
           {lists.length > 0 || task.list_id ? (
             <Controller
               control={control}
