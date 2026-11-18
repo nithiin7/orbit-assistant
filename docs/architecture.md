@@ -2573,14 +2573,32 @@ days. Dismissal key includes the period. No notifications.
 1. Model emits a fenced `orbit-action` block (hidden from the stream), or a feature builds one.
 2. Kept only if the message asked (`routing.wants_action`), kind allowlisted (`create_task`,
    `create_reminder`, `create_event`, `create_note`, `append_to_note`, `add_note_tags`,
-   `update_document_details`), ≤ 3 per answer, validated by the module's request schema
-   (`api/ai_actions.py`).
+   `update_document_details`, and the capture kinds `add_shopping_item`, `create_habit`,
+   `log_water`, `log_weight`, `log_activity`, `add_transaction`, `add_place`, `save_link`,
+   `add_watch_item`), ≤ 8 per answer, validated by the module's request schema
+   (`api/ai_actions.py`). Capture kinds in habits, health, finance, and watchlist are offered only
+   while the AI layer may read that module.
 3. Stored `pending`; proposals made while reading records are flagged.
 4. Approve: conditional update `pending` → `executing` (repeat is 409), re-validate, run the
    module's service, record result. Reject changes nothing.
 
-No generic query/update, deletion, or financial action. The
+No generic query/update or deletion. `add_transaction` records income or an expense the person
+stated: the amount is in major units and converted with the account's currency, the account is
+named or the default (never guessed between several), and it moves no money. The
 [personal agent](#personal-agent-and-automation) reuses this validator and executor.
+
+With **Add simple items without asking** on (`ai_settings.auto_capture`, off by default; Settings →
+AI, or **Always add** on a card), `services/ai/auto_capture.py` runs a proposal straight away only
+if it is a new task, reminder, note, shopping item, habit, health log, place, link, or watchlist
+title, the message was typed, and every word of its text and every logged number appears in that
+message. Everything else stays a card, including events, changes to existing records, transactions,
+and spoken requests. The composer's **Quick add** menu starts these sentences. The agent keeps its
+own autonomy settings.
+
+Plain commands from Quick add (`services/ai/quick_commands.py`, such as `Add a task: …`) become
+proposals with no model call and no records read. Otherwise, when an answer holds no usable action,
+one narrow request sends only the person's message to the model; if a command still adds nothing,
+the answer says so.
 
 ### Prompt injection and untrusted content
 
@@ -3001,19 +3019,22 @@ Each tool declares name, description, input schema (Pydantic, `extra="forbid"`),
 idempotency, always-asks, whether it sends record content to the AI provider, and workflow use.
 `GET …/agent/tools` lists them with current decisions.
 
-| Module              | Read                                                                                                             | Write (risk)                                                             |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Tasks               | `search_tasks`                                                                                                   | `create_task` (low), `complete_task` (low), `update_task` (medium)       |
-| Reminders           | `get_reminders`                                                                                                  | `create_reminder` (low), `send_notification` (low, in-app to owner only) |
-| Calendar            | `search_calendar` (Orbit finds overlaps)                                                                         | `create_event` (medium)                                                  |
-| Notes               | `search_notes`, `summarize_note` (AI)                                                                            | `create_note` (low), `append_to_note` (medium), `add_note_tags` (low)    |
-| Documents           | `search_documents`, `get_document` (no reference numbers), `summarize_document`, `extract_document_details` (AI) | `update_document_details` (medium; descriptive fields only)              |
-| Finance (read only) | `get_accounts`, `get_transactions`, `get_finance_summary`, `get_budgets`, `get_upcoming_payments`                | none                                                                     |
-| Habits, health      | `get_habit_progress`, `get_workout_history`, `get_health_summary` (owner only)                                   | none                                                                     |
-| Mail (read only)    | `search_email` (labels chosen for Orbit, via the integrations' mail service)                                     | none                                                                     |
-| The agent's own     |                                                                                                                  | `remember_preference`, `run_workflow` (agent runs only; both always ask) |
+| Module           | Read                                                                                                             | Write (risk)                                                             |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Tasks            | `search_tasks`                                                                                                   | `create_task` (low), `complete_task` (low), `update_task` (medium)       |
+| Reminders        | `get_reminders`                                                                                                  | `create_reminder` (low), `send_notification` (low, in-app to owner only) |
+| Calendar         | `search_calendar` (Orbit finds overlaps)                                                                         | `create_event` (medium)                                                  |
+| Notes            | `search_notes`, `summarize_note` (AI)                                                                            | `create_note` (low), `append_to_note` (medium), `add_note_tags` (low)    |
+| Documents        | `search_documents`, `get_document` (no reference numbers), `summarize_document`, `extract_document_details` (AI) | `update_document_details` (medium; descriptive fields only)              |
+| Finance          | `get_accounts`, `get_transactions`, `get_finance_summary`, `get_budgets`, `get_upcoming_payments`                | `add_transaction` (high; always asks; agent runs only)                   |
+| Habits, health   | `get_habit_progress`, `get_workout_history`, `get_health_summary` (owner only)                                   | `create_habit`, `log_water`, `log_weight`, `log_activity` (low)          |
+| Shopping, places |                                                                                                                  | `add_shopping_item`, `add_place` (low)                                   |
+| Saved, watchlist |                                                                                                                  | `save_link`, `add_watch_item` (low)                                      |
+| Mail (read only) | `search_email` (labels chosen for Orbit, via the integrations' mail service)                                     | none                                                                     |
+| The agent's own  |                                                                                                                  | `remember_preference`, `run_workflow` (agent runs only; both always ask) |
 
-No tool deletes, pays, transfers, invests, sends email or messages, shares documents, changes
+Agents created before these modules existed keep their saved module list until the person allows
+the new ones. No tool deletes, pays, transfers, invests, sends email or messages, shares documents, changes
 connected accounts, settings, or permissions, or runs code, SQL, shell, or HTTP. Every call is
 prepared (validated by the tool's model, then the module's request schema for writes, target looked
 up) before it runs or is proposed, and again when an approval is acted on.
