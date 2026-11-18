@@ -404,6 +404,8 @@ To-dos inside a workspace.
 - `scheduled_start`/`scheduled_end`: optional UTC calendar block, both or neither, end after
   start (CHECK).
 - `list_id`: composite FK `(list_id, workspace_id)` (`0027`).
+- `recurrence` (JSON, `0043`): the repeat rule, on a series' current occurrence only. `series_id`
+  groups a series' occurrences and references no row.
 - `updated_at` changes only when a field actually changes.
 - Indexes `(workspace_id, status, due_date)` and `(workspace_id, status, priority)`. Search is
   `ILIKE` substring (`%`, `_`, `\` literal), unindexed, scanning one workspace (fine at personal
@@ -440,6 +442,22 @@ one.
 - Titles and descriptions reject control characters (descriptions allow line breaks and tabs);
   emoji sequences and non-breaking spaces are fine.
 
+### Repeating tasks
+
+A repeating task (`services/tasks/recurrence.py`) is one open task at a time, repeating every 1-99
+days, weeks, months, or years from its due date, which it must have (`422` otherwise).
+
+- **Completing** moves the rule to a new open occurrence in the same transaction, copying the
+  title, description, priority, and list. The time block, notes, documents, and reminders stay
+  with the completed occurrence.
+- **Next due date:** the first date in the series after both the due date and `today` (`?today=`
+  on `/complete`, the user's local date; UTC by default). Finishing early doesn't bring the next
+  one forward; finishing late skips missed dates. Dates count from the anchor, so the 31st clamps
+  to shorter months and returns.
+- **Reopening** the occurrence that created the current one deletes that next occurrence and takes
+  the rule back, unless the next occurrence was edited; then the reopened task is one-off.
+- `PATCH` with `recurrence: null` stops the series. A new rule or due date restarts it there.
+
 ### Web app
 
 - `/tasks` (`components/tasks/`), hooks `useTaskList`/`useTaskMutations` in
@@ -456,7 +474,7 @@ one.
 
 ### Not implemented
 
-Recurring tasks, subtasks, tags (one list per task), reordering lists, sharing, drag-and-drop
+Subtasks, tags (one list per task), reordering lists, sharing, drag-and-drop
 ordering. Scheduled time blocks ([calendar](#calendar-task-integration)) are separate from the
 due date; [reminders](#reminders-and-notifications) are a separate feature.
 
