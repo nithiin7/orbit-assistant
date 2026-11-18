@@ -1,6 +1,7 @@
 import {
   Archive,
   AudioLines,
+  Bell,
   Bookmark,
   Bot,
   Clapperboard,
@@ -72,6 +73,13 @@ export const settingsPanels: readonly SettingsPanel[] = [
     title: "Places",
     description: "Online maps and place search.",
     icon: MapPinned,
+    group: "general",
+  },
+  {
+    slug: "notifications",
+    title: "Notifications",
+    description: "Push notifications on your devices.",
+    icon: Bell,
     group: "general",
   },
   {

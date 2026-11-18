@@ -21,6 +21,7 @@ import {
   type SignUpInput,
   type SignUpResult,
 } from "@/lib/auth/auth-client";
+import { unsubscribeDevice } from "@/lib/push";
 
 export type AuthState =
   | { status: "loading" }
@@ -166,6 +167,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signOut = useCallback(async () => {
+    // A signed-out browser stops receiving this person's notifications. The server forgets the
+    // device the next time a push service reports it gone.
+    void unsubscribeDevice().catch((error: unknown) => {
+      console.warn("Couldn’t turn off push notifications on this device.", error);
+    });
     await requireClient().signOut();
     signedOut();
   }, [requireClient, signedOut]);
