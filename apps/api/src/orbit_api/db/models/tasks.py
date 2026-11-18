@@ -2,8 +2,10 @@
 
 import uuid
 from datetime import date, datetime
+from typing import Any
 
 from sqlalchemy import (
+    JSON,
     CheckConstraint,
     Date,
     ForeignKey,
@@ -89,6 +91,7 @@ class TaskModel(Base):
             name="fk_tasks_list",
         ),
         Index("ix_tasks_workspace_list", "workspace_id", "list_id"),
+        Index("ix_tasks_workspace_series", "workspace_id", "series_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
@@ -102,5 +105,9 @@ class TaskModel(Base):
     completed_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     scheduled_start: Mapped[datetime | None] = mapped_column(UTCDateTime)
     scheduled_end: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    # How the task repeats, on a series' current occurrence (`services/tasks/recurrence.py`).
+    recurrence: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    # Shared by a repeating task's occurrences. Not a reference to any row.
+    series_id: Mapped[uuid.UUID | None]
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now, onupdate=utc_now)

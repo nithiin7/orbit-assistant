@@ -48,6 +48,16 @@ class FakeTasks:
         tasks = [t for t in self.items.values() if t.workspace_id == workspace_id]
         return TaskPage(tasks=tasks, total=len(tasks))
 
+    async def current_in_series(self, workspace_id: uuid.UUID, series_id: uuid.UUID) -> Task | None:
+        series = [
+            task
+            for task in self.items.values()
+            if task.workspace_id == workspace_id
+            and task.series_id == series_id
+            and task.status == "open"
+        ]
+        return max(series, key=lambda task: task.created_at, default=None)
+
     async def save(self, task: Task) -> None:
         self.saves += 1
         self.items[task.id] = task

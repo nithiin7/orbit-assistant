@@ -16,6 +16,7 @@ from pydantic import (
 
 from orbit_api.schemas.common import SearchText, multi_line, single_line
 from orbit_api.services.tasks.models import (
+    MAX_TASK_REPEAT_INTERVAL,
     Task,
     TaskChanges,
     TaskDraft,
@@ -25,6 +26,8 @@ from orbit_api.services.tasks.models import (
     TaskListOverview,
     TaskPriority,
     TaskQuery,
+    TaskRepeat,
+    TaskRepeatFrequency,
     TaskSchedule,
     TaskSort,
     TaskStatus,
@@ -54,6 +57,23 @@ Description = Annotated[
 ]
 
 
+class TaskRepeatBody(BaseModel):
+    """How a task repeats, counted from its due date."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    frequency: TaskRepeatFrequency
+    interval: int = Field(
+        default=1,
+        ge=1,
+        le=MAX_TASK_REPEAT_INTERVAL,
+        description="Every this many days, weeks, months, or years.",
+    )
+
+    def to_repeat(self) -> TaskRepeat:
+        return TaskRepeat(frequency=self.frequency, interval=self.interval)
+
+
 class TaskResponse(BaseModel):
     id: uuid.UUID
     workspace_id: uuid.UUID
@@ -69,6 +89,10 @@ class TaskResponse(BaseModel):
     )
     scheduled_end: datetime | None
     list_id: uuid.UUID | None = Field(description="The list the task is on, if any.")
+    recurrence: TaskRepeatBody | None = Field(
+        description="How the task repeats. Completing it creates the next occurrence, which "
+        "takes over the repeat, so completed tasks have none."
+    )
     created_at: datetime
     updated_at: datetime
 
@@ -86,6 +110,14 @@ class TaskResponse(BaseModel):
             scheduled_start=task.scheduled_start,
             scheduled_end=task.scheduled_end,
             list_id=task.list_id,
+            recurrence=(
+                TaskRepeatBody(
+                    frequency=task.recurrence.repeat.frequency,
+                    interval=task.recurrence.repeat.interval,
+                )
+                if task.recurrence
+                else None
+            ),
             created_at=task.created_at,
             updated_at=task.updated_at,
         )
@@ -156,6 +188,16 @@ class TaskListParams(BaseModel):
         )
 
 
+class TaskCompleteParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    today: date | None = Field(
+        default=None,
+        description="The client's local date, which decides when a repeating task comes due "
+        "next. Defaults to today's date in UTC.",
+    )
+
+
 class TaskSummaryParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -192,6 +234,9 @@ class CreateTaskRequest(BaseModel):
     scheduled_start: AwareDatetime | None = None
     scheduled_end: AwareDatetime | None = None
     list_id: uuid.UUID | None = Field(default=None, description="A list in this workspace.")
+    recurrence: TaskRepeatBody | None = Field(
+        default=None, description="How the task repeats. Needs a due date."
+    )
 
     @model_validator(mode="after")
     def _check_schedule(self) -> Self:
@@ -207,6 +252,7 @@ class CreateTaskRequest(BaseModel):
             due_date=self.due_date,
             schedule=_schedule(self.scheduled_start, self.scheduled_end),
             list_id=self.list_id,
+            repeat=self.recurrence.to_repeat() if self.recurrence else None,
         )
 
 
@@ -226,6 +272,9 @@ class UpdateTaskRequest(BaseModel):
     scheduled_end: AwareDatetime | None = None
     list_id: uuid.UUID | None = Field(
         default=None, description="Move the task to this list; `null` takes it off its list."
+    )
+    recurrence: TaskRepeatBody | None = Field(
+        default=None, description="How the task repeats; `null` stops it repeating."
     )
 
     @model_validator(mode="after")
@@ -253,6 +302,11 @@ class UpdateTaskRequest(BaseModel):
                 else UNSET
             ),
             list_id=self.list_id if "list_id" in provided else UNSET,
+            repeat=(
+                (self.recurrence.to_repeat() if self.recurrence else None)
+                if "recurrence" in provided
+                else UNSET
+            ),
         )
 
 

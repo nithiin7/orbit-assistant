@@ -633,6 +633,8 @@ def _task_tools(deps: ToolDeps) -> list[Tool]:
             task = await deps.tasks.complete(ctx.workspace_id, args.task_id)
         except TaskNotFoundError:
             raise ToolFailedError("The task no longer exists.") from None
+        except ValueError as exc:
+            raise ToolFailedError(str(exc) or "The task can't be completed.") from None
         return ToolOutput(
             text=f"Completed “{task.title}”.",
             result=ActionResult(kind="task", id=task.id, title=task.title),

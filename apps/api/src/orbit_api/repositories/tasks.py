@@ -22,6 +22,7 @@ from orbit_api.services.tasks.models import (
     TaskStatus,
     TaskSummary,
 )
+from orbit_api.services.tasks.recurrence import recurrence_from_json, recurrence_to_json
 from orbit_api.services.tasks.service import normalize_list_name
 from orbit_api.utils.changes import UNSET
 from orbit_api.utils.text_search import LIKE_ESCAPE, contains_pattern
@@ -49,6 +50,8 @@ def to_task(model: TaskModel) -> Task:
         scheduled_start=model.scheduled_start,
         scheduled_end=model.scheduled_end,
         list_id=model.list_id,
+        recurrence=recurrence_from_json(model.recurrence),
+        series_id=model.series_id,
     )
 
 
@@ -147,6 +150,8 @@ class SqlTaskRepository:
                 scheduled_start=task.scheduled_start,
                 scheduled_end=task.scheduled_end,
                 list_id=task.list_id,
+                recurrence=recurrence_to_json(task.recurrence),
+                series_id=task.series_id,
             )
         )
         await flush(self._session)
@@ -167,6 +172,19 @@ class SqlTaskRepository:
         )
         return TaskPage(tasks=[to_task(model) for model in models], total=total or 0)
 
+    async def current_in_series(self, workspace_id: uuid.UUID, series_id: uuid.UUID) -> Task | None:
+        model = await self._session.scalar(
+            select(TaskModel)
+            .where(
+                TaskModel.workspace_id == workspace_id,
+                TaskModel.series_id == series_id,
+                TaskModel.status == "open",
+            )
+            .order_by(TaskModel.created_at.desc())
+            .limit(1)
+        )
+        return to_task(model) if model else None
+
     async def save(self, task: Task) -> None:
         model = await self._get_model(task.workspace_id, task.id)
         if model is None:
@@ -180,6 +198,8 @@ class SqlTaskRepository:
         model.scheduled_start = task.scheduled_start
         model.scheduled_end = task.scheduled_end
         model.list_id = task.list_id
+        model.recurrence = recurrence_to_json(task.recurrence)
+        model.series_id = task.series_id
         model.updated_at = task.updated_at
         await flush(self._session)
 
