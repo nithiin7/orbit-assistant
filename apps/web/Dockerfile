@@ -56,6 +56,7 @@ WORKDIR /app
 # The standalone server and only the dependencies it traced, plus static assets it serves.
 COPY --from=build --chown=node:node /repo/apps/web/.next/standalone ./
 COPY --from=build --chown=node:node /repo/apps/web/.next/static ./apps/web/.next/static
+COPY --from=build --chown=node:node /repo/apps/web/public ./apps/web/public
 
 USER node
 EXPOSE 3000
