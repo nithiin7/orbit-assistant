@@ -450,14 +450,17 @@ A repeating task (`services/tasks/recurrence.py`) is one open task at a time, re
 days, weeks, months, or years from its due date, which it must have (`422` otherwise).
 
 - **Completing** moves the rule to a new open occurrence in the same transaction, copying the
-  title, description, priority, and list. The time block, notes, documents, and reminders stay
-  with the completed occurrence.
+  title, description, priority, and list. The time block, notes, and documents stay with the
+  completed occurrence.
+- **Reminders** move to the new occurrence (`services/reminders/task_series.py`). A one-time
+  reminder moves by as many days as the due date did; a recurring one keeps its schedule.
 - **Next due date:** the first date in the series after both the due date and `today` (`?today=`
   on `/complete`, the user's local date; UTC by default). Finishing early doesn't bring the next
   one forward; finishing late skips missed dates. Dates count from the anchor, so the 31st clamps
   to shorter months and returns.
 - **Reopening** the occurrence that created the current one deletes that next occurrence and takes
-  the rule back, unless the next occurrence was edited; then the reopened task is one-off.
+  the rule and reminders back, unless the next occurrence was edited; then the reopened task is
+  one-off.
 - `PATCH` with `recurrence: null` stops the series. A new rule or due date restarts it there.
 
 ### Web app
