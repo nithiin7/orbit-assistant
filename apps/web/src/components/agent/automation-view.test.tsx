@@ -348,7 +348,7 @@ describe("Templates", () => {
     expect(screen.getByRole("button", { name: "Money" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.queryByRole("button", { name: /^Morning briefing/ })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Budget watch/ })).toHaveTextContent(
-      "Needs Finance (read only)",
+      "Needs Finance",
     );
   });
 

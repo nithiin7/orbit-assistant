@@ -295,6 +295,10 @@ export function useAssistantChat(
                   break;
                 case "done":
                   setProposals(event.data.proposals);
+                  // Items added without asking changed a module's data.
+                  if (event.data.proposals.some((p) => p.status === "executed")) {
+                    void queryClient.invalidateQueries({ queryKey: ["workspaces", workspaceId] });
+                  }
                   break;
               }
             },

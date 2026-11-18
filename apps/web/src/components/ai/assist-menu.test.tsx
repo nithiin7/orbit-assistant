@@ -31,6 +31,7 @@ const settings: AiSettings = {
   response_style: "balanced",
   monthly_token_limit: null,
   indexing_enabled: true,
+  auto_capture: false,
 };
 
 const session = {

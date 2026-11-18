@@ -1,14 +1,14 @@
 "use client";
 
 import type { AiProposal } from "@orbit/contracts";
-import { Check, CircleAlert, ShieldAlert, X } from "lucide-react";
+import { Check, CheckCheck, CircleAlert, ShieldAlert, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import { Button } from "@/components/ui/button";
-import { useDecideProposal } from "@/hooks/use-ai";
-import { recordHref } from "@/lib/ai";
+import { useDecideProposal, useUpdateAiSettings } from "@/hooks/use-ai";
+import { canAlwaysAdd, recordHref } from "@/lib/ai";
 
 const KIND_LABELS: Record<AiProposal["kind"], string> = {
   create_task: "New task",
@@ -18,6 +18,15 @@ const KIND_LABELS: Record<AiProposal["kind"], string> = {
   append_to_note: "Add to note",
   add_note_tags: "Tag note",
   update_document_details: "Document details",
+  add_shopping_item: "Shopping item",
+  create_habit: "New habit",
+  log_water: "Log water",
+  log_weight: "Log weight",
+  log_activity: "Log activity",
+  add_transaction: "New transaction",
+  add_place: "New place",
+  save_link: "Save link",
+  add_watch_item: "Add to watchlist",
 };
 
 const FIELD_LABELS: Record<string, string> = {
@@ -39,6 +48,33 @@ const FIELD_LABELS: Record<string, string> = {
   effective_date: "Effective",
   expiry_date: "Expires",
   renewal_date: "Renews",
+  name: "Name",
+  quantity: "Quantity",
+  notes: "Notes",
+  note: "Note",
+  list_name: "List",
+  weekdays: "Days",
+  times_per_week: "Times a week",
+  amount_ml: "Water (ml)",
+  weight_kg: "Weight (kg)",
+  kind: "Type",
+  duration_minutes: "Minutes",
+  distance_km: "Distance (km)",
+  steps: "Steps",
+  day: "Day",
+  type: "Type",
+  amount: "Amount",
+  occurred_on: "Date",
+  account: "Account",
+  category: "Category",
+  country_code: "Country",
+  locality: "Area",
+  status: "Status",
+  visited_on: "Visited",
+  url: "Link",
+  platform: "Platform",
+  recommended_by: "Recommended by",
+  release_year: "Year",
 };
 
 function fields(payload: AiProposal["payload"]): [string, string][] {
@@ -54,10 +90,18 @@ function fields(payload: AiProposal["payload"]): [string, string][] {
  * An action the AI proposed, shown in full before anything happens. Nothing changes until the
  * person approves; approval runs it once through the module's own rules.
  */
-export function ProposalCard({ proposal: initial }: { proposal: AiProposal }) {
+export function ProposalCard({
+  proposal: initial,
+  offerAlways = false,
+}: {
+  proposal: AiProposal;
+  /** Offer to stop asking for simple items like this one. */
+  offerAlways?: boolean;
+}) {
   const [proposal, setProposal] = useState(initial);
   const [error, setError] = useState<string | null>(null);
   const decide = useDecideProposal();
+  const updateSettings = useUpdateAiSettings();
 
   const act = (decision: "approve" | "reject") => {
     setError(null);
@@ -69,6 +113,18 @@ export function ProposalCard({ proposal: initial }: { proposal: AiProposal }) {
       },
     );
   };
+
+  const alwaysAdd = () => {
+    setError(null);
+    updateSettings.mutate(
+      { auto_capture: true },
+      {
+        onSuccess: () => act("approve"),
+        onError: (cause) => setError(describeApiError(cause, "That didn’t work. Try again.")),
+      },
+    );
+  };
+  const busy = decide.isPending || updateSettings.isPending;
 
   const result =
     proposal.status === "executed" && proposal.result_kind
@@ -89,7 +145,8 @@ export function ProposalCard({ proposal: initial }: { proposal: AiProposal }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-0.5">
           <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            {KIND_LABELS[proposal.kind]} · needs your approval
+            {KIND_LABELS[proposal.kind]}
+            {proposal.status === "pending" ? " · needs your approval" : ""}
           </p>
           <p className="text-sm font-medium">{proposal.summary}</p>
         </div>
@@ -110,16 +167,17 @@ export function ProposalCard({ proposal: initial }: { proposal: AiProposal }) {
       ) : null}
       {proposal.status === "pending" ? (
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" onClick={() => act("approve")} disabled={decide.isPending}>
+          <Button size="sm" onClick={() => act("approve")} disabled={busy}>
             <Check aria-hidden="true" />
-            Approve
+            Approve once
           </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => act("reject")}
-            disabled={decide.isPending}
-          >
+          {offerAlways && canAlwaysAdd(proposal.kind) ? (
+            <Button size="sm" variant="soft" onClick={alwaysAdd} disabled={busy}>
+              <CheckCheck aria-hidden="true" />
+              Always add
+            </Button>
+          ) : null}
+          <Button size="sm" variant="ghost" onClick={() => act("reject")} disabled={busy}>
             <X aria-hidden="true" />
             Reject
           </Button>

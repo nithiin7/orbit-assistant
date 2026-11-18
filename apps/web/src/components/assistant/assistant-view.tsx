@@ -9,6 +9,7 @@ import {
   HardDrive,
   Mic,
   PanelLeft,
+  Plus,
   Sparkles,
   Square,
   SquarePen,
@@ -26,6 +27,7 @@ import {
 
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
+import { Menu } from "@/components/ui/menu";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VoicePanel } from "@/components/voice/voice-panel";
@@ -45,6 +47,8 @@ import {
   chatModelValue,
   parseChatModelValue,
   processingLabel,
+  type QuickAddTemplate,
+  quickAddTemplates,
   suggestedQuestions,
 } from "@/lib/ai";
 import { settingsHref } from "@/lib/settings";
@@ -251,14 +255,19 @@ function Chat({
         ) : (
           <ol className="space-y-8" aria-live="polite" aria-busy={chat.streaming}>
             {visibleMessages(messages, chat.pending).map((message) => (
-              <MessageItem key={message.id} message={message} proposals={proposals} />
+              <MessageItem
+                key={message.id}
+                message={message}
+                proposals={proposals}
+                offerAlways={!settings.auto_capture}
+              />
             ))}
             {chat.pending ? <PendingItem pending={chat.pending} /> : null}
             {chat.proposals
               .filter((p) => !proposals.some((known) => known.id === p.id))
               .map((proposal) => (
                 <li key={proposal.id} className="pl-11">
-                  <ProposalCard proposal={proposal} />
+                  <ProposalCard proposal={proposal} offerAlways={!settings.auto_capture} />
                 </li>
               ))}
           </ol>
@@ -408,7 +417,15 @@ function UserTurn({ text, spoken = false }: { text: string; spoken?: boolean }) 
   );
 }
 
-function MessageItem({ message, proposals }: { message: AiMessage; proposals: AiProposal[] }) {
+function MessageItem({
+  message,
+  proposals,
+  offerAlways,
+}: {
+  message: AiMessage;
+  proposals: AiProposal[];
+  offerAlways: boolean;
+}) {
   if (message.role === "user") {
     return <UserTurn text={message.content} spoken={message.input_mode === "voice"} />;
   }
@@ -435,7 +452,7 @@ function MessageItem({ message, proposals }: { message: AiMessage; proposals: Ai
           processing={message.processing}
         />
         {own.map((proposal) => (
-          <ProposalCard key={proposal.id} proposal={proposal} />
+          <ProposalCard key={proposal.id} proposal={proposal} offerAlways={offerAlways} />
         ))}
       </AssistantTurn>
     </li>
@@ -533,6 +550,15 @@ function Composer({
     onSend(question);
     setText("");
   };
+  const startFrom = (template: QuickAddTemplate) => {
+    const next = `${template.text}${text.trim()}`;
+    setText(next);
+    // After the menu has closed and handed focus back to its button.
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      inputRef.current?.setSelectionRange(next.length, next.length);
+    });
+  };
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault();
@@ -559,6 +585,21 @@ function Composer({
         className="block field-sizing-content max-h-60 min-h-11 w-full resize-none bg-transparent px-3 pt-2 text-base outline-none placeholder:text-muted-foreground sm:text-sm"
       />
       <div className="flex items-center justify-between gap-2">
+        <Menu
+          aria-label="Quick add"
+          variant="ghost"
+          size="icon"
+          chevron={false}
+          className="rounded-full"
+          items={quickAddTemplates(settings.modules).map((template) => ({
+            id: template.id,
+            label: template.label,
+            group: template.group,
+            onSelect: () => startFrom(template),
+          }))}
+        >
+          <Plus aria-hidden="true" />
+        </Menu>
         <ModelPicker settings={settings} disabled={streaming} />
         <span className="flex-1" />
         <Button
