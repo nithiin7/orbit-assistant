@@ -126,6 +126,19 @@ class Settings(BaseSettings):
     integrations_webhook_url: AnyHttpUrl | None = None
     # How often the worker looks for due synchronization work.
     integrations_poll_seconds: float = Field(default=30, ge=5, le=3600)
+    # Push notifications. Each person turns them on per device in Settings; this turns them off
+    # for everyone on the server.
+    web_push_enabled: bool = True
+    # The P-256 private key (URL-safe base64) that identifies this server to push services. Unset
+    # in local mode, a key file beside the SQLite database is created on first use; unset in
+    # cloud mode, push is unavailable.
+    web_push_private_key: SecretStr | None = None
+    # How a push service can reach whoever runs this server: a `mailto:` or `https://` address.
+    web_push_contact: str = Field(
+        default="https://github.com/nithiin7/orbit-assistant",
+        pattern=r"^(mailto:|https://)\S+$",
+        max_length=320,
+    )
     # Market data: mutual fund NAVs (mfapi.in) and stock and ETF prices (Yahoo Finance). Each
     # workspace turns it on in Settings → Finance (off until then); turning it on sends each
     # priced holding's scheme code or ticker (never units or amounts) to those services. This
@@ -169,6 +182,11 @@ class Settings(BaseSettings):
         if self.storage_mode != "local":
             return None
         return self.sqlite_path.parent / "integrations-secret.key"
+
+    @property
+    def web_push_key_file(self) -> Path | None:
+        """Where local mode keeps a generated web push key; `None` in cloud mode."""
+        return self.sqlite_path.parent / "web-push.key" if self.storage_mode == "local" else None
 
     @property
     def ai_private_endpoints_allowed(self) -> bool:

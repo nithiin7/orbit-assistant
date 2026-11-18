@@ -43,6 +43,7 @@ from orbit_api.repositories.notes import build_attachment_service, build_note_se
 from orbit_api.repositories.notifications import SqlNotificationRepository
 from orbit_api.repositories.places import SqlPlaceRepository, SqlPlaceSettings
 from orbit_api.repositories.planning import build_planning_service
+from orbit_api.repositories.push import build_push_service
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.search.history import build_search_history
 from orbit_api.repositories.search.providers import build_universal_search
@@ -79,6 +80,8 @@ from orbit_api.services.notes.service import NoteService
 from orbit_api.services.notifications.service import NotificationService
 from orbit_api.services.places.service import Geocoder, PlaceService
 from orbit_api.services.planning.service import PlanningService
+from orbit_api.services.push.models import PushSender
+from orbit_api.services.push.service import PushService
 from orbit_api.services.reminders.service import ReminderService
 from orbit_api.services.search.history import SearchHistoryService
 from orbit_api.services.search.service import SearchService
@@ -241,6 +244,14 @@ def get_notification_service(session: SessionDep) -> NotificationService:
 
 
 NotificationServiceDep = Annotated[NotificationService, Depends(get_notification_service)]
+
+
+def get_push_service(request: Request, session: SessionDep) -> PushService:
+    sender: PushSender = getattr(request.app.state, "push_sender")  # noqa: B009
+    return build_push_service(session, sender)
+
+
+PushServiceDep = Annotated[PushService, Depends(get_push_service)]
 
 
 def get_finance_service(session: SessionDep) -> FinanceService:

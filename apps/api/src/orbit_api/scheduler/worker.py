@@ -17,6 +17,7 @@ The guarantees are described in `orbit_api.services.reminders.delivery`.
 import asyncio
 import contextlib
 import logging
+import uuid
 from collections import Counter
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
@@ -48,6 +49,7 @@ from orbit_api.repositories.investments import (
     workspaces_with_holdings,
 )
 from orbit_api.repositories.notifications import SqlNotificationRepository
+from orbit_api.repositories.push import build_push_service
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.repositories.voice import SqlVoiceHistoryRepository
@@ -57,6 +59,7 @@ from orbit_api.services.ai.indexing import IndexRun, permitted_types
 from orbit_api.services.ai.providers import ProviderFactory
 from orbit_api.services.integrations.connectors import ConnectorRegistry
 from orbit_api.services.investments.valuation import PriceFeed
+from orbit_api.services.push.models import PushSender
 from orbit_api.services.reminders.delivery import (
     DEFAULT_MAX_ATTEMPTS,
     DeliveryResult,
@@ -211,8 +214,10 @@ class ReminderWorker:
         market: MarketData | None = None,
         sip_interval: timedelta = DEFAULT_SIP_INTERVAL,
         briefing_interval: timedelta = DEFAULT_BRIEFING_INTERVAL,
+        push: PushSender | None = None,
     ) -> None:
         self._database = database
+        self._push = push
         self._briefing_interval = briefing_interval
         self._briefings_checked_at: datetime | None = None
         self._market = market
@@ -252,8 +257,15 @@ class ReminderWorker:
             await session.commit()
 
         results: Counter[DeliveryResult] = Counter()
+        delivered: list[ClaimedOccurrence] = []
         for claim in claims:
-            results[await self._process(claim)] += 1
+            result = await self._process(claim)
+            results[result] += 1
+            if result == "delivered":
+                delivered.append(claim)
+        # After the whole batch, so a slow push service can't outlast the other claims' leases.
+        for claim in delivered:
+            await self._push_reminder(claim)
         if claims:
             # IDs and counts only: reminder titles are personal data.
             logger.info("Processed %d reminder occurrence(s): %s", len(claims), dict(results))
@@ -341,7 +353,7 @@ class ReminderWorker:
             async with self._database.session() as session:
                 try:
                     service = build_briefing_service(session, self._files, self._clock)
-                    prepared += await service.prepare_if_due(entry)
+                    was_prepared = await service.prepare_if_due(entry)
                 except Exception:
                     # Deliberate boundary: one briefing failing must not stop the others; the
                     # next check retries it. IDs only: briefings hold personal data.
@@ -351,6 +363,10 @@ class ReminderWorker:
                         entry.user_id,
                         entry.workspace_id,
                     )
+                    continue
+            if was_prepared:
+                prepared += 1
+                await self._push_briefing(entry.user_id)
         if prepared:
             logger.info("Prepared %d daily briefing(s).", prepared)
         return prepared
@@ -786,6 +802,31 @@ class ReminderWorker:
             count = await SqlOccurrenceRepository(session).retry_failed(self._clock())
             await session.commit()
             return count
+
+    async def _push_reminder(self, claim: ClaimedOccurrence) -> None:
+        """Copy a delivered reminder to its recipients' devices. Best effort: the in-app
+        notification is already committed."""
+        if self._push is None:
+            return
+        try:
+            async with self._database.session() as session:
+                notifications = await SqlNotificationRepository(session).for_occurrence(claim.id)
+                service = build_push_service(session, self._push)
+                for notification in notifications:
+                    await service.notify_reminder(notification)
+        except Exception:
+            # Deliberate boundary: push must never stop reminder delivery. IDs only.
+            logger.exception("Sending push notifications for occurrence %s failed.", claim.id)
+
+    async def _push_briefing(self, user_id: uuid.UUID) -> None:
+        if self._push is None:
+            return
+        try:
+            async with self._database.session() as session:
+                await build_push_service(session, self._push).notify_briefing(user_id)
+        except Exception:
+            # Deliberate boundary: the briefing is prepared; only its notification failed.
+            logger.exception("Sending the briefing push notification to %s failed.", user_id)
 
     async def _process(self, claim: ClaimedOccurrence) -> DeliveryResult:
         async with self._database.session() as session:

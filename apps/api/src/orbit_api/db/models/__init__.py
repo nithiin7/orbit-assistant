@@ -136,6 +136,7 @@ from orbit_api.db.models.notes import (
     NoteTaskLinkModel,
 )
 from orbit_api.db.models.places import PlaceModel, PlaceSettingsModel
+from orbit_api.db.models.push import PushPreferencesModel, PushSubscriptionModel
 from orbit_api.db.models.reminders import (
     NotificationModel,
     ReminderModel,
@@ -258,6 +259,8 @@ __all__ = [
     "NotificationModel",
     "PlaceModel",
     "PlaceSettingsModel",
+    "PushPreferencesModel",
+    "PushSubscriptionModel",
     "RecentSearchModel",
     "ReminderModel",
     "ReminderOccurrenceModel",

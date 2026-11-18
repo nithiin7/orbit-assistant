@@ -27,6 +27,7 @@ from orbit_api.providers.geo.nominatim import NominatimGeocoder
 from orbit_api.providers.integrations.registry import HttpConnectorRegistry
 from orbit_api.providers.media.tmdb import TmdbClient
 from orbit_api.providers.prices.feed import HttpPriceFeed
+from orbit_api.providers.push.web_push import WebPushSender
 from orbit_api.providers.voice.registry import HttpAudioProviderFactory
 from orbit_api.providers.web.link_preview import LinkPreviewClient
 from orbit_api.scheduler.worker import (
@@ -85,6 +86,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     backups=BackupJobs(settings),
                     agents=AgentJobs(settings, providers, connectors),
                     market=MarketData(settings, prices),
+                    push=app.state.push_sender,
                 ).run(stop, settings.scheduler_poll_seconds)
             )
         try:
@@ -119,6 +121,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.ai_providers = HttpProviderFactory()
     # One HTTP client for speech (transcription, text-to-speech); tests replace it with fakes.
     app.state.voice_providers = HttpAudioProviderFactory()
+    app.state.push_sender = WebPushSender.from_settings(settings)
     # One HTTP client for every Google and Microsoft call; tests replace it with fakes.
     app.state.integration_connectors = HttpConnectorRegistry(settings)
     # One HTTP client for market data; routes and workers gate it by server and workspace settings.
