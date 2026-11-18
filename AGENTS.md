@@ -19,10 +19,11 @@ briefing (structured API; AI summary in the dashboard greeting); universal searc
 index); AI layer (off by default; OpenAI, Anthropic, Gemini, Ollama, OpenAI-compatible); Google
 and Microsoft integrations; backup and restore; personal agent with approval-gated workflows;
 voice conversations in the assistant (browser or OpenAI-style speech; no audio stored; spoken
-approval only for new, low-risk records).
+approval only for new, low-risk records); installable web app (manifest and a service worker
+that caches nothing); opt-in web push for reminders and the daily briefing.
 
 **Not built; never claim or build on unless asked:** OCR, encryption at rest by Orbit,
-push/email/SMS notifications, email sending, bank or broker feeds, auto-created transactions
+email/SMS notifications, email sending, bank or broker feeds, auto-created transactions
 (except auto-debit SIP installments), CalDAV or `.ics`/CSV/Markdown import,
 wake words or always-on listening, stored audio, multi-device sync, shared workspaces, an event bus, any vector DB, agent tools that
 delete, pay, send, share, or change permissions.

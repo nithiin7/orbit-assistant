@@ -102,6 +102,8 @@ Design decisions:
 - **Server Components by default**; `"use client"` only where needed.
 - **Route groups:** `RequireAuth` shows a loading screen until the session is confirmed and
   redirects to `/sign-in?next=…` (validated against open redirects by `lib/auth/redirect.ts`).
+- **Installable app:** `app/manifest.ts` and `public/sw.js`, registered in production only. The
+  worker has no fetch handler, so private pages and API responses are never cached on the device.
 
 ## API
 
@@ -624,12 +626,31 @@ Reminders: `/api/v1/workspaces/{workspace_id}/reminders` (CRUD, `WorkspaceDep`).
 
 ### Reminder limitations
 
-- **In-app only.** No browser push, email, SMS, or mobile; seen only while Orbit is open. The
-  polling bell stands in for push.
+- No email or SMS. Push is an opt-in, best-effort copy of the in-app notification
+  ([Push notifications](#push-notifications)).
 - Delivery granularity is the poll interval; `overdue` until delivered.
 - Notifications go to the workspace owner (its only member). Shared workspaces would need
   per-member delivery and membership checks.
 - No snooze, recurrence end date/count, "every N days/weeks", or history beyond the inbox.
+
+### Push notifications
+
+Opt-in per device under Settings → Notifications; preferences (reminders, daily briefing, show
+details) are per person. Code: `services/push/`, `providers/push/web_push.py`,
+`system/push_keys.py`, `api/v1/push.py`, `lib/push/`, and the handlers in `public/sw.js`.
+
+- **Delivery:** after a worker batch commits, each delivered occurrence's notifications are copied
+  to the recipient's devices; a briefing is pushed when the worker prepares it at its chosen time
+  (not when it was already prepared that day). Failures are logged and never retried or allowed to
+  affect the reminder, and no transaction is open during network calls.
+- **Privacy:** payloads are encrypted for the device (RFC 8291). By default they carry no content,
+  only "You have a reminder." Endpoints and keys are never returned, logged, or backed up.
+- **Safety:** the server posts only to known browser push services over HTTPS, without following
+  redirects, so a subscription can't aim it at an internal address.
+- **Keys:** the VAPID key comes from `ORBIT_WEB_PUSH_PRIVATE_KEY`, or in local mode from
+  `web-push.key` beside the database. Replacing it means turning push on again on each device.
+- **Lifecycle:** devices a push service reports gone (404, 410) are deleted; a person keeps at most 20. Signing out unsubscribes the browser. A subscription the browser rotates by itself is not
+  picked up until push is turned on again there.
 
 ## Finance
 
