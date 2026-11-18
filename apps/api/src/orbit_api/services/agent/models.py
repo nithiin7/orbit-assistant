@@ -15,15 +15,38 @@ from orbit_api.services.ai.models import AI_MODULES, RecordRef
 
 # What the agent may use: the AI layer's modules, plus connected mailboxes (read on demand).
 AgentModule = Literal[
-    "tasks", "notes", "calendar", "reminders", "habits", "documents", "finance", "health", "mail"
+    "tasks",
+    "notes",
+    "calendar",
+    "reminders",
+    "habits",
+    "documents",
+    "finance",
+    "health",
+    "mail",
+    "shopping",
+    "places",
+    "saved",
+    "watchlist",
 ]
 AGENT_MODULES: Final[tuple[AgentModule, ...]] = get_args(AgentModule)
 # Sensitive modules start off, like the AI layer's defaults.
 DEFAULT_AGENT_MODULES: Final[frozenset[AgentModule]] = frozenset(
-    {"tasks", "notes", "calendar", "reminders", "habits"}
+    {
+        "tasks",
+        "notes",
+        "calendar",
+        "reminders",
+        "habits",
+        "shopping",
+        "places",
+        "saved",
+        "watchlist",
+    }
 )
-# The agent has no watchlist tools, so the AI layer's watchlist permission has no agent twin.
-assert set(AI_MODULES) - {"watchlist"} <= set(AGENT_MODULES)
+assert set(AI_MODULES) <= set(AGENT_MODULES)
+# Modules the agent only adds to: it reads nothing from them, so no AI-layer permission applies.
+CAPTURE_ONLY_MODULES: Final[frozenset[AgentModule]] = frozenset({"shopping", "places", "saved"})
 
 # 0 read only · 1 suggest · 2 approval required · 3 limited autonomy. There is no level above 3.
 AutonomyLevel = Literal["read_only", "suggest", "approval", "limited"]

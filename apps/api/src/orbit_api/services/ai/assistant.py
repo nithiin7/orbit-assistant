@@ -26,10 +26,13 @@ from zoneinfo import ZoneInfo
 import anyio
 
 from orbit_api.services.ai.actions import ProposalService
+from orbit_api.services.ai.auto_capture import may_add_directly
 from orbit_api.services.ai.configuration import AiConfigService, ResolvedProvider
 from orbit_api.services.ai.context import ContextBuilder, Viewer
 from orbit_api.services.ai.models import (
+    ACTION_MODULE,
     AI_MODULES,
+    ActionKind,
     AiModule,
     AiSettings,
     ChatMessage,
@@ -49,7 +52,9 @@ from orbit_api.services.ai.models import (
 from orbit_api.services.ai.prompts import (
     ActionFenceFilter,
     check_answer,
+    extraction_prompt,
     fit_history,
+    parse_extracted_actions,
     render_record,
     system_prompt,
 )
@@ -58,8 +63,9 @@ from orbit_api.services.ai.providers import (
     ProviderRateLimitError,
     ProviderUnavailableError,
 )
+from orbit_api.services.ai.quick_commands import read_commands
 from orbit_api.services.ai.retrieval import Retriever
-from orbit_api.services.ai.routing import Route, route_question
+from orbit_api.services.ai.routing import Route, is_command, route_question
 from orbit_api.services.transactions import Transaction
 from orbit_api.utils.clock import utc_now
 
@@ -69,6 +75,10 @@ CONTEXT_CHARS: Final = 16000
 RETRIEVED: Final = 6
 MAX_ANSWER_TOKENS: Final = 1500
 TITLE_LENGTH: Final = 60
+EXTRACTION_TOKENS: Final = 600
+NOTHING_ADDED: Final = (
+    "Nothing was added to Orbit. Try saying exactly what to add, or start from Quick add."
+)
 
 
 class ConversationRepository(Protocol):
@@ -108,6 +118,7 @@ class Turn:
     viewer: Viewer
     question: str
     history: list[ChatMessage]
+    input_mode: InputMode
 
 
 @dataclass(frozen=True, slots=True)
@@ -312,9 +323,15 @@ class AssistantService:
             viewer=viewer_for(workspace_id, user_id, timezone, now),
             question=question,
             history=history,
+            input_mode=input_mode,
         )
 
     async def run(self, turn: Turn) -> AsyncIterator[AssistantEvent]:
+        commands = self._valid(turn, read_commands(turn.question))
+        if commands:
+            async for event in self._run_command(turn, commands):
+                yield event
+            return
         route = route_question(turn.question, turn.viewer.today)
         embedder = await self._config.embedding_provider(turn.settings, turn.viewer.workspace_id)
         grounding = await self._grounder.ground(
@@ -398,18 +415,99 @@ class AssistantService:
                     )
 
         checked = check_answer("".join(parts), grounding.citations)
-        saved = await self._save(turn, checked.text, checked.citations, "complete", provider, usage)
-        proposals: list[Proposal] = []
-        if route.wants_action and checked.actions:
-            proposals = await self._proposals.propose(
-                turn.viewer.workspace_id,
-                turn.viewer.user_id,
-                self._proposals.check(checked.actions, turn.viewer.timezone),
-                conversation_id=turn.conversation.id,
-                message_id=saved.id,
-                from_untrusted_context=bool(grounding.citations),
-            )
+        valid = self._valid(turn, checked.actions) if route.wants_action else []
+        read_records = bool(grounding.citations)
+        if route.wants_action and not valid:
+            # The answer held nothing usable; ask again from the person's message alone.
+            valid = self._valid(turn, await self._extract(turn, provider))
+            read_records = False
+        answer = checked.text
+        if not valid and is_command(turn.question):
+            notice = NOTHING_ADDED if not answer else f"\n\n{NOTHING_ADDED}"
+            answer += notice
+            yield DeltaEvent(notice)
+        saved = await self._save(turn, answer, checked.citations, "complete", provider, usage)
+        proposals = await self._propose(turn, saved, valid, read_records=read_records)
         yield DoneEvent(saved, proposals)
+
+    def _valid(
+        self, turn: Turn, actions: Sequence[tuple[str, dict[str, object]]]
+    ) -> list[tuple[ActionKind, dict[str, object], str]]:
+        return self._proposals.check(
+            [a for a in actions if ACTION_MODULE.get(a[0], None) in (None, *turn.settings.modules)],
+            turn.viewer.timezone,
+        )
+
+    async def _extract(
+        self, turn: Turn, provider: ResolvedProvider
+    ) -> list[tuple[str, dict[str, object]]]:
+        request = ChatRequest(
+            model=provider.model,
+            messages=[
+                ChatMessage(
+                    role="system",
+                    content=extraction_prompt(
+                        now=turn.viewer.now,
+                        timezone=turn.viewer.timezone,
+                        permitted=[m for m in AI_MODULES if m in turn.settings.modules],
+                    ),
+                ),
+                ChatMessage(role="user", content=turn.question),
+            ],
+            max_tokens=EXTRACTION_TOKENS,
+        )
+        try:
+            completion = await provider.provider.complete(request)
+        except (ProviderError, UsageLimitReachedError):
+            return []
+        return parse_extracted_actions(completion.text)
+
+    async def _run_command(
+        self, turn: Turn, commands: Sequence[tuple[ActionKind, dict[str, object], str]]
+    ) -> AsyncIterator[AssistantEvent]:
+        """A plain command: added from the person's own words, with no model and no records."""
+        yield SourcesEvent([])
+        direct = self._adds_directly(turn) and all(
+            may_add_directly(kind, payload, turn.question) for kind, payload, _ in commands
+        )
+        text = "Adding that now." if direct else "Approve this to add it."
+        yield DeltaEvent(text)
+        saved = await self._save(turn, text, [], "complete", turn.provider, TokenUsage())
+        yield DoneEvent(saved, await self._propose(turn, saved, commands, read_records=False))
+
+    async def _propose(
+        self,
+        turn: Turn,
+        saved: Message,
+        valid: Sequence[tuple[ActionKind, dict[str, object], str]],
+        *,
+        read_records: bool,
+    ) -> list[Proposal]:
+        if not valid:
+            return []
+        proposals = await self._proposals.propose(
+            turn.viewer.workspace_id,
+            turn.viewer.user_id,
+            valid,
+            conversation_id=turn.conversation.id,
+            message_id=saved.id,
+            from_untrusted_context=read_records,
+        )
+        if self._adds_directly(turn):
+            return [await self._add_if_stated(turn, p) for p in proposals]
+        return proposals
+
+    @staticmethod
+    def _adds_directly(turn: Turn) -> bool:
+        # Typed requests only: a misheard word shouldn't add anything without a look.
+        return turn.settings.auto_capture and turn.input_mode == "text"
+
+    async def _add_if_stated(self, turn: Turn, proposal: Proposal) -> Proposal:
+        if not may_add_directly(proposal.kind, proposal.payload, turn.question):
+            return proposal
+        return await self._proposals.approve(
+            turn.viewer.workspace_id, turn.viewer.user_id, proposal.id, turn.viewer.timezone
+        )
 
     async def _save(
         self,

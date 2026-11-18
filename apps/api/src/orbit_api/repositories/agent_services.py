@@ -18,6 +18,7 @@ from orbit_api.repositories.agent import AiModelGateway, SqlAgentStore, SqlChang
 from orbit_api.repositories.ai_services import AiServices, build_ai
 from orbit_api.repositories.briefings import SqlBriefingRepository
 from orbit_api.repositories.calendar import SqlCalendarRepository
+from orbit_api.repositories.capture import CaptureServices, build_capture_services
 from orbit_api.repositories.documents import SqlDocumentStore
 from orbit_api.repositories.habits import build_habit_service
 from orbit_api.repositories.integrations import (
@@ -73,6 +74,7 @@ class WriteServices:
     calendar: CalendarService
     notes: NoteService
     documents: DocumentService
+    capture: CaptureServices
 
 
 @dataclass(frozen=True, slots=True)
@@ -193,6 +195,7 @@ def build_agent(
             deferred,
             clock,
         ),
+        capture=build_capture_services(session, settings, deferred),
     )
     models = AiModelGateway(ai.config)
     notifier = NotificationNotifier(session, clock)

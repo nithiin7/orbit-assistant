@@ -76,6 +76,8 @@ class AiSettings:
     monthly_token_limit: int | None = None
     indexing_enabled: bool = True
     updated_at: datetime | None = None
+    # Add simple items the person typed without asking. Off until they choose it.
+    auto_capture: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -327,8 +329,26 @@ ActionKind = Literal[
     "append_to_note",
     "add_note_tags",
     "update_document_details",
+    "add_shopping_item",
+    "create_habit",
+    "log_water",
+    "log_weight",
+    "log_activity",
+    "add_transaction",
+    "add_place",
+    "save_link",
+    "add_watch_item",
 ]
 ACTION_KINDS: Final[tuple[ActionKind, ...]] = get_args(ActionKind)
+# Capture actions in modules the person can withhold from AI: proposed only while it's allowed.
+ACTION_MODULE: Final[dict[str, AiModule]] = {
+    "create_habit": "habits",
+    "log_water": "health",
+    "log_weight": "health",
+    "log_activity": "health",
+    "add_transaction": "finance",
+    "add_watch_item": "watchlist",
+}
 ProposalStatus = Literal["pending", "executing", "executed", "rejected", "failed"]
 
 

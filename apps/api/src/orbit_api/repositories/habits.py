@@ -59,6 +59,7 @@ from orbit_api.services.habits.schedule import (
 from orbit_api.services.habits.service import HabitService, HealthSource, normalize_name
 from orbit_api.services.reminders.recurrence import WEEKDAYS, Weekday
 from orbit_api.services.tasks.models import Task
+from orbit_api.services.transactions import Transaction
 from orbit_api.utils.clock import utc_now
 
 _WEEKDAY_NAMES: dict[str, Weekday] = {day: day for day in WEEKDAYS}
@@ -871,15 +872,17 @@ def build_habit_service(
     session: AsyncSession,
     clock: Callable[[], datetime] | None = None,
     health: HealthSource | None = None,
+    transaction: Transaction | None = None,
 ) -> HabitService:
     """A habit service whose changes and reminders share `session`'s transaction. Used by the
-    API per request and by the reminder worker inside each delivery transaction."""
+    API per request and by the reminder worker inside each delivery transaction. `transaction`
+    replaces the commit, for callers that commit the change with their own records."""
     timing = {"clock": clock} if clock else {}
     return HabitService(
         SqlHabitStore(session),
         SqlReminderRepository(session),
         SqlOccurrenceRepository(session),
-        SqlTransaction(session),
+        transaction or SqlTransaction(session),
         health=health,
         **timing,
     )

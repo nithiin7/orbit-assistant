@@ -103,6 +103,7 @@ class SqlAiSettingsRepository:
             monthly_token_limit=model.monthly_token_limit,
             indexing_enabled=model.indexing_enabled,
             updated_at=model.updated_at,
+            auto_capture=model.auto_capture,
         )
 
     async def put(self, settings: AiSettings) -> None:
@@ -122,6 +123,7 @@ class SqlAiSettingsRepository:
         model.response_style = settings.response_style
         model.monthly_token_limit = settings.monthly_token_limit
         model.indexing_enabled = settings.indexing_enabled
+        model.auto_capture = settings.auto_capture
         if settings.updated_at is not None:
             model.updated_at = settings.updated_at
         await flush(self._session)

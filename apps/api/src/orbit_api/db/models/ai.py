@@ -21,6 +21,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    false,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -31,7 +32,9 @@ PROVIDER_KINDS = "'openai', 'anthropic', 'gemini', 'ollama', 'openai_compatible'
 SOURCE_TYPES = "'note', 'document', 'task', 'event', 'habit'"
 ACTION_KINDS = (
     "'create_task', 'create_reminder', 'create_event', 'create_note', 'append_to_note', "
-    "'add_note_tags', 'update_document_details'"
+    "'add_note_tags', 'update_document_details', 'add_shopping_item', 'create_habit', "
+    "'log_water', 'log_weight', 'log_activity', 'add_transaction', 'add_place', 'save_link', "
+    "'add_watch_item'"
 )
 
 
@@ -93,6 +96,8 @@ class AiSettingsModel(Base):
     modules: Mapped[list[str]] = mapped_column(JSON)
     response_style: Mapped[str] = mapped_column(String(16))
     monthly_token_limit: Mapped[int | None] = mapped_column(Integer)
+    # Add simple items the person typed without asking; see `services/ai/auto_capture.py`.
+    auto_capture: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     indexing_enabled: Mapped[bool] = mapped_column(Boolean)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
 

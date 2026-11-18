@@ -119,6 +119,7 @@ class AiSettingsResponse(BaseModel):
     response_style: ResponseStyle
     monthly_token_limit: int | None
     indexing_enabled: bool
+    auto_capture: bool = Field(description="Add simple items the person typed without asking.")
 
     @classmethod
     def of(cls, settings: AiSettings, server_enabled: bool) -> "AiSettingsResponse":
@@ -136,6 +137,7 @@ class AiSettingsResponse(BaseModel):
             response_style=settings.response_style,
             monthly_token_limit=settings.monthly_token_limit,
             indexing_enabled=settings.indexing_enabled,
+            auto_capture=settings.auto_capture,
         )
 
 
@@ -156,6 +158,7 @@ class UpdateAiSettingsRequest(BaseModel):
     response_style: ResponseStyle | None = None
     monthly_token_limit: int | None = Field(default=None, ge=1000, le=10**10)
     indexing_enabled: bool | None = None
+    auto_capture: bool | None = None
 
     @model_validator(mode="after")
     def _check(self) -> Self:

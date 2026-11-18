@@ -109,6 +109,7 @@ class SettingsChanges:
     response_style: Change[ResponseStyle] = UNSET
     monthly_token_limit: Change[int | None] = UNSET
     indexing_enabled: Change[bool] = UNSET
+    auto_capture: Change[bool] = UNSET
 
 
 @dataclass(frozen=True, slots=True)
@@ -196,6 +197,7 @@ class AiConfigService:
             response_style=_pick(changes.response_style, current.response_style),
             monthly_token_limit=_pick(changes.monthly_token_limit, current.monthly_token_limit),
             indexing_enabled=_pick(changes.indexing_enabled, current.indexing_enabled),
+            auto_capture=_pick(changes.auto_capture, current.auto_capture),
             updated_at=self._clock(),
         )
         await self._settings.put(updated)

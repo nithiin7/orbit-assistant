@@ -229,6 +229,7 @@ async def update_settings(
         if "monthly_token_limit" in provided
         else UNSET,
         indexing_enabled=body.indexing_enabled if body.indexing_enabled is not None else UNSET,
+        auto_capture=body.auto_capture if body.auto_capture is not None else UNSET,
     )
     with _errors():
         settings = await ai.config.update_settings(user.id, changes)
@@ -443,6 +444,7 @@ async def _stream(request: Request, turn: Turn) -> AsyncIterator[str]:
             viewer=turn.viewer,
             question=turn.question,
             history=turn.history,
+            input_mode=turn.input_mode,
         )
         yield _event("start", AiTurnStarted.of(turn.conversation, provider))
         async for event in ai.assistant.run(turn):

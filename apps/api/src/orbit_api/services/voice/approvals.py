@@ -19,7 +19,17 @@ from orbit_api.services.voice.confirmation import Reply, classify_reply
 # Proposal kinds a spoken yes may approve: each only creates a new record. Changing existing
 # records (appending to a note, tags, document details) needs the screen.
 VOICE_APPROVABLE: Final[frozenset[ActionKind]] = frozenset(
-    {"create_task", "create_reminder", "create_event", "create_note"}
+    {
+        "create_task",
+        "create_reminder",
+        "create_event",
+        "create_note",
+        "add_shopping_item",
+        "create_habit",
+        "add_place",
+        "save_link",
+        "add_watch_item",
+    }
 )
 
 Outcome = Literal["approved", "rejected", "unclear", "needs_screen", "not_pending"]

@@ -29,7 +29,7 @@ from orbit_api.services.ai.models import (
 from orbit_api.services.transactions import Transaction
 from orbit_api.utils.clock import utc_now
 
-MAX_PROPOSALS_PER_ANSWER = 3
+MAX_PROPOSALS_PER_ANSWER = 8
 
 
 class ActionValidator(Protocol):

@@ -22,6 +22,7 @@ from orbit_api.repositories.calendar import (
     build_calendar_preference_service,
     build_calendar_service,
 )
+from orbit_api.repositories.capture import build_capture_services
 from orbit_api.repositories.commitments import build_commitment_service
 from orbit_api.repositories.dashboard import SqlDashboardRepository
 from orbit_api.repositories.documents import build_document_service
@@ -539,6 +540,7 @@ def build_ai_for(session: AsyncSession, state: object) -> AiServices:
             calendar=modules.calendar,
             notes=modules.notes,
             documents=modules.documents,
+            capture=build_capture_services(session, app_settings, SqlTransaction(session)),
         ),
     )
 
