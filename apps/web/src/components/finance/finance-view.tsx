@@ -54,6 +54,7 @@ import { PaymentDialog, type PaymentTarget } from "./payment-dialog";
 import { PlanView } from "./plan-view";
 import { RecurringDialog } from "./recurring-dialog";
 import { RecurringView } from "./recurring-view";
+import { StatementImportDialog } from "./statement-import-dialog";
 import { TransactionDialog } from "./transaction-dialog";
 import { TransactionHistory } from "./transaction-history";
 import { UpcomingPayments } from "./upcoming-payments";
@@ -72,6 +73,7 @@ type Dialog =
   | { kind: "transaction"; type: FinanceTransactionType; transaction?: FinanceTransaction }
   | { kind: "account"; account?: FinanceAccount }
   | { kind: "categories" }
+  | { kind: "import" }
   | { kind: "loan"; loan?: Loan }
   | { kind: "reschedule"; loan: Loan }
   | { kind: "installment"; loan: Loan; installment: Installment }
@@ -319,6 +321,7 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
               <TransactionHistory
                 {...data}
                 onManageCategories={() => setDialog({ kind: "categories" })}
+                onImportStatement={() => setDialog({ kind: "import" })}
               />
             ) : tab === "investments" ? (
               <InvestmentsView {...data} />
@@ -388,6 +391,14 @@ function FinanceView({ workspaceId }: { workspaceId: string }) {
       ) : dialog?.kind === "categories" ? (
         <CategoriesDialog
           workspaceId={workspaceId}
+          categories={categories.data}
+          onAnnounce={setAnnouncement}
+          onClose={() => setDialog(null)}
+        />
+      ) : dialog?.kind === "import" ? (
+        <StatementImportDialog
+          workspaceId={workspaceId}
+          accounts={allAccounts}
           categories={categories.data}
           onAnnounce={setAnnouncement}
           onClose={() => setDialog(null)}
