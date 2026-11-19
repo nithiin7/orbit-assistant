@@ -780,6 +780,47 @@ Date, Type, Description, Category, Account, To account, Amount (positive major-u
 `20000.50`), Currency, Notes, ID. Text starting with `=`, `+`, `-`, `@`, tab, or CR gets a `'`
 prefix (CSV injection). No BOM; Excel users may need to import as UTF-8.
 
+### Statement imports
+
+A bank statement (PDF, `.xlsx`, `.xls`, or CSV, at most 5 MB) is imported into one account in
+two steps: a preview that writes nothing, then an import of the rows the person reviewed. Code:
+`services/statements/` (`readers.py` files to text cells, `columns.py` header keywords,
+`parsing.py` amounts, dates, and balance checks, `matching.py` proposals, `service.py`), routes
+under `…/finance/statements`.
+
+- **Files** are read in memory and never stored. The type comes from the content. PDFs are read
+  with `pdfminer.six` from each character's position: characters group into lines by height and
+  into cells by gaps, and a cell goes under the header above it (numbers by nearest right edge,
+  since amounts are right-aligned). Excel uses `openpyxl` and `xlrd`. Scanned PDFs (no text) and
+  password-protected Excel files are refused; there is no OCR.
+- **Passwords:** a locked PDF previews as `password_required` (or `wrong_password`). The password
+  is sent base64-encoded in `X-Statement-Password`, never in the URL, used only to open the file,
+  and never stored or logged.
+- **Columns** are found by keyword in the first 40 rows (`columns.py`): an exact header beats a
+  partial one, short words (`dr`, `cr`) match whole words, and a tie or a missing field returns
+  `needs_mapping` so the person picks columns. Numeric dates that read either way are settled by
+  the reading that keeps the dates far closer together, otherwise the person chooses day or month
+  first.
+- **Balance check:** each row must take the printed balance before it to its own printed balance.
+  In a PDF a row that only works with its direction flipped is flipped (a number under the wrong
+  column); any other mismatch, and any dated row without a readable amount, is shown flagged and
+  can't be imported. Newest-first statements are reordered by whichever order the balances agree
+  with.
+- **Proposals**, in order: imported before (fingerprint), already in the ledger (same account,
+  amount, and direction within 3 days, auto-debit SIPs included), a bill or EMI payment already
+  recorded, an open bill or EMI of the same amount due within 5 days (settled through the
+  commitment's own payment flow), else a new transaction categorized by the person's rules.
+  Each ledger entry and payment matches one row.
+- **Tables** (`0047`): `finance_import_batches`, `finance_import_rows` (a SHA-256 fingerprint of
+  account, date, direction, amount, normalized description, and its order among identical rows;
+  unique per account), `finance_category_rules` (first merchant word of a narration to category,
+  learned from what the person chose).
+- **Import** is one transaction, all or nothing; rows already imported are skipped, so a repeated
+  request is safe. **Undo** deletes a batch's transactions except those a payment or goal uses
+  (kept and counted); fingerprints of kept rows stay.
+- Web: **Import statement** in Transactions opens `StatementImportDialog` (file, password,
+  mapping, review, done with Undo).
+
 ### Web app
 
 - `/finance` (`components/finance/`), thirteen views in `lib/finance-views`: Overview; **Money**
@@ -1265,15 +1306,16 @@ JSON integers; nothing logged about amounts.
 
 ## Finance limitations and extension points (planned, not implemented)
 
-- **Statement imports** (CAS, contract notes) would implement `PriceFeed` or record buys (see
-  [Valuation strategy](#valuation-strategy)); none integrated.
+- **Investment statement imports** (CAS, contract notes) would implement `PriceFeed` or record
+  buys (see [Valuation strategy](#valuation-strategy)); none integrated. Bank statements import
+  (see [Statement imports](#statement-imports)).
 - Only auto-debit SIPs create transactions automatically. Overdue subscription or bill occurrences
   are listed up to the 60 most recent.
 - No loan history before it was added; floating rates via rescheduling; interest per installment
   period (no daily-balance interest, fees, or bundled insurance).
 - Editing a transaction that records a payment isn't blocked; the payment keeps its amounts.
-- Not supported: conversion, split transactions, attachments, imports, bank connections,
-  reconciliation, undo.
+- Not supported: conversion, split transactions, attachments, bank connections, reconciliation,
+  undo (except undoing a statement import).
 
 ## Notes and knowledge management
 
