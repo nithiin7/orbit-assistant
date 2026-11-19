@@ -32,6 +32,7 @@ from orbit_api.api.v1 import (
     reminders,
     search,
     shopping,
+    statements,
     storage,
     tasks,
     voice,
@@ -55,6 +56,7 @@ router.include_router(bookmarks.router)
 router.include_router(places.router)
 router.include_router(reminders.router)
 router.include_router(finance.router)
+router.include_router(statements.router)
 router.include_router(commitments.router)
 router.include_router(investments.router)
 router.include_router(networth.router)

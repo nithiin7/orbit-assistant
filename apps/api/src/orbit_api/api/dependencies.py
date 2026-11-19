@@ -53,6 +53,7 @@ from orbit_api.repositories.reminders import (
 from orbit_api.repositories.search.history import build_search_history
 from orbit_api.repositories.search.providers import build_universal_search
 from orbit_api.repositories.shopping import SqlShoppingItemRepository, SqlShoppingListRepository
+from orbit_api.repositories.statements import build_statement_service
 from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.repositories.voice import VoiceServices, build_voice
@@ -92,6 +93,7 @@ from orbit_api.services.search.history import SearchHistoryService
 from orbit_api.services.search.service import SearchService
 from orbit_api.services.search.universal import UniversalSearchService
 from orbit_api.services.shopping.service import ShoppingService
+from orbit_api.services.statements.service import StatementImportService
 from orbit_api.services.tasks.service import TaskService
 from orbit_api.services.voice.models import AudioProviderFactory
 from orbit_api.services.watchlist.service import TitleCatalogs, WatchlistService
@@ -276,6 +278,13 @@ def get_commitment_service(session: SessionDep) -> CommitmentService:
 
 
 CommitmentServiceDep = Annotated[CommitmentService, Depends(get_commitment_service)]
+
+
+def get_statement_service(session: SessionDep) -> StatementImportService:
+    return build_statement_service(session)
+
+
+StatementServiceDep = Annotated[StatementImportService, Depends(get_statement_service)]
 
 
 def get_investment_service(session: SessionDep) -> InvestmentService:
