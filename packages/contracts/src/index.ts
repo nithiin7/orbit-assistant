@@ -230,6 +230,17 @@ export type FinanceReportQuery = NonNullable<
 export type FinanceTrendQuery = NonNullable<
   paths["/api/v1/workspaces/{workspace_id}/finance/trend"]["get"]["parameters"]["query"]
 >;
+export type StatementPreview = Schemas["StatementPreviewResponse"];
+export type StatementPreviewStatus = StatementPreview["status"];
+export type StatementRow = Schemas["StatementRowResponse"];
+export type StatementColumns = Schemas["StatementColumnsResponse"];
+export type StatementPreviewQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/finance/statements/preview"]["post"]["parameters"]["query"]
+>;
+export type ImportStatementRequest = Schemas["ImportStatementRequest"];
+export type ImportStatementRow = Schemas["ImportStatementRowRequest"];
+export type ImportStatementResult = Schemas["ImportStatementResponse"];
+export type UndoStatementImportResult = Schemas["UndoStatementImportResponse"];
 export type MonthlySummary = Schemas["MonthlySummaryResponse"];
 export type MonthCashFlow = Schemas["MonthCashFlowResponse"];
 export type FinanceTrend = Schemas["TrendResponse"];

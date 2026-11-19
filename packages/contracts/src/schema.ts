@@ -1883,6 +1883,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/finance/statements/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview a bank statement
+         * @description Read the statement and propose what to do with each row. Nothing is saved.
+         */
+        post: operations["preview_statement_api_v1_workspaces__workspace_id__finance_statements_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/statements/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import reviewed statement rows
+         * @description All or nothing. Rows imported before are skipped, so repeating a request is safe.
+         */
+        post: operations["import_statement_api_v1_workspaces__workspace_id__finance_statements_imports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/statements/imports/{batch_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Undo a statement import
+         * @description Delete the import's transactions, except ones a payment or goal now uses.
+         */
+        delete: operations["undo_statement_import_api_v1_workspaces__workspace_id__finance_statements_imports__batch_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/finance/loans": {
         parameters: {
             query?: never;
@@ -14739,6 +14799,76 @@ export interface components {
             /** Category Id */
             category_id?: string | null;
         };
+        /**
+         * ImportStatementRequest
+         * @description The rows the person confirmed after reviewing a preview. Leave skipped rows out.
+         */
+        ImportStatementRequest: {
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /**
+             * Today
+             * Format: date
+             */
+            today: string;
+            /** Rows */
+            rows: components["schemas"]["ImportStatementRowRequest"][];
+        };
+        /** ImportStatementResponse */
+        ImportStatementResponse: {
+            /**
+             * Batch Id
+             * Format: uuid
+             */
+            batch_id: string;
+            /** Created */
+            created: number;
+            /** Settled */
+            settled: number;
+            /** Already Imported */
+            already_imported: number;
+        };
+        /** ImportStatementRowRequest */
+        ImportStatementRowRequest: {
+            /** Fingerprint */
+            fingerprint: string;
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /** Description */
+            description: string;
+            /**
+             * Amount
+             * @description Minor units, always positive: ₹12.50 is 1250.
+             */
+            amount: number;
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "in" | "out";
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "create" | "settle" | "transfer";
+            /**
+             * Type
+             * @default expense
+             * @enum {string}
+             */
+            type: "income" | "expense" | "refund" | "transfer";
+            /** Category Id */
+            category_id?: string | null;
+            /** To Account Id */
+            to_account_id?: string | null;
+            settle?: components["schemas"]["StatementSettleRequest"] | null;
+        };
         /** ImportedFileResponse */
         ImportedFileResponse: {
             /**
@@ -19208,6 +19338,132 @@ export interface components {
              */
             calendar_event_id?: string | null;
         };
+        /** StatementColumnsResponse */
+        StatementColumnsResponse: {
+            /** Date */
+            date: number;
+            /** Description */
+            description: number;
+            /** Withdrawal */
+            withdrawal: number | null;
+            /** Deposit */
+            deposit: number | null;
+            /** Amount */
+            amount: number | null;
+            /** Direction */
+            direction: number | null;
+            /** Balance */
+            balance: number | null;
+        };
+        /** StatementPaymentMatchResponse */
+        StatementPaymentMatchResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "loan" | "subscription" | "bill";
+            /**
+             * Commitment Id
+             * Format: uuid
+             */
+            commitment_id: string;
+            /** Occurrence Id */
+            occurrence_id: string | null;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Name */
+            name: string;
+        };
+        /** StatementPreviewResponse */
+        StatementPreviewResponse: {
+            /**
+             * Status
+             * @description `ready` with rows to review; `needs_mapping` when the columns or the date order must be chosen; `password_required` or `wrong_password` for a locked PDF.
+             * @enum {string}
+             */
+            status: "ready" | "needs_mapping" | "password_required" | "wrong_password";
+            /** Source */
+            source: ("text" | "excel" | "pdf") | null;
+            /** Headers */
+            headers: string[];
+            /** Header Row */
+            header_row: number | null;
+            columns: components["schemas"]["StatementColumnsResponse"] | null;
+            /** Needs Date Order */
+            needs_date_order: boolean;
+            /** Rows */
+            rows: components["schemas"]["StatementRowResponse"][];
+        };
+        /** StatementRowResponse */
+        StatementRowResponse: {
+            /** Fingerprint */
+            fingerprint: string;
+            /**
+             * Line
+             * @description The row's position below the header, from 1.
+             */
+            line: number;
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /** Description */
+            description: string;
+            /** Amount */
+            amount: number;
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "in" | "out";
+            /** Balance */
+            balance: number | null;
+            /**
+             * Action
+             * @description What Orbit suggests doing with the row.
+             * @enum {string}
+             */
+            action: "create" | "skip" | "settle" | "transfer";
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "new" | "already_imported" | "possible_duplicate" | "recorded_payment" | "payment_due" | "balance_mismatch" | "unreadable_amount";
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "income" | "expense" | "refund" | "transfer";
+            /** Category Id */
+            category_id: string | null;
+            payment: components["schemas"]["StatementPaymentMatchResponse"] | null;
+            /** Duplicate Of */
+            duplicate_of: string | null;
+        };
+        /** StatementSettleRequest */
+        StatementSettleRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "loan" | "subscription" | "bill";
+            /**
+             * Commitment Id
+             * Format: uuid
+             */
+            commitment_id: string;
+            /** Occurrence Id */
+            occurrence_id?: string | null;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+        };
         /**
          * StorageLocationResponse
          * @description Where this installation keeps its data, for signed-in users.
@@ -19788,6 +20044,16 @@ export interface components {
              * @description Oldest first, one per month, including months without transactions.
              */
             months: components["schemas"]["MonthCashFlowResponse"][];
+        };
+        /** UndoStatementImportResponse */
+        UndoStatementImportResponse: {
+            /** Removed */
+            removed: number;
+            /**
+             * Kept
+             * @description Transactions kept because a payment or goal now uses them.
+             */
+            kept: number;
         };
         /** UnequipRewardRequest */
         UnequipRewardRequest: {
@@ -28040,6 +28306,172 @@ export interface operations {
                 content?: never;
             };
             /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_statement_api_v1_workspaces__workspace_id__finance_statements_preview_post: {
+        parameters: {
+            query: {
+                account_id: string;
+                /** @description The person's local date, to tell overdue bills apart. */
+                today: string;
+                /** @description Day first (`dmy`) or month first (`mdy`) for numeric dates. */
+                date_order?: ("dmy" | "mdy") | null;
+                header_row?: number | null;
+                date_column?: number | null;
+                description_column?: number | null;
+                withdrawal_column?: number | null;
+                deposit_column?: number | null;
+                amount_column?: number | null;
+                direction_column?: number | null;
+                balance_column?: number | null;
+            };
+            header?: {
+                /** @description The PDF's password, base64-encoded. Never stored or logged. */
+                "x-statement-password"?: string | null;
+            };
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        /** @description The statement file: PDF, Excel (`.xlsx` or `.xls`), or CSV. */
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementPreviewResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, or import does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The file is larger than 5 MB. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The file can't be read, or the chosen columns don't fit it. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    import_statement_api_v1_workspaces__workspace_id__finance_statements_imports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportStatementRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportStatementResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, or import does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A row breaks a rule; nothing was imported. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    undo_statement_import_api_v1_workspaces__workspace_id__finance_statements_imports__batch_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The import's ID. */
+                batch_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UndoStatementImportResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, or import does not exist. */
             404: {
                 headers: {
                     [name: string]: unknown;

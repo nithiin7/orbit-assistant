@@ -8964,6 +8964,398 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/finance/statements/preview": {
+      "post": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "Preview a bank statement",
+        "description": "Read the statement and propose what to do with each row. Nothing is saved.",
+        "operationId": "preview_statement_api_v1_workspaces__workspace_id__finance_statements_preview_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Account Id"
+            }
+          },
+          {
+            "name": "today",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "The person's local date, to tell overdue bills apart.",
+              "title": "Today"
+            },
+            "description": "The person's local date, to tell overdue bills apart."
+          },
+          {
+            "name": "date_order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "dmy",
+                    "mdy"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Day first (`dmy`) or month first (`mdy`) for numeric dates.",
+              "title": "Date Order"
+            },
+            "description": "Day first (`dmy`) or month first (`mdy`) for numeric dates."
+          },
+          {
+            "name": "header_row",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Header Row"
+            }
+          },
+          {
+            "name": "date_column",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 200,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date Column"
+            }
+          },
+          {
+            "name": "description_column",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 200,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Description Column"
+            }
+          },
+          {
+            "name": "withdrawal_column",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 200,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Withdrawal Column"
+            }
+          },
+          {
+            "name": "deposit_column",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 200,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Deposit Column"
+            }
+          },
+          {
+            "name": "amount_column",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 200,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Amount Column"
+            }
+          },
+          {
+            "name": "direction_column",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 200,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Direction Column"
+            }
+          },
+          {
+            "name": "balance_column",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 200,
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Balance Column"
+            }
+          },
+          {
+            "name": "x-statement-password",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The PDF's password, base64-encoded. Never stored or logged.",
+              "title": "X-Statement-Password"
+            },
+            "description": "The PDF's password, base64-encoded. Never stored or logged."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatementPreviewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, or import does not exist."
+          },
+          "413": {
+            "description": "The file is larger than 5 MB."
+          },
+          "422": {
+            "description": "The file can't be read, or the chosen columns don't fit it."
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "description": "The statement file: PDF, Excel (`.xlsx` or `.xls`), or CSV.",
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/statements/imports": {
+      "post": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "Import reviewed statement rows",
+        "description": "All or nothing. Rows imported before are skipped, so repeating a request is safe.",
+        "operationId": "import_statement_api_v1_workspaces__workspace_id__finance_statements_imports_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportStatementRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportStatementResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, or import does not exist."
+          },
+          "422": {
+            "description": "A row breaks a rule; nothing was imported."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/finance/statements/imports/{batch_id}": {
+      "delete": {
+        "tags": [
+          "finance"
+        ],
+        "summary": "Undo a statement import",
+        "description": "Delete the import's transactions, except ones a payment or goal now uses.",
+        "operationId": "undo_statement_import_api_v1_workspaces__workspace_id__finance_statements_imports__batch_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The import's ID.",
+              "title": "Batch Id"
+            },
+            "description": "The import's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UndoStatementImportResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, account, or import does not exist."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/finance/loans": {
       "get": {
         "tags": [
@@ -56203,6 +56595,167 @@
         "type": "object",
         "title": "ImportFileRequest"
       },
+      "ImportStatementRequest": {
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id"
+          },
+          "today": {
+            "type": "string",
+            "format": "date",
+            "title": "Today"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ImportStatementRowRequest"
+            },
+            "type": "array",
+            "maxItems": 5000,
+            "minItems": 1,
+            "title": "Rows"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "account_id",
+          "today",
+          "rows"
+        ],
+        "title": "ImportStatementRequest",
+        "description": "The rows the person confirmed after reviewing a preview. Leave skipped rows out."
+      },
+      "ImportStatementResponse": {
+        "properties": {
+          "batch_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Batch Id"
+          },
+          "created": {
+            "type": "integer",
+            "title": "Created"
+          },
+          "settled": {
+            "type": "integer",
+            "title": "Settled"
+          },
+          "already_imported": {
+            "type": "integer",
+            "title": "Already Imported"
+          }
+        },
+        "type": "object",
+        "required": [
+          "batch_id",
+          "created",
+          "settled",
+          "already_imported"
+        ],
+        "title": "ImportStatementResponse"
+      },
+      "ImportStatementRowRequest": {
+        "properties": {
+          "fingerprint": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Fingerprint"
+          },
+          "occurred_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Occurred On"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Description"
+          },
+          "amount": {
+            "type": "integer",
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "Minor units, always positive: ₹12.50 is 1250."
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "in",
+              "out"
+            ],
+            "title": "Direction"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "create",
+              "settle",
+              "transfer"
+            ],
+            "title": "Action"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "income",
+              "expense",
+              "refund",
+              "transfer"
+            ],
+            "title": "Type",
+            "default": "expense"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "to_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Account Id"
+          },
+          "settle": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatementSettleRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "fingerprint",
+          "occurred_on",
+          "description",
+          "amount",
+          "direction",
+          "action"
+        ],
+        "title": "ImportStatementRowRequest"
+      },
       "ImportedFileResponse": {
         "properties": {
           "document_id": {
@@ -66938,6 +67491,386 @@
         ],
         "title": "StartSessionRequest"
       },
+      "StatementColumnsResponse": {
+        "properties": {
+          "date": {
+            "type": "integer",
+            "title": "Date"
+          },
+          "description": {
+            "type": "integer",
+            "title": "Description"
+          },
+          "withdrawal": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Withdrawal"
+          },
+          "deposit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deposit"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "direction": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direction"
+          },
+          "balance": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Balance"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "description",
+          "withdrawal",
+          "deposit",
+          "amount",
+          "direction",
+          "balance"
+        ],
+        "title": "StatementColumnsResponse"
+      },
+      "StatementPaymentMatchResponse": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "loan",
+              "subscription",
+              "bill"
+            ],
+            "title": "Kind"
+          },
+          "commitment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Commitment Id"
+          },
+          "occurrence_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurrence Id"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Due Date"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "commitment_id",
+          "occurrence_id",
+          "due_date",
+          "name"
+        ],
+        "title": "StatementPaymentMatchResponse"
+      },
+      "StatementPreviewResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "needs_mapping",
+              "password_required",
+              "wrong_password"
+            ],
+            "title": "Status",
+            "description": "`ready` with rows to review; `needs_mapping` when the columns or the date order must be chosen; `password_required` or `wrong_password` for a locked PDF."
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "text",
+                  "excel",
+                  "pdf"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "headers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Headers"
+          },
+          "header_row": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Header Row"
+          },
+          "columns": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatementColumnsResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "needs_date_order": {
+            "type": "boolean",
+            "title": "Needs Date Order"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/StatementRowResponse"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "source",
+          "headers",
+          "header_row",
+          "columns",
+          "needs_date_order",
+          "rows"
+        ],
+        "title": "StatementPreviewResponse"
+      },
+      "StatementRowResponse": {
+        "properties": {
+          "fingerprint": {
+            "type": "string",
+            "title": "Fingerprint"
+          },
+          "line": {
+            "type": "integer",
+            "title": "Line",
+            "description": "The row's position below the header, from 1."
+          },
+          "occurred_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Occurred On"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "in",
+              "out"
+            ],
+            "title": "Direction"
+          },
+          "balance": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Balance"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "create",
+              "skip",
+              "settle",
+              "transfer"
+            ],
+            "title": "Action",
+            "description": "What Orbit suggests doing with the row."
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "new",
+              "already_imported",
+              "possible_duplicate",
+              "recorded_payment",
+              "payment_due",
+              "balance_mismatch",
+              "unreadable_amount"
+            ],
+            "title": "Reason"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "income",
+              "expense",
+              "refund",
+              "transfer"
+            ],
+            "title": "Type"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "payment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatementPaymentMatchResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "duplicate_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duplicate Of"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fingerprint",
+          "line",
+          "occurred_on",
+          "description",
+          "amount",
+          "direction",
+          "balance",
+          "action",
+          "reason",
+          "type",
+          "category_id",
+          "payment",
+          "duplicate_of"
+        ],
+        "title": "StatementRowResponse"
+      },
+      "StatementSettleRequest": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "loan",
+              "subscription",
+              "bill"
+            ],
+            "title": "Kind"
+          },
+          "commitment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Commitment Id"
+          },
+          "occurrence_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurrence Id"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Due Date"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "commitment_id",
+          "due_date"
+        ],
+        "title": "StatementSettleRequest"
+      },
       "StorageLocationResponse": {
         "properties": {
           "storage_mode": {
@@ -68415,6 +69348,25 @@
           "months"
         ],
         "title": "TrendResponse"
+      },
+      "UndoStatementImportResponse": {
+        "properties": {
+          "removed": {
+            "type": "integer",
+            "title": "Removed"
+          },
+          "kept": {
+            "type": "integer",
+            "title": "Kept",
+            "description": "Transactions kept because a payment or goal now uses them."
+          }
+        },
+        "type": "object",
+        "required": [
+          "removed",
+          "kept"
+        ],
+        "title": "UndoStatementImportResponse"
       },
       "UnequipRewardRequest": {
         "properties": {
