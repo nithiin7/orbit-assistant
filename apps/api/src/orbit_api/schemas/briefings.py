@@ -333,6 +333,22 @@ class BriefingShopping(_Snapshot):
     needed: int
 
 
+class BriefingPersonDateItem(_Snapshot):
+    ref: BriefingSourceRef
+    name: str
+    kind: str = Field(description="`birthday`, `anniversary`, or `other` (named by `label`).")
+    label: str
+    on: date
+    days_away: int
+    years: int | None = Field(description="How old they turn, or years together, if known.")
+
+
+class BriefingPeople(_Snapshot):
+    items: list[BriefingPersonDateItem] = Field(description="Soonest first; names and dates only.")
+    today: int
+    total: int
+
+
 class BriefingSipItem(_Snapshot):
     ref: BriefingSourceRef
     holding_name: str
@@ -414,6 +430,10 @@ class BriefingContentResponse(_Snapshot):
     )
     shopping: BriefingShopping | None
     investments: BriefingInvestments | None
+    people: BriefingPeople | None = Field(
+        description="`null` when unavailable, left out, or in briefings prepared before it was "
+        "added."
+    )
     unavailable: list[Source]
 
 

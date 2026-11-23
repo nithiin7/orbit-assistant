@@ -338,6 +338,7 @@ ActionKind = Literal[
     "add_place",
     "save_link",
     "add_watch_item",
+    "add_person",
 ]
 ACTION_KINDS: Final[tuple[ActionKind, ...]] = get_args(ActionKind)
 # Capture actions in modules the person can withhold from AI: proposed only while it's allowed.

@@ -114,6 +114,7 @@ class TestEmptyAndShape:
             "health",
             "documents",
             "shopping",
+            "people",
             "notes",
             "reminders",
         ]

@@ -49,6 +49,7 @@ Source = Literal[
     "documents",
     "shopping",
     "investments",
+    "people",
 ]
 SOURCES: Final[tuple[Source, ...]] = (
     "tasks",
@@ -62,6 +63,7 @@ SOURCES: Final[tuple[Source, ...]] = (
     "health",
     "documents",
     "shopping",
+    "people",
     "notes",
     # Last: reminders already shown by a task, event, payment, or habit are left out.
     "reminders",
@@ -95,6 +97,7 @@ RecordType = Literal[
     "shopping_list",
     "sip",
     "deposit",
+    "person",
 ]
 
 
@@ -467,6 +470,31 @@ class ShoppingSection:
     needed: int
 
 
+# People: birthdays, anniversaries, and other dates coming up. Names and dates only.
+
+
+@dataclass(frozen=True, slots=True)
+class BriefingPersonDate:
+    ref: SourceRef
+    name: str
+    # `birthday`, `anniversary`, or `other` (named by `label`).
+    kind: str
+    label: str
+    on: date
+    days_away: int
+    # How old they turn, or years together; `None` without a year.
+    years: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class PeopleSection:
+    # Soonest first, at most `ITEM_LIMIT`.
+    items: tuple[BriefingPersonDate, ...]
+    # Dates today, and every date within the horizon.
+    today: int
+    total: int
+
+
 # Investments: SIP installments and deposit maturities coming up, from the investments module.
 
 
@@ -570,6 +598,7 @@ class BriefingContent:
     documents: DocumentSection | None = None
     shopping: ShoppingSection | None = None
     investments: InvestmentSection | None = None
+    people: PeopleSection | None = None
 
 
 # Settings

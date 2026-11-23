@@ -460,3 +460,59 @@ def test_ledger_is_private_and_goes_with_the_person(
 
     client.delete(f"{ws}/people/{priya['id']}", headers=ada)
     assert ledger(client, ws, ada)["entries"] == []
+
+
+# Gift ideas
+
+
+def default_list(client: TestClient, ws: str, headers: Headers) -> str:
+    lists = client.get(f"{ws}/shopping/lists", headers=headers).json()["lists"]
+    return next(entry["id"] for entry in lists if entry["is_default"])
+
+
+def test_gift_ideas_live_on_shopping_lists(client: TestClient, ws: str, ada: Headers) -> None:
+    priya = add(client, ws, ada)
+    shopping = f"{ws}/shopping"
+    items = f"{shopping}/lists/{default_list(client, ws, ada)}/items"
+    gift = client.post(
+        items, json={"name": "Jasmine candle", "person_id": priya["id"]}, headers=ada
+    )
+    assert gift.status_code == 201, gift.text
+    assert gift.json()["person_id"] == priya["id"]
+    plain = client.post(items, json={"name": "Milk"}, headers=ada).json()
+    assert plain["person_id"] is None
+
+    gifts = client.get(f"{shopping}/gifts", headers=ada).json()["items"]
+    assert [item["name"] for item in gifts] == ["Jasmine candle"]
+
+    # Linking an existing item, and unlinking it.
+    url = f"{shopping}/items/{plain['id']}"
+    assert client.patch(url, json={"person_id": priya["id"]}, headers=ada).json()["person_id"]
+    assert client.patch(url, json={"person_id": None}, headers=ada).json()["person_id"] is None
+
+    # Deleting the person keeps the item as an ordinary one.
+    client.delete(f"{ws}/people/{priya['id']}", headers=ada)
+    kept = client.get(items, headers=ada).json()["items"]
+    assert {item["name"]: item["person_id"] for item in kept} == {
+        "Jasmine candle": None,
+        "Milk": None,
+    }
+    assert client.get(f"{shopping}/gifts", headers=ada).json()["items"] == []
+
+
+def test_gift_ideas_only_for_people_in_the_workspace(
+    client: TestClient, ws: str, ada: Headers, grace: Headers
+) -> None:
+    graces = workspace_url(client, grace)
+    hers = add(client, graces, grace, name="Hers")
+    items = f"{ws}/shopping/lists/{default_list(client, ws, ada)}/items"
+    for person_id in (hers["id"], str(uuid.uuid4())):
+        response = client.post(items, json={"name": "Gift", "person_id": person_id}, headers=ada)
+        assert response.status_code == 422
+        assert response.json()["detail"] == "That person doesn't exist in this workspace."
+    item = client.post(items, json={"name": "Gift"}, headers=ada).json()
+    patched = client.patch(
+        f"{ws}/shopping/items/{item['id']}", json={"person_id": hers["id"]}, headers=ada
+    )
+    assert patched.status_code == 422
+    assert client.get(f"{ws}/shopping/gifts", headers=grace).status_code == 404

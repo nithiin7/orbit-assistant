@@ -47,6 +47,7 @@ from orbit_api.services.habits.models import RoutineDetail, RoutineStatus, Today
 from orbit_api.services.investments.models import SipPlanView
 from orbit_api.services.investments.service import InvestmentBook
 from orbit_api.services.notes.models import LinkedNoteMatch, NotePage, NoteQuery
+from orbit_api.services.people.models import Person, PersonDate
 from orbit_api.services.reminders.models import CommitmentLink, Reminder, ReminderView
 from orbit_api.services.reminders.recurrence import Schedule
 from orbit_api.services.shopping.models import ShoppingList, ShoppingListOverview
@@ -179,6 +180,14 @@ class FakeShopping:
         return self._lists
 
 
+class FakePeople:
+    def __init__(self, people: list[Person] | None = None) -> None:
+        self._people = people or []
+
+    async def people(self, workspace_id: uuid.UUID) -> list[Person]:
+        return self._people
+
+
 class FakeInvestments:
     def __init__(
         self, book: InvestmentBook | None = None, sips: list[SipPlanView] | None = None
@@ -233,6 +242,7 @@ def aggregator(transaction: FakeTransaction | None = None, **sources: Any) -> Br
         "notes": FakeNotes(),
         "documents": FakeDocuments(),
         "shopping": FakeShopping(),
+        "people": FakePeople(),
         "investments": FakeInvestments(),
     }
     return BriefingAggregator(
@@ -787,6 +797,56 @@ class TestNarrative:
         # The bill is ₹2,500.00: no amount, in any form, reaches the model.
         assert "2500" not in everything and "250000" not in everything
         assert briefing_digest(content, frozenset()) is None
+
+
+class TestPeople:
+    @pytest.mark.anyio
+    async def test_dates_within_the_horizon_and_never_sent_to_a_model(self) -> None:
+        def person(name: str, *dates: PersonDate) -> Person:
+            return Person(
+                id=uuid.uuid4(),
+                workspace_id=WS,
+                name=name,
+                relationship="friend",
+                phone="+91 98765 43210",
+                email="",
+                note="Secret note",
+                favorite=False,
+                dates=dates,
+                reminder_time=time(9),
+                timezone="UTC",
+                created_at=NOW,
+                updated_at=NOW,
+            )
+
+        day = NOW.date()  # 10 June 2030 in UTC.
+        people = [
+            person("Priya", PersonDate(kind="birthday", month=6, day=10, year=2000)),
+            person("Sam", PersonDate(kind="anniversary", month=6, day=14)),
+            person("Later", PersonDate(kind="birthday", month=7, day=30)),
+        ]
+        content = await aggregator(people=FakePeople(people)).collect(WS, USER, day, "UTC")
+
+        section = content.people
+        assert section is not None
+        assert [(i.name, i.days_away, i.years) for i in section.items] == [
+            ("Priya", 0, 30),
+            ("Sam", 4, None),
+        ]
+        assert (section.today, section.total) == (1, 2)
+        # The snapshot round-trips, and no model ever sees People.
+        assert decode_content(encode_content(content)) == content
+        everything = briefing_digest(content, frozenset(AI_MODULES))
+        assert everything is None or "Priya" not in everything
+
+    @pytest.mark.anyio
+    async def test_people_reminders_are_counted_as_shown(self) -> None:
+        link = CommitmentLink(kind="person", id=uuid.uuid4())
+        reminders = FakeReminders([reminder_view("Priya's birthday is today", NOW, link=link)])
+        content = await aggregator(reminders=reminders).collect(WS, USER, NOW.date(), "UTC")
+        assert content.reminders is not None
+        assert content.reminders.items == ()
+        assert content.reminders.represented_elsewhere == 1
 
 
 class TestNewSourcesInNarrative:

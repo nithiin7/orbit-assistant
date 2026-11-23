@@ -29,6 +29,7 @@ VOICE_APPROVABLE: Final[frozenset[ActionKind]] = frozenset(
         "add_place",
         "save_link",
         "add_watch_item",
+        "add_person",
     }
 )
 

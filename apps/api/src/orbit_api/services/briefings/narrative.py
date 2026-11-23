@@ -32,8 +32,8 @@ from orbit_api.services.briefings.models import (
 )
 from orbit_api.utils.clock import utc_now
 
-# The AI permission each briefing source needs. Shopping has no AI permission of its own, so it
-# is never given to a model.
+# The AI permission each briefing source needs. Shopping and People have no AI permission of
+# their own, so they are never given to a model.
 SOURCE_PERMISSION: Final[dict[Source, AiModule | None]] = {
     "tasks": "tasks",
     "calendar": "calendar",
@@ -48,6 +48,7 @@ SOURCE_PERMISSION: Final[dict[Source, AiModule | None]] = {
     "documents": "documents",
     "investments": "finance",
     "shopping": None,
+    "people": None,
 }
 
 MAX_HEADLINE: Final = 120

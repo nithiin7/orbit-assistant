@@ -6,7 +6,7 @@ from collections.abc import Callable, Sequence
 from datetime import datetime
 from typing import Any, cast
 
-from sqlalchemy import BigInteger, Select, and_, delete, func, select
+from sqlalchemy import BigInteger, Select, and_, delete, func, select, update
 from sqlalchemy import cast as cast_
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,6 +15,7 @@ from orbit_api.db.models import (
     PersonDateModel,
     PersonLedgerEntryModel,
     PersonModel,
+    ShoppingItemModel,
 )
 from orbit_api.repositories.finance import (
     SqlFinanceAccountRepository,
@@ -135,6 +136,15 @@ class SqlPeopleStore:
         await self._add_dates(person)
 
     async def delete(self, workspace_id: uuid.UUID, person_id: uuid.UUID) -> bool:
+        # Gift ideas stay on their shopping lists as ordinary items.
+        await self._session.execute(
+            update(ShoppingItemModel)
+            .where(
+                ShoppingItemModel.workspace_id == workspace_id,
+                ShoppingItemModel.person_id == person_id,
+            )
+            .values(person_id=None)
+        )
         deleted = await self._session.scalars(
             delete(PersonModel)
             .where(PersonModel.id == person_id, PersonModel.workspace_id == workspace_id)

@@ -28,6 +28,7 @@ AgentModule = Literal[
     "places",
     "saved",
     "watchlist",
+    "people",
 ]
 AGENT_MODULES: Final[tuple[AgentModule, ...]] = get_args(AgentModule)
 # Sensitive modules start off, like the AI layer's defaults.
@@ -42,11 +43,14 @@ DEFAULT_AGENT_MODULES: Final[frozenset[AgentModule]] = frozenset(
         "places",
         "saved",
         "watchlist",
+        "people",
     }
 )
 assert set(AI_MODULES) <= set(AGENT_MODULES)
 # Modules the agent only adds to: it reads nothing from them, so no AI-layer permission applies.
-CAPTURE_ONLY_MODULES: Final[frozenset[AgentModule]] = frozenset({"shopping", "places", "saved"})
+CAPTURE_ONLY_MODULES: Final[frozenset[AgentModule]] = frozenset(
+    {"shopping", "places", "saved", "people"}
+)
 
 # 0 read only · 1 suggest · 2 approval required · 3 limited autonomy. There is no level above 3.
 AutonomyLevel = Literal["read_only", "suggest", "approval", "limited"]

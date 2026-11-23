@@ -172,6 +172,7 @@ def test_agent_starts_off_with_safe_defaults(client: TestClient, ada: Headers, w
         "places",
         "saved",
         "watchlist",
+        "people",
     }
     assert agent["tool_modes"] == {}
     assert overview["runtime"]["server_enabled"] is True

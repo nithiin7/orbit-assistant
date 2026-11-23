@@ -94,6 +94,12 @@ class FakeItems:
     ) -> int:
         raise NotImplementedError
 
+    async def gifts(self, workspace_id: uuid.UUID) -> list[ShoppingItem]:
+        return [item for item in self.items.values() if item.person_id is not None]
+
+    async def has_person(self, workspace_id: uuid.UUID, person_id: uuid.UUID) -> bool:
+        return False
+
     async def delete_purchased(self, workspace_id: uuid.UUID, list_id: uuid.UUID) -> int:
         raise NotImplementedError
 

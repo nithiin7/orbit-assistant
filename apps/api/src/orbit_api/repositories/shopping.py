@@ -8,7 +8,7 @@ from typing import cast
 from sqlalchemy import ColumnElement, case, delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from orbit_api.db.models import ShoppingItemModel, ShoppingListModel
+from orbit_api.db.models import PersonModel, ShoppingItemModel, ShoppingListModel
 from orbit_api.repositories.transaction import flush
 from orbit_api.services.shopping.models import (
     ItemStatus,
@@ -47,6 +47,7 @@ def _to_item(model: ShoppingItemModel) -> ShoppingItem:
         purchased_at=model.purchased_at,
         created_at=model.created_at,
         updated_at=model.updated_at,
+        person_id=model.person_id,
     )
 
 
@@ -142,6 +143,7 @@ class SqlShoppingItemRepository:
                 purchased_at=item.purchased_at,
                 created_at=item.created_at,
                 updated_at=item.updated_at,
+                person_id=item.person_id,
             )
         )
         await flush(self._session)
@@ -175,6 +177,7 @@ class SqlShoppingItemRepository:
         model.notes = item.notes
         model.status = item.status
         model.purchased_at = item.purchased_at
+        model.person_id = item.person_id
         model.updated_at = item.updated_at
         await flush(self._session)
 
@@ -196,6 +199,25 @@ class SqlShoppingItemRepository:
             .returning(ShoppingItemModel.id)
         )
         return len(restocked.all())
+
+    async def gifts(self, workspace_id: uuid.UUID) -> list[ShoppingItem]:
+        models = await self._session.scalars(
+            select(ShoppingItemModel)
+            .where(
+                ShoppingItemModel.workspace_id == workspace_id,
+                ShoppingItemModel.person_id.is_not(None),
+            )
+            .order_by(ShoppingItemModel.created_at.desc(), ShoppingItemModel.id)
+        )
+        return [_to_item(model) for model in models]
+
+    async def has_person(self, workspace_id: uuid.UUID, person_id: uuid.UUID) -> bool:
+        found = await self._session.scalar(
+            select(PersonModel.id).where(
+                PersonModel.id == person_id, PersonModel.workspace_id == workspace_id
+            )
+        )
+        return found is not None
 
     async def delete_purchased(self, workspace_id: uuid.UUID, list_id: uuid.UUID) -> int:
         deleted = await self._session.scalars(
