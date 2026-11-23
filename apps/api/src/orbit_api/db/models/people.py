@@ -1,10 +1,12 @@
 """People: the people in your life and the dates to remember about them."""
 
 import uuid
-from datetime import datetime, time
+from datetime import date, datetime, time
 
 from sqlalchemy import (
+    BigInteger,
     CheckConstraint,
+    Date,
     ForeignKey,
     ForeignKeyConstraint,
     Index,
@@ -20,6 +22,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from orbit_api.db.base import Base
 from orbit_api.db.columns import UTCDateTime, utc_now
+from orbit_api.db.models.finance import MAX_AMOUNT
 
 
 class PersonModel(Base):
@@ -103,3 +106,41 @@ class PersonDateModel(Base):
     remind_days_before: Mapped[int | None] = mapped_column(SmallInteger)
     # The order the user listed the dates in.
     position: Mapped[int] = mapped_column(Integer)
+
+
+class PersonLedgerEntryModel(Base):
+    """Money between you and a person: what they owe you, what you owe them, and repayments
+    either way. Deleting the person deletes their entries; deleting a linked transaction keeps
+    the entry and clears the link."""
+
+    __tablename__ = "person_ledger_entries"
+    __table_args__ = (
+        CheckConstraint("kind IN ('they_owe', 'i_owe', 'they_paid', 'i_paid')", name="kind"),
+        CheckConstraint(f"amount > 0 AND amount <= {MAX_AMOUNT}", name="amount_range"),
+        CheckConstraint("length(currency) = 3 AND currency = upper(currency)", name="currency"),
+        CheckConstraint("length(description) BETWEEN 1 AND 200", name="description_length"),
+        ForeignKeyConstraint(
+            ["person_id", "workspace_id"],
+            ["people.id", "people.workspace_id"],
+            ondelete="CASCADE",
+        ),
+        Index("ix_person_ledger_entries_person_date", "person_id", "occurred_on"),
+        Index("ix_person_ledger_entries_transaction", "transaction_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+    workspace_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"))
+    person_id: Mapped[uuid.UUID]
+    kind: Mapped[str] = mapped_column(String(16))
+    # Positive integer minor units; `kind` says which way it goes.
+    amount: Mapped[int] = mapped_column(BigInteger)
+    currency: Mapped[str] = mapped_column(String(3))
+    occurred_on: Mapped[date] = mapped_column(Date)
+    description: Mapped[str] = mapped_column(String(200))
+    # The Finance transaction behind it: the expense a share was split from, or the refund or
+    # expense recorded with a repayment. The service keeps it in the same workspace.
+    transaction_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("finance_transactions.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)

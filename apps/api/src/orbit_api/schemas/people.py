@@ -1,7 +1,7 @@
 """People models."""
 
 import uuid
-from datetime import datetime, time
+from datetime import date, datetime, time
 from typing import Annotated, Self
 
 from pydantic import (
@@ -14,10 +14,13 @@ from pydantic import (
 )
 
 from orbit_api.schemas.common import TimeZoneName, multi_line, single_line
+from orbit_api.schemas.finance import Amount
+from orbit_api.services.finance.money import Currency
 from orbit_api.services.people.models import (
     DEFAULT_REMINDER_TIME,
     MAX_DATES,
     MAX_DAYS_BEFORE,
+    MAX_DESCRIPTION_LENGTH,
     MAX_EMAIL_LENGTH,
     MAX_LABEL_LENGTH,
     MAX_NAME_LENGTH,
@@ -25,11 +28,19 @@ from orbit_api.services.people.models import (
     MAX_PHONE_LENGTH,
     MAX_YEAR,
     MIN_YEAR,
+    Balance,
     DateKind,
+    Ledger,
+    LedgerChanges,
+    LedgerDraft,
+    LedgerEntry,
+    LedgerKind,
+    LinkedTransaction,
     Person,
     PersonChanges,
     PersonDate,
     PersonDraft,
+    RecordInFinance,
     Relationship,
 )
 from orbit_api.utils.changes import UNSET
@@ -216,4 +227,167 @@ class UpdatePersonRequest(BaseModel):
             else UNSET,
             reminder_time=self.reminder_time if self.reminder_time is not None else UNSET,
             timezone=self.timezone if self.timezone is not None else UNSET,
+        )
+
+
+# Money owed
+
+LedgerDescription = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_DESCRIPTION_LENGTH),
+    AfterValidator(single_line),
+]
+
+
+class PersonLinkedTransactionResponse(BaseModel):
+    """The Finance transaction behind an entry; null once that transaction is deleted."""
+
+    id: uuid.UUID
+    type: str
+    description: str
+    amount: int
+    occurred_on: date
+    account_id: uuid.UUID
+    category_id: uuid.UUID | None
+
+    @classmethod
+    def of(cls, linked: LinkedTransaction) -> "PersonLinkedTransactionResponse":
+        return cls(
+            id=linked.id,
+            type=linked.type,
+            description=linked.description,
+            amount=linked.amount,
+            occurred_on=linked.occurred_on,
+            account_id=linked.account_id,
+            category_id=linked.category_id,
+        )
+
+
+class PersonLedgerEntryResponse(BaseModel):
+    id: uuid.UUID
+    person_id: uuid.UUID
+    kind: LedgerKind = Field(
+        description="`they_owe` (you paid or lent), `i_owe` (they did), or a repayment: "
+        "`they_paid` or `i_paid`."
+    )
+    amount: int = Field(description="Minor units, always positive; `kind` says which way.")
+    currency: Currency
+    occurred_on: date
+    description: str
+    transaction: PersonLinkedTransactionResponse | None
+    created_at: datetime
+    updated_at: datetime
+
+    @classmethod
+    def of(cls, entry: LedgerEntry) -> "PersonLedgerEntryResponse":
+        return cls(
+            id=entry.id,
+            person_id=entry.person_id,
+            kind=entry.kind,
+            amount=entry.amount,
+            currency=entry.currency,
+            occurred_on=entry.occurred_on,
+            description=entry.description,
+            transaction=PersonLinkedTransactionResponse.of(entry.transaction)
+            if entry.transaction
+            else None,
+            created_at=entry.created_at,
+            updated_at=entry.updated_at,
+        )
+
+
+class PersonBalanceResponse(BaseModel):
+    person_id: uuid.UUID
+    currency: Currency
+    amount: int = Field(
+        description="Minor units: positive while they owe you, negative while you owe them."
+    )
+
+    @classmethod
+    def of(cls, balance: Balance) -> "PersonBalanceResponse":
+        return cls(person_id=balance.person_id, currency=balance.currency, amount=balance.amount)
+
+
+class PersonLedgerResponse(BaseModel):
+    entries: list[PersonLedgerEntryResponse] = Field(description="Newest first.")
+    balances: list[PersonBalanceResponse] = Field(
+        description="Each person's non-zero balance per currency; currencies are never mixed."
+    )
+
+    @classmethod
+    def of(cls, ledger: Ledger) -> "PersonLedgerResponse":
+        return cls(
+            entries=[PersonLedgerEntryResponse.of(entry) for entry in ledger.entries],
+            balances=[PersonBalanceResponse.of(balance) for balance in ledger.balances],
+        )
+
+
+class PersonLedgerRecordRequest(BaseModel):
+    """Record a repayment in Finance too, in the same commit."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    account_id: uuid.UUID = Field(description="Where the money arrived or left from.")
+    category_id: uuid.UUID = Field(
+        description="An expense category: the shared expense's, so your spending comes down "
+        "to your share."
+    )
+
+
+class CreatePersonLedgerEntryRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: LedgerKind
+    amount: Amount
+    currency: Currency
+    occurred_on: date
+    description: LedgerDescription
+    transaction_id: uuid.UUID | None = Field(
+        default=None,
+        description="For `they_owe`: the expense of yours this share was split from.",
+    )
+    record_in_finance: PersonLedgerRecordRequest | None = Field(
+        default=None,
+        description="For repayments: also record a refund (`they_paid`) or an expense "
+        "(`i_paid`) in Finance.",
+    )
+
+    def to_draft(self) -> LedgerDraft:
+        record = self.record_in_finance
+        return LedgerDraft(
+            kind=self.kind,
+            amount=self.amount,
+            currency=self.currency,
+            occurred_on=self.occurred_on,
+            description=self.description,
+            transaction_id=self.transaction_id,
+            record=RecordInFinance(account_id=record.account_id, category_id=record.category_id)
+            if record
+            else None,
+        )
+
+
+class UpdatePersonLedgerEntryRequest(BaseModel):
+    """Change an entry's amount, date, or description. Its kind and links stay."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    amount: Amount | None = None
+    occurred_on: date | None = None
+    description: LedgerDescription | None = None
+
+    @model_validator(mode="after")
+    def _check_fields(self) -> Self:
+        if not self.model_fields_set:
+            raise ValueError("include at least one field to change")
+        for name in self.model_fields_set:
+            if getattr(self, name) is None:
+                raise ValueError(f"{name} cannot be null")
+        return self
+
+    def to_changes(self) -> LedgerChanges:
+        return LedgerChanges(
+            amount=self.amount if self.amount is not None else UNSET,
+            occurred_on=self.occurred_on if self.occurred_on is not None else UNSET,
+            description=self.description if self.description is not None else UNSET,
         )

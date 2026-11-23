@@ -100,6 +100,7 @@ _EXACT: Final[dict[str, Module]] = {
     "place_settings": "places",
     "people": "people",
     "person_dates": "people",
+    "person_ledger_entries": "people",
 }
 
 # Tables a backup leaves out, and why. Credentials and tokens never leave the server; derived

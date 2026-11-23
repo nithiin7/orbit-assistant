@@ -262,3 +262,201 @@ def test_people_are_private_to_their_workspace(
     assert client.get(f"{graces}/people/{person['id']}", headers=grace).status_code == 404
     assert client.get(f"{graces}/people", headers=grace).json()["people"] == []
     assert client.get(f"{ws}/people/{uuid.uuid4()}", headers=ada).status_code == 404
+
+
+# Money owed
+
+
+def finance_setup(client: TestClient, ws: str, headers: Headers) -> tuple[str, str, str]:
+    """An INR bank account, the Food and dining category, and a ₹1,000 dinner paid from it."""
+    fin = f"{ws}/finance"
+    account = client.post(
+        f"{fin}/accounts", json={"name": "HDFC", "type": "bank"}, headers=headers
+    ).json()["id"]
+    categories = client.get(f"{fin}/categories", headers=headers).json()["categories"]
+    food = next(entry["id"] for entry in categories if entry["name"] == "Food and dining")
+    dinner = client.post(
+        f"{fin}/transactions",
+        json={
+            "type": "expense",
+            "amount": 100_000,
+            "occurred_on": "2030-02-10",
+            "description": "Dinner",
+            "account_id": account,
+            "category_id": food,
+        },
+        headers=headers,
+    ).json()["id"]
+    return account, food, dinner
+
+
+def owe(client: TestClient, ws: str, headers: Headers, person: Json, **fields: Any) -> Any:
+    body = {
+        "kind": "they_owe",
+        "amount": 50_000,
+        "currency": "INR",
+        "occurred_on": "2030-02-10",
+        "description": "Dinner",
+        **fields,
+    }
+    return client.post(f"{ws}/people/{person['id']}/ledger", json=body, headers=headers)
+
+
+def ledger(client: TestClient, ws: str, headers: Headers) -> Json:
+    response = client.get(f"{ws}/people/ledger", headers=headers)
+    assert response.status_code == 200, response.text
+    body: Json = response.json()
+    return body
+
+
+def test_balances_follow_every_kind_of_entry(client: TestClient, ws: str, ada: Headers) -> None:
+    priya = add(client, ws, ada)
+    sam = add(client, ws, ada, name="Sam")
+    assert owe(client, ws, ada, priya, amount=30_000).status_code == 201
+    assert owe(client, ws, ada, priya, kind="they_paid", amount=10_000).status_code == 201
+    assert owe(client, ws, ada, sam, kind="i_owe", amount=5_000).status_code == 201
+    assert owe(client, ws, ada, sam, kind="i_owe", amount=700, currency="USD").status_code == 201
+    assert owe(client, ws, ada, sam, kind="i_paid", amount=5_000).status_code == 201
+
+    body = ledger(client, ws, ada)
+    assert len(body["entries"]) == 5
+    balances = {(b["person_id"], b["currency"]): b["amount"] for b in body["balances"]}
+    # Sam's INR is settled, so only their USD remains; currencies are never mixed.
+    assert balances == {(priya["id"], "INR"): 20_000, (sam["id"], "USD"): -700}
+
+
+def test_split_a_share_from_an_expense(client: TestClient, ws: str, ada: Headers) -> None:
+    priya = add(client, ws, ada)
+    sam = add(client, ws, ada, name="Sam")
+    _account, _food, dinner = finance_setup(client, ws, ada)
+
+    response = owe(client, ws, ada, priya, transaction_id=dinner)
+    assert response.status_code == 201, response.text
+    entry = response.json()
+    assert entry["transaction"]["id"] == dinner
+    assert entry["transaction"]["amount"] == 100_000
+    assert owe(client, ws, ada, sam, amount=40_000, transaction_id=dinner).status_code == 201
+
+    # Shares can't add up to more than the expense, on create or edit.
+    too_much = owe(client, ws, ada, sam, amount=20_000, transaction_id=dinner)
+    assert too_much.status_code == 422
+    assert too_much.json()["detail"] == "The shares add up to more than the expense."
+    url = f"{ws}/people/{priya['id']}/ledger/{entry['id']}"
+    assert client.patch(url, json={"amount": 70_000}, headers=ada).status_code == 422
+    assert client.patch(url, json={"amount": 60_000}, headers=ada).status_code == 200
+
+    # Only an expense, in its currency, for a share someone owes you.
+    assert owe(client, ws, ada, priya, kind="i_owe", transaction_id=dinner).status_code == 422
+    assert owe(client, ws, ada, priya, currency="USD", transaction_id=dinner).status_code == 422
+    assert owe(client, ws, ada, priya, transaction_id=str(uuid.uuid4())).status_code == 422
+
+    # Deleting the expense keeps the entry and clears the link.
+    assert client.delete(f"{ws}/finance/transactions/{dinner}", headers=ada).status_code == 204
+    assert all(e["transaction"] is None for e in ledger(client, ws, ada)["entries"])
+
+
+def test_repayment_records_a_refund_so_spending_is_your_share(
+    client: TestClient, ws: str, ada: Headers
+) -> None:
+    priya = add(client, ws, ada)
+    account, food, dinner = finance_setup(client, ws, ada)
+    owe(client, ws, ada, priya, transaction_id=dinner)
+
+    record = {"account_id": account, "category_id": food}
+    response = owe(
+        client,
+        ws,
+        ada,
+        priya,
+        kind="they_paid",
+        description="Priya paid you back",
+        record_in_finance=record,
+    )
+    assert response.status_code == 201, response.text
+    repaid = response.json()
+    assert repaid["transaction"]["type"] == "refund"
+    assert repaid["transaction"]["category_id"] == food
+
+    spending = client.get(f"{ws}/finance/spending", params={"month": "2030-02"}, headers=ada).json()
+    assert spending["total"] == 50_000
+    assert ledger(client, ws, ada)["balances"] == []
+
+    # The recorded repayment keeps its amount; its date and description can change.
+    url = f"{ws}/people/{priya['id']}/ledger/{repaid['id']}"
+    assert client.patch(url, json={"amount": 1}, headers=ada).status_code == 422
+    assert client.patch(url, json={"description": "Paid back"}, headers=ada).status_code == 200
+    # Deleting it leaves the refund in Finance.
+    assert client.delete(url, headers=ada).status_code == 204
+    spending = client.get(f"{ws}/finance/spending", params={"month": "2030-02"}, headers=ada).json()
+    assert spending["total"] == 50_000
+
+
+def test_paying_someone_back_records_an_expense(client: TestClient, ws: str, ada: Headers) -> None:
+    sam = add(client, ws, ada, name="Sam")
+    account, food, _dinner = finance_setup(client, ws, ada)
+    owe(client, ws, ada, sam, kind="i_owe", amount=30_000)
+    response = owe(
+        client,
+        ws,
+        ada,
+        sam,
+        kind="i_paid",
+        amount=30_000,
+        record_in_finance={"account_id": account, "category_id": food},
+    )
+    assert response.status_code == 201, response.text
+    assert response.json()["transaction"]["type"] == "expense"
+
+    # Only repayments are recorded, in the account's currency, with an expense category.
+    bad = {"account_id": account, "category_id": food}
+    assert owe(client, ws, ada, sam, kind="they_owe", record_in_finance=bad).status_code == 422
+    usd = owe(client, ws, ada, sam, kind="i_paid", currency="USD", record_in_finance=bad)
+    assert usd.status_code == 422
+    unknown = {"account_id": account, "category_id": str(uuid.uuid4())}
+    assert owe(client, ws, ada, sam, kind="i_paid", record_in_finance=unknown).status_code == 422
+    # Nothing was half-recorded: one dinner and one repayment.
+    transactions = client.get(f"{ws}/finance/transactions", headers=ada).json()["transactions"]
+    assert len(transactions) == 2
+
+
+@pytest.mark.parametrize(
+    "fields",
+    [
+        {"amount": 0},
+        {"amount": 12.5},
+        {"currency": "XYZ"},
+        {"description": ""},
+        {"kind": "gift"},
+    ],
+)
+def test_rejects_invalid_entries(
+    client: TestClient, ws: str, ada: Headers, fields: dict[str, Any]
+) -> None:
+    assert owe(client, ws, ada, add(client, ws, ada), **fields).status_code == 422
+
+
+def test_ledger_is_private_and_goes_with_the_person(
+    client: TestClient, ws: str, ada: Headers, grace: Headers
+) -> None:
+    priya = add(client, ws, ada)
+    entry = owe(client, ws, ada, priya).json()
+    url = f"{ws}/people/{priya['id']}/ledger/{entry['id']}"
+    assert client.get(f"{ws}/people/ledger", headers=grace).status_code == 404
+    assert owe(client, ws, grace, priya).status_code == 404
+    assert client.patch(url, json={"amount": 1}, headers=grace).status_code == 404
+    assert client.delete(url, headers=grace).status_code == 404
+
+    # Grace can't attach her entries to Ada's person, or Ada's expense to her own person.
+    graces = workspace_url(client, grace)
+    assert owe(client, graces, grace, priya).status_code == 404
+    _account, _food, dinner = finance_setup(client, ws, ada)
+    hers = add(client, graces, grace, name="Hers")
+    assert owe(client, graces, grace, hers, transaction_id=dinner).status_code == 422
+
+    # Another person's entry can't be reached through someone else's URL.
+    sam = add(client, ws, ada, name="Sam")
+    wrong = f"{ws}/people/{sam['id']}/ledger/{entry['id']}"
+    assert client.delete(wrong, headers=ada).status_code == 404
+
+    client.delete(f"{ws}/people/{priya['id']}", headers=ada)
+    assert ledger(client, ws, ada)["entries"] == []
