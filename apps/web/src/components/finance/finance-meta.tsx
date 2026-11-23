@@ -113,7 +113,7 @@ export function SectionHeading({
 
 /** The card a list of rows sits in. A `rows` container, so rows can lay out by their width. */
 export const rowListClassName =
-  "@container/rows divide-y overflow-hidden rounded-xl border bg-card shadow-elevation-1";
+  "@container/rows divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1";
 
 const TWO_COLUMNS = {
   "5xl":

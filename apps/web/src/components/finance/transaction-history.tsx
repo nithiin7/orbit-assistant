@@ -488,7 +488,7 @@ function Pager({
 
 function HistorySkeleton() {
   return (
-    <div className="divide-y overflow-hidden rounded-xl border bg-card">
+    <div className="divide-y overflow-hidden rounded-2xl border bg-card">
       <span className="sr-only">Loading transactions…</span>
       {[0, 1, 2, 3].map((row) => (
         <div key={row} className="flex items-center gap-3 px-4 py-3.5">

@@ -9,6 +9,7 @@ import {
   History,
   Pause,
   Pencil,
+  PiggyBank,
   Play,
   Plus,
   Target,
@@ -205,7 +206,7 @@ function GoalTotals({ goals }: { goals: SavingsGoal[] }) {
   }
   if (totals.size === 0) return null;
   return (
-    <StatGrid>
+    <StatGrid hero icon={PiggyBank}>
       {[...totals.entries()].flatMap(([currency, total]) => [
         <StatTile
           key={`${currency}-saved`}
@@ -275,7 +276,7 @@ function GoalCard({
   return (
     <li
       aria-labelledby={headingId}
-      className="flex min-w-0 flex-col gap-4 rounded-xl border bg-card p-5 shadow-elevation-1"
+      className="flex min-w-0 flex-col gap-4 rounded-2xl border bg-card p-5 shadow-elevation-1"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-0.5">

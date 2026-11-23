@@ -234,7 +234,7 @@ export function AccountsView({
       />
 
       {totals.length > 0 ? (
-        <StatGrid>
+        <StatGrid hero icon={Wallet}>
           {totals.flatMap((total) => {
             const suffix = multiCurrency ? ` (${total.currency})` : "";
             return [
@@ -357,7 +357,7 @@ function AccountCard({
       : null;
 
   return (
-    <li className="flex min-w-0 flex-col rounded-xl border bg-card p-4 shadow-elevation-1 transition-shadow duration-150 hover:shadow-elevation-2 @3xl/list:p-5">
+    <li className="flex min-w-0 flex-col rounded-2xl border bg-card p-4 shadow-elevation-1 transition-[box-shadow,translate] duration-150 hover:-translate-y-0.5 hover:shadow-elevation-2 motion-reduce:hover:translate-y-0 @3xl/list:p-5">
       <div className="flex items-start gap-3">
         <span
           aria-hidden="true"

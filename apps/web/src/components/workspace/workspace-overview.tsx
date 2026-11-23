@@ -33,7 +33,7 @@ export function WorkspaceOverview() {
         Current workspace
       </h2>
       <Card
-        className="flex h-full min-h-20 items-center gap-4 p-5 shadow-elevation-1"
+        className="flex h-full min-h-20 items-center gap-4 rounded-2xl p-5 shadow-elevation-1"
         aria-live="polite"
       >
         {resource.status === "loading" ? (

@@ -3,6 +3,7 @@
 import { ArrowRight, MapPinned, Plus } from "lucide-react";
 import Link from "next/link";
 
+import { WIDGET_CARD_CLASS, WidgetIcon } from "@/components/dashboard/widget-card";
 import { buttonVariants } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useActiveWorkspaceId } from "@/hooks/use-calendar";
 import { usePlaces } from "@/hooks/use-places";
 import { countryName, placesHref, SOVEREIGN_COUNT, travelStats } from "@/lib/places";
+import { cn } from "@/utils/common";
 
 import { CountryFlag } from "./country-flag";
 
@@ -18,13 +20,13 @@ export function PlacesWidget() {
   const workspaceId = useActiveWorkspaceId();
   return (
     <section aria-labelledby="places-widget-heading" className="h-full">
-      <Card className="h-full shadow-elevation-1">
+      <Card className={cn("h-full", WIDGET_CARD_CLASS)}>
         <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
           <h2
             id="places-widget-heading"
-            className="flex items-center gap-2 text-base font-semibold"
+            className="flex items-center gap-2.5 text-base font-semibold"
           >
-            <MapPinned className="size-4 text-muted-foreground" aria-hidden="true" />
+            <WidgetIcon icon={MapPinned} tone="teal" />
             Places
           </h2>
           <Link href="/places" className={buttonVariants({ variant: "ghost", size: "sm" })}>

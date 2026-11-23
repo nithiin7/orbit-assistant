@@ -3,6 +3,7 @@
 import { ArrowRight, Plus, Users } from "lucide-react";
 import Link from "next/link";
 
+import { WIDGET_CARD_CLASS, WidgetIcon } from "@/components/dashboard/widget-card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,13 +24,13 @@ export function PeopleWidget() {
   const workspaceId = useActiveWorkspaceId();
   return (
     <section aria-labelledby="people-widget-heading" className="h-full">
-      <Card className="h-full shadow-elevation-1">
+      <Card className={cn("h-full", WIDGET_CARD_CLASS)}>
         <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
           <h2
             id="people-widget-heading"
-            className="flex items-center gap-2 text-base font-semibold"
+            className="flex items-center gap-2.5 text-base font-semibold"
           >
-            <Users className="size-4 text-muted-foreground" aria-hidden="true" />
+            <WidgetIcon icon={Users} tone="rose" />
             Coming up
           </h2>
           <Link

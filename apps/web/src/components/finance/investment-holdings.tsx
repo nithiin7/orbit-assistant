@@ -4,6 +4,7 @@ import type { Currency, Holding, HoldingKind, InvestmentAccount, SipPlan } from 
 import {
   ArrowUpFromLine,
   CalendarClock,
+  ChartLine,
   Coins,
   Pause,
   Pencil,
@@ -80,6 +81,8 @@ export function HoldingsPanel({
   return (
     <Panel
       title={title}
+      icon={ChartLine}
+      accent="brand"
       description="Units and cost come from recorded buys and sales (first in, first out). Values use the latest price you entered."
       flush
     >

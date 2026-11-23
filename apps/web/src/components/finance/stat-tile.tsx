@@ -1,5 +1,7 @@
+"use client";
+
 import type { LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import { createContext, type ReactNode, useContext } from "react";
 
 import { cn } from "@/utils/common";
 
@@ -24,20 +26,49 @@ const TONES: Record<Tone, string> = {
   warning: "text-warning",
 };
 
+/** Whether tiles sit inside a hero card, where they turn translucent over its tint. */
+const InHero = createContext(false);
+
 /**
  * Headline figures as a description list of tiles. Tiles share the row evenly and wrap when a
  * tile would get narrower than about 13rem, so one figure or five fill the width without gaps.
+ *
+ * As a view's `hero`, the tiles sit together on one tinted card, with `icon` faint behind them.
  */
-export function StatGrid({ children, className }: { children: ReactNode; className?: string }) {
-  return (
+export function StatGrid({
+  children,
+  className,
+  hero = false,
+  icon: Icon,
+}: {
+  children: ReactNode;
+  className?: string;
+  hero?: boolean;
+  /** A faint watermark in the hero card's corner. */
+  icon?: LucideIcon;
+}) {
+  const grid = (
     <dl
       className={cn(
         "grid grid-cols-[repeat(auto-fit,minmax(min(100%,13rem),1fr))] gap-3 @3xl/list:gap-4",
+        hero && "relative",
         className,
       )}
     >
       {children}
     </dl>
+  );
+  if (!hero) return grid;
+  return (
+    <div className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-brand-subtle/80 via-card to-card p-4 shadow-elevation-1 @3xl/list:p-5">
+      {Icon ? (
+        <Icon
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-8 -right-8 size-44 -rotate-12 text-brand opacity-[0.05]"
+        />
+      ) : null}
+      <InHero value={true}>{grid}</InHero>
+    </div>
   );
 }
 
@@ -60,12 +91,15 @@ export function StatTile({
   emphasis?: boolean;
   children?: ReactNode;
 }) {
+  const inHero = useContext(InHero);
   return (
     <div
       className={cn(
         // A container itself: a narrow tile drops its icon and shrinks the figure to fit.
-        "@container/tile relative min-w-0 rounded-xl border bg-card p-4 shadow-elevation-1 @3xl/list:p-5",
-        emphasis && "border-brand/25 bg-brand-subtle/40",
+        "@container/tile relative min-w-0 rounded-xl border p-4 @3xl/list:p-5",
+        inHero ? "bg-card/80 backdrop-blur-sm" : "bg-card shadow-elevation-1",
+        emphasis &&
+          (inHero ? "border-brand/30 bg-brand-subtle/70" : "border-brand/25 bg-brand-subtle/40"),
       )}
     >
       {Icon ? (

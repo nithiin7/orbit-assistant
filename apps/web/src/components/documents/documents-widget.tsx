@@ -37,6 +37,7 @@ export function DocumentsWidget() {
 
   return (
     <WidgetCard
+      tone="slate"
       title="Documents"
       icon={FolderLock}
       href={documentsHref({})}

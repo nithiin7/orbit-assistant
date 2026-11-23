@@ -14,6 +14,7 @@ import Link from "next/link";
 import { type ReactNode, useId } from "react";
 
 import { useAmounts } from "@/components/dashboard/amount-visibility";
+import { WIDGET_CARD_CLASS, WidgetIcon } from "@/components/dashboard/widget-card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -259,10 +260,10 @@ function WidgetCard<T>({
   const headingId = useId();
   return (
     <section aria-labelledby={headingId} className="h-full">
-      <Card className="h-full shadow-elevation-1" aria-busy={resource.status === "loading"}>
+      <Card className={cn("h-full", WIDGET_CARD_CLASS)} aria-busy={resource.status === "loading"}>
         <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
-          <h2 id={headingId} className="flex items-center gap-2 text-base font-semibold">
-            <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
+          <h2 id={headingId} className="flex items-center gap-2.5 text-base font-semibold">
+            <WidgetIcon icon={Icon} tone="teal" />
             {title}
           </h2>
           <Link

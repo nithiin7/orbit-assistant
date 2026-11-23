@@ -37,7 +37,7 @@ export function Panel({
   return (
     // `min-w-0` lets the card shrink inside grids, so long text truncates instead of overflowing.
     <section aria-labelledby={id} className={cn("min-w-0", className)}>
-      <Card className="h-full shadow-elevation-1">
+      <Card className="h-full rounded-2xl shadow-elevation-1">
         <div className="flex items-start justify-between gap-3 p-5 pb-4">
           <div className="flex min-w-0 items-start gap-3">
             {Icon ? (

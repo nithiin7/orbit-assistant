@@ -61,6 +61,7 @@ export function NotesWidget() {
 
   return (
     <WidgetCard
+      tone="violet"
       title="Notes"
       icon={NotebookPen}
       href={notesHref({})}

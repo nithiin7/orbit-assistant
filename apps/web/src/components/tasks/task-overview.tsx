@@ -3,6 +3,7 @@
 import { ArrowRight, CheckSquare } from "lucide-react";
 import Link from "next/link";
 
+import { WIDGET_CARD_CLASS, WidgetIcon } from "@/components/dashboard/widget-card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,13 +18,13 @@ export function TaskOverview() {
 
   return (
     <section aria-labelledby="task-overview-heading" className="h-full">
-      <Card className="h-full shadow-elevation-1" aria-busy={resource.status === "loading"}>
+      <Card className={cn("h-full", WIDGET_CARD_CLASS)} aria-busy={resource.status === "loading"}>
         <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
           <h2
             id="task-overview-heading"
-            className="flex items-center gap-2 text-base font-semibold"
+            className="flex items-center gap-2.5 text-base font-semibold"
           >
-            <CheckSquare className="size-4 text-muted-foreground" aria-hidden="true" />
+            <WidgetIcon icon={CheckSquare} tone="brand" />
             Tasks
           </h2>
           <Link href="/tasks" className={buttonVariants({ variant: "ghost", size: "sm" })}>

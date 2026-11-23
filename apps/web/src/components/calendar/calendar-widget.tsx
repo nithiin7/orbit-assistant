@@ -8,6 +8,7 @@ import { useMemo, useState } from "react";
 
 import { peopleOptions } from "@/api/people";
 import { taskSummaryOptions } from "@/api/tasks";
+import { WIDGET_CARD_CLASS, WidgetIcon } from "@/components/dashboard/widget-card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,6 +40,7 @@ import {
 } from "@/lib/calendar";
 import { datesBetween, peopleHref } from "@/lib/people";
 import { useAuth } from "@/providers/auth";
+import { cn } from "@/utils/common";
 import { addDays } from "@/utils/dates";
 import { zonedTimeToInstant } from "@/utils/time-zones";
 
@@ -108,13 +110,13 @@ export function CalendarWidget() {
 
   return (
     <section aria-labelledby="calendar-widget-heading" className="h-full">
-      <Card className="h-full shadow-elevation-1" aria-busy={loading}>
+      <Card className={cn("h-full", WIDGET_CARD_CLASS)} aria-busy={loading}>
         <div className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
           <h2
             id="calendar-widget-heading"
-            className="flex items-center gap-2 text-base font-semibold"
+            className="flex items-center gap-2.5 text-base font-semibold"
           >
-            <CalendarDays className="size-4 text-muted-foreground" aria-hidden="true" />
+            <WidgetIcon icon={CalendarDays} tone="blue" />
             Today’s agenda
           </h2>
           <div className="flex items-center gap-1">
