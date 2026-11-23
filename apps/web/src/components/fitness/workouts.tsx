@@ -36,9 +36,16 @@ import {
 } from "@/lib/fitness";
 import { cn } from "@/utils/common";
 
-import { Loaded, Section, shortDate } from "./shared";
+import { Loaded, Section, shortDate, type ViewTab, ViewTabs } from "./shared";
 
 const PAGE = 20;
+
+type WorkoutTab = "start" | "history";
+
+const WORKOUT_TABS: readonly ViewTab<WorkoutTab>[] = [
+  { id: "start", label: "Start", icon: Play },
+  { id: "history", label: "History", icon: History },
+];
 
 /** Starting a workout: empty, or from one of the templates. */
 export function useStartWorkout(workspaceId: string, today: string, timeZone: string) {
@@ -221,10 +228,7 @@ export function WorkoutsView({
   timeZone: string;
   onLogPast: () => void;
 }) {
-  const units = useUnits(workspaceId);
-  const [limit, setLimit] = useState(PAGE);
-  const [status, setStatus] = useState<"all" | "completed" | "abandoned">("all");
-  const workouts = useWorkouts(workspaceId, { status, limit, offset: 0 });
+  const [tab, setTab] = useState<WorkoutTab>("start");
   const templates = useTemplates(workspaceId);
   const active = useActiveWorkout(workspaceId);
   const start = useStartWorkout(workspaceId, today, timeZone);
@@ -246,127 +250,151 @@ export function WorkoutsView({
     <div className="space-y-4">
       <ActiveWorkoutBanner workspaceId={workspaceId} />
       <FormAlert message={error} />
-      {running ? null : (
-        <Section
-          title="Start a workout"
-          description="Pick a template, or start empty and add exercises as you go."
-          action={
-            <Button variant="ghost" size="sm" onClick={onLogPast}>
-              <History aria-hidden="true" />
-              Log a past workout
-            </Button>
-          }
-        >
-          <ul className="grid gap-3 @xl:grid-cols-2 @4xl:grid-cols-3 @7xl:grid-cols-4">
-            {ready.map((template) => (
-              <li key={template.id}>
-                <StartCard template={template} onStart={() => begin(template.id)} />
-              </li>
-            ))}
-            <li>
-              <button
-                type="button"
-                onClick={() => begin(null)}
-                className="flex h-full min-h-24 w-full items-center gap-3 rounded-lg border border-dashed p-3 text-left transition-colors duration-150 outline-none hover:border-brand/40 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <span
-                  aria-hidden="true"
-                  className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground"
-                >
-                  <Plus className="size-4" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-medium">Empty workout</span>
-                  <span className="block text-xs text-muted-foreground">
-                    Add exercises as you go.
-                  </span>
-                </span>
-              </button>
-            </li>
-            {templates.state.status === "success" && ready.length === 0 ? (
+      <ViewTabs
+        label="Workouts"
+        tabs={WORKOUT_TABS}
+        tab={tab}
+        onChange={setTab}
+        action={
+          <Button variant="ghost" size="sm" onClick={onLogPast}>
+            <History aria-hidden="true" />
+            Log a past workout
+          </Button>
+        }
+      >
+        {tab === "history" ? (
+          <WorkoutHistory workspaceId={workspaceId} />
+        ) : running ? (
+          <p className="text-sm text-muted-foreground">
+            A workout is in progress. Finish or end it to start another.
+          </p>
+        ) : (
+          <Section
+            title="Start a workout"
+            description="Pick a template, or start empty and add exercises as you go."
+          >
+            <ul className="grid gap-3 @xl:grid-cols-2 @4xl:grid-cols-3 @7xl:grid-cols-4">
+              {ready.map((template) => (
+                <li key={template.id}>
+                  <StartCard template={template} onStart={() => begin(template.id)} />
+                </li>
+              ))}
               <li>
-                <Link
-                  href={fitnessHref({ kind: "view", view: "templates" })}
-                  className="flex h-full min-h-24 items-center gap-3 rounded-lg border border-dashed p-3 transition-colors duration-150 outline-none hover:border-brand/40 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                <button
+                  type="button"
+                  onClick={() => begin(null)}
+                  className="flex h-full min-h-24 w-full items-center gap-3 rounded-lg border border-dashed p-3 text-left transition-colors duration-150 outline-none hover:border-brand/40 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <span
                     aria-hidden="true"
-                    className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-subtle text-brand"
+                    className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground"
                   >
-                    <LayoutTemplate className="size-4" />
+                    <Plus className="size-4" />
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-sm font-medium">Browse starter templates</span>
+                    <span className="block text-sm font-medium">Empty workout</span>
                     <span className="block text-xs text-muted-foreground">
-                      Full body, push/pull/legs, home workouts, and more.
+                      Add exercises as you go.
                     </span>
                   </span>
-                </Link>
+                </button>
               </li>
-            ) : null}
-          </ul>
-        </Section>
-      )}
-      <Section
-        title="History"
-        action={
-          <div role="group" aria-label="Show" className="flex gap-1">
-            {HISTORY_FILTERS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                aria-pressed={status === option.value}
-                onClick={() => setStatus(option.value)}
-                className={cn(
-                  "h-7 rounded-full px-2.5 text-xs font-medium whitespace-nowrap transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  status === option.value
-                    ? "bg-brand-subtle text-brand"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                )}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        }
-      >
-        <Loaded resource={workouts.state} reload={workouts.reload}>
-          {({ sessions }) =>
-            sessions.length === 0 ? (
-              <EmptyState
-                icon={Dumbbell}
-                title={status === "all" ? "No workouts yet" : "Nothing here"}
-                description={
-                  status === "all"
-                    ? "Workouts you start or log show up here, newest first."
-                    : "No workouts match this filter."
-                }
-              />
-            ) : (
-              <div className="space-y-4">
-                {byMonth(sessions).map((group) => (
-                  <div key={group.month} className="space-y-1">
-                    <h3 className="text-xs font-medium text-muted-foreground">
-                      {monthLabel(group.month)}
-                    </h3>
-                    <ul className="-mx-3">
-                      {group.items.map((workout) => (
-                        <WorkoutRow key={workout.id} workout={workout} units={units} />
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-                {sessions.length >= limit ? (
-                  <Button variant="ghost" size="sm" onClick={() => setLimit(limit + PAGE)}>
-                    Show more
-                  </Button>
-                ) : null}
-              </div>
-            )
-          }
-        </Loaded>
-      </Section>
+              {templates.state.status === "success" && ready.length === 0 ? (
+                <li>
+                  <Link
+                    href={fitnessHref({ kind: "view", view: "templates" })}
+                    className="flex h-full min-h-24 items-center gap-3 rounded-lg border border-dashed p-3 transition-colors duration-150 outline-none hover:border-brand/40 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-subtle text-brand"
+                    >
+                      <LayoutTemplate className="size-4" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium">Browse starter templates</span>
+                      <span className="block text-xs text-muted-foreground">
+                        Full body, push/pull/legs, home workouts, and more.
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              ) : null}
+            </ul>
+          </Section>
+        )}
+      </ViewTabs>
     </div>
+  );
+}
+
+/** Every workout started or logged, newest first, by month. */
+function WorkoutHistory({ workspaceId }: { workspaceId: string }) {
+  const units = useUnits(workspaceId);
+  const [limit, setLimit] = useState(PAGE);
+  const [status, setStatus] = useState<"all" | "completed" | "abandoned">("all");
+  const workouts = useWorkouts(workspaceId, { status, limit, offset: 0 });
+
+  return (
+    <Section
+      title="Past workouts"
+      action={
+        <div role="group" aria-label="Show" className="flex gap-1">
+          {HISTORY_FILTERS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={status === option.value}
+              onClick={() => setStatus(option.value)}
+              className={cn(
+                "h-7 rounded-full px-2.5 text-xs font-medium whitespace-nowrap transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                status === option.value
+                  ? "bg-brand-subtle text-brand"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      }
+    >
+      <Loaded resource={workouts.state} reload={workouts.reload}>
+        {({ sessions }) =>
+          sessions.length === 0 ? (
+            <EmptyState
+              icon={Dumbbell}
+              title={status === "all" ? "No workouts yet" : "Nothing here"}
+              description={
+                status === "all"
+                  ? "Workouts you start or log show up here, newest first."
+                  : "No workouts match this filter."
+              }
+            />
+          ) : (
+            <div className="space-y-4">
+              {byMonth(sessions).map((group) => (
+                <div key={group.month} className="space-y-1">
+                  <h3 className="text-xs font-medium text-muted-foreground">
+                    {monthLabel(group.month)}
+                  </h3>
+                  <ul className="-mx-3">
+                    {group.items.map((workout) => (
+                      <WorkoutRow key={workout.id} workout={workout} units={units} />
+                    ))}
+                  </ul>
+                </div>
+              ))}
+              {sessions.length >= limit ? (
+                <Button variant="ghost" size="sm" onClick={() => setLimit(limit + PAGE)}>
+                  Show more
+                </Button>
+              ) : null}
+            </div>
+          )
+        }
+      </Loaded>
+    </Section>
   );
 }
 

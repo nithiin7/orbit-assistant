@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import { type LinkOwner, type LinkTarget, setFitnessLink } from "@/api/fitness";
@@ -76,6 +76,94 @@ export function Section({
       </div>
       {children}
     </section>
+  );
+}
+
+export type ViewTab<T extends string> = { id: T; label: string; icon: LucideIcon };
+
+/**
+ * Tabs within one Health view (what you do now, and what you've done), with the selected tab's
+ * panel below. Arrow keys, Home, and End move between tabs.
+ */
+export function ViewTabs<T extends string>({
+  label,
+  tabs,
+  tab,
+  onChange,
+  action,
+  children,
+}: {
+  label: string;
+  tabs: readonly ViewTab<T>[];
+  tab: T;
+  onChange: (tab: T) => void;
+  /** Sits at the end of the tab row, for the view's main action. */
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  const idPrefix = useId();
+  const buttons = useRef<(HTMLButtonElement | null)[]>([]);
+
+  function onKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+    const last = tabs.length - 1;
+    const next = {
+      ArrowRight: index === last ? 0 : index + 1,
+      ArrowLeft: index === 0 ? last : index - 1,
+      Home: 0,
+      End: last,
+    }[event.key];
+    const target = next === undefined ? undefined : tabs[next];
+    if (next === undefined || !target) return;
+    event.preventDefault();
+    onChange(target.id);
+    buttons.current[next]?.focus();
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-2 border-b">
+        <div role="tablist" aria-label={label} className="-mb-px flex gap-1">
+          {tabs.map(({ id, label: tabLabel, icon: Icon }, index) => {
+            const selected = id === tab;
+            return (
+              <button
+                key={id}
+                ref={(element) => {
+                  buttons.current[index] = element;
+                }}
+                type="button"
+                role="tab"
+                id={`${idPrefix}-${id}`}
+                aria-selected={selected}
+                aria-controls={`${idPrefix}-panel`}
+                tabIndex={selected ? 0 : -1}
+                onClick={() => onChange(id)}
+                onKeyDown={(event) => onKeyDown(event, index)}
+                className={cn(
+                  "relative flex h-10 shrink-0 items-center gap-2 rounded-t-md px-3 text-sm font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full",
+                  selected
+                    ? "text-foreground after:bg-brand"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Icon aria-hidden="true" className={cn("size-4", selected && "text-brand")} />
+                {tabLabel}
+              </button>
+            );
+          })}
+        </div>
+        {action ? <div className="flex items-center gap-2 pb-2">{action}</div> : null}
+      </div>
+      <div
+        role="tabpanel"
+        id={`${idPrefix}-panel`}
+        aria-labelledby={`${idPrefix}-${tab}`}
+        className="animate-page-in space-y-4"
+      >
+        {children}
+      </div>
+    </div>
   );
 }
 

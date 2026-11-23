@@ -225,6 +225,11 @@ describe("HealthPanel: overview", () => {
       "60",
     );
     expect(screen.getByRole("link", { name: "Today" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("heading", { name: "Ready when you are" })).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: "Water" })).toHaveAttribute(
+      "aria-valuetext",
+      expect.stringMatching(/^750 ml of /),
+    );
   });
 
   it("leaves out the sections the person hid", async () => {
@@ -352,6 +357,7 @@ describe("HealthPanel: workouts", () => {
 
   it("points to the starter templates when there are none", async () => {
     navigation.params = new URLSearchParams("view=workouts");
+    const user = userEvent.setup();
     mockApi({ ...session(), [`GET ${WS}/sessions`]: json({ sessions: [] }) });
     await renderSignedIn(<HealthPanel />);
     expect(await screen.findByRole("link", { name: /Browse starter templates/ })).toHaveAttribute(
@@ -359,7 +365,32 @@ describe("HealthPanel: workouts", () => {
       "/health?view=templates",
     );
     expect(screen.getByRole("button", { name: /Empty workout/ })).toBeInTheDocument();
-    expect(screen.getByText("No workouts yet")).toBeInTheDocument();
+    // Past workouts are on their own tab.
+    expect(screen.queryByText("No workouts yet")).toBeNull();
+    await user.click(screen.getByRole("tab", { name: "History" }));
+    expect(await screen.findByText("No workouts yet")).toBeInTheDocument();
+  });
+});
+
+describe("HealthPanel: exercises and templates", () => {
+  it("opens templates as a tab of Exercises", async () => {
+    navigation.params = new URLSearchParams("view=templates");
+    const user = userEvent.setup();
+    mockApi({
+      ...session(),
+      [`GET ${WS}/templates`]: json({ templates: [] }),
+      [`GET ${WS}/exercises`]: json({ exercises: [] }),
+    });
+    await renderSignedIn(<HealthPanel />);
+    const nav = await screen.findByRole("navigation", { name: "Health views" });
+    expect(within(nav).queryByRole("link", { name: "Templates" })).toBeNull();
+    expect(within(nav).getByRole("link", { name: "Exercises" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(screen.getByRole("tab", { name: "Templates" })).toHaveAttribute("aria-selected", "true");
+    await user.click(screen.getByRole("tab", { name: "Exercises" }));
+    expect(screen.getByRole("tab", { name: "Exercises" })).toHaveAttribute("aria-selected", "true");
   });
 });
 

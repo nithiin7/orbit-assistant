@@ -1,18 +1,27 @@
 "use client";
 
-import type { FitnessSection, Food } from "@orbit/contracts";
+import type { FitnessOverview, FitnessSection, Food, WorkoutTemplate } from "@orbit/contracts";
 import {
+  Activity,
   CalendarClock,
+  ChevronRight,
   Droplets,
+  Dumbbell,
+  Flame,
   LayoutTemplate,
   type LucideIcon,
   Play,
   Plus,
+  Scale,
   Settings2,
+  Target,
+  TrendingDown,
+  TrendingUp,
+  Trophy,
 } from "lucide-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
-import { useState } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import { useId, useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import { addWater, saveFoodEntry } from "@/api/fitness";
@@ -42,22 +51,186 @@ import {
   MEALS,
   METRIC_UNITS,
   share,
+  type Units,
 } from "@/lib/fitness";
+import { cn } from "@/utils/common";
 
+import { KIND_ICONS } from "./activity-rings";
 import { GoalCard } from "./goals";
 import { FoodEntryDialog } from "./nutrition";
 import { RecordTable } from "./progress";
-import { LineChart, Loaded, Meter, Section, shortDate } from "./shared";
+import { LineChart, Loaded, shortDate } from "./shared";
 import { ActiveWorkoutBanner, StartWorkoutMenu, useStartWorkout, WorkoutRow } from "./workouts";
+
+/** Each card's colour. Classes are written out in full so Tailwind sees them. */
+const TONES = {
+  brand: { chip: "bg-brand-subtle text-brand", stroke: "text-brand" },
+  orange: { chip: "bg-event-orange/12 text-event-orange", stroke: "text-event-orange" },
+  blue: { chip: "bg-event-blue/12 text-event-blue", stroke: "text-event-blue" },
+  violet: { chip: "bg-event-violet/12 text-event-violet", stroke: "text-event-violet" },
+  amber: { chip: "bg-event-amber/12 text-event-amber", stroke: "text-event-amber" },
+  green: { chip: "bg-event-green/12 text-event-green", stroke: "text-event-green" },
+  success: { chip: "bg-success/12 text-success", stroke: "text-success" },
+} as const;
+
+type Tone = keyof typeof TONES;
 
 function More({ view, children }: { view: FitnessView; children: ReactNode }) {
   return (
     <Link
       href={fitnessHref({ kind: "view", view })}
-      className="text-xs font-medium text-brand underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="group/more -mr-1.5 inline-flex h-7 items-center gap-0.5 rounded-full px-2 text-xs font-medium text-muted-foreground transition-colors duration-150 hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       {children}
+      <ChevronRight
+        aria-hidden="true"
+        className="size-3.5 transition-transform duration-150 group-hover/more:translate-x-0.5"
+      />
     </Link>
+  );
+}
+
+/** One card on Today: a tinted icon, a title, and a link through to the full view. */
+function Card({
+  title,
+  icon: Icon,
+  tone,
+  action,
+  children,
+  className,
+}: {
+  title: string;
+  icon: LucideIcon;
+  tone: Tone;
+  action?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  const id = useId();
+  return (
+    <section
+      aria-labelledby={id}
+      className={cn("flex flex-col gap-4 rounded-2xl border bg-card p-4 @3xl:p-5", className)}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span
+            aria-hidden="true"
+            className={cn(
+              "flex size-8 shrink-0 items-center justify-center rounded-xl",
+              TONES[tone].chip,
+            )}
+          >
+            <Icon className="size-4" />
+          </span>
+          <h2 id={id} className="truncate text-sm font-semibold">
+            {title}
+          </h2>
+        </div>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/**
+ * A circular progress gauge toward a daily target, with the percentage in the middle. Without a
+ * target the ring stays empty.
+ */
+function Gauge({
+  label,
+  fraction,
+  tone,
+  valueText,
+  icon: Icon,
+}: {
+  label: string;
+  /** 0 to 1, or `null` without a target. */
+  fraction: number | null;
+  tone: Tone;
+  /** Read out for the gauge, such as "1,200 of 2,000 kcal". */
+  valueText: string;
+  /** Shown in the middle when there's no target to measure against. */
+  icon: LucideIcon;
+}) {
+  const percent = fraction === null ? 0 : Math.round(fraction * 100);
+  const offset = 100 - percent;
+  const style: CSSProperties & { "--ring-offset": number } = { "--ring-offset": offset };
+  return (
+    <div
+      role="progressbar"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={fraction === null ? undefined : percent}
+      aria-valuetext={valueText}
+      className="relative size-24 shrink-0"
+    >
+      <svg viewBox="0 0 100 100" aria-hidden="true" className={cn("size-full", TONES[tone].stroke)}>
+        <circle
+          cx="50"
+          cy="50"
+          r="42"
+          fill="none"
+          strokeWidth="9"
+          stroke="currentColor"
+          className="opacity-15"
+        />
+        {percent > 0 ? (
+          <circle
+            cx="50"
+            cy="50"
+            r="42"
+            fill="none"
+            strokeWidth="9"
+            stroke="currentColor"
+            strokeLinecap="round"
+            pathLength={100}
+            strokeDasharray="100"
+            strokeDashoffset={offset}
+            transform="rotate(-90 50 50)"
+            style={style}
+            className="motion-safe:animate-ring-fill"
+          />
+        ) : null}
+      </svg>
+      <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center">
+        {fraction === null ? (
+          <Icon className={cn("size-6 opacity-60", TONES[tone].stroke)} />
+        ) : (
+          <span className="text-lg font-semibold tabular-nums">{percent}%</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** A small labelled figure, such as protein eaten today. */
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-xl bg-muted/60 px-3 py-2">
+      <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
+      <p className="truncate text-sm font-semibold tabular-nums">{value}</p>
+    </div>
+  );
+}
+
+/** The day's amount in large type, with what it's measured against below. */
+function Figure({ value, caption }: { value: string; caption: string }) {
+  return (
+    <div className="min-w-0 space-y-0.5">
+      <p className="truncate text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
+      <p className="text-xs text-pretty text-muted-foreground">{caption}</p>
+    </div>
+  );
+}
+
+function Empty({ children }: { children: ReactNode }) {
+  return (
+    <p className="rounded-xl border border-dashed px-3 py-4 text-center text-sm text-muted-foreground">
+      {children}
+    </p>
   );
 }
 
@@ -86,13 +259,13 @@ function GettingStarted({ hasTemplates }: { hasTemplates: boolean }) {
   return (
     <section
       aria-labelledby="health-start-heading"
-      className="space-y-4 rounded-xl border border-brand/30 bg-brand-subtle/40 p-4 @3xl:p-5"
+      className="space-y-4 rounded-2xl border border-brand/20 bg-linear-to-br from-brand-subtle/70 to-card p-4 @3xl:p-5"
     >
       <div className="space-y-0.5">
-        <h2 id="health-start-heading" className="text-sm font-semibold">
+        <h2 id="health-start-heading" className="text-base font-semibold tracking-tight">
           New here? Start with these
         </h2>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Everything else is optional. Use only the parts that help you.
         </p>
       </div>
@@ -101,25 +274,191 @@ function GettingStarted({ hasTemplates }: { hasTemplates: boolean }) {
           <li key={step.view}>
             <Link
               href={fitnessHref({ kind: "view", view: step.view })}
-              className="flex h-full gap-3 rounded-lg border bg-card p-3 transition-colors duration-150 outline-none hover:border-brand/40 focus-visible:ring-2 focus-visible:ring-ring"
+              className="group/step flex h-full flex-col gap-3 rounded-xl border bg-card p-4 transition-[border-color,translate] duration-150 outline-none hover:-translate-y-0.5 hover:border-brand/40 focus-visible:ring-2 focus-visible:ring-ring motion-reduce:hover:translate-y-0"
             >
-              <span
-                aria-hidden="true"
-                className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-subtle text-xs font-semibold text-brand tabular-nums"
-              >
-                {index + 1}
-              </span>
-              <span className="min-w-0 space-y-0.5">
-                <span className="flex items-center gap-1.5 text-sm font-medium">
-                  <step.icon className="size-3.5 text-muted-foreground" aria-hidden="true" />
-                  {step.title}
+              <span className="flex items-center justify-between">
+                <span
+                  aria-hidden="true"
+                  className="flex size-9 items-center justify-center rounded-xl bg-brand-subtle text-brand"
+                >
+                  <step.icon className="size-4" />
                 </span>
+                <span
+                  aria-hidden="true"
+                  className="text-xs font-semibold text-muted-foreground tabular-nums"
+                >
+                  Step {index + 1}
+                </span>
+              </span>
+              <span className="min-w-0 space-y-1">
+                <span className="block text-sm font-semibold">{step.title}</span>
                 <span className="block text-xs text-pretty text-muted-foreground">{step.text}</span>
               </span>
             </Link>
           </li>
         ))}
       </ol>
+    </section>
+  );
+}
+
+function longDate(day: string): string {
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    // The calendar day itself, whatever the viewer's time zone.
+    timeZone: "UTC",
+  }).format(new Date(`${day}T00:00:00Z`));
+}
+
+function plural(count: number, word: string): string {
+  return `${count} ${word}${count === 1 ? "" : "s"}`;
+}
+
+/** What today looks like for training, in a few words. */
+function headline(data: FitnessOverview): string {
+  if (data.active_session !== null) return "Workout in progress";
+  if (data.completed_today.length > 0)
+    return `Nice work: ${plural(data.completed_today.length, "workout")} done today`;
+  if (data.scheduled_today.length > 0)
+    return `${plural(data.scheduled_today.length, "workout")} planned today`;
+  return "Ready when you are";
+}
+
+/** Today's training: what's planned, what's done, and a quick way to start. */
+function TodayHero({
+  data,
+  workspaceId,
+  today,
+  timeZone,
+  templates,
+  units,
+  onStart,
+}: {
+  data: FitnessOverview;
+  workspaceId: string;
+  today: string;
+  timeZone: string;
+  templates: readonly WorkoutTemplate[];
+  units: Units;
+  onStart: (templateId: string | null, eventId?: string | null) => void;
+}) {
+  const idle =
+    data.active_session === null &&
+    data.completed_today.length === 0 &&
+    data.scheduled_today.length === 0;
+  return (
+    <section
+      aria-labelledby="health-today-heading"
+      className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-brand-subtle/80 via-card to-card p-4 @3xl:p-6"
+    >
+      <Dumbbell
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-6 -right-6 size-40 -rotate-12 text-brand opacity-[0.06]"
+      />
+      <div className="relative space-y-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 space-y-1">
+            <p className="text-xs font-medium tracking-wide text-brand uppercase">
+              {longDate(today)}
+            </p>
+            <h2
+              id="health-today-heading"
+              className="text-xl font-semibold tracking-tight @3xl:text-2xl"
+            >
+              {headline(data)}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {plural(data.week_workouts, "workout")} so far this week.
+            </p>
+          </div>
+          {data.active_session === null ? (
+            <StartWorkoutMenu workspaceId={workspaceId} templates={templates} onStart={onStart} />
+          ) : null}
+        </div>
+
+        <ActiveWorkoutBanner workspaceId={workspaceId} />
+
+        {data.scheduled_today.length > 0 ? (
+          <ul aria-label="Planned today" className="grid gap-2 @3xl:grid-cols-2">
+            {data.scheduled_today.map((item) => (
+              <li
+                key={`${item.calendar_event_id}-${item.start_at ?? ""}`}
+                className="flex items-center justify-between gap-3 rounded-xl border bg-card/80 p-3 backdrop-blur-sm"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <span
+                    aria-hidden="true"
+                    className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-subtle text-brand"
+                  >
+                    <CalendarClock className="size-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.start_at
+                        ? new Date(item.start_at).toLocaleTimeString([], {
+                            timeStyle: "short",
+                            timeZone,
+                          })
+                        : "Scheduled"}
+                      {item.template_name ? ` · ${item.template_name}` : ""}
+                    </p>
+                  </div>
+                </div>
+                {item.session_ids.length === 0 && data.active_session === null ? (
+                  <Button
+                    size="sm"
+                    variant="soft"
+                    onClick={() => onStart(item.template_id, item.calendar_event_id)}
+                  >
+                    <Play aria-hidden="true" />
+                    Start
+                  </Button>
+                ) : (
+                  <span className="text-xs text-muted-foreground">Started</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {data.completed_today.length > 0 ? (
+          <ul className="-mx-3 rounded-xl">
+            {data.completed_today.map((w) => (
+              <WorkoutRow key={w.id} workout={w} units={units} />
+            ))}
+          </ul>
+        ) : null}
+
+        {idle && templates.length > 0 ? (
+          <ul aria-label="Quick start" className="grid gap-2 @xl:grid-cols-2 @5xl:grid-cols-4">
+            {templates.slice(0, 4).map((template) => (
+              <li key={template.id}>
+                <button
+                  type="button"
+                  onClick={() => onStart(template.id)}
+                  className="group/start flex w-full items-center gap-3 rounded-xl border bg-card/80 p-3 text-left backdrop-blur-sm transition-[border-color,translate] duration-150 outline-none hover:-translate-y-0.5 hover:border-brand/40 focus-visible:ring-2 focus-visible:ring-ring motion-reduce:hover:translate-y-0"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand text-brand-foreground transition-transform duration-150 group-hover/start:scale-105"
+                  >
+                    <Play className="size-4 translate-x-px" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium">{template.name}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {plural(template.exercises.length, "exercise")}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
     </section>
   );
 }
@@ -198,6 +537,9 @@ export function OverviewView({
           const shown = (section: FitnessSection) => !data.hidden_sections.includes(section);
           const weights = data.weight_trend;
           const latest = weights[weights.length - 1];
+          const first = weights[0];
+          const change =
+            latest && first && weights.length > 1 ? latest.weight_g - first.weight_g : 0;
           const ready =
             templates.state.status === "success"
               ? templates.state.data.templates.filter((t) => !t.archived)
@@ -207,107 +549,57 @@ export function OverviewView({
             data.completed_today.length === 0 &&
             data.active_session === null &&
             data.week_workouts === 0;
+          const energyTarget = data.targets.energy_cal;
+          const energyText = `${formatEnergy(data.nutrition.energy_cal, units.energy_unit)}${energyTarget ? ` of ${formatEnergy(energyTarget, units.energy_unit)}` : ""}`;
+          const waterTarget = data.targets.water_ml;
+          const waterDone = Boolean(waterTarget && data.water_ml >= waterTarget);
           return (
             <div className="space-y-4">
               <FormAlert message={error} />
               {fresh ? <GettingStarted hasTemplates={ready.length > 0} /> : null}
               {shown("workout") ? (
-                <Section
-                  title="Today’s workout"
-                  action={
-                    data.active_session === null ? (
-                      <StartWorkoutMenu
-                        workspaceId={workspaceId}
-                        templates={ready}
-                        onStart={begin}
-                      />
-                    ) : null
-                  }
-                >
-                  <ActiveWorkoutBanner workspaceId={workspaceId} />
-                  {data.scheduled_today.length > 0 ? (
-                    <ul className="space-y-2">
-                      {data.scheduled_today.map((item) => (
-                        <li
-                          key={`${item.calendar_event_id}-${item.start_at ?? ""}`}
-                          className="flex items-center justify-between gap-2 rounded-lg border p-3"
-                        >
-                          <div className="flex min-w-0 items-center gap-2">
-                            <CalendarClock
-                              aria-hidden="true"
-                              className="size-4 text-muted-foreground"
-                            />
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-medium">{item.title}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {item.start_at
-                                  ? new Date(item.start_at).toLocaleTimeString([], {
-                                      timeStyle: "short",
-                                      timeZone,
-                                    })
-                                  : "Scheduled"}
-                                {item.template_name ? ` · ${item.template_name}` : ""}
-                              </p>
-                            </div>
-                          </div>
-                          {item.session_ids.length === 0 && data.active_session === null ? (
-                            <Button
-                              size="sm"
-                              variant="soft"
-                              onClick={() => begin(item.template_id, item.calendar_event_id)}
-                            >
-                              Start
-                            </Button>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">Started</span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                  {data.completed_today.length > 0 ? (
-                    <ul className="-mx-3">
-                      {data.completed_today.map((w) => (
-                        <WorkoutRow key={w.id} workout={w} units={units} />
-                      ))}
-                    </ul>
-                  ) : data.active_session === null && data.scheduled_today.length === 0 ? (
-                    <div className="space-y-3">
-                      <p className="text-sm text-muted-foreground">
-                        Nothing yet today. {data.week_workouts} workout
-                        {data.week_workouts === 1 ? "" : "s"} so far this week.
-                      </p>
-                      {ready.length > 0 ? (
-                        <ul aria-label="Quick start" className="flex flex-wrap gap-2">
-                          {ready.slice(0, 4).map((template) => (
-                            <li key={template.id}>
-                              <Button size="sm" variant="soft" onClick={() => begin(template.id)}>
-                                <Play aria-hidden="true" />
-                                {template.name}
-                              </Button>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </Section>
+                <TodayHero
+                  data={data}
+                  workspaceId={workspaceId}
+                  today={today}
+                  timeZone={timeZone}
+                  templates={ready}
+                  units={units}
+                  onStart={begin}
+                />
               ) : null}
 
               <div className="grid gap-4 @3xl:grid-cols-2 @6xl:grid-cols-3">
                 {shown("nutrition") ? (
-                  <Section title="Food today" action={<More view="nutrition">Open</More>}>
-                    <Meter
-                      label="Energy"
-                      value={`${formatEnergy(data.nutrition.energy_cal, units.energy_unit)}${data.targets.energy_cal ? ` of ${formatEnergy(data.targets.energy_cal, units.energy_unit)}` : ""}`}
-                      fraction={share(data.nutrition.energy_cal, data.targets.energy_cal)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Protein {formatGrams(data.nutrition.protein_mg)} · Carbs{" "}
-                      {formatGrams(data.nutrition.carbs_mg)} · Fat{" "}
-                      {formatGrams(data.nutrition.fat_mg)}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
+                  <Card
+                    title="Food today"
+                    icon={Flame}
+                    tone="orange"
+                    action={<More view="nutrition">Open</More>}
+                  >
+                    <div className="flex items-center gap-4">
+                      <Gauge
+                        label="Energy"
+                        fraction={share(data.nutrition.energy_cal, energyTarget)}
+                        tone="orange"
+                        valueText={energyText}
+                        icon={Flame}
+                      />
+                      <Figure
+                        value={formatEnergy(data.nutrition.energy_cal, units.energy_unit)}
+                        caption={
+                          energyTarget
+                            ? `of ${formatEnergy(energyTarget, units.energy_unit)}`
+                            : "No daily target"
+                        }
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <Stat label="Protein" value={formatGrams(data.nutrition.protein_mg)} />
+                      <Stat label="Carbs" value={formatGrams(data.nutrition.carbs_mg)} />
+                      <Stat label="Fat" value={formatGrams(data.nutrition.fat_mg)} />
+                    </div>
+                    <div className="mt-auto flex flex-wrap gap-2">
                       <Button size="sm" variant="soft" onClick={() => setAddingFood(true)}>
                         <Plus aria-hidden="true" />
                         Add food
@@ -317,6 +609,7 @@ export function OverviewView({
                           key={food.id}
                           size="sm"
                           variant="ghost"
+                          className="rounded-full border"
                           aria-label={`Add one serving of ${food.name}`}
                           onClick={() => logServing(food)}
                         >
@@ -328,30 +621,41 @@ export function OverviewView({
                     <p role="status" className="text-xs text-muted-foreground empty:hidden">
                       {logged}
                     </p>
-                  </Section>
+                  </Card>
                 ) : null}
                 {shown("water") ? (
-                  <Section title="Water today" action={<More view="water">Open</More>}>
-                    <Meter
-                      label={formatWater(data.water_ml, units.water_unit)}
-                      value={
-                        data.targets.water_ml
-                          ? `of ${formatWater(data.targets.water_ml, units.water_unit)}`
-                          : "No target set"
-                      }
-                      fraction={share(data.water_ml, data.targets.water_ml)}
-                      tone={
-                        data.targets.water_ml && data.water_ml >= data.targets.water_ml
-                          ? "success"
-                          : "brand"
-                      }
-                    />
-                    <div className="flex flex-wrap gap-2">
+                  <Card
+                    title="Water today"
+                    icon={Droplets}
+                    tone="blue"
+                    action={<More view="water">Open</More>}
+                  >
+                    <div className="flex items-center gap-4">
+                      <Gauge
+                        label="Water"
+                        fraction={share(data.water_ml, waterTarget)}
+                        tone={waterDone ? "success" : "blue"}
+                        valueText={`${formatWater(data.water_ml, units.water_unit)}${waterTarget ? ` of ${formatWater(waterTarget, units.water_unit)}` : ""}`}
+                        icon={Droplets}
+                      />
+                      <Figure
+                        value={formatWater(data.water_ml, units.water_unit)}
+                        caption={
+                          waterDone
+                            ? "Target reached. Nicely done."
+                            : waterTarget
+                              ? `${formatWater(waterTarget - data.water_ml, units.water_unit)} to go of ${formatWater(waterTarget, units.water_unit)}`
+                              : "No daily target"
+                        }
+                      />
+                    </div>
+                    <div className="mt-auto flex flex-wrap gap-2">
                       {quick.map((ml) => (
                         <Button
                           key={ml}
                           size="sm"
                           variant="soft"
+                          className="rounded-full"
                           onClick={() =>
                             run((token) => addWater(token, workspaceId, today, ml), {
                               touches: ["habits"],
@@ -364,21 +668,35 @@ export function OverviewView({
                         </Button>
                       ))}
                     </div>
-                  </Section>
+                  </Card>
                 ) : null}
                 {shown("weight") ? (
-                  <Section title="Weight" action={<More view="body">Body</More>}>
+                  <Card
+                    title="Weight"
+                    icon={Scale}
+                    tone="violet"
+                    action={<More view="body">Body</More>}
+                  >
                     {latest ? (
                       <>
-                        <p className="text-2xl font-semibold tabular-nums">
-                          {formatWeight(latest.weight_g, units.weight_unit)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {shortDate(latest.day)}
-                          {weights.length > 1 && weights[0]
-                            ? ` · ${latest.weight_g >= weights[0].weight_g ? "+" : ""}${formatWeight(latest.weight_g - weights[0].weight_g, units.weight_unit)} over 90 days`
-                            : ""}
-                        </p>
+                        <div className="flex flex-wrap items-end justify-between gap-2">
+                          <div>
+                            <p className="text-3xl font-semibold tracking-tight tabular-nums">
+                              {formatWeight(latest.weight_g, units.weight_unit)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">{shortDate(latest.day)}</p>
+                          </div>
+                          {weights.length > 1 ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs font-medium tabular-nums">
+                              {change < 0 ? (
+                                <TrendingDown aria-hidden="true" className="size-3.5" />
+                              ) : (
+                                <TrendingUp aria-hidden="true" className="size-3.5" />
+                              )}
+                              {`${change >= 0 ? "+" : ""}${formatWeight(change, units.weight_unit)} over 90 days`}
+                            </span>
+                          ) : null}
+                        </div>
                         {weights.length > 1 ? (
                           <LineChart
                             title="Weight, last 90 days"
@@ -391,16 +709,19 @@ export function OverviewView({
                         ) : null}
                       </>
                     ) : (
-                      <p className="text-sm text-muted-foreground">
-                        No weight in the last 90 days.
-                      </p>
+                      <Empty>No weight in the last 90 days.</Empty>
                     )}
-                  </Section>
+                  </Card>
                 ) : null}
                 {shown("goals") ? (
-                  <Section title="Active goals" action={<More view="goals">All goals</More>}>
+                  <Card
+                    title="Active goals"
+                    icon={Target}
+                    tone="amber"
+                    action={<More view="goals">All goals</More>}
+                  >
                     {data.goals.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No active goals.</p>
+                      <Empty>No active goals.</Empty>
                     ) : (
                       <ul className="space-y-2">
                         {data.goals.slice(0, 3).map((goal) => (
@@ -410,52 +731,73 @@ export function OverviewView({
                         ))}
                       </ul>
                     )}
-                  </Section>
+                  </Card>
                 ) : null}
                 {shown("recent_workouts") ? (
-                  <Section title="Recent workouts" action={<More view="workouts">History</More>}>
+                  <Card
+                    title="Recent workouts"
+                    icon={Dumbbell}
+                    tone="brand"
+                    action={<More view="workouts">History</More>}
+                  >
                     {data.recent_sessions.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No completed workouts yet.</p>
+                      <Empty>No completed workouts yet.</Empty>
                     ) : (
-                      <ul className="-mx-3">
+                      <ul className="-mx-3 -my-1">
                         {data.recent_sessions.map((w) => (
                           <WorkoutRow key={w.id} workout={w} units={units} />
                         ))}
                       </ul>
                     )}
-                  </Section>
+                  </Card>
                 ) : null}
                 {shown("activity") ? (
-                  <Section title="Recent activity" action={<More view="activity">Open</More>}>
+                  <Card
+                    title="Recent activity"
+                    icon={Activity}
+                    tone="green"
+                    action={<More view="activity">Open</More>}
+                  >
                     {data.recent_activities.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No activity recorded.</p>
+                      <Empty>No activity recorded.</Empty>
                     ) : (
-                      <ul className="space-y-1 text-sm">
-                        {data.recent_activities.map((a) => (
-                          <li key={a.id} className="flex justify-between gap-2">
-                            <span>
-                              {labelOf(ACTIVITY_KINDS, a.kind)}{" "}
-                              <span className="text-xs text-muted-foreground">
-                                {shortDate(a.day)}
+                      <ul className="space-y-1">
+                        {data.recent_activities.map((a) => {
+                          const KindIcon = KIND_ICONS[a.kind];
+                          return (
+                            <li key={a.id} className="flex items-center gap-3 py-1">
+                              <span
+                                aria-hidden="true"
+                                className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground"
+                              >
+                                <KindIcon className="size-4" />
                               </span>
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {describeActivity(a, units)}
-                            </span>
-                          </li>
-                        ))}
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium">
+                                  {labelOf(ACTIVITY_KINDS, a.kind)}
+                                </p>
+                                <p className="text-xs text-muted-foreground">{shortDate(a.day)}</p>
+                              </div>
+                              <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                                {describeActivity(a, units)}
+                              </span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     )}
-                  </Section>
+                  </Card>
                 ) : null}
               </div>
               {shown("records") ? (
-                <Section
+                <Card
                   title="Latest personal records"
+                  icon={Trophy}
+                  tone="amber"
                   action={<More view="progress">All records</More>}
                 >
                   <RecordTable records={data.records} units={units} />
-                </Section>
+                </Card>
               ) : null}
             </div>
           );

@@ -7,10 +7,12 @@ import {
   ChevronRight,
   Flame,
   Footprints,
+  History as HistoryIcon,
   Moon,
   MoreHorizontal,
   Pencil,
   Plus,
+  Sun,
   Target,
   Trash2,
   Trophy,
@@ -66,7 +68,14 @@ import { cn } from "@/utils/common";
 import { addDays, parseCalendarDate } from "@/utils/dates";
 
 import { ActivityRings, describeRings, KIND_ICONS, ringOf, RINGS } from "./activity-rings";
-import { Loaded, shortDate } from "./shared";
+import { Loaded, shortDate, type ViewTab, ViewTabs } from "./shared";
+
+type ActivityTab = "today" | "history";
+
+const ACTIVITY_TABS: readonly ViewTab<ActivityTab>[] = [
+  { id: "today", label: "Today", icon: Sun },
+  { id: "history", label: "History", icon: HistoryIcon },
+];
 
 /** What a new entry starts with when logged from a ring or a quick-log chip. */
 type Draft = { kind: ActivityKind; day: string };
@@ -127,6 +136,7 @@ export function ActivityView({ workspaceId, today }: { workspaceId: string; toda
   const run = useFitnessAction(workspaceId);
   const { confirm, confirmDialog } = useConfirm();
   const { celebrate, celebration } = useCelebration();
+  const [tab, setTab] = useState<ActivityTab>("today");
   const [day, setDay] = useState(today);
   const [kind, setKind] = useState<ActivityKind | "all">("all");
   const [editing, setEditing] = useState<Activity | Draft | null>(null);
@@ -172,61 +182,77 @@ export function ActivityView({ workspaceId, today }: { workspaceId: string; toda
 
   return (
     <div className="@container/activity space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <DayStepper day={day} today={today} onChange={setDay} />
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" disabled={!loadedProfile} onClick={() => setEditingGoals(true)}>
-            <Target aria-hidden="true" />
-            Goals
-          </Button>
-          <Button onClick={() => setEditing({ kind: "steps", day })}>
-            <Plus aria-hidden="true" />
-            Record activity
-          </Button>
-        </div>
-      </div>
       <FormAlert message={error} />
-      <Loaded resource={activities.state} reload={activities.reload} skeleton="h-72">
-        {({ activities: all }) => {
-          const byDay = totalsByDay(all);
-          const week = recentDays(today);
-          return (
-            <>
-              <TodayCard
-                day={day}
-                today={today}
-                totals={dayTotals(byDay, day)}
-                goals={goals}
-                onLog={(draft) => setEditing(draft)}
-              />
-              <QuickLog onLog={(next) => setEditing({ kind: next, day })} />
-              <WeekStrip
-                days={week}
-                byDay={byDay}
-                goals={goals}
-                selected={day}
-                today={today}
-                onSelect={setDay}
-              />
-              <Stats
-                streak={ringStreak(byDay, goals, today)}
-                summary={summarizeDays(byDay, goals, week)}
-              />
-              <History
-                activities={all}
-                byDay={byDay}
-                goals={goals}
-                today={today}
-                units={units}
-                kind={kind}
-                onKindChange={setKind}
-                onEdit={setEditing}
-                onDelete={(activity) => void remove(activity)}
-              />
-            </>
-          );
-        }}
-      </Loaded>
+      <ViewTabs
+        label="Activity"
+        tabs={ACTIVITY_TABS}
+        tab={tab}
+        onChange={setTab}
+        action={
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={!loadedProfile}
+              onClick={() => setEditingGoals(true)}
+            >
+              <Target aria-hidden="true" />
+              Goals
+            </Button>
+            <Button size="sm" onClick={() => setEditing({ kind: "steps", day })}>
+              <Plus aria-hidden="true" />
+              Record activity
+            </Button>
+          </>
+        }
+      >
+        <Loaded resource={activities.state} reload={activities.reload} skeleton="h-72">
+          {({ activities: all }) => {
+            const byDay = totalsByDay(all);
+            const week = recentDays(today);
+            if (tab === "history") {
+              return (
+                <History
+                  activities={all}
+                  byDay={byDay}
+                  goals={goals}
+                  today={today}
+                  units={units}
+                  kind={kind}
+                  onKindChange={setKind}
+                  onEdit={setEditing}
+                  onDelete={(activity) => void remove(activity)}
+                />
+              );
+            }
+            return (
+              <>
+                <DayStepper day={day} today={today} onChange={setDay} />
+                <TodayCard
+                  day={day}
+                  today={today}
+                  totals={dayTotals(byDay, day)}
+                  goals={goals}
+                  onLog={(draft) => setEditing(draft)}
+                />
+                <QuickLog onLog={(next) => setEditing({ kind: next, day })} />
+                <WeekStrip
+                  days={week}
+                  byDay={byDay}
+                  goals={goals}
+                  selected={day}
+                  today={today}
+                  onSelect={setDay}
+                />
+                <Stats
+                  streak={ringStreak(byDay, goals, today)}
+                  summary={summarizeDays(byDay, goals, week)}
+                />
+              </>
+            );
+          }}
+        </Loaded>
+      </ViewTabs>
       <p className="text-xs text-muted-foreground">
         Entered by hand. Orbit doesn’t connect to fitness trackers or estimate activity.
       </p>
@@ -598,7 +624,7 @@ function History({
     <section aria-labelledby="activity-history" className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 id="activity-history" className="text-sm font-semibold">
-          History
+          Past activity
         </h2>
         <Select
           aria-label="Show"
