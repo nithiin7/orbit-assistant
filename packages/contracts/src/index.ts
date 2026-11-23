@@ -94,6 +94,15 @@ export type UpdatePlaceRequest = Schemas["UpdatePlaceRequest"];
 export type PlaceMatch = Schemas["PlaceMatchResponse"];
 export type PlaceMatches = Schemas["PlaceMatchesResponse"];
 export type PlaceSettings = Schemas["PlaceSettingsResponse"];
+
+// People
+export type Person = Schemas["PersonResponse"];
+export type People = Schemas["PeopleResponse"];
+export type PersonDate = Schemas["PersonDateBody"];
+export type PersonDateKind = PersonDate["kind"];
+export type PersonRelationship = Person["relationship"];
+export type CreatePersonRequest = Schemas["CreatePersonRequest"];
+export type UpdatePersonRequest = Schemas["UpdatePersonRequest"];
 export type AchievementProfile = Schemas["AchievementProfileResponse"];
 export type Achievement = Schemas["AchievementResponse"];
 export type AchievementTier = Achievement["tier"];

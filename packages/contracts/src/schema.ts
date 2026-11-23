@@ -1516,6 +1516,50 @@ export interface paths {
         patch: operations["update_place_api_v1_workspaces__workspace_id__places_items__place_id__patch"];
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List people */
+        get: operations["list_people_api_v1_workspaces__workspace_id__people_get"];
+        put?: never;
+        /**
+         * Add a person
+         * @description Dates with `remind_days_before` share one reminder, managed here, that announces the
+         *     soonest one. Reminders carry the name and date only.
+         */
+        post: operations["create_person_api_v1_workspaces__workspace_id__people_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/people/{person_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a person */
+        get: operations["get_person_api_v1_workspaces__workspace_id__people__person_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a person
+         * @description Deletes their dates and their reminder too; notifications already delivered stay.
+         */
+        delete: operations["delete_person_api_v1_workspaces__workspace_id__people__person_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update a person */
+        patch: operations["update_person_api_v1_workspaces__workspace_id__people__person_id__patch"];
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/reminders": {
         parameters: {
             query?: never;
@@ -12130,6 +12174,52 @@ export interface components {
             tags?: string[];
         };
         /**
+         * CreatePersonRequest
+         * @description Add a person. A name is enough; dates with `remind_days_before` get reminders.
+         */
+        CreatePersonRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Relationship
+             * @default friend
+             * @enum {string}
+             */
+            relationship: "family" | "partner" | "friend" | "colleague" | "other";
+            /**
+             * Phone
+             * @default
+             */
+            phone: string;
+            /**
+             * Email
+             * @default
+             */
+            email: string;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /**
+             * Favorite
+             * @default false
+             */
+            favorite: boolean;
+            /** Dates */
+            dates?: components["schemas"]["PersonDateBody"][];
+            /**
+             * Reminder Time
+             * @description 09:00 by default.
+             */
+            reminder_time?: string | null;
+            /**
+             * Timezone
+             * @description For reminders; the user's time zone by default.
+             */
+            timezone?: string | null;
+        };
+        /**
          * CreatePlaceRequest
          * @description Add a place. A name and a country are enough to shade the country on the map; a location
          *     adds a pin.
@@ -12551,7 +12641,7 @@ export interface components {
              * Id
              * @enum {string}
              */
-            id: "today" | "quick_actions" | "attention" | "workspace" | "tasks" | "reminders" | "calendar" | "habits" | "notes" | "documents" | "shopping" | "watchlist" | "places" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "savings_goals" | "workouts" | "water" | "nutrition" | "weight" | "fitness_goals";
+            id: "today" | "quick_actions" | "attention" | "workspace" | "tasks" | "reminders" | "calendar" | "habits" | "notes" | "documents" | "shopping" | "watchlist" | "places" | "people" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "savings_goals" | "workouts" | "water" | "nutrition" | "weight" | "fitness_goals";
             /**
              * Size
              * @description `half` widgets sit side by side on wide screens.
@@ -13590,7 +13680,7 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks" | "places";
+            module: "tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks" | "places" | "people";
             /** Label */
             label: string;
             /** Formats */
@@ -13599,7 +13689,7 @@ export interface components {
         /** ExportModuleRequest */
         ExportModuleRequest: {
             /** Module */
-            module: ("tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks" | "places") | null;
+            module: ("tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks" | "places" | "people") | null;
             /**
              * Format
              * @enum {string}
@@ -16895,6 +16985,14 @@ export interface components {
              */
             payments: components["schemas"]["PaymentItemResponse"][];
         };
+        /** PeopleResponse */
+        PeopleResponse: {
+            /**
+             * People
+             * @description Everyone, by name.
+             */
+            people: components["schemas"]["PersonResponse"][];
+        };
         /** PeriodChangeResponse */
         PeriodChangeResponse: {
             /** Months */
@@ -16920,6 +17018,90 @@ export interface components {
             duration_s: number;
             /** Volume G */
             volume_g: number;
+        };
+        /**
+         * PersonDateBody
+         * @description A date that comes round every year. Without a year, ages and years together aren't
+         *     known; 29 February falls on 28 February in other years.
+         */
+        PersonDateBody: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "birthday" | "anniversary" | "other";
+            /**
+             * Label
+             * @description The date's name; required for `other`, empty otherwise.
+             * @default
+             */
+            label: string;
+            /** Month */
+            month: number;
+            /** Day */
+            day: number;
+            /** Year */
+            year?: number | null;
+            /**
+             * Remind Days Before
+             * @description Days before the date to remind (0 is on the day); null for no reminder.
+             */
+            remind_days_before?: number | null;
+        };
+        /** PersonResponse */
+        PersonResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Relationship
+             * @enum {string}
+             */
+            relationship: "family" | "partner" | "friend" | "colleague" | "other";
+            /**
+             * Phone
+             * @description Empty when not given.
+             */
+            phone: string;
+            /**
+             * Email
+             * @description Empty when not given.
+             */
+            email: string;
+            /**
+             * Note
+             * @description Empty when not given.
+             */
+            note: string;
+            /** Favorite */
+            favorite: boolean;
+            /**
+             * Dates
+             * @description In the order the user listed them.
+             */
+            dates: components["schemas"]["PersonDateBody"][];
+            /**
+             * Reminder Time
+             * Format: time
+             * @description When date reminders fire, in `timezone`.
+             */
+            reminder_time: string;
+            /** Timezone */
+            timezone: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** PersonalRecordResponse */
         PersonalRecordResponse: {
@@ -17878,10 +18060,10 @@ export interface components {
         ReminderCommitmentResponse: {
             /**
              * Kind
-             * @description `loan`, `recurring_payment` for a subscription or bill, `deposit` for a fixed or recurring deposit's maturity, `calendar_alert` for one of a calendar event's alerts (`id` is the alert's), `habit_reminder` for a habit's or routine's reminder time (`id` is the reminder time's), or `document` for a document's expiry, renewal, and review alerts (`id` is the document's).
+             * @description `loan`, `recurring_payment` for a subscription or bill, `deposit` for a fixed or recurring deposit's maturity, `calendar_alert` for one of a calendar event's alerts (`id` is the alert's), `habit_reminder` for a habit's or routine's reminder time (`id` is the reminder time's), `document` for a document's expiry, renewal, and review alerts (`id` is the document's), or `person` for a person's birthday, anniversary, and other dates (`id` is the person's).
              * @enum {string}
              */
-            kind: "loan" | "recurring_payment" | "deposit" | "calendar_alert" | "habit_reminder" | "document";
+            kind: "loan" | "recurring_payment" | "deposit" | "calendar_alert" | "habit_reminder" | "document" | "person";
             /**
              * Id
              * Format: uuid
@@ -18431,12 +18613,12 @@ export interface components {
              * Module
              * @description Repeat to search only some modules.
              */
-            module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places")[];
+            module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places" | "people")[];
             /**
              * Type
              * @description Repeat to search only some record types.
              */
-            type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place")[];
+            type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place" | "person")[];
             /**
              * Date From
              * @description The record's own date: due date, event, transaction, …
@@ -18592,7 +18774,7 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places";
+            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places" | "people";
             /**
              * Total
              * @description Matches under every filter except the module filter.
@@ -20069,12 +20251,12 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places";
+            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places" | "people";
             /**
              * Entity Type
              * @enum {string}
              */
-            entity_type: "task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place";
+            entity_type: "task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place" | "person";
             /**
              * Id
              * Format: uuid
@@ -20166,7 +20348,7 @@ export interface components {
              * Unavailable
              * @description Modules that couldn't be searched.
              */
-            unavailable: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places")[];
+            unavailable: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places" | "people")[];
         };
         /** UnreadCountResponse */
         UnreadCountResponse: {
@@ -20752,6 +20934,31 @@ export interface components {
             end?: string | null;
             /** Status */
             status?: ("confirmed" | "cancelled") | null;
+        };
+        /**
+         * UpdatePersonRequest
+         * @description Change some of a person's fields. Omitted fields keep their values; `dates` replaces all
+         *     of them.
+         */
+        UpdatePersonRequest: {
+            /** Name */
+            name?: string | null;
+            /** Relationship */
+            relationship?: ("family" | "partner" | "friend" | "colleague" | "other") | null;
+            /** Phone */
+            phone?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Favorite */
+            favorite?: boolean | null;
+            /** Dates */
+            dates?: components["schemas"]["PersonDateBody"][] | null;
+            /** Reminder Time */
+            reminder_time?: string | null;
+            /** Timezone */
+            timezone?: string | null;
         };
         /**
          * UpdatePlaceRequest
@@ -26872,6 +27079,239 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    list_people_api_v1_workspaces__workspace_id__people_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeopleResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_person_api_v1_workspaces__workspace_id__people_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePersonRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A date doesn't exist, or there are two birthdays. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_person_api_v1_workspaces__workspace_id__people__person_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's ID. */
+                person_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_person_api_v1_workspaces__workspace_id__people__person_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's ID. */
+                person_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_person_api_v1_workspaces__workspace_id__people__person_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's ID. */
+                person_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePersonRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A date doesn't exist, or there are two birthdays. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -43484,9 +43924,9 @@ export interface operations {
         parameters: {
             query: {
                 /** @description Repeat to search only some modules. */
-                module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places")[];
+                module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places" | "people")[];
                 /** @description Repeat to search only some record types. */
-                type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place")[];
+                type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place" | "person")[];
                 /** @description The record's own date: due date, event, transaction, … */
                 date_from?: string | null;
                 date_to?: string | null;
