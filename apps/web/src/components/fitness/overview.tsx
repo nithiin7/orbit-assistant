@@ -20,7 +20,7 @@ import {
   Trophy,
 } from "lucide-react";
 import Link from "next/link";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useId, useState } from "react";
 
 import { describeApiError } from "@/api/client";
@@ -59,21 +59,8 @@ import { KIND_ICONS } from "./activity-rings";
 import { GoalCard } from "./goals";
 import { FoodEntryDialog } from "./nutrition";
 import { RecordTable } from "./progress";
-import { LineChart, Loaded, shortDate } from "./shared";
+import { Gauge, HEALTH_TONES, type HealthTone, LineChart, Loaded, shortDate } from "./shared";
 import { ActiveWorkoutBanner, StartWorkoutMenu, useStartWorkout, WorkoutRow } from "./workouts";
-
-/** Each card's colour. Classes are written out in full so Tailwind sees them. */
-const TONES = {
-  brand: { chip: "bg-brand-subtle text-brand", stroke: "text-brand" },
-  orange: { chip: "bg-event-orange/12 text-event-orange", stroke: "text-event-orange" },
-  blue: { chip: "bg-event-blue/12 text-event-blue", stroke: "text-event-blue" },
-  violet: { chip: "bg-event-violet/12 text-event-violet", stroke: "text-event-violet" },
-  amber: { chip: "bg-event-amber/12 text-event-amber", stroke: "text-event-amber" },
-  green: { chip: "bg-event-green/12 text-event-green", stroke: "text-event-green" },
-  success: { chip: "bg-success/12 text-success", stroke: "text-success" },
-} as const;
-
-type Tone = keyof typeof TONES;
 
 function More({ view, children }: { view: FitnessView; children: ReactNode }) {
   return (
@@ -101,7 +88,7 @@ function Card({
 }: {
   title: string;
   icon: LucideIcon;
-  tone: Tone;
+  tone: HealthTone;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -118,7 +105,7 @@ function Card({
             aria-hidden="true"
             className={cn(
               "flex size-8 shrink-0 items-center justify-center rounded-xl",
-              TONES[tone].chip,
+              HEALTH_TONES[tone].chip,
             )}
           >
             <Icon className="size-4" />
@@ -131,78 +118,6 @@ function Card({
       </div>
       {children}
     </section>
-  );
-}
-
-/**
- * A circular progress gauge toward a daily target, with the percentage in the middle. Without a
- * target the ring stays empty.
- */
-function Gauge({
-  label,
-  fraction,
-  tone,
-  valueText,
-  icon: Icon,
-}: {
-  label: string;
-  /** 0 to 1, or `null` without a target. */
-  fraction: number | null;
-  tone: Tone;
-  /** Read out for the gauge, such as "1,200 of 2,000 kcal". */
-  valueText: string;
-  /** Shown in the middle when there's no target to measure against. */
-  icon: LucideIcon;
-}) {
-  const percent = fraction === null ? 0 : Math.round(fraction * 100);
-  const offset = 100 - percent;
-  const style: CSSProperties & { "--ring-offset": number } = { "--ring-offset": offset };
-  return (
-    <div
-      role="progressbar"
-      aria-label={label}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={fraction === null ? undefined : percent}
-      aria-valuetext={valueText}
-      className="relative size-24 shrink-0"
-    >
-      <svg viewBox="0 0 100 100" aria-hidden="true" className={cn("size-full", TONES[tone].stroke)}>
-        <circle
-          cx="50"
-          cy="50"
-          r="42"
-          fill="none"
-          strokeWidth="9"
-          stroke="currentColor"
-          className="opacity-15"
-        />
-        {percent > 0 ? (
-          <circle
-            cx="50"
-            cy="50"
-            r="42"
-            fill="none"
-            strokeWidth="9"
-            stroke="currentColor"
-            strokeLinecap="round"
-            pathLength={100}
-            strokeDasharray="100"
-            strokeDashoffset={offset}
-            transform="rotate(-90 50 50)"
-            style={style}
-            className="motion-safe:animate-ring-fill"
-          />
-        ) : null}
-      </svg>
-      <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center">
-        {fraction === null ? (
-          <Icon className={cn("size-6 opacity-60", TONES[tone].stroke)} />
-        ) : (
-          <span className="text-lg font-semibold tabular-nums">{percent}%</span>
-        )}
-      </div>
-    </div>
   );
 }
 

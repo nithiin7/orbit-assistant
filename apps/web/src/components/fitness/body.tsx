@@ -6,6 +6,7 @@ import {
   Camera,
   Columns2,
   Gauge,
+  History as HistoryIcon,
   Minus,
   MoreHorizontal,
   MoveVertical,
@@ -109,7 +110,7 @@ export function BodyView({ workspaceId, today }: { workspaceId: string; today: s
           return (
             <div className="space-y-4">
               <WeightCard trend={weight} weights={weights} units={units} />
-              <StatGrid>
+              <StatGrid hero icon={Scale}>
                 <StatTile
                   label="BMI"
                   icon={Gauge}
@@ -276,6 +277,8 @@ function Circumferences({ list, units }: { list: readonly Measurement[]; units: 
   });
   return (
     <Section
+      icon={Ruler}
+      tone="violet"
       title="Measurements"
       description="The latest of each, with the change since you last measured it."
     >
@@ -323,6 +326,8 @@ function History({
   const shown = showAll ? newest : newest.slice(0, HISTORY_PREVIEW);
   return (
     <Section
+      icon={HistoryIcon}
+      tone="slate"
       title="History"
       description={`${list.length} ${list.length === 1 ? "entry" : "entries"}`}
     >
@@ -542,6 +547,8 @@ function PhotosSection({ workspaceId, today }: { workspaceId: string; today: str
 
   return (
     <Section
+      icon={Camera}
+      tone="rose"
       title="Progress photos"
       description="Private to you. Stored on Orbit’s server with your files, never at a public link."
       action={

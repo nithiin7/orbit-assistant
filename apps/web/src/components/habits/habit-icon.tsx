@@ -89,6 +89,38 @@ export const COLOR_STYLES: Record<HabitColor, { tile: string; fill: string; text
 };
 
 /** A habit's or routine's icon on a tile of its color. Decorative: the name is beside it. */
+/** Colours for section headings. Classes are written out in full so Tailwind sees them. */
+const SECTION_TONES = {
+  brand: "bg-brand-subtle text-brand",
+  green: "bg-event-green/12 text-event-green",
+  amber: "bg-event-amber/12 text-event-amber",
+  blue: "bg-event-blue/12 text-event-blue",
+  violet: "bg-event-violet/12 text-event-violet",
+  slate: "bg-event-slate/12 text-event-slate",
+  success: "bg-success/12 text-success",
+} as const;
+
+/** A section's icon in a tinted chip, before its heading. */
+export function SectionChip({
+  icon: Icon,
+  tone,
+}: {
+  icon: LucideIcon;
+  tone: keyof typeof SECTION_TONES;
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "flex size-8 shrink-0 items-center justify-center rounded-xl",
+        SECTION_TONES[tone],
+      )}
+    >
+      <Icon className="size-4" />
+    </span>
+  );
+}
+
 export function HabitTile({
   icon,
   color,

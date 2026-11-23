@@ -588,6 +588,21 @@ describe("HealthPanel: logging a workout", () => {
 });
 
 describe("HealthPanel: water", () => {
+  it("shows the day's water against the target as a ring", async () => {
+    navigation.params = new URLSearchParams("view=water");
+    mockApi({
+      ...session(),
+      [`GET ${WS}/water`]: json({ day: "2030-01-14", entries: [], total_ml: 500, target_ml: 2000 }),
+      [`GET ${WS}/water/history`]: json({ days: [] }),
+    });
+    await renderSignedIn(<HealthPanel />);
+    expect(await screen.findByRole("progressbar", { name: "Water" })).toHaveAttribute(
+      "aria-valuenow",
+      "25",
+    );
+    expect(screen.getByText(/to go of/)).toBeInTheDocument();
+  });
+
   it("adds a custom amount in the person's unit", async () => {
     const user = userEvent.setup();
     navigation.params = new URLSearchParams("view=water");

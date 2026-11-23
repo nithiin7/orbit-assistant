@@ -1,7 +1,15 @@
 "use client";
 
 import type { HabitAnalytics, HabitCategory, HabitTrendPoint } from "@orbit/contracts";
-import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  BarChart3,
+  CalendarDays,
+  ChartColumn,
+  ListChecks,
+  Shapes,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/empty-state";
@@ -13,7 +21,7 @@ import { cn } from "@/utils/common";
 import { formatCalendarDate, monthLabel } from "@/utils/dates";
 
 import { Heatmap } from "./habit-heatmap";
-import { COLOR_STYLES, HabitTile } from "./habit-icon";
+import { COLOR_STYLES, HabitTile, SectionChip } from "./habit-icon";
 import { ViewError } from "./view-error";
 
 export type AnalyticsRange = "30" | "90" | "182" | "365";
@@ -117,21 +125,28 @@ function Loaded({ analytics }: { analytics: HabitAnalytics }) {
 
   return (
     <div className="space-y-6">
-      <dl className="grid grid-cols-2 gap-3 @2xl:grid-cols-4">
-        <Tile
-          label="Completion rate"
-          value={formatRate(met + missed ? met / (met + missed) : null)}
+      <div className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-brand-subtle/80 via-card to-card p-4 shadow-elevation-1 @3xl:p-5">
+        <ChartColumn
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-8 -right-8 size-44 -rotate-12 text-brand opacity-[0.05]"
         />
-        <Tile label="Completions" value={String(completions)} />
-        <Tile label="Days or weeks met" value={String(met)} />
-        <Tile label="Habits tracked" value={String(analytics.habits.length)} />
-      </dl>
+        <dl className="relative grid grid-cols-2 gap-3 @2xl:grid-cols-4">
+          <Tile
+            label="Completion rate"
+            value={formatRate(met + missed ? met / (met + missed) : null)}
+          />
+          <Tile label="Completions" value={String(completions)} />
+          <Tile label="Days or weeks met" value={String(met)} />
+          <Tile label="Habits tracked" value={String(analytics.habits.length)} />
+        </dl>
+      </div>
 
       <section
         aria-labelledby="calendar-heading"
-        className="space-y-3 rounded-xl border bg-card p-4"
+        className="space-y-3 rounded-2xl border bg-card p-4 @3xl:p-5"
       >
-        <h2 id="calendar-heading" className="text-sm font-semibold">
+        <h2 id="calendar-heading" className="flex items-center gap-2.5 text-sm font-semibold">
+          <SectionChip icon={CalendarDays} tone="green" />
           Completion calendar
         </h2>
         <Heatmap cells={cells} label="Habits completed by day" />
@@ -151,16 +166,22 @@ function Loaded({ analytics }: { analytics: HabitAnalytics }) {
       </div>
 
       <div className="grid gap-6 @4xl:grid-cols-2">
-        <section aria-labelledby="best-heading" className="rounded-xl border bg-card p-4">
-          <h2 id="best-heading" className="flex items-center gap-2 text-sm font-semibold">
-            <TrendingUp className="size-4 text-success" aria-hidden="true" />
+        <section
+          aria-labelledby="best-heading"
+          className="space-y-3 rounded-2xl border bg-card p-4 @3xl:p-5"
+        >
+          <h2 id="best-heading" className="flex items-center gap-2.5 text-sm font-semibold">
+            <SectionChip icon={TrendingUp} tone="success" />
             Going well
           </h2>
           <HabitRanking items={best} empty="Track a little longer to see what’s working." />
         </section>
-        <section aria-labelledby="declining-heading" className="rounded-xl border bg-card p-4">
-          <h2 id="declining-heading" className="flex items-center gap-2 text-sm font-semibold">
-            <TrendingDown className="size-4 text-muted-foreground" aria-hidden="true" />
+        <section
+          aria-labelledby="declining-heading"
+          className="space-y-3 rounded-2xl border bg-card p-4 @3xl:p-5"
+        >
+          <h2 id="declining-heading" className="flex items-center gap-2.5 text-sm font-semibold">
+            <SectionChip icon={TrendingDown} tone="amber" />
             Could use attention
           </h2>
           <HabitRanking
@@ -171,8 +192,12 @@ function Loaded({ analytics }: { analytics: HabitAnalytics }) {
         </section>
       </div>
 
-      <section aria-labelledby="category-heading" className="rounded-xl border bg-card p-4">
-        <h2 id="category-heading" className="text-sm font-semibold">
+      <section
+        aria-labelledby="category-heading"
+        className="space-y-3 rounded-2xl border bg-card p-4 @3xl:p-5"
+      >
+        <h2 id="category-heading" className="flex items-center gap-2.5 text-sm font-semibold">
+          <SectionChip icon={Shapes} tone="violet" />
           By category
         </h2>
         <ul className="mt-3 space-y-2.5">
@@ -196,10 +221,11 @@ function Loaded({ analytics }: { analytics: HabitAnalytics }) {
       </section>
 
       <section aria-labelledby="all-heading" className="space-y-2">
-        <h2 id="all-heading" className="text-sm font-semibold">
+        <h2 id="all-heading" className="flex items-center gap-2.5 text-sm font-semibold">
+          <SectionChip icon={ListChecks} tone="slate" />
           Every habit
         </h2>
-        <div className="overflow-x-auto rounded-xl border bg-card">
+        <div className="overflow-x-auto rounded-2xl border bg-card">
           <table className="w-full text-sm">
             <thead className="text-left text-xs text-muted-foreground">
               <tr className="border-b">
@@ -251,9 +277,9 @@ function Loaded({ analytics }: { analytics: HabitAnalytics }) {
 
 function Tile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border bg-card p-3">
+    <div className="rounded-xl border bg-card/80 p-4 backdrop-blur-sm">
       <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="mt-1 text-xl font-semibold tabular-nums">{value}</dd>
+      <dd className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">{value}</dd>
     </div>
   );
 }
@@ -270,8 +296,12 @@ function Trend({
   label: (point: HabitTrendPoint) => string;
 }) {
   return (
-    <section aria-labelledby={`trend-${title}`} className="rounded-xl border bg-card p-4">
-      <h2 id={`trend-${title}`} className="text-sm font-semibold">
+    <section
+      aria-labelledby={`trend-${title}`}
+      className="space-y-3 rounded-2xl border bg-card p-4 @3xl:p-5"
+    >
+      <h2 id={`trend-${title}`} className="flex items-center gap-2.5 text-sm font-semibold">
+        <SectionChip icon={ChartColumn} tone="brand" />
         {title} consistency
       </h2>
       {points.length === 0 ? (

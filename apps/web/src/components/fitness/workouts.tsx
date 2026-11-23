@@ -270,6 +270,8 @@ export function WorkoutsView({
           </p>
         ) : (
           <Section
+            icon={Play}
+            tone="brand"
             title="Start a workout"
             description="Pick a template, or start empty and add exercises as you go."
           >
@@ -337,6 +339,8 @@ function WorkoutHistory({ workspaceId }: { workspaceId: string }) {
 
   return (
     <Section
+      icon={History}
+      tone="slate"
       title="Past workouts"
       action={
         <div role="group" aria-label="Show" className="flex gap-1">

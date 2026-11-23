@@ -5,7 +5,9 @@ import type { Equipment, Exercise, ExerciseCategory, Muscle } from "@orbit/contr
 import {
   Archive,
   ArchiveRestore,
+  ChartLine,
   Dumbbell,
+  History,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -417,7 +419,7 @@ export function ExerciseDetail({
                 ) : null}
               </div>
               {records.length > 0 ? (
-                <StatGrid>
+                <StatGrid hero icon={Dumbbell}>
                   {records.map((record) => (
                     <StatTile
                       key={record.kind}
@@ -431,6 +433,8 @@ export function ExerciseDetail({
               ) : null}
               {chart.length > 1 ? (
                 <Section
+                  icon={ChartLine}
+                  tone="brand"
                   title={weighted ? "Estimated 1-rep max over time" : "Best per workout"}
                   description={weighted ? "An estimate from your sets of 1 to 10 reps." : undefined}
                 >
@@ -449,7 +453,7 @@ export function ExerciseDetail({
                   />
                 </Section>
               ) : null}
-              <Section title="History">
+              <Section icon={History} tone="slate" title="History">
                 {points.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     No completed workouts with this exercise yet.

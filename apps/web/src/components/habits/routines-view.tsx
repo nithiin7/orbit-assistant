@@ -13,6 +13,7 @@ import {
   ArrowLeft,
   Check,
   Clock,
+  History,
   ListChecks,
   MoreHorizontal,
   NotebookPen,
@@ -43,7 +44,7 @@ import { noteHref } from "@/lib/note-links";
 import { cn } from "@/utils/common";
 import { formatCalendarDate, localDateString } from "@/utils/dates";
 
-import { HabitTile, ProgressBar } from "./habit-icon";
+import { HabitTile, ProgressBar, SectionChip } from "./habit-icon";
 import { ViewError } from "./view-error";
 
 function schedule(routine: Routine): string {
@@ -92,7 +93,10 @@ export function RoutineListView({
   return (
     <ul className="grid gap-3 @2xl:grid-cols-2 @6xl:grid-cols-3">
       {state.data.routines.map((routine) => (
-        <li key={routine.id} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+        <li
+          key={routine.id}
+          className="flex flex-col gap-3 rounded-2xl border bg-card p-4 transition-[border-color,translate] duration-150 hover:-translate-y-0.5 hover:border-brand/40 motion-reduce:hover:translate-y-0"
+        >
           <div className="flex items-start gap-3">
             <HabitTile icon={routine.icon} color={routine.color} />
             <div className="min-w-0 flex-1">
@@ -273,7 +277,7 @@ function RoutineDetail({
           {doneToday ? (
             <p
               role="status"
-              className="flex items-center gap-2 rounded-xl border border-success/40 bg-success/5 px-4 py-3 text-sm font-medium"
+              className="flex items-center gap-2 rounded-2xl border border-success/40 bg-success/5 px-4 py-3 text-sm font-medium"
             >
               <Check className="size-4 text-success" strokeWidth={3} aria-hidden="true" />
               Completed today. Nice work.
@@ -289,8 +293,9 @@ function RoutineDetail({
               onOpenNote={onOpenNote}
             />
           ) : (
-            <section aria-labelledby="steps-heading" className="rounded-xl border bg-card p-4">
-              <h3 id="steps-heading" className="text-sm font-semibold">
+            <section aria-labelledby="steps-heading" className="rounded-2xl border bg-card p-4">
+              <h3 id="steps-heading" className="flex items-center gap-2.5 text-sm font-semibold">
+                <SectionChip icon={ListChecks} tone="brand" />
                 Steps
               </h3>
               {routine.steps.length === 0 ? (
@@ -318,8 +323,9 @@ function RoutineDetail({
           )}
         </div>
         <aside className="space-y-6">
-          <section aria-labelledby="history-heading" className="rounded-xl border bg-card p-4">
-            <h3 id="history-heading" className="text-sm font-semibold">
+          <section aria-labelledby="history-heading" className="rounded-2xl border bg-card p-4">
+            <h3 id="history-heading" className="flex items-center gap-2.5 text-sm font-semibold">
+              <SectionChip icon={History} tone="slate" />
               Past sessions
             </h3>
             <SessionHistory sessions={sessions} />
@@ -368,9 +374,13 @@ function SessionRunner({
   }
 
   return (
-    <section aria-labelledby="session-heading" className="space-y-4 rounded-xl border bg-card p-4">
+    <section
+      aria-labelledby="session-heading"
+      className="space-y-4 rounded-2xl border bg-card p-4 shadow-elevation-1"
+    >
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 id="session-heading" className="text-sm font-semibold">
+        <h3 id="session-heading" className="flex items-center gap-2.5 text-sm font-semibold">
+          <SectionChip icon={Play} tone="brand" />
           In progress · {formatCalendarDate(session.day)}
         </h3>
         <span className="text-sm text-muted-foreground tabular-nums">

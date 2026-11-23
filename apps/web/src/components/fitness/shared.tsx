@@ -12,7 +12,15 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  type KeyboardEvent,
+  type ReactNode,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 
 import { describeApiError } from "@/api/client";
 import { type LinkOwner, type LinkTarget, setFitnessLink } from "@/api/fitness";
@@ -32,19 +40,37 @@ import { formatCalendarDate } from "@/utils/dates";
 
 import { ViewError } from "../habits/view-error";
 
+/** Colours for Health cards and gauges. Classes are written out in full so Tailwind sees them. */
+export const HEALTH_TONES = {
+  brand: { chip: "bg-brand-subtle text-brand", stroke: "text-brand" },
+  orange: { chip: "bg-event-orange/12 text-event-orange", stroke: "text-event-orange" },
+  blue: { chip: "bg-event-blue/12 text-event-blue", stroke: "text-event-blue" },
+  violet: { chip: "bg-event-violet/12 text-event-violet", stroke: "text-event-violet" },
+  amber: { chip: "bg-event-amber/12 text-event-amber", stroke: "text-event-amber" },
+  green: { chip: "bg-event-green/12 text-event-green", stroke: "text-event-green" },
+  rose: { chip: "bg-event-rose/12 text-event-rose", stroke: "text-event-rose" },
+  slate: { chip: "bg-event-slate/12 text-event-slate", stroke: "text-event-slate" },
+  success: { chip: "bg-success/12 text-success", stroke: "text-success" },
+} as const;
+
+export type HealthTone = keyof typeof HEALTH_TONES;
+
 /** A titled card for one part of a view, with an optional action beside the title. */
 export function Section({
   title,
   description,
   icon: Icon,
+  tone = "brand",
   action,
   children,
   className,
 }: {
   title: string;
   description?: string;
-  /** Marks the section as a heading over a list (a meal over its foods), set apart from it. */
+  /** A tinted icon before the title. */
   icon?: LucideIcon;
+  /** The icon chip's colour. */
+  tone?: HealthTone;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -53,20 +79,23 @@ export function Section({
   return (
     <section
       aria-labelledby={id}
-      className={cn("space-y-3 rounded-xl border bg-card p-4", className)}
+      className={cn("space-y-3 rounded-2xl border bg-card p-4 @3xl:p-5", className)}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2.5">
           {Icon ? (
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-subtle text-brand">
+            <span
+              aria-hidden="true"
+              className={cn(
+                "flex size-8 shrink-0 items-center justify-center rounded-xl",
+                HEALTH_TONES[tone].chip,
+              )}
+            >
               <Icon aria-hidden="true" className="size-4" />
             </span>
           ) : null}
           <div className="space-y-0.5">
-            <h2
-              id={id}
-              className={cn("font-semibold", Icon ? "text-base tracking-tight" : "text-sm")}
-            >
+            <h2 id={id} className="text-sm font-semibold">
               {title}
             </h2>
             {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
@@ -162,6 +191,82 @@ export function ViewTabs<T extends string>({
         className="animate-page-in space-y-4"
       >
         {children}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A circular progress gauge toward a daily target, with the percentage in the middle. Without a
+ * target the ring stays empty.
+ */
+export function Gauge({
+  label,
+  fraction,
+  tone,
+  valueText,
+  icon: Icon,
+}: {
+  label: string;
+  /** 0 to 1, or `null` without a target. */
+  fraction: number | null;
+  tone: HealthTone;
+  /** Read out for the gauge, such as "1,200 of 2,000 kcal". */
+  valueText: string;
+  /** Shown in the middle when there's no target to measure against. */
+  icon: LucideIcon;
+}) {
+  const percent = fraction === null ? 0 : Math.round(fraction * 100);
+  const offset = 100 - percent;
+  const style: CSSProperties & { "--ring-offset": number } = { "--ring-offset": offset };
+  return (
+    <div
+      role="progressbar"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={fraction === null ? undefined : percent}
+      aria-valuetext={valueText}
+      className="relative size-24 shrink-0"
+    >
+      <svg
+        viewBox="0 0 100 100"
+        aria-hidden="true"
+        className={cn("size-full", HEALTH_TONES[tone].stroke)}
+      >
+        <circle
+          cx="50"
+          cy="50"
+          r="42"
+          fill="none"
+          strokeWidth="9"
+          stroke="currentColor"
+          className="opacity-15"
+        />
+        {percent > 0 ? (
+          <circle
+            cx="50"
+            cy="50"
+            r="42"
+            fill="none"
+            strokeWidth="9"
+            stroke="currentColor"
+            strokeLinecap="round"
+            pathLength={100}
+            strokeDasharray="100"
+            strokeDashoffset={offset}
+            transform="rotate(-90 50 50)"
+            style={style}
+            className="motion-safe:animate-ring-fill"
+          />
+        ) : null}
+      </svg>
+      <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center">
+        {fraction === null ? (
+          <Icon className={cn("size-6 opacity-60", HEALTH_TONES[tone].stroke)} />
+        ) : (
+          <span className="text-lg font-semibold tabular-nums">{percent}%</span>
+        )}
       </div>
     </div>
   );

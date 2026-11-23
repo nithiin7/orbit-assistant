@@ -1,7 +1,7 @@
 "use client";
 
 import type { PersonalRecord } from "@orbit/contracts";
-import { Trophy } from "lucide-react";
+import { BicepsFlexed, CalendarDays, ChartColumn, Trophy } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -56,7 +56,7 @@ export function ProgressView({ workspaceId, today }: { workspaceId: string; toda
           const weekly = data.weekly.length > 16 ? data.monthly : data.weekly;
           return (
             <div className="space-y-4">
-              <StatGrid>
+              <StatGrid hero icon={Trophy}>
                 <StatTile label="Workouts" value={data.workouts}>
                   {data.total_weeks > 0
                     ? `${(data.workouts / data.total_weeks).toFixed(1)} a week on average`
@@ -79,6 +79,8 @@ export function ProgressView({ workspaceId, today }: { workspaceId: string; toda
               </StatGrid>
               <div className="grid gap-4 @4xl:grid-cols-2">
                 <Section
+                  icon={CalendarDays}
+                  tone="brand"
                   title={weekly === data.weekly ? "Workouts per week" : "Workouts per month"}
                 >
                   <BarChart
@@ -87,7 +89,7 @@ export function ProgressView({ workspaceId, today }: { workspaceId: string; toda
                     format={(n) => `${n} workouts`}
                   />
                 </Section>
-                <Section title="Training volume">
+                <Section icon={ChartColumn} tone="orange" title="Training volume">
                   <BarChart
                     title="Volume per period"
                     bars={weekly.map((p) => ({
@@ -99,6 +101,8 @@ export function ProgressView({ workspaceId, today }: { workspaceId: string; toda
                 </Section>
               </div>
               <Section
+                icon={BicepsFlexed}
+                tone="rose"
                 title="Muscle groups"
                 description="Completed working sets by primary muscle."
               >
@@ -133,7 +137,7 @@ export function ProgressView({ workspaceId, today }: { workspaceId: string; toda
           );
         }}
       </Loaded>
-      <Section title="Personal records" description={ESTIMATE_NOTE}>
+      <Section icon={Trophy} tone="amber" title="Personal records" description={ESTIMATE_NOTE}>
         <Loaded resource={records.state} reload={records.reload} skeleton="h-32">
           {({ records: list }) => <RecordTable records={list} units={units} />}
         </Loaded>
