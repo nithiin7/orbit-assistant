@@ -250,6 +250,9 @@ describe("DocumentsPanel", () => {
       "Expires in 5 days",
     );
     expect(screen.getByRole("button", { name: /Expiring in 30 days/ })).toHaveTextContent("1");
+    expect(
+      screen.getByRole("heading", { name: "1 document expires within 30 days" }),
+    ).toBeInTheDocument();
     const rail = screen.getAllByRole("navigation", { name: "Documents" })[0]!;
     expect(within(rail).getByRole("button", { name: /Garage, 1 document/ })).toBeInTheDocument();
     expect(within(rail).getByRole("button", { name: /Insurance, 1 document/ })).toBeInTheDocument();

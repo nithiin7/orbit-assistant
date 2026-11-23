@@ -6,12 +6,10 @@ import {
   ArchiveRestore,
   Banknote,
   CreditCard,
-  HandCoins,
   Landmark,
   LineChart,
   type LucideIcon,
   Pencil,
-  PiggyBank,
   Plus,
   Smartphone,
   Star,
@@ -29,6 +27,7 @@ import { accountTypeLabel, formatMoney } from "@/lib/finance";
 import { cn } from "@/utils/common";
 
 import { Chip, SectionHeading } from "./finance-meta";
+import { ACCOUNT_TYPE_ICONS as TYPE_ICONS } from "./finance-meta";
 import { AccountBalance } from "./finance-overview";
 import type { FinanceData } from "./finance-view";
 import { EndedSection } from "./panel";
@@ -52,17 +51,6 @@ const ACCOUNT_GROUPS: readonly { label: string; icon: LucideIcon; types: Finance
     { label: "Loans", icon: Landmark, types: ["loan"] },
     { label: "Other", icon: Wallet, types: ["other"] },
   ];
-
-const TYPE_ICONS: Record<FinanceAccountType, LucideIcon> = {
-  bank: Landmark,
-  savings: PiggyBank,
-  cash: Banknote,
-  credit_card: CreditCard,
-  wallet: Smartphone,
-  investment: LineChart,
-  loan: HandCoins,
-  other: Wallet,
-};
 
 export function AccountsView({
   workspaceId,

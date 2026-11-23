@@ -1,7 +1,30 @@
-import type { LucideIcon } from "lucide-react";
+import type { FinanceAccountType } from "@orbit/contracts";
+import {
+  Banknote,
+  CreditCard,
+  HandCoins,
+  Landmark,
+  LineChart,
+  type LucideIcon,
+  PiggyBank,
+  Smartphone,
+  Wallet,
+} from "lucide-react";
 import type { ReactNode } from "react";
 
 import { cn } from "@/utils/common";
+
+/** The icon for each kind of account, wherever accounts are listed. */
+export const ACCOUNT_TYPE_ICONS: Record<FinanceAccountType, LucideIcon> = {
+  bank: Landmark,
+  savings: PiggyBank,
+  cash: Banknote,
+  credit_card: CreditCard,
+  wallet: Smartphone,
+  investment: LineChart,
+  loan: HandCoins,
+  other: Wallet,
+};
 
 export type ChipTone = "danger" | "warning" | "success" | "brand" | "muted" | "quiet";
 

@@ -6,7 +6,7 @@ import { cn } from "@/utils/common";
 /** A tile's accent: what the figure is about, shown as the color of its icon chip. */
 export type TileAccent = "brand" | "income" | "spending" | "positive" | "negative" | "neutral";
 
-const ACCENTS: Record<TileAccent, string> = {
+export const ACCENTS: Record<TileAccent, string> = {
   brand: "bg-brand-subtle text-brand",
   income: "bg-chart-1/12 text-chart-1",
   spending: "bg-chart-2/12 text-chart-2",

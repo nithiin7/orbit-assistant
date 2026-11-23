@@ -117,6 +117,13 @@ describe("HabitsPanel: Today", () => {
     const toDo = await screen.findByRole("region", { name: "To do" });
     expect(within(toDo).getByRole("link", { name: "Read" })).toBeInTheDocument();
     expect(screen.getByText("0 of 1 done · 0%")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "A fresh start. Pick one to begin with." }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: "Today’s progress" })).toHaveAttribute(
+      "aria-valuenow",
+      "0",
+    );
 
     await user.click(screen.getByRole("button", { name: "Mark Read done" }));
     expect(await screen.findByRole("region", { name: "Done" })).toBeInTheDocument();

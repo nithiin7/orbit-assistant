@@ -396,6 +396,11 @@ describe("ShoppingPanel", () => {
     await renderSignedIn(<ShoppingPanel />);
 
     expect(await screen.findByText("1 of 2 bought")).toBeInTheDocument();
+    expect(screen.getByText(/^1 item to buy/)).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: "Bought" })).toHaveAttribute(
+      "aria-valuenow",
+      "50",
+    );
     expect(await screen.findByRole("heading", { name: "To buy" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Bought" })).toBeInTheDocument();
   });

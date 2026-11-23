@@ -1,8 +1,16 @@
 "use client";
 
 import type { Currency, FinanceAccount } from "@orbit/contracts";
-import { ArrowDownLeft, ArrowRight, ArrowUpRight, Receipt, Scale } from "lucide-react";
-import { useMemo } from "react";
+import {
+  ArrowDownLeft,
+  ArrowRight,
+  ArrowUpRight,
+  ChartColumn,
+  ChartPie,
+  Receipt,
+  Wallet,
+} from "lucide-react";
+import { type ReactNode, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,9 +22,9 @@ import { monthLabel } from "@/utils/dates";
 import { BudgetSummary } from "./budget-summary";
 import { CommitmentsSummary } from "./commitments-summary";
 import { CategoryBreakdown, TrendChart } from "./finance-charts";
+import { ACCOUNT_TYPE_ICONS as TYPE_ICONS } from "./finance-meta";
 import type { FinanceData } from "./finance-view";
 import { LoadError, Panel } from "./panel";
-import { StatGrid, StatTile } from "./stat-tile";
 import { TransactionItem } from "./transaction-item";
 import { CurrencySwitcher, MonthSwitcher, ViewHeader } from "./view-header";
 
@@ -68,7 +76,7 @@ export function FinanceOverview({
           aria-busy={refreshing}
           className={cn("space-y-6 transition-opacity duration-150", refreshing && "opacity-70")}
         >
-          <CashFlowTiles {...resource.data.summary} currency={currency} />
+          <CashFlowHero {...resource.data.summary} month={month} currency={currency} />
 
           {/* A dashboard of cards: one column on phones, two from a medium column, three on very
               wide ones. Budget, goal, and commitment cards appear once the workspace has them. */}
@@ -76,6 +84,8 @@ export function FinanceOverview({
             <Panel
               title="Income and spending"
               description="The last six months."
+              icon={ChartColumn}
+              accent="income"
               className="@3xl/list:col-span-2"
             >
               <TrendChart
@@ -84,7 +94,12 @@ export function FinanceOverview({
                 selected={month}
               />
             </Panel>
-            <Panel title="Spending by category" description="Transfers aren’t spending.">
+            <Panel
+              title="Spending by category"
+              description="Transfers aren’t spending."
+              icon={ChartPie}
+              accent="spending"
+            >
               {resource.data.spending.categories.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No spending this month.</p>
               ) : (
@@ -117,6 +132,8 @@ export function FinanceOverview({
             />
             <Panel
               title="Latest this month"
+              icon={Receipt}
+              accent="neutral"
               flush
               action={
                 <Button variant="ghost" size="sm" onClick={() => onShowTab("transactions")}>
@@ -126,10 +143,9 @@ export function FinanceOverview({
               }
             >
               {resource.data.recent.length === 0 ? (
-                <div className="flex items-center gap-3 px-5 pb-5 text-sm text-muted-foreground">
-                  <Receipt className="size-4" aria-hidden="true" />
+                <p className="mx-5 mb-5 rounded-xl border border-dashed px-3 py-4 text-center text-sm text-muted-foreground">
                   Nothing recorded in {monthLabel(month)}.
-                </div>
+                </p>
               ) : (
                 <ul className="@container/rows divide-y border-t">
                   {resource.data.recent.map((transaction) => (
@@ -151,13 +167,18 @@ export function FinanceOverview({
   );
 }
 
-function CashFlowTiles({
+/**
+ * The month's cash flow as one card: net cash flow in large type, how income split between
+ * spending and what was kept, and income and spending beside it.
+ */
+function CashFlowHero({
   income,
   expenses,
   refunds,
   net_expenses,
   net,
   transactions,
+  month,
   currency,
 }: {
   income: number;
@@ -166,44 +187,118 @@ function CashFlowTiles({
   net_expenses: number;
   net: number;
   transactions: number;
+  month: string;
   currency: Currency;
 }) {
   const savedShare = income > 0 && net > 0 ? Math.round((net / income) * 100) : null;
+  // How much of the income went on spending; past 100% the bar is all spending.
+  const spentShare = income > 0 ? Math.min(100, Math.round((net_expenses / income) * 100)) : null;
   return (
-    <StatGrid>
-      <StatTile
-        label="Income"
-        icon={ArrowDownLeft}
-        accent="income"
-        value={formatMoney(income, currency)}
+    <section
+      aria-label={`Cash flow, ${monthLabel(month)}`}
+      className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-brand-subtle/80 via-card to-card p-5 shadow-elevation-1 @3xl/list:p-6"
+    >
+      <Wallet
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-8 -right-8 size-44 -rotate-12 text-brand opacity-[0.05]"
+      />
+      <dl className="relative grid gap-6 @4xl/list:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] @4xl/list:items-center">
+        <div className="min-w-0 space-y-3">
+          <div className="space-y-1">
+            <dt className="text-xs font-medium tracking-wide text-brand uppercase">
+              Net cash flow
+            </dt>
+            <dd
+              className={cn(
+                // Money never breaks across lines: a sign or currency symbol stays with its digits.
+                "text-3xl font-semibold tracking-tight whitespace-nowrap tabular-nums @3xl/list:text-4xl",
+                net < 0 && "text-destructive",
+                net > 0 && "text-success",
+              )}
+            >
+              {formatMoney(net, currency, { signDisplay: net === 0 ? "auto" : "always" })}
+            </dd>
+            <dd className="text-sm text-muted-foreground">
+              {transactions === 0
+                ? `Nothing recorded in ${monthLabel(month)} yet.`
+                : net < 0
+                  ? "Spent more than earned"
+                  : savedShare !== null
+                    ? `Saved ${savedShare}% of income`
+                    : "Income minus spending"}
+            </dd>
+          </div>
+          {spentShare !== null ? (
+            <div aria-hidden="true" className="space-y-1.5">
+              <div className="flex h-2.5 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full bg-chart-2 transition-[width] duration-500"
+                  style={{ width: `${spentShare}%` }}
+                />
+                <div className="h-full flex-1 bg-success/70" />
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
+                <span>{spentShare}% spent</span>
+                <span>{100 - spentShare}% kept</span>
+              </div>
+            </div>
+          ) : null}
+        </div>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,11rem),1fr))] gap-3">
+          <FlowFigure
+            label="Income"
+            icon={ArrowDownLeft}
+            iconClass="bg-chart-1/12 text-chart-1"
+            value={formatMoney(income, currency)}
+          >
+            {transactions === 0 ? "Nothing recorded yet" : "Money earned this month"}
+          </FlowFigure>
+          <FlowFigure
+            label="Spending"
+            icon={ArrowUpRight}
+            iconClass="bg-chart-2/12 text-chart-2"
+            value={formatMoney(net_expenses, currency)}
+          >
+            {refunds > 0
+              ? `${formatMoney(expenses, currency)} spent, ${formatMoney(refunds, currency)} refunded`
+              : "Expenses this month"}
+          </FlowFigure>
+        </div>
+      </dl>
+    </section>
+  );
+}
+
+function FlowFigure({
+  label,
+  icon: Icon,
+  iconClass,
+  value,
+  children,
+}: {
+  label: string;
+  icon: typeof ArrowDownLeft;
+  iconClass: string;
+  value: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="relative min-w-0 space-y-1 rounded-xl border bg-card/80 p-4 backdrop-blur-sm">
+      <span
+        aria-hidden="true"
+        className={cn(
+          "absolute top-3.5 right-3.5 flex size-8 items-center justify-center rounded-lg",
+          iconClass,
+        )}
       >
-        {transactions === 0 ? "Nothing recorded yet" : "Money earned this month"}
-      </StatTile>
-      <StatTile
-        label="Spending"
-        icon={ArrowUpRight}
-        accent="spending"
-        value={formatMoney(net_expenses, currency)}
-      >
-        {refunds > 0
-          ? `${formatMoney(expenses, currency)} spent, ${formatMoney(refunds, currency)} refunded`
-          : "Expenses this month"}
-      </StatTile>
-      <StatTile
-        label="Net cash flow"
-        icon={Scale}
-        value={formatMoney(net, currency, { signDisplay: net === 0 ? "auto" : "always" })}
-        tone={net < 0 ? "negative" : net > 0 ? "positive" : "default"}
-        accent={net < 0 ? "negative" : "positive"}
-        emphasis
-      >
-        {net < 0
-          ? "Spent more than earned"
-          : savedShare !== null
-            ? `Saved ${savedShare}% of income`
-            : "Income minus spending"}
-      </StatTile>
-    </StatGrid>
+        <Icon className="size-4" />
+      </span>
+      <dt className="pr-10 text-sm text-muted-foreground">{label}</dt>
+      <dd className="text-xl font-semibold tracking-tight whitespace-nowrap tabular-nums">
+        {value}
+      </dd>
+      <dd className="text-xs text-muted-foreground">{children}</dd>
+    </div>
   );
 }
 
@@ -235,6 +330,8 @@ function Balances({
     <Panel
       title="Account balances"
       description="Excludes investments and assets."
+      icon={Wallet}
+      accent="brand"
       flush
       action={
         <Button variant="ghost" size="sm" onClick={onOpenAccounts}>
@@ -243,14 +340,14 @@ function Balances({
         </Button>
       }
     >
-      <dl className="grid grid-cols-2 gap-4 px-5 pb-4">
-        <div className="min-w-0">
+      <dl className="grid grid-cols-2 gap-3 px-5 pb-4">
+        <div className="min-w-0 rounded-xl bg-muted/60 px-3 py-2.5">
           <dt className="text-xs text-muted-foreground">In your accounts</dt>
           <dd className="text-lg font-semibold whitespace-nowrap tabular-nums">
             {formatMoney(held, currency)}
           </dd>
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 rounded-xl bg-muted/60 px-3 py-2.5">
           <dt className="text-xs text-muted-foreground">Owed on cards and loans</dt>
           <dd className="text-lg font-semibold whitespace-nowrap tabular-nums">
             {formatMoney(owed, currency)}
@@ -258,15 +355,24 @@ function Balances({
         </div>
       </dl>
       <ul className="divide-y border-t">
-        {listed.map((account) => (
-          <li key={account.id} className="flex items-center justify-between gap-3 px-5 py-2.5">
-            <div className="min-w-0">
-              <p className="truncate text-sm">{account.name}</p>
-              <p className="text-xs text-muted-foreground">{accountTypeLabel(account.type)}</p>
-            </div>
-            <AccountBalance account={account} />
-          </li>
-        ))}
+        {listed.map((account) => {
+          const TypeIcon = TYPE_ICONS[account.type];
+          return (
+            <li key={account.id} className="flex items-center gap-3 px-5 py-2.5">
+              <span
+                aria-hidden="true"
+                className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground"
+              >
+                <TypeIcon className="size-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{account.name}</p>
+                <p className="text-xs text-muted-foreground">{accountTypeLabel(account.type)}</p>
+              </div>
+              <AccountBalance account={account} />
+            </li>
+          );
+        })}
       </ul>
       {rest > 0 ? (
         <p className="border-t px-5 py-2.5 text-xs text-muted-foreground">
@@ -315,11 +421,7 @@ function OverviewSkeleton() {
   return (
     <div className="space-y-6">
       <span className="sr-only">Loading this month…</span>
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,13rem),1fr))] gap-4">
-        {[0, 1, 2].map((tile) => (
-          <Skeleton key={tile} className="h-28 rounded-xl" />
-        ))}
-      </div>
+      <Skeleton className="h-44 rounded-2xl" />
       <div className="grid gap-6 @3xl/list:grid-cols-2">
         <Skeleton className="h-64 rounded-xl" />
         <Skeleton className="h-64 rounded-xl" />
