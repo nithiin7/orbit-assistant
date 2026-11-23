@@ -1974,7 +1974,8 @@ shapes and pinless places count but don't show on the offline map.
 ## People
 
 `/people` (Plan): the people who matter, with birthdays, anniversaries, and named yearly dates,
-and a reminder before each one, and the money between you. Wider links are a later phase.
+a reminder before each one, the money between you, gift ideas, and their dates on the calendar,
+in the briefing, and in the assistant.
 
 ### Data
 
@@ -2024,15 +2025,35 @@ mixed or stored; positive while they owe you. Routes: `GET …/people/ledger` (d
 - Web: rail view Money (owed to you / you owe per currency, who owes whom with Settle up,
   recent entries), balance chips on cards, a Money section in the person detail.
 
+### Across Orbit
+
+- **Calendar:** birthdays, anniversaries, and named dates show as read-only all-day items in every
+  calendar view and the dashboard's Today list (`datesBetween` in `lib/people`, from the people
+  list; nothing is stored in the calendar). They open the person and can't be dragged. Like
+  reminders, a date with a year starts the year after it.
+- **Briefing:** source `people` (can be hidden like any source) lists dates from today through the
+  horizon, names and dates only, at most 10, with `today` and `total`; People reminders count as
+  represented elsewhere. People has no AI permission, so it is never sent to a model; the
+  dashboard shows a "celebrations today" chip.
+- **Assistant and agent:** capture kind `add_person` (migration `0051`; name, relationship,
+  birthday month/day/year, note) adds a person whose birthday reminds on the day. It's never
+  added without asking (a model could invent the date), and a spoken yes may approve it. Agent
+  module `people` is capture-only and on by default, like Places.
+- **Gift ideas:** `shopping_items.person_id` (migration `0050`; composite FK to
+  `people(id, workspace_id)` with no ON DELETE; deleting a person clears the link first, so the
+  item stays). `GET …/shopping/gifts` lists them; items take `person_id` on create and update
+  (422 for someone outside the workspace). The person detail adds and ticks ideas on the default
+  list; Shopping shows "For Priya" and a "Gift idea for" choice.
+
 ### Backup and search
 
-Module `people`: all three tables, JSON/CSV. Universal search: name and note (contact details aren't
+Module `people`: all three tables, JSON/CSV; gift links travel with Shopping's items. Universal search: name and note (contact details aren't
 searched or shown).
 
 ### Limitations
 
-No contact import (vCard, Google), photos, payment requests or reminders about money, currency
-conversion, calendar overlay, briefing, or agent tool (phase 3).
+No contact import (vCard, Google), photos, payment requests or reminders about money, or currency
+conversion. Calendar dates aren't exported to `.ics`; the agent can add people but not read them.
 
 ## Achievements and the XP store
 
@@ -2687,7 +2708,7 @@ days. Dismissal key includes the period. No notifications.
    `create_reminder`, `create_event`, `create_note`, `append_to_note`, `add_note_tags`,
    `update_document_details`, and the capture kinds `add_shopping_item`, `create_habit`,
    `log_water`, `log_weight`, `log_activity`, `add_transaction`, `add_place`, `save_link`,
-   `add_watch_item`), ≤ 8 per answer, validated by the module's request schema
+   `add_watch_item`, `add_person`), ≤ 8 per answer, validated by the module's request schema
    (`api/ai_actions.py`). Capture kinds in habits, health, finance, and watchlist are offered only
    while the AI layer may read that module.
 3. Stored `pending`; proposals made while reading records are flagged.
@@ -2704,7 +2725,7 @@ AI, or **Always add** on a card), `services/ai/auto_capture.py` runs a proposal 
 if it is a new task, reminder, note, shopping item, habit, health log, place, link, or watchlist
 title, the message was typed, and every word of its text and every logged number appears in that
 message. Everything else stays a card, including events, changes to existing records, transactions,
-and spoken requests. The composer's **Quick add** menu starts these sentences. The agent keeps its
+new people (their birthdays), and spoken requests. The composer's **Quick add** menu starts these sentences. The agent keeps its
 own autonomy settings.
 
 Plain commands from Quick add (`services/ai/quick_commands.py`, such as `Add a task: …`) become

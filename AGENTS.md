@@ -15,7 +15,8 @@ plans, auto-debit SIPs; opt-in prices from mfapi.in and Yahoo; bank statement im
 Excel, or CSV, reviewed before anything is saved); notes; calendar (RFC 5545);
 habits and routines; documents vault; health and fitness (per person); saved links (`/saved`,
 "bookmarks" in code; opt-in previews); watchlist (opt-in TMDB); places (world map; opt-in online
-maps and Nominatim); people (birthdays, anniversaries, managed reminders; money owed, shares split from expenses); achievements and XP store (`/profile`, per person); dashboard; daily
+maps and Nominatim); people (birthdays, anniversaries, managed reminders; money owed, shares split from expenses;
+gift ideas on shopping lists; dates on the calendar and in the briefing); achievements and XP store (`/profile`, per person); dashboard; daily
 briefing (structured API; AI summary in the dashboard greeting); universal search (SQL, no
 index); AI layer (off by default; OpenAI, Anthropic, Gemini, Ollama, OpenAI-compatible); Google
 and Microsoft integrations; backup and restore; personal agent with approval-gated workflows;
