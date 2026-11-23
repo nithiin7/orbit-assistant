@@ -1317,7 +1317,8 @@ JSON integers; nothing logged about amounts.
 - No loan history before it was added; floating rates via rescheduling; interest per installment
   period (no daily-balance interest, fees, or bundled insurance).
 - Editing a transaction that records a payment isn't blocked; the payment keeps its amounts.
-- Not supported: conversion, split transactions, attachments, bank connections, reconciliation,
+- Not supported: conversion, split categories (shares with people go through
+  [People](#money-owed)), attachments, bank connections, reconciliation,
   undo (except undoing a statement import).
 
 ## Notes and knowledge management
@@ -1973,7 +1974,7 @@ shapes and pinless places count but don't show on the offline map.
 ## People
 
 `/people` (Plan): the people who matter, with birthdays, anniversaries, and named yearly dates,
-and a reminder before each one. Phase 1; money owed and wider links are later phases.
+and a reminder before each one, and the money between you. Wider links are a later phase.
 
 ### Data
 
@@ -2002,15 +2003,36 @@ search and relationship chips) and Upcoming dates (today's celebrated, then this
 month). `?person=<id>` opens a detail dialog (notifications and search link there). Date maths in
 `lib/people` uses the browser's local date. Dashboard widget "Coming up" (next 30 days).
 
+### Money owed
+
+`person_ledger_entries` (migration `0049`): `kind` `they_owe` (you paid or lent), `i_owe`,
+`they_paid`, `i_paid` (repayments); positive `amount` in minor units with `currency`; date,
+description; optional `transaction_id` (FK `ON DELETE SET NULL`; the service keeps it in the
+workspace). Balances are derived (`services/people/ledger.py`), per person and currency, never
+mixed or stored; positive while they owe you. Routes: `GET …/people/ledger` (declared before
+`/{person_id}`), `POST|PATCH|DELETE …/people/{id}/ledger[/{entry_id}]`.
+
+- **Split from an expense:** a `they_owe` share links to one of your expenses (same currency);
+  shares can't exceed it. The expense stays whole in Finance. The transaction dialog's "Split
+  with" records shares after the expense saves (separate requests; a failed share is reported,
+  not retried).
+- **Repayments in Finance:** `record_in_finance` (repayments only) creates a refund (`they_paid`,
+  in the expense category, so spending comes down to your share) or an expense (`i_paid`), via
+  `FinanceService.create(commit=False)`, in the entry's commit. Settle up suggests the account
+  and category of the person's latest split expense. Plain loans stay in People. A recorded
+  repayment keeps its amount (422); deleting an entry leaves its transaction.
+- Web: rail view Money (owed to you / you owe per currency, who owes whom with Settle up,
+  recent entries), balance chips on cards, a Money section in the person detail.
+
 ### Backup and search
 
-Module `people`: both tables, JSON/CSV. Universal search: name and note (contact details aren't
+Module `people`: all three tables, JSON/CSV. Universal search: name and note (contact details aren't
 searched or shown).
 
 ### Limitations
 
-No contact import (vCard, Google), photos, money owed (phase 2), calendar overlay, briefing, or
-agent tool (phase 3).
+No contact import (vCard, Google), photos, payment requests or reminders about money, currency
+conversion, calendar overlay, briefing, or agent tool (phase 3).
 
 ## Achievements and the XP store
 

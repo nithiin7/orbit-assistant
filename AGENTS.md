@@ -15,7 +15,7 @@ plans, auto-debit SIPs; opt-in prices from mfapi.in and Yahoo; bank statement im
 Excel, or CSV, reviewed before anything is saved); notes; calendar (RFC 5545);
 habits and routines; documents vault; health and fitness (per person); saved links (`/saved`,
 "bookmarks" in code; opt-in previews); watchlist (opt-in TMDB); places (world map; opt-in online
-maps and Nominatim); people (birthdays, anniversaries, managed reminders); achievements and XP store (`/profile`, per person); dashboard; daily
+maps and Nominatim); people (birthdays, anniversaries, managed reminders; money owed, shares split from expenses); achievements and XP store (`/profile`, per person); dashboard; daily
 briefing (structured API; AI summary in the dashboard greeting); universal search (SQL, no
 index); AI layer (off by default; OpenAI, Anthropic, Gemini, Ollama, OpenAI-compatible); Google
 and Microsoft integrations; backup and restore; personal agent with approval-gated workflows;
@@ -25,7 +25,8 @@ that caches nothing); opt-in web push for reminders and the daily briefing.
 
 **Not built; never claim or build on unless asked:** OCR, encryption at rest by Orbit,
 email/SMS notifications, email sending, bank or broker feeds, auto-created transactions
-(except auto-debit SIP installments and confirmed statement imports), investment statement (CAS)
+(except auto-debit SIP installments, confirmed statement imports, and repayments the user records
+from People), investment statement (CAS)
 import, CalDAV or `.ics`/Markdown import, CSV import other than bank statements,
 wake words or always-on listening, stored audio, multi-device sync, shared workspaces, an event bus, any vector DB, agent tools that
 delete, pay, send, share, or change permissions.
