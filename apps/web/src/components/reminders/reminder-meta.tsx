@@ -9,6 +9,7 @@ import {
   type LucideIcon,
   Repeat,
   Repeat2,
+  Users,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -87,7 +88,7 @@ export function TimeZoneChip({ timeZone }: { timeZone: string }) {
 type CommitmentKind = NonNullable<Reminder["commitment"]>["kind"];
 
 /** The module that keeps a managed reminder up to date, by what manages it. */
-export type ManagingModule = "finance" | "calendar" | "habits" | "documents";
+export type ManagingModule = "finance" | "calendar" | "habits" | "documents" | "people";
 
 const MANAGING_MODULE: Record<CommitmentKind, ManagingModule> = {
   loan: "finance",
@@ -96,6 +97,7 @@ const MANAGING_MODULE: Record<CommitmentKind, ManagingModule> = {
   calendar_alert: "calendar",
   habit_reminder: "habits",
   document: "documents",
+  person: "people",
 };
 
 export const MODULE_LABEL: Record<ManagingModule, string> = {
@@ -103,6 +105,7 @@ export const MODULE_LABEL: Record<ManagingModule, string> = {
   calendar: "Calendar",
   habits: "Habits",
   documents: "Documents",
+  people: "People",
 };
 
 const MODULE_ICON: Record<ManagingModule, LucideIcon> = {
@@ -110,13 +113,15 @@ const MODULE_ICON: Record<ManagingModule, LucideIcon> = {
   calendar: CalendarDays,
   habits: Repeat2,
   documents: FileText,
+  people: Users,
 };
 
 export function managingModule(kind: CommitmentKind): ManagingModule {
   return MANAGING_MODULE[kind];
 }
 
-/** Marks a reminder another module keeps up to date: Finance, Calendar, Habits, or Documents. */
+/** Marks a reminder another module keeps up to date: Finance, Calendar, Habits, Documents, or
+ * People. */
 export function ManagedChip({ by }: { by: ManagingModule }) {
   const Icon = MODULE_ICON[by];
   return (

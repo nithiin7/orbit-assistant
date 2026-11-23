@@ -34,6 +34,7 @@ import {
   Repeat2,
   Search,
   Sun,
+  Users,
   Wallet,
   Zap,
 } from "lucide-react";
@@ -288,6 +289,7 @@ const SEARCH_ICONS: Record<UniversalSearchModule, LucideIcon> = {
   watchlist: Clapperboard,
   bookmarks: BookmarkIcon,
   places: MapPinned,
+  people: Users,
 };
 
 /** A saved link's address from its search hit, if it's one Orbit will open. */
