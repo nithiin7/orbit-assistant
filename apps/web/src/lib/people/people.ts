@@ -23,11 +23,12 @@ const MAX_YEAR = 2100;
 
 // Views
 
-export type PeopleView = "everyone" | "upcoming";
+export type PeopleView = "everyone" | "upcoming" | "money";
 
 export const PEOPLE_VIEWS: readonly Option<PeopleView>[] = [
   { value: "everyone", label: "Everyone" },
   { value: "upcoming", label: "Upcoming dates" },
+  { value: "money", label: "Money" },
 ];
 
 export function parsePeopleView(params: URLSearchParams): PeopleView {

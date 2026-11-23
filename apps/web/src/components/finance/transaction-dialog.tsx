@@ -8,17 +8,20 @@ import type {
   FinanceTransaction,
   FinanceTransactionType,
 } from "@orbit/contracts";
-import { useId } from "react";
+import { useId, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
 import { LinkedDocuments } from "@/components/documents/linked-documents";
 import { AmountField, DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
+import { newSplitRow, SplitWith } from "@/components/people/split-with";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogFormActions, DialogHeader } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useFinanceMutations } from "@/hooks/use-finance";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
+import { useLedgerMutations, useTransactionSplits } from "@/hooks/use-people";
 import {
   categoryTypeFor,
   DEFAULT_CURRENCY,
@@ -27,6 +30,7 @@ import {
   TRANSACTION_TYPES,
   transactionSchema,
 } from "@/lib/finance";
+import { type ParsedSplit, parseSplits, type SplitRow } from "@/lib/people";
 import { cn } from "@/utils/common";
 import { localDateString } from "@/utils/dates";
 
@@ -65,6 +69,13 @@ export function TransactionDialog({
 }: TransactionDialogProps) {
   const id = useId();
   const { createTransaction, updateTransaction } = useFinanceMutations(workspaceId);
+  const money = useLedgerMutations(workspaceId);
+  const existingSplits = useTransactionSplits(
+    workspaceId,
+    transaction?.type === "expense" ? transaction.id : null,
+  );
+  const [splits, setSplits] = useState<SplitRow[]>([]);
+  const [splitting, setSplitting] = useState(false);
   // Archived accounts take no new transactions, but one already used here stays selectable.
   const current = new Set([transaction?.account_id, transaction?.to_account_id]);
   const usable = accounts.filter((account) => !account.archived || current.has(account.id));
@@ -105,6 +116,7 @@ export function TransactionDialog({
   });
   const { close, dialogProps } = useModalDialog({ onClose, dismissible: !saving });
   const selectedType = useWatch({ control, name: "type" });
+  const amountText = useWatch({ control, name: "amount" });
   const accountId = useWatch({ control, name: "accountId" });
   const source = accounts.find((account) => account.id === accountId);
   const currency = source?.currency ?? DEFAULT_CURRENCY;
@@ -123,6 +135,21 @@ export function TransactionDialog({
       });
       return;
     }
+    let shares: ParsedSplit[] = [];
+    if (values.type === "expense" && splits.length > 0) {
+      const alreadyShared = existingSplits.reduce((sum, entry) => sum + entry.amount, 0);
+      const parsed = parseSplits(
+        splits,
+        (text) => parseAmount(text, currency),
+        amount,
+        alreadyShared,
+      );
+      if ("error" in parsed) {
+        setError("root.server", { message: parsed.error });
+        return;
+      }
+      shares = parsed.splits;
+    }
     const category = categories.find((entry) => entry.id === values.categoryId);
     const body: CreateFinanceTransactionRequest = {
       type: values.type,
@@ -138,7 +165,37 @@ export function TransactionDialog({
       const saved = transaction
         ? await updateTransaction.mutateAsync({ id: transaction.id, changes: body })
         : await createTransaction.mutateAsync(body);
-      onSaved(transaction ? `Saved “${saved.description}”.` : `Recorded “${saved.description}”.`);
+      let message = transaction
+        ? `Saved “${saved.description}”.`
+        : `Recorded “${saved.description}”.`;
+      // Each share is money they owe you, linked to this expense. The transaction is saved
+      // already, so a failed share is reported rather than retried with the whole form.
+      let failed = 0;
+      for (const share of shares) {
+        try {
+          await money.add.mutateAsync({
+            personId: share.personId,
+            body: {
+              kind: "they_owe",
+              amount: share.amount,
+              currency: saved.currency,
+              occurred_on: saved.occurred_on,
+              description: saved.description,
+              transaction_id: saved.id,
+              record_in_finance: null,
+            },
+          });
+        } catch {
+          failed += 1;
+        }
+      }
+      if (shares.length > 0) {
+        message +=
+          failed === 0
+            ? ` Split with ${shares.length} ${shares.length === 1 ? "person" : "people"}.`
+            : " Some shares couldn’t be saved; add them from People.";
+      }
+      onSaved(message);
       close();
     } catch (reason) {
       setError("root.server", {
@@ -283,6 +340,30 @@ export function TransactionDialog({
             </p>
           ) : null}
         </div>
+
+        {selectedType === "expense" ? (
+          splitting || existingSplits.length > 0 ? (
+            <SplitWith
+              workspaceId={workspaceId}
+              currency={currency}
+              total={parseAmount(amountText, currency)}
+              rows={splits}
+              existing={existingSplits}
+              onChange={setSplits}
+            />
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSplitting(true);
+                setSplits([newSplitRow()]);
+              }}
+            >
+              Split with someone
+            </Button>
+          )
+        ) : null}
 
         {transaction ? (
           <LinkedDocuments

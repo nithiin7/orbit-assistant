@@ -1,4 +1,4 @@
-import type { Person } from "@orbit/contracts";
+import type { Person, PersonLedger } from "@orbit/contracts";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -51,7 +51,7 @@ function inDays(days: number) {
 }
 
 /** A stateful list, so mutations that refetch see their changes. */
-function routes(initial: Person[]) {
+function routes(initial: Person[], ledger: PersonLedger = { entries: [], balances: [] }) {
   let items = initial;
   return {
     set: (next: Person[]) => {
@@ -60,6 +60,7 @@ function routes(initial: Person[]) {
     route: {
       [`GET ${PE}`]: () => Response.json({ people: items }),
       [`GET /api/v1/workspaces/${personal.id}/reminders`]: json({ reminders: [] }),
+      [`GET ${PE}/ledger`]: () => Response.json(ledger),
     },
   };
 }
@@ -246,5 +247,96 @@ describe("PeoplePanel", () => {
     expect(
       await screen.findByRole("heading", { name: "Keep your people close" }),
     ).toBeInTheDocument();
+  });
+
+  it("shows who owes whom and settles up with a refund in Finance", async () => {
+    const user = userEvent.setup();
+    search = new URLSearchParams("view=money");
+    const sent: unknown[] = [];
+    const dinner = {
+      id: "t1",
+      type: "expense",
+      description: "Dinner",
+      amount: 100_000,
+      occurred_on: "2030-02-10",
+      account_id: "bank",
+      category_id: "food",
+    };
+    const stamp = "2030-02-10T00:00:00Z";
+    mockApi({
+      ...session,
+      ...routes([person({ id: "a", name: "Priya" }), person({ id: "b", name: "Sam" })], {
+        entries: [
+          {
+            id: "e1",
+            person_id: "a",
+            kind: "they_owe",
+            amount: 50_000,
+            currency: "INR",
+            occurred_on: "2030-02-10",
+            description: "Dinner",
+            transaction: dinner,
+            created_at: stamp,
+            updated_at: stamp,
+          },
+          {
+            id: "e2",
+            person_id: "b",
+            kind: "i_owe",
+            amount: 30_000,
+            currency: "INR",
+            occurred_on: "2030-02-09",
+            description: "Cab",
+            transaction: null,
+            created_at: stamp,
+            updated_at: stamp,
+          },
+        ],
+        balances: [
+          { person_id: "a", currency: "INR", amount: 50_000 },
+          { person_id: "b", currency: "INR", amount: -30_000 },
+        ],
+      }).route,
+      [`GET /api/v1/workspaces/${personal.id}/finance/accounts`]: json({
+        accounts: [{ id: "bank", name: "HDFC", currency: "INR", archived: false }],
+        totals: [],
+      }),
+      [`GET /api/v1/workspaces/${personal.id}/finance/categories`]: json({
+        categories: [{ id: "food", name: "Food and dining", type: "expense" }],
+      }),
+      [`POST ${PE}/a/ledger`]: (request: MockRequest) => {
+        sent.push(request.body);
+        return Response.json({ id: "e3" }, { status: 201 });
+      },
+    });
+
+    await renderSignedIn(<PeoplePanel />);
+
+    expect(await screen.findByRole("region", { name: "Owed to you" })).toHaveTextContent("₹500.00");
+    expect(screen.getByRole("region", { name: "You owe" })).toHaveTextContent("₹300.00");
+    expect(screen.getByRole("link", { name: /Money\s*2/ })).toBeInTheDocument();
+    expect(screen.getByText("Priya owes you")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Settle up with Priya" }));
+    const dialog = await screen.findByRole("dialog", { name: "Settle up with Priya" });
+    expect(within(dialog).getByRole("textbox", { name: "Amount" })).toHaveValue("500.00");
+    expect(
+      within(dialog).getByRole("checkbox", { name: /Also record it in Finance/ }),
+    ).toBeChecked();
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(sent).toEqual([
+        {
+          kind: "they_paid",
+          amount: 50_000,
+          currency: "INR",
+          occurred_on: expect.any(String),
+          description: "Priya paid you back",
+          transaction_id: null,
+          record_in_finance: { account_id: "bank", category_id: "food" },
+        },
+      ]),
+    );
   });
 });

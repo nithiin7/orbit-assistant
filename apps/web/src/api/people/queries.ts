@@ -2,7 +2,7 @@ import type { People, Person } from "@orbit/contracts";
 import { type QueryClient, queryOptions, skipToken } from "@tanstack/react-query";
 
 import type { WithToken } from "../client";
-import { listPeople } from "./requests";
+import { getPeopleLedger, listPeople } from "./requests";
 
 /**
  * Cache keys for a workspace's people. Every key starts with the workspace ID, so one
@@ -11,6 +11,7 @@ import { listPeople } from "./requests";
 export const peopleKeys = {
   all: (workspaceId: string | null) => ["workspaces", workspaceId, "people"] as const,
   list: (workspaceId: string | null) => [...peopleKeys.all(workspaceId), "list"] as const,
+  ledger: (workspaceId: string | null) => [...peopleKeys.all(workspaceId), "ledger"] as const,
 };
 
 /** Everyone. Shared by the People page and the dashboard widget. */
@@ -21,6 +22,17 @@ export function peopleOptions(withToken: WithToken, workspaceId: string | null) 
       workspaceId === null
         ? skipToken
         : ({ signal }) => withToken((token) => listPeople(token, workspaceId, { signal })),
+  });
+}
+
+/** Money between you and everyone. Shared by People and the transaction dialog. */
+export function peopleLedgerOptions(withToken: WithToken, workspaceId: string | null) {
+  return queryOptions({
+    queryKey: peopleKeys.ledger(workspaceId),
+    queryFn:
+      workspaceId === null
+        ? skipToken
+        : ({ signal }) => withToken((token) => getPeopleLedger(token, workspaceId, { signal })),
   });
 }
 

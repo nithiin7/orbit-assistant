@@ -1,19 +1,34 @@
 "use client";
 
-import type { CreatePersonRequest, People, Person, UpdatePersonRequest } from "@orbit/contracts";
+import type {
+  CreatePersonLedgerEntryRequest,
+  CreatePersonRequest,
+  People,
+  Person,
+  PersonLedgerEntry,
+  UpdatePersonLedgerEntryRequest,
+  UpdatePersonRequest,
+} from "@orbit/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { financeKeys } from "@/api/finance";
 import {
+  createLedgerEntry,
   createPerson,
+  deleteLedgerEntry,
   deletePerson,
+  peopleKeys,
+  peopleLedgerOptions,
   peopleOptions,
   replaceCachedPerson,
   updateCachedPeople,
+  updateLedgerEntry,
   updatePerson,
 } from "@/api/people";
 import { reminderKeys } from "@/api/reminders";
 import { queryResource } from "@/hooks/query-resource";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
+import { splitsByTransaction } from "@/lib/people";
 import { useAuth } from "@/providers/auth";
 
 const selectPeople = (data: People) => data.people;
@@ -60,8 +75,64 @@ export function usePeopleMutations(workspaceId: string) {
         people.filter((entry) => entry.id !== person.id),
       );
       refreshReminders();
+      // Their ledger entries go with them.
+      void queryClient.invalidateQueries({ queryKey: peopleKeys.ledger(workspaceId) });
     },
   });
 
   return { add, update, remove };
+}
+
+/** Money between you and everyone: entries newest first, and each person's balances. */
+export function usePeopleLedger(workspaceId: string) {
+  const { withToken } = useAuth();
+  const query = useQuery(peopleLedgerOptions(withToken, workspaceId));
+  return { ledger: queryResource(query, "Couldn’t load money owed."), reload: query.refetch };
+}
+
+/**
+ * Recording, correcting, and deleting money owed. A repayment can record a Finance transaction
+ * and a share links to one, so every change refreshes Finance too.
+ */
+export function useLedgerMutations(workspaceId: string) {
+  const { withToken } = useAuth();
+  const queryClient = useQueryClient();
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: peopleKeys.ledger(workspaceId) });
+    void queryClient.invalidateQueries({ queryKey: financeKeys.all(workspaceId) });
+  };
+
+  const add = useMutation({
+    mutationFn: ({ personId, body }: { personId: string; body: CreatePersonLedgerEntryRequest }) =>
+      withToken((token) => createLedgerEntry(token, workspaceId, personId, body)),
+    onSuccess: refresh,
+  });
+  const update = useMutation({
+    mutationFn: ({
+      entry,
+      changes,
+    }: {
+      entry: PersonLedgerEntry;
+      changes: UpdatePersonLedgerEntryRequest;
+    }) => withToken((token) => updateLedgerEntry(token, workspaceId, entry, changes)),
+    onSuccess: refresh,
+  });
+  const remove = useMutation({
+    mutationFn: (entry: PersonLedgerEntry) =>
+      withToken((token) => deleteLedgerEntry(token, workspaceId, entry)),
+    onSuccess: refresh,
+  });
+  return { add, update, remove };
+}
+
+/** The shares already split from one expense; fetched only while `transactionId` is set. */
+export function useTransactionSplits(workspaceId: string, transactionId: string | null) {
+  const { withToken } = useAuth();
+  const query = useQuery({
+    ...peopleLedgerOptions(withToken, workspaceId),
+    enabled: transactionId !== null,
+  });
+  return query.data && transactionId
+    ? (splitsByTransaction(query.data).get(transactionId) ?? [])
+    : [];
 }

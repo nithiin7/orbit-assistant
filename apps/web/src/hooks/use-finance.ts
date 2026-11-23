@@ -40,6 +40,7 @@ import {
   updateFinanceAccount,
   updateFinanceTransaction,
 } from "@/api/finance";
+import { peopleKeys } from "@/api/people";
 import { queryResource, type Resource } from "@/hooks/query-resource";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
 import { useAuth } from "@/providers/auth";
@@ -172,8 +173,11 @@ export function useFinanceReport(
 export function useFinanceMutations(workspaceId: string) {
   const { withToken } = useAuth();
   const queryClient = useQueryClient();
-  const refetchFinance = () =>
+  const refetchFinance = () => {
     void queryClient.invalidateQueries({ queryKey: financeKeys.all(workspaceId) });
+    // Money owed shows the transactions it links to, and loses the link when one is deleted.
+    void queryClient.invalidateQueries({ queryKey: peopleKeys.ledger(workspaceId) });
+  };
 
   const createTransaction = useMutation({
     mutationFn: (body: CreateFinanceTransactionRequest) =>

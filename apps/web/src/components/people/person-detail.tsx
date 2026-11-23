@@ -1,13 +1,14 @@
 "use client";
 
-import type { Person } from "@orbit/contracts";
-import { BellRing, Mail, Pencil, Phone, Star, Trash2 } from "lucide-react";
+import type { Person, PersonBalance, PersonLedgerEntry } from "@orbit/contracts";
+import { BellRing, HandCoins, Mail, Pencil, Phone, Plus, Star, Trash2 } from "lucide-react";
 import { useId } from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogCloseButton, DialogFooter } from "@/components/ui/dialog";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import {
+  balanceText,
   type CalendarDay,
   dateLabel,
   formatDayMonth,
@@ -18,24 +19,41 @@ import {
   telHref,
   yearsOn,
 } from "@/lib/people";
+import { cn } from "@/utils/common";
 
 import { DATE_ICONS } from "./date-icon";
+import { EntryRow } from "./money-view";
 import { Countdown } from "./people-lists";
 import { PersonAvatar } from "./person-avatar";
 
-/** One person at a glance: their dates with countdowns and reminders, how to reach them, and
- * the note. */
+const SHOWN_ENTRIES = 5;
+
+/** One person at a glance: their dates with countdowns and reminders, the money between you,
+ * how to reach them, and the note. */
 export function PersonDetail({
   person,
   today,
+  balances,
+  entries,
   onEdit,
   onDelete,
+  onRecord,
+  onSettle,
+  onDeleteEntry,
   onClose,
 }: {
   person: Person;
   today: CalendarDay;
+  /** Open balances, one per currency; `null` while money owed loads. */
+  balances: readonly PersonBalance[] | null;
+  /** Their ledger entries, newest first. */
+  entries: readonly PersonLedgerEntry[];
   onEdit: () => void;
   onDelete: () => void;
+  /** Money dialogs open over this one, which stays open. */
+  onRecord: () => void;
+  onSettle: (balance: PersonBalance) => void;
+  onDeleteEntry: (entry: PersonLedgerEntry) => void;
   /** Called once the dialog has closed. */
   onClose: () => void;
 }) {
@@ -148,6 +166,74 @@ export function PersonDetail({
               })}
             </ul>
           )}
+        </section>
+
+        <section aria-labelledby={`${id}-money`} className="space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <h3
+              id={`${id}-money`}
+              className="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+            >
+              Money
+            </h3>
+            <Button variant="ghost" size="sm" className="h-7" onClick={onRecord}>
+              <Plus aria-hidden="true" />
+              Record
+            </Button>
+          </div>
+          {balances === null ? null : balances.length > 0 ? (
+            <ul className="space-y-2">
+              {balances.map((balance) => (
+                <li
+                  key={balance.currency}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl px-4 py-3",
+                    balance.amount > 0 ? "bg-success/10" : "bg-warning/10",
+                  )}
+                >
+                  <HandCoins
+                    className={cn(
+                      "size-4 shrink-0",
+                      balance.amount > 0 ? "text-success" : "text-warning",
+                    )}
+                    aria-hidden="true"
+                  />
+                  <span className="flex-1 text-sm font-semibold tabular-nums">
+                    {balanceText(balance)}
+                  </span>
+                  <Button variant="soft" size="sm" onClick={() => onSettle(balance)}>
+                    Settle up
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="rounded-xl border border-dashed px-4 py-3 text-sm text-muted-foreground">
+              {entries.length > 0 ? "All square." : "Nothing owed either way."}
+            </p>
+          )}
+          {entries.length > 0 ? (
+            <ul className="divide-y rounded-xl border" aria-label={`Money with ${person.name}`}>
+              {entries.slice(0, SHOWN_ENTRIES).map((entry) => (
+                <EntryRow
+                  key={entry.id}
+                  entry={entry}
+                  person={person}
+                  actions={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 shrink-0 text-muted-foreground"
+                      aria-label={`Delete “${entry.description}”`}
+                      onClick={() => onDeleteEntry(entry)}
+                    >
+                      <Trash2 aria-hidden="true" />
+                    </Button>
+                  }
+                />
+              ))}
+            </ul>
+          ) : null}
         </section>
 
         {person.note ? (

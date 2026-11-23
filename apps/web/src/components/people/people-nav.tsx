@@ -1,4 +1,4 @@
-import { CalendarHeart, type LucideIcon, Users } from "lucide-react";
+import { CalendarHeart, HandCoins, type LucideIcon, Users } from "lucide-react";
 import Link from "next/link";
 
 import { PEOPLE_VIEWS, peopleHref, type PeopleView } from "@/lib/people";
@@ -7,6 +7,7 @@ import { cn } from "@/utils/common";
 export const VIEW_ICONS: Record<PeopleView, LucideIcon> = {
   everyone: Users,
   upcoming: CalendarHeart,
+  money: HandCoins,
 };
 
 /**
@@ -18,7 +19,7 @@ export function PeopleNav({
   counts,
 }: {
   view: PeopleView;
-  /** People, and dates in the next 30 days; left out while they load. */
+  /** People, dates in the next 30 days, and open balances; left out while they load. */
   counts: Partial<Record<PeopleView, number>> | null;
 }) {
   return (

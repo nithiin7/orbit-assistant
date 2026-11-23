@@ -1,6 +1,6 @@
 "use client";
 
-import type { Person, PersonRelationship } from "@orbit/contracts";
+import type { Person, PersonBalance, PersonRelationship } from "@orbit/contracts";
 import {
   Cake,
   Mail,
@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Menu, type MenuItem } from "@/components/ui/menu";
 import { ChoiceChips } from "@/components/watchlist/choice-chips";
 import {
+  balanceText,
   type CalendarDay,
   filterPeople,
   formatDayMonth,
@@ -51,6 +52,7 @@ type Filter = PersonRelationship | "all";
 /** Everyone as cards, with a search box and relationship chips. */
 export function EveryoneList({
   people,
+  balances,
   today,
   query,
   relationship,
@@ -59,6 +61,8 @@ export function EveryoneList({
   actions,
 }: {
   people: readonly Person[];
+  /** Each person's open balances, by person ID. */
+  balances: ReadonlyMap<string, readonly PersonBalance[]>;
   today: CalendarDay;
   query: string;
   relationship: Filter;
@@ -107,12 +111,19 @@ export function EveryoneList({
       ) : (
         <>
           {favorites.length > 0 ? (
-            <CardGrid title="Favorites" people={favorites} today={today} actions={actions} />
+            <CardGrid
+              title="Favorites"
+              people={favorites}
+              balances={balances}
+              today={today}
+              actions={actions}
+            />
           ) : null}
           {others.length > 0 ? (
             <CardGrid
               title={favorites.length > 0 ? "Everyone else" : null}
               people={others}
+              balances={balances}
               today={today}
               actions={actions}
             />
@@ -126,11 +137,13 @@ export function EveryoneList({
 function CardGrid({
   title,
   people,
+  balances,
   today,
   actions,
 }: {
   title: string | null;
   people: readonly Person[];
+  balances: ReadonlyMap<string, readonly PersonBalance[]>;
   today: CalendarDay;
   actions: PersonActions;
 }) {
@@ -143,7 +156,13 @@ function CardGrid({
       ) : null}
       <ul className="grid gap-3 @2xl/people:grid-cols-2 @6xl/people:grid-cols-3">
         {people.map((person) => (
-          <PersonCard key={person.id} person={person} today={today} actions={actions} />
+          <PersonCard
+            key={person.id}
+            person={person}
+            balances={balances.get(person.id) ?? []}
+            today={today}
+            actions={actions}
+          />
         ))}
       </ul>
     </section>
@@ -152,10 +171,12 @@ function CardGrid({
 
 function PersonCard({
   person,
+  balances,
   today,
   actions,
 }: {
   person: Person;
+  balances: readonly PersonBalance[];
   today: CalendarDay;
   actions: PersonActions;
 }) {
@@ -197,6 +218,21 @@ function PersonCard({
       ) : (
         <p className="px-0.5 text-xs text-muted-foreground">No dates yet</p>
       )}
+      {balances.length > 0 ? (
+        <ul className="-mt-1 flex flex-wrap gap-1.5" aria-label={`Money with ${person.name}`}>
+          {balances.map((balance) => (
+            <li
+              key={balance.currency}
+              className={cn(
+                "rounded-full px-2 py-0.5 text-xs font-medium tabular-nums",
+                balance.amount > 0 ? "bg-success/10 text-success" : "bg-warning/10 text-warning",
+              )}
+            >
+              {balanceText(balance)}
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </li>
   );
 }

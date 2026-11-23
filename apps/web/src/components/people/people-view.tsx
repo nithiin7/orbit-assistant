@@ -1,6 +1,12 @@
 "use client";
 
-import type { Person, PersonRelationship } from "@orbit/contracts";
+import type {
+  CreatePersonLedgerEntryRequest,
+  Person,
+  PersonBalance,
+  PersonLedgerEntry,
+  PersonRelationship,
+} from "@orbit/contracts";
 import { CalendarHeart, Plus, Users } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type ReactNode, useState } from "react";
@@ -12,11 +18,22 @@ import { FormAlert } from "@/components/form-field";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { usePeople, usePeopleMutations } from "@/hooks/use-people";
 import {
+  useLedgerMutations,
+  usePeople,
+  usePeopleLedger,
+  usePeopleMutations,
+} from "@/hooks/use-people";
+import {
+  balancesOf,
   changesOf,
   createRequestOf,
+  entriesOf,
+  isRepayment,
+  lastSplitExpense,
   localToday,
+  type MoneyValues,
+  newMoneyValues,
   newPersonValues,
   parsePeopleView,
   PEOPLE_VIEWS,
@@ -24,11 +41,14 @@ import {
   type PeopleView,
   type PersonValues,
   personValues,
+  settleValues,
   upcomingDates,
 } from "@/lib/people";
 import { useWorkspaces } from "@/providers/workspace";
 import { browserTimeZone } from "@/utils/time-zones";
 
+import { MoneyDialog } from "./money-dialog";
+import { MoneyView } from "./money-view";
 import { EveryoneList, type PersonActions, UpcomingList } from "./people-lists";
 import { PeopleNav, VIEW_ICONS } from "./people-nav";
 import { PersonDetail } from "./person-detail";
@@ -67,7 +87,10 @@ export function PeoplePanel() {
   );
 }
 
-type Dialog = { kind: "add" } | { kind: "edit"; id: string };
+type Dialog =
+  | { kind: "add" }
+  | { kind: "edit"; id: string }
+  | { kind: "money"; title: string; initial: MoneyValues };
 
 function PeoplePage({
   workspaceId,
@@ -82,6 +105,8 @@ function PeoplePage({
   const router = useRouter();
   const { people, reload } = usePeople(workspaceId);
   const mutations = usePeopleMutations(workspaceId);
+  const { ledger, reload: reloadLedger } = usePeopleLedger(workspaceId);
+  const money = useLedgerMutations(workspaceId);
   const { confirm, confirmDialog } = useConfirm();
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -93,6 +118,11 @@ function PeoplePage({
   const all = people.status === "success" ? people.data : [];
   const editing = dialog?.kind === "edit" ? all.find((person) => person.id === dialog.id) : null;
   const opened = openId ? (all.find((person) => person.id === openId) ?? null) : null;
+  const ledgerData = ledger.status === "success" ? ledger.data : null;
+  const balances = new Map<string, PersonBalance[]>();
+  for (const balance of ledgerData?.balances ?? []) {
+    balances.set(balance.person_id, [...(balances.get(balance.person_id) ?? []), balance]);
+  }
 
   const open = (person: Person) => router.replace(peopleHref(view, person.id), { scroll: false });
   const closeDetail = () => router.replace(peopleHref(view), { scroll: false });
@@ -142,6 +172,54 @@ function PeoplePage({
     });
   }
 
+  function recordMoney(person: Person | null) {
+    setDialog({
+      kind: "money",
+      title: person ? `Money with ${person.name}` : "Record money",
+      initial: newMoneyValues(person?.id ?? ""),
+    });
+  }
+
+  function settle(person: Person, balance: PersonBalance) {
+    const suggested =
+      balance.amount > 0 && ledgerData
+        ? lastSplitExpense(ledgerData, person.id, balance.currency)
+        : null;
+    setDialog({
+      kind: "money",
+      title: `Settle up with ${person.name}`,
+      initial: settleValues(balance, person, suggested),
+    });
+  }
+
+  async function saveMoney(personId: string, body: CreatePersonLedgerEntryRequest) {
+    await money.add.mutateAsync({ personId, body });
+    setAnnouncement(body.record_in_finance ? "Saved, and recorded in Finance." : "Saved.");
+  }
+
+  function deleteEntry(entry: PersonLedgerEntry) {
+    const stays = entry.transaction
+      ? isRepayment(entry.kind)
+        ? " The transaction recorded in Finance stays; delete it there if you need to."
+        : " The expense in Finance stays as it is."
+      : "";
+    void confirm({
+      title: `Delete “${entry.description}”?`,
+      description: `It no longer counts toward what’s owed.${stays}`,
+      confirmLabel: "Delete",
+      destructive: true,
+    }).then(async (ok) => {
+      if (!ok) return;
+      setError(null);
+      try {
+        await money.remove.mutateAsync(entry);
+        setAnnouncement(`Deleted ${entry.description}.`);
+      } catch (reason) {
+        setError(describeApiError(reason, "Couldn’t delete that. Try again."));
+      }
+    });
+  }
+
   const actions: PersonActions = {
     open,
     edit: (person) => setDialog({ kind: "edit", id: person.id }),
@@ -151,7 +229,11 @@ function PeoplePage({
 
   const counts =
     people.status === "success"
-      ? { everyone: all.length, upcoming: upcomingDates(all, today, 30).length }
+      ? {
+          everyone: all.length,
+          upcoming: upcomingDates(all, today, 30).length,
+          ...(ledgerData ? { money: balances.size } : {}),
+        }
       : null;
 
   let content: ReactNode;
@@ -168,6 +250,21 @@ function PeoplePage({
         {addAction}
       </EmptyState>
     );
+  } else if (view === "money") {
+    if (ledger.status === "loading") content = <PageSkeleton />;
+    else if (ledger.status === "error") {
+      content = <LoadError message={ledger.message} onRetry={() => void reloadLedger()} />;
+    } else {
+      content = (
+        <MoneyView
+          people={all}
+          ledger={ledger.data}
+          onOpen={open}
+          onSettle={settle}
+          onRecord={() => recordMoney(null)}
+        />
+      );
+    }
   } else if (view === "upcoming") {
     content = all.some((person) => person.dates.length > 0) ? (
       <UpcomingList people={all} today={today} onOpen={open} />
@@ -182,6 +279,7 @@ function PeoplePage({
     content = (
       <EveryoneList
         people={all}
+        balances={balances}
         today={today}
         query={query}
         relationship={relationship}
@@ -199,17 +297,33 @@ function PeoplePage({
       <p role="status" aria-live="polite" className="sr-only">
         {announcement}
       </p>
-      {opened && dialog === null ? (
+      {/* Money dialogs open over the detail, which stays open behind them. */}
+      {opened && dialog?.kind !== "add" && dialog?.kind !== "edit" ? (
         <PersonDetail
           key={opened.id}
           person={opened}
           today={today}
+          balances={ledgerData ? balancesOf(ledgerData, opened.id) : null}
+          entries={ledgerData ? entriesOf(ledgerData, opened.id) : []}
           onEdit={() => setDialog({ kind: "edit", id: opened.id })}
           onDelete={() => remove(opened)}
+          onRecord={() => recordMoney(opened)}
+          onSettle={(balance) => settle(opened, balance)}
+          onDeleteEntry={deleteEntry}
           onClose={closeDetail}
         />
       ) : null}
-      {dialog && (dialog.kind === "add" || editing) ? (
+      {dialog?.kind === "money" ? (
+        <MoneyDialog
+          workspaceId={workspaceId}
+          people={all}
+          title={dialog.title}
+          initial={dialog.initial}
+          onSave={saveMoney}
+          onClose={() => setDialog(null)}
+        />
+      ) : null}
+      {dialog && (dialog.kind === "add" || (dialog.kind === "edit" && editing)) ? (
         <PersonDialog
           mode={dialog.kind === "add" ? "add" : "edit"}
           initial={editing ? personValues(editing) : newPersonValues()}
