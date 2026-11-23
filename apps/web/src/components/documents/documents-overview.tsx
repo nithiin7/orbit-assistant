@@ -19,6 +19,7 @@ import {
 import { type ReactNode, useId } from "react";
 
 import { Button } from "@/components/ui/button";
+import { IconChip, type IconChipTone } from "@/components/ui/icon-chip";
 import { type DocumentsLocation, formatFileSize } from "@/lib/documents";
 import { cn } from "@/utils/common";
 
@@ -317,7 +318,7 @@ function Panel({
 }: {
   title: string;
   icon: LucideIcon;
-  tone: Tone;
+  tone: IconChipTone;
   action?: ReactNode;
   children: ReactNode;
 }) {
@@ -329,15 +330,7 @@ function Panel({
     >
       <div className="flex min-h-14 items-center justify-between gap-2 px-4 py-3">
         <div className="flex min-w-0 items-center gap-2.5">
-          <span
-            aria-hidden="true"
-            className={cn(
-              "flex size-8 shrink-0 items-center justify-center rounded-xl",
-              TONES[tone],
-            )}
-          >
-            <Icon className="size-4" />
-          </span>
+          <IconChip icon={Icon} tone={tone} />
           <h3 id={id} className="truncate text-sm font-semibold">
             {title}
           </h3>

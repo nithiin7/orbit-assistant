@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 
 import { EmptyState } from "@/components/empty-state";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Resource } from "@/hooks/query-resource";
@@ -21,7 +22,7 @@ import { cn } from "@/utils/common";
 import { formatCalendarDate, monthLabel } from "@/utils/dates";
 
 import { Heatmap } from "./habit-heatmap";
-import { COLOR_STYLES, HabitTile, SectionChip } from "./habit-icon";
+import { COLOR_STYLES, HabitTile } from "./habit-icon";
 import { ViewError } from "./view-error";
 
 export type AnalyticsRange = "30" | "90" | "182" | "365";
@@ -146,7 +147,7 @@ function Loaded({ analytics }: { analytics: HabitAnalytics }) {
         className="space-y-3 rounded-2xl border bg-card p-4 @3xl:p-5"
       >
         <h2 id="calendar-heading" className="flex items-center gap-2.5 text-sm font-semibold">
-          <SectionChip icon={CalendarDays} tone="green" />
+          <IconChip icon={CalendarDays} tone="green" />
           Completion calendar
         </h2>
         <Heatmap cells={cells} label="Habits completed by day" />
@@ -171,7 +172,7 @@ function Loaded({ analytics }: { analytics: HabitAnalytics }) {
           className="space-y-3 rounded-2xl border bg-card p-4 @3xl:p-5"
         >
           <h2 id="best-heading" className="flex items-center gap-2.5 text-sm font-semibold">
-            <SectionChip icon={TrendingUp} tone="success" />
+            <IconChip icon={TrendingUp} tone="success" />
             Going well
           </h2>
           <HabitRanking items={best} empty="Track a little longer to see what’s working." />
@@ -181,7 +182,7 @@ function Loaded({ analytics }: { analytics: HabitAnalytics }) {
           className="space-y-3 rounded-2xl border bg-card p-4 @3xl:p-5"
         >
           <h2 id="declining-heading" className="flex items-center gap-2.5 text-sm font-semibold">
-            <SectionChip icon={TrendingDown} tone="amber" />
+            <IconChip icon={TrendingDown} tone="amber" />
             Could use attention
           </h2>
           <HabitRanking
@@ -197,7 +198,7 @@ function Loaded({ analytics }: { analytics: HabitAnalytics }) {
         className="space-y-3 rounded-2xl border bg-card p-4 @3xl:p-5"
       >
         <h2 id="category-heading" className="flex items-center gap-2.5 text-sm font-semibold">
-          <SectionChip icon={Shapes} tone="violet" />
+          <IconChip icon={Shapes} tone="violet" />
           By category
         </h2>
         <ul className="mt-3 space-y-2.5">
@@ -222,7 +223,7 @@ function Loaded({ analytics }: { analytics: HabitAnalytics }) {
 
       <section aria-labelledby="all-heading" className="space-y-2">
         <h2 id="all-heading" className="flex items-center gap-2.5 text-sm font-semibold">
-          <SectionChip icon={ListChecks} tone="slate" />
+          <IconChip icon={ListChecks} tone="slate" />
           Every habit
         </h2>
         <div className="overflow-x-auto rounded-2xl border bg-card">
@@ -301,7 +302,7 @@ function Trend({
       className="space-y-3 rounded-2xl border bg-card p-4 @3xl:p-5"
     >
       <h2 id={`trend-${title}`} className="flex items-center gap-2.5 text-sm font-semibold">
-        <SectionChip icon={ChartColumn} tone="brand" />
+        <IconChip icon={ChartColumn} tone="brand" />
         {title} consistency
       </h2>
       {points.length === 0 ? (

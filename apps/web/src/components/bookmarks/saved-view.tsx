@@ -21,6 +21,7 @@ import { FormAlert } from "@/components/form-field";
 import { PageHeader } from "@/components/page-header";
 import { ShortcutHint } from "@/components/shortcut-hint";
 import { Button } from "@/components/ui/button";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
 import { Select } from "@/components/ui/select";
@@ -349,12 +350,7 @@ function SavedPage({ workspaceId }: { workspaceId: string }) {
               id={`${searchId}-pinned`}
               className="flex items-center gap-2.5 text-sm font-semibold"
             >
-              <span
-                aria-hidden="true"
-                className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-brand-subtle text-brand"
-              >
-                <Pin className="size-4" />
-              </span>
+              <IconChip icon={Pin} tone="brand" />
               Quick launch
             </h3>
             <ul className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-2">
@@ -601,12 +597,7 @@ function Shell({
           <div key={viewKey} className="min-w-0 animate-page-in space-y-5">
             <div className="flex items-center justify-between gap-3">
               <h2 className="flex min-w-0 items-center gap-2.5 text-lg font-semibold tracking-tight">
-                <span
-                  aria-hidden="true"
-                  className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-brand-subtle text-brand"
-                >
-                  <Icon className="size-4" />
-                </span>
+                <IconChip icon={Icon} tone="brand" />
                 <span className="truncate">{title}</span>
               </h2>
               {viewActions}

@@ -29,6 +29,7 @@ import { useState } from "react";
 
 import { EmptyState } from "@/components/empty-state";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Menu } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,7 +45,7 @@ import { noteHref } from "@/lib/note-links";
 import { cn } from "@/utils/common";
 import { formatCalendarDate, localDateString } from "@/utils/dates";
 
-import { HabitTile, ProgressBar, SectionChip } from "./habit-icon";
+import { HabitTile, ProgressBar } from "./habit-icon";
 import { ViewError } from "./view-error";
 
 function schedule(routine: Routine): string {
@@ -295,7 +296,7 @@ function RoutineDetail({
           ) : (
             <section aria-labelledby="steps-heading" className="rounded-2xl border bg-card p-4">
               <h3 id="steps-heading" className="flex items-center gap-2.5 text-sm font-semibold">
-                <SectionChip icon={ListChecks} tone="brand" />
+                <IconChip icon={ListChecks} tone="brand" />
                 Steps
               </h3>
               {routine.steps.length === 0 ? (
@@ -325,7 +326,7 @@ function RoutineDetail({
         <aside className="space-y-6">
           <section aria-labelledby="history-heading" className="rounded-2xl border bg-card p-4">
             <h3 id="history-heading" className="flex items-center gap-2.5 text-sm font-semibold">
-              <SectionChip icon={History} tone="slate" />
+              <IconChip icon={History} tone="slate" />
               Past sessions
             </h3>
             <SessionHistory sessions={sessions} />
@@ -380,7 +381,7 @@ function SessionRunner({
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 id="session-heading" className="flex items-center gap-2.5 text-sm font-semibold">
-          <SectionChip icon={Play} tone="brand" />
+          <IconChip icon={Play} tone="brand" />
           In progress · {formatCalendarDate(session.day)}
         </h3>
         <span className="text-sm text-muted-foreground tabular-nums">

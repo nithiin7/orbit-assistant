@@ -18,6 +18,7 @@ import { FormAlert } from "@/components/form-field";
 import { useCelebration } from "@/components/habits/celebration";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWatchlist, useWatchlistMutations } from "@/hooks/use-watchlist";
@@ -44,7 +45,7 @@ import { SuggestionsView } from "./suggestions-view";
 import { ContinueCard, type TitleActions, TitleCard } from "./title-card";
 import { TitleSheet } from "./title-sheet";
 import { TonightDialog } from "./tonight-dialog";
-import { WatchChip, WatchlistHero } from "./watchlist-hero";
+import { WatchlistHero } from "./watchlist-hero";
 import { VIEW_ICONS, WatchlistNav } from "./watchlist-nav";
 
 const ALL_PLATFORMS = "__all";
@@ -448,12 +449,7 @@ function Shell({
           </aside>
           <div key={view} className="@container/view min-w-0 animate-page-in space-y-5">
             <h2 className="flex items-center gap-2.5 text-lg font-semibold tracking-tight">
-              <span
-                aria-hidden="true"
-                className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-event-violet/12 text-event-violet"
-              >
-                <Icon className="size-4" />
-              </span>
+              <IconChip icon={Icon} tone="violet" />
               {WATCH_VIEWS.find((option) => option.value === view)?.label}
             </h2>
             {children}
@@ -526,7 +522,7 @@ function Overview({
     return (
       <div className="flex items-center justify-between gap-3">
         <h3 id={`${id}-${key}`} className="flex items-center gap-2.5 text-sm font-semibold">
-          <WatchChip icon={VIEW_ICONS[view]} tone={view === "watched" ? "green" : "brand"} />
+          <IconChip icon={VIEW_ICONS[view]} tone={view === "watched" ? "green" : "brand"} />
           {title}
         </h3>
         {total > OVERVIEW_LIMIT ? (
@@ -547,7 +543,7 @@ function Overview({
       {kindFilter}
       <section aria-labelledby={`${id}-continue`} className="space-y-3">
         <h3 id={`${id}-continue`} className="flex items-center gap-2.5 text-sm font-semibold">
-          <WatchChip icon={CirclePlay} tone="violet" />
+          <IconChip icon={CirclePlay} tone="violet" />
           Continue watching
         </h3>
         {watching.length > 0 ? (

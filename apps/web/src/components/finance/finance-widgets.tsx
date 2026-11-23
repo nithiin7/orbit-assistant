@@ -14,9 +14,10 @@ import Link from "next/link";
 import { type ReactNode, useId } from "react";
 
 import { useAmounts } from "@/components/dashboard/amount-visibility";
-import { WIDGET_CARD_CLASS, WidgetIcon } from "@/components/dashboard/widget-card";
+import { WIDGET_CARD_CLASS } from "@/components/dashboard/widget-card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Resource } from "@/hooks/query-resource";
 import {
@@ -263,7 +264,7 @@ function WidgetCard<T>({
       <Card className={cn("h-full", WIDGET_CARD_CLASS)} aria-busy={resource.status === "loading"}>
         <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
           <h2 id={headingId} className="flex items-center gap-2.5 text-base font-semibold">
-            <WidgetIcon icon={Icon} tone="teal" />
+            <IconChip icon={Icon} tone="teal" />
             {title}
           </h2>
           <Link

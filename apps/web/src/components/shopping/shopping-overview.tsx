@@ -4,9 +4,10 @@ import type { ShoppingListIcon } from "@orbit/contracts";
 import { ArrowRight, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 
-import { WIDGET_CARD_CLASS, WidgetIcon } from "@/components/dashboard/widget-card";
+import { WIDGET_CARD_CLASS } from "@/components/dashboard/widget-card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShoppingOverview } from "@/hooks/use-shopping";
 import { cn } from "@/utils/common";
@@ -25,7 +26,7 @@ export function ShoppingOverview() {
             id="shopping-overview-heading"
             className="flex items-center gap-2.5 text-base font-semibold"
           >
-            <WidgetIcon icon={ShoppingCart} tone="orange" />
+            <IconChip icon={ShoppingCart} tone="orange" />
             Shopping
           </h2>
           <Link href="/shopping" className={buttonVariants({ variant: "ghost", size: "sm" })}>

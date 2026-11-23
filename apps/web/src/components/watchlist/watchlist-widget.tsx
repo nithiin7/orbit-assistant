@@ -6,10 +6,11 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { describeApiError } from "@/api/client";
-import { WIDGET_CARD_CLASS, WidgetIcon } from "@/components/dashboard/widget-card";
+import { WIDGET_CARD_CLASS } from "@/components/dashboard/widget-card";
 import { FormAlert } from "@/components/form-field";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActiveWorkspaceId } from "@/hooks/use-calendar";
 import { useWatchlist, useWatchlistMutations } from "@/hooks/use-watchlist";
@@ -32,7 +33,7 @@ export function WatchlistWidget() {
             id="watchlist-widget-heading"
             className="flex items-center gap-2.5 text-base font-semibold"
           >
-            <WidgetIcon icon={Clapperboard} tone="violet" />
+            <IconChip icon={Clapperboard} tone="violet" />
             Watchlist
           </h2>
           <Link href="/watchlist" className={buttonVariants({ variant: "ghost", size: "sm" })}>

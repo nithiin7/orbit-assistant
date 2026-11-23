@@ -4,6 +4,7 @@ import type { HabitColor, HabitIcon } from "@orbit/contracts";
 import { Check, ListChecks, Plus, Sparkles } from "lucide-react";
 import { useState } from "react";
 
+import { IconChip } from "@/components/ui/icon-chip";
 import {
   describeHabitTemplate,
   describeRoutineTemplate,
@@ -16,8 +17,7 @@ import {
 } from "@/lib/habits";
 import { cn } from "@/utils/common";
 
-import { HabitTile, SectionChip } from "./habit-icon";
-
+import { HabitTile } from "./habit-icon";
 const FILTERS: readonly { value: TemplateFilter | "all"; label: string }[] = [
   { value: "all", label: "All" },
   ...TEMPLATE_FILTERS,
@@ -78,7 +78,7 @@ export function HabitTemplatesView({
             id="habit-templates-heading"
             className="flex items-center gap-2.5 text-sm font-semibold"
           >
-            <SectionChip icon={Sparkles} tone="brand" />
+            <IconChip icon={Sparkles} tone="brand" />
             Habits
           </h2>
           <ul className="grid gap-3 @2xl:grid-cols-2 @6xl:grid-cols-3">
@@ -106,7 +106,7 @@ export function HabitTemplatesView({
               id="routine-templates-heading"
               className="flex items-center gap-2.5 text-sm font-semibold"
             >
-              <SectionChip icon={ListChecks} tone="green" />
+              <IconChip icon={ListChecks} tone="green" />
               Routines
             </h2>
             <p className="text-xs text-muted-foreground">

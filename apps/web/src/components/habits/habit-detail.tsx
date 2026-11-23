@@ -25,6 +25,7 @@ import { type FormEvent, useState } from "react";
 import { describeApiError } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,7 +45,7 @@ import { cn } from "@/utils/common";
 import { addDays, formatCalendarDate } from "@/utils/dates";
 
 import { type HeatCell, Heatmap } from "./habit-heatmap";
-import { HabitTile, SectionChip } from "./habit-icon";
+import { HabitTile } from "./habit-icon";
 import { HabitRow } from "./habit-row";
 import { ViewError } from "./view-error";
 
@@ -210,7 +211,7 @@ function Loaded({
             className="space-y-3 rounded-2xl border bg-linear-to-br from-brand-subtle/80 via-card to-card p-4 shadow-elevation-1 @3xl:p-5"
           >
             <h3 id="stats-heading" className="flex items-center gap-2.5 text-sm font-semibold">
-              <SectionChip icon={Flame} tone="brand" />
+              <IconChip icon={Flame} tone="brand" />
               Progress
             </h3>
             <dl className="grid grid-cols-2 gap-3 @xl:grid-cols-3">
@@ -240,7 +241,7 @@ function Loaded({
             className="space-y-3 rounded-2xl border bg-card p-4 @3xl:p-5"
           >
             <h3 id="heatmap-heading" className="flex items-center gap-2.5 text-sm font-semibold">
-              <SectionChip icon={CalendarDays} tone="green" />
+              <IconChip icon={CalendarDays} tone="green" />
               The last six months
             </h3>
             {history.status === "success" ? (
@@ -375,7 +376,7 @@ function Panel({
   return (
     <section aria-label={title} className="rounded-2xl border bg-card p-4">
       <h3 className="mb-3 flex items-center gap-2.5 text-sm font-semibold">
-        {Icon ? <SectionChip icon={Icon} tone="slate" /> : null}
+        {Icon ? <IconChip icon={Icon} tone="slate" /> : null}
         {title}
       </h3>
       {children}
@@ -484,7 +485,7 @@ function PastDay({
   return (
     <section aria-labelledby="past-heading" className="space-y-2">
       <h3 id="past-heading" className="flex items-center gap-2.5 text-sm font-semibold">
-        <SectionChip icon={History} tone="slate" />
+        <IconChip icon={History} tone="slate" />
         Record a past day
       </h3>
       <div className="flex flex-wrap items-center gap-2">
@@ -525,7 +526,7 @@ function RecentDays({ history, detail }: { history: HabitHistory; detail: HabitD
   return (
     <section aria-labelledby="recent-heading" className="space-y-2">
       <h3 id="recent-heading" className="flex items-center gap-2.5 text-sm font-semibold">
-        <SectionChip icon={History} tone="slate" />
+        <IconChip icon={History} tone="slate" />
         Recent entries
       </h3>
       <ul className="divide-y rounded-2xl border bg-card">

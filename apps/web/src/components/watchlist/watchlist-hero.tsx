@@ -1,5 +1,5 @@
 import type { WatchItem, WatchStatus } from "@orbit/contracts";
-import { Clapperboard, type LucideIcon } from "lucide-react";
+import { Clapperboard } from "lucide-react";
 import Link from "next/link";
 
 import { countByStatus, STATUS_LABELS, watchlistHref } from "@/lib/watchlist";
@@ -14,27 +14,6 @@ export const WATCH_TONES = {
   green: "bg-event-green/12 text-event-green",
   slate: "bg-event-slate/12 text-event-slate",
 } as const;
-
-/** A section's icon in a tinted chip, before its heading. */
-export function WatchChip({
-  icon: Icon,
-  tone,
-}: {
-  icon: LucideIcon;
-  tone: keyof typeof WATCH_TONES;
-}) {
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        "flex size-8 shrink-0 items-center justify-center rounded-xl",
-        WATCH_TONES[tone],
-      )}
-    >
-      <Icon className="size-4" />
-    </span>
-  );
-}
 
 const TILES: readonly { status: WatchStatus; tone: keyof typeof WATCH_TONES }[] = [
   { status: "watching", tone: "violet" },

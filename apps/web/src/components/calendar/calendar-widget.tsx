@@ -8,9 +8,10 @@ import { useMemo, useState } from "react";
 
 import { peopleOptions } from "@/api/people";
 import { taskSummaryOptions } from "@/api/tasks";
-import { WIDGET_CARD_CLASS, WidgetIcon } from "@/components/dashboard/widget-card";
+import { WIDGET_CARD_CLASS } from "@/components/dashboard/widget-card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   useActiveWorkspaceId,
@@ -116,7 +117,7 @@ export function CalendarWidget() {
             id="calendar-widget-heading"
             className="flex items-center gap-2.5 text-base font-semibold"
           >
-            <WidgetIcon icon={CalendarDays} tone="blue" />
+            <IconChip icon={CalendarDays} tone="blue" />
             Today’s agenda
           </h2>
           <div className="flex items-center gap-1">

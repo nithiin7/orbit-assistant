@@ -6,40 +6,10 @@ import { type ReactNode, useId } from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { IconChip, type IconChipTone } from "@/components/ui/icon-chip";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Resource } from "@/hooks/query-resource";
 import { cn } from "@/utils/common";
-
-/** Each module's colour on the dashboard. Classes are written out in full so Tailwind sees them. */
-export const WIDGET_TONES = {
-  brand: "bg-brand-subtle text-brand",
-  blue: "bg-event-blue/12 text-event-blue",
-  green: "bg-event-green/12 text-event-green",
-  amber: "bg-event-amber/12 text-event-amber",
-  violet: "bg-event-violet/12 text-event-violet",
-  teal: "bg-event-teal/12 text-event-teal",
-  orange: "bg-event-orange/12 text-event-orange",
-  rose: "bg-event-rose/12 text-event-rose",
-  slate: "bg-event-slate/12 text-event-slate",
-  warning: "bg-warning/15 text-warning",
-} as const;
-
-export type WidgetTone = keyof typeof WIDGET_TONES;
-
-/** A widget's icon in a tinted chip, in its module's colour, before the title. */
-export function WidgetIcon({ icon: Icon, tone }: { icon: LucideIcon; tone: WidgetTone }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        "flex size-8 shrink-0 items-center justify-center rounded-xl",
-        WIDGET_TONES[tone],
-      )}
-    >
-      <Icon className="size-4" />
-    </span>
-  );
-}
 
 /** The card behind a dashboard widget. */
 export const WIDGET_CARD_CLASS = "rounded-2xl shadow-elevation-1";
@@ -61,7 +31,7 @@ export function WidgetCard({
 }: {
   title: string;
   icon: LucideIcon;
-  tone?: WidgetTone;
+  tone?: IconChipTone;
   /** The module page the widget summarizes. */
   href: string;
   /** The link's text, such as "Open tasks". */
@@ -77,7 +47,7 @@ export function WidgetCard({
       <Card className={cn("flex h-full flex-col", WIDGET_CARD_CLASS, className)} aria-busy={busy}>
         <div className="widget-header flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b px-5 py-4">
           <h2 id={headingId} className="flex items-center gap-2.5 text-base font-semibold">
-            <WidgetIcon icon={icon} tone={tone} />
+            <IconChip icon={icon} tone={tone} />
             {title}
           </h2>
           <div className="flex flex-wrap items-center gap-1">

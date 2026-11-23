@@ -3,10 +3,11 @@
 import { ArrowRight, MapPinned, Plus } from "lucide-react";
 import Link from "next/link";
 
-import { WIDGET_CARD_CLASS, WidgetIcon } from "@/components/dashboard/widget-card";
+import { WIDGET_CARD_CLASS } from "@/components/dashboard/widget-card";
 import { buttonVariants } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActiveWorkspaceId } from "@/hooks/use-calendar";
 import { usePlaces } from "@/hooks/use-places";
@@ -26,7 +27,7 @@ export function PlacesWidget() {
             id="places-widget-heading"
             className="flex items-center gap-2.5 text-base font-semibold"
           >
-            <WidgetIcon icon={MapPinned} tone="teal" />
+            <IconChip icon={MapPinned} tone="teal" />
             Places
           </h2>
           <Link href="/places" className={buttonVariants({ variant: "ghost", size: "sm" })}>

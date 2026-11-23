@@ -28,6 +28,7 @@ import type { InferType } from "yup";
 import { describeApiError } from "@/api/client";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
+import { IconChip, type IconChipTone } from "@/components/ui/icon-chip";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -341,7 +342,7 @@ function PendingPreview({ count }: { count: number }) {
     <SectionCard
       title={`Needs you (${count})`}
       icon={Hand}
-      tone="bg-warning/15 text-warning"
+      tone="warning"
       className="border-warning/30"
       action={<More href={automationHref("approvals")}>All approvals</More>}
     >
@@ -372,7 +373,7 @@ function UpNext() {
     <SectionCard
       title="Up next"
       icon={CalendarClock}
-      tone="bg-brand-subtle text-brand"
+      tone="brand"
       action={<More href={automationHref("workflows")}>Workflows</More>}
     >
       {workflows.status === "loading" ? (
@@ -410,7 +411,7 @@ function Recent({ recent }: { recent: readonly AgentExecution[] }) {
     <SectionCard
       title="Recent"
       icon={History}
-      tone="bg-success/12 text-success"
+      tone="success"
       action={<More href={automationHref("activity")}>History</More>}
     >
       {recent.length === 0 ? (
@@ -460,7 +461,7 @@ function IdeasToTry({ first }: { first: boolean }) {
         first ? "Start from a ready-made workflow. Nothing is saved until you do." : undefined
       }
       icon={Sparkles}
-      tone="bg-event-violet/12 text-event-violet"
+      tone="violet"
       action={<More href={automationHref("workflows")}>All templates</More>}
     >
       <ul className="grid gap-3 @3xl:grid-cols-3">
@@ -525,8 +526,7 @@ function SectionCard({
   title: string;
   description?: string;
   icon: LucideIcon;
-  /** The icon chip's classes, written out in full so Tailwind sees them. */
-  tone: string;
+  tone: IconChipTone;
   action?: ReactNode;
   className?: string;
   children: ReactNode;
@@ -542,12 +542,7 @@ function SectionCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-2.5">
-          <span
-            aria-hidden="true"
-            className={cn("flex size-8 shrink-0 items-center justify-center rounded-xl", tone)}
-          >
-            <Icon className="size-4" />
-          </span>
+          <IconChip icon={Icon} tone={tone} />
           <div className="min-w-0 space-y-0.5 pt-1">
             <h2 id={id} className="text-sm font-semibold">
               {title}

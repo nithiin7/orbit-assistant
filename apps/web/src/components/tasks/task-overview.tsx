@@ -3,9 +3,10 @@
 import { ArrowRight, CheckSquare } from "lucide-react";
 import Link from "next/link";
 
-import { WIDGET_CARD_CLASS, WidgetIcon } from "@/components/dashboard/widget-card";
+import { WIDGET_CARD_CLASS } from "@/components/dashboard/widget-card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type TaskOverviewData, useTaskOverview } from "@/hooks/use-tasks";
 import { cn } from "@/utils/common";
@@ -24,7 +25,7 @@ export function TaskOverview() {
             id="task-overview-heading"
             className="flex items-center gap-2.5 text-base font-semibold"
           >
-            <WidgetIcon icon={CheckSquare} tone="brand" />
+            <IconChip icon={CheckSquare} tone="brand" />
             Tasks
           </h2>
           <Link href="/tasks" className={buttonVariants({ variant: "ghost", size: "sm" })}>

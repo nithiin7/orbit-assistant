@@ -27,6 +27,7 @@ import { describeApiError } from "@/api/client";
 import { addWater, saveFoodEntry } from "@/api/fitness";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
+import { IconChip } from "@/components/ui/icon-chip";
 import {
   useFitnessAction,
   useFitnessOverview,
@@ -59,7 +60,7 @@ import { KIND_ICONS } from "./activity-rings";
 import { GoalCard } from "./goals";
 import { FoodEntryDialog } from "./nutrition";
 import { RecordTable } from "./progress";
-import { Gauge, HEALTH_TONES, type HealthTone, LineChart, Loaded, shortDate } from "./shared";
+import { Gauge, type HealthTone, LineChart, Loaded, shortDate } from "./shared";
 import { ActiveWorkoutBanner, StartWorkoutMenu, useStartWorkout, WorkoutRow } from "./workouts";
 
 function More({ view, children }: { view: FitnessView; children: ReactNode }) {
@@ -101,15 +102,7 @@ function Card({
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2.5">
-          <span
-            aria-hidden="true"
-            className={cn(
-              "flex size-8 shrink-0 items-center justify-center rounded-xl",
-              HEALTH_TONES[tone].chip,
-            )}
-          >
-            <Icon className="size-4" />
-          </span>
+          <IconChip icon={Icon} tone={tone} />
           <h2 id={id} className="truncate text-sm font-semibold">
             {title}
           </h2>

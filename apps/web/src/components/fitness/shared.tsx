@@ -26,6 +26,7 @@ import { describeApiError } from "@/api/client";
 import { type LinkOwner, type LinkTarget, setFitnessLink } from "@/api/fitness";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,17 +41,17 @@ import { formatCalendarDate } from "@/utils/dates";
 
 import { ViewError } from "../habits/view-error";
 
-/** Colours for Health cards and gauges. Classes are written out in full so Tailwind sees them. */
+/** Colours for Health gauges. Classes are written out in full so Tailwind sees them. */
 export const HEALTH_TONES = {
-  brand: { chip: "bg-brand-subtle text-brand", stroke: "text-brand" },
-  orange: { chip: "bg-event-orange/12 text-event-orange", stroke: "text-event-orange" },
-  blue: { chip: "bg-event-blue/12 text-event-blue", stroke: "text-event-blue" },
-  violet: { chip: "bg-event-violet/12 text-event-violet", stroke: "text-event-violet" },
-  amber: { chip: "bg-event-amber/12 text-event-amber", stroke: "text-event-amber" },
-  green: { chip: "bg-event-green/12 text-event-green", stroke: "text-event-green" },
-  rose: { chip: "bg-event-rose/12 text-event-rose", stroke: "text-event-rose" },
-  slate: { chip: "bg-event-slate/12 text-event-slate", stroke: "text-event-slate" },
-  success: { chip: "bg-success/12 text-success", stroke: "text-success" },
+  brand: { stroke: "text-brand" },
+  orange: { stroke: "text-event-orange" },
+  blue: { stroke: "text-event-blue" },
+  violet: { stroke: "text-event-violet" },
+  amber: { stroke: "text-event-amber" },
+  green: { stroke: "text-event-green" },
+  rose: { stroke: "text-event-rose" },
+  slate: { stroke: "text-event-slate" },
+  success: { stroke: "text-success" },
 } as const;
 
 export type HealthTone = keyof typeof HEALTH_TONES;
@@ -83,17 +84,7 @@ export function Section({
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2.5">
-          {Icon ? (
-            <span
-              aria-hidden="true"
-              className={cn(
-                "flex size-8 shrink-0 items-center justify-center rounded-xl",
-                HEALTH_TONES[tone].chip,
-              )}
-            >
-              <Icon aria-hidden="true" className="size-4" />
-            </span>
-          ) : null}
+          {Icon ? <IconChip icon={Icon} tone={tone} /> : null}
           <div className="space-y-0.5">
             <h2 id={id} className="text-sm font-semibold">
               {title}

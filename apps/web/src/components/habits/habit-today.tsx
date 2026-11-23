@@ -19,6 +19,7 @@ import type { CSSProperties, ReactNode } from "react";
 
 import { EmptyState } from "@/components/empty-state";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { IconChip, type IconChipTone } from "@/components/ui/icon-chip";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Resource } from "@/hooks/query-resource";
 import {
@@ -239,12 +240,7 @@ export function HabitTodayView({
       </div>
 
       <aside className="space-y-6">
-        <SideCard
-          id="week-heading"
-          title="This week"
-          icon={CalendarDays}
-          tone="bg-success/12 text-success"
-        >
+        <SideCard id="week-heading" title="This week" icon={CalendarDays} tone="success">
           <ol className="grid grid-cols-7 gap-1.5 text-center">
             {today.week.map((day) => {
               const label = WEEKDAYS[(dayOfWeek(day.day) + 6) % 7]?.label ?? "";
@@ -280,12 +276,7 @@ export function HabitTodayView({
         </SideCard>
 
         {todaysRoutines.length > 0 ? (
-          <SideCard
-            id="routines-heading"
-            title="Today’s routines"
-            icon={ListChecks}
-            tone="bg-brand-subtle text-brand"
-          >
+          <SideCard id="routines-heading" title="Today’s routines" icon={ListChecks} tone="brand">
             <ul className="space-y-2">
               {todaysRoutines.map((routine) => (
                 <li
@@ -335,12 +326,7 @@ export function HabitTodayView({
           </SideCard>
         ) : null}
 
-        <SideCard
-          id="upcoming-heading"
-          title="Coming up"
-          icon={CalendarCheck}
-          tone="bg-event-blue/12 text-event-blue"
-        >
+        <SideCard id="upcoming-heading" title="Coming up" icon={CalendarCheck} tone="blue">
           <ul className="space-y-1 text-sm">
             {today.upcoming.map((day) => (
               <li
@@ -511,19 +497,13 @@ function SideCard({
   id: string;
   title: string;
   icon: LucideIcon;
-  /** The icon chip's classes, written out in full so Tailwind sees them. */
-  tone: string;
+  tone: IconChipTone;
   children: ReactNode;
 }) {
   return (
     <section aria-labelledby={id} className="space-y-3 rounded-2xl border bg-card p-4">
       <h2 id={id} className="flex items-center gap-2.5 text-sm font-semibold">
-        <span
-          aria-hidden="true"
-          className={cn("flex size-8 shrink-0 items-center justify-center rounded-xl", tone)}
-        >
-          <Icon className="size-4" />
-        </span>
+        <IconChip icon={Icon} tone={tone} />
         {title}
       </h2>
       {children}

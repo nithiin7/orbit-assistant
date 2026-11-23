@@ -3,9 +3,10 @@
 import { ArrowRight, Plus, Users } from "lucide-react";
 import Link from "next/link";
 
-import { WIDGET_CARD_CLASS, WidgetIcon } from "@/components/dashboard/widget-card";
+import { WIDGET_CARD_CLASS } from "@/components/dashboard/widget-card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActiveWorkspaceId } from "@/hooks/use-calendar";
 import { usePeople } from "@/hooks/use-people";
@@ -30,7 +31,7 @@ export function PeopleWidget() {
             id="people-widget-heading"
             className="flex items-center gap-2.5 text-base font-semibold"
           >
-            <WidgetIcon icon={Users} tone="rose" />
+            <IconChip icon={Users} tone="rose" />
             Coming up
           </h2>
           <Link
