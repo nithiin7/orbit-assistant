@@ -1516,6 +1516,65 @@ export interface paths {
         patch: operations["update_place_api_v1_workspaces__workspace_id__places_items__place_id__patch"];
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/people/ledger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List money owed between you and everyone */
+        get: operations["get_ledger_api_v1_workspaces__workspace_id__people_ledger_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/people/{person_id}/ledger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record money owed or repaid
+         * @description A share split from an expense links to it (the expense stays whole in Finance). A
+         *     repayment with `record_in_finance` also records a refund or an expense, in one commit.
+         */
+        post: operations["create_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/people/{person_id}/ledger/{entry_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete money owed or repaid
+         * @description A Finance transaction recorded with it stays; delete that in Finance if needed.
+         */
+        delete: operations["delete_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger__entry_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update money owed or repaid */
+        patch: operations["update_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger__entry_id__patch"];
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/people": {
         parameters: {
             query?: never;
@@ -12173,6 +12232,38 @@ export interface components {
             /** Tags */
             tags?: string[];
         };
+        /** CreatePersonLedgerEntryRequest */
+        CreatePersonLedgerEntryRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "they_owe" | "i_owe" | "they_paid" | "i_paid";
+            /**
+             * Amount
+             * @description Minor units, always positive: ₹12.50 is 1250.
+             */
+            amount: number;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /** Description */
+            description: string;
+            /**
+             * Transaction Id
+             * @description For `they_owe`: the expense of yours this share was split from.
+             */
+            transaction_id?: string | null;
+            /** @description For repayments: also record a refund (`they_paid`) or an expense (`i_paid`) in Finance. */
+            record_in_finance?: components["schemas"]["PersonLedgerRecordRequest"] | null;
+        };
         /**
          * CreatePersonRequest
          * @description Add a person. A name is enough; dates with `remind_days_before` get reminders.
@@ -17019,6 +17110,24 @@ export interface components {
             /** Volume G */
             volume_g: number;
         };
+        /** PersonBalanceResponse */
+        PersonBalanceResponse: {
+            /**
+             * Person Id
+             * Format: uuid
+             */
+            person_id: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Amount
+             * @description Minor units: positive while they owe you, negative while you owe them.
+             */
+            amount: number;
+        };
         /**
          * PersonDateBody
          * @description A date that comes round every year. Without a year, ages and years together aren't
@@ -17047,6 +17156,113 @@ export interface components {
              * @description Days before the date to remind (0 is on the day); null for no reminder.
              */
             remind_days_before?: number | null;
+        };
+        /** PersonLedgerEntryResponse */
+        PersonLedgerEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Person Id
+             * Format: uuid
+             */
+            person_id: string;
+            /**
+             * Kind
+             * @description `they_owe` (you paid or lent), `i_owe` (they did), or a repayment: `they_paid` or `i_paid`.
+             * @enum {string}
+             */
+            kind: "they_owe" | "i_owe" | "they_paid" | "i_paid";
+            /**
+             * Amount
+             * @description Minor units, always positive; `kind` says which way.
+             */
+            amount: number;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /** Description */
+            description: string;
+            transaction: components["schemas"]["PersonLinkedTransactionResponse"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * PersonLedgerRecordRequest
+         * @description Record a repayment in Finance too, in the same commit.
+         */
+        PersonLedgerRecordRequest: {
+            /**
+             * Account Id
+             * Format: uuid
+             * @description Where the money arrived or left from.
+             */
+            account_id: string;
+            /**
+             * Category Id
+             * Format: uuid
+             * @description An expense category: the shared expense's, so your spending comes down to your share.
+             */
+            category_id: string;
+        };
+        /** PersonLedgerResponse */
+        PersonLedgerResponse: {
+            /**
+             * Entries
+             * @description Newest first.
+             */
+            entries: components["schemas"]["PersonLedgerEntryResponse"][];
+            /**
+             * Balances
+             * @description Each person's non-zero balance per currency; currencies are never mixed.
+             */
+            balances: components["schemas"]["PersonBalanceResponse"][];
+        };
+        /**
+         * PersonLinkedTransactionResponse
+         * @description The Finance transaction behind an entry; null once that transaction is deleted.
+         */
+        PersonLinkedTransactionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Type */
+            type: string;
+            /** Description */
+            description: string;
+            /** Amount */
+            amount: number;
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Category Id */
+            category_id: string | null;
         };
         /** PersonResponse */
         PersonResponse: {
@@ -20934,6 +21150,18 @@ export interface components {
             end?: string | null;
             /** Status */
             status?: ("confirmed" | "cancelled") | null;
+        };
+        /**
+         * UpdatePersonLedgerEntryRequest
+         * @description Change an entry's amount, date, or description. Its kind and links stay.
+         */
+        UpdatePersonLedgerEntryRequest: {
+            /** Amount */
+            amount?: number | null;
+            /** Occurred On */
+            occurred_on?: string | null;
+            /** Description */
+            description?: string | null;
         };
         /**
          * UpdatePersonRequest
@@ -27079,6 +27307,198 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    get_ledger_api_v1_workspaces__workspace_id__people_ledger_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonLedgerResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's ID. */
+                person_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePersonLedgerEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonLedgerEntryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A link or record that doesn't fit the entry. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger__entry_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's ID. */
+                person_id: string;
+                /** @description The ledger entry's ID. */
+                entry_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger__entry_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's ID. */
+                person_id: string;
+                /** @description The ledger entry's ID. */
+                entry_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePersonLedgerEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonLedgerEntryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A repayment recorded in Finance keeps its amount. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

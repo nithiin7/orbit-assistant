@@ -6703,6 +6703,281 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/people/ledger": {
+      "get": {
+        "tags": [
+          "people"
+        ],
+        "summary": "List money owed between you and everyone",
+        "operationId": "get_ledger_api_v1_workspaces__workspace_id__people_ledger_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonLedgerResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or person is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/people/{person_id}/ledger": {
+      "post": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Record money owed or repaid",
+        "description": "A share split from an expense links to it (the expense stays whole in Finance). A\nrepayment with `record_in_finance` also records a refund or an expense, in one commit.",
+        "operationId": "create_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The person's ID.",
+              "title": "Person Id"
+            },
+            "description": "The person's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePersonLedgerEntryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonLedgerEntryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or person is not accessible."
+          },
+          "422": {
+            "description": "A link or record that doesn't fit the entry."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/people/{person_id}/ledger/{entry_id}": {
+      "patch": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Update money owed or repaid",
+        "operationId": "update_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger__entry_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The person's ID.",
+              "title": "Person Id"
+            },
+            "description": "The person's ID."
+          },
+          {
+            "name": "entry_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The ledger entry's ID.",
+              "title": "Entry Id"
+            },
+            "description": "The ledger entry's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePersonLedgerEntryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonLedgerEntryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or person is not accessible."
+          },
+          "422": {
+            "description": "A repayment recorded in Finance keeps its amount."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Delete money owed or repaid",
+        "description": "A Finance transaction recorded with it stays; delete that in Finance if needed.",
+        "operationId": "delete_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger__entry_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The person's ID.",
+              "title": "Person Id"
+            },
+            "description": "The person's ID."
+          },
+          {
+            "name": "entry_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The ledger entry's ID.",
+              "title": "Entry Id"
+            },
+            "description": "The ledger entry's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or person is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/people": {
       "get": {
         "tags": [
@@ -50214,6 +50489,88 @@
         "title": "CreateNoteRequest",
         "description": "A new note. Give `content` (an editor document) or `text` (plain text, one paragraph per\nline, for quick capture), or neither for an empty note."
       },
+      "CreatePersonLedgerEntryRequest": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "they_owe",
+              "i_owe",
+              "they_paid",
+              "i_paid"
+            ],
+            "title": "Kind"
+          },
+          "amount": {
+            "type": "integer",
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "Minor units, always positive: ₹12.50 is 1250."
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "occurred_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Occurred On"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Description"
+          },
+          "transaction_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transaction Id",
+            "description": "For `they_owe`: the expense of yours this share was split from."
+          },
+          "record_in_finance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonLedgerRecordRequest"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "For repayments: also record a refund (`they_paid`) or an expense (`i_paid`) in Finance."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "amount",
+          "currency",
+          "occurred_on",
+          "description"
+        ],
+        "title": "CreatePersonLedgerEntryRequest"
+      },
       "CreatePersonRequest": {
         "properties": {
           "name": {
@@ -61936,6 +62293,43 @@
         ],
         "title": "PeriodCountResponse"
       },
+      "PersonBalanceResponse": {
+        "properties": {
+          "person_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Person Id"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount",
+            "description": "Minor units: positive while they owe you, negative while you owe them."
+          }
+        },
+        "type": "object",
+        "required": [
+          "person_id",
+          "currency",
+          "amount"
+        ],
+        "title": "PersonBalanceResponse"
+      },
       "PersonDateBody": {
         "properties": {
           "kind": {
@@ -62003,6 +62397,200 @@
         ],
         "title": "PersonDateBody",
         "description": "A date that comes round every year. Without a year, ages and years together aren't\nknown; 29 February falls on 28 February in other years."
+      },
+      "PersonLedgerEntryResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "person_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Person Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "they_owe",
+              "i_owe",
+              "they_paid",
+              "i_paid"
+            ],
+            "title": "Kind",
+            "description": "`they_owe` (you paid or lent), `i_owe` (they did), or a repayment: `they_paid` or `i_paid`."
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount",
+            "description": "Minor units, always positive; `kind` says which way."
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "occurred_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Occurred On"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "transaction": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonLinkedTransactionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "person_id",
+          "kind",
+          "amount",
+          "currency",
+          "occurred_on",
+          "description",
+          "transaction",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "PersonLedgerEntryResponse"
+      },
+      "PersonLedgerRecordRequest": {
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id",
+            "description": "Where the money arrived or left from."
+          },
+          "category_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Category Id",
+            "description": "An expense category: the shared expense's, so your spending comes down to your share."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "account_id",
+          "category_id"
+        ],
+        "title": "PersonLedgerRecordRequest",
+        "description": "Record a repayment in Finance too, in the same commit."
+      },
+      "PersonLedgerResponse": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/PersonLedgerEntryResponse"
+            },
+            "type": "array",
+            "title": "Entries",
+            "description": "Newest first."
+          },
+          "balances": {
+            "items": {
+              "$ref": "#/components/schemas/PersonBalanceResponse"
+            },
+            "type": "array",
+            "title": "Balances",
+            "description": "Each person's non-zero balance per currency; currencies are never mixed."
+          }
+        },
+        "type": "object",
+        "required": [
+          "entries",
+          "balances"
+        ],
+        "title": "PersonLedgerResponse"
+      },
+      "PersonLinkedTransactionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount"
+          },
+          "occurred_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Occurred On"
+          },
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "description",
+          "amount",
+          "occurred_on",
+          "account_id",
+          "category_id"
+        ],
+        "title": "PersonLinkedTransactionResponse",
+        "description": "The Finance transaction behind an entry; null once that transaction is deleted."
       },
       "PersonResponse": {
         "properties": {
@@ -73103,6 +73691,53 @@
         "type": "object",
         "title": "UpdateOccurrenceRequest",
         "description": "Change one occurrence (`this`), it and every later one (`following`), or the whole series\n(`series`). Moving or resizing an occurrence with `series` moves or resizes them all."
+      },
+      "UpdatePersonLedgerEntryRequest": {
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
+                "description": "Minor units, always positive: ₹12.50 is 1250."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "occurred_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred On"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdatePersonLedgerEntryRequest",
+        "description": "Change an entry's amount, date, or description. Its kind and links stay."
       },
       "UpdatePersonRequest": {
         "properties": {
