@@ -3893,6 +3893,61 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/shopping/gifts": {
+      "get": {
+        "tags": [
+          "shopping"
+        ],
+        "summary": "List gift ideas for people",
+        "description": "Items in any list that are gift ideas for someone in People, newest first.",
+        "operationId": "list_gifts_api_v1_workspaces__workspace_id__shopping_gifts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShoppingItemsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, list, or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/shopping/items/{item_id}": {
       "patch": {
         "tags": [
@@ -40746,7 +40801,8 @@
                 "shopping",
                 "places",
                 "saved",
-                "watchlist"
+                "watchlist",
+                "people"
               ]
             },
             "type": "array",
@@ -41000,7 +41056,8 @@
                   "shopping",
                   "places",
                   "saved",
-                  "watchlist"
+                  "watchlist",
+                  "people"
                 ]
               },
               {
@@ -42714,7 +42771,8 @@
               "add_transaction",
               "add_place",
               "save_link",
-              "add_watch_item"
+              "add_watch_item",
+              "add_person"
             ],
             "title": "Kind"
           },
@@ -44825,7 +44883,8 @@
               "notes",
               "documents",
               "shopping",
-              "investments"
+              "investments",
+              "people"
             ],
             "title": "Module"
           },
@@ -45165,6 +45224,17 @@
               }
             ]
           },
+          "people": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BriefingPeople"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "`null` when unavailable, left out, or in briefings prepared before it was added."
+          },
           "unavailable": {
             "items": {
               "type": "string",
@@ -45181,7 +45251,8 @@
                 "notes",
                 "documents",
                 "shopping",
-                "investments"
+                "investments",
+                "people"
               ]
             },
             "type": "array",
@@ -45207,6 +45278,7 @@
           "documents",
           "shopping",
           "investments",
+          "people",
           "unavailable"
         ],
         "title": "BriefingContentResponse"
@@ -45827,7 +45899,8 @@
                 "notes",
                 "documents",
                 "shopping",
-                "investments"
+                "investments",
+                "people"
               ]
             },
             "type": "array",
@@ -46051,6 +46124,85 @@
           "upcoming"
         ],
         "title": "BriefingPayments"
+      },
+      "BriefingPeople": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingPersonDateItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Soonest first; names and dates only."
+          },
+          "today": {
+            "type": "integer",
+            "title": "Today"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "today",
+          "total"
+        ],
+        "title": "BriefingPeople"
+      },
+      "BriefingPersonDateItem": {
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/BriefingSourceRef"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "description": "`birthday`, `anniversary`, or `other` (named by `label`)."
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "on": {
+            "type": "string",
+            "format": "date",
+            "title": "On"
+          },
+          "days_away": {
+            "type": "integer",
+            "title": "Days Away"
+          },
+          "years": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Years",
+            "description": "How old they turn, or years together, if known."
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref",
+          "name",
+          "kind",
+          "label",
+          "on",
+          "days_away",
+          "years"
+        ],
+        "title": "BriefingPersonDateItem"
       },
       "BriefingRegenerateRequest": {
         "properties": {
@@ -46417,11 +46569,12 @@
                 "notes",
                 "documents",
                 "shopping",
-                "investments"
+                "investments",
+                "people"
               ]
             },
             "type": "array",
-            "maxItems": 13,
+            "maxItems": 14,
             "title": "Hidden",
             "description": "Modules left out of the briefing entirely."
           },
@@ -46571,7 +46724,8 @@
               "notes",
               "documents",
               "shopping",
-              "investments"
+              "investments",
+              "people"
             ],
             "title": "Module"
           },
@@ -46592,7 +46746,8 @@
               "document",
               "shopping_list",
               "sip",
-              "deposit"
+              "deposit",
+              "person"
             ],
             "title": "Type"
           },
@@ -46646,7 +46801,8 @@
               "notes",
               "documents",
               "shopping",
-              "investments"
+              "investments",
+              "people"
             ],
             "title": "Module"
           },
@@ -50217,6 +50373,19 @@
             "maxLength": 2000,
             "title": "Notes",
             "default": ""
+          },
+          "person_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Id",
+            "description": "Make it a gift idea for someone in People."
           }
         },
         "additionalProperties": false,
@@ -67929,6 +68098,19 @@
             "type": "string",
             "format": "date-time",
             "title": "Updated At"
+          },
+          "person_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Id",
+            "description": "Who it's a gift idea for, from People."
           }
         },
         "type": "object",
@@ -67943,7 +68125,8 @@
           "status",
           "purchased_at",
           "created_at",
-          "updated_at"
+          "updated_at",
+          "person_id"
         ],
         "title": "ShoppingItemResponse"
       },
@@ -70982,7 +71165,8 @@
                     "shopping",
                     "places",
                     "saved",
-                    "watchlist"
+                    "watchlist",
+                    "people"
                   ]
                 },
                 "type": "array",
@@ -73346,12 +73530,24 @@
               }
             ],
             "title": "Notes"
+          },
+          "person_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Id"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "title": "UpdateItemRequest",
-        "description": "Change some of an item's fields. Omitted fields keep their values; `quantity: null` and\n`url: null` clear them. Purchasing has its own endpoints."
+        "description": "Change some of an item's fields. Omitted fields keep their values; `quantity: null`,\n`url: null`, and `person_id: null` clear them. Purchasing has its own endpoints."
       },
       "UpdateLoanRequest": {
         "properties": {

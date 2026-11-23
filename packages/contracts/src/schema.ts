@@ -971,6 +971,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/shopping/gifts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List gift ideas for people
+         * @description Items in any list that are gift ideas for someone in People, newest first.
+         */
+        get: operations["list_gifts_api_v1_workspaces__workspace_id__shopping_gifts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/shopping/items/{item_id}": {
         parameters: {
             query?: never;
@@ -8280,7 +8300,7 @@ export interface components {
              */
             autonomy: "read_only" | "suggest" | "approval" | "limited";
             /** Modules */
-            modules: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail" | "shopping" | "places" | "saved" | "watchlist")[];
+            modules: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail" | "shopping" | "places" | "saved" | "watchlist" | "people")[];
             /** Tool Modes */
             tool_modes: {
                 [key: string]: "off" | "ask" | "auto";
@@ -8367,7 +8387,7 @@ export interface components {
             /** Description */
             description: string;
             /** Module */
-            module: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail" | "shopping" | "places" | "saved" | "watchlist") | null;
+            module: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail" | "shopping" | "places" | "saved" | "watchlist" | "people") | null;
             /**
              * Access
              * @enum {string}
@@ -8995,7 +9015,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "create_task" | "create_reminder" | "create_event" | "create_note" | "append_to_note" | "add_note_tags" | "update_document_details" | "add_shopping_item" | "create_habit" | "log_water" | "log_weight" | "log_activity" | "add_transaction" | "add_place" | "save_link" | "add_watch_item";
+            kind: "create_task" | "create_reminder" | "create_event" | "create_note" | "append_to_note" | "add_note_tags" | "update_document_details" | "add_shopping_item" | "create_habit" | "log_water" | "log_weight" | "log_activity" | "add_transaction" | "add_place" | "save_link" | "add_watch_item" | "add_person";
             /** Payload */
             payload: {
                 [key: string]: unknown;
@@ -9841,7 +9861,7 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments";
+            module: "tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments" | "people";
             /** Title */
             title: string;
             /**
@@ -9952,8 +9972,10 @@ export interface components {
             documents: components["schemas"]["BriefingDocuments"] | null;
             shopping: components["schemas"]["BriefingShopping"] | null;
             investments: components["schemas"]["BriefingInvestments"] | null;
+            /** @description `null` when unavailable, left out, or in briefings prepared before it was added. */
+            people: components["schemas"]["BriefingPeople"] | null;
             /** Unavailable */
-            unavailable: ("tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments")[];
+            unavailable: ("tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments" | "people")[];
         };
         /** BriefingDayWindow */
         BriefingDayWindow: {
@@ -10237,7 +10259,7 @@ export interface components {
              * Modules
              * @description The modules the provider was given; AI permissions left out the rest.
              */
-            modules: ("tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments")[];
+            modules: ("tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments" | "people")[];
             /** Provider Name */
             provider_name: string;
             /** Model */
@@ -10334,6 +10356,43 @@ export interface components {
             due_today: number;
             /** Upcoming */
             upcoming: number;
+        };
+        /** BriefingPeople */
+        BriefingPeople: {
+            /**
+             * Items
+             * @description Soonest first; names and dates only.
+             */
+            items: components["schemas"]["BriefingPersonDateItem"][];
+            /** Today */
+            today: number;
+            /** Total */
+            total: number;
+        };
+        /** BriefingPersonDateItem */
+        BriefingPersonDateItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Name */
+            name: string;
+            /**
+             * Kind
+             * @description `birthday`, `anniversary`, or `other` (named by `label`).
+             */
+            kind: string;
+            /** Label */
+            label: string;
+            /**
+             * On
+             * Format: date
+             */
+            on: string;
+            /** Days Away */
+            days_away: number;
+            /**
+             * Years
+             * @description How old they turn, or years together, if known.
+             */
+            years: number | null;
         };
         /** BriefingRegenerateRequest */
         BriefingRegenerateRequest: {
@@ -10495,7 +10554,7 @@ export interface components {
              * Hidden
              * @description Modules left out of the briefing entirely.
              */
-            hidden: ("tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments")[];
+            hidden: ("tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments" | "people")[];
             /**
              * Prepare At
              * @description Local time (your time zone preference) to prepare the briefing each day; `null` prepares it only when opened.
@@ -10554,12 +10613,12 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments";
+            module: "tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments" | "people";
             /**
              * Type
              * @enum {string}
              */
-            type: "task" | "event" | "reminder" | "commitment" | "budget" | "savings_goal" | "habit" | "routine" | "workout" | "fitness_goal" | "note" | "document" | "shopping_list" | "sip" | "deposit";
+            type: "task" | "event" | "reminder" | "commitment" | "budget" | "savings_goal" | "habit" | "routine" | "workout" | "fitness_goal" | "note" | "document" | "shopping_list" | "sip" | "deposit" | "person";
             /**
              * Id
              * Format: uuid
@@ -10582,7 +10641,7 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments";
+            module: "tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments" | "people";
             /**
              * Status
              * @enum {string}
@@ -12109,6 +12168,11 @@ export interface components {
              * @default
              */
             notes: string;
+            /**
+             * Person Id
+             * @description Make it a gift idea for someone in People.
+             */
+            person_id?: string | null;
         };
         /** CreateLinkedNoteRequest */
         CreateLinkedNoteRequest: {
@@ -19415,6 +19479,11 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+            /**
+             * Person Id
+             * @description Who it's a gift idea for, from People.
+             */
+            person_id: string | null;
         };
         /** ShoppingItemsResponse */
         ShoppingItemsResponse: {
@@ -20607,7 +20676,7 @@ export interface components {
             /** Autonomy */
             autonomy?: ("read_only" | "suggest" | "approval" | "limited") | null;
             /** Modules */
-            modules?: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail" | "shopping" | "places" | "saved" | "watchlist")[] | null;
+            modules?: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail" | "shopping" | "places" | "saved" | "watchlist" | "people")[] | null;
             /** Tool Modes */
             tool_modes?: {
                 [key: string]: "off" | "ask" | "auto";
@@ -21055,8 +21124,8 @@ export interface components {
         };
         /**
          * UpdateItemRequest
-         * @description Change some of an item's fields. Omitted fields keep their values; `quantity: null` and
-         *     `url: null` clear them. Purchasing has its own endpoints.
+         * @description Change some of an item's fields. Omitted fields keep their values; `quantity: null`,
+         *     `url: null`, and `person_id: null` clear them. Purchasing has its own endpoints.
          */
         UpdateItemRequest: {
             /** Name */
@@ -21067,6 +21136,8 @@ export interface components {
             url?: string | null;
             /** Notes */
             notes?: string | null;
+            /** Person Id */
+            person_id?: string | null;
         };
         /**
          * UpdateLoanRequest
@@ -25066,6 +25137,51 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ShoppingItemResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, list, or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_gifts_api_v1_workspaces__workspace_id__shopping_gifts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShoppingItemsResponse"];
                 };
             };
             /** @description Not signed in. */
