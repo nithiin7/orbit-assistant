@@ -555,6 +555,9 @@ reminders); `notifications.occurrence_id`/`reminder_id` `ON DELETE SET NULL`, `u
   (`reminders.calendar_event_alert_id`, unique; a CHECK forbids also having a finance link),
   "Managed in Calendar", 409 from the reminders API. See
   [Reminder integration](#calendar-reminder-integration).
+- **People-managed reminders.** Each person with a date reminder owns one
+  (`reminders.person_id`, unique; a CHECK forbids any other manager), "Managed in People", 409
+  from the reminders API; its notification opens `/people?person=<id>`. See [People](#people).
 
 ### Scheduling and delivery
 
@@ -1966,6 +1969,48 @@ Module `places`: both tables, JSON/CSV. Universal search: name, city, note.
 
 No reverse geocoding, import, trips/repeat visits, or agent tool. Countries missing from the 1:50m
 shapes and pinless places count but don't show on the offline map.
+
+## People
+
+`/people` (Plan): the people who matter, with birthdays, anniversaries, and named yearly dates,
+and a reminder before each one. Phase 1; money owed and wider links are later phases.
+
+### Data
+
+`people`: name, `relationship` (family, partner, friend, colleague, other), optional phone,
+email, and note, `favorite`, and when date reminders fire (`reminder_time`, IANA `timezone`,
+default the user's zone, else UTC). `person_dates` (migration `0048`): `kind` birthday,
+anniversary, or other (with a `label`), `month`/`day`, optional `year` (1900-2100; gives ages and
+years together), optional `remind_days_before` (0-30, `NULL` = no reminder), `position`. One
+birthday per person (partial unique index); composite FKs keep dates in the person's workspace.
+`PATCH` with `dates` replaces them all. 29 February is allowed without a year or in a leap year,
+and falls on 28 February in other years.
+
+### Reminders
+
+One managed reminder per person (`services/people/dates.py`, pure): the soonest alert still ahead
+across their dates (`date − days_before` at `reminder_time` local), one-time, re-pointed in the
+same transaction as every change and by `after_delivery` once it fires (so it moves to next
+year). No occurrence before the date's own year. Title "Priya turns 30 in 7 days" / "Priya's
+birthday is today"; description has the date only, never contact details or the note. Deleting
+the person cascades to the reminder; delivered notifications stay.
+
+### Web
+
+`components/people/`, rail `?view=` Everyone (cards with initials avatars, favorites first,
+search and relationship chips) and Upcoming dates (today's celebrated, then this week and by
+month). `?person=<id>` opens a detail dialog (notifications and search link there). Date maths in
+`lib/people` uses the browser's local date. Dashboard widget "Coming up" (next 30 days).
+
+### Backup and search
+
+Module `people`: both tables, JSON/CSV. Universal search: name and note (contact details aren't
+searched or shown).
+
+### Limitations
+
+No contact import (vCard, Google), photos, money owed (phase 2), calendar overlay, briefing, or
+agent tool (phase 3).
 
 ## Achievements and the XP store
 
