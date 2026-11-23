@@ -79,7 +79,7 @@ export function MonthView({
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border bg-card shadow-elevation-1">
+    <div className="overflow-hidden rounded-2xl border bg-card shadow-elevation-1">
       <div role="table" aria-label="Month" className="flex flex-col">
         <div role="row" className="grid grid-cols-7 border-b bg-muted/40">
           {names.map((name) => (

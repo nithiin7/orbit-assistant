@@ -141,7 +141,7 @@ export function ProposalCard({
   return (
     <section
       aria-label={`Proposed: ${proposal.summary}`}
-      className="space-y-3 rounded-xl border bg-card p-4 shadow-elevation-1"
+      className="space-y-3 rounded-2xl border bg-card p-4 shadow-elevation-1"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-0.5">

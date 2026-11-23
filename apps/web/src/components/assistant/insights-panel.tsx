@@ -32,7 +32,7 @@ export function InsightsPanel() {
           <li
             key={insight.key}
             className={cn(
-              "relative space-y-1 rounded-xl border bg-card p-3 pr-10 shadow-elevation-1",
+              "relative space-y-1 rounded-2xl border bg-card p-3 pr-10 shadow-elevation-1",
               insight.tone === "attention" && "border-l-4 border-l-warning",
               insight.tone === "positive" && "border-l-4 border-l-success",
             )}

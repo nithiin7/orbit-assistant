@@ -92,7 +92,7 @@ export function DocumentList({
       className={cn(
         layout === "grid"
           ? "grid grid-cols-1 gap-3 @md/list:grid-cols-2 @3xl/list:grid-cols-3 @6xl/list:grid-cols-4"
-          : "divide-y overflow-hidden rounded-xl border bg-card shadow-elevation-1",
+          : "divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1",
       )}
     >
       {documents.map((document) => {
@@ -105,7 +105,7 @@ export function DocumentList({
             className={cn(
               "group relative transition-[background-color,opacity] duration-150",
               layout === "grid"
-                ? "rounded-xl border bg-card shadow-elevation-1 hover:border-brand/30"
+                ? "rounded-2xl border bg-card shadow-elevation-1 transition-[border-color,translate] hover:-translate-y-0.5 hover:border-brand/40 motion-reduce:hover:translate-y-0"
                 : "hover:bg-accent/40",
               checked &&
                 (layout === "grid" ? "border-brand/50 ring-1 ring-brand/30" : "bg-brand-subtle/50"),

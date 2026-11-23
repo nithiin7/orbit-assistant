@@ -47,7 +47,7 @@ export function WorkspaceSettings() {
 
       <div className="space-y-3">
         <h3 className="text-sm font-medium">Your workspaces</h3>
-        <ul className="divide-y rounded-xl border bg-card">
+        <ul className="divide-y rounded-2xl border bg-card">
           {workspaces.map((workspace) => {
             const current = workspace.id === active.id;
             return (
@@ -210,7 +210,7 @@ function DeleteWorkspaceSection({ workspace }: { workspace: Workspace }) {
   return (
     <section
       aria-labelledby="delete-workspace-heading"
-      className="space-y-3 rounded-xl border border-destructive/30 p-4"
+      className="space-y-3 rounded-2xl border border-destructive/30 p-4"
     >
       <div className="space-y-1">
         <h3 id="delete-workspace-heading" className="text-sm font-medium text-destructive">

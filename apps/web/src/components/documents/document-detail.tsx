@@ -11,14 +11,17 @@ import type {
 import {
   ArrowLeft,
   BellRing,
+  CalendarClock,
   Download,
   FileText,
   Folder,
+  FolderOpen,
   History,
   Link2,
   type LucideIcon,
   MoreHorizontal,
   Plus,
+  RefreshCcw,
   SlidersHorizontal,
   Star,
   Tag,
@@ -35,6 +38,7 @@ import { AssistMenu } from "@/components/ai/assist-menu";
 import { AmountField, DateField, FormAlert, FormField, SelectField } from "@/components/form-field";
 import { ExternalOrigin } from "@/components/integrations/external-origin";
 import { Button } from "@/components/ui/button";
+import { IconChip, type IconChipTone } from "@/components/ui/icon-chip";
 import { Input } from "@/components/ui/input";
 import { Menu, type MenuItem } from "@/components/ui/menu";
 import { Select } from "@/components/ui/select";
@@ -407,7 +411,7 @@ function DocumentDetailView({
               onDownload={() => onDownload(document)}
             />
           ) : (
-            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card/40 px-6 py-16 text-center">
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed bg-card/40 px-6 py-16 text-center">
               <FileText className="size-8 text-muted-foreground" aria-hidden="true" />
               <p className="text-sm text-muted-foreground">This record has no file yet.</p>
               {!trashed ? (
@@ -435,7 +439,7 @@ function DocumentDetailView({
             id={settingsId}
             aria-label="Document details"
             className={cn(
-              "flex min-h-0 w-full min-w-0 flex-col justify-self-end overflow-hidden rounded-xl border bg-card transition-transform duration-300 ease-out motion-reduce:transition-none @4xl/pane:max-h-[calc(100dvh-3rem)] @4xl/pane:w-[24rem]",
+              "flex min-h-0 w-full min-w-0 flex-col justify-self-end overflow-hidden rounded-2xl border bg-card transition-transform duration-300 ease-out motion-reduce:transition-none @4xl/pane:max-h-[calc(100dvh-3rem)] @4xl/pane:w-[24rem]",
               settingsOpen ? "translate-x-0" : "@4xl/pane:translate-x-6",
             )}
           >
@@ -648,10 +652,14 @@ function SettingsTabs({
 
 function Section({
   title,
+  icon,
+  tone = "slate",
   action,
   children,
 }: {
   title: string;
+  icon: LucideIcon;
+  tone?: IconChipTone;
   action?: ReactNode;
   children: ReactNode;
 }) {
@@ -659,7 +667,8 @@ function Section({
   return (
     <section aria-labelledby={id} className="space-y-3">
       <div className="flex min-h-8 items-center justify-between gap-2">
-        <h3 id={id} className="text-sm font-semibold">
+        <h3 id={id} className="flex items-center gap-2.5 text-sm font-semibold">
+          <IconChip icon={icon} tone={tone} />
           {title}
         </h3>
         {action}
@@ -698,7 +707,7 @@ function Organize({
     onChange({ tags: [...document.tags, name] }, `Tagged “${name}”.`);
   };
   return (
-    <Section title="Organize">
+    <Section title="Organize" icon={FolderOpen} tone="brand">
       <div className="grid gap-3 @md/pane:grid-cols-2 @4xl/pane:grid-cols-1">
         <div className="space-y-1.5">
           <label htmlFor={categoryId} className="text-sm font-medium">
@@ -853,7 +862,7 @@ function DetailsForm({
         className="min-h-0 flex-1 scrollbar-thin overflow-y-auto p-4"
       >
         <div hidden={tab !== "details"} className="space-y-4">
-          <Section title="Details">
+          <Section title="Details" icon={FileText} tone="blue">
             <FormField
               label="Name"
               autoComplete="off"
@@ -967,7 +976,7 @@ function DetailsForm({
         </div>
 
         <div hidden={tab !== "reminders"} className="space-y-4">
-          <Section title="Expiry and reminders">
+          <Section title="Expiry and reminders" icon={CalendarClock} tone="amber">
             <div className="grid gap-3 @md/pane:grid-cols-2 @4xl/pane:grid-cols-1">
               <DateField
                 control={control}
@@ -1062,8 +1071,8 @@ function Versions({
 }) {
   if (detail.versions.length === 0) return null;
   return (
-    <Section title="Version history">
-      <ol className="divide-y rounded-xl border bg-card">
+    <Section title="Version history" icon={History}>
+      <ol className="divide-y rounded-2xl border bg-card">
         {detail.versions.map((version) => (
           <li
             key={version.id}
@@ -1140,6 +1149,8 @@ function Links({
   return (
     <Section
       title="Linked records"
+      icon={Link2}
+      tone="violet"
       action={
         !readOnly ? (
           <Button variant="ghost" size="sm" onClick={onLink}>
@@ -1154,7 +1165,7 @@ function Links({
           Link this document to a task, note, event, loan, policy, or transaction it belongs with.
         </p>
       ) : (
-        <ul className="divide-y rounded-xl border bg-card">
+        <ul className="divide-y rounded-2xl border bg-card">
           {detail.links.map((link) => {
             const Icon = LINK_ICONS[link.kind];
             return (
@@ -1197,7 +1208,7 @@ function Renewals({ detail }: { detail: DocumentDetail }) {
   if (detail.renewals.length === 0) return null;
   const date = (value: string | null) => (value ? formatCalendarDate(value) : "none");
   return (
-    <Section title="Renewal history">
+    <Section title="Renewal history" icon={RefreshCcw} tone="green">
       <ol className="space-y-2">
         {detail.renewals.map((renewal) => (
           <li key={renewal.id} className="rounded-lg border bg-card px-4 py-2.5 text-sm">

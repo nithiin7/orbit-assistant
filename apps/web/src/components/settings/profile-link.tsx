@@ -18,7 +18,7 @@ export function ProfileLink({ active = false }: { active?: boolean }) {
       aria-label={`Account: ${user.display_name}`}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex items-center gap-4 rounded-xl border bg-card px-4 py-4 transition-colors duration-150 outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
+        "flex items-center gap-4 rounded-2xl border bg-card px-4 py-4 transition-colors duration-150 outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
         active && "bg-accent",
       )}
     >

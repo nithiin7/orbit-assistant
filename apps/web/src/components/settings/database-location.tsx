@@ -52,7 +52,7 @@ export function DatabaseLocation() {
 
   if (state.status === "loading") {
     return (
-      <div aria-busy="true" className="space-y-2 rounded-xl border bg-card p-4">
+      <div aria-busy="true" className="space-y-2 rounded-2xl border bg-card p-4">
         <span className="sr-only">Loading the database location…</span>
         <Skeleton className="h-4 w-32" />
         <Skeleton className="h-9" />
@@ -76,7 +76,7 @@ export function DatabaseLocation() {
   return (
     <section
       aria-labelledby="database-location-heading"
-      className="space-y-3 rounded-xl border bg-card p-4"
+      className="space-y-3 rounded-2xl border bg-card p-4"
     >
       <h2 id="database-location-heading" className="text-sm font-medium">
         Database file

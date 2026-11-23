@@ -181,7 +181,7 @@ export function SearchView() {
       />
 
       <div className="space-y-4">
-        <div className="flex h-12 items-center gap-3 rounded-xl border bg-card px-4 shadow-elevation-1 focus-within:ring-2 focus-within:ring-ring">
+        <div className="flex h-12 items-center gap-3 rounded-2xl border bg-card px-4 shadow-elevation-1 focus-within:ring-2 focus-within:ring-ring">
           <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
           <input
             ref={inputRef}
@@ -306,7 +306,7 @@ export function SearchView() {
       ) : tooShort ? (
         <p className="text-sm text-muted-foreground">Type at least two characters to search.</p>
       ) : search.failed ? (
-        <div role="alert" className="space-y-3 rounded-xl border p-6 text-center">
+        <div role="alert" className="space-y-3 rounded-2xl border p-6 text-center">
           <p className="text-sm">Couldn’t search just now.</p>
           <Button variant="outline" onClick={search.retry}>
             <RefreshCw aria-hidden="true" />

@@ -58,7 +58,7 @@ export function AgendaView({
 
   if (resource.status === "loading") {
     return (
-      <div className="space-y-3 rounded-xl border bg-card p-5" aria-busy="true">
+      <div className="space-y-3 rounded-2xl border bg-card p-5" aria-busy="true">
         <span className="sr-only">Loading agenda…</span>
         <Skeleton className="h-4 w-1/3" />
         <Skeleton className="h-10 w-full" />
@@ -70,7 +70,7 @@ export function AgendaView({
     return (
       <div
         role="alert"
-        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-5"
+        className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-5"
       >
         <p className="text-sm text-muted-foreground">{resource.message}</p>
         <Button variant="outline" size="sm" onClick={agenda.reload}>
@@ -100,7 +100,7 @@ export function AgendaView({
         {groups.map((group) => (
           <li
             key={group.date}
-            className="overflow-hidden rounded-xl border bg-card shadow-elevation-1"
+            className="overflow-hidden rounded-2xl border bg-card shadow-elevation-1"
           >
             <h3
               className={cn(

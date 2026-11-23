@@ -582,7 +582,7 @@ function CalendarView({ workspaceId }: { workspaceId: string }) {
           ) : state.status === "error" ? (
             <div
               role="alert"
-              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-5"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-5"
             >
               <p className="text-sm text-muted-foreground">{state.message}</p>
               <Button variant="outline" size="sm" onClick={reload}>

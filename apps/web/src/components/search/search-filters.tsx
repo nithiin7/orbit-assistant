@@ -119,7 +119,7 @@ export function SearchFilters({ state, categories, onChange }: SearchFiltersProp
   const count = activeFilterCount(state);
 
   return (
-    <section aria-label="Filters" className="space-y-4 rounded-xl border bg-card p-4">
+    <section aria-label="Filters" className="space-y-4 rounded-2xl border bg-card p-4">
       <div className="flex flex-wrap items-end gap-4">
         <div className="space-y-1.5">
           <span className="block text-xs font-medium text-muted-foreground">Sort</span>
