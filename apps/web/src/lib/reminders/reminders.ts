@@ -129,25 +129,64 @@ export function toReminderListQuery(filter: ReminderFilter): ReminderListQuery {
  * or "Tue, Jan 15, 9:00 AM" (with the year when it isn't this year).
  */
 export function formatOccurrence(at: string, timeZone: string, now: Date = new Date()): string {
+  const { day, time } = occurrenceParts(at, timeZone, now);
+  return `${day}, ${time}`;
+}
+
+/**
+ * The day ("Today", "Tomorrow", "Tue, Jan 15") and the time ("9:00 AM") a reminder fires, on its
+ * own time zone's clock, for layouts that show them apart.
+ */
+export function occurrenceParts(
+  at: string,
+  timeZone: string,
+  now: Date = new Date(),
+): { day: string; time: string } {
   const instant = new Date(at);
   const time = new Intl.DateTimeFormat(undefined, {
     timeZone,
     hour: "numeric",
     minute: "2-digit",
   }).format(instant);
-  const day = localParts(instant, timeZone).date;
+  const date = localParts(instant, timeZone).date;
   const today = localParts(now, timeZone).date;
   const tomorrow = localParts(new Date(now.getTime() + 86_400_000), timeZone).date;
-  if (day === today) return `Today, ${time}`;
-  if (day === tomorrow) return `Tomorrow, ${time}`;
-  const date = new Intl.DateTimeFormat(undefined, {
+  if (date === today) return { day: "Today", time };
+  if (date === tomorrow) return { day: "Tomorrow", time };
+  const day = new Intl.DateTimeFormat(undefined, {
     timeZone,
     weekday: "short",
     month: "short",
     day: "numeric",
-    year: day.slice(0, 4) === today.slice(0, 4) ? undefined : "numeric",
+    year: date.slice(0, 4) === today.slice(0, 4) ? undefined : "numeric",
   }).format(instant);
-  return `${date}, ${time}`;
+  return { day, time };
+}
+
+/** How long until `at`: "in 5 min", "in 2 h 15 min", "in 3 days"; "now" once it has passed. */
+export function formatCountdown(at: string, now: Date = new Date()): string {
+  const minutes = Math.ceil((new Date(at).getTime() - now.getTime()) / 60_000);
+  if (minutes <= 0) return "now";
+  if (minutes < 60) return `in ${minutes} min`;
+  if (minutes < 24 * 60) {
+    const hours = Math.floor(minutes / 60);
+    const rest = minutes % 60;
+    return rest === 0 ? `in ${hours} h` : `in ${hours} h ${rest} min`;
+  }
+  const days = Math.round(minutes / (24 * 60));
+  return `in ${days} ${days === 1 ? "day" : "days"}`;
+}
+
+/** Whether a reminder's title, details, or task contain `query`, ignoring case. */
+export function matchesReminder(
+  reminder: Pick<Reminder, "title" | "description" | "task">,
+  query: string,
+): boolean {
+  const needle = query.trim().toLocaleLowerCase();
+  if (!needle) return true;
+  return [reminder.title, reminder.description, reminder.task?.title ?? ""].some((text) =>
+    text.toLocaleLowerCase().includes(needle),
+  );
 }
 
 /** A short "3 min ago" or "Jan 15" for when a notification arrived. */
