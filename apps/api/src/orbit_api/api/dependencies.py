@@ -42,6 +42,7 @@ from orbit_api.repositories.investments import (
 )
 from orbit_api.repositories.notes import build_attachment_service, build_note_service
 from orbit_api.repositories.notifications import SqlNotificationRepository
+from orbit_api.repositories.people import build_people_service
 from orbit_api.repositories.places import SqlPlaceRepository, SqlPlaceSettings
 from orbit_api.repositories.planning import build_planning_service
 from orbit_api.repositories.push import build_push_service
@@ -84,6 +85,7 @@ from orbit_api.services.networth.service import NetWorthService
 from orbit_api.services.notes.attachments import AttachmentService
 from orbit_api.services.notes.service import NoteService
 from orbit_api.services.notifications.service import NotificationService
+from orbit_api.services.people.service import PeopleService
 from orbit_api.services.places.service import Geocoder, PlaceService
 from orbit_api.services.planning.service import PlanningService
 from orbit_api.services.push.models import PushSender
@@ -391,6 +393,13 @@ def get_place_service(request: Request, session: SessionDep, settings: SettingsD
 
 
 PlaceServiceDep = Annotated[PlaceService, Depends(get_place_service)]
+
+
+def get_people_service(session: SessionDep) -> PeopleService:
+    return build_people_service(session)
+
+
+PeopleServiceDep = Annotated[PeopleService, Depends(get_people_service)]
 
 
 def get_archive_store(settings: SettingsDep) -> FileArchiveStore:

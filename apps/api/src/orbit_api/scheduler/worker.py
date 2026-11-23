@@ -49,6 +49,7 @@ from orbit_api.repositories.investments import (
     workspaces_with_holdings,
 )
 from orbit_api.repositories.notifications import SqlNotificationRepository
+from orbit_api.repositories.people import build_people_reminders
 from orbit_api.repositories.push import build_push_service
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.transaction import SqlTransaction
@@ -109,7 +110,8 @@ AGENT_PURGE_INTERVAL = timedelta(hours=1)
 
 class ManagedFollowUp:
     """Hands a delivered managed reminder to the record that manages it: a calendar event's
-    alert, a habit's or routine's reminder time, a document, or a financial commitment."""
+    alert, a habit's or routine's reminder time, a document, a person, or a financial
+    commitment."""
 
     def __init__(
         self,
@@ -117,11 +119,13 @@ class ManagedFollowUp:
         commitments: ReminderFollowUp,
         habits: ReminderFollowUp,
         documents: ReminderFollowUp,
+        people: ReminderFollowUp,
     ) -> None:
         self._calendar = calendar
         self._commitments = commitments
         self._habits = habits
         self._documents = documents
+        self._people = people
 
     async def after_delivery(self, reminder: Reminder, now: datetime) -> None:
         link = reminder.commitment
@@ -131,6 +135,8 @@ class ManagedFollowUp:
             await self._habits.after_delivery(reminder, now)
         elif link is not None and link.kind == "document":
             await self._documents.after_delivery(reminder, now)
+        elif link is not None and link.kind == "person":
+            await self._people.after_delivery(reminder, now)
         else:
             await self._commitments.after_delivery(reminder, now)
 
@@ -864,11 +870,13 @@ class ReminderWorker:
             max_attempts=self._max_attempts,
             # Loan, subscription, and bill reminders move on to the next payment once delivered;
             # event alerts move on to the next occurrence; habit and routine reminders to the
-            # next due day; document reminders to the next expiry, renewal, or review alert.
+            # next due day; document reminders to the next expiry, renewal, or review alert;
+            # people reminders to the person's next date.
             follow_up=ManagedFollowUp(
                 build_calendar_service(session, self._clock),
                 build_commitment_service(session, self._clock),
                 build_habit_service(session, self._clock).reminders,
                 build_document_reminders(session, self._clock),
+                build_people_reminders(session, self._clock),
             ),
         )

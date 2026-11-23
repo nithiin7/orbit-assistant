@@ -26,6 +26,7 @@ from orbit_api.api.v1 import (
     networth,
     notes,
     notifications,
+    people,
     places,
     planning,
     push,
@@ -54,6 +55,7 @@ router.include_router(shopping.router)
 router.include_router(watchlist.router)
 router.include_router(bookmarks.router)
 router.include_router(places.router)
+router.include_router(people.router)
 router.include_router(reminders.router)
 router.include_router(finance.router)
 router.include_router(statements.router)

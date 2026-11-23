@@ -27,6 +27,7 @@ Module = Literal[
     "watchlist",
     "bookmarks",
     "places",
+    "people",
 ]
 
 MODULES: Final[tuple[Module, ...]] = (
@@ -44,6 +45,7 @@ MODULES: Final[tuple[Module, ...]] = (
     "watchlist",
     "bookmarks",
     "places",
+    "people",
 )
 
 MODULE_LABELS: Final[dict[Module, str]] = {
@@ -61,6 +63,7 @@ MODULE_LABELS: Final[dict[Module, str]] = {
     "watchlist": "Watchlist",
     "bookmarks": "Saved",
     "places": "Places",
+    "people": "People",
 }
 
 _PREFIXES: Final[tuple[tuple[str, Module], ...]] = (
@@ -95,6 +98,8 @@ _EXACT: Final[dict[str, Module]] = {
     "bookmark_settings": "bookmarks",
     "places": "places",
     "place_settings": "places",
+    "people": "people",
+    "person_dates": "people",
 }
 
 # Tables a backup leaves out, and why. Credentials and tokens never leave the server; derived

@@ -123,8 +123,9 @@ class ReminderCommitmentResponse(BaseModel):
         description="`loan`, `recurring_payment` for a subscription or bill, `deposit` for a "
         "fixed or recurring deposit's maturity, `calendar_alert` for one of a calendar event's "
         "alerts (`id` is the alert's), `habit_reminder` for a habit's or routine's reminder "
-        "time (`id` is the reminder time's), or `document` for a document's expiry, renewal, "
-        "and review alerts (`id` is the document's)."
+        "time (`id` is the reminder time's), `document` for a document's expiry, renewal, "
+        "and review alerts (`id` is the document's), or `person` for a person's birthday, "
+        "anniversary, and other dates (`id` is the person's)."
     )
     id: uuid.UUID
 

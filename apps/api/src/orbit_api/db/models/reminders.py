@@ -40,6 +40,12 @@ DOCUMENT_MANAGER = (
     " AND habit_reminder_id IS NULL)"
 )
 
+PERSON_MANAGER = (
+    "person_id IS NULL OR (finance_loan_id IS NULL AND finance_recurring_payment_id IS NULL"
+    " AND finance_deposit_id IS NULL AND calendar_event_alert_id IS NULL"
+    " AND habit_reminder_id IS NULL AND document_id IS NULL)"
+)
+
 
 class ReminderModel(Base):
     """A reminder in one workspace, optionally about one of its tasks or managed by one of its
@@ -124,6 +130,15 @@ class ReminderModel(Base):
         ),
         UniqueConstraint("document_id", name="uq_reminders_document_id"),
         CheckConstraint(DOCUMENT_MANAGER, name="one_document_manager"),
+        # A person's birthday, anniversary, and other date alerts, managed the same way.
+        ForeignKeyConstraint(
+            ["person_id", "workspace_id"],
+            ["people.id", "people.workspace_id"],
+            ondelete="CASCADE",
+            name="fk_reminders_person",
+        ),
+        UniqueConstraint("person_id", name="uq_reminders_person_id"),
+        CheckConstraint(PERSON_MANAGER, name="one_person_manager"),
         Index("ix_reminders_workspace_created_at", "workspace_id", "created_at"),
         Index("ix_reminders_task_id", "task_id"),
     )
@@ -137,6 +152,7 @@ class ReminderModel(Base):
     calendar_event_alert_id: Mapped[uuid.UUID | None]
     habit_reminder_id: Mapped[uuid.UUID | None]
     document_id: Mapped[uuid.UUID | None]
+    person_id: Mapped[uuid.UUID | None]
     title: Mapped[str] = mapped_column(String(200))
     description: Mapped[str] = mapped_column(Text)
     enabled: Mapped[bool]

@@ -205,5 +205,8 @@ def _notification(
         scheduled_for=claim.scheduled_for,
         created_at=now,
         read_at=None,
-        link="/reminders",
+        # A person's date reminder opens the person; everything else opens Reminders.
+        link=f"/people?person={reminder.commitment.id}"
+        if reminder.commitment is not None and reminder.commitment.kind == "person"
+        else "/reminders",
     )
