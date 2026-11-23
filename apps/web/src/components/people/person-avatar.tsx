@@ -1,12 +1,13 @@
 import type { Person } from "@orbit/contracts";
 
-import { avatarTone, initials } from "@/lib/people";
+import { initials, personTone } from "@/lib/people";
 import { cn } from "@/utils/common";
 
 const SIZES = {
   sm: "size-8 text-xs",
-  md: "size-11 text-sm",
+  md: "size-12 text-base",
   lg: "size-16 text-xl",
+  xl: "size-20 text-2xl",
 } as const;
 
 /** A person's initials on a tone of their own. Decorative: their name is always beside it. */
@@ -23,9 +24,9 @@ export function PersonAvatar({
     <span
       aria-hidden="true"
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-full font-semibold tracking-wide select-none",
+        "inline-flex shrink-0 items-center justify-center rounded-full bg-linear-to-br font-semibold tracking-wide ring-1 select-none",
         SIZES[size],
-        avatarTone(person.id),
+        personTone(person.id).avatar,
         className,
       )}
     >

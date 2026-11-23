@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { peopleOptions } from "@/api/people";
 import { taskSummaryOptions } from "@/api/tasks";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -30,11 +31,13 @@ import {
   itemsOnDay,
   minutesNow,
   newEventValues,
+  personItem,
   snap,
   taskItem,
   todayIn,
   toEventRequest,
 } from "@/lib/calendar";
+import { datesBetween, peopleHref } from "@/lib/people";
 import { useAuth } from "@/providers/auth";
 import { addDays } from "@/utils/dates";
 import { zonedTimeToInstant } from "@/utils/time-zones";
@@ -66,6 +69,9 @@ export function CalendarWidget() {
   // Overdue is judged by the viewer's date, as on the Tasks page.
   const { data: summary } = useQuery(taskSummaryOptions(withToken, workspaceId, { today }));
 
+  // Today's birthdays and other dates from People sit with the day's all-day items.
+  const { data: peopleData } = useQuery(peopleOptions(withToken, workspaceId));
+  const everyone = peopleData?.people ?? null;
   const todayItems = useMemo<CalendarItem[]>(() => {
     if (todayRange.state.status !== "success") return [];
     const { occurrences, scheduled_tasks, due_tasks } = todayRange.state.data;
@@ -74,11 +80,12 @@ export function CalendarWidget() {
         ...occurrences.filter((item) => item.status !== "cancelled").map(eventItem),
         ...scheduled_tasks.map((task) => taskItem(task)),
         ...due_tasks.map((task) => taskItem(task, true)),
+        ...datesBetween(everyone ?? [], today, addDays(today, 1)).map(personItem),
       ],
       today,
       timeZone,
     );
-  }, [todayRange.state, today, timeZone]);
+  }, [todayRange.state, today, timeZone, everyone]);
 
   const open = (item: CalendarItem) => {
     if (item.kind === "task") {
@@ -87,6 +94,10 @@ export function CalendarWidget() {
     }
     if (item.kind === "habit") {
       router.push(habitEntryHref(item.entry));
+      return;
+    }
+    if (item.kind === "person") {
+      router.push(peopleHref("upcoming", item.entry.personId));
       return;
     }
     router.push(calendarHref({ view: "day", date: item.occurrence.start.slice(0, 10) }));

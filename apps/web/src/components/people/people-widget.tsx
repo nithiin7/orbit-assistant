@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useActiveWorkspaceId } from "@/hooks/use-calendar";
 import { usePeople } from "@/hooks/use-people";
 import { localToday, occasion, peopleHref, upcomingDates } from "@/lib/people";
+import { cn } from "@/utils/common";
 
 import { DATE_ICONS } from "./date-icon";
 import { Countdown, DateTile } from "./people-lists";
@@ -89,14 +90,18 @@ function WidgetBody({ workspaceId }: { workspaceId: string }) {
 
   return (
     <div className="p-2">
-      <ul>
-        {upcoming.slice(0, SHOWN).map((item) => {
+      <ul className="space-y-0.5">
+        {upcoming.slice(0, SHOWN).map((item, index) => {
           const Icon = DATE_ICONS[item.date.kind];
           return (
             <li key={`${item.person.id}-${item.date.kind}-${item.date.label}`}>
               <Link
                 href={peopleHref("upcoming", item.person.id)}
-                className="flex items-center gap-3 rounded-lg px-3 py-2 outline-none hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring"
+                className={cn(
+                  "flex items-center gap-3 rounded-xl px-3 py-2 transition-colors outline-none hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring",
+                  // The soonest date stands out.
+                  index === 0 && "bg-brand-subtle/60 hover:bg-brand-subtle",
+                )}
               >
                 <DateTile day={item.on.day} month={item.on.month} />
                 <PersonAvatar person={item.person} size="sm" />

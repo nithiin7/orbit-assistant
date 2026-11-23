@@ -45,6 +45,7 @@ export function briefingContent(overrides: Partial<BriefingContent> = {}): Brief
     documents: { items: [], expired: 0, expiring: 0 },
     shopping: { lists: [], needed: 0 },
     investments: { sips: [], deposits: [] },
+    people: { items: [], today: 0, total: 0 },
     unavailable: [],
     ...overrides,
   };

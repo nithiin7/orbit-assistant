@@ -25,6 +25,7 @@ const KIND_LABELS: Record<AiProposal["kind"], string> = {
   log_activity: "Log activity",
   add_transaction: "New transaction",
   add_place: "New place",
+  add_person: "New person",
   save_link: "Save link",
   add_watch_item: "Add to watchlist",
 };

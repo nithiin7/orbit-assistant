@@ -13,6 +13,7 @@ import { financeViewHref } from "@/lib/finance-views";
 import { fitnessHref } from "@/lib/fitness";
 import { habitsHref } from "@/lib/habits";
 import { notesHref } from "@/lib/notes";
+import { peopleHref } from "@/lib/people";
 
 /** What each source is called in the briefing. */
 export const MODULE_LABELS: Record<BriefingModule, string> = {
@@ -29,6 +30,7 @@ export const MODULE_LABELS: Record<BriefingModule, string> = {
   documents: "Documents",
   shopping: "Shopping",
   investments: "Investments",
+  people: "People",
 };
 
 /**
@@ -72,6 +74,8 @@ export function briefingHref(
     case "sip":
     case "deposit":
       return financeViewHref("investments");
+    case "person":
+      return peopleHref("upcoming", ref.id);
   }
 }
 

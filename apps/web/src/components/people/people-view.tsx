@@ -301,6 +301,7 @@ function PeoplePage({
       {opened && dialog?.kind !== "add" && dialog?.kind !== "edit" ? (
         <PersonDetail
           key={opened.id}
+          workspaceId={workspaceId}
           person={opened}
           today={today}
           balances={ledgerData ? balancesOf(ledgerData, opened.id) : null}
@@ -361,7 +362,7 @@ function Shell({
           <aside className="min-w-0 @5xl/people:sticky @5xl/people:top-6 @5xl/people:self-start">
             <PeopleNav view={view} counts={counts} />
           </aside>
-          <div key={view} className="min-w-0 animate-page-in space-y-5">
+          <div key={view} className="min-w-0 animate-page-in space-y-6">
             <h2 className="flex min-w-0 items-center gap-2 text-lg font-semibold tracking-tight">
               <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
               <span className="truncate">{title}</span>
@@ -376,7 +377,10 @@ function Shell({
 
 function LoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
+    <div
+      role="alert"
+      className="space-y-3 rounded-2xl border bg-card p-5 text-sm shadow-elevation-1"
+    >
       <p>{message}</p>
       <Button variant="outline" size="sm" onClick={onRetry}>
         Try again
@@ -387,12 +391,13 @@ function LoadError({ message, onRetry }: { message: string; onRetry: () => void 
 
 function PageSkeleton() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <span className="sr-only">Loading your people…</span>
-      <Skeleton className="h-10 w-full max-w-sm rounded-lg" />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Skeleton className="h-28 rounded-2xl" />
-        <Skeleton className="h-28 rounded-2xl" />
+      <Skeleton className="h-10 w-full max-w-xs rounded-full" />
+      <div className="grid gap-4 @2xl/people:grid-cols-2 @6xl/people:grid-cols-3">
+        {[0, 1, 2].map((key) => (
+          <Skeleton key={key} className="h-36 rounded-2xl" />
+        ))}
       </div>
     </div>
   );

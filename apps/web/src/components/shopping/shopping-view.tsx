@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePeople } from "@/hooks/use-people";
 import { useShopping, useShoppingMutations } from "@/hooks/use-shopping";
 import { DEFAULT_LIST_ICON } from "@/lib/shopping";
 import { useWorkspaces } from "@/providers/workspace";
@@ -45,6 +46,10 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
   const shopping = useShopping(workspaceId);
   const { active, items, select } = shopping;
   const mutations = useShoppingMutations(workspaceId);
+  // Gift ideas name their person; People is optional, so a failed load only hides names.
+  const { people } = usePeople(workspaceId);
+  const everyone = people.status === "success" ? people.data : [];
+  const names = new Map(everyone.map((person) => [person.id, person.name]));
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [editing, setEditing] = useState<ShoppingItem | null>(null);
   const [nameDialog, setNameDialog] = useState<NameDialog | null>(null);
@@ -220,6 +225,7 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
         <ShoppingItemRow
           key={item.id}
           item={item}
+          giftFor={item.person_id ? (names.get(item.person_id) ?? null) : null}
           pending={pending.has(item.id)}
           onToggle={(entry) => void toggle(entry)}
           onEdit={setEditing}
@@ -364,7 +370,12 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
       </p>
 
       {editing ? (
-        <ItemEditDialog item={editing} onSave={save} onClose={() => setEditing(null)} />
+        <ItemEditDialog
+          item={editing}
+          people={everyone}
+          onSave={save}
+          onClose={() => setEditing(null)}
+        />
       ) : null}
       {nameDialog ? (
         <ListNameDialog

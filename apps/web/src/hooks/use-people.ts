@@ -6,6 +6,7 @@ import type {
   People,
   Person,
   PersonLedgerEntry,
+  ShoppingItem,
   UpdatePersonLedgerEntryRequest,
   UpdatePersonRequest,
 } from "@orbit/contracts";
@@ -26,6 +27,14 @@ import {
   updatePerson,
 } from "@/api/people";
 import { reminderKeys } from "@/api/reminders";
+import {
+  addShoppingItem,
+  giftIdeasOptions,
+  purchaseShoppingItem,
+  restockShoppingItem,
+  shoppingKeys,
+  shoppingListsOptions,
+} from "@/api/shopping";
 import { queryResource } from "@/hooks/query-resource";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
 import { splitsByTransaction } from "@/lib/people";
@@ -135,4 +144,48 @@ export function useTransactionSplits(workspaceId: string, transactionId: string 
   return query.data && transactionId
     ? (splitsByTransaction(query.data).get(transactionId) ?? [])
     : [];
+}
+
+/**
+ * Gift ideas for people: shopping items linked to a person, kept on the default shopping list.
+ * Adding or ticking one refreshes Shopping too.
+ */
+export function useGiftIdeas(workspaceId: string) {
+  const { withToken } = useAuth();
+  const queryClient = useQueryClient();
+  const query = useQuery(giftIdeasOptions(withToken, workspaceId));
+  const refresh = () =>
+    void queryClient.invalidateQueries({ queryKey: shoppingKeys.all(workspaceId) });
+
+  const add = useMutation({
+    mutationFn: async ({ personId, name }: { personId: string; name: string }) => {
+      const { lists } = await queryClient.fetchQuery(shoppingListsOptions(withToken, workspaceId));
+      const target = lists.find((entry) => entry.is_default) ?? lists[0];
+      if (!target) throw new Error("There's no shopping list to add it to.");
+      return withToken((token) =>
+        addShoppingItem(token, workspaceId, target.id, {
+          name,
+          quantity: null,
+          url: null,
+          notes: "",
+          person_id: personId,
+        }),
+      );
+    },
+    onSuccess: refresh,
+  });
+  const toggle = useMutation({
+    mutationFn: (item: ShoppingItem) =>
+      withToken((token) =>
+        item.status === "purchased"
+          ? restockShoppingItem(token, workspaceId, item.id)
+          : purchaseShoppingItem(token, workspaceId, item.id),
+      ),
+    onSuccess: refresh,
+  });
+  return {
+    gifts: queryResource(query, "Couldn’t load gift ideas."),
+    add,
+    toggle,
+  };
 }

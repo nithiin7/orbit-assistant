@@ -61,6 +61,7 @@ function routes(initial: Person[], ledger: PersonLedger = { entries: [], balance
       [`GET ${PE}`]: () => Response.json({ people: items }),
       [`GET /api/v1/workspaces/${personal.id}/reminders`]: json({ reminders: [] }),
       [`GET ${PE}/ledger`]: () => Response.json(ledger),
+      [`GET /api/v1/workspaces/${personal.id}/shopping/gifts`]: json({ items: [] }),
     },
   };
 }
@@ -315,7 +316,12 @@ describe("PeoplePanel", () => {
     expect(await screen.findByRole("region", { name: "Owed to you" })).toHaveTextContent("₹500.00");
     expect(screen.getByRole("region", { name: "You owe" })).toHaveTextContent("₹300.00");
     expect(screen.getByRole("link", { name: /Money\s*2/ })).toBeInTheDocument();
+    // Balances come first; everything recorded is on the Recent tab.
+    expect(screen.getByRole("tab", { name: /Balances/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.queryByText("Priya owes you")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: /Recent/ }));
     expect(screen.getByText("Priya owes you")).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: /Balances/ }));
 
     await user.click(screen.getByRole("button", { name: "Settle up with Priya" }));
     const dialog = await screen.findByRole("dialog", { name: "Settle up with Priya" });
@@ -336,6 +342,39 @@ describe("PeoplePanel", () => {
           transaction_id: null,
           record_in_finance: { account_id: "bank", category_id: "food" },
         },
+      ]),
+    );
+  });
+
+  it("adds a gift idea to the default shopping list for that person", async () => {
+    const user = userEvent.setup();
+    search = new URLSearchParams("person=a");
+    const sent: unknown[] = [];
+    mockApi({
+      ...session,
+      ...routes([person({ id: "a", name: "Priya" })]).route,
+      [`GET /api/v1/workspaces/${personal.id}/shopping/lists`]: json({
+        lists: [{ id: "groceries", name: "Groceries", is_default: true }],
+      }),
+      [`POST /api/v1/workspaces/${personal.id}/shopping/lists/groceries/items`]: (
+        request: MockRequest,
+      ) => {
+        sent.push(request.body);
+        return Response.json({ id: "i1" }, { status: 201 });
+      },
+    });
+
+    await renderSignedIn(<PeoplePanel />);
+
+    const detail = await screen.findByRole("dialog", { name: "Priya" });
+    await user.type(
+      within(detail).getByRole("textbox", { name: "New gift idea for Priya" }),
+      "Jasmine candle",
+    );
+    await user.click(within(detail).getByRole("button", { name: "Add gift idea" }));
+    await waitFor(() =>
+      expect(sent).toEqual([
+        { name: "Jasmine candle", quantity: null, url: null, notes: "", person_id: "a" },
       ]),
     );
   });

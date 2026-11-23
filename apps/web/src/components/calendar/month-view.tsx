@@ -151,11 +151,13 @@ export function MonthView({
                             ? "border border-foreground/50"
                             : item.kind === "habit"
                               ? cn("border", CATEGORY_STYLES[item.entry.color].block.split(" ")[0])
-                              : CATEGORY_STYLES[
-                                  (item.occurrence.category_id
-                                    ? categories.get(item.occurrence.category_id)?.color
-                                    : undefined) ?? "slate"
-                                ].dot,
+                              : item.kind === "person"
+                                ? "bg-brand"
+                                : CATEGORY_STYLES[
+                                    (item.occurrence.category_id
+                                      ? categories.get(item.occurrence.category_id)?.color
+                                      : undefined) ?? "slate"
+                                  ].dot,
                         )}
                       />
                     ))}

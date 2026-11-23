@@ -92,15 +92,49 @@ export function filterPeople(
 
 // Avatars
 
-const AVATAR_TONES = [
-  "bg-event-rose/15 text-event-rose",
-  "bg-event-amber/15 text-event-amber",
-  "bg-event-green/15 text-event-green",
-  "bg-event-teal/15 text-event-teal",
-  "bg-event-blue/15 text-event-blue",
-  "bg-event-violet/15 text-event-violet",
-  "bg-event-orange/15 text-event-orange",
+/**
+ * Each person's colour, used on their avatar, their card, and the banner of their detail. Written
+ * out in full so Tailwind sees every class.
+ */
+const PERSON_TONES = [
+  {
+    avatar: "from-event-rose/35 to-event-rose/10 text-event-rose ring-event-rose/25",
+    wash: "from-event-rose/15",
+    dot: "bg-event-rose",
+  },
+  {
+    avatar: "from-event-amber/35 to-event-amber/10 text-event-amber ring-event-amber/25",
+    wash: "from-event-amber/15",
+    dot: "bg-event-amber",
+  },
+  {
+    avatar: "from-event-green/35 to-event-green/10 text-event-green ring-event-green/25",
+    wash: "from-event-green/15",
+    dot: "bg-event-green",
+  },
+  {
+    avatar: "from-event-teal/35 to-event-teal/10 text-event-teal ring-event-teal/25",
+    wash: "from-event-teal/15",
+    dot: "bg-event-teal",
+  },
+  {
+    avatar: "from-event-blue/35 to-event-blue/10 text-event-blue ring-event-blue/25",
+    wash: "from-event-blue/15",
+    dot: "bg-event-blue",
+  },
+  {
+    avatar: "from-event-violet/35 to-event-violet/10 text-event-violet ring-event-violet/25",
+    wash: "from-event-violet/15",
+    dot: "bg-event-violet",
+  },
+  {
+    avatar: "from-event-orange/35 to-event-orange/10 text-event-orange ring-event-orange/25",
+    wash: "from-event-orange/15",
+    dot: "bg-event-orange",
+  },
 ] as const;
+
+export type PersonTone = (typeof PERSON_TONES)[number];
 
 /** Up to two initials: the first letters of the first and last words. */
 export function initials(name: string): string {
@@ -112,10 +146,10 @@ export function initials(name: string): string {
 }
 
 /** A tone picked from the person's ID, so it stays the same across renames and devices. */
-export function avatarTone(id: string): string {
+export function personTone(id: string): PersonTone {
   let hash = 0;
   for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
-  return AVATAR_TONES[hash % AVATAR_TONES.length] ?? AVATAR_TONES[0];
+  return PERSON_TONES[hash % PERSON_TONES.length] ?? PERSON_TONES[0];
 }
 
 // Calendar dates
@@ -509,4 +543,57 @@ export function changesOf(person: Person, values: PersonValues): UpdatePersonReq
 /** A `tel:` link for a phone number, keeping only what dialers understand. */
 export function telHref(phone: string): string {
   return `tel:${phone.replace(/[^\d+]/g, "")}`;
+}
+
+// On the calendar
+
+/** One date on the calendar: whose it is, what it says, and its local date (`YYYY-MM-DD`). */
+export type CalendarPersonDate = {
+  personId: string;
+  kind: PersonDateKind;
+  title: string;
+  day: string;
+};
+
+function isoDay({ year, month, day }: CalendarDay): string {
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+/** What a date says on the calendar: "Priya turns 30", "Sam’s anniversary · 5 years". */
+export function calendarTitle(name: string, date: PersonDate, years: number | null): string {
+  if (date.kind === "birthday") return years ? `${name} turns ${years}` : `${name}’s birthday`;
+  if (date.kind === "anniversary") {
+    return years
+      ? `${name}’s anniversary · ${years} ${years === 1 ? "year" : "years"}`
+      : `${name}’s anniversary`;
+  }
+  return `${name}: ${date.label}`;
+}
+
+/** Every date falling on local days `start` (inclusive) to `end` (exclusive), `YYYY-MM-DD`. */
+export function datesBetween(
+  people: readonly Person[],
+  start: string,
+  end: string,
+): CalendarPersonDate[] {
+  const first = Number(start.slice(0, 4));
+  const last = Number(end.slice(0, 4));
+  const found: CalendarPersonDate[] = [];
+  for (const person of people) {
+    for (const date of person.dates) {
+      for (let year = first; year <= last; year += 1) {
+        // Like reminders: nothing to celebrate until a year after the date first happened.
+        if (date.year && year <= date.year) continue;
+        const day = isoDay(occurrence(date, year));
+        if (day < start || day >= end) continue;
+        found.push({
+          personId: person.id,
+          kind: date.kind,
+          title: calendarTitle(person.name, date, yearsOn(date, year)),
+          day,
+        });
+      }
+    }
+  }
+  return found;
 }
