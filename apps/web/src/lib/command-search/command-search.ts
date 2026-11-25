@@ -40,4 +40,5 @@ export const SEARCH_GROUP_LABELS: Record<UniversalSearchModule, string> = {
   watchlist: "Matching watchlist titles",
   bookmarks: "Matching saved links",
   places: "Matching places",
+  people: "Matching people",
 };

@@ -25,9 +25,16 @@ DeliveryOutcome = Literal["delivered", "cancelled", "failed"]
 
 # The record a reminder is managed by: a loan, a subscription or bill, or a deposit (its
 # maturity) in Finance, one of a calendar event's alerts, a habit's or routine's reminder
-# time, or a document (its expiry, renewal, and review dates).
+# time, a document (its expiry, renewal, and review dates), or a person (their birthday,
+# anniversary, and other yearly dates).
 CommitmentLinkKind = Literal[
-    "loan", "recurring_payment", "deposit", "calendar_alert", "habit_reminder", "document"
+    "loan",
+    "recurring_payment",
+    "deposit",
+    "calendar_alert",
+    "habit_reminder",
+    "document",
+    "person",
 ]
 
 

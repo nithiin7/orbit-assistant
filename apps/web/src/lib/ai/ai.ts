@@ -214,6 +214,12 @@ const QUICK_ADD_TEMPLATES: readonly QuickAddTemplate[] = [
   { id: "note", label: "Note", group: "Plan", text: "Note down: " },
   { id: "shopping", label: "Shopping item", group: "Lists", text: "Add to my shopping list: " },
   { id: "place", label: "Place to visit", group: "Lists", text: "I want to visit " },
+  {
+    id: "birthday",
+    label: "Birthday",
+    group: "Lists",
+    text: "Add a person to People, their birthday is ",
+  },
   { id: "link", label: "Saved link", group: "Lists", text: "Save this link: " },
   {
     id: "watch",

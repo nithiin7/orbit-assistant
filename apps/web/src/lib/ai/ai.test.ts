@@ -112,7 +112,16 @@ describe("quick add", () => {
   it("offers templates only for modules AI may read", () => {
     const ids = (modules: Parameters<typeof quickAddTemplates>[0]) =>
       quickAddTemplates(modules).map((template) => template.id);
-    expect(ids([])).toEqual(["task", "reminder", "event", "note", "shopping", "place", "link"]);
+    expect(ids([])).toEqual([
+      "task",
+      "reminder",
+      "event",
+      "note",
+      "shopping",
+      "place",
+      "birthday",
+      "link",
+    ]);
     expect(ids(["finance"])).toContain("expense");
     expect(ids(["health"])).toEqual(expect.arrayContaining(["water", "weight", "activity"]));
     expect(ids(["health"])).not.toContain("expense");
@@ -123,5 +132,7 @@ describe("quick add", () => {
     expect(canAlwaysAdd("add_transaction")).toBe(false);
     expect(canAlwaysAdd("create_event")).toBe(false);
     expect(canAlwaysAdd("append_to_note")).toBe(false);
+    // A model could invent a birthday, so a new person is always a card.
+    expect(canAlwaysAdd("add_person")).toBe(false);
   });
 });

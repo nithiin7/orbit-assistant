@@ -4,10 +4,13 @@ import type { ShoppingListIcon } from "@orbit/contracts";
 import { ArrowRight, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 
+import { WIDGET_CARD_CLASS } from "@/components/dashboard/widget-card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShoppingOverview } from "@/hooks/use-shopping";
+import { cn } from "@/utils/common";
 
 import { SHOPPING_LIST_ICON_COMPONENTS } from "./list-icon";
 
@@ -17,13 +20,13 @@ export function ShoppingOverview() {
 
   return (
     <section aria-labelledby="shopping-overview-heading" className="h-full">
-      <Card className="h-full shadow-elevation-1" aria-busy={resource.status === "loading"}>
+      <Card className={cn("h-full", WIDGET_CARD_CLASS)} aria-busy={resource.status === "loading"}>
         <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
           <h2
             id="shopping-overview-heading"
-            className="flex items-center gap-2 text-base font-semibold"
+            className="flex items-center gap-2.5 text-base font-semibold"
           >
-            <ShoppingCart className="size-4 text-muted-foreground" aria-hidden="true" />
+            <IconChip icon={ShoppingCart} tone="orange" />
             Shopping
           </h2>
           <Link href="/shopping" className={buttonVariants({ variant: "ghost", size: "sm" })}>

@@ -6,9 +6,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { peopleOptions } from "@/api/people";
 import { taskSummaryOptions } from "@/api/tasks";
+import { WIDGET_CARD_CLASS } from "@/components/dashboard/widget-card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   useActiveWorkspaceId,
@@ -30,12 +33,15 @@ import {
   itemsOnDay,
   minutesNow,
   newEventValues,
+  personItem,
   snap,
   taskItem,
   todayIn,
   toEventRequest,
 } from "@/lib/calendar";
+import { datesBetween, peopleHref } from "@/lib/people";
 import { useAuth } from "@/providers/auth";
+import { cn } from "@/utils/common";
 import { addDays } from "@/utils/dates";
 import { zonedTimeToInstant } from "@/utils/time-zones";
 
@@ -66,6 +72,9 @@ export function CalendarWidget() {
   // Overdue is judged by the viewer's date, as on the Tasks page.
   const { data: summary } = useQuery(taskSummaryOptions(withToken, workspaceId, { today }));
 
+  // Today's birthdays and other dates from People sit with the day's all-day items.
+  const { data: peopleData } = useQuery(peopleOptions(withToken, workspaceId));
+  const everyone = peopleData?.people ?? null;
   const todayItems = useMemo<CalendarItem[]>(() => {
     if (todayRange.state.status !== "success") return [];
     const { occurrences, scheduled_tasks, due_tasks } = todayRange.state.data;
@@ -74,11 +83,12 @@ export function CalendarWidget() {
         ...occurrences.filter((item) => item.status !== "cancelled").map(eventItem),
         ...scheduled_tasks.map((task) => taskItem(task)),
         ...due_tasks.map((task) => taskItem(task, true)),
+        ...datesBetween(everyone ?? [], today, addDays(today, 1)).map(personItem),
       ],
       today,
       timeZone,
     );
-  }, [todayRange.state, today, timeZone]);
+  }, [todayRange.state, today, timeZone, everyone]);
 
   const open = (item: CalendarItem) => {
     if (item.kind === "task") {
@@ -89,6 +99,10 @@ export function CalendarWidget() {
       router.push(habitEntryHref(item.entry));
       return;
     }
+    if (item.kind === "person") {
+      router.push(peopleHref("upcoming", item.entry.personId));
+      return;
+    }
     router.push(calendarHref({ view: "day", date: item.occurrence.start.slice(0, 10) }));
   };
 
@@ -97,13 +111,13 @@ export function CalendarWidget() {
 
   return (
     <section aria-labelledby="calendar-widget-heading" className="h-full">
-      <Card className="h-full shadow-elevation-1" aria-busy={loading}>
+      <Card className={cn("h-full", WIDGET_CARD_CLASS)} aria-busy={loading}>
         <div className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
           <h2
             id="calendar-widget-heading"
-            className="flex items-center gap-2 text-base font-semibold"
+            className="flex items-center gap-2.5 text-base font-semibold"
           >
-            <CalendarDays className="size-4 text-muted-foreground" aria-hidden="true" />
+            <IconChip icon={CalendarDays} tone="blue" />
             Today’s agenda
           </h2>
           <div className="flex items-center gap-1">

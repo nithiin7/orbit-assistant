@@ -88,7 +88,8 @@ export const FITNESS_VIEW_GROUPS: readonly {
   views: readonly FitnessView[];
 }[] = [
   { label: null, views: ["overview"] },
-  { label: "Train", views: ["workouts", "templates", "exercises"] },
+  // Templates is a tab inside Exercises, so it has no rail entry of its own.
+  { label: "Train", views: ["workouts", "exercises"] },
   { label: "Track daily", views: ["nutrition", "water", "body", "activity"] },
   { label: "Review", views: ["goals", "progress"] },
   { label: null, views: ["settings"] },
@@ -100,7 +101,8 @@ export const FITNESS_VIEW_HINTS: Record<FitnessView, string> = {
   workouts: "Start a workout and log sets as you go, or record one you’ve already done.",
   templates:
     "Workouts you repeat, ready to start in one tap. Add a starter plan or build your own.",
-  exercises: "Every exercise you can add to a workout, with your history for each.",
+  exercises:
+    "Every exercise you can add to a workout, and the templates you build from them to repeat.",
   nutrition: "Optional. Log meals to see calories and protein against your daily targets.",
   water: "Optional. Tap to add a glass and see how close you are to your target.",
   body: "Optional. Record your weight and measurements now and then to see the trend.",
@@ -132,11 +134,11 @@ export function fitnessHref(location: FitnessLocation): string {
   return location.view === "overview" ? "/health" : `/health?view=${location.view}`;
 }
 
-/** The view a detail page belongs to, for the tab strip. */
+/** The rail entry a view or detail page belongs to. Templates live under Exercises. */
 export function viewOf(location: FitnessLocation): FitnessView {
   switch (location.kind) {
     case "view":
-      return location.view;
+      return location.view === "templates" ? "exercises" : location.view;
     case "workout":
       return "workouts";
     case "exercise":

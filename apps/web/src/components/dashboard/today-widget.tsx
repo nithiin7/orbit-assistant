@@ -42,7 +42,7 @@ export function TodayWidget() {
   return (
     <section aria-labelledby="today-heading" className="h-full">
       <Card
-        className="h-full bg-gradient-to-br from-brand-subtle/60 via-card to-card p-5 shadow-elevation-1 sm:p-6"
+        className="h-full rounded-2xl bg-linear-to-br from-brand-subtle/80 via-card to-card p-5 shadow-elevation-1 sm:p-6"
         aria-busy={resource.status === "loading"}
       >
         <div className="flex flex-wrap items-start justify-between gap-3">

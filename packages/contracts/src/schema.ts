@@ -971,6 +971,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/shopping/gifts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List gift ideas for people
+         * @description Items in any list that are gift ideas for someone in People, newest first.
+         */
+        get: operations["list_gifts_api_v1_workspaces__workspace_id__shopping_gifts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/shopping/items/{item_id}": {
         parameters: {
             query?: never;
@@ -1514,6 +1534,109 @@ export interface paths {
         head?: never;
         /** Update a place */
         patch: operations["update_place_api_v1_workspaces__workspace_id__places_items__place_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/people/ledger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List money owed between you and everyone */
+        get: operations["get_ledger_api_v1_workspaces__workspace_id__people_ledger_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/people/{person_id}/ledger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record money owed or repaid
+         * @description A share split from an expense links to it (the expense stays whole in Finance). A
+         *     repayment with `record_in_finance` also records a refund or an expense, in one commit.
+         */
+        post: operations["create_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/people/{person_id}/ledger/{entry_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete money owed or repaid
+         * @description A Finance transaction recorded with it stays; delete that in Finance if needed.
+         */
+        delete: operations["delete_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger__entry_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update money owed or repaid */
+        patch: operations["update_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger__entry_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List people */
+        get: operations["list_people_api_v1_workspaces__workspace_id__people_get"];
+        put?: never;
+        /**
+         * Add a person
+         * @description Dates with `remind_days_before` share one reminder, managed here, that announces the
+         *     soonest one. Reminders carry the name and date only.
+         */
+        post: operations["create_person_api_v1_workspaces__workspace_id__people_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/people/{person_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a person */
+        get: operations["get_person_api_v1_workspaces__workspace_id__people__person_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a person
+         * @description Deletes their dates and their reminder too; notifications already delivered stay.
+         */
+        delete: operations["delete_person_api_v1_workspaces__workspace_id__people__person_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update a person */
+        patch: operations["update_person_api_v1_workspaces__workspace_id__people__person_id__patch"];
         trace?: never;
     };
     "/api/v1/workspaces/{workspace_id}/reminders": {
@@ -8177,7 +8300,7 @@ export interface components {
              */
             autonomy: "read_only" | "suggest" | "approval" | "limited";
             /** Modules */
-            modules: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail" | "shopping" | "places" | "saved" | "watchlist")[];
+            modules: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail" | "shopping" | "places" | "saved" | "watchlist" | "people")[];
             /** Tool Modes */
             tool_modes: {
                 [key: string]: "off" | "ask" | "auto";
@@ -8264,7 +8387,7 @@ export interface components {
             /** Description */
             description: string;
             /** Module */
-            module: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail" | "shopping" | "places" | "saved" | "watchlist") | null;
+            module: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail" | "shopping" | "places" | "saved" | "watchlist" | "people") | null;
             /**
              * Access
              * @enum {string}
@@ -8892,7 +9015,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "create_task" | "create_reminder" | "create_event" | "create_note" | "append_to_note" | "add_note_tags" | "update_document_details" | "add_shopping_item" | "create_habit" | "log_water" | "log_weight" | "log_activity" | "add_transaction" | "add_place" | "save_link" | "add_watch_item";
+            kind: "create_task" | "create_reminder" | "create_event" | "create_note" | "append_to_note" | "add_note_tags" | "update_document_details" | "add_shopping_item" | "create_habit" | "log_water" | "log_weight" | "log_activity" | "add_transaction" | "add_place" | "save_link" | "add_watch_item" | "add_person";
             /** Payload */
             payload: {
                 [key: string]: unknown;
@@ -9738,7 +9861,7 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments";
+            module: "tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments" | "people";
             /** Title */
             title: string;
             /**
@@ -9849,8 +9972,10 @@ export interface components {
             documents: components["schemas"]["BriefingDocuments"] | null;
             shopping: components["schemas"]["BriefingShopping"] | null;
             investments: components["schemas"]["BriefingInvestments"] | null;
+            /** @description `null` when unavailable, left out, or in briefings prepared before it was added. */
+            people: components["schemas"]["BriefingPeople"] | null;
             /** Unavailable */
-            unavailable: ("tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments")[];
+            unavailable: ("tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments" | "people")[];
         };
         /** BriefingDayWindow */
         BriefingDayWindow: {
@@ -10134,7 +10259,7 @@ export interface components {
              * Modules
              * @description The modules the provider was given; AI permissions left out the rest.
              */
-            modules: ("tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments")[];
+            modules: ("tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments" | "people")[];
             /** Provider Name */
             provider_name: string;
             /** Model */
@@ -10231,6 +10356,43 @@ export interface components {
             due_today: number;
             /** Upcoming */
             upcoming: number;
+        };
+        /** BriefingPeople */
+        BriefingPeople: {
+            /**
+             * Items
+             * @description Soonest first; names and dates only.
+             */
+            items: components["schemas"]["BriefingPersonDateItem"][];
+            /** Today */
+            today: number;
+            /** Total */
+            total: number;
+        };
+        /** BriefingPersonDateItem */
+        BriefingPersonDateItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Name */
+            name: string;
+            /**
+             * Kind
+             * @description `birthday`, `anniversary`, or `other` (named by `label`).
+             */
+            kind: string;
+            /** Label */
+            label: string;
+            /**
+             * On
+             * Format: date
+             */
+            on: string;
+            /** Days Away */
+            days_away: number;
+            /**
+             * Years
+             * @description How old they turn, or years together, if known.
+             */
+            years: number | null;
         };
         /** BriefingRegenerateRequest */
         BriefingRegenerateRequest: {
@@ -10392,7 +10554,7 @@ export interface components {
              * Hidden
              * @description Modules left out of the briefing entirely.
              */
-            hidden: ("tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments")[];
+            hidden: ("tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments" | "people")[];
             /**
              * Prepare At
              * @description Local time (your time zone preference) to prepare the briefing each day; `null` prepares it only when opened.
@@ -10451,12 +10613,12 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments";
+            module: "tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments" | "people";
             /**
              * Type
              * @enum {string}
              */
-            type: "task" | "event" | "reminder" | "commitment" | "budget" | "savings_goal" | "habit" | "routine" | "workout" | "fitness_goal" | "note" | "document" | "shopping_list" | "sip" | "deposit";
+            type: "task" | "event" | "reminder" | "commitment" | "budget" | "savings_goal" | "habit" | "routine" | "workout" | "fitness_goal" | "note" | "document" | "shopping_list" | "sip" | "deposit" | "person";
             /**
              * Id
              * Format: uuid
@@ -10479,7 +10641,7 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments";
+            module: "tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments" | "people";
             /**
              * Status
              * @enum {string}
@@ -12006,6 +12168,11 @@ export interface components {
              * @default
              */
             notes: string;
+            /**
+             * Person Id
+             * @description Make it a gift idea for someone in People.
+             */
+            person_id?: string | null;
         };
         /** CreateLinkedNoteRequest */
         CreateLinkedNoteRequest: {
@@ -12128,6 +12295,84 @@ export interface components {
             folder_id?: string | null;
             /** Tags */
             tags?: string[];
+        };
+        /** CreatePersonLedgerEntryRequest */
+        CreatePersonLedgerEntryRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "they_owe" | "i_owe" | "they_paid" | "i_paid";
+            /**
+             * Amount
+             * @description Minor units, always positive: ₹12.50 is 1250.
+             */
+            amount: number;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /** Description */
+            description: string;
+            /**
+             * Transaction Id
+             * @description For `they_owe`: the expense of yours this share was split from.
+             */
+            transaction_id?: string | null;
+            /** @description For repayments: also record a refund (`they_paid`) or an expense (`i_paid`) in Finance. */
+            record_in_finance?: components["schemas"]["PersonLedgerRecordRequest"] | null;
+        };
+        /**
+         * CreatePersonRequest
+         * @description Add a person. A name is enough; dates with `remind_days_before` get reminders.
+         */
+        CreatePersonRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Relationship
+             * @default friend
+             * @enum {string}
+             */
+            relationship: "family" | "partner" | "friend" | "colleague" | "other";
+            /**
+             * Phone
+             * @default
+             */
+            phone: string;
+            /**
+             * Email
+             * @default
+             */
+            email: string;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /**
+             * Favorite
+             * @default false
+             */
+            favorite: boolean;
+            /** Dates */
+            dates?: components["schemas"]["PersonDateBody"][];
+            /**
+             * Reminder Time
+             * @description 09:00 by default.
+             */
+            reminder_time?: string | null;
+            /**
+             * Timezone
+             * @description For reminders; the user's time zone by default.
+             */
+            timezone?: string | null;
         };
         /**
          * CreatePlaceRequest
@@ -12551,7 +12796,7 @@ export interface components {
              * Id
              * @enum {string}
              */
-            id: "today" | "quick_actions" | "attention" | "workspace" | "tasks" | "reminders" | "calendar" | "habits" | "notes" | "documents" | "shopping" | "watchlist" | "places" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "savings_goals" | "workouts" | "water" | "nutrition" | "weight" | "fitness_goals";
+            id: "today" | "quick_actions" | "attention" | "workspace" | "tasks" | "reminders" | "calendar" | "habits" | "notes" | "documents" | "shopping" | "watchlist" | "places" | "people" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "savings_goals" | "workouts" | "water" | "nutrition" | "weight" | "fitness_goals";
             /**
              * Size
              * @description `half` widgets sit side by side on wide screens.
@@ -13590,7 +13835,7 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks" | "places";
+            module: "tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks" | "places" | "people";
             /** Label */
             label: string;
             /** Formats */
@@ -13599,7 +13844,7 @@ export interface components {
         /** ExportModuleRequest */
         ExportModuleRequest: {
             /** Module */
-            module: ("tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks" | "places") | null;
+            module: ("tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks" | "places" | "people") | null;
             /**
              * Format
              * @enum {string}
@@ -16895,6 +17140,14 @@ export interface components {
              */
             payments: components["schemas"]["PaymentItemResponse"][];
         };
+        /** PeopleResponse */
+        PeopleResponse: {
+            /**
+             * People
+             * @description Everyone, by name.
+             */
+            people: components["schemas"]["PersonResponse"][];
+        };
         /** PeriodChangeResponse */
         PeriodChangeResponse: {
             /** Months */
@@ -16920,6 +17173,215 @@ export interface components {
             duration_s: number;
             /** Volume G */
             volume_g: number;
+        };
+        /** PersonBalanceResponse */
+        PersonBalanceResponse: {
+            /**
+             * Person Id
+             * Format: uuid
+             */
+            person_id: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Amount
+             * @description Minor units: positive while they owe you, negative while you owe them.
+             */
+            amount: number;
+        };
+        /**
+         * PersonDateBody
+         * @description A date that comes round every year. Without a year, ages and years together aren't
+         *     known; 29 February falls on 28 February in other years.
+         */
+        PersonDateBody: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "birthday" | "anniversary" | "other";
+            /**
+             * Label
+             * @description The date's name; required for `other`, empty otherwise.
+             * @default
+             */
+            label: string;
+            /** Month */
+            month: number;
+            /** Day */
+            day: number;
+            /** Year */
+            year?: number | null;
+            /**
+             * Remind Days Before
+             * @description Days before the date to remind (0 is on the day); null for no reminder.
+             */
+            remind_days_before?: number | null;
+        };
+        /** PersonLedgerEntryResponse */
+        PersonLedgerEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Person Id
+             * Format: uuid
+             */
+            person_id: string;
+            /**
+             * Kind
+             * @description `they_owe` (you paid or lent), `i_owe` (they did), or a repayment: `they_paid` or `i_paid`.
+             * @enum {string}
+             */
+            kind: "they_owe" | "i_owe" | "they_paid" | "i_paid";
+            /**
+             * Amount
+             * @description Minor units, always positive; `kind` says which way.
+             */
+            amount: number;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /** Description */
+            description: string;
+            transaction: components["schemas"]["PersonLinkedTransactionResponse"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * PersonLedgerRecordRequest
+         * @description Record a repayment in Finance too, in the same commit.
+         */
+        PersonLedgerRecordRequest: {
+            /**
+             * Account Id
+             * Format: uuid
+             * @description Where the money arrived or left from.
+             */
+            account_id: string;
+            /**
+             * Category Id
+             * Format: uuid
+             * @description An expense category: the shared expense's, so your spending comes down to your share.
+             */
+            category_id: string;
+        };
+        /** PersonLedgerResponse */
+        PersonLedgerResponse: {
+            /**
+             * Entries
+             * @description Newest first.
+             */
+            entries: components["schemas"]["PersonLedgerEntryResponse"][];
+            /**
+             * Balances
+             * @description Each person's non-zero balance per currency; currencies are never mixed.
+             */
+            balances: components["schemas"]["PersonBalanceResponse"][];
+        };
+        /**
+         * PersonLinkedTransactionResponse
+         * @description The Finance transaction behind an entry; null once that transaction is deleted.
+         */
+        PersonLinkedTransactionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Type */
+            type: string;
+            /** Description */
+            description: string;
+            /** Amount */
+            amount: number;
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Category Id */
+            category_id: string | null;
+        };
+        /** PersonResponse */
+        PersonResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Relationship
+             * @enum {string}
+             */
+            relationship: "family" | "partner" | "friend" | "colleague" | "other";
+            /**
+             * Phone
+             * @description Empty when not given.
+             */
+            phone: string;
+            /**
+             * Email
+             * @description Empty when not given.
+             */
+            email: string;
+            /**
+             * Note
+             * @description Empty when not given.
+             */
+            note: string;
+            /** Favorite */
+            favorite: boolean;
+            /**
+             * Dates
+             * @description In the order the user listed them.
+             */
+            dates: components["schemas"]["PersonDateBody"][];
+            /**
+             * Reminder Time
+             * Format: time
+             * @description When date reminders fire, in `timezone`.
+             */
+            reminder_time: string;
+            /** Timezone */
+            timezone: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** PersonalRecordResponse */
         PersonalRecordResponse: {
@@ -17878,10 +18340,10 @@ export interface components {
         ReminderCommitmentResponse: {
             /**
              * Kind
-             * @description `loan`, `recurring_payment` for a subscription or bill, `deposit` for a fixed or recurring deposit's maturity, `calendar_alert` for one of a calendar event's alerts (`id` is the alert's), `habit_reminder` for a habit's or routine's reminder time (`id` is the reminder time's), or `document` for a document's expiry, renewal, and review alerts (`id` is the document's).
+             * @description `loan`, `recurring_payment` for a subscription or bill, `deposit` for a fixed or recurring deposit's maturity, `calendar_alert` for one of a calendar event's alerts (`id` is the alert's), `habit_reminder` for a habit's or routine's reminder time (`id` is the reminder time's), `document` for a document's expiry, renewal, and review alerts (`id` is the document's), or `person` for a person's birthday, anniversary, and other dates (`id` is the person's).
              * @enum {string}
              */
-            kind: "loan" | "recurring_payment" | "deposit" | "calendar_alert" | "habit_reminder" | "document";
+            kind: "loan" | "recurring_payment" | "deposit" | "calendar_alert" | "habit_reminder" | "document" | "person";
             /**
              * Id
              * Format: uuid
@@ -18431,12 +18893,12 @@ export interface components {
              * Module
              * @description Repeat to search only some modules.
              */
-            module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places")[];
+            module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places" | "people")[];
             /**
              * Type
              * @description Repeat to search only some record types.
              */
-            type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place")[];
+            type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place" | "person")[];
             /**
              * Date From
              * @description The record's own date: due date, event, transaction, …
@@ -18592,7 +19054,7 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places";
+            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places" | "people";
             /**
              * Total
              * @description Matches under every filter except the module filter.
@@ -19017,6 +19479,11 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+            /**
+             * Person Id
+             * @description Who it's a gift idea for, from People.
+             */
+            person_id: string | null;
         };
         /** ShoppingItemsResponse */
         ShoppingItemsResponse: {
@@ -20069,12 +20536,12 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places";
+            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places" | "people";
             /**
              * Entity Type
              * @enum {string}
              */
-            entity_type: "task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place";
+            entity_type: "task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place" | "person";
             /**
              * Id
              * Format: uuid
@@ -20166,7 +20633,7 @@ export interface components {
              * Unavailable
              * @description Modules that couldn't be searched.
              */
-            unavailable: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places")[];
+            unavailable: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places" | "people")[];
         };
         /** UnreadCountResponse */
         UnreadCountResponse: {
@@ -20209,7 +20676,7 @@ export interface components {
             /** Autonomy */
             autonomy?: ("read_only" | "suggest" | "approval" | "limited") | null;
             /** Modules */
-            modules?: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail" | "shopping" | "places" | "saved" | "watchlist")[] | null;
+            modules?: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail" | "shopping" | "places" | "saved" | "watchlist" | "people")[] | null;
             /** Tool Modes */
             tool_modes?: {
                 [key: string]: "off" | "ask" | "auto";
@@ -20657,8 +21124,8 @@ export interface components {
         };
         /**
          * UpdateItemRequest
-         * @description Change some of an item's fields. Omitted fields keep their values; `quantity: null` and
-         *     `url: null` clear them. Purchasing has its own endpoints.
+         * @description Change some of an item's fields. Omitted fields keep their values; `quantity: null`,
+         *     `url: null`, and `person_id: null` clear them. Purchasing has its own endpoints.
          */
         UpdateItemRequest: {
             /** Name */
@@ -20669,6 +21136,8 @@ export interface components {
             url?: string | null;
             /** Notes */
             notes?: string | null;
+            /** Person Id */
+            person_id?: string | null;
         };
         /**
          * UpdateLoanRequest
@@ -20752,6 +21221,43 @@ export interface components {
             end?: string | null;
             /** Status */
             status?: ("confirmed" | "cancelled") | null;
+        };
+        /**
+         * UpdatePersonLedgerEntryRequest
+         * @description Change an entry's amount, date, or description. Its kind and links stay.
+         */
+        UpdatePersonLedgerEntryRequest: {
+            /** Amount */
+            amount?: number | null;
+            /** Occurred On */
+            occurred_on?: string | null;
+            /** Description */
+            description?: string | null;
+        };
+        /**
+         * UpdatePersonRequest
+         * @description Change some of a person's fields. Omitted fields keep their values; `dates` replaces all
+         *     of them.
+         */
+        UpdatePersonRequest: {
+            /** Name */
+            name?: string | null;
+            /** Relationship */
+            relationship?: ("family" | "partner" | "friend" | "colleague" | "other") | null;
+            /** Phone */
+            phone?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Favorite */
+            favorite?: boolean | null;
+            /** Dates */
+            dates?: components["schemas"]["PersonDateBody"][] | null;
+            /** Reminder Time */
+            reminder_time?: string | null;
+            /** Timezone */
+            timezone?: string | null;
         };
         /**
          * UpdatePlaceRequest
@@ -24658,6 +25164,51 @@ export interface operations {
             };
         };
     };
+    list_gifts_api_v1_workspaces__workspace_id__shopping_gifts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShoppingItemsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, list, or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     delete_item_api_v1_workspaces__workspace_id__shopping_items__item_id__delete: {
         parameters: {
             query?: never;
@@ -26872,6 +27423,431 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    get_ledger_api_v1_workspaces__workspace_id__people_ledger_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonLedgerResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's ID. */
+                person_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePersonLedgerEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonLedgerEntryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A link or record that doesn't fit the entry. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger__entry_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's ID. */
+                person_id: string;
+                /** @description The ledger entry's ID. */
+                entry_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger__entry_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's ID. */
+                person_id: string;
+                /** @description The ledger entry's ID. */
+                entry_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePersonLedgerEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonLedgerEntryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A repayment recorded in Finance keeps its amount. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_people_api_v1_workspaces__workspace_id__people_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeopleResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_person_api_v1_workspaces__workspace_id__people_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePersonRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A date doesn't exist, or there are two birthdays. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_person_api_v1_workspaces__workspace_id__people__person_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's ID. */
+                person_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_person_api_v1_workspaces__workspace_id__people__person_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's ID. */
+                person_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_person_api_v1_workspaces__workspace_id__people__person_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's ID. */
+                person_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePersonRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A date doesn't exist, or there are two birthdays. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -43484,9 +44460,9 @@ export interface operations {
         parameters: {
             query: {
                 /** @description Repeat to search only some modules. */
-                module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places")[];
+                module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places" | "people")[];
                 /** @description Repeat to search only some record types. */
-                type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place")[];
+                type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place" | "person")[];
                 /** @description The record's own date: due date, event, transaction, … */
                 date_from?: string | null;
                 date_to?: string | null;

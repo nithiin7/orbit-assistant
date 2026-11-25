@@ -179,6 +179,17 @@ describe("NotesPanel", () => {
     expect(within(rail!).getByRole("button", { name: /^Projects/ })).toBeInTheDocument();
   });
 
+  it("opens on a summary that leads to the views used most", async () => {
+    const user = userEvent.setup();
+    mockApi(routes());
+    await renderNotes();
+
+    const hero = await screen.findByRole("region", { name: "2 notes in your library" });
+    expect(within(hero).getByRole("button", { name: /Pinned/ })).toHaveTextContent("1");
+    await user.click(within(hero).getByRole("button", { name: /Inbox/ }));
+    expect(push).toHaveBeenLastCalledWith("/notes?view=inbox", { scroll: false });
+  });
+
   it("asks for each view's notes, and narrows to a folder", async () => {
     const user = userEvent.setup();
     const api = mockApi(routes());

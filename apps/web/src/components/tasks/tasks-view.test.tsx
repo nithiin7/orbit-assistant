@@ -108,6 +108,12 @@ describe("TasksPanel", () => {
 
     expect(await screen.findByText("1 overdue")).toBeInTheDocument();
     expect(screen.getByText("1 due today")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "1 task past due" })).toBeInTheDocument();
+    // 5 of 7 tasks are done.
+    expect(screen.getByRole("progressbar", { name: "Tasks completed" })).toHaveAttribute(
+      "aria-valuenow",
+      "71",
+    );
     const views = within(screen.getByRole("group", { name: "Show" }));
     expect(views.getByRole("button", { name: "Open" })).toHaveTextContent("2");
     expect(views.getByRole("button", { name: "Completed" })).toHaveTextContent("5");

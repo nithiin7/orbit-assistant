@@ -12,12 +12,21 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  type KeyboardEvent,
+  type ReactNode,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 
 import { describeApiError } from "@/api/client";
 import { type LinkOwner, type LinkTarget, setFitnessLink } from "@/api/fitness";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,19 +41,37 @@ import { formatCalendarDate } from "@/utils/dates";
 
 import { ViewError } from "../habits/view-error";
 
+/** Colours for Health gauges. Classes are written out in full so Tailwind sees them. */
+export const HEALTH_TONES = {
+  brand: { stroke: "text-brand" },
+  orange: { stroke: "text-event-orange" },
+  blue: { stroke: "text-event-blue" },
+  violet: { stroke: "text-event-violet" },
+  amber: { stroke: "text-event-amber" },
+  green: { stroke: "text-event-green" },
+  rose: { stroke: "text-event-rose" },
+  slate: { stroke: "text-event-slate" },
+  success: { stroke: "text-success" },
+} as const;
+
+export type HealthTone = keyof typeof HEALTH_TONES;
+
 /** A titled card for one part of a view, with an optional action beside the title. */
 export function Section({
   title,
   description,
   icon: Icon,
+  tone = "brand",
   action,
   children,
   className,
 }: {
   title: string;
   description?: string;
-  /** Marks the section as a heading over a list (a meal over its foods), set apart from it. */
+  /** A tinted icon before the title. */
   icon?: LucideIcon;
+  /** The icon chip's colour. */
+  tone?: HealthTone;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -53,20 +80,13 @@ export function Section({
   return (
     <section
       aria-labelledby={id}
-      className={cn("space-y-3 rounded-xl border bg-card p-4", className)}
+      className={cn("space-y-3 rounded-2xl border bg-card p-4 @3xl:p-5", className)}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2.5">
-          {Icon ? (
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-subtle text-brand">
-              <Icon aria-hidden="true" className="size-4" />
-            </span>
-          ) : null}
+          {Icon ? <IconChip icon={Icon} tone={tone} /> : null}
           <div className="space-y-0.5">
-            <h2
-              id={id}
-              className={cn("font-semibold", Icon ? "text-base tracking-tight" : "text-sm")}
-            >
+            <h2 id={id} className="text-sm font-semibold">
               {title}
             </h2>
             {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
@@ -76,6 +96,170 @@ export function Section({
       </div>
       {children}
     </section>
+  );
+}
+
+export type ViewTab<T extends string> = { id: T; label: string; icon: LucideIcon };
+
+/**
+ * Tabs within one Health view (what you do now, and what you've done), with the selected tab's
+ * panel below. Arrow keys, Home, and End move between tabs.
+ */
+export function ViewTabs<T extends string>({
+  label,
+  tabs,
+  tab,
+  onChange,
+  action,
+  children,
+}: {
+  label: string;
+  tabs: readonly ViewTab<T>[];
+  tab: T;
+  onChange: (tab: T) => void;
+  /** Sits at the end of the tab row, for the view's main action. */
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  const idPrefix = useId();
+  const buttons = useRef<(HTMLButtonElement | null)[]>([]);
+
+  function onKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+    const last = tabs.length - 1;
+    const next = {
+      ArrowRight: index === last ? 0 : index + 1,
+      ArrowLeft: index === 0 ? last : index - 1,
+      Home: 0,
+      End: last,
+    }[event.key];
+    const target = next === undefined ? undefined : tabs[next];
+    if (next === undefined || !target) return;
+    event.preventDefault();
+    onChange(target.id);
+    buttons.current[next]?.focus();
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-2 border-b">
+        <div role="tablist" aria-label={label} className="-mb-px flex gap-1">
+          {tabs.map(({ id, label: tabLabel, icon: Icon }, index) => {
+            const selected = id === tab;
+            return (
+              <button
+                key={id}
+                ref={(element) => {
+                  buttons.current[index] = element;
+                }}
+                type="button"
+                role="tab"
+                id={`${idPrefix}-${id}`}
+                aria-selected={selected}
+                aria-controls={`${idPrefix}-panel`}
+                tabIndex={selected ? 0 : -1}
+                onClick={() => onChange(id)}
+                onKeyDown={(event) => onKeyDown(event, index)}
+                className={cn(
+                  "relative flex h-10 shrink-0 items-center gap-2 rounded-t-md px-3 text-sm font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full",
+                  selected
+                    ? "text-foreground after:bg-brand"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Icon aria-hidden="true" className={cn("size-4", selected && "text-brand")} />
+                {tabLabel}
+              </button>
+            );
+          })}
+        </div>
+        {action ? <div className="flex items-center gap-2 pb-2">{action}</div> : null}
+      </div>
+      <div
+        role="tabpanel"
+        id={`${idPrefix}-panel`}
+        aria-labelledby={`${idPrefix}-${tab}`}
+        className="animate-page-in space-y-4"
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A circular progress gauge toward a daily target, with the percentage in the middle. Without a
+ * target the ring stays empty.
+ */
+export function Gauge({
+  label,
+  fraction,
+  tone,
+  valueText,
+  icon: Icon,
+}: {
+  label: string;
+  /** 0 to 1, or `null` without a target. */
+  fraction: number | null;
+  tone: HealthTone;
+  /** Read out for the gauge, such as "1,200 of 2,000 kcal". */
+  valueText: string;
+  /** Shown in the middle when there's no target to measure against. */
+  icon: LucideIcon;
+}) {
+  const percent = fraction === null ? 0 : Math.round(fraction * 100);
+  const offset = 100 - percent;
+  const style: CSSProperties & { "--ring-offset": number } = { "--ring-offset": offset };
+  return (
+    <div
+      role="progressbar"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={fraction === null ? undefined : percent}
+      aria-valuetext={valueText}
+      className="relative size-24 shrink-0"
+    >
+      <svg
+        viewBox="0 0 100 100"
+        aria-hidden="true"
+        className={cn("size-full", HEALTH_TONES[tone].stroke)}
+      >
+        <circle
+          cx="50"
+          cy="50"
+          r="42"
+          fill="none"
+          strokeWidth="9"
+          stroke="currentColor"
+          className="opacity-15"
+        />
+        {percent > 0 ? (
+          <circle
+            cx="50"
+            cy="50"
+            r="42"
+            fill="none"
+            strokeWidth="9"
+            stroke="currentColor"
+            strokeLinecap="round"
+            pathLength={100}
+            strokeDasharray="100"
+            strokeDashoffset={offset}
+            transform="rotate(-90 50 50)"
+            style={style}
+            className="motion-safe:animate-ring-fill"
+          />
+        ) : null}
+      </svg>
+      <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center">
+        {fraction === null ? (
+          <Icon className={cn("size-6 opacity-60", HEALTH_TONES[tone].stroke)} />
+        ) : (
+          <span className="text-lg font-semibold tabular-nums">{percent}%</span>
+        )}
+      </div>
+    </div>
   );
 }
 

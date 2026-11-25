@@ -143,7 +143,7 @@ export function RecurringView(props: RecurringViewProps) {
   return (
     <div className="space-y-6">
       {header}
-      <StatGrid>
+      <StatGrid hero icon={Repeat}>
         {costTotals(active).map((total) => (
           <StatTile
             key={total.currency}

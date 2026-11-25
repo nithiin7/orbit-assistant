@@ -1,28 +1,32 @@
 "use client";
 
 import { yupResolver } from "@hookform/resolvers/yup";
-import type { ShoppingItem, UpdateShoppingItemRequest } from "@orbit/contracts";
-import { useId } from "react";
+import type { Person, ShoppingItem, UpdateShoppingItemRequest } from "@orbit/contracts";
+import { useId, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { InferType } from "yup";
 
 import { describeApiError } from "@/api/client";
 import { FormAlert, FormField } from "@/components/form-field";
 import { Dialog, DialogFormActions, DialogHeader } from "@/components/ui/dialog";
+import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { itemSchema, NOTES_MAX_LENGTH, optionalText } from "@/lib/shopping";
 
 type ItemEditDialogProps = {
   item: ShoppingItem;
+  /** People an item can be a gift idea for. */
+  people?: readonly Person[];
   onSave: (item: ShoppingItem, changes: UpdateShoppingItemRequest) => Promise<void>;
   /** Called once the dialog has closed, whether saved or cancelled. */
   onClose: () => void;
 };
 
 /** Edits an item in a modal `<dialog>`. Focus returns to whatever opened it. */
-export function ItemEditDialog({ item, onSave, onClose }: ItemEditDialogProps) {
+export function ItemEditDialog({ item, people = [], onSave, onClose }: ItemEditDialogProps) {
   const id = useId();
+  const [giftFor, setGiftFor] = useState(item.person_id ?? "");
   const {
     register,
     handleSubmit,
@@ -49,6 +53,8 @@ export function ItemEditDialog({ item, onSave, onClose }: ItemEditDialogProps) {
     if (quantity !== item.quantity) changes.quantity = quantity;
     if (url !== item.url) changes.url = url;
     if (values.notes !== item.notes) changes.notes = values.notes;
+    const personId = giftFor === "" ? null : giftFor;
+    if (personId !== item.person_id) changes.person_id = personId;
     if (Object.keys(changes).length === 0) {
       close();
       return;
@@ -123,6 +129,23 @@ export function ItemEditDialog({ item, onSave, onClose }: ItemEditDialogProps) {
             {errors.notes?.message ?? `${notes.trim().length} / ${NOTES_MAX_LENGTH} characters`}
           </p>
         </div>
+
+        {people.length > 0 || item.person_id ? (
+          <div className="space-y-1.5">
+            <label htmlFor={`${id}-gift`} className="block text-sm font-medium">
+              Gift idea for <span className="font-normal text-muted-foreground">(optional)</span>
+            </label>
+            <Select
+              id={`${id}-gift`}
+              value={giftFor}
+              onValueChange={setGiftFor}
+              options={[
+                { value: "", label: "Not a gift" },
+                ...people.map((person) => ({ value: person.id, label: person.name })),
+              ]}
+            />
+          </div>
+        ) : null}
 
         <FormAlert message={errors.root?.server?.message ?? null} />
 

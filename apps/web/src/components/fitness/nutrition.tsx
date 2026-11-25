@@ -3,10 +3,13 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { Food, FoodEntry, MealType, Portion, SavedMeal } from "@orbit/contracts";
 import {
+  Apple,
+  ChartColumn,
   ChevronLeft,
   ChevronRight,
   Coffee,
   Cookie,
+  Flame,
   type LucideIcon,
   Moon,
   MoreHorizontal,
@@ -18,6 +21,7 @@ import {
   Sun,
   Trash2,
   Utensils,
+  UtensilsCrossed,
 } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { Controller, useForm, type UseFormRegisterReturn, useWatch } from "react-hook-form";
@@ -136,6 +140,7 @@ export function NutritionView({ workspaceId, today }: { workspaceId: string; tod
                     key={meal.value}
                     title={meal.label}
                     icon={MEAL_ICONS[meal.value]}
+                    tone="orange"
                     description={
                       totals && entries.length > 0
                         ? `${formatEnergy(totals.energy_cal, units.energy_unit)} · ${formatGrams(totals.protein_mg)} protein`
@@ -218,7 +223,12 @@ export function NutritionView({ workspaceId, today }: { workspaceId: string; tod
               })}
             </div>
             <div className="space-y-4">
-              <Section title="Totals" description={day === today ? "Today" : shortDate(day)}>
+              <Section
+                icon={Flame}
+                tone="orange"
+                title="Totals"
+                description={day === today ? "Today" : shortDate(day)}
+              >
                 <div className="space-y-3">
                   <Meter
                     label="Energy"
@@ -359,7 +369,12 @@ function SavedMeals({
     if (ok) act((token) => deleteMeal(token, workspaceId, meal.id));
   }
   return (
-    <Section title="Saved meals" description="Log several foods at once.">
+    <Section
+      icon={UtensilsCrossed}
+      tone="orange"
+      title="Saved meals"
+      description="Log several foods at once."
+    >
       <Loaded resource={meals.state} reload={meals.reload} skeleton="h-16">
         {({ meals: list }) =>
           list.length === 0 ? (
@@ -437,7 +452,7 @@ function NutritionHistory({
   const start = addDays(today, -13);
   const history = useNutritionHistory(workspaceId, start, today);
   return (
-    <Section title="Last 14 days">
+    <Section icon={ChartColumn} tone="orange" title="Last 14 days">
       <Loaded resource={history.state} reload={history.reload} skeleton="h-32">
         {({ days }) => {
           const byDay = new Map(days.map((d) => [d.day, d.nutrients.energy_cal]));
@@ -485,6 +500,8 @@ function SavedFoods({
   }
   return (
     <Section
+      icon={Apple}
+      tone="green"
       title="Saved foods"
       description="Foods you eat often, with their nutrients per serving."
       action={

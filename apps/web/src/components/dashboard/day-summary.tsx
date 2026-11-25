@@ -3,6 +3,7 @@
 import type { BriefingContent, BriefingSourceRef } from "@orbit/contracts";
 import {
   AlarmClock,
+  Cake,
   CalendarDays,
   CheckSquare,
   CreditCard,
@@ -29,6 +30,7 @@ import type { NarratedBriefing } from "@/hooks/use-briefing";
 import { briefingItemHrefs } from "@/lib/briefing";
 import { calendarHref } from "@/lib/calendar";
 import { financeViewHref } from "@/lib/finance-views";
+import { peopleHref } from "@/lib/people";
 import { cn } from "@/utils/common";
 
 const ICONS: Record<BriefingSourceRef["type"], LucideIcon> = {
@@ -38,6 +40,7 @@ const ICONS: Record<BriefingSourceRef["type"], LucideIcon> = {
   commitment: CreditCard,
   budget: PiggyBank,
   savings_goal: Target,
+  person: Cake,
   habit: Repeat2,
   routine: ListChecks,
   workout: Dumbbell,
@@ -269,6 +272,14 @@ function AtAGlance({ content, day }: { content: BriefingContent; day: string }) 
       label: plural(s.workouts, "workout", "workouts"),
       href: "/health",
       icon: Dumbbell,
+    });
+  // Older briefings were stored before People joined, so the section can be missing.
+  const celebrations = content.people?.today ?? 0;
+  if (celebrations > 0)
+    chips.push({
+      label: plural(celebrations, "celebration today", "celebrations today"),
+      href: peopleHref("upcoming"),
+      icon: Cake,
     });
   if (chips.length === 0) return null;
 

@@ -180,6 +180,24 @@ describe("SavedPanel", () => {
     await waitFor(() => expect(opened).toEqual(["b-grafana"]));
   });
 
+  it("opens on a summary that leads to each view", async () => {
+    mockApi({
+      ...session,
+      ...routes([
+        bookmark({ id: "b-grafana", title: "Grafana", pinned: true }),
+        bookmark({ id: "b-reel", title: "Reel", kind: "reel", status: "later" }),
+      ]).route,
+    });
+    await renderSignedIn(<SavedPanel />);
+
+    const hero = await screen.findByRole("region", { name: "1 link to read or watch later" });
+    expect(within(hero).getByRole("link", { name: /Pinned/ })).toHaveTextContent("1");
+    expect(within(hero).getByRole("link", { name: /Read & watch later/ })).toHaveAttribute(
+      "href",
+      "/saved?view=later",
+    );
+  });
+
   it("filters the list as you type", async () => {
     const user = userEvent.setup();
     mockApi({

@@ -48,6 +48,7 @@ from orbit_api.db.models import (
     NoteModel,
     NoteTagAssignmentModel,
     NoteTagModel,
+    PersonModel,
     PlaceModel,
     ReminderModel,
     RoutineModel,
@@ -921,6 +922,27 @@ PLACE = EntitySource(
 )
 
 
+# People
+
+PERSON = EntitySource(
+    module="people",
+    entity_type="person",
+    table=PersonModel,
+    id=PersonModel.id,
+    title=PersonModel.name,
+    updated_at=PersonModel.updated_at,
+    created_at=PersonModel.created_at,
+    status=PersonModel.relationship,
+    scope=_workspace(PersonModel),
+    # Contact details stay out of results; the note is searched but shown only as a snippet.
+    fields=(text_field("note", "description", PersonModel.note),),
+    columns={"person_relationship": PersonModel.relationship},
+    describe=lambda row, _c: Description(
+        details=details(("relationship", row["person_relationship"]))
+    ),
+)
+
+
 SOURCES: Final[dict[UniversalModule, tuple[EntitySource, ...]]] = {
     "tasks": (TASK,),
     "notes": (NOTE,),
@@ -944,4 +966,5 @@ SOURCES: Final[dict[UniversalModule, tuple[EntitySource, ...]]] = {
     "watchlist": (WATCH_ITEM,),
     "bookmarks": (BOOKMARK,),
     "places": (PLACE,),
+    "people": (PERSON,),
 }

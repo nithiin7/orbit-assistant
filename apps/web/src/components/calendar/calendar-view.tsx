@@ -29,6 +29,7 @@ import {
   useViewerTimeZone,
 } from "@/hooks/use-calendar";
 import { useHabitCalendar } from "@/hooks/use-habits";
+import { usePeople } from "@/hooks/use-people";
 import { useTaskList } from "@/hooks/use-tasks";
 import { ASSIST_ACTIONS } from "@/lib/ai";
 import {
@@ -48,6 +49,7 @@ import {
   newEventValues,
   occurrenceKey,
   parseCalendarLocation,
+  personItem,
   rangeTitle,
   resolveWeekStart,
   shiftDate,
@@ -62,6 +64,7 @@ import {
   weekDates,
 } from "@/lib/calendar";
 import { notesHref } from "@/lib/notes";
+import { datesBetween, peopleHref } from "@/lib/people";
 import { useAuth } from "@/providers/auth";
 import { useWorkspaces } from "@/providers/workspace";
 import { cn } from "@/utils/common";
@@ -188,6 +191,9 @@ function CalendarView({ workspaceId }: { workspaceId: string }) {
       : { start: range.start, end: range.end, timezone: timeZone },
   );
   const unscheduled = useUnscheduledTasks(workspaceId, showUnscheduled);
+  // Birthdays and other dates from People, worked out here; nothing is stored in the calendar.
+  const { people } = usePeople(workspaceId);
+  const everyone = people.status === "success" ? people.data : [];
   const openTasks = useTaskList(workspaceId, { status: "open", sort: "due_date", limit: 200 });
   const openTaskList = openTasks.state.status === "success" ? openTasks.state.data.tasks : [];
 
@@ -205,13 +211,18 @@ function CalendarView({ workspaceId }: { workspaceId: string }) {
           ...state.data.scheduled_tasks.map((task) => taskItem(task)),
           ...(showDue ? state.data.due_tasks.map((task) => taskItem(task, true)) : []),
           ...habitEntries.map(habitItem),
+          ...datesBetween(everyone, range.start, range.end).map(personItem),
         ]
       : [];
 
-  /** Habits and routines open their own page; everything else opens its details here. */
+  /** Habits, routines, and people's dates open their own page; the rest open details here. */
   const openItem = (item: CalendarItem) => {
     if (item.kind === "habit") {
       router.push(habitEntryHref(item.entry));
+      return;
+    }
+    if (item.kind === "person") {
+      router.push(peopleHref("upcoming", item.entry.personId));
       return;
     }
     setDetails(item);
@@ -319,8 +330,8 @@ function CalendarView({ workspaceId }: { workspaceId: string }) {
   }
 
   const onMoveTimed = (item: CalendarItem, day: string, minutes: number, edge: "start" | "end") => {
-    // Habits and routines are moved from their own page, not dragged here.
-    if (item.kind === "habit") return;
+    // Habits, routines, and people's dates are changed on their own page, not dragged here.
+    if (item.kind === "habit" || item.kind === "person") return;
     if (item.kind === "event") {
       const { start, end } = movedTimes(item.occurrence, { date: day, minutes, edge }, timeZone);
       void moveOccurrence(item.occurrence, start, end);
@@ -337,7 +348,7 @@ function CalendarView({ workspaceId }: { workspaceId: string }) {
   };
 
   const onMoveToDate = (item: CalendarItem, day: string) => {
-    if (item.kind === "habit") return;
+    if (item.kind === "habit" || item.kind === "person") return;
     if (item.kind === "event") {
       const moved = item.occurrence.all_day
         ? movedDates(item.occurrence, day)
@@ -571,7 +582,7 @@ function CalendarView({ workspaceId }: { workspaceId: string }) {
           ) : state.status === "error" ? (
             <div
               role="alert"
-              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-5"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-5"
             >
               <p className="text-sm text-muted-foreground">{state.message}</p>
               <Button variant="outline" size="sm" onClick={reload}>

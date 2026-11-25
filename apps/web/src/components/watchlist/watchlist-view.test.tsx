@@ -233,6 +233,11 @@ describe("WatchlistPanel", () => {
 
     const shelf = await screen.findByRole("region", { name: "Continue watching" });
     expect(within(shelf).getByText("Watched S1 · E2")).toBeInTheDocument();
+    const hero = screen.getByRole("region", { name: "1 title in progress" });
+    expect(within(hero).getByRole("link", { name: /Watching/ })).toHaveAttribute(
+      "href",
+      "/watchlist?view=watching",
+    );
     expect(within(shelf).getByRole("progressbar", { name: "Saga progress" })).toHaveAttribute(
       "aria-valuenow",
       "2",

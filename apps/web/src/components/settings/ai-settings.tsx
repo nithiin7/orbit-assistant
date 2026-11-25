@@ -303,7 +303,7 @@ function Providers({ providers, settings }: { providers: AiProvider[]; settings:
     >
       {editing === "new" ? <ProviderForm onDone={() => setEditing(null)} /> : null}
       {providers.length ? (
-        <ul className="divide-y rounded-xl border">
+        <ul className="divide-y rounded-2xl border">
           {providers.map((provider) =>
             editing !== "new" && editing?.id === provider.id ? (
               <li key={provider.id} className="p-2">
@@ -842,7 +842,7 @@ function Usage() {
             ) : null}
           </div>
           {usage.data.lines.length ? (
-            <div className="overflow-x-auto rounded-xl border">
+            <div className="overflow-x-auto rounded-2xl border">
               <table className="w-full text-xs">
                 <thead className="bg-muted/40 text-left text-muted-foreground">
                   <tr>

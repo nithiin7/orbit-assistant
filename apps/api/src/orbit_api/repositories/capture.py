@@ -20,7 +20,9 @@ from orbit_api.repositories.finance import (
 )
 from orbit_api.repositories.fitness import build_fitness
 from orbit_api.repositories.habits import build_habit_service
+from orbit_api.repositories.people import SqlPeopleStore
 from orbit_api.repositories.places import SqlPlaceRepository, SqlPlaceSettings
+from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.shopping import SqlShoppingItemRepository, SqlShoppingListRepository
 from orbit_api.repositories.watchlist import SqlLookupSettings, SqlWatchItemRepository
 from orbit_api.services.bookmarks.models import FetchedPage, PreviewFetchError
@@ -28,6 +30,7 @@ from orbit_api.services.bookmarks.service import BookmarkService
 from orbit_api.services.finance.service import FinanceService
 from orbit_api.services.fitness.overview import Fitness
 from orbit_api.services.habits.service import HabitService
+from orbit_api.services.people.service import PeopleService
 from orbit_api.services.places.models import PlaceMatch, PlaceSearchError
 from orbit_api.services.places.service import PlaceService
 from orbit_api.services.shopping.service import ShoppingService
@@ -65,6 +68,7 @@ class CaptureServices:
     places: PlaceService
     bookmarks: BookmarkService
     watchlist: WatchlistService
+    people: PeopleService
 
 
 def build_capture_services(
@@ -104,5 +108,11 @@ def build_capture_services(
             transaction,
             FernetSecretBox.from_settings(settings),
             _NoCatalogs(),
+        ),
+        people=PeopleService(
+            SqlPeopleStore(session),
+            SqlReminderRepository(session),
+            SqlOccurrenceRepository(session),
+            transaction,
         ),
     )

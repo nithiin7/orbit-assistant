@@ -39,7 +39,7 @@ describe("NavLinks", () => {
       within(plan)
         .getAllByRole("link")
         .map((link) => link.textContent),
-    ).toEqual(["Tasks", "Calendar", "Reminders", "Shopping"]);
+    ).toEqual(["Tasks", "Calendar", "Reminders", "Shopping", "People"]);
     expect(
       within(screen.getByRole("list", { name: "AI" })).getByRole("link", { name: "Assistant" }),
     ).toBeInTheDocument();

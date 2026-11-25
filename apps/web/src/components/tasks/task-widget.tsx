@@ -107,6 +107,7 @@ export function TaskWidget() {
 
   return (
     <WidgetCard
+      tone="brand"
       title="Tasks"
       icon={CheckSquare}
       href="/tasks"

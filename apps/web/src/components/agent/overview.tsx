@@ -6,6 +6,7 @@ import {
   ArrowRight,
   Bot,
   CalendarClock,
+  ChevronRight,
   CircleCheck,
   FileText,
   Hand,
@@ -27,6 +28,7 @@ import type { InferType } from "yup";
 import { describeApiError } from "@/api/client";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
+import { IconChip, type IconChipTone } from "@/components/ui/icon-chip";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -50,21 +52,19 @@ import { cn } from "@/utils/common";
 
 import { ExecutionRow } from "./activity";
 import { ApprovalCard } from "./approvals";
-import { ErrorNote, LoadingRows, SectionHeading } from "./shared";
+import { ErrorNote, LoadingRows } from "./shared";
 
 export function OverviewView({ overview }: { overview: AgentOverview }) {
   const hasWorkflows = overview.workflows > 0;
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <AgentHero overview={overview} />
-
-      <AtAGlance overview={overview} />
 
       {overview.pending_approvals > 0 ? (
         <PendingPreview count={overview.pending_approvals} />
       ) : null}
 
-      <div className={cn("grid gap-8", hasWorkflows && "@4xl:grid-cols-2")}>
+      <div className={cn("grid items-start gap-6", hasWorkflows && "@4xl:grid-cols-2")}>
         {hasWorkflows ? <UpNext /> : null}
         <Recent recent={overview.recent} />
       </div>
@@ -84,8 +84,12 @@ function AgentHero({ overview }: { overview: AgentOverview }) {
   return (
     <section
       aria-label="Agent status"
-      className="relative overflow-hidden rounded-2xl border bg-card shadow-elevation-1"
+      className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-brand-subtle/60 via-card to-card shadow-elevation-1"
     >
+      <Bot
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-8 -right-8 size-44 -rotate-12 text-brand opacity-[0.05]"
+      />
       {/* A soft glow behind the header, in the brand's colors, fading out fully inside the card. */}
       <div
         aria-hidden="true"
@@ -104,7 +108,10 @@ function AgentHero({ overview }: { overview: AgentOverview }) {
             />
           </span>
           <div className="min-w-0 flex-1 space-y-0.5">
-            <p className="truncate text-lg font-semibold tracking-tight">{agent.name}</p>
+            <p className="text-xs font-medium tracking-wide text-brand uppercase">Your agent</p>
+            <p className="truncate text-xl font-semibold tracking-tight @3xl:text-2xl">
+              {agent.name}
+            </p>
             <p className="text-sm text-muted-foreground">
               {agent.enabled ? "On" : "Off"} · {level?.label ?? agent.autonomy}{" "}
               <Link
@@ -134,10 +141,12 @@ function AgentHero({ overview }: { overview: AgentOverview }) {
         ) : null}
         <FormAlert message={error} />
 
+        <AtAGlance overview={overview} />
+
         {agent.enabled ? (
           <AskAgent />
         ) : runtime.server_enabled ? (
-          <p className="rounded-xl border border-dashed bg-background/60 p-4 text-sm text-muted-foreground">
+          <p className="rounded-xl border border-dashed bg-card/60 p-4 text-sm text-muted-foreground">
             Turn the agent on to ask it for help and let your workflows run. It always asks before
             changing anything you haven’t allowed.
           </p>
@@ -305,7 +314,7 @@ function Stat({
   children: ReactNode;
 }) {
   return (
-    <div className="relative min-w-0 rounded-xl border bg-card p-4 shadow-elevation-1 transition-colors duration-150 focus-within:ring-2 focus-within:ring-ring hover:border-brand/40">
+    <div className="relative min-w-0 rounded-xl border bg-card/80 p-4 backdrop-blur-sm transition-[border-color,translate] duration-150 focus-within:ring-2 focus-within:ring-ring hover:-translate-y-0.5 hover:border-brand/40 motion-reduce:hover:translate-y-0">
       <span
         aria-hidden="true"
         className={cn(
@@ -330,18 +339,13 @@ function Stat({
 function PendingPreview({ count }: { count: number }) {
   const approvals = useAgentApprovals(["pending"]);
   return (
-    <section className="space-y-3">
-      <SectionHeading
-        title={`Needs you (${count})`}
-        actions={
-          <Link
-            href={automationHref("approvals")}
-            className="text-sm font-medium text-brand hover:underline"
-          >
-            All approvals
-          </Link>
-        }
-      />
+    <SectionCard
+      title={`Needs you (${count})`}
+      icon={Hand}
+      tone="warning"
+      className="border-warning/30"
+      action={<More href={automationHref("approvals")}>All approvals</More>}
+    >
       {approvals.status === "success" ? (
         <div className="grid gap-3 @3xl:grid-cols-2">
           {approvals.data.approvals.slice(0, 2).map((approval) => (
@@ -349,7 +353,7 @@ function PendingPreview({ count }: { count: number }) {
           ))}
         </div>
       ) : null}
-    </section>
+    </SectionCard>
   );
 }
 
@@ -366,18 +370,12 @@ function UpNext() {
       : [];
 
   return (
-    <section className="space-y-3">
-      <SectionHeading
-        title="Up next"
-        actions={
-          <Link
-            href={automationHref("workflows")}
-            className="text-sm font-medium text-brand hover:underline"
-          >
-            Workflows
-          </Link>
-        }
-      />
+    <SectionCard
+      title="Up next"
+      icon={CalendarClock}
+      tone="brand"
+      action={<More href={automationHref("workflows")}>Workflows</More>}
+    >
       {workflows.status === "loading" ? (
         <LoadingRows label="Loading workflows" rows={2} />
       ) : workflows.status === "error" ? (
@@ -385,9 +383,9 @@ function UpNext() {
       ) : scheduled.length === 0 ? (
         <QuietState icon={CalendarClock}>Nothing is scheduled to run on its own.</QuietState>
       ) : (
-        <ul className="divide-y rounded-xl border bg-card">
+        <ul className="-mx-4 divide-y border-t @3xl:-mx-5">
           {scheduled.map((workflow) => (
-            <li key={workflow.id} className="flex items-center gap-3 px-3 py-2.5">
+            <li key={workflow.id} className="flex items-center gap-3 px-4 py-2.5 @3xl:px-5">
               <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-subtle text-brand">
                 <CalendarClock className="size-4" aria-hidden="true" />
               </span>
@@ -404,42 +402,36 @@ function UpNext() {
           ))}
         </ul>
       )}
-    </section>
+    </SectionCard>
   );
 }
 
 function Recent({ recent }: { recent: readonly AgentExecution[] }) {
   return (
-    <section className="space-y-3">
-      <SectionHeading
-        title="Recent"
-        actions={
-          <Link
-            href={automationHref("activity")}
-            className="text-sm font-medium text-brand hover:underline"
-          >
-            History
-          </Link>
-        }
-      />
+    <SectionCard
+      title="Recent"
+      icon={History}
+      tone="success"
+      action={<More href={automationHref("activity")}>History</More>}
+    >
       {recent.length === 0 ? (
         <QuietState icon={History}>
           Nothing has run yet. Ask the agent something or start a workflow, and it shows up here.
         </QuietState>
       ) : (
-        <ul className="divide-y rounded-xl border bg-card p-1">
+        <ul className="-mx-4 divide-y border-t px-1 pt-1 @3xl:-mx-5">
           {recent.slice(0, 5).map((execution) => (
             <ExecutionRow key={execution.id} execution={execution} />
           ))}
         </ul>
       )}
-    </section>
+    </SectionCard>
   );
 }
 
 function QuietState({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
+    <div className="flex items-center gap-3 rounded-xl border border-dashed bg-background/40 p-4 text-sm text-muted-foreground">
       <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
         <Icon className="size-4" aria-hidden="true" />
       </span>
@@ -463,21 +455,15 @@ const FEATURED = ["briefing", "week", "busy"]
 
 function IdeasToTry({ first }: { first: boolean }) {
   return (
-    <section className="space-y-3">
-      <SectionHeading
-        title={first ? "Try a template" : "More ideas"}
-        description={
-          first ? "Start from a ready-made workflow. Nothing is saved until you do." : undefined
-        }
-        actions={
-          <Link
-            href={automationHref("workflows")}
-            className="text-sm font-medium text-brand hover:underline"
-          >
-            All templates
-          </Link>
-        }
-      />
+    <SectionCard
+      title={first ? "Try a template" : "More ideas"}
+      description={
+        first ? "Start from a ready-made workflow. Nothing is saved until you do." : undefined
+      }
+      icon={Sparkles}
+      tone="violet"
+      action={<More href={automationHref("workflows")}>All templates</More>}
+    >
       <ul className="grid gap-3 @3xl:grid-cols-3">
         {FEATURED.map((template) => {
           const Icon = CATEGORY_ICONS[template.category];
@@ -485,7 +471,7 @@ function IdeasToTry({ first }: { first: boolean }) {
             <li key={template.id}>
               <Link
                 href={automationHref("workflows", { template: template.id })}
-                className="group flex h-full flex-col gap-3 rounded-xl border bg-card p-4 shadow-elevation-1 transition-colors duration-150 outline-none hover:border-brand/40 hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring"
+                className="group flex h-full flex-col gap-3 rounded-xl border bg-background/60 p-4 transition-[border-color,background-color,translate] duration-150 outline-none hover:-translate-y-0.5 hover:border-brand/40 hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring motion-reduce:hover:translate-y-0"
               >
                 <span className="flex items-center justify-between gap-2">
                   <span className="flex size-9 items-center justify-center rounded-lg bg-brand-subtle text-brand">
@@ -507,6 +493,66 @@ function IdeasToTry({ first }: { first: boolean }) {
           );
         })}
       </ul>
+    </SectionCard>
+  );
+}
+
+/** A link to the full view, at the end of a card's header. */
+function More({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="group/more -mr-1.5 inline-flex h-7 items-center gap-0.5 rounded-full px-2 text-xs font-medium text-muted-foreground transition-colors duration-150 outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      {children}
+      <ChevronRight
+        aria-hidden="true"
+        className="size-3.5 transition-transform duration-150 group-hover/more:translate-x-0.5"
+      />
+    </Link>
+  );
+}
+
+/** One part of the overview as a card: a tinted icon, a title, and a link to the full view. */
+function SectionCard({
+  title,
+  description,
+  icon: Icon,
+  tone,
+  action,
+  className,
+  children,
+}: {
+  title: string;
+  description?: string;
+  icon: LucideIcon;
+  tone: IconChipTone;
+  action?: ReactNode;
+  className?: string;
+  children: ReactNode;
+}) {
+  const id = useId();
+  return (
+    <section
+      aria-labelledby={id}
+      className={cn(
+        "min-w-0 space-y-4 overflow-hidden rounded-2xl border bg-card p-4 shadow-elevation-1 @3xl:p-5",
+        className,
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-2.5">
+          <IconChip icon={Icon} tone={tone} />
+          <div className="min-w-0 space-y-0.5 pt-1">
+            <h2 id={id} className="text-sm font-semibold">
+              {title}
+            </h2>
+            {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+          </div>
+        </div>
+        {action}
+      </div>
+      {children}
     </section>
   );
 }

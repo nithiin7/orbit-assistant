@@ -173,6 +173,8 @@ describe("Automation overview", () => {
     });
     await renderSignedIn(<AutomationView />);
     const glance = await screen.findByRole("region", { name: "At a glance" });
+    // The counts sit inside the agent's card, under its status.
+    expect(screen.getByRole("region", { name: "Agent status" })).toContainElement(glance);
     expect(within(glance).getByText("of 2 in all")).toBeInTheDocument();
     expect(within(glance).getByText("1/2")).toBeInTheDocument();
     expect(within(glance).getByRole("link", { name: "Needs you" })).toHaveAttribute(

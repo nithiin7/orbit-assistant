@@ -47,6 +47,7 @@ function item(overrides: Partial<ShoppingItem> & Pick<ShoppingItem, "id" | "name
     purchased_at: null,
     created_at: "2026-10-01T09:00:00Z",
     updated_at: "2026-10-01T09:00:00Z",
+    person_id: null,
     ...overrides,
   } satisfies ShoppingItem;
 }
@@ -395,6 +396,11 @@ describe("ShoppingPanel", () => {
     await renderSignedIn(<ShoppingPanel />);
 
     expect(await screen.findByText("1 of 2 bought")).toBeInTheDocument();
+    expect(screen.getByText(/^1 item to buy/)).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: "Bought" })).toHaveAttribute(
+      "aria-valuenow",
+      "50",
+    );
     expect(await screen.findByRole("heading", { name: "To buy" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Bought" })).toBeInTheDocument();
   });

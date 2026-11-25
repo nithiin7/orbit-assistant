@@ -3893,6 +3893,61 @@
         }
       }
     },
+    "/api/v1/workspaces/{workspace_id}/shopping/gifts": {
+      "get": {
+        "tags": [
+          "shopping"
+        ],
+        "summary": "List gift ideas for people",
+        "description": "Items in any list that are gift ideas for someone in People, newest first.",
+        "operationId": "list_gifts_api_v1_workspaces__workspace_id__shopping_gifts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShoppingItemsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, list, or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/shopping/items/{item_id}": {
       "patch": {
         "tags": [
@@ -6689,6 +6744,582 @@
           },
           "404": {
             "description": "The workspace or place is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/people/ledger": {
+      "get": {
+        "tags": [
+          "people"
+        ],
+        "summary": "List money owed between you and everyone",
+        "operationId": "get_ledger_api_v1_workspaces__workspace_id__people_ledger_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonLedgerResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or person is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/people/{person_id}/ledger": {
+      "post": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Record money owed or repaid",
+        "description": "A share split from an expense links to it (the expense stays whole in Finance). A\nrepayment with `record_in_finance` also records a refund or an expense, in one commit.",
+        "operationId": "create_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The person's ID.",
+              "title": "Person Id"
+            },
+            "description": "The person's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePersonLedgerEntryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonLedgerEntryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or person is not accessible."
+          },
+          "422": {
+            "description": "A link or record that doesn't fit the entry."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/people/{person_id}/ledger/{entry_id}": {
+      "patch": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Update money owed or repaid",
+        "operationId": "update_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger__entry_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The person's ID.",
+              "title": "Person Id"
+            },
+            "description": "The person's ID."
+          },
+          {
+            "name": "entry_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The ledger entry's ID.",
+              "title": "Entry Id"
+            },
+            "description": "The ledger entry's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePersonLedgerEntryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonLedgerEntryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or person is not accessible."
+          },
+          "422": {
+            "description": "A repayment recorded in Finance keeps its amount."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Delete money owed or repaid",
+        "description": "A Finance transaction recorded with it stays; delete that in Finance if needed.",
+        "operationId": "delete_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger__entry_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The person's ID.",
+              "title": "Person Id"
+            },
+            "description": "The person's ID."
+          },
+          {
+            "name": "entry_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The ledger entry's ID.",
+              "title": "Entry Id"
+            },
+            "description": "The ledger entry's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or person is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/people": {
+      "get": {
+        "tags": [
+          "people"
+        ],
+        "summary": "List people",
+        "operationId": "list_people_api_v1_workspaces__workspace_id__people_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeopleResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or person is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Add a person",
+        "description": "Dates with `remind_days_before` share one reminder, managed here, that announces the\nsoonest one. Reminders carry the name and date only.",
+        "operationId": "create_person_api_v1_workspaces__workspace_id__people_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePersonRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or person is not accessible."
+          },
+          "422": {
+            "description": "A date doesn't exist, or there are two birthdays."
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/people/{person_id}": {
+      "get": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Get a person",
+        "operationId": "get_person_api_v1_workspaces__workspace_id__people__person_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The person's ID.",
+              "title": "Person Id"
+            },
+            "description": "The person's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or person is not accessible."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Update a person",
+        "operationId": "update_person_api_v1_workspaces__workspace_id__people__person_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The person's ID.",
+              "title": "Person Id"
+            },
+            "description": "The person's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePersonRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or person is not accessible."
+          },
+          "422": {
+            "description": "A date doesn't exist, or there are two birthdays."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "people"
+        ],
+        "summary": "Delete a person",
+        "description": "Deletes their dates and their reminder too; notifications already delivered stay.",
+        "operationId": "delete_person_api_v1_workspaces__workspace_id__people__person_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The person's ID.",
+              "title": "Person Id"
+            },
+            "description": "The person's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or person is not accessible."
           },
           "422": {
             "description": "Validation Error",
@@ -31543,7 +32174,8 @@
                   "health",
                   "watchlist",
                   "bookmarks",
-                  "places"
+                  "places",
+                  "people"
                 ],
                 "type": "string"
               },
@@ -31584,7 +32216,8 @@
                   "measurement",
                   "watch_item",
                   "bookmark",
-                  "place"
+                  "place",
+                  "person"
                 ],
                 "type": "string"
               },
@@ -40168,7 +40801,8 @@
                 "shopping",
                 "places",
                 "saved",
-                "watchlist"
+                "watchlist",
+                "people"
               ]
             },
             "type": "array",
@@ -40422,7 +41056,8 @@
                   "shopping",
                   "places",
                   "saved",
-                  "watchlist"
+                  "watchlist",
+                  "people"
                 ]
               },
               {
@@ -42136,7 +42771,8 @@
               "add_transaction",
               "add_place",
               "save_link",
-              "add_watch_item"
+              "add_watch_item",
+              "add_person"
             ],
             "title": "Kind"
           },
@@ -44247,7 +44883,8 @@
               "notes",
               "documents",
               "shopping",
-              "investments"
+              "investments",
+              "people"
             ],
             "title": "Module"
           },
@@ -44587,6 +45224,17 @@
               }
             ]
           },
+          "people": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BriefingPeople"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "`null` when unavailable, left out, or in briefings prepared before it was added."
+          },
           "unavailable": {
             "items": {
               "type": "string",
@@ -44603,7 +45251,8 @@
                 "notes",
                 "documents",
                 "shopping",
-                "investments"
+                "investments",
+                "people"
               ]
             },
             "type": "array",
@@ -44629,6 +45278,7 @@
           "documents",
           "shopping",
           "investments",
+          "people",
           "unavailable"
         ],
         "title": "BriefingContentResponse"
@@ -45249,7 +45899,8 @@
                 "notes",
                 "documents",
                 "shopping",
-                "investments"
+                "investments",
+                "people"
               ]
             },
             "type": "array",
@@ -45473,6 +46124,85 @@
           "upcoming"
         ],
         "title": "BriefingPayments"
+      },
+      "BriefingPeople": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BriefingPersonDateItem"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Soonest first; names and dates only."
+          },
+          "today": {
+            "type": "integer",
+            "title": "Today"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "today",
+          "total"
+        ],
+        "title": "BriefingPeople"
+      },
+      "BriefingPersonDateItem": {
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/BriefingSourceRef"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "description": "`birthday`, `anniversary`, or `other` (named by `label`)."
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "on": {
+            "type": "string",
+            "format": "date",
+            "title": "On"
+          },
+          "days_away": {
+            "type": "integer",
+            "title": "Days Away"
+          },
+          "years": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Years",
+            "description": "How old they turn, or years together, if known."
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref",
+          "name",
+          "kind",
+          "label",
+          "on",
+          "days_away",
+          "years"
+        ],
+        "title": "BriefingPersonDateItem"
       },
       "BriefingRegenerateRequest": {
         "properties": {
@@ -45839,11 +46569,12 @@
                 "notes",
                 "documents",
                 "shopping",
-                "investments"
+                "investments",
+                "people"
               ]
             },
             "type": "array",
-            "maxItems": 13,
+            "maxItems": 14,
             "title": "Hidden",
             "description": "Modules left out of the briefing entirely."
           },
@@ -45993,7 +46724,8 @@
               "notes",
               "documents",
               "shopping",
-              "investments"
+              "investments",
+              "people"
             ],
             "title": "Module"
           },
@@ -46014,7 +46746,8 @@
               "document",
               "shopping_list",
               "sip",
-              "deposit"
+              "deposit",
+              "person"
             ],
             "title": "Type"
           },
@@ -46068,7 +46801,8 @@
               "notes",
               "documents",
               "shopping",
-              "investments"
+              "investments",
+              "people"
             ],
             "title": "Module"
           },
@@ -49639,6 +50373,19 @@
             "maxLength": 2000,
             "title": "Notes",
             "default": ""
+          },
+          "person_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Id",
+            "description": "Make it a gift idea for someone in People."
           }
         },
         "additionalProperties": false,
@@ -49910,6 +50657,175 @@
         "type": "object",
         "title": "CreateNoteRequest",
         "description": "A new note. Give `content` (an editor document) or `text` (plain text, one paragraph per\nline, for quick capture), or neither for an empty note."
+      },
+      "CreatePersonLedgerEntryRequest": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "they_owe",
+              "i_owe",
+              "they_paid",
+              "i_paid"
+            ],
+            "title": "Kind"
+          },
+          "amount": {
+            "type": "integer",
+            "maximum": 10000000000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Amount",
+            "description": "Minor units, always positive: ₹12.50 is 1250."
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "occurred_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Occurred On"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Description"
+          },
+          "transaction_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transaction Id",
+            "description": "For `they_owe`: the expense of yours this share was split from."
+          },
+          "record_in_finance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonLedgerRecordRequest"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "For repayments: also record a refund (`they_paid`) or an expense (`i_paid`) in Finance."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "amount",
+          "currency",
+          "occurred_on",
+          "description"
+        ],
+        "title": "CreatePersonLedgerEntryRequest"
+      },
+      "CreatePersonRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "relationship": {
+            "type": "string",
+            "enum": [
+              "family",
+              "partner",
+              "friend",
+              "colleague",
+              "other"
+            ],
+            "title": "Relationship",
+            "default": "friend"
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 40,
+            "title": "Phone",
+            "default": ""
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "title": "Email",
+            "default": ""
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Note",
+            "default": ""
+          },
+          "favorite": {
+            "type": "boolean",
+            "title": "Favorite",
+            "default": false
+          },
+          "dates": {
+            "items": {
+              "$ref": "#/components/schemas/PersonDateBody"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Dates"
+          },
+          "reminder_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reminder Time",
+            "description": "09:00 by default."
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone",
+            "description": "For reminders; the user's time zone by default."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "CreatePersonRequest",
+        "description": "Add a person. A name is enough; dates with `remind_days_before` get reminders."
       },
       "CreatePlaceRequest": {
         "properties": {
@@ -50833,7 +51749,7 @@
               "$ref": "#/components/schemas/DashboardWidgetModel"
             },
             "type": "array",
-            "maxItems": 23,
+            "maxItems": 24,
             "title": "Widgets",
             "description": "The widgets to show, in order. Each widget may appear once; an empty list is an empty dashboard."
           },
@@ -50915,6 +51831,7 @@
               "shopping",
               "watchlist",
               "places",
+              "people",
               "cash_flow",
               "upcoming_payments",
               "budget",
@@ -53583,7 +54500,8 @@
               "search",
               "watchlist",
               "bookmarks",
-              "places"
+              "places",
+              "people"
             ],
             "title": "Module"
           },
@@ -53633,7 +54551,8 @@
                   "search",
                   "watchlist",
                   "bookmarks",
-                  "places"
+                  "places",
+                  "people"
                 ]
               },
               {
@@ -61459,6 +62378,23 @@
         ],
         "title": "PaymentListResponse"
       },
+      "PeopleResponse": {
+        "properties": {
+          "people": {
+            "items": {
+              "$ref": "#/components/schemas/PersonResponse"
+            },
+            "type": "array",
+            "title": "People",
+            "description": "Everyone, by name."
+          }
+        },
+        "type": "object",
+        "required": [
+          "people"
+        ],
+        "title": "PeopleResponse"
+      },
       "PeriodChangeResponse": {
         "properties": {
           "months": {
@@ -61525,6 +62461,392 @@
           "volume_g"
         ],
         "title": "PeriodCountResponse"
+      },
+      "PersonBalanceResponse": {
+        "properties": {
+          "person_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Person Id"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount",
+            "description": "Minor units: positive while they owe you, negative while you owe them."
+          }
+        },
+        "type": "object",
+        "required": [
+          "person_id",
+          "currency",
+          "amount"
+        ],
+        "title": "PersonBalanceResponse"
+      },
+      "PersonDateBody": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "birthday",
+              "anniversary",
+              "other"
+            ],
+            "title": "Kind"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 60,
+            "title": "Label",
+            "description": "The date's name; required for `other`, empty otherwise.",
+            "default": ""
+          },
+          "month": {
+            "type": "integer",
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Month"
+          },
+          "day": {
+            "type": "integer",
+            "maximum": 31.0,
+            "minimum": 1.0,
+            "title": "Day"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2100.0,
+                "minimum": 1900.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          },
+          "remind_days_before": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 30.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remind Days Before",
+            "description": "Days before the date to remind (0 is on the day); null for no reminder."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "month",
+          "day"
+        ],
+        "title": "PersonDateBody",
+        "description": "A date that comes round every year. Without a year, ages and years together aren't\nknown; 29 February falls on 28 February in other years."
+      },
+      "PersonLedgerEntryResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "person_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Person Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "they_owe",
+              "i_owe",
+              "they_paid",
+              "i_paid"
+            ],
+            "title": "Kind",
+            "description": "`they_owe` (you paid or lent), `i_owe` (they did), or a repayment: `they_paid` or `i_paid`."
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount",
+            "description": "Minor units, always positive; `kind` says which way."
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "AED",
+              "SGD",
+              "AUD",
+              "CAD",
+              "CHF",
+              "JPY"
+            ],
+            "title": "Currency"
+          },
+          "occurred_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Occurred On"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "transaction": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonLinkedTransactionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "person_id",
+          "kind",
+          "amount",
+          "currency",
+          "occurred_on",
+          "description",
+          "transaction",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "PersonLedgerEntryResponse"
+      },
+      "PersonLedgerRecordRequest": {
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id",
+            "description": "Where the money arrived or left from."
+          },
+          "category_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Category Id",
+            "description": "An expense category: the shared expense's, so your spending comes down to your share."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "account_id",
+          "category_id"
+        ],
+        "title": "PersonLedgerRecordRequest",
+        "description": "Record a repayment in Finance too, in the same commit."
+      },
+      "PersonLedgerResponse": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/PersonLedgerEntryResponse"
+            },
+            "type": "array",
+            "title": "Entries",
+            "description": "Newest first."
+          },
+          "balances": {
+            "items": {
+              "$ref": "#/components/schemas/PersonBalanceResponse"
+            },
+            "type": "array",
+            "title": "Balances",
+            "description": "Each person's non-zero balance per currency; currencies are never mixed."
+          }
+        },
+        "type": "object",
+        "required": [
+          "entries",
+          "balances"
+        ],
+        "title": "PersonLedgerResponse"
+      },
+      "PersonLinkedTransactionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "amount": {
+            "type": "integer",
+            "title": "Amount"
+          },
+          "occurred_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Occurred On"
+          },
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "description",
+          "amount",
+          "occurred_on",
+          "account_id",
+          "category_id"
+        ],
+        "title": "PersonLinkedTransactionResponse",
+        "description": "The Finance transaction behind an entry; null once that transaction is deleted."
+      },
+      "PersonResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "relationship": {
+            "type": "string",
+            "enum": [
+              "family",
+              "partner",
+              "friend",
+              "colleague",
+              "other"
+            ],
+            "title": "Relationship"
+          },
+          "phone": {
+            "type": "string",
+            "title": "Phone",
+            "description": "Empty when not given."
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "description": "Empty when not given."
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "description": "Empty when not given."
+          },
+          "favorite": {
+            "type": "boolean",
+            "title": "Favorite"
+          },
+          "dates": {
+            "items": {
+              "$ref": "#/components/schemas/PersonDateBody"
+            },
+            "type": "array",
+            "title": "Dates",
+            "description": "In the order the user listed them."
+          },
+          "reminder_time": {
+            "type": "string",
+            "format": "time",
+            "title": "Reminder Time",
+            "description": "When date reminders fire, in `timezone`."
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "relationship",
+          "phone",
+          "email",
+          "note",
+          "favorite",
+          "dates",
+          "reminder_time",
+          "timezone",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "PersonResponse"
       },
       "PersonalRecordResponse": {
         "properties": {
@@ -63648,10 +64970,11 @@
               "deposit",
               "calendar_alert",
               "habit_reminder",
-              "document"
+              "document",
+              "person"
             ],
             "title": "Kind",
-            "description": "`loan`, `recurring_payment` for a subscription or bill, `deposit` for a fixed or recurring deposit's maturity, `calendar_alert` for one of a calendar event's alerts (`id` is the alert's), `habit_reminder` for a habit's or routine's reminder time (`id` is the reminder time's), or `document` for a document's expiry, renewal, and review alerts (`id` is the document's)."
+            "description": "`loan`, `recurring_payment` for a subscription or bill, `deposit` for a fixed or recurring deposit's maturity, `calendar_alert` for one of a calendar event's alerts (`id` is the alert's), `habit_reminder` for a habit's or routine's reminder time (`id` is the reminder time's), `document` for a document's expiry, renewal, and review alerts (`id` is the document's), or `person` for a person's birthday, anniversary, and other dates (`id` is the person's)."
           },
           "id": {
             "type": "string",
@@ -65195,7 +66518,8 @@
                 "health",
                 "watchlist",
                 "bookmarks",
-                "places"
+                "places",
+                "people"
               ]
             },
             "type": "array",
@@ -65230,7 +66554,8 @@
                 "measurement",
                 "watch_item",
                 "bookmark",
-                "place"
+                "place",
+                "person"
               ]
             },
             "type": "array",
@@ -65699,7 +67024,8 @@
               "health",
               "watchlist",
               "bookmarks",
-              "places"
+              "places",
+              "people"
             ],
             "title": "Module"
           },
@@ -66772,6 +68098,19 @@
             "type": "string",
             "format": "date-time",
             "title": "Updated At"
+          },
+          "person_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Id",
+            "description": "Who it's a gift idea for, from People."
           }
         },
         "type": "object",
@@ -66786,7 +68125,8 @@
           "status",
           "purchased_at",
           "created_at",
-          "updated_at"
+          "updated_at",
+          "person_id"
         ],
         "title": "ShoppingItemResponse"
       },
@@ -69403,7 +70743,8 @@
               "health",
               "watchlist",
               "bookmarks",
-              "places"
+              "places",
+              "people"
             ],
             "title": "Module"
           },
@@ -69434,7 +70775,8 @@
               "measurement",
               "watch_item",
               "bookmark",
-              "place"
+              "place",
+              "person"
             ],
             "title": "Entity Type"
           },
@@ -69626,7 +70968,8 @@
                 "health",
                 "watchlist",
                 "bookmarks",
-                "places"
+                "places",
+                "people"
               ]
             },
             "type": "array",
@@ -69822,7 +71165,8 @@
                     "shopping",
                     "places",
                     "saved",
-                    "watchlist"
+                    "watchlist",
+                    "people"
                   ]
                 },
                 "type": "array",
@@ -72186,12 +73530,24 @@
               }
             ],
             "title": "Notes"
+          },
+          "person_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Id"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "title": "UpdateItemRequest",
-        "description": "Change some of an item's fields. Omitted fields keep their values; `quantity: null` and\n`url: null` clear them. Purchasing has its own endpoints."
+        "description": "Change some of an item's fields. Omitted fields keep their values; `quantity: null`,\n`url: null`, and `person_id: null` clear them. Purchasing has its own endpoints."
       },
       "UpdateLoanRequest": {
         "properties": {
@@ -72531,6 +73887,179 @@
         "type": "object",
         "title": "UpdateOccurrenceRequest",
         "description": "Change one occurrence (`this`), it and every later one (`following`), or the whole series\n(`series`). Moving or resizing an occurrence with `series` moves or resizes them all."
+      },
+      "UpdatePersonLedgerEntryRequest": {
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10000000000000.0,
+                "exclusiveMinimum": 0.0,
+                "description": "Minor units, always positive: ₹12.50 is 1250."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "occurred_on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred On"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdatePersonLedgerEntryRequest",
+        "description": "Change an entry's amount, date, or description. Its kind and links stay."
+      },
+      "UpdatePersonRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "relationship": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "family",
+                  "partner",
+                  "friend",
+                  "colleague",
+                  "other"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relationship"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 254
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "favorite": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Favorite"
+          },
+          "dates": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PersonDateBody"
+                },
+                "type": "array",
+                "maxItems": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dates"
+          },
+          "reminder_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reminder Time"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdatePersonRequest",
+        "description": "Change some of a person's fields. Omitted fields keep their values; `dates` replaces all\nof them."
       },
       "UpdatePlaceRequest": {
         "properties": {

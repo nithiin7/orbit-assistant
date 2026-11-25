@@ -4,9 +4,11 @@ import type { Currency, Deposit, Holding, HoldingKind, SipPlan } from "@orbit/co
 import {
   BriefcaseBusiness,
   CalendarClock,
+  ChartPie,
   ChevronRight,
   CircleHelp,
   Coins,
+  LayoutGrid,
   LineChart,
   PiggyBank,
   TrendingDown,
@@ -118,7 +120,7 @@ export function WhatYouHold({
                 onClick={() => onOpen(card.id)}
                 aria-label={`${card.label}: ${card.count} held, ${value}`}
                 aria-describedby={`${headingId}-${card.id}`}
-                className="group flex h-full w-full flex-col rounded-xl border bg-card p-4 text-left shadow-elevation-1 transition-[box-shadow,border-color] duration-150 outline-none hover:border-brand/30 hover:shadow-elevation-2 focus-visible:ring-2 focus-visible:ring-ring"
+                className="group flex h-full w-full flex-col rounded-2xl border bg-card p-4 text-left shadow-elevation-1 transition-[box-shadow,border-color,translate] duration-150 outline-none hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-elevation-2 focus-visible:ring-2 focus-visible:ring-ring motion-reduce:hover:translate-y-0"
               >
                 <span className="flex w-full items-center gap-2.5">
                   <span
@@ -292,7 +294,7 @@ export function PortfolioSummary({
   const rangeLabel = RANGES.find((option) => option.value === range)?.label.toLowerCase();
   return (
     <div className="space-y-6">
-      <StatGrid>
+      <StatGrid hero icon={TrendingUp}>
         <StatTile
           label="Current value"
           icon={BriefcaseBusiness}
@@ -357,10 +359,10 @@ export function PortfolioSummary({
       {children}
 
       <div className="grid gap-6 @3xl/list:grid-cols-2">
-        <Panel title="Allocation">
+        <Panel title="Allocation" icon={ChartPie} accent="brand">
           <ProportionBars slices={data.allocation} currency={currency} label="Allocation" />
         </Panel>
-        <Panel title="By category">
+        <Panel title="By category" icon={LayoutGrid} accent="neutral">
           <ProportionBars slices={data.categories} currency={currency} label="By category" />
         </Panel>
       </div>

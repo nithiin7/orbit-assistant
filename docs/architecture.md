@@ -555,6 +555,9 @@ reminders); `notifications.occurrence_id`/`reminder_id` `ON DELETE SET NULL`, `u
   (`reminders.calendar_event_alert_id`, unique; a CHECK forbids also having a finance link),
   "Managed in Calendar", 409 from the reminders API. See
   [Reminder integration](#calendar-reminder-integration).
+- **People-managed reminders.** Each person with a date reminder owns one
+  (`reminders.person_id`, unique; a CHECK forbids any other manager), "Managed in People", 409
+  from the reminders API; its notification opens `/people?person=<id>`. See [People](#people).
 
 ### Scheduling and delivery
 
@@ -1314,7 +1317,8 @@ JSON integers; nothing logged about amounts.
 - No loan history before it was added; floating rates via rescheduling; interest per installment
   period (no daily-balance interest, fees, or bundled insurance).
 - Editing a transaction that records a payment isn't blocked; the payment keeps its amounts.
-- Not supported: conversion, split transactions, attachments, bank connections, reconciliation,
+- Not supported: conversion, split categories (shares with people go through
+  [People](#money-owed)), attachments, bank connections, reconciliation,
   undo (except undoing a statement import).
 
 ## Notes and knowledge management
@@ -1966,6 +1970,90 @@ Module `places`: both tables, JSON/CSV. Universal search: name, city, note.
 
 No reverse geocoding, import, trips/repeat visits, or agent tool. Countries missing from the 1:50m
 shapes and pinless places count but don't show on the offline map.
+
+## People
+
+`/people` (Plan): the people who matter, with birthdays, anniversaries, and named yearly dates,
+a reminder before each one, the money between you, gift ideas, and their dates on the calendar,
+in the briefing, and in the assistant.
+
+### Data
+
+`people`: name, `relationship` (family, partner, friend, colleague, other), optional phone,
+email, and note, `favorite`, and when date reminders fire (`reminder_time`, IANA `timezone`,
+default the user's zone, else UTC). `person_dates` (migration `0048`): `kind` birthday,
+anniversary, or other (with a `label`), `month`/`day`, optional `year` (1900-2100; gives ages and
+years together), optional `remind_days_before` (0-30, `NULL` = no reminder), `position`. One
+birthday per person (partial unique index); composite FKs keep dates in the person's workspace.
+`PATCH` with `dates` replaces them all. 29 February is allowed without a year or in a leap year,
+and falls on 28 February in other years.
+
+### Reminders
+
+One managed reminder per person (`services/people/dates.py`, pure): the soonest alert still ahead
+across their dates (`date − days_before` at `reminder_time` local), one-time, re-pointed in the
+same transaction as every change and by `after_delivery` once it fires (so it moves to next
+year). No occurrence before the date's own year. Title "Priya turns 30 in 7 days" / "Priya's
+birthday is today"; description has the date only, never contact details or the note. Deleting
+the person cascades to the reminder; delivered notifications stay.
+
+### Web
+
+`components/people/`, rail `?view=` Everyone (cards with initials avatars, favorites first,
+search and relationship chips) and Upcoming dates (today's celebrated, then this week and by
+month). `?person=<id>` opens a detail dialog (notifications and search link there). Date maths in
+`lib/people` uses the browser's local date. Dashboard widget "Coming up" (next 30 days).
+
+### Money owed
+
+`person_ledger_entries` (migration `0049`): `kind` `they_owe` (you paid or lent), `i_owe`,
+`they_paid`, `i_paid` (repayments); positive `amount` in minor units with `currency`; date,
+description; optional `transaction_id` (FK `ON DELETE SET NULL`; the service keeps it in the
+workspace). Balances are derived (`services/people/ledger.py`), per person and currency, never
+mixed or stored; positive while they owe you. Routes: `GET …/people/ledger` (declared before
+`/{person_id}`), `POST|PATCH|DELETE …/people/{id}/ledger[/{entry_id}]`.
+
+- **Split from an expense:** a `they_owe` share links to one of your expenses (same currency);
+  shares can't exceed it. The expense stays whole in Finance. The transaction dialog's "Split
+  with" records shares after the expense saves (separate requests; a failed share is reported,
+  not retried).
+- **Repayments in Finance:** `record_in_finance` (repayments only) creates a refund (`they_paid`,
+  in the expense category, so spending comes down to your share) or an expense (`i_paid`), via
+  `FinanceService.create(commit=False)`, in the entry's commit. Settle up suggests the account
+  and category of the person's latest split expense. Plain loans stay in People. A recorded
+  repayment keeps its amount (422); deleting an entry leaves its transaction.
+- Web: rail view Money (owed to you / you owe per currency, who owes whom with Settle up,
+  recent entries), balance chips on cards, a Money section in the person detail.
+
+### Across Orbit
+
+- **Calendar:** birthdays, anniversaries, and named dates show as read-only all-day items in every
+  calendar view and the dashboard's Today list (`datesBetween` in `lib/people`, from the people
+  list; nothing is stored in the calendar). They open the person and can't be dragged. Like
+  reminders, a date with a year starts the year after it.
+- **Briefing:** source `people` (can be hidden like any source) lists dates from today through the
+  horizon, names and dates only, at most 10, with `today` and `total`; People reminders count as
+  represented elsewhere. People has no AI permission, so it is never sent to a model; the
+  dashboard shows a "celebrations today" chip.
+- **Assistant and agent:** capture kind `add_person` (migration `0051`; name, relationship,
+  birthday month/day/year, note) adds a person whose birthday reminds on the day. It's never
+  added without asking (a model could invent the date), and a spoken yes may approve it. Agent
+  module `people` is capture-only and on by default, like Places.
+- **Gift ideas:** `shopping_items.person_id` (migration `0050`; composite FK to
+  `people(id, workspace_id)` with no ON DELETE; deleting a person clears the link first, so the
+  item stays). `GET …/shopping/gifts` lists them; items take `person_id` on create and update
+  (422 for someone outside the workspace). The person detail adds and ticks ideas on the default
+  list; Shopping shows "For Priya" and a "Gift idea for" choice.
+
+### Backup and search
+
+Module `people`: all three tables, JSON/CSV; gift links travel with Shopping's items. Universal search: name and note (contact details aren't
+searched or shown).
+
+### Limitations
+
+No contact import (vCard, Google), photos, payment requests or reminders about money, or currency
+conversion. Calendar dates aren't exported to `.ics`; the agent can add people but not read them.
 
 ## Achievements and the XP store
 
@@ -2620,7 +2708,7 @@ days. Dismissal key includes the period. No notifications.
    `create_reminder`, `create_event`, `create_note`, `append_to_note`, `add_note_tags`,
    `update_document_details`, and the capture kinds `add_shopping_item`, `create_habit`,
    `log_water`, `log_weight`, `log_activity`, `add_transaction`, `add_place`, `save_link`,
-   `add_watch_item`), ≤ 8 per answer, validated by the module's request schema
+   `add_watch_item`, `add_person`), ≤ 8 per answer, validated by the module's request schema
    (`api/ai_actions.py`). Capture kinds in habits, health, finance, and watchlist are offered only
    while the AI layer may read that module.
 3. Stored `pending`; proposals made while reading records are flagged.
@@ -2637,7 +2725,7 @@ AI, or **Always add** on a card), `services/ai/auto_capture.py` runs a proposal 
 if it is a new task, reminder, note, shopping item, habit, health log, place, link, or watchlist
 title, the message was typed, and every word of its text and every logged number appears in that
 message. Everything else stays a card, including events, changes to existing records, transactions,
-and spoken requests. The composer's **Quick add** menu starts these sentences. The agent keeps its
+new people (their birthdays), and spoken requests. The composer's **Quick add** menu starts these sentences. The agent keeps its
 own autonomy settings.
 
 Plain commands from Quick add (`services/ai/quick_commands.py`, such as `Add a task: …`) become

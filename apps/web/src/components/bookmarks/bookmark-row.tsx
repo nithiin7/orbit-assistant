@@ -221,7 +221,7 @@ export function BookmarkRow({
     <li
       aria-busy={pending || undefined}
       className={cn(
-        "group relative flex items-start gap-3 rounded-xl border bg-card p-3 transition-colors duration-150 hover:border-brand/30",
+        "group relative flex items-start gap-3 rounded-2xl border bg-card p-3 transition-colors duration-150 hover:border-brand/40",
         pending && "opacity-60",
         bookmark.status === "done" && "bg-card/60",
       )}

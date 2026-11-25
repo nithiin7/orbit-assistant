@@ -22,6 +22,7 @@ from typing import Annotated, Any, Final, Literal, Protocol, cast
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from orbit_api.api.ai_actions import (
+    AddPerson,
     AddPlace,
     AddShoppingItem,
     AddTransaction,
@@ -1426,6 +1427,15 @@ def _capture_tools(deps: ToolDeps) -> list[Tool]:
             "low",
             AddPlace,
             "A place is added to the map.",
+        ),
+        (
+            "add_person",
+            "Add a person",
+            "Add someone to People, with the birthday the person stated, if any.",
+            "people",
+            "low",
+            AddPerson,
+            "A person is added to People, with a reminder on their birthday.",
         ),
         (
             "save_link",

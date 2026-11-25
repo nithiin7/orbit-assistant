@@ -87,6 +87,7 @@ describe("ReminderItem", () => {
   it.each([
     ["calendar_alert", "Managed in Calendar"],
     ["habit_reminder", "Managed in Habits"],
+    ["person", "Managed in People"],
   ] as const)("names the module that manages a %s reminder", (kind, label) => {
     renderItem({ ...reminder, commitment: { kind, id: "x-1" } });
     expect(screen.getByText(label)).toBeInTheDocument();

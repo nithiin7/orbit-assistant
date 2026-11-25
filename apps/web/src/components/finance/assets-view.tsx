@@ -158,7 +158,7 @@ export function AssetsView({ workspaceId, accounts, onAnnounce, currency }: Fina
     <div className="space-y-6">
       {header}
       {counted.length > 0 ? (
-        <StatGrid>
+        <StatGrid hero icon={Gem}>
           <StatTile
             label="Counted in net worth"
             icon={Gem}

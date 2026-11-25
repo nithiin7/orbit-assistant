@@ -135,6 +135,7 @@ from orbit_api.db.models.notes import (
     NoteTagModel,
     NoteTaskLinkModel,
 )
+from orbit_api.db.models.people import PersonDateModel, PersonLedgerEntryModel, PersonModel
 from orbit_api.db.models.places import PlaceModel, PlaceSettingsModel
 from orbit_api.db.models.push import PushPreferencesModel, PushSubscriptionModel
 from orbit_api.db.models.reminders import (
@@ -265,6 +266,9 @@ __all__ = [
     "NoteTagModel",
     "NoteTaskLinkModel",
     "NotificationModel",
+    "PersonDateModel",
+    "PersonLedgerEntryModel",
+    "PersonModel",
     "PlaceModel",
     "PlaceSettingsModel",
     "PushPreferencesModel",

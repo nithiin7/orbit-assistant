@@ -157,6 +157,7 @@ class ShoppingItemResponse(BaseModel):
     purchased_at: datetime | None = Field(description="When the item was purchased, if it is.")
     created_at: datetime
     updated_at: datetime
+    person_id: uuid.UUID | None = Field(description="Who it's a gift idea for, from People.")
 
     @classmethod
     def of(cls, item: ShoppingItem) -> "ShoppingItemResponse":
@@ -172,6 +173,7 @@ class ShoppingItemResponse(BaseModel):
             purchased_at=item.purchased_at,
             created_at=item.created_at,
             updated_at=item.updated_at,
+            person_id=item.person_id,
         )
 
 
@@ -189,14 +191,23 @@ class CreateItemRequest(BaseModel):
     quantity: Quantity = None
     url: WebUrl = None
     notes: Notes = ""
+    person_id: uuid.UUID | None = Field(
+        default=None, description="Make it a gift idea for someone in People."
+    )
 
     def to_draft(self) -> ItemDraft:
-        return ItemDraft(name=self.name, quantity=self.quantity, url=self.url, notes=self.notes)
+        return ItemDraft(
+            name=self.name,
+            quantity=self.quantity,
+            url=self.url,
+            notes=self.notes,
+            person_id=self.person_id,
+        )
 
 
 class UpdateItemRequest(BaseModel):
-    """Change some of an item's fields. Omitted fields keep their values; `quantity: null` and
-    `url: null` clear them. Purchasing has its own endpoints."""
+    """Change some of an item's fields. Omitted fields keep their values; `quantity: null`,
+    `url: null`, and `person_id: null` clear them. Purchasing has its own endpoints."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -204,6 +215,7 @@ class UpdateItemRequest(BaseModel):
     quantity: Quantity = None
     url: WebUrl = None
     notes: Notes | None = None
+    person_id: uuid.UUID | None = None
 
     @model_validator(mode="after")
     def _check_fields(self) -> Self:
@@ -221,4 +233,5 @@ class UpdateItemRequest(BaseModel):
             quantity=self.quantity if "quantity" in provided else UNSET,
             url=self.url if "url" in provided else UNSET,
             notes=self.notes if self.notes is not None else UNSET,
+            person_id=self.person_id if "person_id" in provided else UNSET,
         )

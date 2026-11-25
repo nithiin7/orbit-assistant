@@ -1,7 +1,7 @@
 "use client";
 
 import type { Currency, Deposit } from "@orbit/contracts";
-import { CircleCheck, Pencil, Plus, RotateCcw, Tag } from "lucide-react";
+import { CircleCheck, Pencil, PiggyBank, Plus, RotateCcw, Tag } from "lucide-react";
 import { type ReactNode } from "react";
 
 import { describeApiError } from "@/api/client";
@@ -55,7 +55,13 @@ export function DepositsPanel({
   const today = localDateString();
 
   return (
-    <Panel title="Fixed and recurring deposits" description="Values are estimates." flush>
+    <Panel
+      title="Fixed and recurring deposits"
+      description="Values are estimates."
+      icon={PiggyBank}
+      accent="positive"
+      flush
+    >
       <ul
         className={cn(
           "@container/rows grid divide-y border-t",

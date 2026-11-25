@@ -34,7 +34,7 @@ ACTION_KINDS = (
     "'create_task', 'create_reminder', 'create_event', 'create_note', 'append_to_note', "
     "'add_note_tags', 'update_document_details', 'add_shopping_item', 'create_habit', "
     "'log_water', 'log_weight', 'log_activity', 'add_transaction', 'add_place', 'save_link', "
-    "'add_watch_item'"
+    "'add_watch_item', 'add_person'"
 )
 
 

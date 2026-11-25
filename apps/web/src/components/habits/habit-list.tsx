@@ -79,7 +79,7 @@ function HabitCard({ item }: { item: HabitProgress }) {
     <li>
       <Link
         href={habitsHref({ kind: "habit", id: habit.id })}
-        className="flex h-full flex-col gap-3 rounded-xl border bg-card p-4 transition-colors duration-150 outline-none hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex h-full flex-col gap-3 rounded-2xl border bg-card p-4 transition-[background-color,border-color,translate] duration-150 outline-none hover:-translate-y-0.5 hover:border-brand/40 hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring motion-reduce:hover:translate-y-0"
       >
         <div className="flex items-start gap-3">
           <HabitTile icon={habit.icon} color={habit.color} />

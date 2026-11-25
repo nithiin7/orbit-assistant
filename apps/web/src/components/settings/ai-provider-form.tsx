@@ -94,7 +94,7 @@ export function ProviderForm({ provider, onDone }: ProviderFormProps) {
     <form
       noValidate
       onSubmit={(event) => void handleSubmit(save)(event)}
-      className="space-y-4 rounded-xl border bg-card p-4"
+      className="space-y-4 rounded-2xl border bg-card p-4"
       aria-label={provider ? `Edit ${provider.name}` : "Add a provider"}
     >
       {provider ? null : (

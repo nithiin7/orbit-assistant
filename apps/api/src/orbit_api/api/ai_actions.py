@@ -6,14 +6,15 @@ service, exactly as its route would. Only the allowlisted kinds exist; there is 
 arbitrary queries or touch other tables.
 """
 
+import calendar
 import json
 import uuid
 from datetime import date
 from decimal import Decimal
-from typing import Final, Literal, cast
+from typing import Final, Literal, Self, cast
 from zoneinfo import ZoneInfo
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from orbit_api.repositories.capture import CaptureServices
 from orbit_api.schemas.bookmarks import CreateBookmarkRequest
@@ -23,6 +24,7 @@ from orbit_api.schemas.finance import CreateTransactionRequest, Description, Tra
 from orbit_api.schemas.fitness import ActivityRequest, MeasurementRequest, WaterRequest
 from orbit_api.schemas.habits import CreateHabitRequest, HabitScheduleModel
 from orbit_api.schemas.notes import AddNoteTagRequest, CreateNoteRequest
+from orbit_api.schemas.people import CreatePersonRequest, PersonDateBody
 from orbit_api.schemas.places import CreatePlaceRequest
 from orbit_api.schemas.reminders import CreateReminderRequest
 from orbit_api.schemas.shopping import CreateItemRequest
@@ -60,6 +62,8 @@ from orbit_api.services.notes.models import (
     TooManyTagsError,
 )
 from orbit_api.services.notes.service import NoteService
+from orbit_api.services.people.dates import check_dates
+from orbit_api.services.people.models import PersonDateError, Relationship
 from orbit_api.services.places.models import PlaceStatus, VisitDateError
 from orbit_api.services.reminders.models import ReminderInPastError, ReminderTaskNotFoundError
 from orbit_api.services.reminders.recurrence import Weekday
@@ -178,6 +182,23 @@ class AddPlace(BaseModel):
     note: str = Field(default="", max_length=2000)
 
 
+class AddPerson(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=120)
+    relationship: Relationship = "friend"
+    birthday_month: int | None = Field(default=None, ge=1, le=12)
+    birthday_day: int | None = Field(default=None, ge=1, le=31)
+    birthday_year: int | None = Field(default=None, ge=1900, le=2100)
+    note: str = Field(default="", max_length=2000)
+
+    @model_validator(mode="after")
+    def _check_birthday(self) -> Self:
+        if (self.birthday_month is None) != (self.birthday_day is None):
+            raise ValueError("a birthday needs both a month and a day")
+        return self
+
+
 class SaveLink(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -253,6 +274,26 @@ def _place_request(place: AddPlace) -> CreatePlaceRequest:
     )
 
 
+def _person_request(person: AddPerson) -> CreatePersonRequest:
+    """A person with their birthday reminding on the day; raises for a day that doesn't exist."""
+    dates: list[PersonDateBody] = []
+    if person.birthday_month is not None and person.birthday_day is not None:
+        dates.append(
+            PersonDateBody(
+                kind="birthday",
+                month=person.birthday_month,
+                day=person.birthday_day,
+                year=person.birthday_year,
+                remind_days_before=0,
+            )
+        )
+    request = CreatePersonRequest(
+        name=person.name, relationship=person.relationship, note=person.note, dates=dates
+    )
+    check_dates([entry.to_date() for entry in dates])
+    return request
+
+
 def _link_request(link: SaveLink) -> CreateBookmarkRequest:
     return CreateBookmarkRequest(url=link.url, title=link.title, note=link.note, tags=link.tags)
 
@@ -270,6 +311,8 @@ class ModuleActionValidator:
             return self._validate(kind, _clean(payload), timezone)
         except ValidationError:
             raise InvalidActionError("The proposed values aren't valid.") from None
+        except PersonDateError as exc:
+            raise InvalidActionError(exc.message) from None
 
     def _validate(
         self, kind: ActionKind, payload: dict[str, object], timezone: str
@@ -388,6 +431,16 @@ class ModuleActionValidator:
                 place = AddPlace.model_validate(payload)
                 request = _place_request(place)
                 return _capture(place), f"Add “{request.name}” to your places"
+            case "add_person":
+                person = AddPerson.model_validate(payload)
+                request = _person_request(person)
+                birthday = request.dates[0] if request.dates else None
+                when = (
+                    f", birthday {birthday.day} {calendar.month_name[birthday.month]}"
+                    if birthday
+                    else ""
+                )
+                return _capture(person), f"Add {request.name} to People{when}"
             case "save_link":
                 link = SaveLink.model_validate(payload)
                 request = _link_request(link)
@@ -436,6 +489,8 @@ class ModuleActionExecutor:
             raise InvalidActionError("That title is already on your watchlist.") from None
         except VisitDateError:
             raise InvalidActionError("Only a visited place can have a visit date.") from None
+        except PersonDateError as exc:
+            raise InvalidActionError(exc.message) from None
         except ShoppingListNotFoundError:
             raise InvalidActionError("That shopping list no longer exists.") from None
         except (AccountNotFoundError, CategoryNotFoundError, CollectionNotFoundError):
@@ -582,6 +637,12 @@ class ModuleActionExecutor:
                     workspace_id, _place_request(AddPlace.model_validate(payload)).to_draft()
                 )
                 return ActionResult(kind="place", id=place.id, title=place.name)
+            case "add_person":
+                added = await capture.people.add(
+                    workspace_id,
+                    _person_request(AddPerson.model_validate(payload)).to_draft(zone),
+                )
+                return ActionResult(kind="person", id=added.id, title=added.name)
             case "save_link":
                 bookmark = await capture.bookmarks.add(
                     workspace_id, _link_request(SaveLink.model_validate(payload)).to_draft()

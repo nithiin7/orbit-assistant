@@ -17,6 +17,7 @@ from typing import Protocol
 from orbit_api.services.shopping.models import (
     DEFAULT_LIST_ICON,
     DefaultListError,
+    GiftPersonNotFoundError,
     ItemChanges,
     ItemDraft,
     ShoppingItem,
@@ -78,6 +79,14 @@ class ShoppingItemRepository(Protocol):
         self, workspace_id: uuid.UUID, list_id: uuid.UUID, now: datetime
     ) -> int:
         """Mark every purchased item in the list as needed again; return how many changed."""
+        ...
+
+    async def gifts(self, workspace_id: uuid.UUID) -> list[ShoppingItem]:
+        """Every item that is a gift idea for someone, in any list, newest first."""
+        ...
+
+    async def has_person(self, workspace_id: uuid.UUID, person_id: uuid.UUID) -> bool:
+        """Whether the person exists in `workspace_id`."""
         ...
 
     async def delete_purchased(self, workspace_id: uuid.UUID, list_id: uuid.UUID) -> int:
@@ -180,6 +189,7 @@ class ShoppingService:
         self, workspace_id: uuid.UUID, list_id: uuid.UUID, draft: ItemDraft
     ) -> ShoppingItem:
         await self.get_list(workspace_id, list_id)
+        await self._check_person(workspace_id, draft.person_id)
         now = self._clock()
         item = ShoppingItem(
             id=uuid.uuid4(),
@@ -193,6 +203,7 @@ class ShoppingService:
             purchased_at=None,
             created_at=now,
             updated_at=now,
+            person_id=draft.person_id,
         )
         await self._items.add(item)
         await self._transaction.commit()
@@ -208,14 +219,25 @@ class ShoppingService:
         self, workspace_id: uuid.UUID, item_id: uuid.UUID, changes: ItemChanges
     ) -> ShoppingItem:
         item = await self.get_item(workspace_id, item_id)
+        if changes.person_id is not UNSET:
+            await self._check_person(workspace_id, changes.person_id)
         updated = replace(
             item,
             name=item.name if changes.name is UNSET else changes.name,
             quantity=item.quantity if changes.quantity is UNSET else changes.quantity,
             url=item.url if changes.url is UNSET else changes.url,
             notes=item.notes if changes.notes is UNSET else changes.notes,
+            person_id=item.person_id if changes.person_id is UNSET else changes.person_id,
         )
         return await self._save_if_changed(item, updated)
+
+    async def gifts(self, workspace_id: uuid.UUID) -> list[ShoppingItem]:
+        """Gift ideas for people, across every list, newest first."""
+        return await self._items.gifts(workspace_id)
+
+    async def _check_person(self, workspace_id: uuid.UUID, person_id: uuid.UUID | None) -> None:
+        if person_id is not None and not await self._items.has_person(workspace_id, person_id):
+            raise GiftPersonNotFoundError
 
     async def purchase(self, workspace_id: uuid.UUID, item_id: uuid.UUID) -> ShoppingItem:
         """Mark the item purchased. Purchasing a purchased item keeps its purchase time."""

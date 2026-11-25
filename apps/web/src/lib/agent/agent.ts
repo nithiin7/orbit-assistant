@@ -100,6 +100,7 @@ export const MODULE_LABELS: Record<AgentModule, string> = {
   mail: "Email (read only)",
   shopping: "Shopping",
   places: "Places",
+  people: "People",
   saved: "Saved links",
   watchlist: "Watchlist",
 };
@@ -116,6 +117,7 @@ export const AGENT_MODULES: readonly AgentModule[] = [
   "mail",
   "shopping",
   "places",
+  "people",
   "saved",
   "watchlist",
 ];

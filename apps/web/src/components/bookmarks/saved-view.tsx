@@ -6,6 +6,7 @@ import {
   FolderOpen,
   MoreHorizontal,
   Pencil,
+  Pin,
   Plus,
   Search,
   Trash2,
@@ -20,6 +21,7 @@ import { FormAlert } from "@/components/form-field";
 import { PageHeader } from "@/components/page-header";
 import { ShortcutHint } from "@/components/shortcut-hint";
 import { Button } from "@/components/ui/button";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
 import { Select } from "@/components/ui/select";
@@ -55,6 +57,7 @@ import { isEditableTarget } from "@/utils/keyboard";
 import { BookmarkDialog } from "./bookmark-dialog";
 import { type BookmarkActions, BookmarkRow, PinnedTile } from "./bookmark-row";
 import { CollectionDialog } from "./collection-dialog";
+import { SavedHero } from "./saved-hero";
 import { SavedNav, VIEW_ICONS } from "./saved-nav";
 
 const DESCRIPTION =
@@ -338,9 +341,16 @@ function SavedPage({ workspaceId }: { workspaceId: string }) {
 
     body = (
       <div className="space-y-6">
+        {view.kind === "all" && !filtered ? (
+          <SavedHero counts={countViews(all)} collections={collections.length} />
+        ) : null}
         {pinned.length > 0 ? (
           <section aria-labelledby={`${searchId}-pinned`} className="space-y-3">
-            <h3 id={`${searchId}-pinned`} className="text-sm font-semibold">
+            <h3
+              id={`${searchId}-pinned`}
+              className="flex items-center gap-2.5 text-sm font-semibold"
+            >
+              <IconChip icon={Pin} tone="brand" />
               Quick launch
             </h3>
             <ul className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-2">
@@ -401,7 +411,7 @@ function SavedPage({ workspaceId }: { workspaceId: string }) {
         </div>
 
         {shown.length === 0 ? (
-          <div className="rounded-xl border border-dashed px-4 py-10 text-center">
+          <div className="rounded-2xl border border-dashed px-4 py-10 text-center">
             <p className="text-sm font-medium">{filtered ? "No links match" : empty.title}</p>
             <p className="mx-auto mt-1 max-w-sm text-sm text-pretty text-muted-foreground">
               {filtered ? "Try other words or another tag." : empty.description}
@@ -586,8 +596,8 @@ function Shell({
           </aside>
           <div key={viewKey} className="min-w-0 animate-page-in space-y-5">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="flex min-w-0 items-center gap-2 text-lg font-semibold tracking-tight">
-                <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <h2 className="flex min-w-0 items-center gap-2.5 text-lg font-semibold tracking-tight">
+                <IconChip icon={Icon} tone="brand" />
                 <span className="truncate">{title}</span>
               </h2>
               {viewActions}

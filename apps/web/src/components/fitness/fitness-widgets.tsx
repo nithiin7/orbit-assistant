@@ -71,6 +71,7 @@ function HealthCard({
   const { overview, context } = useHealth();
   return (
     <WidgetCard
+      tone="rose"
       title={title}
       icon={icon}
       href={fitnessHref({ kind: "view", view })}

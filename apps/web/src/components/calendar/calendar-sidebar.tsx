@@ -1,13 +1,14 @@
 "use client";
 
 import type { CalendarCategory, CalendarCategoryColor, Task } from "@orbit/contracts";
-import { CalendarClock, GripVertical, MoreHorizontal, Plus } from "lucide-react";
+import { CalendarClock, GripVertical, ListTodo, MoreHorizontal, Plus, Tags } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 
 import { describeApiError } from "@/api/client";
 import { useConfirm } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
 import { Select } from "@/components/ui/select";
@@ -76,7 +77,8 @@ function CategoryList({
 
   return (
     <section aria-labelledby={`${id}-heading`} className="space-y-2">
-      <h2 id={`${id}-heading`} className="text-sm font-semibold">
+      <h2 id={`${id}-heading`} className="flex items-center gap-2.5 text-sm font-semibold">
+        <IconChip icon={Tags} tone="violet" />
         Categories
       </h2>
       {categories.length === 0 ? (
@@ -216,7 +218,8 @@ function UnscheduledTasks({
   return (
     <section aria-labelledby={`${id}-heading`} className="space-y-2">
       <div>
-        <h2 id={`${id}-heading`} className="text-sm font-semibold">
+        <h2 id={`${id}-heading`} className="flex items-center gap-2.5 text-sm font-semibold">
+          <IconChip icon={ListTodo} tone="brand" />
           Unscheduled tasks
         </h2>
         <p className="text-xs text-muted-foreground">

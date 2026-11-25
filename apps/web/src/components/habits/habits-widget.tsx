@@ -62,6 +62,7 @@ export function HabitsWidget() {
 
   return (
     <WidgetCard
+      tone="green"
       title="Habits"
       icon={Sparkles}
       href={habitsHref({ kind: "view", view: "today" })}

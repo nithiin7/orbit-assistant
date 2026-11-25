@@ -4,6 +4,8 @@ import type { Budget, BudgetMonth, Currency, FinanceCategory } from "@orbit/cont
 import {
   Archive,
   ArchiveRestore,
+  ChartColumn,
+  ChartPie,
   Copy,
   History,
   Pencil,
@@ -206,7 +208,7 @@ function MonthTiles({ month, currency }: { month: BudgetMonth; currency: Currenc
   const over = month.remaining !== null && month.remaining < 0;
   return (
     <div className="space-y-4">
-      <StatGrid>
+      <StatGrid hero icon={Target}>
         <StatTile
           label="Budget"
           icon={Target}
@@ -595,7 +597,12 @@ function CategorySpending({
     .sort((a, b) => b.spent - a.spent);
   const total = rows.reduce((sum, entry) => sum + entry.spent, 0);
   return (
-    <Panel title="Where it went" description="This month, by category.">
+    <Panel
+      title="Where it went"
+      description="This month, by category."
+      icon={ChartPie}
+      accent="spending"
+    >
       {rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">No spending this month.</p>
       ) : (
@@ -652,7 +659,12 @@ function MonthHistory({
 }) {
   const { state, reload } = useBudgetHistory(workspaceId, month, currency, today);
   return (
-    <Panel title="Budget against spending" description="The last six months.">
+    <Panel
+      title="Budget against spending"
+      description="The last six months."
+      icon={ChartColumn}
+      accent="income"
+    >
       {state.status === "error" ? (
         <LoadError message={state.message} onRetry={reload} />
       ) : state.status === "loading" ? (

@@ -1,7 +1,30 @@
-import type { LucideIcon } from "lucide-react";
+import type { FinanceAccountType } from "@orbit/contracts";
+import {
+  Banknote,
+  CreditCard,
+  HandCoins,
+  Landmark,
+  LineChart,
+  type LucideIcon,
+  PiggyBank,
+  Smartphone,
+  Wallet,
+} from "lucide-react";
 import type { ReactNode } from "react";
 
 import { cn } from "@/utils/common";
+
+/** The icon for each kind of account, wherever accounts are listed. */
+export const ACCOUNT_TYPE_ICONS: Record<FinanceAccountType, LucideIcon> = {
+  bank: Landmark,
+  savings: PiggyBank,
+  cash: Banknote,
+  credit_card: CreditCard,
+  wallet: Smartphone,
+  investment: LineChart,
+  loan: HandCoins,
+  other: Wallet,
+};
 
 export type ChipTone = "danger" | "warning" | "success" | "brand" | "muted" | "quiet";
 
@@ -90,7 +113,7 @@ export function SectionHeading({
 
 /** The card a list of rows sits in. A `rows` container, so rows can lay out by their width. */
 export const rowListClassName =
-  "@container/rows divide-y overflow-hidden rounded-xl border bg-card shadow-elevation-1";
+  "@container/rows divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1";
 
 const TWO_COLUMNS = {
   "5xl":

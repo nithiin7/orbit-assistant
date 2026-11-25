@@ -22,6 +22,7 @@ function item(overrides: Partial<ShoppingItem> & Pick<ShoppingItem, "id">): Shop
     purchased_at: null,
     created_at: "2026-10-01T09:00:00Z",
     updated_at: "2026-10-01T09:00:00Z",
+    person_id: null,
     ...overrides,
   };
 }

@@ -6,7 +6,8 @@
 | watchlist             |                                                       |
 | Reminders, habits,    | CSV (a ZIP with one CSV per table), JSON              |
 | health and fitness,   |                                                       |
-| saved links           |                                                       |
+| saved links, places,  |                                                       |
+| people                |                                                       |
 | Notes                 | Markdown (a ZIP of `.md` files in their folders), JSON |
 | Calendar              | iCalendar (`.ics`), JSON                              |
 | Finance, documents    | JSON here; finance's transaction CSV and the document |
@@ -49,6 +50,7 @@ EXPORT_FORMATS: Final[dict[Module, tuple[ExportFormat, ...]]] = {
     "watchlist": ("json", "csv"),
     "bookmarks": ("json", "csv"),
     "places": ("json", "csv"),
+    "people": ("json", "csv"),
 }
 
 _UNSAFE_NAME = re.compile(r'[\x00-\x1f\x7f/\\:*?"<>|]')

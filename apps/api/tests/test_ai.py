@@ -1038,6 +1038,42 @@ def test_invalid_capture_values_are_dropped(
     assert ask(client, ws, ada, "Add these for me")["done"][0]["proposals"] == []
 
 
+def test_adding_a_person_with_a_birthday_waits_for_approval_even_with_always_add(
+    client: TestClient, ada: Headers, ws: str, fake: FakeProviderFactory
+) -> None:
+    enable(client, ada)
+    always_add(client, ada)
+    fake.state.script = propose(
+        (
+            "add_person",
+            {"name": "Priya", "relationship": "friend", "birthday_month": 3, "birthday_day": 20},
+        ),
+        ("add_person", {"name": "Nobody", "birthday_month": 4, "birthday_day": 31}),
+        ("add_person", {"name": "Half", "birthday_month": 4}),
+    )
+    [proposal] = ask(client, ws, ada, "Add Priya, her birthday is 20 March")["done"][0]["proposals"]
+    # Dates could be invented by a model, so adding a person is always a card.
+    assert proposal["status"] == "pending"
+    assert proposal["summary"] == "Add Priya to People, birthday 20 March"
+    assert ok(client.get(f"{ws}/people", headers=ada))["people"] == []
+
+    result = approve(client, ws, ada, proposal)
+    assert result["status"] == "executed" and result["result_kind"] == "person"
+    [person] = ok(client.get(f"{ws}/people", headers=ada))["people"]
+    assert person["dates"] == [
+        {
+            "kind": "birthday",
+            "label": "",
+            "month": 3,
+            "day": 20,
+            "year": None,
+            "remind_days_before": 0,
+        }
+    ]
+    reminders = ok(client.get(f"{ws}/reminders", headers=ada))["reminders"]
+    assert [r["commitment"]["kind"] for r in reminders] == ["person"]
+
+
 # Adding without approval
 
 

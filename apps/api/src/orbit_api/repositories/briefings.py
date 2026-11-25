@@ -29,6 +29,7 @@ from orbit_api.repositories.goals import build_goal_service
 from orbit_api.repositories.habits import build_habit_service, build_routine_service
 from orbit_api.repositories.investments import build_investment_service
 from orbit_api.repositories.notes import build_note_service
+from orbit_api.repositories.people import build_people_service
 from orbit_api.repositories.reminders import (
     SqlOccurrenceRepository,
     SqlReminderRepository,
@@ -322,6 +323,7 @@ def build_briefing_service(
         shopping=ShoppingService(
             SqlShoppingListRepository(session), SqlShoppingItemRepository(session), transaction
         ),
+        people=build_people_service(session),
         investments=build_investment_service(session, clock),
         transaction=transaction,
         clock=now,

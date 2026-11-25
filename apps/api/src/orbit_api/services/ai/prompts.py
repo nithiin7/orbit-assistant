@@ -127,6 +127,8 @@ def _action_kinds(permitted: Sequence[str]) -> list[str]:
         "add_place (name, country_code as ISO 3166 alpha-2, status: want_to_visit|visited, "
         "locality, visited_on, note)",
         "save_link (url, title, note, tags)",
+        "add_person (name, relationship: family|partner|friend|colleague|other, birthday_month, "
+        "birthday_day, birthday_year, note); only a birthday the person stated",
     ]
     if "habits" in permitted:
         kinds.append(

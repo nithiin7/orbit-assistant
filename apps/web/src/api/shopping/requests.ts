@@ -158,3 +158,12 @@ export function deleteShoppingItem(
 ): Promise<void> {
   return request<void>(shoppingItemPath(workspaceId, itemId), { method: "DELETE", token });
 }
+
+/** Items in any list that are gift ideas for someone in People, newest first. */
+export function listGiftIdeas(
+  token: string,
+  workspaceId: string,
+  { signal }: Signal = {},
+): Promise<ShoppingItems> {
+  return request<ShoppingItems>(shoppingPath(workspaceId, "/gifts"), { token, signal });
+}

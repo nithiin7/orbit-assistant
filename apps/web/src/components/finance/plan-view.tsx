@@ -2,7 +2,7 @@
 
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { Currency, MonthPlan, PlanLine } from "@orbit/contracts";
-import { Wallet } from "lucide-react";
+import { ClipboardList, Wallet } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { InferType } from "yup";
@@ -97,7 +97,7 @@ function RemainingTiles({ plan }: { plan: MonthPlan }) {
   const { remaining, currency } = plan;
   const planned = remaining.planned;
   return (
-    <StatGrid>
+    <StatGrid hero icon={ClipboardList}>
       <StatTile
         label="Available to spend (planned)"
         icon={Wallet}
@@ -158,7 +158,13 @@ function Breakdown({ plan }: { plan: MonthPlan }) {
     { label: "Investments", line: plan.investments, sign: "−", hint: "Planned: SIPs due" },
   ];
   return (
-    <Panel title={`${monthLabel(plan.month)} plan`} description="Planned against actual." flush>
+    <Panel
+      title={`${monthLabel(plan.month)} plan`}
+      description="Planned against actual."
+      icon={ClipboardList}
+      accent="brand"
+      flush
+    >
       <table className="w-full text-sm">
         <caption className="sr-only">
           Planned and actual cash flow for {monthLabel(plan.month)}

@@ -1,6 +1,16 @@
 "use client";
 
-import { Droplets, Dumbbell, Footprints, History, Plus, Ruler, Utensils } from "lucide-react";
+import {
+  Droplets,
+  Dumbbell,
+  Footprints,
+  History,
+  LayoutTemplate,
+  ListChecks,
+  Plus,
+  Ruler,
+  Utensils,
+} from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
@@ -28,6 +38,7 @@ import { FoodEntryDialog, NutritionView } from "./nutrition";
 import { OverviewView } from "./overview";
 import { ProgressView } from "./progress";
 import { SettingsView } from "./settings";
+import { type ViewTab, ViewTabs } from "./shared";
 import { TemplatesView } from "./templates";
 import { WaterView } from "./water";
 import { WorkoutDetail } from "./workout-detail";
@@ -66,7 +77,7 @@ function HealthContent({
       ? templates.state.data.templates.find((t) => !t.archived)
       : undefined;
 
-  const view = location.kind === "view" ? location.view : null;
+  const view = location.kind === "view" ? viewOf(location) : null;
   const ViewIcon = view ? VIEW_ICONS[view] : null;
 
   return (
@@ -232,9 +243,15 @@ function View({
         />
       );
     case "exercises":
-      return <ExercisesView workspaceId={workspaceId} />;
     case "templates":
-      return <TemplatesView workspaceId={workspaceId} today={today} timeZone={timeZone} />;
+      return (
+        <ExerciseLibrary
+          initialTab={view}
+          workspaceId={workspaceId}
+          today={today}
+          timeZone={timeZone}
+        />
+      );
     case "body":
       return <BodyView workspaceId={workspaceId} today={today} />;
     case "nutrition":
@@ -250,4 +267,35 @@ function View({
     case "settings":
       return <SettingsView workspaceId={workspaceId} />;
   }
+}
+
+type LibraryTab = "exercises" | "templates";
+
+const LIBRARY_TABS: readonly ViewTab<LibraryTab>[] = [
+  { id: "exercises", label: "Exercises", icon: ListChecks },
+  { id: "templates", label: "Templates", icon: LayoutTemplate },
+];
+
+/** Exercises and the templates built from them, as two tabs; `?view=templates` opens the second. */
+function ExerciseLibrary({
+  initialTab,
+  workspaceId,
+  today,
+  timeZone,
+}: {
+  initialTab: LibraryTab;
+  workspaceId: string;
+  today: string;
+  timeZone: string;
+}) {
+  const [tab, setTab] = useState(initialTab);
+  return (
+    <ViewTabs label="Exercises" tabs={LIBRARY_TABS} tab={tab} onChange={setTab}>
+      {tab === "templates" ? (
+        <TemplatesView workspaceId={workspaceId} today={today} timeZone={timeZone} />
+      ) : (
+        <ExercisesView workspaceId={workspaceId} />
+      )}
+    </ViewTabs>
+  );
 }

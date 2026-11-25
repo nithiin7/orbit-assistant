@@ -9,7 +9,7 @@ import { type QueryClient, queryOptions, skipToken } from "@tanstack/react-query
 import { countItems, sortItems } from "@/lib/shopping";
 
 import type { WithToken } from "../client";
-import { listShoppingItems, listShoppingLists } from "./requests";
+import { listGiftIdeas, listShoppingItems, listShoppingLists } from "./requests";
 
 /**
  * Cache keys for a workspace's shopping data. Every key starts with the workspace ID, so one
@@ -20,7 +20,19 @@ export const shoppingKeys = {
   lists: (workspaceId: string | null) => [...shoppingKeys.all(workspaceId), "lists"] as const,
   items: (workspaceId: string | null, listId: string | null) =>
     [...shoppingKeys.all(workspaceId), "items", listId] as const,
+  gifts: (workspaceId: string | null) => [...shoppingKeys.all(workspaceId), "gifts"] as const,
 };
+
+/** Gift ideas for people, across every list. Used by People. */
+export function giftIdeasOptions(withToken: WithToken, workspaceId: string | null) {
+  return queryOptions({
+    queryKey: shoppingKeys.gifts(workspaceId),
+    queryFn:
+      workspaceId === null
+        ? skipToken
+        : ({ signal }) => withToken((token) => listGiftIdeas(token, workspaceId, { signal })),
+  });
+}
 
 /** Every list with its item counts. Shared by the Shopping page and the dashboard. */
 export function shoppingListsOptions(withToken: WithToken, workspaceId: string | null) {

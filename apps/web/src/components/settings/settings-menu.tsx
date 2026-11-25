@@ -28,7 +28,7 @@ export function SettingsMenu({ activeFallback }: SettingsMenuProps) {
   return (
     <nav aria-label="Settings" className="space-y-6">
       <ProfileLink active={activeSlug === "account"} />
-      <ul className="divide-y overflow-hidden rounded-xl border bg-card">
+      <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
         {generalPanels.map(({ slug, title, icon: Icon }) => {
           const active = activeSlug === slug;
           return (

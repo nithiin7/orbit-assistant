@@ -68,7 +68,7 @@ export function QuickActionsWidget() {
 
   return (
     <section aria-labelledby="quick-actions-heading" className="h-full">
-      <Card className="h-full p-4 shadow-elevation-1">
+      <Card className="h-full rounded-2xl p-4 shadow-elevation-1">
         <h2 id="quick-actions-heading" className="sr-only">
           Quick actions
         </h2>

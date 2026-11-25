@@ -6,7 +6,7 @@ import type {
   WatchItem,
   WatchStatus,
 } from "@orbit/contracts";
-import { Clapperboard, Dices, Plus } from "lucide-react";
+import { CirclePlay, Clapperboard, Dices, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type ReactNode, useEffect, useId, useState } from "react";
@@ -18,6 +18,7 @@ import { FormAlert } from "@/components/form-field";
 import { useCelebration } from "@/components/habits/celebration";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWatchlist, useWatchlistMutations } from "@/hooks/use-watchlist";
@@ -44,6 +45,7 @@ import { SuggestionsView } from "./suggestions-view";
 import { ContinueCard, type TitleActions, TitleCard } from "./title-card";
 import { TitleSheet } from "./title-sheet";
 import { TonightDialog } from "./tonight-dialog";
+import { WatchlistHero } from "./watchlist-hero";
 import { VIEW_ICONS, WatchlistNav } from "./watchlist-nav";
 
 const ALL_PLATFORMS = "__all";
@@ -446,8 +448,8 @@ function Shell({
             <WatchlistNav view={view} counts={counts} />
           </aside>
           <div key={view} className="@container/view min-w-0 animate-page-in space-y-5">
-            <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-              <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
+            <h2 className="flex items-center gap-2.5 text-lg font-semibold tracking-tight">
+              <IconChip icon={Icon} tone="violet" />
               {WATCH_VIEWS.find((option) => option.value === view)?.label}
             </h2>
             {children}
@@ -518,8 +520,9 @@ function Overview({
 
   function heading(key: string, title: string, view: WatchStatus, total: number) {
     return (
-      <div className="flex items-baseline justify-between gap-3">
-        <h3 id={`${id}-${key}`} className="text-sm font-semibold">
+      <div className="flex items-center justify-between gap-3">
+        <h3 id={`${id}-${key}`} className="flex items-center gap-2.5 text-sm font-semibold">
+          <IconChip icon={VIEW_ICONS[view]} tone={view === "watched" ? "green" : "brand"} />
           {title}
         </h3>
         {total > OVERVIEW_LIMIT ? (
@@ -536,9 +539,11 @@ function Overview({
 
   return (
     <div className="space-y-8">
+      <WatchlistHero items={items} />
       {kindFilter}
       <section aria-labelledby={`${id}-continue`} className="space-y-3">
-        <h3 id={`${id}-continue`} className="text-sm font-semibold">
+        <h3 id={`${id}-continue`} className="flex items-center gap-2.5 text-sm font-semibold">
+          <IconChip icon={CirclePlay} tone="violet" />
           Continue watching
         </h3>
         {watching.length > 0 ? (
@@ -554,7 +559,7 @@ function Overview({
             ))}
           </ul>
         ) : (
-          <p className="rounded-xl border border-dashed px-4 py-5 text-sm text-pretty text-muted-foreground">
+          <p className="rounded-2xl border border-dashed px-4 py-5 text-sm text-pretty text-muted-foreground">
             {kind === "all"
               ? "Nothing in progress. Start something from your queue, or let “Watch tonight” choose."
               : `No ${kind === "movie" ? "movies" : "series"} in progress.`}

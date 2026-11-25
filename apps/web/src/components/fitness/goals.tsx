@@ -3,7 +3,9 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { FitnessGoal, FitnessGoalStatus } from "@orbit/contracts";
 import {
+  CalendarCheck,
   CheckCircle2,
+  Link2,
   Pause,
   Pencil,
   Play,
@@ -11,6 +13,7 @@ import {
   RotateCcw,
   Target,
   Trash2,
+  TrendingUp,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -416,7 +419,7 @@ export function GoalDetail({
                 </div>
               </div>
               <FormAlert message={error} />
-              <Section title="Progress">
+              <Section icon={TrendingUp} tone="brand" title="Progress">
                 <Meter
                   label={`${formatGoalValue(goal.current_value, goal, units)} now`}
                   value={`${formatPercent(goal.fraction)} from ${formatGoalValue(goal.start_value, goal, units)} to ${formatGoalValue(goal.target_value, goal, units)}`}
@@ -456,6 +459,8 @@ export function GoalDetail({
                 </ol>
               </Section>
               <Section
+                icon={CalendarCheck}
+                tone="green"
                 title="Check-ins"
                 description={
                   goal.auto_track
@@ -523,7 +528,7 @@ export function GoalDetail({
                   </ul>
                 )}
               </Section>
-              <Section title="Related">
+              <Section icon={Link2} tone="slate" title="Related">
                 {goal.habit_name ? (
                   <p className="text-sm">
                     Habit:{" "}

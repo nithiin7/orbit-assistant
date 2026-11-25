@@ -34,6 +34,7 @@ from orbit_api.services.briefings.models import (
     BriefingHabit,
     BriefingNote,
     BriefingPayment,
+    BriefingPersonDate,
     BriefingReminder,
     BriefingRoutine,
     BriefingSavingsGoal,
@@ -53,6 +54,7 @@ from orbit_api.services.briefings.models import (
     InvestmentSection,
     NoteSection,
     PaymentSection,
+    PeopleSection,
     ReminderBucket,
     ReminderSection,
     RoutineSection,
@@ -86,6 +88,8 @@ from orbit_api.services.habits.models import RoutineDetail, RoutineStatus, Today
 from orbit_api.services.investments.models import SipPlanView
 from orbit_api.services.investments.service import InvestmentBook
 from orbit_api.services.notes.models import LinkedNoteMatch, NotePage, NoteQuery
+from orbit_api.services.people.dates import next_occurrence, years_on
+from orbit_api.services.people.models import Person
 from orbit_api.services.reminders.models import ReminderView
 from orbit_api.services.reminders.recurrence import Weekday
 from orbit_api.services.shopping.models import ShoppingListOverview
@@ -172,6 +176,10 @@ class DocumentSource(Protocol):
 
 class ShoppingSource(Protocol):
     async def overview(self, workspace_id: uuid.UUID) -> list[ShoppingListOverview]: ...
+
+
+class PeopleSource(Protocol):
+    async def people(self, workspace_id: uuid.UUID) -> list[Person]: ...
 
 
 class InvestmentSource(Protocol):
@@ -311,6 +319,7 @@ class _Collected:
     documents: DocumentSection | None = None
     shopping: ShoppingSection | None = None
     investments: InvestmentSection | None = None
+    people: PeopleSection | None = None
     upcoming_tasks: TaskList | None = None
 
     def task_ids(self) -> set[uuid.UUID]:
@@ -341,6 +350,7 @@ class BriefingAggregator:
         notes: NoteSource,
         documents: DocumentSource,
         shopping: ShoppingSource,
+        people: PeopleSource,
         investments: InvestmentSource,
         transaction: Transaction,
         clock: Callable[[], datetime] = utc_now,
@@ -357,6 +367,7 @@ class BriefingAggregator:
         self._notes = notes
         self._documents = documents
         self._shopping = shopping
+        self._people = people
         self._investments = investments
         self._transaction = transaction
         self._clock = clock
@@ -416,6 +427,7 @@ class BriefingAggregator:
             "documents", lambda: self._document_section(workspace_id, day, horizon)
         )
         got.shopping = await load("shopping", lambda: self._shopping_section(workspace_id))
+        got.people = await load("people", lambda: self._people_section(workspace_id, day, horizon))
         got.notes = await load("notes", lambda: self._note_section(workspace_id, got))
         reminders = await load(
             "reminders", lambda: self._reminder_section(workspace_id, window, got)
@@ -465,6 +477,7 @@ class BriefingAggregator:
             unavailable=unavailable,
             documents=got.documents,
             shopping=got.shopping,
+            people=got.people,
             investments=got.investments,
         )
         return replace(content, summary=summarize(content))
@@ -956,6 +969,35 @@ class BriefingAggregator:
             needed=sum(entry.needed for entry in lists),
         )
 
+    async def _people_section(
+        self, workspace_id: uuid.UUID, day: date, horizon: int
+    ) -> PeopleSection:
+        """Dates from today through the horizon, soonest first; names and dates only."""
+        coming: list[BriefingPersonDate] = []
+        for person in await self._people.people(workspace_id):
+            for entry in person.dates:
+                on = next_occurrence(entry, day)
+                days_away = (on - day).days
+                if days_away > horizon:
+                    continue
+                coming.append(
+                    BriefingPersonDate(
+                        ref=SourceRef(module="people", type="person", id=person.id),
+                        name=person.name,
+                        kind=entry.kind,
+                        label=entry.label,
+                        on=on,
+                        days_away=days_away,
+                        years=years_on(entry, on) or None,
+                    )
+                )
+        coming.sort(key=lambda item: (item.days_away, item.name.casefold(), str(item.ref.id)))
+        return PeopleSection(
+            items=tuple(coming[:ITEM_LIMIT]),
+            today=sum(1 for item in coming if item.days_away == 0),
+            total=len(coming),
+        )
+
     async def _investment_section(
         self, workspace_id: uuid.UUID, day: date, horizon: int
     ) -> InvestmentSection:
@@ -1092,6 +1134,7 @@ class BriefingAggregator:
                 or (link.kind in ("loan", "recurring_payment") and link.id in commitments)
                 or (link.kind == "document" and link.id in documents)
                 or (link.kind == "deposit" and link.id in deposits)
+                or (link.kind == "person" and got.people is not None)
             ):
                 elsewhere += 1
                 continue
@@ -1176,6 +1219,7 @@ def _source_counts(got: _Collected) -> dict[Source, int]:
         "notes": len(got.notes.items) if got.notes else 0,
         "documents": len(got.documents.items) if got.documents else 0,
         "shopping": len(got.shopping.lists) if got.shopping else 0,
+        "people": len(got.people.items) if got.people else 0,
         "investments": len(got.investments.sips) + len(got.investments.deposits)
         if got.investments
         else 0,

@@ -1,11 +1,13 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, type LucideIcon } from "lucide-react";
 import { type ReactNode, useId } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/utils/common";
+
+import { ACCENTS, type TileAccent } from "./stat-tile";
 
 /** A titled card in a finance view, with an optional link or button in its header. */
 export function Panel({
@@ -13,6 +15,8 @@ export function Panel({
   description,
   action,
   flush = false,
+  icon: Icon,
+  accent = "brand",
   className,
   children,
 }: {
@@ -22,6 +26,10 @@ export function Panel({
   action?: ReactNode;
   /** Let the content run to the card's edges, as lists do. */
   flush?: boolean;
+  /** A tinted icon before the title, for dashboard cards such as the Overview's. */
+  icon?: LucideIcon;
+  /** The icon chip's color. */
+  accent?: TileAccent;
   className?: string;
   children: ReactNode;
 }) {
@@ -29,13 +37,26 @@ export function Panel({
   return (
     // `min-w-0` lets the card shrink inside grids, so long text truncates instead of overflowing.
     <section aria-labelledby={id} className={cn("min-w-0", className)}>
-      <Card className="h-full shadow-elevation-1">
+      <Card className="h-full rounded-2xl shadow-elevation-1">
         <div className="flex items-start justify-between gap-3 p-5 pb-4">
-          <div className="min-w-0 space-y-1">
-            <h3 id={id} className="text-sm font-semibold">
-              {title}
-            </h3>
-            {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
+          <div className="flex min-w-0 items-start gap-3">
+            {Icon ? (
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "flex size-9 shrink-0 items-center justify-center rounded-xl",
+                  ACCENTS[accent],
+                )}
+              >
+                <Icon className="size-[1.125rem]" />
+              </span>
+            ) : null}
+            <div className={cn("min-w-0 space-y-1", Icon && "pt-0.5")}>
+              <h3 id={id} className="text-sm font-semibold">
+                {title}
+              </h3>
+              {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
+            </div>
           </div>
           {action ? <div className="-mt-1.5 -mr-2 shrink-0">{action}</div> : null}
         </div>
