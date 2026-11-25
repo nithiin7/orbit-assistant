@@ -12,6 +12,13 @@ describe("securityHeaders", () => {
     expect(contentSecurityPolicy).not.toMatch(/script-src|connect-src|default-src/);
   });
 
+  it("allows the microphone only on Orbit's own pages, for voice conversations", () => {
+    const policy = securityHeaders.find((header) => header.key === "Permissions-Policy");
+
+    expect(policy?.value).toContain("microphone=(self)");
+    expect(policy?.value).toContain("camera=()");
+  });
+
   it("has one value per header", () => {
     const names = securityHeaders.map((header) => header.key.toLowerCase());
 

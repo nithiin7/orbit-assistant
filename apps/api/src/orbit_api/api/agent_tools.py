@@ -7,7 +7,8 @@ own service, exactly as its route would. Reads go through the same module servic
 assistant's structured context uses, so figures are Orbit's.
 
 There are no tools for deleting, paying, transferring, investing, sending email, sharing, or
-changing settings or permissions; financial tools are read only.
+changing settings or permissions. The one financial write records income or an expense the
+person states, and always asks first.
 
 Writes only flush: the engine commits a write together with the step that records it.
 """
@@ -20,7 +21,20 @@ from typing import Annotated, Any, Final, Literal, Protocol, cast
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from orbit_api.api.ai_actions import ModuleActionExecutor, ModuleActionValidator
+from orbit_api.api.ai_actions import (
+    AddPerson,
+    AddPlace,
+    AddShoppingItem,
+    AddTransaction,
+    AddWatchItem,
+    CreateHabit,
+    LogActivity,
+    LogWater,
+    LogWeight,
+    ModuleActionExecutor,
+    ModuleActionValidator,
+    SaveLink,
+)
 from orbit_api.repositories.agent import SqlAgentStore
 from orbit_api.repositories.agent_services import ToolInputs
 from orbit_api.services.agent.engine import run_link
@@ -275,6 +289,7 @@ class ToolDeps:
     start_workflow: StartWorkflow
     workflow_title: WorkflowTitle
     mail: MailReader | None
+    briefing_today: Callable[[ToolContext], Awaitable[str]]
     validator: ModuleActionValidator = field(default_factory=ModuleActionValidator)
 
 
@@ -540,6 +555,8 @@ def build_tools(deps: ToolDeps) -> ToolRegistry:
             *_document_tools(deps),
             *_finance_tools(deps),
             *_health_tools(deps),
+            *_capture_tools(deps),
+            *_briefing_tools(deps),
             *_mail_tools(deps),
             *_memory_and_workflow_tools(deps),
         ]
@@ -631,6 +648,8 @@ def _task_tools(deps: ToolDeps) -> list[Tool]:
             task = await deps.tasks.complete(ctx.workspace_id, args.task_id)
         except TaskNotFoundError:
             raise ToolFailedError("The task no longer exists.") from None
+        except ValueError as exc:
+            raise ToolFailedError(str(exc) or "The task can't be completed.") from None
         return ToolOutput(
             text=f"Completed “{task.title}”.",
             result=ActionResult(kind="task", id=task.id, title=task.title),
@@ -1293,6 +1312,32 @@ def _health_tools(deps: ToolDeps) -> list[Tool]:
     return tools
 
 
+def _briefing_tools(deps: ToolDeps) -> list[Tool]:
+    """The daily briefing."""
+    tools: list[Tool] = []
+    add = _adder(tools)
+
+    async def briefing(args: NoArgs, ctx: ToolContext) -> ToolOutput:
+        return ToolOutput(text=(await deps.briefing_today(ctx))[:MAX_TEXT], data={"count": 1})
+
+    add(
+        _spec(
+            "get_daily_briefing",
+            "Daily briefing",
+            "Today's prepared briefing: schedule, tasks, reminders, payments and budgets "
+            "(without amounts), habits, workouts, and linked notes. Only the modules both the "
+            "agent and Settings → AI may read are included.",
+            # It spans modules: the reader checks each module's permission itself.
+            None,
+            "read",
+            "low",
+            NoArgs,
+        ),
+        _Read("Read today's briefing", NoArgs, briefing),
+    )
+    return tools
+
+
 def _mail_tools(deps: ToolDeps) -> list[Tool]:
     """Mail (read only)."""
     tools: list[Tool] = []
@@ -1321,6 +1366,121 @@ def _mail_tools(deps: ToolDeps) -> list[Tool]:
         _Read("Search email", SearchEmailArgs, search_email),
     )
 
+    return tools
+
+
+def _capture_tools(deps: ToolDeps) -> list[Tool]:
+    """Quick capture: adding what the person says to the modules that keep lists and logs."""
+    tools: list[Tool] = []
+    add = _adder(tools)
+    rows: tuple[tuple[ActionKind, str, str, AgentModule, RiskLevel, type[BaseModel], str], ...] = (
+        (
+            "add_shopping_item",
+            "Add a shopping item",
+            "Add one item to a shopping list.",
+            "shopping",
+            "low",
+            AddShoppingItem,
+            "An item is added to the list.",
+        ),
+        (
+            "create_habit",
+            "Create a habit",
+            "Start a yes-or-no habit, daily or on a schedule.",
+            "habits",
+            "low",
+            CreateHabit,
+            "A new habit starts.",
+        ),
+        (
+            "log_water",
+            "Log water",
+            "Record water the person drank.",
+            "health",
+            "low",
+            LogWater,
+            "Water is added to the day.",
+        ),
+        (
+            "log_weight",
+            "Log weight",
+            "Record the person's body weight.",
+            "health",
+            "low",
+            LogWeight,
+            "A weight entry is added.",
+        ),
+        (
+            "log_activity",
+            "Log activity",
+            "Record a walk, run, ride, swim, steps, sleep, or a rest day.",
+            "health",
+            "low",
+            LogActivity,
+            "An activity entry is added.",
+        ),
+        (
+            "add_place",
+            "Add a place",
+            "Add a place the person visited or wants to visit.",
+            "places",
+            "low",
+            AddPlace,
+            "A place is added to the map.",
+        ),
+        (
+            "add_person",
+            "Add a person",
+            "Add someone to People, with the birthday the person stated, if any.",
+            "people",
+            "low",
+            AddPerson,
+            "A person is added to People, with a reminder on their birthday.",
+        ),
+        (
+            "save_link",
+            "Save a link",
+            "Save a web link. The page isn't fetched.",
+            "saved",
+            "low",
+            SaveLink,
+            "The link is saved.",
+        ),
+        (
+            "add_watch_item",
+            "Add to watchlist",
+            "Add a movie or series to the watchlist.",
+            "watchlist",
+            "low",
+            AddWatchItem,
+            "The title is added to the watchlist.",
+        ),
+    )
+    for name, title, description, module, risk, model, effect in rows:
+        add(
+            _spec(name, title, description, module, "create", risk, model),
+            _Action(deps, name, model, None, effect),
+        )
+    add(
+        _spec(
+            "add_transaction",
+            "Record a transaction",
+            "Record income or an expense the person states. Moves no money. Always asks first.",
+            "finance",
+            "create",
+            "high",
+            AddTransaction,
+            always_confirm=True,
+            in_workflows=False,
+        ),
+        _Action(
+            deps,
+            "add_transaction",
+            AddTransaction,
+            None,
+            "A transaction is added to your ledger and changes the account's balance.",
+        ),
+    )
     return tools
 
 
@@ -1450,11 +1610,13 @@ def tool_factory(inputs: ToolInputs) -> ToolRegistry:
                 calendar=writes.calendar,
                 notes=writes.notes,
                 documents=writes.documents,
+                capture=writes.capture,
             ),
             notifications=inputs.notifications,
             memories=_AgentMemories(inputs.store),
             start_workflow=inputs.start_workflow,
             workflow_title=inputs.workflow_title,
             mail=inputs.mail,
+            briefing_today=inputs.briefing_today,
         )
     )

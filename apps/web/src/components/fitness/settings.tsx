@@ -2,7 +2,7 @@
 
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { ActivityKind, FitnessHabitLink, FitnessProfile } from "@orbit/contracts";
-import { Link2, Trash2 } from "lucide-react";
+import { Activity, LayoutDashboard, Link2, Ruler, Target, Trash2, User } from "lucide-react";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
@@ -81,6 +81,8 @@ function ProfileForm({ workspaceId, profile }: { workspaceId: string; profile: F
   return (
     <form noValidate onSubmit={(event) => void handleSubmit(save)(event)} className="space-y-4">
       <Section
+        icon={Ruler}
+        tone="slate"
         title="Units"
         description="Records are stored in exact metric units and shown in yours. Changing units never changes your data."
       >
@@ -144,6 +146,8 @@ function ProfileForm({ workspaceId, profile }: { workspaceId: string; profile: F
         </div>
       </Section>
       <Section
+        icon={User}
+        tone="brand"
         title="About you"
         description="Both optional. Height is used only for BMI; nothing is calculated from your date of birth."
       >
@@ -159,6 +163,8 @@ function ProfileForm({ workspaceId, profile }: { workspaceId: string; profile: F
         </div>
       </Section>
       <Section
+        icon={Target}
+        tone="orange"
         title="Daily targets"
         description="Leave any blank to not track it against a target."
       >
@@ -202,6 +208,8 @@ function ProfileForm({ workspaceId, profile }: { workspaceId: string; profile: F
         </div>
       </Section>
       <Section
+        icon={Activity}
+        tone="green"
         title="Activity rings"
         description={`Leave any blank to use the default: ${formatNumber(DEFAULT_ACTIVITY_GOALS.steps)} steps, ${DEFAULT_ACTIVITY_GOALS.active_s / 60} active minutes, and ${DEFAULT_ACTIVITY_GOALS.sleep_s / 3600} hours of sleep.`}
       >
@@ -232,7 +240,12 @@ function ProfileForm({ workspaceId, profile }: { workspaceId: string; profile: F
           error={errors.quickAmounts?.message}
         />
       </Section>
-      <Section title="Overview sections" description="Hide what you don’t use.">
+      <Section
+        icon={LayoutDashboard}
+        tone="slate"
+        title="Overview sections"
+        description="Hide what you don’t use."
+      >
         <Controller
           control={control}
           name="hiddenSections"
@@ -323,6 +336,8 @@ function HabitLinks({ workspaceId }: { workspaceId: string }) {
 
   return (
     <Section
+      icon={Link2}
+      tone="green"
       title="Linked habits"
       description="Relate a habit to workouts, water, or an activity. With “Sync with Health” on, Health is the habit’s source: each day of the habit shows that day’s records, as you add, change, or remove them. Logging an amount habit linked to steps or water from Habits adds it here too; checking off a workout habit never creates a workout."
     >

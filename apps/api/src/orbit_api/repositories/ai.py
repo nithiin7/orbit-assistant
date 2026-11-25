@@ -19,6 +19,7 @@ from orbit_api.db.models import (
     AiProviderModel,
     AiSettingsModel,
     AiUsageModel,
+    VoiceSettingsModel,
     WorkspaceModel,
 )
 from orbit_api.repositories.transaction import flush
@@ -71,7 +72,7 @@ _MESSAGE_STATUSES: Final[dict[str, MessageStatus]] = {
 }
 _STYLES: Final[dict[str, ResponseStyle]] = {s: s for s in ("concise", "balanced", "detailed")}
 _OPERATIONS: Final[dict[str, UsageOperation]] = {
-    o: o for o in ("chat", "assist", "embedding", "test")
+    o: o for o in ("chat", "assist", "embedding", "test", "transcription", "speech")
 }
 _PROCESSING: Final[dict[str, Processing]] = {"local": "local", "cloud": "cloud"}
 
@@ -102,6 +103,7 @@ class SqlAiSettingsRepository:
             monthly_token_limit=model.monthly_token_limit,
             indexing_enabled=model.indexing_enabled,
             updated_at=model.updated_at,
+            auto_capture=model.auto_capture,
         )
 
     async def put(self, settings: AiSettings) -> None:
@@ -121,6 +123,7 @@ class SqlAiSettingsRepository:
         model.response_style = settings.response_style
         model.monthly_token_limit = settings.monthly_token_limit
         model.indexing_enabled = settings.indexing_enabled
+        model.auto_capture = settings.auto_capture
         if settings.updated_at is not None:
             model.updated_at = settings.updated_at
         await flush(self._session)
@@ -219,6 +222,15 @@ class SqlAiProviderRepository:
                 .where(
                     AiSettingsModel.user_id == user_id,
                     getattr(AiSettingsModel, column) == provider_id,
+                )
+                .values({column: None})
+            )
+        for column in ("stt_provider_id", "tts_provider_id"):
+            await self._session.execute(
+                update(VoiceSettingsModel)
+                .where(
+                    VoiceSettingsModel.user_id == user_id,
+                    getattr(VoiceSettingsModel, column) == provider_id,
                 )
                 .values({column: None})
             )
@@ -729,6 +741,7 @@ class SqlConversationRepository:
                 processing=_PROCESSING.get(row.processing or ""),
                 usage=TokenUsage(input_tokens=row.input_tokens, output_tokens=row.output_tokens),
                 created_at=row.created_at,
+                input_mode="voice" if row.input_mode == "voice" else "text",
             )
             for row in rows
         ]
@@ -749,6 +762,7 @@ class SqlConversationRepository:
                 input_tokens=message.usage.input_tokens,
                 output_tokens=message.usage.output_tokens,
                 created_at=message.created_at,
+                input_mode=message.input_mode,
             )
         )
         await flush(self._session)

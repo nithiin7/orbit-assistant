@@ -35,6 +35,7 @@ export function AttentionWidget() {
   const { resource, reload, timeZone } = useTodayOverview();
   return (
     <WidgetCard
+      tone="warning"
       title="Needs attention"
       icon={BellRing}
       href="/reminders"

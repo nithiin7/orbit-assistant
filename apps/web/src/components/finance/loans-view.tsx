@@ -125,7 +125,7 @@ export function LoansView(props: LoansViewProps) {
     <div className="space-y-6">
       {header}
       {counted.length > 0 ? (
-        <StatGrid>
+        <StatGrid hero icon={Landmark}>
           <StatTile
             label="Still owed"
             icon={Landmark}

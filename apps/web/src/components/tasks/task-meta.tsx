@@ -1,7 +1,13 @@
-import type { TaskListColor, TaskPriority } from "@orbit/contracts";
-import { CalendarDays } from "lucide-react";
+import type { TaskListColor, TaskPriority, TaskRepeat } from "@orbit/contracts";
+import { CalendarDays, Repeat } from "lucide-react";
 
-import { describeDueDate, type DueState, priorityLabel, TASK_LIST_STYLES } from "@/lib/tasks";
+import {
+  describeDueDate,
+  type DueState,
+  priorityLabel,
+  repeatLabel,
+  TASK_LIST_STYLES,
+} from "@/lib/tasks";
 import { cn } from "@/utils/common";
 
 /** The dot that marks a priority, here and in the priority filter. */
@@ -61,6 +67,17 @@ export function DueDateLabel({
       <CalendarDays className="size-3" aria-hidden="true" />
       <span className="sr-only">Due </span>
       <time dateTime={dueDate}>{text}</time>
+    </span>
+  );
+}
+
+/** How often a task repeats. */
+export function RepeatBadge({ repeat }: { repeat: TaskRepeat }) {
+  return (
+    <span className={cn(chipClassName, "bg-muted/70 text-muted-foreground")}>
+      <Repeat className="size-3" aria-hidden="true" />
+      <span className="sr-only">Repeats: </span>
+      {repeatLabel(repeat)}
     </span>
   );
 }

@@ -13,9 +13,11 @@ TaskStatus = Literal["open", "completed"]
 TaskPriority = Literal["none", "low", "medium", "high"]
 TaskSort = Literal["due_date", "priority", "created_at", "completed_at"]
 TaskListColor = Literal["blue", "green", "amber", "rose", "violet", "teal", "orange", "slate"]
+TaskRepeatFrequency = Literal["daily", "weekly", "monthly", "yearly"]
 
 # A workspace's lists are few and meant to be scanned at a glance.
 MAX_TASK_LISTS = 50
+MAX_TASK_REPEAT_INTERVAL = 99
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +46,21 @@ class TaskListChanges:
 
 
 @dataclass(frozen=True, slots=True)
+class TaskRepeat:
+    """How often a task repeats: every `interval` days, weeks, months, or years."""
+
+    frequency: TaskRepeatFrequency
+    interval: int = 1
+
+
+@dataclass(frozen=True, slots=True)
+class TaskRecurrence:
+    repeat: TaskRepeat
+    # The due date the series counts from, which keeps month-end dates from drifting.
+    anchor: date
+
+
+@dataclass(frozen=True, slots=True)
 class Task:
     id: uuid.UUID
     workspace_id: uuid.UUID
@@ -62,6 +79,10 @@ class Task:
     scheduled_end: datetime | None = None
     # The list the task is on, if any.
     list_id: uuid.UUID | None = None
+    # Set on a series' current occurrence only: completing the task moves it to the next one.
+    recurrence: TaskRecurrence | None = None
+    # Shared by every occurrence of a repeating task.
+    series_id: uuid.UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -80,12 +101,14 @@ class TaskDraft:
     due_date: date | None = None
     schedule: TaskSchedule | None = None
     list_id: uuid.UUID | None = None
+    repeat: TaskRepeat | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class TaskChanges:
-    """A partial update. `UNSET` leaves a field as it is; `due_date=None` clears the date and
-    `schedule=None` unschedules the task, and `list_id=None` takes it off its list."""
+    """A partial update. `UNSET` leaves a field as it is; `due_date=None` clears the date,
+    `schedule=None` unschedules the task, `list_id=None` takes it off its list, and `repeat=None`
+    stops it repeating."""
 
     title: Change[str] = UNSET
     description: Change[str] = UNSET
@@ -93,6 +116,7 @@ class TaskChanges:
     due_date: Change[date | None] = UNSET
     schedule: Change[TaskSchedule | None] = UNSET
     list_id: Change[uuid.UUID | None] = UNSET
+    repeat: Change[TaskRepeat | None] = UNSET
 
 
 @dataclass(frozen=True, slots=True)
@@ -135,6 +159,10 @@ class TaskSummary:
 
 class TaskNotFoundError(Exception):
     """The task does not exist in this workspace."""
+
+
+class InvalidTaskRecurrenceError(ValueError):
+    """A repeat the task can't have, or a stored one this version can't read."""
 
 
 class InvalidTaskScheduleError(ValueError):

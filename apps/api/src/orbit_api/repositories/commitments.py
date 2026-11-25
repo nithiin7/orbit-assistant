@@ -45,6 +45,7 @@ from orbit_api.services.commitments.service import CommitmentService
 from orbit_api.services.finance.money import Currency
 from orbit_api.services.finance.service import FinanceService
 from orbit_api.services.transactions import ConflictError
+from orbit_api.services.transactions import Transaction as UnitOfWork
 
 _Loan = FinanceLoanModel
 _Installment = FinanceLoanInstallmentModel
@@ -516,12 +517,15 @@ class SqlPaymentLinks:
 
 
 def build_commitment_service(
-    session: AsyncSession, clock: Callable[[], datetime] | None = None
+    session: AsyncSession,
+    clock: Callable[[], datetime] | None = None,
+    unit_of_work: UnitOfWork | None = None,
 ) -> CommitmentService:
     """A commitment service whose ledger writes, reminder changes, and records all share
     `session`'s transaction. Used by the API per request and by the reminder worker inside each
-    delivery transaction."""
-    unit_of_work = SqlTransaction(session)
+    delivery transaction. A caller that commits several payments at once passes a deferred
+    `unit_of_work`."""
+    unit_of_work = unit_of_work or SqlTransaction(session)
     timing = {"clock": clock} if clock else {}
     finance = FinanceService(
         SqlFinanceAccountRepository(session),

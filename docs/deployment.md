@@ -85,6 +85,23 @@ the API is reachable only through the proxy and `127.0.0.1`). Sign-in limits cou
 client address; without it, every visitor appears to be the proxy and shares one limit. A
 proxy's `X-Request-ID` header is kept, so its logs and the API's can be matched.
 
+### Install Orbit as an app
+
+Over HTTPS, Orbit can be installed from the browser: use the install icon in the address bar on
+desktop Chrome or Edge, **Install app** on Android, or **Share → Add to Home Screen** in Safari on
+iPhone and iPad. The installed app opens in its own window and still needs a connection to your
+server. Its service worker caches no pages or data on the device.
+
+### Push notifications
+
+Each person turns push on per device in **Settings → Notifications**. It needs HTTPS (or
+localhost), and on iPhone and iPad Orbit must be added to the Home Screen first. The server must be
+able to reach the browsers' push services over outbound HTTPS.
+
+In local mode the server creates its push key in `web-push.key` beside the database; keep that file
+with your data. In cloud mode, set `ORBIT_WEB_PUSH_PRIVATE_KEY` (a P-256 private key as URL-safe
+base64), or push stays unavailable. `ORBIT_WEB_PUSH_ENABLED=false` turns push off for everyone.
+
 ## Monitoring and logs
 
 | Endpoint                      | Meaning                                                                                                              | Use for                   |

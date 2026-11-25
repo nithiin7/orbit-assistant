@@ -31,7 +31,7 @@ export function RecentSearches({ searches, onSearch }: RecentSearchesProps) {
           Clear history
         </Button>
       </div>
-      <ul className="divide-y rounded-xl border bg-card">
+      <ul className="divide-y rounded-2xl border bg-card">
         {searches.map((search) => (
           <li key={search.id} className="flex items-center gap-2 px-3 py-1.5">
             <Clock className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
@@ -98,7 +98,7 @@ export function SavedSearches({ searches, onOpen }: SavedSearchesProps) {
       <h2 id="saved-searches" className="text-sm font-medium">
         Saved searches
       </h2>
-      <ul className="divide-y rounded-xl border bg-card">
+      <ul className="divide-y rounded-2xl border bg-card">
         {searches.map((search) => (
           <li key={search.id} className="flex items-center gap-2 px-3 py-1.5">
             <Bookmark className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
@@ -214,7 +214,7 @@ export function SaveSearchForm({ onSave, onCancel }: SaveSearchFormProps) {
     <form
       onSubmit={submit}
       aria-label="Save search"
-      className="flex flex-wrap items-start gap-2 rounded-xl border bg-card p-3"
+      className="flex flex-wrap items-start gap-2 rounded-2xl border bg-card p-3"
     >
       <div className="min-w-48 flex-1 space-y-1">
         <Input

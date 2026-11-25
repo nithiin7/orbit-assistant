@@ -16,7 +16,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from orbit_api.config import Settings
 from orbit_api.repositories.agent import AiModelGateway, SqlAgentStore, SqlChangeFeed
 from orbit_api.repositories.ai_services import AiServices, build_ai
+from orbit_api.repositories.briefings import SqlBriefingRepository
 from orbit_api.repositories.calendar import SqlCalendarRepository
+from orbit_api.repositories.capture import CaptureServices, build_capture_services
 from orbit_api.repositories.documents import SqlDocumentStore
 from orbit_api.repositories.habits import build_habit_service
 from orbit_api.repositories.integrations import (
@@ -30,7 +32,11 @@ from orbit_api.repositories.notes import (
     SqlNoteTagRepository,
 )
 from orbit_api.repositories.notifications import SqlNotificationRepository
-from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
+from orbit_api.repositories.reminders import (
+    SqlOccurrenceRepository,
+    SqlReminderRepository,
+    build_task_service,
+)
 from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.services.agent.automation import AutomationService
@@ -50,7 +56,9 @@ from orbit_api.services.agent.tools import (
     ToolContext,
     ToolRegistry,
 )
+from orbit_api.services.ai.models import AiModule
 from orbit_api.services.ai.providers import ProviderFactory
+from orbit_api.services.briefings.narrative import briefing_digest
 from orbit_api.services.calendar.service import CalendarService
 from orbit_api.services.documents.service import DocumentService
 from orbit_api.services.integrations.connectors import ConnectorRegistry
@@ -70,6 +78,7 @@ class WriteServices:
     calendar: CalendarService
     notes: NoteService
     documents: DocumentService
+    capture: CaptureServices
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,6 +92,8 @@ class ToolInputs:
     mail: MailReader | None
     start_workflow: Callable[[ToolContext, uuid.UUID], Awaitable[str]]
     workflow_title: Callable[[ToolContext, uuid.UUID], Awaitable[str | None]]
+    # Today's stored briefing, as the agent and AI may read it.
+    briefing_today: Callable[[ToolContext], Awaitable[str]]
 
 
 type ToolFactory = Callable[[ToolInputs], ToolRegistry]
@@ -159,7 +170,7 @@ def build_agent(
     store = SqlAgentStore(session)
     notifications = SqlNotificationRepository(session)
     writes = WriteServices(
-        tasks=TaskService(SqlTaskRepository(session), deferred, clock),
+        tasks=build_task_service(session, deferred, clock),
         reminders=ReminderService(
             SqlReminderRepository(session),
             SqlOccurrenceRepository(session),
@@ -188,6 +199,7 @@ def build_agent(
             deferred,
             clock,
         ),
+        capture=build_capture_services(session, settings, deferred),
     )
     models = AiModelGateway(ai.config)
     notifier = NotificationNotifier(session, clock)
@@ -215,6 +227,33 @@ def build_agent(
         workflow = await store.get_workflow(ctx.workspace_id, ctx.user_id, workflow_id)
         return workflow.name if workflow else None
 
+    briefings = SqlBriefingRepository(session)
+
+    async def briefing_today(ctx: ToolContext) -> str:
+        """Only the stored snapshot: preparing one would write, and a module failing during a
+        fresh read would roll back the run's own pending records."""
+        execution = (
+            await store.execution_by_id(ctx.execution_id) if ctx.execution_id is not None else None
+        )
+        agent = (
+            await store.agent(execution.agent_id)
+            if execution is not None
+            else await store.primary(ctx.workspace_id, ctx.user_id)
+        )
+        if agent is None:
+            raise ToolFailedError("The agent isn't set up.")
+        readable = await models.ai_modules(ctx.user_id)
+        modules: frozenset[AiModule] = frozenset(m for m in readable if m in agent.modules)
+        stored = await briefings.get(
+            ctx.workspace_id, ctx.user_id, ctx.today, ctx.timezone
+        ) or await briefings.get(ctx.workspace_id, ctx.user_id, ctx.today, None)
+        if stored is None:
+            return "No briefing has been prepared for today yet. Open Briefing to prepare it."
+        digest = briefing_digest(stored.content, modules)
+        if digest is None:
+            return "Neither the agent nor AI may read any of the modules in today's briefing."
+        return f"Briefing for {stored.date:%A %d %B} (prepared earlier today):\n\n{digest}"
+
     registry = tools(
         ToolInputs(
             ai=ai,
@@ -224,6 +263,7 @@ def build_agent(
             mail=IntegrationMailReader(session, settings, connectors) if connectors else None,
             start_workflow=start_workflow,
             workflow_title=workflow_title,
+            briefing_today=briefing_today,
         )
     )
     engine = ExecutionEngine(store, registry, models, notifier, transaction, clock)

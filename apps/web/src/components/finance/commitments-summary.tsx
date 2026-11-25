@@ -1,7 +1,7 @@
 "use client";
 
 import type { Currency } from "@orbit/contracts";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CalendarClock } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,8 @@ export function CommitmentsSummary({
     <Panel
       title="Commitments"
       description="Not spending until recorded."
+      icon={CalendarClock}
+      accent="neutral"
       action={
         <Button variant="ghost" size="sm" onClick={onOpenUpcoming}>
           Upcoming payments

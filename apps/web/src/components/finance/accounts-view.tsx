@@ -6,12 +6,10 @@ import {
   ArchiveRestore,
   Banknote,
   CreditCard,
-  HandCoins,
   Landmark,
   LineChart,
   type LucideIcon,
   Pencil,
-  PiggyBank,
   Plus,
   Smartphone,
   Star,
@@ -29,6 +27,7 @@ import { accountTypeLabel, formatMoney } from "@/lib/finance";
 import { cn } from "@/utils/common";
 
 import { Chip, SectionHeading } from "./finance-meta";
+import { ACCOUNT_TYPE_ICONS as TYPE_ICONS } from "./finance-meta";
 import { AccountBalance } from "./finance-overview";
 import type { FinanceData } from "./finance-view";
 import { EndedSection } from "./panel";
@@ -52,17 +51,6 @@ const ACCOUNT_GROUPS: readonly { label: string; icon: LucideIcon; types: Finance
     { label: "Loans", icon: Landmark, types: ["loan"] },
     { label: "Other", icon: Wallet, types: ["other"] },
   ];
-
-const TYPE_ICONS: Record<FinanceAccountType, LucideIcon> = {
-  bank: Landmark,
-  savings: PiggyBank,
-  cash: Banknote,
-  credit_card: CreditCard,
-  wallet: Smartphone,
-  investment: LineChart,
-  loan: HandCoins,
-  other: Wallet,
-};
 
 export function AccountsView({
   workspaceId,
@@ -246,7 +234,7 @@ export function AccountsView({
       />
 
       {totals.length > 0 ? (
-        <StatGrid>
+        <StatGrid hero icon={Wallet}>
           {totals.flatMap((total) => {
             const suffix = multiCurrency ? ` (${total.currency})` : "";
             return [
@@ -369,7 +357,7 @@ function AccountCard({
       : null;
 
   return (
-    <li className="flex min-w-0 flex-col rounded-xl border bg-card p-4 shadow-elevation-1 transition-shadow duration-150 hover:shadow-elevation-2 @3xl/list:p-5">
+    <li className="flex min-w-0 flex-col rounded-2xl border bg-card p-4 shadow-elevation-1 transition-[box-shadow,translate] duration-150 hover:-translate-y-0.5 hover:shadow-elevation-2 motion-reduce:hover:translate-y-0 @3xl/list:p-5">
       <div className="flex items-start gap-3">
         <span
           aria-hidden="true"

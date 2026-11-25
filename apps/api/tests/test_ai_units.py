@@ -7,10 +7,12 @@ from datetime import date
 
 import pytest
 
+from orbit_api.services.ai.auto_capture import may_add_directly
 from orbit_api.services.ai.chunking import ChunkingOptions, chunk_sections, note_sections
 from orbit_api.services.ai.endpoints import check_endpoint
 from orbit_api.services.ai.extraction import ExtractionError, extract_sections
 from orbit_api.services.ai.models import (
+    ActionKind,
     Citation,
     EndpointNotAllowedError,
     RecordRef,
@@ -24,6 +26,7 @@ from orbit_api.services.ai.prompts import (
     render_record,
 )
 from orbit_api.services.ai.providers import processing_of
+from orbit_api.services.ai.quick_commands import read_commands
 from orbit_api.services.ai.routing import keywords, route_question, wants_action
 from orbit_api.services.ai.vectors import normalize, pack, top_k, unpack
 
@@ -311,3 +314,74 @@ def test_processing_location_comes_from_the_endpoint() -> None:
     assert processing_of("ollama", "https://ollama.example.com") == "cloud"
     assert processing_of("openai", None) == "cloud"
     assert processing_of("openai_compatible", "http://192.168.1.20:1234/v1") == "local"
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("Buy oat milk", True),
+        ("Save https://example.com for later", True),
+        ("I want to visit Kyoto", True),
+        ("I spent 400 on lunch", True),
+        ("I drank two glasses of water", True),
+        ("How much have I spent this month?", False),
+        ("What did I buy last week", False),
+        ("I feel tired today", False),
+    ],
+)
+def test_capture_requests_are_recognised_without_catching_questions(
+    text: str, expected: bool
+) -> None:
+    assert wants_action(text) is expected
+
+
+@pytest.mark.parametrize(
+    ("kind", "payload", "message", "expected"),
+    [
+        ("create_task", {"title": "Renew passport"}, "Add a task to renew my passport", True),
+        ("add_shopping_item", {"name": "Milk", "quantity": "2"}, "Buy 2 milk", True),
+        ("save_link", {"url": "https://a.dev/x"}, "Save https://a.dev/x", True),
+        ("log_water", {"amount_ml": 500}, "I drank 500 ml", True),
+        ("log_activity", {"kind": "walk", "steps": 10000}, "I walked 10,000 steps", True),
+        ("log_water", {"amount_ml": 1000}, "I drank a litre", False),
+        ("log_activity", {"kind": "rest_day"}, "Rest day today", False),
+        ("create_task", {"title": "Wire money"}, "Add a task to call mum", False),
+        ("create_task", {"title": "Call mum", "description": "Urgent"}, "Call mum", False),
+        ("create_task", {}, "Add a task", False),
+        ("create_event", {"title": "Tea"}, "Add tea", False),
+        ("add_transaction", {"description": "Tea", "amount": "40"}, "Tea 40", False),
+        ("append_to_note", {"text": "Tea"}, "Add tea", False),
+    ],
+)
+def test_only_low_risk_records_the_person_stated_are_added_directly(
+    kind: ActionKind, payload: dict[str, object], message: str, expected: bool
+) -> None:
+    assert may_add_directly(kind, payload, message) is expected
+
+
+@pytest.mark.parametrize(
+    ("message", "expected"),
+    [
+        (
+            "Add a task: Update OOO message in work",
+            [("create_task", {"title": "Update OOO message in work"})],
+        ),
+        ("add task - Renew passport.", [("create_task", {"title": "Renew passport"})]),
+        (
+            "Add to my shopping list: milk, eggs",
+            [("add_shopping_item", {"name": "milk"}), ("add_shopping_item", {"name": "eggs"})],
+        ),
+        ("Note down: gate code 4412", [("create_note", {"text": "gate code 4412"})]),
+        ("Save this link: https://a.dev/x", [("save_link", {"url": "https://a.dev/x"})]),
+        ("I drank 500 ml of water", [("log_water", {"amount_ml": 500})]),
+        ("I weigh 71.5 kg", [("log_weight", {"weight_kg": 71.5})]),
+        ("Add a task: call mum tomorrow", []),
+        ("Add a task: file taxes by Friday", []),
+        ("Add a task to call mum", []),
+        ("What is a task: anything?", []),
+    ],
+)
+def test_plain_commands_are_read_without_a_model(
+    message: str, expected: list[tuple[str, dict[str, object]]]
+) -> None:
+    assert read_commands(message) == expected

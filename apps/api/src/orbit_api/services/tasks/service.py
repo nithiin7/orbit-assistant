@@ -14,6 +14,7 @@ from typing import Protocol
 
 from orbit_api.services.tasks.models import (
     MAX_TASK_LISTS,
+    InvalidTaskRecurrenceError,
     InvalidTaskScheduleError,
     Task,
     TaskChanges,
@@ -27,12 +28,15 @@ from orbit_api.services.tasks.models import (
     TaskNotFoundError,
     TaskPage,
     TaskQuery,
+    TaskRecurrence,
+    TaskRepeat,
     TaskSchedule,
     TaskSummary,
     TooManyTaskListsError,
 )
+from orbit_api.services.tasks.recurrence import next_due_date
 from orbit_api.services.transactions import ConflictError, Transaction
-from orbit_api.utils.changes import UNSET
+from orbit_api.utils.changes import UNSET, Change
 from orbit_api.utils.clock import utc_now
 
 # A scheduled block is a working session, not a deadline: at most a week.
@@ -56,6 +60,10 @@ class TaskRepository(Protocol):
         ...
 
     async def find(self, workspace_id: uuid.UUID, query: TaskQuery) -> TaskPage: ...
+
+    async def current_in_series(self, workspace_id: uuid.UUID, series_id: uuid.UUID) -> Task | None:
+        """The series' newest open occurrence, if any."""
+        ...
 
     async def save(self, task: Task) -> None:
         """Store an existing task's fields. Matches on both its ID and workspace."""
@@ -86,14 +94,29 @@ class TaskRepository(Protocol):
         ...
 
 
+class OccurrenceReminders(Protocol):
+    """Hands a repeating task's reminders from one occurrence to another."""
+
+    async def move(
+        self,
+        workspace_id: uuid.UUID,
+        source_id: uuid.UUID,
+        target_id: uuid.UUID,
+        shift: timedelta,
+        now: datetime,
+    ) -> None: ...
+
+
 class TaskService:
     def __init__(
         self,
         tasks: TaskRepository,
+        reminders: OccurrenceReminders,
         transaction: Transaction,
         clock: Callable[[], datetime] = utc_now,
     ) -> None:
         self._tasks = tasks
+        self._reminders = reminders
         self._transaction = transaction
         self._clock = clock
 
@@ -101,6 +124,7 @@ class TaskService:
         _check_schedule(draft.schedule)
         await self._check_list(workspace_id, draft.list_id)
         now = self._clock()
+        recurrence = _recurrence_for(draft.repeat, draft.due_date)
         task = Task(
             id=uuid.uuid4(),
             workspace_id=workspace_id,
@@ -115,6 +139,8 @@ class TaskService:
             scheduled_start=draft.schedule.start if draft.schedule else None,
             scheduled_end=draft.schedule.end if draft.schedule else None,
             list_id=draft.list_id,
+            recurrence=recurrence,
+            series_id=uuid.uuid4() if recurrence else None,
         )
         await self._tasks.add(task)
         await self._transaction.commit()
@@ -138,30 +164,85 @@ class TaskService:
             _check_schedule(changes.schedule)
         if changes.list_id is not UNSET:
             await self._check_list(workspace_id, changes.list_id)
+        due_date = task.due_date if changes.due_date is UNSET else changes.due_date
+        recurrence = _changed_recurrence(task, changes.repeat, due_date)
         updated = replace(
             task,
+            recurrence=recurrence,
+            series_id=task.series_id or (uuid.uuid4() if recurrence else None),
             scheduled_start=schedule.start if schedule else None,
             scheduled_end=schedule.end if schedule else None,
             title=task.title if changes.title is UNSET else changes.title,
             description=task.description if changes.description is UNSET else changes.description,
             priority=task.priority if changes.priority is UNSET else changes.priority,
-            due_date=task.due_date if changes.due_date is UNSET else changes.due_date,
+            due_date=due_date,
             list_id=task.list_id if changes.list_id is UNSET else changes.list_id,
         )
         return await self._save_if_changed(task, updated)
 
-    async def complete(self, workspace_id: uuid.UUID, task_id: uuid.UUID) -> Task:
-        """Mark the task completed. Completing a completed task keeps its completion time."""
+    async def complete(
+        self, workspace_id: uuid.UUID, task_id: uuid.UUID, today: date | None = None
+    ) -> Task:
+        """Mark the task completed. Completing a completed task keeps its completion time.
+
+        A repeating task hands its recurrence and reminders to a new open occurrence, in the same
+        transaction. `today` is the user's local date, and defaults to today's date in UTC.
+        """
         task = await self.get(workspace_id, task_id)
         if task.status == "completed":
             return task
-        return await self._save_if_changed(
-            task, replace(task, status="completed", completed_at=self._clock())
+        now = self._clock()
+        completed = replace(
+            task, status="completed", completed_at=now, recurrence=None, updated_at=now
         )
+        await self._tasks.save(completed)
+        if task.recurrence is not None and task.due_date is not None:
+            due_date = next_due_date(task.recurrence, task.due_date, today or now.date())
+            following = replace(
+                task,
+                id=uuid.uuid4(),
+                due_date=due_date,
+                # A time block belongs to the occurrence it was planned for.
+                scheduled_start=None,
+                scheduled_end=None,
+                created_at=now,
+                updated_at=now,
+            )
+            await self._tasks.add(following)
+            await self._reminders.move(
+                workspace_id, task.id, following.id, due_date - task.due_date, now
+            )
+        await self._transaction.commit()
+        return completed
 
     async def reopen(self, workspace_id: uuid.UUID, task_id: uuid.UUID) -> Task:
+        """Reopen the task. Undoing the completion that created a next occurrence takes that
+        occurrence back, with its reminders, unless it has been edited since; then the series
+        carries on from it."""
         task = await self.get(workspace_id, task_id)
-        return await self._save_if_changed(task, replace(task, status="open", completed_at=None))
+        if task.status == "open":
+            return task
+        now = self._clock()
+        following = await self._untouched_next_occurrence(task)
+        if following is not None:
+            # Deleting the occurrence would delete any reminder still attached to it.
+            shift = (
+                task.due_date - following.due_date
+                if task.due_date is not None and following.due_date is not None
+                else timedelta()
+            )
+            await self._reminders.move(workspace_id, following.id, task.id, shift, now)
+            await self._tasks.delete(workspace_id, following.id)
+        reopened = replace(
+            task,
+            status="open",
+            completed_at=None,
+            recurrence=following.recurrence if following else None,
+            updated_at=now,
+        )
+        await self._tasks.save(reopened)
+        await self._transaction.commit()
+        return reopened
 
     async def delete(self, workspace_id: uuid.UUID, task_id: uuid.UUID) -> None:
         if not await self._tasks.delete(workspace_id, task_id):
@@ -243,6 +324,20 @@ class TaskService:
         if list_id is not None and await self._tasks.get_list(workspace_id, list_id) is None:
             raise TaskListNotFoundError
 
+    async def _untouched_next_occurrence(self, task: Task) -> Task | None:
+        """The occurrence created by completing `task`, if nobody has changed it since."""
+        if task.series_id is None:
+            return None
+        current = await self._tasks.current_in_series(task.workspace_id, task.series_id)
+        if (
+            current is None
+            or current.recurrence is None
+            or current.created_at != task.completed_at
+            or current.updated_at != current.created_at
+        ):
+            return None
+        return current
+
     async def _save_if_changed(self, task: Task, updated: Task) -> Task:
         # A request that changes nothing leaves `updated_at` alone.
         if updated == task:
@@ -251,6 +346,29 @@ class TaskService:
         await self._tasks.save(updated)
         await self._transaction.commit()
         return updated
+
+
+def _recurrence_for(repeat: TaskRepeat | None, due_date: date | None) -> TaskRecurrence | None:
+    if repeat is None:
+        return None
+    if due_date is None:
+        raise InvalidTaskRecurrenceError("A repeating task needs a due date.")
+    return TaskRecurrence(repeat=repeat, anchor=due_date)
+
+
+def _changed_recurrence(
+    task: Task, repeat: Change[TaskRepeat | None], due_date: date | None
+) -> TaskRecurrence | None:
+    """The task's recurrence after an update. A new rule or due date restarts the series there."""
+    current = task.recurrence
+    wanted = (current.repeat if current else None) if repeat is UNSET else repeat
+    if wanted is None:
+        return None
+    if task.status == "completed":
+        raise InvalidTaskRecurrenceError("A completed task can't repeat.")
+    if current is not None and current.repeat == wanted and due_date == task.due_date:
+        return current
+    return _recurrence_for(wanted, due_date)
 
 
 def _schedule_of(task: Task) -> TaskSchedule | None:

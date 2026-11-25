@@ -116,6 +116,27 @@ _ACTION = re.compile(
     re.IGNORECASE,
 )
 
+# Things to keep or record, said without a verb like "add": "buy milk", "save this link".
+_CAPTURE = re.compile(
+    r"\b(buy|bookmark|save|watchlist|shopping list|want to (visit|watch|see|go to))\b",
+    re.IGNORECASE,
+)
+# Something that happened, worth recording only when stated: "I spent 400 on lunch", but not
+# "how much have I spent?".
+_LOGGED = re.compile(
+    r"\bi(?:'ve| have)? (?:just )?(spent|paid|earned|received|got paid|drank|weigh|weighed|"
+    r"walked|ran|cycled|swam|slept|visited|watched)\b",
+    re.IGNORECASE,
+)
+_QUESTION = re.compile(
+    r"\?\s*$|^\s*(how|what|when|where|why|which|who|did|do|does|have|has)\b", re.I
+)
+
+_COMMAND = re.compile(
+    r"\s*(?:please\s+)?(add|create|remind me|save|buy|log|note down|schedule|bookmark)\b",
+    re.IGNORECASE,
+)
+
 _WEEKDAYS: Final = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 _MONTHS: Final = (
     "january",
@@ -186,7 +207,16 @@ def wants_action(text: str) -> bool:
     """Whether the person asked for something to be created or scheduled. Proposals from the
     model are dropped otherwise, so instructions inside retrieved records can't make it
     propose anything on its own."""
-    return _ACTION.search(text) is not None
+    if _ACTION.search(text) is not None:
+        return True
+    if _QUESTION.search(text) is not None:
+        return False
+    return _CAPTURE.search(text) is not None or _LOGGED.search(text) is not None
+
+
+def is_command(text: str) -> bool:
+    """Whether the message plainly tells Orbit to add something, so it must hear what happened."""
+    return _COMMAND.match(text) is not None
 
 
 def keywords(text: str, limit: int = 4) -> tuple[str, ...]:

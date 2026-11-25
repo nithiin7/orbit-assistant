@@ -15,6 +15,7 @@ import {
   Settings,
   ShoppingCart,
   Trophy,
+  Users,
   Wallet,
   Workflow,
 } from "lucide-react";
@@ -80,6 +81,13 @@ export const navItems: readonly NavItem[] = [
     href: "/shopping",
     icon: ShoppingCart,
     description: "Track what to buy across your shopping lists.",
+    group: "plan",
+  },
+  {
+    title: "People",
+    href: "/people",
+    icon: Users,
+    description: "The people who matter, with their birthdays, anniversaries, and reminders.",
     group: "plan",
   },
   {
@@ -198,6 +206,7 @@ const dedicatedRoutes: ReadonlySet<string> = new Set([
   "/watchlist",
   "/saved",
   "/places",
+  "/people",
   "/assistant",
   "/automation",
   "/profile",

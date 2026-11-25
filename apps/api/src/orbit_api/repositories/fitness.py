@@ -96,6 +96,7 @@ from orbit_api.services.fitness.service import FitnessService, normalize_name
 from orbit_api.services.fitness.tracking import TrackingService
 from orbit_api.services.fitness.workouts import WorkoutService
 from orbit_api.services.habits.service import HabitService
+from orbit_api.services.transactions import Transaction
 
 E = FitnessExerciseModel
 S = FitnessSessionModel
@@ -1526,12 +1527,16 @@ class SqlFitnessStore:
 
 
 def build_fitness(
-    session: AsyncSession, files: PhotoFiles, clock: Callable[[], datetime] | None = None
+    session: AsyncSession,
+    files: PhotoFiles,
+    clock: Callable[[], datetime] | None = None,
+    transaction: Transaction | None = None,
 ) -> Fitness:
     """The health and fitness services, sharing `session`'s transaction with the habit and
-    calendar services they use."""
+    calendar services they use. `transaction` replaces the commit, for callers that commit the
+    change with their own records."""
     store = SqlFitnessStore(session)
-    transaction = SqlTransaction(session)
+    transaction = transaction or SqlTransaction(session)
     timing = {"clock": clock} if clock else {}
     contributions = Contributions(store, build_habit_service(session, clock))
     return Fitness(

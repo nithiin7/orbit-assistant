@@ -3,6 +3,7 @@ import type {
   AiModel,
   AiModule,
   AiProcessing,
+  AiProposal,
   AiProviderKind,
   AiRecordRef,
   AiResponseStyle,
@@ -117,7 +118,18 @@ export function recordHref(ref: AiRecordRef): string | null {
     case "workout":
       return id ? fitnessHref({ kind: "workout", id }) : "/health";
     case "health_summary":
+    case "water":
+    case "measurement":
+    case "activity":
       return "/health";
+    case "shopping_item":
+      return "/shopping";
+    case "place":
+      return "/places";
+    case "bookmark":
+      return "/saved";
+    case "watch_item":
+      return "/watchlist";
     default:
       return null;
   }
@@ -164,6 +176,69 @@ export function suggestedQuestions(modules: readonly AiModule[]): string[] {
     .filter(([module]) => allowed.has(module))
     .map(([, question]) => question)
     .slice(0, 4);
+}
+
+/** Proposal kinds the person can have added without approving each one. Money and events ask. */
+const ALWAYS_ADD_KINDS: ReadonlySet<AiProposal["kind"]> = new Set<AiProposal["kind"]>([
+  "create_task",
+  "create_reminder",
+  "create_note",
+  "add_shopping_item",
+  "create_habit",
+  "log_water",
+  "log_weight",
+  "log_activity",
+  "add_place",
+  "save_link",
+  "add_watch_item",
+]);
+
+export function canAlwaysAdd(kind: AiProposal["kind"]): boolean {
+  return ALWAYS_ADD_KINDS.has(kind);
+}
+
+export type QuickAddTemplate = {
+  id: string;
+  label: string;
+  group: "Plan" | "Lists" | "Track";
+  /** The start of the sentence; the person finishes it in the composer. */
+  text: string;
+  /** The module AI must be allowed to read for this to be offered. */
+  module?: AiModule;
+};
+
+const QUICK_ADD_TEMPLATES: readonly QuickAddTemplate[] = [
+  { id: "task", label: "Task", group: "Plan", text: "Add a task: " },
+  { id: "reminder", label: "Reminder", group: "Plan", text: "Remind me to " },
+  { id: "event", label: "Calendar event", group: "Plan", text: "Add an event: " },
+  { id: "note", label: "Note", group: "Plan", text: "Note down: " },
+  { id: "shopping", label: "Shopping item", group: "Lists", text: "Add to my shopping list: " },
+  { id: "place", label: "Place to visit", group: "Lists", text: "I want to visit " },
+  {
+    id: "birthday",
+    label: "Birthday",
+    group: "Lists",
+    text: "Add a person to People, their birthday is ",
+  },
+  { id: "link", label: "Saved link", group: "Lists", text: "Save this link: " },
+  {
+    id: "watch",
+    label: "Movie or series",
+    group: "Lists",
+    text: "Add to my watchlist: ",
+    module: "watchlist",
+  },
+  { id: "habit", label: "Habit", group: "Track", text: "Add a habit: ", module: "habits" },
+  { id: "water", label: "Water", group: "Track", text: "I drank ", module: "health" },
+  { id: "weight", label: "Weight", group: "Track", text: "I weigh ", module: "health" },
+  { id: "activity", label: "Activity", group: "Track", text: "I walked ", module: "health" },
+  { id: "expense", label: "Expense", group: "Track", text: "I spent ", module: "finance" },
+  { id: "income", label: "Income", group: "Track", text: "I received ", module: "finance" },
+];
+
+/** The sentence starters to offer, leaving out modules AI isn't allowed to read. */
+export function quickAddTemplates(modules: readonly AiModule[]): QuickAddTemplate[] {
+  return QUICK_ADD_TEMPLATES.filter((t) => t.module === undefined || modules.includes(t.module));
 }
 
 /** A chat model to pick in the composer: which provider serves it, and the model's name. */

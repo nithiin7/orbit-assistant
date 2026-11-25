@@ -7,7 +7,7 @@ import type {
   InvestmentAccount,
   InvestmentTransaction,
 } from "@orbit/contracts";
-import { Trash2 } from "lucide-react";
+import { History, Landmark, Trash2 } from "lucide-react";
 
 import { describeApiError } from "@/api/client";
 import { Button } from "@/components/ui/button";
@@ -54,7 +54,7 @@ export function ActivityPanel({
   };
 
   return (
-    <Panel title="Recent activity" flush>
+    <Panel title="Recent activity" icon={History} accent="neutral" flush>
       {state.status === "error" ? (
         <div className="px-5 pb-5">
           <LoadError message={state.message} onRetry={activity.reload} />
@@ -134,7 +134,13 @@ export function AccountsPanel({
 }) {
   const names = new Map(accounts.map((account) => [account.id, account.name]));
   return (
-    <Panel title="Investment accounts" description="Cash is money not yet invested." flush>
+    <Panel
+      title="Investment accounts"
+      description="Cash is money not yet invested."
+      icon={Landmark}
+      accent="brand"
+      flush
+    >
       <ul className="divide-y border-t">
         {profiles.map((account) => (
           <li

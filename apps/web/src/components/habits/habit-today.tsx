@@ -1,11 +1,25 @@
 "use client";
 
 import type { HabitProgress, HabitToday, LogHabitRequest, Routine } from "@orbit/contracts";
-import { CalendarCheck, Check, LayoutTemplate, PartyPopper, Play, Sparkles } from "lucide-react";
+import {
+  CalendarCheck,
+  CalendarDays,
+  Check,
+  CircleCheck,
+  CircleDashed,
+  LayoutTemplate,
+  ListChecks,
+  type LucideIcon,
+  PartyPopper,
+  Play,
+  Sparkles,
+} from "lucide-react";
 import Link from "next/link";
+import type { CSSProperties, ReactNode } from "react";
 
 import { EmptyState } from "@/components/empty-state";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { IconChip, type IconChipTone } from "@/components/ui/icon-chip";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Resource } from "@/hooks/query-resource";
 import {
@@ -24,7 +38,7 @@ import { cn } from "@/utils/common";
 import { dayOfWeek, formatCalendarDate } from "@/utils/dates";
 
 import { useCelebration } from "./celebration";
-import { COLOR_STYLES, HABIT_ICON_COMPONENTS, HabitTile, ProgressBar } from "./habit-icon";
+import { COLOR_STYLES, HABIT_ICON_COMPONENTS, HabitTile } from "./habit-icon";
 import { HabitRow } from "./habit-row";
 import { ViewError } from "./view-error";
 
@@ -161,34 +175,58 @@ export function HabitTodayView({
         <section
           aria-labelledby="today-summary"
           className={cn(
-            "rounded-xl border bg-card p-4 transition-colors duration-300",
-            finished && "border-success/40 bg-success/5",
+            "relative overflow-hidden rounded-2xl border bg-linear-to-br via-card to-card p-5 shadow-elevation-1 transition-colors duration-300 @3xl:p-6",
+            finished ? "border-success/40 from-success/15" : "from-brand-subtle/80",
           )}
         >
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 id="today-summary" className="text-sm font-semibold">
-              {formatCalendarDate(today.day)}
-            </h2>
-            <p className="text-sm text-muted-foreground tabular-nums">
-              {done.length} of {due} done
-              {due > 0 ? ` · ${Math.round((done.length / due) * 100)}%` : ""}
-            </p>
-          </div>
-          <ProgressBar
-            className="mt-3 h-2"
-            value={due === 0 ? 0 : done.length / due}
-            color="green"
-            label="Today’s progress"
+          <Sparkles
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-6 -right-6 size-40 -rotate-12 text-brand opacity-[0.06]"
           />
-          <p className="mt-2 text-sm text-muted-foreground">
-            {finished ? (
-              <PartyPopper
-                aria-hidden="true"
-                className="mr-1.5 inline-block size-4 animate-check-pop align-[-0.125em] text-success"
-              />
-            ) : null}
-            {encouragement(done.length, due)}
-          </p>
+          <div className="relative flex flex-wrap items-center gap-5">
+            <ProgressRing value={due === 0 ? 0 : done.length / due} finished={finished}>
+              <span className="text-lg leading-none font-semibold tabular-nums">
+                {done.length}/{due}
+              </span>
+              <span className="mt-0.5 text-[0.6875rem] text-muted-foreground">done</span>
+            </ProgressRing>
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <p
+                className={cn(
+                  "text-xs font-medium tracking-wide uppercase",
+                  finished ? "text-success" : "text-brand",
+                )}
+              >
+                {longDate(today.day)}
+              </p>
+              <h2
+                id="today-summary"
+                className="flex items-center gap-2 text-xl font-semibold tracking-tight @3xl:text-2xl"
+              >
+                {finished ? (
+                  <PartyPopper
+                    aria-hidden="true"
+                    className="size-5 shrink-0 animate-check-pop text-success"
+                  />
+                ) : null}
+                {encouragement(done.length, due)}
+              </h2>
+              <p className="text-sm text-muted-foreground tabular-nums">
+                {done.length} of {due} done
+                {due > 0 ? ` · ${Math.round((done.length / due) * 100)}%` : ""}
+              </p>
+              {due > 0 ? (
+                <ul aria-label="Today at a glance" className="flex flex-wrap gap-2 pt-1">
+                  <Pill icon={CircleDashed} className="bg-card/80 text-foreground">
+                    {remaining.length} to do
+                  </Pill>
+                  <Pill icon={CircleCheck} className="bg-success/12 text-success">
+                    {done.length} done
+                  </Pill>
+                </ul>
+              ) : null}
+            </div>
+          </div>
         </section>
 
         <HabitGroup title="To do" items={remaining} onLog={log} />
@@ -202,18 +240,20 @@ export function HabitTodayView({
       </div>
 
       <aside className="space-y-6">
-        <section aria-labelledby="week-heading" className="rounded-xl border bg-card p-4">
-          <h2 id="week-heading" className="text-sm font-semibold">
-            This week
-          </h2>
-          <ol className="mt-3 grid grid-cols-7 gap-1.5 text-center">
+        <SideCard id="week-heading" title="This week" icon={CalendarDays} tone="success">
+          <ol className="grid grid-cols-7 gap-1.5 text-center">
             {today.week.map((day) => {
               const label = WEEKDAYS[(dayOfWeek(day.day) + 6) % 7]?.label ?? "";
               const future = day.day > today.day;
               const total = day.due;
               return (
                 <li key={day.day} className="space-y-1">
-                  <span className="block text-[0.6875rem] text-muted-foreground">
+                  <span
+                    className={cn(
+                      "block text-[0.6875rem] text-muted-foreground",
+                      day.day === today.day && "font-semibold text-brand",
+                    )}
+                  >
                     {label.slice(0, 1)}
                   </span>
                   <span
@@ -224,7 +264,7 @@ export function HabitTodayView({
                     }`}
                     role="img"
                     className={cn(
-                      "mx-auto block size-7 rounded-full",
+                      "mx-auto block size-7 rounded-full transition-colors duration-300",
                       future ? "border border-dashed" : LEVEL_STYLES[heatLevel(day)],
                       day.day === today.day && "ring-2 ring-brand ring-offset-2 ring-offset-card",
                     )}
@@ -233,16 +273,16 @@ export function HabitTodayView({
               );
             })}
           </ol>
-        </section>
+        </SideCard>
 
         {todaysRoutines.length > 0 ? (
-          <section aria-labelledby="routines-heading" className="rounded-xl border bg-card p-4">
-            <h2 id="routines-heading" className="text-sm font-semibold">
-              Today’s routines
-            </h2>
-            <ul className="mt-3 space-y-2">
+          <SideCard id="routines-heading" title="Today’s routines" icon={ListChecks} tone="brand">
+            <ul className="space-y-2">
               {todaysRoutines.map((routine) => (
-                <li key={routine.id} className="flex items-center gap-3">
+                <li
+                  key={routine.id}
+                  className="flex items-center gap-3 rounded-xl border bg-background/60 p-2.5"
+                >
                   <HabitTile icon={routine.icon} color={routine.color} className="size-8" />
                   <div className="min-w-0 flex-1">
                     <Link
@@ -283,19 +323,23 @@ export function HabitTodayView({
                 </li>
               ))}
             </ul>
-          </section>
+          </SideCard>
         ) : null}
 
-        <section aria-labelledby="upcoming-heading" className="rounded-xl border bg-card p-4">
-          <h2 id="upcoming-heading" className="flex items-center gap-2 text-sm font-semibold">
-            <CalendarCheck className="size-4 text-muted-foreground" aria-hidden="true" />
-            Coming up
-          </h2>
-          <ul className="mt-3 space-y-1.5 text-sm">
+        <SideCard id="upcoming-heading" title="Coming up" icon={CalendarCheck} tone="blue">
+          <ul className="space-y-1 text-sm">
             {today.upcoming.map((day) => (
-              <li key={day.day} className="flex justify-between gap-2">
+              <li
+                key={day.day}
+                className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 odd:bg-muted/50"
+              >
                 <span className="text-muted-foreground">{formatCalendarDate(day.day)}</span>
-                <span className="tabular-nums">
+                <span
+                  className={cn(
+                    "tabular-nums",
+                    day.habit_ids.length === 0 ? "text-muted-foreground" : "font-medium",
+                  )}
+                >
                   {day.habit_ids.length === 0
                     ? "Rest day"
                     : `${day.habit_ids.length} habit${day.habit_ids.length === 1 ? "" : "s"}`}
@@ -303,10 +347,10 @@ export function HabitTodayView({
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Weekly targets can be done on any day, so they aren’t counted here.
           </p>
-        </section>
+        </SideCard>
       </aside>
       {celebration}
     </div>
@@ -330,8 +374,11 @@ function HabitGroup({
   return (
     <section aria-label={title} className="@container/rows space-y-2">
       <div>
-        <h2 className="text-sm font-semibold">
-          {title} <span className="font-normal text-muted-foreground">{items.length}</span>
+        <h2 className="flex items-center gap-2 text-sm font-semibold">
+          {title}{" "}
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground tabular-nums">
+            {items.length}
+          </span>
         </h2>
         {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
       </div>
@@ -340,6 +387,126 @@ function HabitGroup({
           <HabitRow key={item.habit.id} item={item} onLog={(body) => onLog(item, body)} />
         ))}
       </ul>
+    </section>
+  );
+}
+
+function longDate(day: string): string {
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    // The calendar day itself, whatever the viewer's time zone.
+    timeZone: "UTC",
+  }).format(new Date(`${day}T00:00:00Z`));
+}
+
+/** The day's progress as a ring, sweeping in from empty unless motion is reduced. */
+function ProgressRing({
+  value,
+  finished,
+  children,
+}: {
+  value: number;
+  finished: boolean;
+  children: ReactNode;
+}) {
+  const percent = Math.round(Math.max(0, Math.min(1, value)) * 100);
+  const offset = 100 - percent;
+  const style: CSSProperties & { "--ring-offset": number } = { "--ring-offset": offset };
+  return (
+    <div
+      role="progressbar"
+      aria-label="Today’s progress"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={percent}
+      className="relative size-24 shrink-0"
+    >
+      <svg viewBox="0 0 100 100" aria-hidden="true" className="size-full text-success">
+        <circle
+          cx="50"
+          cy="50"
+          r="42"
+          fill="none"
+          strokeWidth="9"
+          stroke="currentColor"
+          className="opacity-15"
+        />
+        {percent > 0 ? (
+          <circle
+            cx="50"
+            cy="50"
+            r="42"
+            fill="none"
+            strokeWidth="9"
+            stroke="currentColor"
+            strokeLinecap="round"
+            pathLength={100}
+            strokeDasharray="100"
+            strokeDashoffset={offset}
+            transform="rotate(-90 50 50)"
+            style={style}
+            className="motion-safe:animate-ring-fill"
+          />
+        ) : null}
+      </svg>
+      <div
+        aria-hidden="true"
+        className={cn(
+          "absolute inset-0 flex flex-col items-center justify-center",
+          finished && "text-success",
+        )}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Pill({
+  icon: Icon,
+  className,
+  children,
+}: {
+  icon: LucideIcon;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <li
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium tabular-nums",
+        className,
+      )}
+    >
+      <Icon aria-hidden="true" className="size-3.5" />
+      {children}
+    </li>
+  );
+}
+
+/** A card in the side column, with a tinted icon before its title. */
+function SideCard({
+  id,
+  title,
+  icon: Icon,
+  tone,
+  children,
+}: {
+  id: string;
+  title: string;
+  icon: LucideIcon;
+  tone: IconChipTone;
+  children: ReactNode;
+}) {
+  return (
+    <section aria-labelledby={id} className="space-y-3 rounded-2xl border bg-card p-4">
+      <h2 id={id} className="flex items-center gap-2.5 text-sm font-semibold">
+        <IconChip icon={Icon} tone={tone} />
+        {title}
+      </h2>
+      {children}
     </section>
   );
 }

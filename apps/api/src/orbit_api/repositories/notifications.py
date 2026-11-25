@@ -39,6 +39,13 @@ class SqlNotificationRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
+    async def for_occurrence(self, occurrence_id: uuid.UUID) -> list[Notification]:
+        """What one reminder occurrence delivered, for the worker to copy to people's devices."""
+        models = await self._session.scalars(
+            select(NotificationModel).where(NotificationModel.occurrence_id == occurrence_id)
+        )
+        return [_to_notification(model) for model in models]
+
     async def add(self, notification: Notification) -> None:
         self._session.add(
             NotificationModel(

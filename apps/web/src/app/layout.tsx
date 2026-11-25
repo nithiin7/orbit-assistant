@@ -3,6 +3,7 @@ import "@/styles/globals.css";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
+import { ServiceWorkerRegistrar } from "@/components/pwa/service-worker-registrar";
 import { appearancePreferenceScript } from "@/lib/appearance-preference";
 import { navPreferenceScript, navPreferenceStyles } from "@/lib/nav-preference";
 import { sidebarPreferenceScript } from "@/lib/sidebar-preference";
@@ -18,6 +19,7 @@ export const metadata: Metadata = {
   title: { default: "Orbit", template: "%s · Orbit" },
   description: DESCRIPTION,
   applicationName: "Orbit",
+  appleWebApp: { capable: true, title: "Orbit", statusBarStyle: "default" },
   keywords: [
     "personal assistant",
     "self-hosted",
@@ -60,6 +62,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: appearancePreferenceScript }} />
       </head>
       <body>
+        <ServiceWorkerRegistrar />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

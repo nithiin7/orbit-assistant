@@ -1,7 +1,7 @@
 "use client";
 
 import type { ShoppingItem } from "@orbit/contracts";
-import { ExternalLink, Trash2 } from "lucide-react";
+import { ExternalLink, Gift, Trash2 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,8 @@ import { cn } from "@/utils/common";
 
 type ShoppingItemRowProps = {
   item: ShoppingItem;
+  /** Who it's a gift idea for, when it is one and their name is known. */
+  giftFor?: string | null;
   /** A status change or deletion is in flight. */
   pending: boolean;
   onToggle: (item: ShoppingItem) => void;
@@ -20,6 +22,7 @@ type ShoppingItemRowProps = {
 
 export function ShoppingItemRow({
   item,
+  giftFor = null,
   pending,
   onToggle,
   onEdit,
@@ -81,8 +84,14 @@ export function ShoppingItemRow({
             <p className="line-clamp-1 text-sm break-words text-muted-foreground">{item.notes}</p>
           ) : null}
         </div>
-        {item.quantity || item.url ? (
+        {item.quantity || item.url || giftFor ? (
           <div className="flex min-w-0 shrink-0 flex-wrap items-center gap-1.5 @lg/rows:justify-end">
+            {giftFor ? (
+              <span className="inline-flex h-6 max-w-40 items-center gap-1 rounded-full bg-brand-subtle px-2 text-xs font-medium text-brand">
+                <Gift className="size-3 shrink-0" aria-hidden="true" />
+                <span className="truncate">For {giftFor}</span>
+              </span>
+            ) : null}
             {item.quantity ? (
               <span
                 aria-label={`Quantity ${item.quantity}`}

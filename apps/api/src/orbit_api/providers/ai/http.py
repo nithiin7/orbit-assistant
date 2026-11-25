@@ -52,6 +52,44 @@ class ProviderHttp:
         await self._check(response)
         return self._json(response)
 
+    async def post_form(
+        self,
+        url: str,
+        headers: Mapping[str, str],
+        data: Mapping[str, str],
+        files: Mapping[str, tuple[str, bytes, str]],
+    ) -> Json:
+        """A multipart upload (audio for transcription)."""
+        try:
+            response = await self._client.post(
+                url, headers=dict(headers), data=dict(data), files=dict(files)
+            )
+        except httpx2.HTTPError as exc:
+            raise self._unreachable() from exc
+        await self._check(response)
+        return self._json(response)
+
+    @asynccontextmanager
+    async def stream_bytes(
+        self, url: str, headers: Mapping[str, str], body: Json
+    ) -> AsyncGenerator[AsyncIterator[bytes]]:
+        """The response body as it arrives (generated speech)."""
+        try:
+            async with self._client.stream(
+                "POST", url, headers=dict(headers), json=body
+            ) as response:
+                await self._check(response)
+                yield self._bytes(response)
+        except httpx2.HTTPError as exc:
+            raise self._unreachable() from exc
+
+    async def _bytes(self, response: httpx2.Response) -> AsyncIterator[bytes]:
+        try:
+            async for chunk in response.aiter_bytes():
+                yield chunk
+        except httpx2.HTTPError as exc:
+            raise self._unreachable() from exc
+
     @asynccontextmanager
     async def stream_lines(
         self, url: str, headers: Mapping[str, str], body: Json

@@ -9,6 +9,7 @@ from orbit_api.api.v1 import (
     auth,
     backups,
     bookmarks,
+    briefings,
     budgets,
     calendar,
     commitments,
@@ -25,13 +26,17 @@ from orbit_api.api.v1 import (
     networth,
     notes,
     notifications,
+    people,
     places,
     planning,
+    push,
     reminders,
     search,
     shopping,
+    statements,
     storage,
     tasks,
+    voice,
     watchlist,
     workspaces,
 )
@@ -50,8 +55,10 @@ router.include_router(shopping.router)
 router.include_router(watchlist.router)
 router.include_router(bookmarks.router)
 router.include_router(places.router)
+router.include_router(people.router)
 router.include_router(reminders.router)
 router.include_router(finance.router)
+router.include_router(statements.router)
 router.include_router(commitments.router)
 router.include_router(investments.router)
 router.include_router(networth.router)
@@ -66,11 +73,15 @@ router.include_router(habits.routines_router)
 router.include_router(documents.router)
 router.include_router(fitness.router)
 router.include_router(dashboard.router)
+router.include_router(briefings.router)
 router.include_router(search.router)
 router.include_router(storage.router)
 router.include_router(agent.router)
 router.include_router(ai.me_router)
 router.include_router(ai.router)
+router.include_router(push.router)
+router.include_router(voice.me_router)
+router.include_router(voice.router)
 router.include_router(integrations.router)
 router.include_router(integrations.oauth_router)
 router.include_router(integrations.webhook_router)

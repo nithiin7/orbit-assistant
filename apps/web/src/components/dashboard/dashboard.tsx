@@ -23,6 +23,7 @@ import {
 import { HabitsWidget } from "@/components/habits/habits-widget";
 import { NotesWidget } from "@/components/notes/notes-widget";
 import { PageHeader } from "@/components/page-header";
+import { PeopleWidget } from "@/components/people/people-widget";
 import { PlacesWidget } from "@/components/places/places-widget";
 import { ReminderOverview } from "@/components/reminders/reminder-overview";
 import { SetupCard } from "@/components/setup/setup-card";
@@ -52,9 +53,7 @@ import { cn } from "@/utils/common";
 
 import { HiddenAmountsProvider } from "./amount-visibility";
 import { AttentionWidget } from "./attention-widget";
-import { ModulesWidget } from "./modules-widget";
 import { QuickActionsWidget } from "./quick-actions-widget";
-import { StatusWidget } from "./status-widget";
 import { TodayWidget } from "./today-widget";
 
 const widgetComponents: Record<WidgetId, ComponentType> = {
@@ -62,7 +61,6 @@ const widgetComponents: Record<WidgetId, ComponentType> = {
   quick_actions: QuickActionsWidget,
   attention: AttentionWidget,
   workspace: WorkspaceOverview,
-  status: StatusWidget,
   tasks: TaskWidget,
   reminders: ReminderOverview,
   calendar: CalendarWidget,
@@ -72,6 +70,7 @@ const widgetComponents: Record<WidgetId, ComponentType> = {
   shopping: ShoppingOverview,
   watchlist: WatchlistWidget,
   places: PlacesWidget,
+  people: PeopleWidget,
   cash_flow: CashFlowWidget,
   upcoming_payments: UpcomingPaymentsWidget,
   budget: BudgetWidget,
@@ -82,7 +81,6 @@ const widgetComponents: Record<WidgetId, ComponentType> = {
   nutrition: NutritionWidget,
   weight: WeightWidget,
   fitness_goals: FitnessGoalsWidget,
-  modules: ModulesWidget,
 };
 
 // Narrow widgets share a row: two on laptops, three on very wide screens. Wide ones fill it.

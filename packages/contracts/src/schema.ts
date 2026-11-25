@@ -801,7 +801,8 @@ export interface paths {
         put?: never;
         /**
          * Complete a task
-         * @description Idempotent: completing a completed task keeps its original completion time.
+         * @description Idempotent: completing a completed task keeps its original completion time. Completing a
+         *     repeating task also creates its next occurrence.
          */
         post: operations["complete_task_api_v1_workspaces__workspace_id__tasks__task_id__complete_post"];
         delete?: never;
@@ -964,6 +965,26 @@ export interface paths {
         put?: never;
         /** Add an item */
         post: operations["add_item_api_v1_workspaces__workspace_id__shopping_lists__list_id__items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/shopping/gifts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List gift ideas for people
+         * @description Items in any list that are gift ideas for someone in People, newest first.
+         */
+        get: operations["list_gifts_api_v1_workspaces__workspace_id__shopping_gifts_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1515,6 +1536,109 @@ export interface paths {
         patch: operations["update_place_api_v1_workspaces__workspace_id__places_items__place_id__patch"];
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/people/ledger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List money owed between you and everyone */
+        get: operations["get_ledger_api_v1_workspaces__workspace_id__people_ledger_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/people/{person_id}/ledger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record money owed or repaid
+         * @description A share split from an expense links to it (the expense stays whole in Finance). A
+         *     repayment with `record_in_finance` also records a refund or an expense, in one commit.
+         */
+        post: operations["create_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/people/{person_id}/ledger/{entry_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete money owed or repaid
+         * @description A Finance transaction recorded with it stays; delete that in Finance if needed.
+         */
+        delete: operations["delete_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger__entry_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update money owed or repaid */
+        patch: operations["update_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger__entry_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List people */
+        get: operations["list_people_api_v1_workspaces__workspace_id__people_get"];
+        put?: never;
+        /**
+         * Add a person
+         * @description Dates with `remind_days_before` share one reminder, managed here, that announces the
+         *     soonest one. Reminders carry the name and date only.
+         */
+        post: operations["create_person_api_v1_workspaces__workspace_id__people_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/people/{person_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a person */
+        get: operations["get_person_api_v1_workspaces__workspace_id__people__person_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a person
+         * @description Deletes their dates and their reminder too; notifications already delivered stay.
+         */
+        delete: operations["delete_person_api_v1_workspaces__workspace_id__people__person_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update a person */
+        patch: operations["update_person_api_v1_workspaces__workspace_id__people__person_id__patch"];
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/reminders": {
         parameters: {
             query?: never;
@@ -1877,6 +2001,66 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/statements/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview a bank statement
+         * @description Read the statement and propose what to do with each row. Nothing is saved.
+         */
+        post: operations["preview_statement_api_v1_workspaces__workspace_id__finance_statements_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/statements/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import reviewed statement rows
+         * @description All or nothing. Rows imported before are skipped, so repeating a request is safe.
+         */
+        post: operations["import_statement_api_v1_workspaces__workspace_id__finance_statements_imports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/finance/statements/imports/{batch_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Undo a statement import
+         * @description Delete the import's transactions, except ones a payment or goal now uses.
+         */
+        delete: operations["undo_statement_import_api_v1_workspaces__workspace_id__finance_statements_imports__batch_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -5627,6 +5811,139 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/briefings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Earlier briefings, newest first
+         * @description The person's briefings in this workspace, without their content.
+         */
+        get: operations["history_api_v1_workspaces__workspace_id__briefings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/briefings/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * How your briefing is prepared
+         * @description Your settings in this workspace, or the defaults (7 days ahead, every module, prepared
+         *     when opened).
+         */
+        get: operations["get_settings_api_v1_workspaces__workspace_id__briefings_settings_get"];
+        /**
+         * Change how your briefing is prepared
+         * @description Applies from the next briefing prepared; regenerate today's to see it now. A
+         *     preparation time uses your time zone preference, else UTC.
+         */
+        put: operations["put_settings_api_v1_workspaces__workspace_id__briefings_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/briefings/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Today's briefing, prepared if there isn't one yet
+         * @description Today in the given time zone. The first request of the day prepares the briefing from
+         *     each module; later ones return that same snapshot until it is regenerated. A module that
+         *     can't be read is listed in `content.unavailable`, and the briefing is `partial`.
+         */
+        get: operations["today_api_v1_workspaces__workspace_id__briefings_today_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/briefings/today/regenerate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prepare today's briefing again
+         * @description Replace today's snapshot with one read from the records as they are now. Earlier days
+         *     can't be regenerated: they are kept as they were.
+         */
+        post: operations["regenerate_api_v1_workspaces__workspace_id__briefings_today_regenerate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/briefings/{briefing_date}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The briefing prepared for a date
+         * @description A stored briefing, exactly as it was prepared: the one for `timezone`, or without it the
+         *     date's most recently prepared. Nothing is prepared here; use `/today`.
+         */
+        get: operations["on_date_api_v1_workspaces__workspace_id__briefings__briefing_date__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/briefings/{briefing_date}/narrative": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write a summary of a briefing with AI
+         * @description A headline, a few sentences, and up to three priorities, written by your AI provider
+         *     from the stored snapshot alone. The provider sees only modules Settings → AI allows, and
+         *     never money amounts, health measurements, descriptions, or note content. The summary is
+         *     kept with the briefing until it is regenerated.
+         */
+        post: operations["narrate_api_v1_workspaces__workspace_id__briefings__briefing_date__narrative_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/search": {
         parameters: {
             query?: never;
@@ -6548,6 +6865,229 @@ export interface paths {
         /** Retry records that failed to index */
         post: operations["retry_index_api_v1_workspaces__workspace_id__ai_index_retry_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/push": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get push notification status and preferences */
+        get: operations["get_push_status_api_v1_me_push_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/push/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Choose what push notifications to receive */
+        put: operations["update_push_preferences_api_v1_me_push_preferences_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/push/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Turn push notifications on for this device */
+        put: operations["save_push_subscription_api_v1_me_push_subscriptions_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/push/subscriptions/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Turn push notifications off for this device */
+        post: operations["remove_push_subscription_api_v1_me_push_subscriptions_remove_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/push/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a test notification to your devices */
+        post: operations["send_push_test_api_v1_me_push_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/voice/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Voice settings and where speech is processed */
+        get: operations["get_voice_settings_api_v1_me_voice_settings_get"];
+        /** Replace voice settings */
+        put: operations["update_voice_settings_api_v1_me_voice_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/voice/providers/{provider_id}/voices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A provider's voices, if it lists them */
+        get: operations["list_provider_voices_api_v1_me_voice_providers__provider_id__voices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/voice/transcriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Transcribe one utterance
+         * @description With the person's transcription provider. The audio is sent to it and discarded.
+         */
+        post: operations["transcribe_api_v1_workspaces__workspace_id__voice_transcriptions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/voice/speech": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Speak a sentence (streamed audio)
+         * @description The provider is asked first, so refusals are ordinary errors; then the audio streams.
+         */
+        post: operations["speak_api_v1_workspaces__workspace_id__voice_speech_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/voice/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check the voice providers answer
+         * @description Speaks a short phrase and transcribes it with the configured providers.
+         */
+        post: operations["test_voice_api_v1_workspaces__workspace_id__voice_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/voice/confirmations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Answer a pending action by voice
+         * @description The transcript is read on the server: only a short, clear yes approves, and only actions
+         *     voice may approve (new records, low risk, not proposed from untrusted content); others are
+         *     left for the screen. Approval runs through the same checks as a click.
+         */
+        post: operations["confirm_api_v1_workspaces__workspace_id__voice_confirmations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/voice/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete spoken conversations
+         * @description Deletes the person's conversations in this workspace that include a spoken question,
+         *     with their answers and proposals. Typed-only conversations are kept.
+         */
+        delete: operations["clear_voice_history_api_v1_workspaces__workspace_id__voice_history_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -7760,7 +8300,7 @@ export interface components {
              */
             autonomy: "read_only" | "suggest" | "approval" | "limited";
             /** Modules */
-            modules: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail")[];
+            modules: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail" | "shopping" | "places" | "saved" | "watchlist" | "people")[];
             /** Tool Modes */
             tool_modes: {
                 [key: string]: "off" | "ask" | "auto";
@@ -7847,7 +8387,7 @@ export interface components {
             /** Description */
             description: string;
             /** Module */
-            module: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail") | null;
+            module: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail" | "shopping" | "places" | "saved" | "watchlist" | "people") | null;
             /**
              * Access
              * @enum {string}
@@ -8308,6 +8848,12 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /**
+             * Input Mode
+             * @description `voice` when the question was spoken.
+             * @enum {string}
+             */
+            input_mode: "text" | "voice";
         };
         /** AiModelListResponse */
         AiModelListResponse: {
@@ -8469,7 +9015,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "create_task" | "create_reminder" | "create_event" | "create_note" | "append_to_note" | "add_note_tags" | "update_document_details";
+            kind: "create_task" | "create_reminder" | "create_event" | "create_note" | "append_to_note" | "add_note_tags" | "update_document_details" | "add_shopping_item" | "create_habit" | "log_water" | "log_weight" | "log_activity" | "add_transaction" | "add_place" | "save_link" | "add_watch_item" | "add_person";
             /** Payload */
             payload: {
                 [key: string]: unknown;
@@ -8639,6 +9185,11 @@ export interface components {
             monthly_token_limit: number | null;
             /** Indexing Enabled */
             indexing_enabled: boolean;
+            /**
+             * Auto Capture
+             * @description Add simple items the person typed without asking.
+             */
+            auto_capture: boolean;
         };
         /** AiSuggestedExerciseResponse */
         AiSuggestedExerciseResponse: {
@@ -8674,7 +9225,7 @@ export interface components {
              * Operation
              * @enum {string}
              */
-            operation: "chat" | "assist" | "embedding" | "test";
+            operation: "chat" | "assist" | "embedding" | "test" | "transcription" | "speech";
             /** Requests */
             requests: number;
             /** Failures */
@@ -9301,6 +9852,921 @@ export interface components {
              * @description Every bookmark, newest first.
              */
             bookmarks: components["schemas"]["BookmarkResponse"][];
+        };
+        /** BriefingAttentionItem */
+        BriefingAttentionItem: {
+            /** Key */
+            key: string;
+            /**
+             * Module
+             * @enum {string}
+             */
+            module: "tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments" | "people";
+            /** Title */
+            title: string;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+        };
+        /** BriefingBudgetItem */
+        BriefingBudgetItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Name */
+            name: string;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "overall" | "category";
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Period Start
+             * Format: date
+             */
+            period_start: string;
+            /**
+             * Period End
+             * Format: date
+             */
+            period_end: string;
+            /**
+             * Available
+             * @description Minor units.
+             */
+            available: number;
+            /** Spent */
+            spent: number;
+            /** Remaining */
+            remaining: number;
+            /**
+             * Utilization Bps
+             * @description Hundredths of a percent: 8750 is 87.5%.
+             */
+            utilization_bps: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "on_track" | "approaching" | "near" | "exceeded";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+        };
+        /** BriefingBudgets */
+        BriefingBudgets: {
+            /** Items */
+            items: components["schemas"]["BriefingBudgetItem"][];
+            /** Exceeded */
+            exceeded: number;
+            /** Approaching */
+            approaching: number;
+        };
+        /** BriefingConflict */
+        BriefingConflict: {
+            /**
+             * First
+             * @description An event's `ref.key`.
+             */
+            first: string;
+            /** Second */
+            second: string;
+            /**
+             * Start At
+             * Format: date-time
+             */
+            start_at: string;
+            /**
+             * End At
+             * Format: date-time
+             */
+            end_at: string;
+        };
+        /** BriefingContentResponse */
+        BriefingContentResponse: {
+            window: components["schemas"]["BriefingDayWindow"];
+            /** Horizon Days */
+            horizon_days: number;
+            summary: components["schemas"]["BriefingSummaryResponse"];
+            /** Sources */
+            sources: components["schemas"]["BriefingSourceState"][];
+            /** @description `null` when the source is unavailable. */
+            schedule: components["schemas"]["BriefingSchedule"] | null;
+            tasks: components["schemas"]["BriefingTasks"] | null;
+            deadlines: components["schemas"]["BriefingDeadlines"] | null;
+            reminders: components["schemas"]["BriefingReminders"] | null;
+            payments: components["schemas"]["BriefingPayments"] | null;
+            budgets: components["schemas"]["BriefingBudgets"] | null;
+            habits: components["schemas"]["BriefingHabits"] | null;
+            routines: components["schemas"]["BriefingRoutines"] | null;
+            health: components["schemas"]["BriefingHealth"] | null;
+            notes: components["schemas"]["BriefingNotes"] | null;
+            /** @description `null` when unavailable, left out, or in briefings prepared before it was added. */
+            documents: components["schemas"]["BriefingDocuments"] | null;
+            shopping: components["schemas"]["BriefingShopping"] | null;
+            investments: components["schemas"]["BriefingInvestments"] | null;
+            /** @description `null` when unavailable, left out, or in briefings prepared before it was added. */
+            people: components["schemas"]["BriefingPeople"] | null;
+            /** Unavailable */
+            unavailable: ("tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments" | "people")[];
+        };
+        /** BriefingDayWindow */
+        BriefingDayWindow: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Timezone */
+            timezone: string;
+            /**
+             * Start
+             * Format: date-time
+             * @description The day's first instant, in UTC.
+             */
+            start: string;
+            /**
+             * End
+             * Format: date-time
+             * @description The next day's first instant, in UTC (exclusive).
+             */
+            end: string;
+        };
+        /** BriefingDeadlines */
+        BriefingDeadlines: {
+            /** @description Open tasks due after today, within the horizon. */
+            tasks: components["schemas"]["BriefingTaskList"];
+            /** Savings Goals */
+            savings_goals: components["schemas"]["BriefingSavingsGoalItem"][];
+        };
+        /** BriefingDepositItem */
+        BriefingDepositItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Name */
+            name: string;
+            /** Institution */
+            institution: string;
+            /**
+             * Maturity Date
+             * Format: date
+             */
+            maturity_date: string;
+            /**
+             * Projected Maturity Amount
+             * @description Minor units.
+             */
+            projected_maturity_amount: number;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Matured
+             * @description Past its maturity date but still open.
+             */
+            matured: boolean;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+        };
+        /** BriefingDocumentItem */
+        BriefingDocumentItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Title */
+            title: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "expiry" | "renewal";
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Lapsed
+             * @description Expired, or its renewal date has passed.
+             */
+            lapsed: boolean;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+        };
+        /** BriefingDocuments */
+        BriefingDocuments: {
+            /**
+             * Items
+             * @description Expired first (most recent first), then expiring within 30 days and renewals within the horizon, soonest first.
+             */
+            items: components["schemas"]["BriefingDocumentItem"][];
+            /** Expired */
+            expired: number;
+            /** Expiring */
+            expiring: number;
+        };
+        /** BriefingEventItem */
+        BriefingEventItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Title */
+            title: string;
+            /** Location */
+            location: string;
+            /** All Day */
+            all_day: boolean;
+            /**
+             * Start At
+             * Format: date-time
+             */
+            start_at: string;
+            /**
+             * End At
+             * Format: date-time
+             */
+            end_at: string;
+            /**
+             * Local Start
+             * Format: date-time
+             * @description Wall-clock start in the event's time zone.
+             */
+            local_start: string;
+            /**
+             * Local End
+             * Format: date-time
+             */
+            local_end: string;
+            /** Event Timezone */
+            event_timezone: string;
+            /** Recurring */
+            recurring: boolean;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+        };
+        /** BriefingFitnessGoalItem */
+        BriefingFitnessGoalItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Name */
+            name: string;
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "body_weight" | "strength" | "workout_frequency" | "running_distance" | "running_duration" | "nutrition" | "water" | "custom";
+            /**
+             * Pace
+             * @enum {string}
+             */
+            pace: "ahead" | "on_track" | "behind" | "no_target_date" | "reached";
+            /** Reached */
+            reached: boolean;
+            /** Target Date */
+            target_date: string | null;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+        };
+        /** BriefingHabitItem */
+        BriefingHabitItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Name */
+            name: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "boolean" | "numeric" | "duration";
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "completed" | "partial" | "skipped" | "missed" | "pending" | "open" | "bonus" | "unscheduled" | "paused" | "inactive";
+            /** Done */
+            done: boolean;
+            /** Current Streak */
+            current_streak: number;
+            /**
+             * Streak Unit
+             * @enum {string}
+             */
+            streak_unit: "day" | "week";
+            /** Week Done */
+            week_done: number;
+            /** Week Due */
+            week_due: number;
+        };
+        /** BriefingHabits */
+        BriefingHabits: {
+            /** Habits */
+            habits: components["schemas"]["BriefingHabitItem"][];
+            /** Remaining */
+            remaining: number;
+            /** Done */
+            done: number;
+        };
+        /** BriefingHealth */
+        BriefingHealth: {
+            /** Workouts */
+            workouts: components["schemas"]["BriefingWorkoutItem"][];
+            /** Goals */
+            goals: components["schemas"]["BriefingFitnessGoalItem"][];
+        };
+        /** BriefingHistoryResponse */
+        BriefingHistoryResponse: {
+            /** Items */
+            items: components["schemas"]["BriefingListingResponse"][];
+            /** Total */
+            total: number;
+        };
+        /** BriefingInvestments */
+        BriefingInvestments: {
+            /**
+             * Sips
+             * @description Installments due within the horizon.
+             */
+            sips: components["schemas"]["BriefingSipItem"][];
+            /**
+             * Deposits
+             * @description Open deposits maturing within the horizon, or already matured.
+             */
+            deposits: components["schemas"]["BriefingDepositItem"][];
+        };
+        /** BriefingListingResponse */
+        BriefingListingResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Timezone */
+            timezone: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "complete" | "partial";
+            /** Revision */
+            revision: number;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            summary: components["schemas"]["BriefingSummaryResponse"];
+        };
+        /** BriefingNarrativePriority */
+        BriefingNarrativePriority: {
+            /**
+             * Key
+             * @description The `ref.key` of the briefing item it's about.
+             */
+            key: string;
+            /** Title */
+            title: string;
+            /** Reason */
+            reason: string;
+        };
+        /** BriefingNarrativeResponse */
+        BriefingNarrativeResponse: {
+            /** Headline */
+            headline: string;
+            /** Summary */
+            summary: string;
+            /** Priorities */
+            priorities: components["schemas"]["BriefingNarrativePriority"][];
+            /**
+             * Modules
+             * @description The modules the provider was given; AI permissions left out the rest.
+             */
+            modules: ("tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments" | "people")[];
+            /** Provider Name */
+            provider_name: string;
+            /** Model */
+            model: string;
+            /**
+             * Processing
+             * @description `local` or `cloud`.
+             */
+            processing: string;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+        };
+        /** BriefingNoteItem */
+        BriefingNoteItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Title */
+            title: string;
+            /**
+             * Note Type
+             * @enum {string}
+             */
+            note_type: "note" | "quick" | "journal";
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "linked" | "pinned";
+            /**
+             * Linked To
+             * @description `ref.key`s of the items the note is linked to.
+             */
+            linked_to: string[];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** BriefingNotes */
+        BriefingNotes: {
+            /** Items */
+            items: components["schemas"]["BriefingNoteItem"][];
+        };
+        /** BriefingPaymentItem */
+        BriefingPaymentItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "loan" | "subscription" | "bill";
+            /** Name */
+            name: string;
+            /** Counterparty */
+            counterparty: string;
+            /**
+             * Amount
+             * @description Minor units.
+             */
+            amount: number;
+            /** Estimated */
+            estimated: boolean;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "upcoming" | "due" | "overdue" | "paid" | "skipped";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+        };
+        /** BriefingPayments */
+        BriefingPayments: {
+            /** Items */
+            items: components["schemas"]["BriefingPaymentItem"][];
+            /** Overdue */
+            overdue: number;
+            /** Due Today */
+            due_today: number;
+            /** Upcoming */
+            upcoming: number;
+        };
+        /** BriefingPeople */
+        BriefingPeople: {
+            /**
+             * Items
+             * @description Soonest first; names and dates only.
+             */
+            items: components["schemas"]["BriefingPersonDateItem"][];
+            /** Today */
+            today: number;
+            /** Total */
+            total: number;
+        };
+        /** BriefingPersonDateItem */
+        BriefingPersonDateItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Name */
+            name: string;
+            /**
+             * Kind
+             * @description `birthday`, `anniversary`, or `other` (named by `label`).
+             */
+            kind: string;
+            /** Label */
+            label: string;
+            /**
+             * On
+             * Format: date
+             */
+            on: string;
+            /** Days Away */
+            days_away: number;
+            /**
+             * Years
+             * @description How old they turn, or years together, if known.
+             */
+            years: number | null;
+        };
+        /** BriefingRegenerateRequest */
+        BriefingRegenerateRequest: {
+            /**
+             * Timezone
+             * @description Where today is. Defaults to the user's preference, else UTC.
+             */
+            timezone?: string | null;
+        };
+        /** BriefingReminderItem */
+        BriefingReminderItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Title */
+            title: string;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /**
+             * Bucket
+             * @enum {string}
+             */
+            bucket: "overdue" | "due_today" | "upcoming";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+            /** Task Id */
+            task_id: string | null;
+        };
+        /** BriefingReminders */
+        BriefingReminders: {
+            /** Items */
+            items: components["schemas"]["BriefingReminderItem"][];
+            /**
+             * Represented Elsewhere
+             * @description Reminders left out because their task, event, payment, or habit is shown.
+             */
+            represented_elsewhere: number;
+        };
+        /** BriefingResponse */
+        BriefingResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Timezone */
+            timezone: string;
+            /**
+             * Status
+             * @description `partial` when a source couldn't be read.
+             * @enum {string}
+             */
+            status: "complete" | "partial";
+            /** Revision */
+            revision: number;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            content: components["schemas"]["BriefingContentResponse"];
+            /** @description The AI-written summary, if one was asked for; cleared on regeneration. */
+            narrative: components["schemas"]["BriefingNarrativeResponse"] | null;
+        };
+        /** BriefingRoutineItem */
+        BriefingRoutineItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Name */
+            name: string;
+            /**
+             * Time Of Day
+             * @description Local time, HH:MM.
+             */
+            time_of_day: string | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "completed" | "in_progress" | "not_started";
+            /** Steps */
+            steps: number;
+            /** Estimated Minutes */
+            estimated_minutes: number;
+        };
+        /** BriefingRoutines */
+        BriefingRoutines: {
+            /** Routines */
+            routines: components["schemas"]["BriefingRoutineItem"][];
+        };
+        /** BriefingSavingsGoalItem */
+        BriefingSavingsGoalItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Name */
+            name: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /** Target Amount */
+            target_amount: number;
+            /** Saved */
+            saved: number;
+            /** Progress Bps */
+            progress_bps: number;
+            /**
+             * Target Date
+             * Format: date
+             */
+            target_date: string;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+        };
+        /** BriefingSchedule */
+        BriefingSchedule: {
+            /**
+             * Events
+             * @description Today's confirmed occurrences: all-day first, then by start.
+             */
+            events: components["schemas"]["BriefingEventItem"][];
+            /** Time Blocks */
+            time_blocks: components["schemas"]["BriefingTimeBlock"][];
+            /** Conflicts */
+            conflicts: components["schemas"]["BriefingConflict"][];
+            /**
+             * Upcoming
+             * @description Timed occurrences after today, within the horizon.
+             */
+            upcoming: components["schemas"]["BriefingEventItem"][];
+        };
+        /**
+         * BriefingSettingsBody
+         * @description How a person's briefing is prepared. Applies from the next briefing prepared.
+         */
+        BriefingSettingsBody: {
+            /**
+             * Horizon Days
+             * @description How many days ahead upcoming events, deadlines, and payments look.
+             */
+            horizon_days: number;
+            /**
+             * Hidden
+             * @description Modules left out of the briefing entirely.
+             */
+            hidden: ("tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments" | "people")[];
+            /**
+             * Prepare At
+             * @description Local time (your time zone preference) to prepare the briefing each day; `null` prepares it only when opened.
+             */
+            prepare_at: string | null;
+        };
+        /** BriefingShopping */
+        BriefingShopping: {
+            /**
+             * Lists
+             * @description Lists with items still to buy.
+             */
+            lists: components["schemas"]["BriefingShoppingListItem"][];
+            /** Needed */
+            needed: number;
+        };
+        /** BriefingShoppingListItem */
+        BriefingShoppingListItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Name */
+            name: string;
+            /** Needed */
+            needed: number;
+        };
+        /** BriefingSipItem */
+        BriefingSipItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Holding Name */
+            holding_name: string;
+            /**
+             * Amount
+             * @description Minor units.
+             */
+            amount: number;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Auto Debit */
+            auto_debit: boolean;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+        };
+        /** BriefingSourceRef */
+        BriefingSourceRef: {
+            /**
+             * Module
+             * @enum {string}
+             */
+            module: "tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments" | "people";
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "task" | "event" | "reminder" | "commitment" | "budget" | "savings_goal" | "habit" | "routine" | "workout" | "fitness_goal" | "note" | "document" | "shopping_list" | "sip" | "deposit" | "person";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Occurrence
+             * @description One occurrence of a repeating record: an event's original start (UTC, ISO 8601), or a payment's due date.
+             */
+            occurrence: string | null;
+            /**
+             * Key
+             * @description Stable across regenerations and unique within a briefing.
+             */
+            key: string;
+        };
+        /** BriefingSourceState */
+        BriefingSourceState: {
+            /**
+             * Module
+             * @enum {string}
+             */
+            module: "tasks" | "calendar" | "reminders" | "payments" | "budgets" | "goals" | "habits" | "routines" | "health" | "notes" | "documents" | "shopping" | "investments" | "people";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "empty" | "unavailable" | "off";
+            /** Items */
+            items: number;
+            /**
+             * Loaded At
+             * Format: date-time
+             */
+            loaded_at: string;
+        };
+        /** BriefingSummaryResponse */
+        BriefingSummaryResponse: {
+            /** Events */
+            events: number;
+            /** Conflicts */
+            conflicts: number;
+            /** Tasks Overdue */
+            tasks_overdue: number;
+            /** Tasks Due Today */
+            tasks_due_today: number;
+            /** Reminders Due */
+            reminders_due: number;
+            /** Payments Overdue */
+            payments_overdue: number;
+            /** Payments Due */
+            payments_due: number;
+            /** Budgets Exceeded */
+            budgets_exceeded: number;
+            /** Budgets Approaching */
+            budgets_approaching: number;
+            /** Habits Remaining */
+            habits_remaining: number;
+            /** Habits Done */
+            habits_done: number;
+            /** Workouts */
+            workouts: number;
+            /**
+             * Attention
+             * @description The most pressing items, critical first, at most 10.
+             */
+            attention: components["schemas"]["BriefingAttentionItem"][];
+        };
+        /** BriefingTaskItem */
+        BriefingTaskItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Title */
+            title: string;
+            /**
+             * Priority
+             * @enum {string}
+             */
+            priority: "none" | "low" | "medium" | "high";
+            /** Due Date */
+            due_date: string | null;
+            /** Completed At */
+            completed_at: string | null;
+            /** Scheduled Start */
+            scheduled_start: string | null;
+            /** Scheduled End */
+            scheduled_end: string | null;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "critical" | "warning" | "info";
+            /**
+             * Reminder At
+             * @description The task's reminder today, which isn't listed again under reminders.
+             */
+            reminder_at: string | null;
+        };
+        /** BriefingTaskList */
+        BriefingTaskList: {
+            /** Items */
+            items: components["schemas"]["BriefingTaskItem"][];
+            /**
+             * Total
+             * @description Every matching task; `items` holds at most 10.
+             */
+            total: number;
+        };
+        /** BriefingTasks */
+        BriefingTasks: {
+            overdue: components["schemas"]["BriefingTaskList"];
+            due_today: components["schemas"]["BriefingTaskList"];
+            /** @description Open high-priority tasks due later or without a due date. */
+            high_priority: components["schemas"]["BriefingTaskList"];
+            /** @description Completed since the start of yesterday. */
+            completed: components["schemas"]["BriefingTaskList"];
+        };
+        /** BriefingTimeBlock */
+        BriefingTimeBlock: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Title */
+            title: string;
+            /**
+             * Start At
+             * Format: date-time
+             */
+            start_at: string;
+            /**
+             * End At
+             * Format: date-time
+             */
+            end_at: string;
+            /** Completed */
+            completed: boolean;
+        };
+        /** BriefingWorkoutItem */
+        BriefingWorkoutItem: {
+            ref: components["schemas"]["BriefingSourceRef"];
+            /** Name */
+            name: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "scheduled" | "in_progress" | "completed";
+            /** Start At */
+            start_at: string | null;
+            /** End At */
+            end_at: string | null;
         };
         /** BudgetDetailResponse */
         BudgetDetailResponse: {
@@ -10702,6 +12168,11 @@ export interface components {
              * @default
              */
             notes: string;
+            /**
+             * Person Id
+             * @description Make it a gift idea for someone in People.
+             */
+            person_id?: string | null;
         };
         /** CreateLinkedNoteRequest */
         CreateLinkedNoteRequest: {
@@ -10824,6 +12295,84 @@ export interface components {
             folder_id?: string | null;
             /** Tags */
             tags?: string[];
+        };
+        /** CreatePersonLedgerEntryRequest */
+        CreatePersonLedgerEntryRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "they_owe" | "i_owe" | "they_paid" | "i_paid";
+            /**
+             * Amount
+             * @description Minor units, always positive: ₹12.50 is 1250.
+             */
+            amount: number;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /** Description */
+            description: string;
+            /**
+             * Transaction Id
+             * @description For `they_owe`: the expense of yours this share was split from.
+             */
+            transaction_id?: string | null;
+            /** @description For repayments: also record a refund (`they_paid`) or an expense (`i_paid`) in Finance. */
+            record_in_finance?: components["schemas"]["PersonLedgerRecordRequest"] | null;
+        };
+        /**
+         * CreatePersonRequest
+         * @description Add a person. A name is enough; dates with `remind_days_before` get reminders.
+         */
+        CreatePersonRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Relationship
+             * @default friend
+             * @enum {string}
+             */
+            relationship: "family" | "partner" | "friend" | "colleague" | "other";
+            /**
+             * Phone
+             * @default
+             */
+            phone: string;
+            /**
+             * Email
+             * @default
+             */
+            email: string;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /**
+             * Favorite
+             * @default false
+             */
+            favorite: boolean;
+            /** Dates */
+            dates?: components["schemas"]["PersonDateBody"][];
+            /**
+             * Reminder Time
+             * @description 09:00 by default.
+             */
+            reminder_time?: string | null;
+            /**
+             * Timezone
+             * @description For reminders; the user's time zone by default.
+             */
+            timezone?: string | null;
         };
         /**
          * CreatePlaceRequest
@@ -11088,6 +12637,8 @@ export interface components {
              * @description A list in this workspace.
              */
             list_id?: string | null;
+            /** @description How the task repeats. Needs a due date. */
+            recurrence?: components["schemas"]["TaskRepeatBody"] | null;
         };
         /**
          * CreateTransactionRequest
@@ -11245,7 +12796,7 @@ export interface components {
              * Id
              * @enum {string}
              */
-            id: "today" | "quick_actions" | "attention" | "workspace" | "status" | "tasks" | "reminders" | "calendar" | "habits" | "notes" | "documents" | "shopping" | "watchlist" | "places" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "savings_goals" | "workouts" | "water" | "nutrition" | "weight" | "fitness_goals" | "modules";
+            id: "today" | "quick_actions" | "attention" | "workspace" | "tasks" | "reminders" | "calendar" | "habits" | "notes" | "documents" | "shopping" | "watchlist" | "places" | "people" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "savings_goals" | "workouts" | "water" | "nutrition" | "weight" | "fitness_goals";
             /**
              * Size
              * @description `half` widgets sit side by side on wide screens.
@@ -12284,7 +13835,7 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks" | "places";
+            module: "tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks" | "places" | "people";
             /** Label */
             label: string;
             /** Formats */
@@ -12293,7 +13844,7 @@ export interface components {
         /** ExportModuleRequest */
         ExportModuleRequest: {
             /** Module */
-            module: ("tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks" | "places") | null;
+            module: ("tasks" | "shopping" | "reminders" | "finance" | "notes" | "calendar" | "habits" | "documents" | "fitness" | "assistant" | "search" | "watchlist" | "bookmarks" | "places" | "people") | null;
             /**
              * Format
              * @enum {string}
@@ -13492,6 +15043,76 @@ export interface components {
             folder_id?: string | null;
             /** Category Id */
             category_id?: string | null;
+        };
+        /**
+         * ImportStatementRequest
+         * @description The rows the person confirmed after reviewing a preview. Leave skipped rows out.
+         */
+        ImportStatementRequest: {
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /**
+             * Today
+             * Format: date
+             */
+            today: string;
+            /** Rows */
+            rows: components["schemas"]["ImportStatementRowRequest"][];
+        };
+        /** ImportStatementResponse */
+        ImportStatementResponse: {
+            /**
+             * Batch Id
+             * Format: uuid
+             */
+            batch_id: string;
+            /** Created */
+            created: number;
+            /** Settled */
+            settled: number;
+            /** Already Imported */
+            already_imported: number;
+        };
+        /** ImportStatementRowRequest */
+        ImportStatementRowRequest: {
+            /** Fingerprint */
+            fingerprint: string;
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /** Description */
+            description: string;
+            /**
+             * Amount
+             * @description Minor units, always positive: ₹12.50 is 1250.
+             */
+            amount: number;
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "in" | "out";
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "create" | "settle" | "transfer";
+            /**
+             * Type
+             * @default expense
+             * @enum {string}
+             */
+            type: "income" | "expense" | "refund" | "transfer";
+            /** Category Id */
+            category_id?: string | null;
+            /** To Account Id */
+            to_account_id?: string | null;
+            settle?: components["schemas"]["StatementSettleRequest"] | null;
         };
         /** ImportedFileResponse */
         ImportedFileResponse: {
@@ -15519,6 +17140,14 @@ export interface components {
              */
             payments: components["schemas"]["PaymentItemResponse"][];
         };
+        /** PeopleResponse */
+        PeopleResponse: {
+            /**
+             * People
+             * @description Everyone, by name.
+             */
+            people: components["schemas"]["PersonResponse"][];
+        };
         /** PeriodChangeResponse */
         PeriodChangeResponse: {
             /** Months */
@@ -15544,6 +17173,215 @@ export interface components {
             duration_s: number;
             /** Volume G */
             volume_g: number;
+        };
+        /** PersonBalanceResponse */
+        PersonBalanceResponse: {
+            /**
+             * Person Id
+             * Format: uuid
+             */
+            person_id: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Amount
+             * @description Minor units: positive while they owe you, negative while you owe them.
+             */
+            amount: number;
+        };
+        /**
+         * PersonDateBody
+         * @description A date that comes round every year. Without a year, ages and years together aren't
+         *     known; 29 February falls on 28 February in other years.
+         */
+        PersonDateBody: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "birthday" | "anniversary" | "other";
+            /**
+             * Label
+             * @description The date's name; required for `other`, empty otherwise.
+             * @default
+             */
+            label: string;
+            /** Month */
+            month: number;
+            /** Day */
+            day: number;
+            /** Year */
+            year?: number | null;
+            /**
+             * Remind Days Before
+             * @description Days before the date to remind (0 is on the day); null for no reminder.
+             */
+            remind_days_before?: number | null;
+        };
+        /** PersonLedgerEntryResponse */
+        PersonLedgerEntryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Person Id
+             * Format: uuid
+             */
+            person_id: string;
+            /**
+             * Kind
+             * @description `they_owe` (you paid or lent), `i_owe` (they did), or a repayment: `they_paid` or `i_paid`.
+             * @enum {string}
+             */
+            kind: "they_owe" | "i_owe" | "they_paid" | "i_paid";
+            /**
+             * Amount
+             * @description Minor units, always positive; `kind` says which way.
+             */
+            amount: number;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /** Description */
+            description: string;
+            transaction: components["schemas"]["PersonLinkedTransactionResponse"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * PersonLedgerRecordRequest
+         * @description Record a repayment in Finance too, in the same commit.
+         */
+        PersonLedgerRecordRequest: {
+            /**
+             * Account Id
+             * Format: uuid
+             * @description Where the money arrived or left from.
+             */
+            account_id: string;
+            /**
+             * Category Id
+             * Format: uuid
+             * @description An expense category: the shared expense's, so your spending comes down to your share.
+             */
+            category_id: string;
+        };
+        /** PersonLedgerResponse */
+        PersonLedgerResponse: {
+            /**
+             * Entries
+             * @description Newest first.
+             */
+            entries: components["schemas"]["PersonLedgerEntryResponse"][];
+            /**
+             * Balances
+             * @description Each person's non-zero balance per currency; currencies are never mixed.
+             */
+            balances: components["schemas"]["PersonBalanceResponse"][];
+        };
+        /**
+         * PersonLinkedTransactionResponse
+         * @description The Finance transaction behind an entry; null once that transaction is deleted.
+         */
+        PersonLinkedTransactionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Type */
+            type: string;
+            /** Description */
+            description: string;
+            /** Amount */
+            amount: number;
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Category Id */
+            category_id: string | null;
+        };
+        /** PersonResponse */
+        PersonResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Relationship
+             * @enum {string}
+             */
+            relationship: "family" | "partner" | "friend" | "colleague" | "other";
+            /**
+             * Phone
+             * @description Empty when not given.
+             */
+            phone: string;
+            /**
+             * Email
+             * @description Empty when not given.
+             */
+            email: string;
+            /**
+             * Note
+             * @description Empty when not given.
+             */
+            note: string;
+            /** Favorite */
+            favorite: boolean;
+            /**
+             * Dates
+             * @description In the order the user listed them.
+             */
+            dates: components["schemas"]["PersonDateBody"][];
+            /**
+             * Reminder Time
+             * Format: time
+             * @description When date reminders fire, in `timezone`.
+             */
+            reminder_time: string;
+            /** Timezone */
+            timezone: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** PersonalRecordResponse */
         PersonalRecordResponse: {
@@ -16058,6 +17896,56 @@ export interface components {
             /** Episode */
             episode: number;
         };
+        /** PushStatusResponse */
+        PushStatusResponse: {
+            /**
+             * Available
+             * @description Whether this server can send push notifications.
+             */
+            available: boolean;
+            /**
+             * Public Key
+             * @description The key browsers subscribe with.
+             */
+            public_key: string | null;
+            /**
+             * Reminders
+             * @description Send a notification when a reminder is due.
+             */
+            reminders: boolean;
+            /**
+             * Briefing
+             * @description Send a notification when the daily briefing is ready.
+             */
+            briefing: boolean;
+            /**
+             * Show Details
+             * @description Include a reminder's title and message.
+             */
+            show_details: boolean;
+            /**
+             * Devices
+             * @description How many devices have push turned on.
+             */
+            devices: number;
+        };
+        /** PushSubscriptionRequest */
+        PushSubscriptionRequest: {
+            /** Endpoint */
+            endpoint: string;
+            /** P256Dh */
+            p256dh: string;
+            /** Auth */
+            auth: string;
+        };
+        /** PushTestResponse */
+        PushTestResponse: {
+            /**
+             * Sent
+             * @description How many devices' push services accepted the notification.
+             */
+            sent: number;
+        };
         /** QualityResponse */
         QualityResponse: {
             /** Estimated */
@@ -16452,10 +18340,10 @@ export interface components {
         ReminderCommitmentResponse: {
             /**
              * Kind
-             * @description `loan`, `recurring_payment` for a subscription or bill, `deposit` for a fixed or recurring deposit's maturity, `calendar_alert` for one of a calendar event's alerts (`id` is the alert's), `habit_reminder` for a habit's or routine's reminder time (`id` is the reminder time's), or `document` for a document's expiry, renewal, and review alerts (`id` is the document's).
+             * @description `loan`, `recurring_payment` for a subscription or bill, `deposit` for a fixed or recurring deposit's maturity, `calendar_alert` for one of a calendar event's alerts (`id` is the alert's), `habit_reminder` for a habit's or routine's reminder time (`id` is the reminder time's), `document` for a document's expiry, renewal, and review alerts (`id` is the document's), or `person` for a person's birthday, anniversary, and other dates (`id` is the person's).
              * @enum {string}
              */
-            kind: "loan" | "recurring_payment" | "deposit" | "calendar_alert" | "habit_reminder" | "document";
+            kind: "loan" | "recurring_payment" | "deposit" | "calendar_alert" | "habit_reminder" | "document" | "person";
             /**
              * Id
              * Format: uuid
@@ -16630,6 +18518,11 @@ export interface components {
             /** Url */
             url: string | null;
             imported: components["schemas"]["IntegrationLinkResponse"] | null;
+        };
+        /** RemovePushSubscriptionRequest */
+        RemovePushSubscriptionRequest: {
+            /** Endpoint */
+            endpoint: string;
         };
         /** RenameAiConversationRequest */
         RenameAiConversationRequest: {
@@ -17000,12 +18893,12 @@ export interface components {
              * Module
              * @description Repeat to search only some modules.
              */
-            module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places")[];
+            module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places" | "people")[];
             /**
              * Type
              * @description Repeat to search only some record types.
              */
-            type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place")[];
+            type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place" | "person")[];
             /**
              * Date From
              * @description The record's own date: due date, event, transaction, …
@@ -17161,7 +19054,7 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places";
+            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places" | "people";
             /**
              * Total
              * @description Matches under every filter except the module filter.
@@ -17251,6 +19144,12 @@ export interface components {
              * @description The viewer's zone for 'today'; defaults to the profile's.
              */
             timezone?: string | null;
+            /**
+             * Input Mode
+             * @description `voice` when the question was spoken and transcribed; it is answered the same way and saved as the question's origin.
+             * @enum {string}
+             */
+            input_mode?: "text" | "voice";
         };
         /** SessionExerciseResponse */
         SessionExerciseResponse: {
@@ -17580,6 +19479,11 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+            /**
+             * Person Id
+             * @description Who it's a gift idea for, from People.
+             */
+            person_id: string | null;
         };
         /** ShoppingItemsResponse */
         ShoppingItemsResponse: {
@@ -17829,6 +19733,11 @@ export interface components {
              */
             updated_at: string;
         };
+        /** SpeakVoiceRequest */
+        SpeakVoiceRequest: {
+            /** Text */
+            text: string;
+        };
         /** SpendingResponse */
         SpendingResponse: {
             /**
@@ -17895,6 +19804,132 @@ export interface components {
              * @description A scheduled workout's event; its template is used.
              */
             calendar_event_id?: string | null;
+        };
+        /** StatementColumnsResponse */
+        StatementColumnsResponse: {
+            /** Date */
+            date: number;
+            /** Description */
+            description: number;
+            /** Withdrawal */
+            withdrawal: number | null;
+            /** Deposit */
+            deposit: number | null;
+            /** Amount */
+            amount: number | null;
+            /** Direction */
+            direction: number | null;
+            /** Balance */
+            balance: number | null;
+        };
+        /** StatementPaymentMatchResponse */
+        StatementPaymentMatchResponse: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "loan" | "subscription" | "bill";
+            /**
+             * Commitment Id
+             * Format: uuid
+             */
+            commitment_id: string;
+            /** Occurrence Id */
+            occurrence_id: string | null;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Name */
+            name: string;
+        };
+        /** StatementPreviewResponse */
+        StatementPreviewResponse: {
+            /**
+             * Status
+             * @description `ready` with rows to review; `needs_mapping` when the columns or the date order must be chosen; `password_required` or `wrong_password` for a locked PDF.
+             * @enum {string}
+             */
+            status: "ready" | "needs_mapping" | "password_required" | "wrong_password";
+            /** Source */
+            source: ("text" | "excel" | "pdf") | null;
+            /** Headers */
+            headers: string[];
+            /** Header Row */
+            header_row: number | null;
+            columns: components["schemas"]["StatementColumnsResponse"] | null;
+            /** Needs Date Order */
+            needs_date_order: boolean;
+            /** Rows */
+            rows: components["schemas"]["StatementRowResponse"][];
+        };
+        /** StatementRowResponse */
+        StatementRowResponse: {
+            /** Fingerprint */
+            fingerprint: string;
+            /**
+             * Line
+             * @description The row's position below the header, from 1.
+             */
+            line: number;
+            /**
+             * Occurred On
+             * Format: date
+             */
+            occurred_on: string;
+            /** Description */
+            description: string;
+            /** Amount */
+            amount: number;
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "in" | "out";
+            /** Balance */
+            balance: number | null;
+            /**
+             * Action
+             * @description What Orbit suggests doing with the row.
+             * @enum {string}
+             */
+            action: "create" | "skip" | "settle" | "transfer";
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "new" | "already_imported" | "possible_duplicate" | "recorded_payment" | "payment_due" | "balance_mismatch" | "unreadable_amount";
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "income" | "expense" | "refund" | "transfer";
+            /** Category Id */
+            category_id: string | null;
+            payment: components["schemas"]["StatementPaymentMatchResponse"] | null;
+            /** Duplicate Of */
+            duplicate_of: string | null;
+        };
+        /** StatementSettleRequest */
+        StatementSettleRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "loan" | "subscription" | "bill";
+            /**
+             * Commitment Id
+             * Format: uuid
+             */
+            commitment_id: string;
+            /** Occurrence Id */
+            occurrence_id?: string | null;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
         };
         /**
          * StorageLocationResponse
@@ -18082,6 +20117,23 @@ export interface components {
             /** Lists */
             lists: components["schemas"]["TaskListDetailResponse"][];
         };
+        /**
+         * TaskRepeatBody
+         * @description How a task repeats, counted from its due date.
+         */
+        TaskRepeatBody: {
+            /**
+             * Frequency
+             * @enum {string}
+             */
+            frequency: "daily" | "weekly" | "monthly" | "yearly";
+            /**
+             * Interval
+             * @description Every this many days, weeks, months, or years.
+             * @default 1
+             */
+            interval: number;
+        };
         /** TaskResponse */
         TaskResponse: {
             /**
@@ -18133,6 +20185,8 @@ export interface components {
              * @description The list the task is on, if any.
              */
             list_id: string | null;
+            /** @description How the task repeats. Completing it creates the next occurrence, which takes over the repeat, so completed tasks have none. */
+            recurrence: components["schemas"]["TaskRepeatBody"] | null;
             /**
              * Created At
              * Format: date-time
@@ -18458,6 +20512,16 @@ export interface components {
              */
             months: components["schemas"]["MonthCashFlowResponse"][];
         };
+        /** UndoStatementImportResponse */
+        UndoStatementImportResponse: {
+            /** Removed */
+            removed: number;
+            /**
+             * Kept
+             * @description Transactions kept because a payment or goal now uses them.
+             */
+            kept: number;
+        };
         /** UnequipRewardRequest */
         UnequipRewardRequest: {
             /**
@@ -18472,12 +20536,12 @@ export interface components {
              * Module
              * @enum {string}
              */
-            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places";
+            module: "tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places" | "people";
             /**
              * Entity Type
              * @enum {string}
              */
-            entity_type: "task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place";
+            entity_type: "task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place" | "person";
             /**
              * Id
              * Format: uuid
@@ -18569,7 +20633,7 @@ export interface components {
              * Unavailable
              * @description Modules that couldn't be searched.
              */
-            unavailable: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places")[];
+            unavailable: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places" | "people")[];
         };
         /** UnreadCountResponse */
         UnreadCountResponse: {
@@ -18612,7 +20676,7 @@ export interface components {
             /** Autonomy */
             autonomy?: ("read_only" | "suggest" | "approval" | "limited") | null;
             /** Modules */
-            modules?: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail")[] | null;
+            modules?: ("tasks" | "notes" | "calendar" | "reminders" | "habits" | "documents" | "finance" | "health" | "mail" | "shopping" | "places" | "saved" | "watchlist" | "people")[] | null;
             /** Tool Modes */
             tool_modes?: {
                 [key: string]: "off" | "ask" | "auto";
@@ -18671,6 +20735,8 @@ export interface components {
             monthly_token_limit?: number | null;
             /** Indexing Enabled */
             indexing_enabled?: boolean | null;
+            /** Auto Capture */
+            auto_capture?: boolean | null;
         };
         /**
          * UpdateAssetRequest
@@ -19058,8 +21124,8 @@ export interface components {
         };
         /**
          * UpdateItemRequest
-         * @description Change some of an item's fields. Omitted fields keep their values; `quantity: null` and
-         *     `url: null` clear them. Purchasing has its own endpoints.
+         * @description Change some of an item's fields. Omitted fields keep their values; `quantity: null`,
+         *     `url: null`, and `person_id: null` clear them. Purchasing has its own endpoints.
          */
         UpdateItemRequest: {
             /** Name */
@@ -19070,6 +21136,8 @@ export interface components {
             url?: string | null;
             /** Notes */
             notes?: string | null;
+            /** Person Id */
+            person_id?: string | null;
         };
         /**
          * UpdateLoanRequest
@@ -19155,6 +21223,43 @@ export interface components {
             status?: ("confirmed" | "cancelled") | null;
         };
         /**
+         * UpdatePersonLedgerEntryRequest
+         * @description Change an entry's amount, date, or description. Its kind and links stay.
+         */
+        UpdatePersonLedgerEntryRequest: {
+            /** Amount */
+            amount?: number | null;
+            /** Occurred On */
+            occurred_on?: string | null;
+            /** Description */
+            description?: string | null;
+        };
+        /**
+         * UpdatePersonRequest
+         * @description Change some of a person's fields. Omitted fields keep their values; `dates` replaces all
+         *     of them.
+         */
+        UpdatePersonRequest: {
+            /** Name */
+            name?: string | null;
+            /** Relationship */
+            relationship?: ("family" | "partner" | "friend" | "colleague" | "other") | null;
+            /** Phone */
+            phone?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Favorite */
+            favorite?: boolean | null;
+            /** Dates */
+            dates?: components["schemas"]["PersonDateBody"][] | null;
+            /** Reminder Time */
+            reminder_time?: string | null;
+            /** Timezone */
+            timezone?: string | null;
+        };
+        /**
          * UpdatePlaceRequest
          * @description Change some of a place's fields. Omitted fields keep their values; `location: null`
          *     removes the pin and `visited_on: null` clears the date. Moving a place to `want_to_visit`
@@ -19189,6 +21294,15 @@ export interface components {
             timezone?: string | null;
             /** Setup Status */
             setup_status?: ("pending" | "deferred" | "done") | null;
+        };
+        /** UpdatePushPreferencesRequest */
+        UpdatePushPreferencesRequest: {
+            /** Reminders */
+            reminders: boolean;
+            /** Briefing */
+            briefing: boolean;
+            /** Show Details */
+            show_details: boolean;
         };
         /**
          * UpdateRecurringPaymentRequest
@@ -19396,6 +21510,8 @@ export interface components {
              * @description Move the task to this list; `null` takes it off its list.
              */
             list_id?: string | null;
+            /** @description How the task repeats; `null` stops it repeating. */
+            recurrence?: components["schemas"]["TaskRepeatBody"] | null;
         };
         /**
          * UpdateTransactionRequest
@@ -19421,6 +21537,52 @@ export interface components {
             category_id?: string | null;
             /** Notes */
             notes?: string | null;
+        };
+        /**
+         * UpdateVoiceSettingsRequest
+         * @description Replaces the settings. Provider engines need a provider and model (and a voice for
+         *     speech); browser engines ignore them.
+         */
+        UpdateVoiceSettingsRequest: {
+            /**
+             * Stt Engine
+             * @enum {string}
+             */
+            stt_engine: "browser" | "provider";
+            /** Stt Provider Id */
+            stt_provider_id: string | null;
+            /** Stt Model */
+            stt_model: string | null;
+            /**
+             * Tts Engine
+             * @enum {string}
+             */
+            tts_engine: "browser" | "provider";
+            /** Tts Provider Id */
+            tts_provider_id: string | null;
+            /** Tts Model */
+            tts_model: string | null;
+            /** Tts Voice */
+            tts_voice: string | null;
+            /** Recognition Language */
+            recognition_language: string;
+            /** Response Language */
+            response_language: string | null;
+            /**
+             * Listening Mode
+             * @enum {string}
+             */
+            listening_mode: "continuous" | "push_to_talk";
+            /** Silence Ms */
+            silence_ms: number;
+            /** Sensitivity */
+            sensitivity: number;
+            /** Auto Speak */
+            auto_speak: boolean;
+            /** Speaking Rate */
+            speaking_rate: number;
+            /** History Days */
+            history_days: number | null;
         };
         /**
          * UpdateWatchItemRequest
@@ -19515,6 +21677,196 @@ export interface components {
             level: "checksum" | "full";
             /** Message */
             message: string;
+        };
+        /**
+         * VoiceConfirmationRequest
+         * @description A spoken reply to one pending action, checked on the server. For a proposal, name the
+         *     conversation it was proposed in; for an agent approval, send the `arguments_hash` that was
+         *     read out, so only that exact action can run.
+         */
+        VoiceConfirmationRequest: {
+            /**
+             * Target
+             * @enum {string}
+             */
+            target: "proposal" | "agent_approval";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Transcript */
+            transcript: string;
+            /** Conversation Id */
+            conversation_id?: string | null;
+            /** Arguments Hash */
+            arguments_hash?: string | null;
+            /** Timezone */
+            timezone?: string | null;
+        };
+        /** VoiceConfirmationResponse */
+        VoiceConfirmationResponse: {
+            /**
+             * Outcome
+             * @description `approved` or `rejected` ran the decision; `unclear` and `needs_screen` changed nothing; `not_pending` means it was already decided.
+             * @enum {string}
+             */
+            outcome: "approved" | "rejected" | "unclear" | "needs_screen" | "not_pending";
+            /**
+             * Reply
+             * @description How the transcript was read.
+             * @enum {string}
+             */
+            reply: "confirm" | "reject" | "unclear";
+            /**
+             * Message
+             * @description A short sentence to speak back.
+             */
+            message: string;
+            proposal: components["schemas"]["AiProposalResponse"] | null;
+            approval: components["schemas"]["AgentApprovalResponse"] | null;
+        };
+        /** VoiceHistoryClearResponse */
+        VoiceHistoryClearResponse: {
+            /**
+             * Removed
+             * @description Conversations deleted.
+             */
+            removed: number;
+        };
+        /** VoiceOptionListResponse */
+        VoiceOptionListResponse: {
+            /**
+             * Voices
+             * @description Empty when the provider doesn't list its voices: type a voice name.
+             */
+            voices: components["schemas"]["VoiceOptionResponse"][];
+        };
+        /** VoiceOptionResponse */
+        VoiceOptionResponse: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** VoiceProviderResponse */
+        VoiceProviderResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "openai" | "anthropic" | "gemini" | "ollama" | "openai_compatible";
+            /**
+             * Processing
+             * @enum {string}
+             */
+            processing: "local" | "cloud";
+        };
+        /** VoiceSettingsResponse */
+        VoiceSettingsResponse: {
+            /**
+             * Stt Engine
+             * @enum {string}
+             */
+            stt_engine: "browser" | "provider";
+            /** Stt Provider Id */
+            stt_provider_id: string | null;
+            /** Stt Model */
+            stt_model: string | null;
+            /**
+             * Tts Engine
+             * @enum {string}
+             */
+            tts_engine: "browser" | "provider";
+            /** Tts Provider Id */
+            tts_provider_id: string | null;
+            /** Tts Model */
+            tts_model: string | null;
+            /** Tts Voice */
+            tts_voice: string | null;
+            /** Recognition Language */
+            recognition_language: string;
+            /** Response Language */
+            response_language: string | null;
+            /**
+             * Listening Mode
+             * @enum {string}
+             */
+            listening_mode: "continuous" | "push_to_talk";
+            /** Silence Ms */
+            silence_ms: number;
+            /** Sensitivity */
+            sensitivity: number;
+            /** Auto Speak */
+            auto_speak: boolean;
+            /**
+             * Speaking Rate
+             * @description Percent of normal speed.
+             */
+            speaking_rate: number;
+            /**
+             * History Days
+             * @description Spoken conversations are deleted this long after their last message; `null` keeps them until deleted.
+             */
+            history_days: number | null;
+            /** Updated At */
+            updated_at: string | null;
+            /**
+             * Server Enabled
+             * @description Whether AI is allowed on this server.
+             */
+            server_enabled: boolean;
+            /**
+             * Ai Enabled
+             * @description Whether AI is on for this person.
+             */
+            ai_enabled: boolean;
+            /** Allow Cloud */
+            allow_cloud: boolean;
+            /** Stt Processing */
+            stt_processing: ("local" | "cloud" | "browser") | null;
+            /** Tts Processing */
+            tts_processing: ("local" | "cloud" | "browser") | null;
+            /**
+             * Providers
+             * @description The person's AI providers that can transcribe or speak.
+             */
+            providers: components["schemas"]["VoiceProviderResponse"][];
+            /**
+             * Stores Audio
+             * @description Always false: Orbit never stores audio.
+             */
+            stores_audio: boolean;
+        };
+        /** VoiceTestResponse */
+        VoiceTestResponse: {
+            /** Ok */
+            ok: boolean;
+            /** Message */
+            message: string;
+            /** Transcription Ms */
+            transcription_ms: number | null;
+            /** Speech Ms */
+            speech_ms: number | null;
+        };
+        /** VoiceTranscriptResponse */
+        VoiceTranscriptResponse: {
+            /** Text */
+            text: string;
+            /** Language */
+            language: string | null;
+            /**
+             * Duration Ms
+             * @description How long the provider took.
+             */
+            duration_ms: number;
         };
         /** WatchItemResponse */
         WatchItemResponse: {
@@ -22124,7 +24476,10 @@ export interface operations {
     };
     complete_task_api_v1_workspaces__workspace_id__tasks__task_id__complete_post: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description The client's local date, which decides when a repeating task comes due next. Defaults to today's date in UTC. */
+                today?: string | null;
+            };
             header?: never;
             path: {
                 /** @description The task's ID. */
@@ -22782,6 +25137,51 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ShoppingItemResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, list, or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_gifts_api_v1_workspaces__workspace_id__shopping_gifts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShoppingItemsResponse"];
                 };
             };
             /** @description Not signed in. */
@@ -25026,6 +27426,431 @@ export interface operations {
             };
         };
     };
+    get_ledger_api_v1_workspaces__workspace_id__people_ledger_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonLedgerResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's ID. */
+                person_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePersonLedgerEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonLedgerEntryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A link or record that doesn't fit the entry. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger__entry_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's ID. */
+                person_id: string;
+                /** @description The ledger entry's ID. */
+                entry_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_ledger_entry_api_v1_workspaces__workspace_id__people__person_id__ledger__entry_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's ID. */
+                person_id: string;
+                /** @description The ledger entry's ID. */
+                entry_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePersonLedgerEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonLedgerEntryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A repayment recorded in Finance keeps its amount. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_people_api_v1_workspaces__workspace_id__people_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeopleResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_person_api_v1_workspaces__workspace_id__people_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePersonRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A date doesn't exist, or there are two birthdays. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_person_api_v1_workspaces__workspace_id__people__person_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's ID. */
+                person_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_person_api_v1_workspaces__workspace_id__people__person_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's ID. */
+                person_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_person_api_v1_workspaces__workspace_id__people__person_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's ID. */
+                person_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePersonRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or person is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A date doesn't exist, or there are two birthdays. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_reminders_api_v1_workspaces__workspace_id__reminders_get: {
         parameters: {
             query?: {
@@ -26457,6 +29282,172 @@ export interface operations {
                 content?: never;
             };
             /** @description The workspace, account, category, or transaction does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_statement_api_v1_workspaces__workspace_id__finance_statements_preview_post: {
+        parameters: {
+            query: {
+                account_id: string;
+                /** @description The person's local date, to tell overdue bills apart. */
+                today: string;
+                /** @description Day first (`dmy`) or month first (`mdy`) for numeric dates. */
+                date_order?: ("dmy" | "mdy") | null;
+                header_row?: number | null;
+                date_column?: number | null;
+                description_column?: number | null;
+                withdrawal_column?: number | null;
+                deposit_column?: number | null;
+                amount_column?: number | null;
+                direction_column?: number | null;
+                balance_column?: number | null;
+            };
+            header?: {
+                /** @description The PDF's password, base64-encoded. Never stored or logged. */
+                "x-statement-password"?: string | null;
+            };
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        /** @description The statement file: PDF, Excel (`.xlsx` or `.xls`), or CSV. */
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementPreviewResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, or import does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The file is larger than 5 MB. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The file can't be read, or the chosen columns don't fit it. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    import_statement_api_v1_workspaces__workspace_id__finance_statements_imports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportStatementRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportStatementResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, or import does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A row breaks a rule; nothing was imported. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    undo_statement_import_api_v1_workspaces__workspace_id__finance_statements_imports__batch_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The import's ID. */
+                batch_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UndoStatementImportResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, account, or import does not exist. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -41062,6 +44053,357 @@ export interface operations {
             };
         };
     };
+    history_api_v1_workspaces__workspace_id__briefings_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BriefingHistoryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_settings_api_v1_workspaces__workspace_id__briefings_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BriefingSettingsBody"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_settings_api_v1_workspaces__workspace_id__briefings_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BriefingSettingsBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BriefingSettingsBody"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    today_api_v1_workspaces__workspace_id__briefings_today_get: {
+        parameters: {
+            query?: {
+                /** @description Where today is. Defaults to the user's preference, else UTC. */
+                timezone?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BriefingResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    regenerate_api_v1_workspaces__workspace_id__briefings_today_regenerate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BriefingRegenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BriefingResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    on_date_api_v1_workspaces__workspace_id__briefings__briefing_date__get: {
+        parameters: {
+            query?: {
+                /** @description Which time zone's briefing for the date. Omit for the date's most recently prepared one. */
+                timezone?: string | null;
+            };
+            header?: never;
+            path: {
+                briefing_date: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BriefingResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No briefing was prepared for that date. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    narrate_api_v1_workspaces__workspace_id__briefings__briefing_date__narrative_post: {
+        parameters: {
+            query?: {
+                /** @description Which time zone's briefing for the date. Omit for the date's most recently prepared one. */
+                timezone?: string | null;
+            };
+            header?: never;
+            path: {
+                briefing_date: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BriefingResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description AI may not read any of the briefing's modules. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No briefing was prepared for that date. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description AI is off or not set up. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     search_api_v1_workspaces__workspace_id__search_get: {
         parameters: {
             query: {
@@ -41118,9 +44460,9 @@ export interface operations {
         parameters: {
             query: {
                 /** @description Repeat to search only some modules. */
-                module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places")[];
+                module?: ("tasks" | "notes" | "calendar" | "reminders" | "finance" | "habits" | "documents" | "health" | "watchlist" | "bookmarks" | "places" | "people")[];
                 /** @description Repeat to search only some record types. */
-                type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place")[];
+                type?: ("task" | "note" | "event" | "reminder" | "account" | "transaction" | "loan" | "subscription" | "bill" | "holding" | "deposit" | "asset" | "budget" | "savings_goal" | "habit" | "routine" | "document" | "exercise" | "workout" | "workout_template" | "fitness_goal" | "measurement" | "watch_item" | "bookmark" | "place" | "person")[];
                 /** @description The record's own date: due date, event, transaction, … */
                 date_from?: string | null;
                 date_to?: string | null;
@@ -43948,6 +47290,578 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AiIndexActionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_push_status_api_v1_me_push_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushStatusResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_push_preferences_api_v1_me_push_preferences_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePushPreferencesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushStatusResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_push_subscription_api_v1_me_push_subscriptions_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushSubscriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushStatusResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The subscription isn't from a known browser push service. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Push notifications aren't available on this server. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    remove_push_subscription_api_v1_me_push_subscriptions_remove_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RemovePushSubscriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushStatusResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_push_test_api_v1_me_push_test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PushTestResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Push notifications aren't available on this server. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_voice_settings_api_v1_me_voice_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceSettingsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_voice_settings_api_v1_me_voice_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateVoiceSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceSettingsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_provider_voices_api_v1_me_voice_providers__provider_id__voices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceOptionListResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transcribe_api_v1_workspaces__workspace_id__voice_transcriptions_post: {
+        parameters: {
+            query?: {
+                /** @description Overrides the recognition language for this utterance. */
+                language?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        /** @description One utterance, typed by `Content-Type` (`audio/webm`, `audio/ogg`, `audio/wav`, `audio/mpeg`, `audio/mp4`). */
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceTranscriptResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description AI is off, transcription isn't set up, or cloud isn't allowed. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The recording is too large. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The audio is empty or not a supported type. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The monthly AI limit has been reached. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    speak_api_v1_workspaces__workspace_id__voice_speech_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpeakVoiceRequest"];
+            };
+        };
+        responses: {
+            /** @description MP3 audio as it's generated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "audio/mpeg": unknown;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description AI is off, speech isn't set up, or cloud isn't allowed. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The monthly AI limit has been reached. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    test_voice_api_v1_workspaces__workspace_id__voice_test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceTestResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_api_v1_workspaces__workspace_id__voice_confirmations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoiceConfirmationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceConfirmationResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace (or record) does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The approval changed, expired, or was already decided. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clear_voice_history_api_v1_workspaces__workspace_id__voice_history_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceHistoryClearResponse"];
                 };
             };
             /** @description Not signed in. */

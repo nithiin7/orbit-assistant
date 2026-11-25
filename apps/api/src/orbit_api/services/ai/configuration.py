@@ -109,6 +109,7 @@ class SettingsChanges:
     response_style: Change[ResponseStyle] = UNSET
     monthly_token_limit: Change[int | None] = UNSET
     indexing_enabled: Change[bool] = UNSET
+    auto_capture: Change[bool] = UNSET
 
 
 @dataclass(frozen=True, slots=True)
@@ -196,6 +197,7 @@ class AiConfigService:
             response_style=_pick(changes.response_style, current.response_style),
             monthly_token_limit=_pick(changes.monthly_token_limit, current.monthly_token_limit),
             indexing_enabled=_pick(changes.indexing_enabled, current.indexing_enabled),
+            auto_capture=_pick(changes.auto_capture, current.auto_capture),
             updated_at=self._clock(),
         )
         await self._settings.put(updated)
@@ -387,6 +389,18 @@ class AiConfigService:
         except (CloudProcessingNotAllowedError, ProviderNotFoundError):
             return None
         return resolved if resolved.provider.capabilities.embeddings else None
+
+    async def audio_connection(
+        self, settings: AiSettings, provider_id: uuid.UUID
+    ) -> tuple[ProviderConnection, str | None, Processing]:
+        """A provider connection for speech (transcription or text-to-speech), its key, and
+        whether it runs locally, under the same cloud consent as chat. Voice builds its own
+        audio adapter: the chat interface has no audio calls."""
+        connection = await self._get(settings.user_id, provider_id)
+        processing = processing_of(connection.kind, base_url_of(connection))
+        if processing == "cloud" and not settings.allow_cloud:
+            raise CloudProcessingNotAllowedError
+        return connection, self._key_of(connection), processing
 
     async def _resolve_provider(
         self,

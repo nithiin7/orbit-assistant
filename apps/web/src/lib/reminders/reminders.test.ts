@@ -3,9 +3,12 @@ import { describe, expect, it } from "vitest";
 
 import {
   describeRecurrence,
+  formatCountdown,
   formatOccurrence,
   groupRemindersByFire,
+  matchesReminder,
   nextHour,
+  occurrenceParts,
   reminderSchema,
   statusHint,
   toFormValues,
@@ -118,6 +121,44 @@ describe("formatOccurrence", () => {
   it("gives later dates in full, with the year when it differs", () => {
     expect(formatOccurrence("2030-01-22T08:00:00Z", "Europe/Paris", now)).toMatch(/Jan 22/);
     expect(formatOccurrence("2031-02-01T08:00:00Z", "Europe/Paris", now)).toMatch(/2031/);
+  });
+});
+
+describe("occurrenceParts", () => {
+  it("splits the day from the time on the reminder's own clock", () => {
+    const now = new Date("2030-01-15T06:00:00Z");
+    expect(occurrenceParts("2030-01-15T08:00:00Z", "Europe/Paris", now)).toEqual({
+      day: "Today",
+      time: expect.stringMatching(/^9:00/) as unknown,
+    });
+    expect(occurrenceParts("2030-01-22T08:00:00Z", "Europe/Paris", now).day).toMatch(/Jan 22/);
+  });
+});
+
+describe("formatCountdown", () => {
+  const now = new Date("2030-01-15T06:00:00Z");
+
+  it("says how long until a reminder fires", () => {
+    expect(formatCountdown("2030-01-15T05:59:00Z", now)).toBe("now");
+    expect(formatCountdown("2030-01-15T06:05:00Z", now)).toBe("in 5 min");
+    expect(formatCountdown("2030-01-15T08:00:00Z", now)).toBe("in 2 h");
+    expect(formatCountdown("2030-01-15T08:15:00Z", now)).toBe("in 2 h 15 min");
+    expect(formatCountdown("2030-01-16T07:00:00Z", now)).toBe("in 1 day");
+    expect(formatCountdown("2030-01-18T06:00:00Z", now)).toBe("in 3 days");
+  });
+});
+
+describe("matchesReminder", () => {
+  it("finds a reminder by its title, details, or task, ignoring case", () => {
+    const withTask = reminder({
+      description: "Ask about the crown",
+      task: { id: "t1", title: "Book checkup", status: "open", list: null },
+    });
+    expect(matchesReminder(withTask, "  ")).toBe(true);
+    expect(matchesReminder(withTask, "DENTIST")).toBe(true);
+    expect(matchesReminder(withTask, "crown")).toBe(true);
+    expect(matchesReminder(withTask, "checkup")).toBe(true);
+    expect(matchesReminder(withTask, "rent")).toBe(false);
   });
 });
 

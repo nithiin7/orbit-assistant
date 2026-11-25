@@ -14,6 +14,7 @@ import { financeViewHref } from "@/lib/finance-views";
 import { fitnessHref } from "@/lib/fitness";
 import { habitsHref } from "@/lib/habits";
 import { notesHref } from "@/lib/notes";
+import { peopleHref } from "@/lib/people";
 import { countryName, placesHref } from "@/lib/places";
 import { watchTitleHref } from "@/lib/watchlist";
 import { formatCalendarDate } from "@/utils/dates";
@@ -38,6 +39,7 @@ export const SEARCH_MODULES: readonly Labelled<UniversalSearchModule>[] = [
   { value: "watchlist", label: "Watchlist" },
   { value: "bookmarks", label: "Saved" },
   { value: "places", label: "Places" },
+  { value: "people", label: "People" },
 ];
 
 export const ENTITY_LABELS: Readonly<Record<SearchEntityType, string>> = {
@@ -66,6 +68,7 @@ export const ENTITY_LABELS: Readonly<Record<SearchEntityType, string>> = {
   watch_item: "Watchlist",
   bookmark: "Saved link",
   place: "Place",
+  person: "Person",
 };
 
 export function moduleLabel(module: UniversalSearchModule): string {
@@ -136,6 +139,8 @@ export function searchResultHref(
       return bookmarkHref(hit.id);
     case "place":
       return placesHref(hit.status === "visited" ? "visited" : "wishlist");
+    case "person":
+      return peopleHref("everyone", hit.id);
   }
 }
 
@@ -305,6 +310,7 @@ const MODULE_FILTERS: Readonly<Record<UniversalSearchModule, readonly ModuleFilt
   watchlist: [],
   bookmarks: [],
   places: [],
+  people: [],
 };
 
 export function moduleFilters(module: UniversalSearchModule | null): readonly ModuleFilter[] {

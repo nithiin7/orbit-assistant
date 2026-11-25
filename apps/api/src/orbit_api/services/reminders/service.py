@@ -15,6 +15,8 @@ Tasks and reminders:
   due date) leaves its reminders where they are.
 - While the task is completed, its reminders don't notify: occurrences that come due are
   cancelled, and recurring reminders keep their schedule, so reopening the task resumes them.
+- Completing a repeating task moves its reminders to the next occurrence
+  (`services.reminders.task_series`).
 - Deleting the task deletes its reminders (a database cascade). Notifications already delivered
   stay in the inbox.
 

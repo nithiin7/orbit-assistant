@@ -1,6 +1,6 @@
 import type { Reminder } from "@orbit/contracts";
 import {
-  AlarmClock,
+  Bell,
   CalendarDays,
   CheckSquare,
   FileText,
@@ -9,10 +9,11 @@ import {
   type LucideIcon,
   Repeat,
   Repeat2,
+  Users,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { describeRecurrence, type FireGroupKey, formatOccurrence } from "@/lib/reminders";
+import { describeRecurrence, type FireGroupKey } from "@/lib/reminders";
 import { cn } from "@/utils/common";
 import { timeZoneLabel } from "@/utils/time-zones";
 
@@ -23,31 +24,6 @@ const quietChip = "bg-muted/70 text-muted-foreground";
 
 function Chip({ className, children }: { className?: string; children: ReactNode }) {
   return <span className={cn(chipClassName, quietChip, className)}>{children}</span>;
-}
-
-const TIME_TONES: Partial<Record<FireGroupKey, string>> = {
-  overdue: "bg-destructive/10 text-destructive",
-  today: "bg-brand-subtle text-brand",
-  tomorrow: "bg-muted/70 text-foreground",
-  week: "bg-muted/70 text-foreground",
-};
-
-/**
- * When it fires next, or last fired, on the reminder's own clock, toned by how soon that is.
- * Overdue reminders say so in words, not only in color.
- */
-export function FireTimeChip({ reminder, group }: { reminder: Reminder; group: FireGroupKey }) {
-  const at = reminder.next_occurrence_at ?? reminder.last_occurrence_at;
-  if (!at) return null;
-  const label = formatOccurrence(at, reminder.timezone);
-  const overdue = reminder.status === "overdue";
-  return (
-    <Chip className={cn(reminder.next_occurrence_at && TIME_TONES[group])}>
-      <AlarmClock className="size-3 shrink-0" aria-hidden="true" />
-      <span className="sr-only">{reminder.next_occurrence_at ? "Next: " : "Last: "}</span>
-      <time dateTime={at}>{overdue ? `Overdue · ${label}` : label}</time>
-    </Chip>
-  );
 }
 
 export function RecurrenceChip({ reminder }: { reminder: Reminder }) {
@@ -87,7 +63,7 @@ export function TimeZoneChip({ timeZone }: { timeZone: string }) {
 type CommitmentKind = NonNullable<Reminder["commitment"]>["kind"];
 
 /** The module that keeps a managed reminder up to date, by what manages it. */
-export type ManagingModule = "finance" | "calendar" | "habits" | "documents";
+export type ManagingModule = "finance" | "calendar" | "habits" | "documents" | "people";
 
 const MANAGING_MODULE: Record<CommitmentKind, ManagingModule> = {
   loan: "finance",
@@ -96,6 +72,7 @@ const MANAGING_MODULE: Record<CommitmentKind, ManagingModule> = {
   calendar_alert: "calendar",
   habit_reminder: "habits",
   document: "documents",
+  person: "people",
 };
 
 export const MODULE_LABEL: Record<ManagingModule, string> = {
@@ -103,6 +80,7 @@ export const MODULE_LABEL: Record<ManagingModule, string> = {
   calendar: "Calendar",
   habits: "Habits",
   documents: "Documents",
+  people: "People",
 };
 
 const MODULE_ICON: Record<ManagingModule, LucideIcon> = {
@@ -110,13 +88,15 @@ const MODULE_ICON: Record<ManagingModule, LucideIcon> = {
   calendar: CalendarDays,
   habits: Repeat2,
   documents: FileText,
+  people: Users,
 };
 
 export function managingModule(kind: CommitmentKind): ManagingModule {
   return MANAGING_MODULE[kind];
 }
 
-/** Marks a reminder another module keeps up to date: Finance, Calendar, Habits, or Documents. */
+/** Marks a reminder another module keeps up to date: Finance, Calendar, Habits, Documents, or
+ * People. */
 export function ManagedChip({ by }: { by: ManagingModule }) {
   const Icon = MODULE_ICON[by];
   return (
@@ -133,5 +113,46 @@ export function StatusChip({ status }: { status: "completed" | "disabled" }) {
     <Chip className="border border-dashed bg-transparent">
       {status === "completed" ? "Completed" : "Disabled"}
     </Chip>
+  );
+}
+
+const ICON_TONES: Partial<Record<FireGroupKey, string>> = {
+  overdue: "bg-destructive/10 text-destructive",
+  today: "bg-brand-subtle text-brand",
+};
+
+/**
+ * A tile showing where a reminder comes from: the module that manages it, its task, a repeat, or
+ * a plain bell. Toned by how soon it fires; decorative, since the chips say the same in words.
+ */
+export function ReminderIcon({
+  reminder,
+  group,
+  className,
+}: {
+  reminder: Reminder;
+  group: FireGroupKey;
+  className?: string;
+}) {
+  const managedBy = reminder.commitment ? managingModule(reminder.commitment.kind) : null;
+  const Icon = managedBy
+    ? MODULE_ICON[managedBy]
+    : reminder.task
+      ? CheckSquare
+      : reminder.recurrence
+        ? Repeat
+        : Bell;
+  const muted = reminder.status === "completed" || reminder.status === "disabled";
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted/70 text-muted-foreground transition-colors duration-150",
+        !muted && ICON_TONES[group],
+        className,
+      )}
+    >
+      <Icon className="size-4" />
+    </span>
   );
 }

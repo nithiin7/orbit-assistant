@@ -17,6 +17,7 @@ The guarantees are described in `orbit_api.services.reminders.delivery`.
 import asyncio
 import contextlib
 import logging
+import uuid
 from collections import Counter
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
@@ -33,6 +34,7 @@ from orbit_api.repositories.agent_services import build_agent
 from orbit_api.repositories.ai import SqlAiSettingsRepository
 from orbit_api.repositories.ai_services import build_ai
 from orbit_api.repositories.backup import SqlBackupRecords, build_backup_service
+from orbit_api.repositories.briefings import SqlBriefingSettings, build_briefing_service
 from orbit_api.repositories.budgets import build_budget_service
 from orbit_api.repositories.calendar import build_calendar_service
 from orbit_api.repositories.commitments import build_commitment_service
@@ -47,14 +49,18 @@ from orbit_api.repositories.investments import (
     workspaces_with_holdings,
 )
 from orbit_api.repositories.notifications import SqlNotificationRepository
+from orbit_api.repositories.people import build_people_reminders
+from orbit_api.repositories.push import build_push_service
 from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
 from orbit_api.repositories.transaction import SqlTransaction
+from orbit_api.repositories.voice import SqlVoiceHistoryRepository
 from orbit_api.services.agent.automation import AutomationService
 from orbit_api.services.agent.engine import LEASE
 from orbit_api.services.ai.indexing import IndexRun, permitted_types
 from orbit_api.services.ai.providers import ProviderFactory
 from orbit_api.services.integrations.connectors import ConnectorRegistry
 from orbit_api.services.investments.valuation import PriceFeed
+from orbit_api.services.push.models import PushSender
 from orbit_api.services.reminders.delivery import (
     DEFAULT_MAX_ATTEMPTS,
     DeliveryResult,
@@ -62,6 +68,7 @@ from orbit_api.services.reminders.delivery import (
     ReminderFollowUp,
 )
 from orbit_api.services.reminders.models import ClaimedOccurrence, OccurrenceStatus, Reminder
+from orbit_api.services.voice.service import purge_spoken_history
 from orbit_api.system.attachment_store import FileAttachmentStore
 from orbit_api.system.backup_store import FileArchiveStore
 
@@ -80,6 +87,8 @@ DEFAULT_BUDGET_INTERVAL = timedelta(minutes=5)
 # How often the worker looks for unreferenced files, and how old one must be to be deleted: an
 # upload writes its file a moment before its metadata commits, so younger files are left alone.
 DEFAULT_SWEEP_INTERVAL = timedelta(hours=6)
+# How often spoken conversations past their owner's retention are deleted.
+DEFAULT_VOICE_PURGE_INTERVAL = timedelta(hours=1)
 SWEEP_MIN_AGE = timedelta(hours=1)
 # Synchronization runs taken per check, and how often imported files are checked for changes.
 INTEGRATION_BATCH = 10
@@ -91,6 +100,9 @@ BACKUP_HOUSEKEEPING_INTERVAL = timedelta(hours=1)
 # How often the worker looks for auto-debit SIP installments that are due. A NAV is published
 # the evening of its date, so an installment is recorded within this long of it appearing.
 DEFAULT_SIP_INTERVAL = timedelta(minutes=15)
+# How often the worker looks for briefings whose preparation time has come. A briefing is
+# prepared once a day, so this bounds how late after the chosen time it appears.
+DEFAULT_BRIEFING_INTERVAL = timedelta(minutes=5)
 # Agent executions advanced per poll, and how often old agent history is purged.
 AGENT_BATCH = 5
 AGENT_PURGE_INTERVAL = timedelta(hours=1)
@@ -98,7 +110,8 @@ AGENT_PURGE_INTERVAL = timedelta(hours=1)
 
 class ManagedFollowUp:
     """Hands a delivered managed reminder to the record that manages it: a calendar event's
-    alert, a habit's or routine's reminder time, a document, or a financial commitment."""
+    alert, a habit's or routine's reminder time, a document, a person, or a financial
+    commitment."""
 
     def __init__(
         self,
@@ -106,11 +119,13 @@ class ManagedFollowUp:
         commitments: ReminderFollowUp,
         habits: ReminderFollowUp,
         documents: ReminderFollowUp,
+        people: ReminderFollowUp,
     ) -> None:
         self._calendar = calendar
         self._commitments = commitments
         self._habits = habits
         self._documents = documents
+        self._people = people
 
     async def after_delivery(self, reminder: Reminder, now: datetime) -> None:
         link = reminder.commitment
@@ -120,6 +135,8 @@ class ManagedFollowUp:
             await self._habits.after_delivery(reminder, now)
         elif link is not None and link.kind == "document":
             await self._documents.after_delivery(reminder, now)
+        elif link is not None and link.kind == "person":
+            await self._people.after_delivery(reminder, now)
         else:
             await self._commitments.after_delivery(reminder, now)
 
@@ -202,8 +219,13 @@ class ReminderWorker:
         agents: AgentJobs | None = None,
         market: MarketData | None = None,
         sip_interval: timedelta = DEFAULT_SIP_INTERVAL,
+        briefing_interval: timedelta = DEFAULT_BRIEFING_INTERVAL,
+        push: PushSender | None = None,
     ) -> None:
         self._database = database
+        self._push = push
+        self._briefing_interval = briefing_interval
+        self._briefings_checked_at: datetime | None = None
         self._market = market
         self._prices_refreshed_at: datetime | None = None
         self._sip_interval = sip_interval
@@ -221,6 +243,7 @@ class ReminderWorker:
         self._files = files
         self._sweep_interval = sweep_interval
         self._swept_at: datetime | None = None
+        self._voice_purged_at: datetime | None = None
         self._snapshot_interval = snapshot_interval
         self._snapshots_checked_at: datetime | None = None
         self._budget_interval = budget_interval
@@ -240,8 +263,15 @@ class ReminderWorker:
             await session.commit()
 
         results: Counter[DeliveryResult] = Counter()
+        delivered: list[ClaimedOccurrence] = []
         for claim in claims:
-            results[await self._process(claim)] += 1
+            result = await self._process(claim)
+            results[result] += 1
+            if result == "delivered":
+                delivered.append(claim)
+        # After the whole batch, so a slow push service can't outlast the other claims' leases.
+        for claim in delivered:
+            await self._push_reminder(claim)
         if claims:
             # IDs and counts only: reminder titles are personal data.
             logger.info("Processed %d reminder occurrence(s): %s", len(claims), dict(results))
@@ -316,6 +346,49 @@ class ReminderWorker:
             # Deliberate boundary: budgets must never stop reminder delivery.
             logger.exception("Checking budgets failed; retrying later.")
 
+    async def prepare_briefings(self) -> int:
+        """Prepare today's briefing for everyone whose chosen time has come and who has none
+        yet, each in its own session, so one person's failure never stops another's; return
+        how many were prepared. Needs the attachment store, which fitness reads through."""
+        if self._files is None:
+            return 0
+        async with self._database.session() as session:
+            scheduled = await SqlBriefingSettings(session).scheduled()
+        prepared = 0
+        for entry in scheduled:
+            async with self._database.session() as session:
+                try:
+                    service = build_briefing_service(session, self._files, self._clock)
+                    was_prepared = await service.prepare_if_due(entry)
+                except Exception:
+                    # Deliberate boundary: one briefing failing must not stop the others; the
+                    # next check retries it. IDs only: briefings hold personal data.
+                    await session.rollback()
+                    logger.exception(
+                        "Preparing the briefing for %s in %s failed.",
+                        entry.user_id,
+                        entry.workspace_id,
+                    )
+                    continue
+            if was_prepared:
+                prepared += 1
+                await self._push_briefing(entry.user_id)
+        if prepared:
+            logger.info("Prepared %d daily briefing(s).", prepared)
+        return prepared
+
+    async def _maybe_prepare_briefings(self) -> None:
+        now = self._clock()
+        last = self._briefings_checked_at
+        if last is not None and now - last < self._briefing_interval:
+            return
+        self._briefings_checked_at = now
+        try:
+            await self.prepare_briefings()
+        except Exception:
+            # Deliberate boundary: briefings must never stop reminder delivery.
+            logger.exception("Preparing briefings failed; retrying later.")
+
     async def sweep_files(self) -> int:
         """Delete stored files that no note attachment, document version, or progress photo
         references and that are older than `SWEEP_MIN_AGE`, such as leftovers of a crash
@@ -341,6 +414,28 @@ class ReminderWorker:
         except Exception:
             # Deliberate boundary: housekeeping must never stop reminder delivery.
             logger.exception("Sweeping unreferenced files failed; retrying later.")
+
+    async def purge_voice_history(self) -> int:
+        """Delete spoken conversations older than their owner's voice retention."""
+        async with self._database.session() as session:
+            removed = await purge_spoken_history(
+                SqlVoiceHistoryRepository(session), SqlTransaction(session), self._clock()
+            )
+        if removed:
+            logger.info("Deleted %d spoken conversation(s) past retention.", removed)
+        return removed
+
+    async def _maybe_purge_voice_history(self) -> None:
+        now = self._clock()
+        last = self._voice_purged_at
+        if last is not None and now - last < DEFAULT_VOICE_PURGE_INTERVAL:
+            return
+        self._voice_purged_at = now
+        try:
+            await self.purge_voice_history()
+        except Exception:
+            # Deliberate boundary: housekeeping must never stop reminder delivery.
+            logger.exception("Deleting expired voice history failed; retrying later.")
 
     async def index_ai(self) -> IndexRun:
         """Reconcile and index a batch for every workspace whose owner has AI indexing on.
@@ -688,7 +783,9 @@ class ReminderWorker:
                 continue  # More may be due: drain the backlog before sleeping.
             await self._maybe_take_snapshots()
             await self._maybe_check_budgets()
+            await self._maybe_prepare_briefings()
             await self._maybe_sweep_files()
+            await self._maybe_purge_voice_history()
             await self._maybe_index_ai()
             await self._maybe_sync_integrations()
             await self._maybe_run_backups()
@@ -711,6 +808,31 @@ class ReminderWorker:
             count = await SqlOccurrenceRepository(session).retry_failed(self._clock())
             await session.commit()
             return count
+
+    async def _push_reminder(self, claim: ClaimedOccurrence) -> None:
+        """Copy a delivered reminder to its recipients' devices. Best effort: the in-app
+        notification is already committed."""
+        if self._push is None:
+            return
+        try:
+            async with self._database.session() as session:
+                notifications = await SqlNotificationRepository(session).for_occurrence(claim.id)
+                service = build_push_service(session, self._push)
+                for notification in notifications:
+                    await service.notify_reminder(notification)
+        except Exception:
+            # Deliberate boundary: push must never stop reminder delivery. IDs only.
+            logger.exception("Sending push notifications for occurrence %s failed.", claim.id)
+
+    async def _push_briefing(self, user_id: uuid.UUID) -> None:
+        if self._push is None:
+            return
+        try:
+            async with self._database.session() as session:
+                await build_push_service(session, self._push).notify_briefing(user_id)
+        except Exception:
+            # Deliberate boundary: the briefing is prepared; only its notification failed.
+            logger.exception("Sending the briefing push notification to %s failed.", user_id)
 
     async def _process(self, claim: ClaimedOccurrence) -> DeliveryResult:
         async with self._database.session() as session:
@@ -748,11 +870,13 @@ class ReminderWorker:
             max_attempts=self._max_attempts,
             # Loan, subscription, and bill reminders move on to the next payment once delivered;
             # event alerts move on to the next occurrence; habit and routine reminders to the
-            # next due day; document reminders to the next expiry, renewal, or review alert.
+            # next due day; document reminders to the next expiry, renewal, or review alert;
+            # people reminders to the person's next date.
             follow_up=ManagedFollowUp(
                 build_calendar_service(session, self._clock),
                 build_commitment_service(session, self._clock),
                 build_habit_service(session, self._clock).reminders,
                 build_document_reminders(session, self._clock),
+                build_people_reminders(session, self._clock),
             ),
         )

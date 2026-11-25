@@ -1,6 +1,6 @@
 "use client";
 
-import { Droplets, X } from "lucide-react";
+import { ChartColumn, Droplets, History, X } from "lucide-react";
 import { useState } from "react";
 
 import { describeApiError } from "@/api/client";
@@ -17,7 +17,7 @@ import { formatWater, parseWater, share, WATER_LABELS } from "@/lib/fitness";
 import { addDays } from "@/utils/dates";
 
 import { DayNavigator } from "./nutrition";
-import { BarChart, Loaded, Meter, NumberInput, Section } from "./shared";
+import { BarChart, Gauge, Loaded, NumberInput, Section } from "./shared";
 
 const DEFAULT_QUICK = [250, 500, 750];
 
@@ -48,20 +48,33 @@ export function WaterView({ workspaceId, today }: { workspaceId: string; today: 
       <Loaded resource={water.state} reload={water.reload} skeleton="h-48">
         {(data) => (
           <div className="grid gap-4 @3xl:grid-cols-2">
-            <Section title="Water" description="Only what you record as water counts here.">
-              <p className="text-3xl font-semibold tabular-nums">
-                {formatWater(data.total_ml, unit)}
-              </p>
-              <Meter
-                label={data.target_ml ? "Daily target" : "No target set"}
-                value={
-                  data.target_ml
-                    ? `${formatWater(data.total_ml, unit)} of ${formatWater(data.target_ml, unit)}`
-                    : "Set one in Settings"
-                }
-                fraction={share(data.total_ml, data.target_ml)}
-                tone={data.target_ml && data.total_ml >= data.target_ml ? "success" : "brand"}
-              />
+            <Section
+              icon={Droplets}
+              tone="blue"
+              title="Water"
+              description="Only what you record as water counts here."
+            >
+              <div className="flex items-center gap-4">
+                <Gauge
+                  label="Water"
+                  fraction={share(data.total_ml, data.target_ml)}
+                  tone={data.target_ml && data.total_ml >= data.target_ml ? "success" : "blue"}
+                  valueText={`${formatWater(data.total_ml, unit)}${data.target_ml ? ` of ${formatWater(data.target_ml, unit)}` : ""}`}
+                  icon={Droplets}
+                />
+                <div className="min-w-0 space-y-0.5">
+                  <p className="text-3xl font-semibold tracking-tight tabular-nums">
+                    {formatWater(data.total_ml, unit)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {!data.target_ml
+                      ? "No daily target. Set one in Settings."
+                      : data.total_ml >= data.target_ml
+                        ? `Target of ${formatWater(data.target_ml, unit)} reached.`
+                        : `${formatWater(data.target_ml - data.total_ml, unit)} to go of ${formatWater(data.target_ml, unit)}`}
+                  </p>
+                </div>
+              </div>
               <div className="flex flex-wrap gap-2" role="group" aria-label="Quick add">
                 {quick.map((ml) => (
                   <Button key={ml} variant="soft" onClick={() => add(ml)}>
@@ -94,7 +107,7 @@ export function WaterView({ workspaceId, today }: { workspaceId: string; today: 
               </form>
               <FormAlert message={error} />
             </Section>
-            <Section title="Entries">
+            <Section icon={History} tone="slate" title="Entries">
               {data.entries.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Nothing recorded for this day.</p>
               ) : (
@@ -149,7 +162,7 @@ function WaterHistory({
   const start = addDays(today, -13);
   const history = useWaterHistory(workspaceId, start, today);
   return (
-    <Section title="Last 14 days">
+    <Section icon={ChartColumn} tone="blue" title="Last 14 days">
       <Loaded resource={history.state} reload={history.reload} skeleton="h-32">
         {({ days }) => {
           const byDay = new Map(days.map((d) => [d.day, d.total_ml]));

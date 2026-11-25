@@ -87,6 +87,7 @@ import { isEditableTarget } from "@/utils/keyboard";
 import { NoteDetails } from "./note-details";
 import { NoteEditor, type NoteEditorHandle } from "./note-editor";
 import { type NoteLayout, NoteList, type NoteListAction } from "./note-list";
+import { NotesHero } from "./notes-hero";
 import { NotesRail, VIEW_ICONS } from "./notes-rail";
 import { useQuickCapture } from "./quick-capture";
 
@@ -507,7 +508,7 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
       <div className="flex items-center gap-2">
         <div className="relative min-w-0 flex-1">
           <Search
-            className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
+            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
             aria-hidden="true"
           />
           <input
@@ -524,7 +525,7 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
                 setSearch("");
               }
             }}
-            className="h-9 w-full rounded-md border border-input bg-card pr-3 pl-8 text-sm shadow-elevation-1 outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 dark:bg-transparent"
+            className="h-10 w-full rounded-xl border border-input bg-card pr-3 pl-9 text-sm shadow-elevation-1 outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 dark:bg-transparent"
           />
         </div>
         {location.view === "recent" || location.view === "journal" ? null : (
@@ -699,6 +700,13 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
             aria-labelledby="note-list-heading"
             className="@container/list min-w-0 space-y-3"
           >
+            {counts &&
+            location.view === "all" &&
+            !location.folderId &&
+            !location.tagId &&
+            !appliedSearch ? (
+              <NotesHero counts={counts} onNavigate={(view) => void navigate({ view })} />
+            ) : null}
             {listContent(false)}
           </section>
         </div>
@@ -784,7 +792,7 @@ function JournalBar({ today, onOpen }: { today: string; onOpen: (date: string) =
     onOpen(next);
   };
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-2 shadow-elevation-1">
+    <div className="flex flex-wrap items-center gap-2 rounded-2xl border bg-card p-2 shadow-elevation-1">
       <Button
         variant="ghost"
         size="icon"

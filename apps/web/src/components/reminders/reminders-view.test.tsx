@@ -29,6 +29,7 @@ const taxes: Task = {
   scheduled_start: null,
   scheduled_end: null,
   list_id: null,
+  recurrence: null,
   created_at: "2026-10-01T09:00:00Z",
   updated_at: "2026-10-01T09:00:00Z",
 };
@@ -342,7 +343,7 @@ describe("RemindersPanel", () => {
 
     const overdue = await screen.findByRole("list", { name: "Overdue, 1 reminder" });
     expect(overdue).toHaveTextContent("Stretch");
-    expect(overdue).toHaveTextContent(/Overdue ·/);
+    expect(within(overdue).getByText("Overdue")).toBeInTheDocument();
     expect(screen.getByRole("list", { name: /^(Today|Tomorrow), 1 reminder$/ })).toHaveTextContent(
       "Coffee",
     );
@@ -353,8 +354,41 @@ describe("RemindersPanel", () => {
       .getAllByRole("heading", { level: 3 })
       .map((heading) => heading.textContent);
     expect(sections).toEqual(["Overdue1", expect.stringMatching(/^(Today|Tomorrow)1$/), "Later1"]);
-    const summary = screen.getByText("3 reminders", { selector: "span" }).parentElement;
-    expect(summary).toHaveTextContent(/Next (Today|Tomorrow), /);
+    expect(
+      screen.getByRole("heading", { name: "Upcoming reminders", level: 2 }).parentElement,
+    ).toHaveTextContent("3 reminders");
+    // The overdue one is already due; the card leads with the next one to fire.
+    const upNext = screen.getByRole("region", { name: "Up next" });
+    expect(upNext).toHaveTextContent("Coffee");
+    expect(upNext).toHaveTextContent(/(Today|Tomorrow), .*in \d+ min/);
+  });
+
+  it("searches the view by title, details, or task", async () => {
+    const plants = reminder({ id: "r-plants", title: "Water plants" });
+    mockApi({
+      ...session,
+      [`GET ${REMINDERS}`]: json({ reminders: [dentist, plants], total: 2 }),
+    });
+    const user = userEvent.setup();
+    await renderSignedIn(<RemindersPanel />);
+    const search = await screen.findByRole("searchbox", { name: "Search reminders" });
+
+    await user.type(search, "taxes");
+    const list = screen.getByRole("list", { name: "Later, 1 reminder" });
+    expect(list).toHaveTextContent("Call the dentist");
+    expect(list).not.toHaveTextContent("Water plants");
+    expect(screen.queryByRole("region", { name: "Up next" })).not.toBeInTheDocument();
+
+    await user.clear(search);
+    await user.type(search, "groceries");
+    expect(screen.getByRole("heading", { name: "No matching reminders" })).toBeInTheDocument();
+
+    // The field's own clear button, and one in the empty state.
+    const clear = screen.getAllByRole("button", { name: "Clear search" });
+    expect(clear).toHaveLength(2);
+    await user.click(clear[1]!);
+    expect(search).toHaveValue("");
+    expect(screen.getByRole("list", { name: "Later, 2 reminders" })).toBeInTheDocument();
   });
 
   it("shows other views as one list", async () => {

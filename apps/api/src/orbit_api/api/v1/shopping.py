@@ -22,6 +22,7 @@ from orbit_api.schemas.shopping import (
 )
 from orbit_api.services.shopping.models import (
     DefaultListError,
+    GiftPersonNotFoundError,
     ShoppingItemNotFoundError,
     ShoppingListNotFoundError,
 )
@@ -41,6 +42,12 @@ ItemId = Annotated[uuid.UUID, Path(description="The item's ID.")]
 
 def list_not_found() -> HTTPException:
     return HTTPException(status.HTTP_404_NOT_FOUND, "Shopping list not found.")
+
+
+def gift_person_not_found() -> HTTPException:
+    return HTTPException(
+        status.HTTP_422_UNPROCESSABLE_CONTENT, "That person doesn't exist in this workspace."
+    )
 
 
 def item_not_found() -> HTTPException:
@@ -153,6 +160,17 @@ async def add_item(
         )
     except ShoppingListNotFoundError:
         raise list_not_found() from None
+    except GiftPersonNotFoundError:
+        raise gift_person_not_found() from None
+
+
+@router.get("/gifts", summary="List gift ideas for people")
+async def list_gifts(
+    workspace: WorkspaceDep, shopping: ShoppingServiceDep
+) -> ShoppingItemsResponse:
+    """Items in any list that are gift ideas for someone in People, newest first."""
+    items = await shopping.gifts(workspace.id)
+    return ShoppingItemsResponse(items=[ShoppingItemResponse.of(item) for item in items])
 
 
 @router.patch("/items/{item_id}", summary="Update an item")
@@ -168,6 +186,8 @@ async def update_item(
         )
     except ShoppingItemNotFoundError:
         raise item_not_found() from None
+    except GiftPersonNotFoundError:
+        raise gift_person_not_found() from None
 
 
 @router.post("/items/{item_id}/purchase", summary="Mark an item purchased")

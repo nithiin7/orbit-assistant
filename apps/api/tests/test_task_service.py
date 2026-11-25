@@ -48,6 +48,16 @@ class FakeTasks:
         tasks = [t for t in self.items.values() if t.workspace_id == workspace_id]
         return TaskPage(tasks=tasks, total=len(tasks))
 
+    async def current_in_series(self, workspace_id: uuid.UUID, series_id: uuid.UUID) -> Task | None:
+        series = [
+            task
+            for task in self.items.values()
+            if task.workspace_id == workspace_id
+            and task.series_id == series_id
+            and task.status == "open"
+        ]
+        return max(series, key=lambda task: task.created_at, default=None)
+
     async def save(self, task: Task) -> None:
         self.saves += 1
         self.items[task.id] = task
@@ -95,6 +105,18 @@ class FakeTasks:
         return True
 
 
+class FakeOccurrenceReminders:
+    async def move(
+        self,
+        workspace_id: uuid.UUID,
+        source_id: uuid.UUID,
+        target_id: uuid.UUID,
+        shift: timedelta,
+        now: datetime,
+    ) -> None:
+        raise NotImplementedError
+
+
 class Clock:
     def __init__(self) -> None:
         self.now = datetime(2026, 10, 29, 9, 0, tzinfo=UTC)
@@ -124,7 +146,7 @@ def transaction() -> FakeTransaction:
 
 @pytest.fixture
 def service(repository: FakeTasks, transaction: FakeTransaction, clock: Clock) -> TaskService:
-    return TaskService(repository, transaction, clock=clock)
+    return TaskService(repository, FakeOccurrenceReminders(), transaction, clock=clock)
 
 
 async def test_create_opens_a_task_in_the_workspace(

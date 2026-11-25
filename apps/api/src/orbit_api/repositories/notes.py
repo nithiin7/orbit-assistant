@@ -29,6 +29,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from orbit_api.db.models import (
+    CalendarEventNoteModel,
     NoteAttachmentModel,
     NoteFolderModel,
     NoteLinkModel,
@@ -45,6 +46,7 @@ from orbit_api.services.notes.models import (
     Attachment,
     Folder,
     FolderUsage,
+    LinkedNoteMatch,
     Note,
     NoteConnections,
     NoteCounts,
@@ -394,6 +396,60 @@ class SqlNoteRepository:
             .order_by(NoteTaskLinkModel.created_at, NoteTaskLinkModel.task_id)
         )
         return list(ids)
+
+    async def linked_to(
+        self,
+        workspace_id: uuid.UUID,
+        task_ids: Sequence[uuid.UUID],
+        event_ids: Sequence[uuid.UUID],
+    ) -> list[LinkedNoteMatch]:
+        columns = (NoteModel.id, NoteModel.title, NoteModel.note_type, NoteModel.updated_at)
+        active = (
+            NoteModel.workspace_id == workspace_id,
+            NoteModel.trashed_at.is_(None),
+            NoteModel.archived_at.is_(None),
+        )
+        notes: dict[uuid.UUID, tuple[str, str, datetime]] = {}
+        tasks: dict[uuid.UUID, set[uuid.UUID]] = {}
+        events: dict[uuid.UUID, set[uuid.UUID]] = {}
+        if task_ids:
+            rows = await self._session.execute(
+                select(*columns, NoteTaskLinkModel.task_id)
+                .join(NoteTaskLinkModel, NoteTaskLinkModel.note_id == NoteModel.id)
+                .where(
+                    *active,
+                    NoteTaskLinkModel.workspace_id == workspace_id,
+                    NoteTaskLinkModel.task_id.in_(set(task_ids)),
+                )
+            )
+            for note_id, title, note_type, updated_at, task_id in rows:
+                notes[note_id] = (title, note_type, updated_at)
+                tasks.setdefault(note_id, set()).add(task_id)
+        if event_ids:
+            rows = await self._session.execute(
+                select(*columns, CalendarEventNoteModel.event_id)
+                .join(CalendarEventNoteModel, CalendarEventNoteModel.note_id == NoteModel.id)
+                .where(
+                    *active,
+                    CalendarEventNoteModel.workspace_id == workspace_id,
+                    CalendarEventNoteModel.event_id.in_(set(event_ids)),
+                )
+            )
+            for note_id, title, note_type, updated_at, event_id in rows:
+                notes[note_id] = (title, note_type, updated_at)
+                events.setdefault(note_id, set()).add(event_id)
+        matches = [
+            LinkedNoteMatch(
+                id=note_id,
+                title=title,
+                note_type=cast(NoteType, note_type),
+                updated_at=updated_at,
+                task_ids=tuple(sorted(tasks.get(note_id, set()), key=str)),
+                event_ids=tuple(sorted(events.get(note_id, set()), key=str)),
+            )
+            for note_id, (title, note_type, updated_at) in notes.items()
+        ]
+        return sorted(matches, key=lambda match: (-match.updated_at.timestamp(), str(match.id)))
 
     async def tasks(self, workspace_id: uuid.UUID, note_id: uuid.UUID) -> list[Task]:
         models = await self._session.scalars(

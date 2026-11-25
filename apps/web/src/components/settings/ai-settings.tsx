@@ -303,7 +303,7 @@ function Providers({ providers, settings }: { providers: AiProvider[]; settings:
     >
       {editing === "new" ? <ProviderForm onDone={() => setEditing(null)} /> : null}
       {providers.length ? (
-        <ul className="divide-y rounded-xl border">
+        <ul className="divide-y rounded-2xl border">
           {providers.map((provider) =>
             editing !== "new" && editing?.id === provider.id ? (
               <li key={provider.id} className="p-2">
@@ -588,6 +588,12 @@ function Privacy({
         checked={settings.allow_cloud}
         onCheckedChange={(allow_cloud) => onSave({ allow_cloud })}
       />
+      <SettingsSwitch
+        label="Add simple items without asking"
+        hint="Tasks, reminders, notes, shopping, habits, health logs, places, links, and watchlist titles you type are added right away. Events, spoken requests, and money always ask."
+        checked={settings.auto_capture}
+        onCheckedChange={(auto_capture) => onSave({ auto_capture })}
+      />
       <fieldset className="space-y-3 border-t pt-5" aria-describedby="ai-modules-hint">
         <legend className="float-left w-full text-sm font-medium">
           What AI may read{" "}
@@ -836,7 +842,7 @@ function Usage() {
             ) : null}
           </div>
           {usage.data.lines.length ? (
-            <div className="overflow-x-auto rounded-xl border">
+            <div className="overflow-x-auto rounded-2xl border">
               <table className="w-full text-xs">
                 <thead className="bg-muted/40 text-left text-muted-foreground">
                   <tr>

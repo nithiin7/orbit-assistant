@@ -406,7 +406,7 @@ class WatchlistService:
             return None
         path = await self._files.locate(workspace_id, item.poster_blob_id)
         if path is None:
-            return None
+            return await self._restore_poster(workspace_id, item, item.poster_blob_id)
         data = await anyio.Path(path).read_bytes()
         return Poster(content_type=_image_type(data) or "image/jpeg", data=data)
 
@@ -434,6 +434,28 @@ class WatchlistService:
         blob_id = uuid.uuid4()
         await self._files.write(workspace_id, blob_id, poster.data)
         return blob_id
+
+    async def _restore_poster(
+        self, workspace_id: uuid.UUID, item: WatchItem, blob_id: uuid.UUID
+    ) -> Poster | None:
+        """Download a looked-up title's poster again when its stored file is missing (a restore
+        without files, or a cleared attachments folder), under the same ID so the row needn't
+        change. `None` when lookup is off or TMDB can't provide it."""
+        if item.source_id is None:
+            return None
+        try:
+            catalog = await self._require_catalog(workspace_id)
+            details = await catalog.details(item.kind, item.source_id)
+            if details.poster_path is None:
+                return None
+            poster = await catalog.poster(details.poster_path, "full")
+        except (LookupUnavailableError, CatalogError):
+            return None
+        content_type = _image_type(poster.data)
+        if len(poster.data) > MAX_POSTER_BYTES or content_type is None:
+            return None
+        await self._files.write(workspace_id, blob_id, poster.data)
+        return Poster(content_type=content_type, data=poster.data)
 
     async def _new_item(
         self,

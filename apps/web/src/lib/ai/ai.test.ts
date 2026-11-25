@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  canAlwaysAdd,
   chatModelOptions,
   conversationTitleSchema,
   parseChatModelValue,
+  quickAddTemplates,
   recordHref,
   splitCitations,
   suggestedQuestions,
@@ -18,6 +20,16 @@ const ref = (kind: string, id: string | null = "1b6f6b2e-0000-4000-8000-00000000
 });
 
 describe("recordHref", () => {
+  it("links captured records to the module that keeps them", () => {
+    expect(recordHref(ref("shopping_item"))).toBe("/shopping");
+    expect(recordHref(ref("place"))).toBe("/places");
+    expect(recordHref(ref("bookmark"))).toBe("/saved");
+    expect(recordHref(ref("watch_item"))).toBe("/watchlist");
+    expect(recordHref(ref("water"))).toBe("/health");
+    expect(recordHref(ref("measurement"))).toBe("/health");
+    expect(recordHref(ref("activity"))).toBe("/health");
+  });
+
   it("opens each record in its own module", () => {
     expect(recordHref(ref("task"))).toBe("/tasks?task=1b6f6b2e-0000-4000-8000-000000000001");
     expect(recordHref(ref("note"))).toContain("note=1b6f6b2e");
@@ -93,5 +105,34 @@ describe("chatModelOptions", () => {
       model: "org/model|v2",
     });
     expect(parseChatModelValue("bad")).toBeNull();
+  });
+});
+
+describe("quick add", () => {
+  it("offers templates only for modules AI may read", () => {
+    const ids = (modules: Parameters<typeof quickAddTemplates>[0]) =>
+      quickAddTemplates(modules).map((template) => template.id);
+    expect(ids([])).toEqual([
+      "task",
+      "reminder",
+      "event",
+      "note",
+      "shopping",
+      "place",
+      "birthday",
+      "link",
+    ]);
+    expect(ids(["finance"])).toContain("expense");
+    expect(ids(["health"])).toEqual(expect.arrayContaining(["water", "weight", "activity"]));
+    expect(ids(["health"])).not.toContain("expense");
+  });
+
+  it("never offers to skip approval for money or events", () => {
+    expect(canAlwaysAdd("add_shopping_item")).toBe(true);
+    expect(canAlwaysAdd("add_transaction")).toBe(false);
+    expect(canAlwaysAdd("create_event")).toBe(false);
+    expect(canAlwaysAdd("append_to_note")).toBe(false);
+    // A model could invent a birthday, so a new person is always a card.
+    expect(canAlwaysAdd("add_person")).toBe(false);
   });
 });

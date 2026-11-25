@@ -1,4 +1,5 @@
 import type {
+  CompleteTaskQuery,
   CreateTaskListRequest,
   CreateTaskRequest,
   Task,
@@ -70,8 +71,17 @@ export function updateTask(
   return request<Task>(taskPath(workspaceId, taskId), { method: "PATCH", body, token });
 }
 
-export function completeTask(token: string, workspaceId: string, taskId: string): Promise<Task> {
-  return request<Task>(taskPath(workspaceId, taskId, "/complete"), { method: "POST", token });
+/** Completes a task; `today` (the user's local date) decides when a repeating one is next due. */
+export function completeTask(
+  token: string,
+  workspaceId: string,
+  taskId: string,
+  query: CompleteTaskQuery = {},
+): Promise<Task> {
+  return request<Task>(`${taskPath(workspaceId, taskId, "/complete")}${toQueryString(query)}`, {
+    method: "POST",
+    token,
+  });
 }
 
 export function reopenTask(token: string, workspaceId: string, taskId: string): Promise<Task> {

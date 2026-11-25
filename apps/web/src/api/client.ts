@@ -19,6 +19,8 @@ export type RequestOptions = {
   /** Session or access token, sent as `Authorization: Bearer`. */
   token?: string;
   signal?: AbortSignal;
+  /** Extra request headers, such as a file's password, which must never go in the URL. */
+  headers?: Record<string, string>;
 };
 
 export type Signal = { signal?: AbortSignal };
@@ -27,8 +29,11 @@ export type Signal = { signal?: AbortSignal };
 export type WithToken = <T>(call: (token: string) => Promise<T>) => Promise<T>;
 
 /** Send a request to the Orbit API, throwing `ApiError` for any non-2xx response. */
-export async function send(path: string, { method, body, token, signal }: RequestOptions = {}) {
-  const headers: Record<string, string> = { Accept: "application/json" };
+export async function send(
+  path: string,
+  { method, body, token, signal, headers: extra }: RequestOptions = {},
+) {
+  const headers: Record<string, string> = { ...extra, Accept: "application/json" };
   if (body instanceof Blob) headers["Content-Type"] = body.type;
   else if (body !== undefined) headers["Content-Type"] = "application/json";
   if (token) headers.Authorization = `Bearer ${token}`;

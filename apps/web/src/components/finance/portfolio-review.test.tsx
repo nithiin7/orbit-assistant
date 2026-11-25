@@ -38,6 +38,7 @@ function aiSettings(modules: AiSettings["modules"]): AiSettings {
     response_style: "balanced",
     monthly_token_limit: null,
     indexing_enabled: true,
+    auto_capture: false,
   };
 }
 

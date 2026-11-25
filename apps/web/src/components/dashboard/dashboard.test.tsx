@@ -11,6 +11,7 @@ import {
   writeDashboardLayout,
 } from "@/lib/dashboard";
 import { ada, json, mockApi, type MockRequest, personal, status } from "@/test/api-mock";
+import { aiSettings } from "@/test/briefing";
 import { renderSignedIn } from "@/test/session";
 
 import { Dashboard } from "./dashboard";
@@ -48,6 +49,8 @@ const routes = {
   "GET /api/v1/me/avatar": status(204),
   "GET /api/v1/workspaces": json({ workspaces: [personal] }),
   "GET /api/v1/health/database": json({ status: "ok", storage_mode: "local" }),
+  // AI is off, so no briefing is prepared or summarized.
+  "GET /api/v1/me/ai/settings": json(aiSettings(false)),
   [`GET ${WORKSPACE}`]: json(personal),
   [`GET ${WORKSPACE}/tasks/summary`]: json({ open: 0, completed: 0, overdue: 0, due_today: 0 }),
   [`GET ${WORKSPACE}/tasks`]: json({ tasks: [], total: 0 }),

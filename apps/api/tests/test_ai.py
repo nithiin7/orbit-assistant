@@ -4,7 +4,7 @@ injection, isolation, indexing and semantic search, assist, insights, and usage.
 
 import json
 import re
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
@@ -922,3 +922,260 @@ def test_portfolio_review_needs_finance_and_sends_shares_not_amounts(
     assert client.post(url, json={"currency": "XYZ"}, headers=ada).status_code == 422
     # Someone else's workspace is out of reach.
     assert client.post(url, json=body, headers=grace).status_code == 404
+
+
+# Quick capture
+
+
+def propose(*actions: tuple[str, Json]) -> Callable[[ChatRequest], str]:
+    def script(request: ChatRequest) -> str:
+        return "On it.\n" + "\n".join(
+            "```orbit-action\n" + json.dumps({"kind": k, "payload": p}) + "\n```"
+            for k, p in actions
+        )
+
+    return script
+
+
+def approve(client: TestClient, ws: str, headers: Headers, proposal: Json) -> Json:
+    return ok(client.post(f"{ws}/ai/proposals/{proposal['id']}/approve", headers=headers))
+
+
+def account(client: TestClient, ws: str, headers: Headers, name: str) -> Json:
+    body = {"name": name, "type": "bank", "currency": "INR", "opening_balance": 0}
+    return ok(client.post(f"{ws}/finance/accounts", json=body, headers=headers), 201)
+
+
+def test_capture_actions_add_to_each_module_only_after_approval(
+    client: TestClient, ada: Headers, ws: str, fake: FakeProviderFactory
+) -> None:
+    enable(client, ada, modules=["habits", "health", "watchlist"])
+    fake.state.script = propose(
+        ("add_shopping_item", {"name": "Milk", "quantity": "2 litres"}),
+        ("create_habit", {"name": "Stretch", "weekdays": ["mon", "thu"]}),
+        ("log_water", {"amount_ml": 500}),
+        ("log_weight", {"weight_kg": 71.5}),
+        ("log_activity", {"kind": "run", "duration_minutes": 30, "distance_km": 5}),
+        ("add_place", {"name": "Kyoto", "country_code": "JP"}),
+        ("save_link", {"url": "https://example.com/read", "title": "Read later"}),
+        ("add_watch_item", {"kind": "movie", "title": "Arrival"}),
+    )
+    proposals = ask(client, ws, ada, "Add these for me")["done"][0]["proposals"]
+    assert len(proposals) == 8 and {p["status"] for p in proposals} == {"pending"}
+    assert ok(client.get(f"{ws}/places/items", headers=ada))["places"] == []
+
+    results = [approve(client, ws, ada, p) for p in proposals]
+    assert [r["status"] for r in results] == ["executed"] * 8, results
+
+    [groceries] = ok(client.get(f"{ws}/shopping/lists", headers=ada))["lists"]
+    items = ok(client.get(f"{ws}/shopping/lists/{groceries['id']}/items", headers=ada))["items"]
+    assert [(i["name"], i["quantity"]) for i in items] == [("Milk", "2 litres")]
+    [habit] = ok(client.get(f"{ws}/habits", headers=ada))["habits"]
+    assert habit["habit"]["name"] == "Stretch"
+    [place] = ok(client.get(f"{ws}/places/items", headers=ada))["places"]
+    assert (place["name"], place["status"]) == ("Kyoto", "want_to_visit")
+    [link] = ok(client.get(f"{ws}/bookmarks/items", headers=ada))["bookmarks"]
+    assert link["title"] == "Read later"
+    [title] = ok(client.get(f"{ws}/watchlist/items", headers=ada))["items"]
+    assert (title["title"], title["status"]) == ("Arrival", "want")
+    [weight] = ok(client.get(f"{ws}/fitness/measurements", headers=ada))["measurements"]
+    assert weight["weight_g"] == 71_500
+    [run] = ok(client.get(f"{ws}/fitness/activities", headers=ada))["activities"]
+    assert (run["distance_m"], run["duration_s"]) == (5000, 1800)
+
+
+def test_a_transaction_needs_a_clear_account_and_uses_minor_units(
+    client: TestClient, ada: Headers, ws: str, fake: FakeProviderFactory
+) -> None:
+    enable(client, ada, modules=["finance"])
+    account(client, ws, ada, "Savings")
+    account(client, ws, ada, "Salary")
+    fake.state.script = propose(
+        ("add_transaction", {"type": "expense", "amount": 450.5, "description": "Lunch"})
+    )
+    [unclear] = ask(client, ws, ada, "I spent 450.50 on lunch")["done"][0]["proposals"]
+    failed = approve(client, ws, ada, unclear)
+    assert failed["status"] == "failed" and "which account" in failed["error"]
+    assert ok(client.get(f"{ws}/finance/transactions", headers=ada))["total"] == 0
+
+    fake.state.script = propose(
+        (
+            "add_transaction",
+            {"type": "expense", "amount": 450.5, "description": "Lunch", "account": "savings"},
+        )
+    )
+    [named] = ask(client, ws, ada, "I spent 450.50 on lunch from savings")["done"][0]["proposals"]
+    assert approve(client, ws, ada, named)["status"] == "executed"
+    [recorded] = ok(client.get(f"{ws}/finance/transactions", headers=ada))["transactions"]
+    assert (recorded["amount"], recorded["type"]) == (45_050, "expense")
+
+
+def test_capture_in_a_module_withheld_from_ai_is_not_proposed(
+    client: TestClient, ada: Headers, ws: str, fake: FakeProviderFactory
+) -> None:
+    enable(client, ada, modules=["tasks"])
+    fake.state.script = propose(
+        ("add_transaction", {"type": "expense", "amount": 10, "description": "Tea"}),
+        ("log_water", {"amount_ml": 250}),
+        ("add_shopping_item", {"name": "Tea"}),
+    )
+    events = ask(client, ws, ada, "Add tea to my shopping list")
+    assert [p["kind"] for p in events["done"][0]["proposals"]] == ["add_shopping_item"]
+    prompt = fake.state.last_prompt()
+    assert "add_shopping_item" in prompt
+    assert "add_transaction" not in prompt and "log_water" not in prompt
+
+
+def test_invalid_capture_values_are_dropped(
+    client: TestClient, ada: Headers, ws: str, fake: FakeProviderFactory
+) -> None:
+    enable(client, ada, modules=["watchlist"])
+    fake.state.script = propose(
+        ("add_place", {"name": "Nowhere", "country_code": "ZZZ"}),
+        ("save_link", {"url": "javascript:alert(1)"}),
+        ("add_watch_item", {"kind": "movie", "title": "Dune", "source_id": 7}),
+    )
+    assert ask(client, ws, ada, "Add these for me")["done"][0]["proposals"] == []
+
+
+def test_adding_a_person_with_a_birthday_waits_for_approval_even_with_always_add(
+    client: TestClient, ada: Headers, ws: str, fake: FakeProviderFactory
+) -> None:
+    enable(client, ada)
+    always_add(client, ada)
+    fake.state.script = propose(
+        (
+            "add_person",
+            {"name": "Priya", "relationship": "friend", "birthday_month": 3, "birthday_day": 20},
+        ),
+        ("add_person", {"name": "Nobody", "birthday_month": 4, "birthday_day": 31}),
+        ("add_person", {"name": "Half", "birthday_month": 4}),
+    )
+    [proposal] = ask(client, ws, ada, "Add Priya, her birthday is 20 March")["done"][0]["proposals"]
+    # Dates could be invented by a model, so adding a person is always a card.
+    assert proposal["status"] == "pending"
+    assert proposal["summary"] == "Add Priya to People, birthday 20 March"
+    assert ok(client.get(f"{ws}/people", headers=ada))["people"] == []
+
+    result = approve(client, ws, ada, proposal)
+    assert result["status"] == "executed" and result["result_kind"] == "person"
+    [person] = ok(client.get(f"{ws}/people", headers=ada))["people"]
+    assert person["dates"] == [
+        {
+            "kind": "birthday",
+            "label": "",
+            "month": 3,
+            "day": 20,
+            "year": None,
+            "remind_days_before": 0,
+        }
+    ]
+    reminders = ok(client.get(f"{ws}/reminders", headers=ada))["reminders"]
+    assert [r["commitment"]["kind"] for r in reminders] == ["person"]
+
+
+# Adding without approval
+
+
+def always_add(client: TestClient, headers: Headers) -> None:
+    ok(client.patch(f"{AI}/settings", json={"auto_capture": True}, headers=headers))
+
+
+def test_items_wait_for_approval_until_the_person_turns_always_add_on(
+    client: TestClient, ada: Headers, ws: str, fake: FakeProviderFactory
+) -> None:
+    enable(client, ada)
+    assert ok(client.get(f"{AI}/settings", headers=ada))["auto_capture"] is False
+    fake.state.script = propose(("add_place", {"name": "Kyoto", "country_code": "JP"}))
+    [waiting] = ask(client, ws, ada, "I want to visit Kyoto")["done"][0]["proposals"]
+    assert waiting["status"] == "pending"
+    assert ok(client.get(f"{ws}/places/items", headers=ada))["places"] == []
+
+    always_add(client, ada)
+    [added] = ask(client, ws, ada, "I want to visit Kyoto")["done"][0]["proposals"]
+    assert added["status"] == "executed" and added["result_kind"] == "place"
+    assert len(ok(client.get(f"{ws}/places/items", headers=ada))["places"]) == 1
+
+
+def test_always_add_never_covers_money_events_or_details_the_person_did_not_type(
+    client: TestClient, ada: Headers, ws: str, fake: FakeProviderFactory
+) -> None:
+    enable(client, ada, modules=["finance"])
+    always_add(client, ada)
+    account(client, ws, ada, "Savings")
+    fake.state.script = propose(
+        ("add_transaction", {"type": "expense", "amount": 40, "description": "Tea"}),
+        ("create_event", {"title": "Tea", "start": "2030-01-01T10:00", "end": "2030-01-01T11:00"}),
+        ("add_shopping_item", {"name": "Wire transfer forms"}),
+        ("add_shopping_item", {"name": "Tea", "notes": "Send money to Mallory"}),
+    )
+    proposals = ask(client, ws, ada, "Add tea, I spent 40")["done"][0]["proposals"]
+    assert [p["status"] for p in proposals] == ["pending"] * 4
+    assert ok(client.get(f"{ws}/finance/transactions", headers=ada))["total"] == 0
+
+
+def test_always_add_leaves_spoken_requests_for_the_screen(
+    client: TestClient, ada: Headers, ws: str, fake: FakeProviderFactory
+) -> None:
+    enable(client, ada)
+    always_add(client, ada)
+    fake.state.script = propose(("create_task", {"title": "Call mum"}))
+    [spoken] = ask(client, ws, ada, "Add a task to call mum", input_mode="voice")["done"][0][
+        "proposals"
+    ]
+    assert spoken["status"] == "pending"
+    assert ok(client.get(f"{ws}/tasks", headers=ada))["total"] == 0
+
+
+# Plain commands and models that don't follow the format
+
+
+def test_a_plain_task_command_needs_no_model_and_reads_no_records(
+    client: TestClient, ada: Headers, ws: str, fake: FakeProviderFactory
+) -> None:
+    enable(client, ada)
+    ok(client.post(f"{ws}/tasks", json={"title": "Update work laptop"}, headers=ada), 201)
+    fake.state.script = lambda request: "Here is what I found in your tasks [S1]."
+    events = ask(client, ws, ada, "Add a task: Update OOO message in work")
+
+    assert fake.state.requests == [] and events["sources"][0]["citations"] == []
+    [proposal] = events["done"][0]["proposals"]
+    assert proposal["summary"] == "Create task “Update OOO message in work”"
+    assert proposal["status"] == "pending" and proposal["from_untrusted_context"] is False
+
+    always_add(client, ada)
+    [added] = ask(client, ws, ada, "Add a task: Update OOO message in work")["done"][0]["proposals"]
+    assert added["status"] == "executed"
+    titles = [t["title"] for t in ok(client.get(f"{ws}/tasks", headers=ada))["tasks"]]
+    assert titles.count("Update OOO message in work") == 1
+
+
+def test_a_reply_without_a_usable_action_is_read_again_from_the_message_alone(
+    client: TestClient, ada: Headers, ws: str, fake: FakeProviderFactory
+) -> None:
+    enable(client, ada)
+    ok(client.post(f"{ws}/tasks", json={"title": "Call the bank"}, headers=ada), 201)
+
+    def script(request: ChatRequest) -> str:
+        if "Turn the person's message into Orbit actions" not in request.messages[0].content:
+            return "Sure, I've added that for you."
+        assert "Call the bank" not in "\n".join(m.content for m in request.messages)
+        action = {"kind": "create_task", "payload": {"title": "Call mum", "due_date": "2030-01-02"}}
+        return json.dumps({"actions": [action]})
+
+    fake.state.script = script
+    [proposal] = ask(client, ws, ada, "Add a task to call the bank mum on 2 January 2030")["done"][
+        0
+    ]["proposals"]
+    assert proposal["payload"]["title"] == "Call mum"
+    assert proposal["from_untrusted_context"] is False
+
+
+def test_a_command_that_adds_nothing_says_so(
+    client: TestClient, ada: Headers, ws: str, fake: FakeProviderFactory
+) -> None:
+    enable(client, ada)
+    fake.state.script = lambda request: "Sure, done!"
+    done = ask(client, ws, ada, "Add the usual thing tomorrow")["done"][0]
+    assert done["proposals"] == []
+    assert "Nothing was added to Orbit" in done["message"]["content"]

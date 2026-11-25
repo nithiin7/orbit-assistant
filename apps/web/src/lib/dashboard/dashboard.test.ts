@@ -120,7 +120,7 @@ describe("layout changes", () => {
     ]);
     expect(moveWidget(layout, "tasks", -1)).toEqual(layout);
     expect(moveWidget(layout, "shopping", 1)).toEqual(layout);
-    expect(moveWidget(layout, "modules", 1)).toEqual(layout);
+    expect(moveWidget(layout, "workspace", 1)).toEqual(layout);
   });
 });
 

@@ -74,8 +74,16 @@ class ShoppingItemModel(Base):
             ["shopping_lists.id", "shopping_lists.workspace_id"],
             ondelete="CASCADE",
         ),
+        # A gift idea's person, kept in the item's workspace. No ON DELETE action: deleting a
+        # person clears the link first, so the item stays on its list.
+        ForeignKeyConstraint(
+            ["person_id", "workspace_id"],
+            ["people.id", "people.workspace_id"],
+            name="fk_shopping_items_person",
+        ),
         # Items are always read one list at a time.
         Index("ix_shopping_items_workspace_list", "workspace_id", "list_id"),
+        Index("ix_shopping_items_person", "person_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
@@ -87,5 +95,7 @@ class ShoppingItemModel(Base):
     notes: Mapped[str] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(16))
     purchased_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    # A gift idea for someone in People.
+    person_id: Mapped[uuid.UUID | None]
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now, onupdate=utc_now)

@@ -21,6 +21,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    false,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -31,7 +32,9 @@ PROVIDER_KINDS = "'openai', 'anthropic', 'gemini', 'ollama', 'openai_compatible'
 SOURCE_TYPES = "'note', 'document', 'task', 'event', 'habit'"
 ACTION_KINDS = (
     "'create_task', 'create_reminder', 'create_event', 'create_note', 'append_to_note', "
-    "'add_note_tags', 'update_document_details'"
+    "'add_note_tags', 'update_document_details', 'add_shopping_item', 'create_habit', "
+    "'log_water', 'log_weight', 'log_activity', 'add_transaction', 'add_place', 'save_link', "
+    "'add_watch_item', 'add_person'"
 )
 
 
@@ -93,6 +96,8 @@ class AiSettingsModel(Base):
     modules: Mapped[list[str]] = mapped_column(JSON)
     response_style: Mapped[str] = mapped_column(String(16))
     monthly_token_limit: Mapped[int | None] = mapped_column(Integer)
+    # Add simple items the person typed without asking; see `services/ai/auto_capture.py`.
+    auto_capture: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     indexing_enabled: Mapped[bool] = mapped_column(Boolean)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
 
@@ -198,6 +203,9 @@ class AiMessageModel(Base):
     input_tokens: Mapped[int | None] = mapped_column(Integer)
     output_tokens: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
+    # 'text' (typed) or 'voice' (spoken, then transcribed); checked by the code, since adding a
+    # check constraint would rebuild the table on SQLite. Audio itself is never stored.
+    input_mode: Mapped[str] = mapped_column(String(8), default="text", server_default="text")
 
 
 class AiActionProposalModel(Base):
@@ -243,7 +251,10 @@ class AiUsageModel(Base):
     __tablename__ = "ai_usage"
     __table_args__ = (
         CheckConstraint(f"provider_kind IN ({PROVIDER_KINDS})", name="provider_kind"),
-        CheckConstraint("operation IN ('chat', 'assist', 'embedding', 'test')", name="operation"),
+        CheckConstraint(
+            "operation IN ('chat', 'assist', 'embedding', 'test', 'transcription', 'speech')",
+            name="operation",
+        ),
         CheckConstraint("processing IN ('local', 'cloud')", name="processing"),
         Index("ix_ai_usage_user_created", "user_id", "created_at"),
     )

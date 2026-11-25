@@ -33,6 +33,7 @@ from orbit_api.db.models.bookmarks import (
     BookmarkPreviewModel,
     BookmarkSettingsModel,
 )
+from orbit_api.db.models.briefings import BriefingSettingsModel, DailyBriefingModel
 from orbit_api.db.models.budgets import (
     FinanceBudgetAlertModel,
     FinanceBudgetModel,
@@ -134,7 +135,9 @@ from orbit_api.db.models.notes import (
     NoteTagModel,
     NoteTaskLinkModel,
 )
+from orbit_api.db.models.people import PersonDateModel, PersonLedgerEntryModel, PersonModel
 from orbit_api.db.models.places import PlaceModel, PlaceSettingsModel
+from orbit_api.db.models.push import PushPreferencesModel, PushSubscriptionModel
 from orbit_api.db.models.reminders import (
     NotificationModel,
     ReminderModel,
@@ -142,8 +145,14 @@ from orbit_api.db.models.reminders import (
 )
 from orbit_api.db.models.search import RecentSearchModel, SavedSearchModel
 from orbit_api.db.models.shopping import ShoppingItemModel, ShoppingListModel
+from orbit_api.db.models.statements import (
+    FinanceCategoryRuleModel,
+    FinanceImportBatchModel,
+    FinanceImportRowModel,
+)
 from orbit_api.db.models.tasks import TaskListModel, TaskModel
 from orbit_api.db.models.users import LocalCredentialModel, LocalSessionModel, UserModel
+from orbit_api.db.models.voice import VoiceSettingsModel
 from orbit_api.db.models.watchlist import WatchItemModel, WatchlistSettingsModel
 from orbit_api.db.models.workspaces import WorkspaceModel
 
@@ -172,6 +181,7 @@ __all__ = [
     "BookmarkModel",
     "BookmarkPreviewModel",
     "BookmarkSettingsModel",
+    "BriefingSettingsModel",
     "CalendarCategoryModel",
     "CalendarEventAlertModel",
     "CalendarEventExceptionModel",
@@ -179,6 +189,7 @@ __all__ = [
     "CalendarEventNoteModel",
     "CalendarEventTaskModel",
     "CalendarPreferencesModel",
+    "DailyBriefingModel",
     "DashboardLayoutModel",
     "DocumentCategoryModel",
     "DocumentFolderModel",
@@ -194,10 +205,13 @@ __all__ = [
     "FinanceBudgetModel",
     "FinanceBudgetPeriodModel",
     "FinanceCategoryModel",
+    "FinanceCategoryRuleModel",
     "FinanceDepositModel",
     "FinanceGoalContributionModel",
     "FinanceHoldingModel",
     "FinanceHoldingPriceModel",
+    "FinanceImportBatchModel",
+    "FinanceImportRowModel",
     "FinanceInvestmentAccountModel",
     "FinanceInvestmentTransactionModel",
     "FinanceLoanInstallmentModel",
@@ -252,8 +266,13 @@ __all__ = [
     "NoteTagModel",
     "NoteTaskLinkModel",
     "NotificationModel",
+    "PersonDateModel",
+    "PersonLedgerEntryModel",
+    "PersonModel",
     "PlaceModel",
     "PlaceSettingsModel",
+    "PushPreferencesModel",
+    "PushSubscriptionModel",
     "RecentSearchModel",
     "ReminderModel",
     "ReminderOccurrenceModel",
@@ -271,6 +290,7 @@ __all__ = [
     "UserAvatarModel",
     "UserCoverModel",
     "UserModel",
+    "VoiceSettingsModel",
     "WatchItemModel",
     "WatchlistSettingsModel",
     "WorkspaceModel",

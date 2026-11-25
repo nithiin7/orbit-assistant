@@ -69,6 +69,7 @@ function routes(activities: Activity[]) {
 
 describe("ActivityView", () => {
   it("shows the day's rings against the person's goals", async () => {
+    const user = userEvent.setup();
     mockApi(
       routes([
         activity({ id: "a1", steps: 6000 }),
@@ -92,7 +93,11 @@ describe("ActivityView", () => {
     expect(screen.getByText("Steps: 2,000 steps to go.")).toBeInTheDocument();
     expect(screen.getByText("1 day")).toBeInTheDocument();
 
-    const history = screen.getByRole("region", { name: "History" });
+    // Past days sit on their own tab.
+    expect(screen.queryByRole("region", { name: "Past activity" })).toBeNull();
+    await user.click(screen.getByRole("tab", { name: "History" }));
+    expect(screen.getByRole("tab", { name: "History" })).toHaveAttribute("aria-selected", "true");
+    const history = screen.getByRole("region", { name: "Past activity" });
     expect(within(history).getByRole("heading", { name: "Today" })).toBeInTheDocument();
     expect(within(history).getByRole("heading", { name: "Yesterday" })).toBeInTheDocument();
   });
@@ -144,7 +149,7 @@ describe("ActivityView", () => {
     });
     await renderSignedIn(<ActivityView workspaceId={personal.id} today={TODAY} />);
 
-    expect(await screen.findByText("No activity recorded")).toBeInTheDocument();
+    expect(await screen.findByText("Let’s get moving")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Goals" }));
     const dialog = screen.getByRole("dialog", { name: "Ring goals" });
     expect(within(dialog).getByLabelText("Steps")).toHaveValue("8000");

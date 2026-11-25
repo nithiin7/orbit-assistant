@@ -20,6 +20,7 @@ from orbit_api.db.database import open_database
 from orbit_api.providers.ai.registry import HttpProviderFactory
 from orbit_api.providers.integrations.registry import HttpConnectorRegistry
 from orbit_api.providers.prices.feed import HttpPriceFeed
+from orbit_api.providers.push.web_push import WebPushSender
 from orbit_api.scheduler.worker import (
     AgentJobs,
     AiIndexing,
@@ -62,6 +63,7 @@ async def _run(command: str, *, once: bool, poll_interval: float) -> None:
         backups=BackupJobs(settings),
         agents=AgentJobs(settings, providers, connectors),
         market=MarketData(settings, prices),
+        push=WebPushSender.from_settings(settings),
     )
     try:
         match command:

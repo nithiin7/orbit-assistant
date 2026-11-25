@@ -1,9 +1,10 @@
 "use client";
 
 import type { HabitColor, HabitIcon } from "@orbit/contracts";
-import { Check, Plus } from "lucide-react";
+import { Check, ListChecks, Plus, Sparkles } from "lucide-react";
 import { useState } from "react";
 
+import { IconChip } from "@/components/ui/icon-chip";
 import {
   describeHabitTemplate,
   describeRoutineTemplate,
@@ -17,7 +18,6 @@ import {
 import { cn } from "@/utils/common";
 
 import { HabitTile } from "./habit-icon";
-
 const FILTERS: readonly { value: TemplateFilter | "all"; label: string }[] = [
   { value: "all", label: "All" },
   ...TEMPLATE_FILTERS,
@@ -74,7 +74,11 @@ export function HabitTemplatesView({
 
       {habits.length > 0 ? (
         <section aria-labelledby="habit-templates-heading" className="space-y-3">
-          <h2 id="habit-templates-heading" className="text-sm font-semibold">
+          <h2
+            id="habit-templates-heading"
+            className="flex items-center gap-2.5 text-sm font-semibold"
+          >
+            <IconChip icon={Sparkles} tone="brand" />
             Habits
           </h2>
           <ul className="grid gap-3 @2xl:grid-cols-2 @6xl:grid-cols-3">
@@ -98,7 +102,11 @@ export function HabitTemplatesView({
       {showRoutines ? (
         <section aria-labelledby="routine-templates-heading" className="space-y-3">
           <div>
-            <h2 id="routine-templates-heading" className="text-sm font-semibold">
+            <h2
+              id="routine-templates-heading"
+              className="flex items-center gap-2.5 text-sm font-semibold"
+            >
+              <IconChip icon={ListChecks} tone="green" />
               Routines
             </h2>
             <p className="text-xs text-muted-foreground">
@@ -151,7 +159,7 @@ function TemplateCard({
       type="button"
       onClick={onUse}
       aria-label={`Use the “${name}” template${inUse ? ", already tracking" : ""}`}
-      className="group/template flex h-full w-full flex-col gap-3 rounded-xl border bg-card p-4 text-left transition-[background-color,border-color,translate,box-shadow] duration-150 outline-none hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-elevation-2 focus-visible:ring-2 focus-visible:ring-ring motion-reduce:hover:translate-y-0"
+      className="group/template flex h-full w-full flex-col gap-3 rounded-2xl border bg-card p-4 text-left transition-[background-color,border-color,translate,box-shadow] duration-150 outline-none hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-elevation-2 focus-visible:ring-2 focus-visible:ring-ring motion-reduce:hover:translate-y-0"
     >
       <span className="flex items-start gap-3">
         <HabitTile icon={icon} color={color} />

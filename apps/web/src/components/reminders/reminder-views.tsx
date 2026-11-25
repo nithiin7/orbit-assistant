@@ -47,10 +47,10 @@ export function ReminderViews({ filter, onFilterChange }: ReminderViewsProps) {
               aria-pressed={selected}
               onClick={() => onFilterChange(value)}
               className={cn(
-                "flex h-9 shrink-0 items-center gap-2.5 rounded-lg px-3 text-sm font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring @4xl/reminders:w-full",
+                "flex h-9 shrink-0 items-center gap-2.5 rounded-full border px-3 text-sm font-medium whitespace-nowrap transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring @4xl/reminders:w-full @4xl/reminders:rounded-lg @4xl/reminders:border-transparent",
                 selected
-                  ? "bg-brand-subtle text-brand"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                  ? "border-transparent bg-brand-subtle text-brand"
+                  : "bg-card text-muted-foreground hover:bg-accent hover:text-foreground @4xl/reminders:bg-transparent",
               )}
             >
               <Icon className="size-4" aria-hidden="true" />

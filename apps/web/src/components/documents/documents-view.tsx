@@ -32,6 +32,7 @@ import { EmptyState } from "@/components/empty-state";
 import { FolderPickerDialog } from "@/components/folders/folder-dialogs";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
 import { Select } from "@/components/ui/select";
@@ -479,14 +480,9 @@ function DocumentsView({ workspaceId }: { workspaceId: string }) {
                 <div className="flex items-center justify-between gap-2">
                   <h2
                     id="document-list-heading"
-                    className="flex min-w-0 items-center gap-2 text-lg font-semibold tracking-tight"
+                    className="flex min-w-0 items-center gap-2.5 text-lg font-semibold tracking-tight"
                   >
-                    {ViewIcon ? (
-                      <ViewIcon
-                        className="size-4 shrink-0 text-muted-foreground"
-                        aria-hidden="true"
-                      />
-                    ) : null}
+                    {ViewIcon ? <IconChip icon={ViewIcon} /> : null}
                     <span className="truncate">{title}</span>
                   </h2>
                   <div className="flex shrink-0 items-center gap-1">
@@ -625,7 +621,7 @@ function DocumentsView({ workspaceId }: { workspaceId: string }) {
                 </div>
 
                 {uploadRequested && uploads.items.length === 0 ? (
-                  <div className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 text-center">
+                  <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed px-6 py-10 text-center">
                     <Upload className="size-6 text-muted-foreground" aria-hidden="true" />
                     <p className="text-sm text-muted-foreground">
                       Drop files here, or choose them from your device.

@@ -59,6 +59,8 @@ class ShoppingItem:
     purchased_at: datetime | None
     created_at: datetime
     updated_at: datetime
+    # A gift idea for this person, from People.
+    person_id: uuid.UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,6 +71,7 @@ class ItemDraft:
     quantity: str | None = None
     url: str | None = None
     notes: str = ""
+    person_id: uuid.UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,6 +82,8 @@ class ItemChanges:
     quantity: Change[str | None] = UNSET
     url: Change[str | None] = UNSET
     notes: Change[str] = UNSET
+    # `None` makes it an ordinary item again.
+    person_id: Change[uuid.UUID | None] = UNSET
 
 
 class ShoppingListNotFoundError(Exception):
@@ -87,6 +92,10 @@ class ShoppingListNotFoundError(Exception):
 
 class ShoppingItemNotFoundError(Exception):
     """The item does not exist in this workspace."""
+
+
+class GiftPersonNotFoundError(Exception):
+    """A gift idea named a person who isn't in this workspace."""
 
 
 class DefaultListError(Exception):

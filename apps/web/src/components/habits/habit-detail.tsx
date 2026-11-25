@@ -6,7 +6,10 @@ import {
   ArchiveRestore,
   ArrowLeft,
   Bell,
+  CalendarDays,
   CheckSquare,
+  Flame,
+  History,
   MoreHorizontal,
   NotebookPen,
   Pause,
@@ -22,6 +25,7 @@ import { type FormEvent, useState } from "react";
 import { describeApiError } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -202,8 +206,12 @@ function Loaded({
             </section>
           ) : null}
 
-          <section aria-labelledby="stats-heading" className="space-y-3">
-            <h3 id="stats-heading" className="text-sm font-semibold">
+          <section
+            aria-labelledby="stats-heading"
+            className="space-y-3 rounded-2xl border bg-linear-to-br from-brand-subtle/80 via-card to-card p-4 shadow-elevation-1 @3xl:p-5"
+          >
+            <h3 id="stats-heading" className="flex items-center gap-2.5 text-sm font-semibold">
+              <IconChip icon={Flame} tone="brand" />
               Progress
             </h3>
             <dl className="grid grid-cols-2 gap-3 @xl:grid-cols-3">
@@ -230,9 +238,10 @@ function Loaded({
 
           <section
             aria-labelledby="heatmap-heading"
-            className="space-y-3 rounded-xl border bg-card p-4"
+            className="space-y-3 rounded-2xl border bg-card p-4 @3xl:p-5"
           >
-            <h3 id="heatmap-heading" className="text-sm font-semibold">
+            <h3 id="heatmap-heading" className="flex items-center gap-2.5 text-sm font-semibold">
+              <IconChip icon={CalendarDays} tone="green" />
               The last six months
             </h3>
             {history.status === "success" ? (
@@ -348,9 +357,9 @@ function Loaded({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border bg-card p-3">
+    <div className="rounded-xl border bg-card/80 p-3 backdrop-blur-sm">
       <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="mt-1 text-lg font-semibold tabular-nums">{value}</dd>
+      <dd className="mt-1 text-xl font-semibold tracking-tight tabular-nums">{value}</dd>
     </div>
   );
 }
@@ -365,9 +374,9 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section aria-label={title} className="rounded-xl border bg-card p-4">
-      <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
-        {Icon ? <Icon className="size-4 text-muted-foreground" aria-hidden="true" /> : null}
+    <section aria-label={title} className="rounded-2xl border bg-card p-4">
+      <h3 className="mb-3 flex items-center gap-2.5 text-sm font-semibold">
+        {Icon ? <IconChip icon={Icon} tone="slate" /> : null}
         {title}
       </h3>
       {children}
@@ -475,7 +484,8 @@ function PastDay({
   if (habit.habit.status === "archived") return null;
   return (
     <section aria-labelledby="past-heading" className="space-y-2">
-      <h3 id="past-heading" className="text-sm font-semibold">
+      <h3 id="past-heading" className="flex items-center gap-2.5 text-sm font-semibold">
+        <IconChip icon={History} tone="slate" />
         Record a past day
       </h3>
       <div className="flex flex-wrap items-center gap-2">
@@ -515,10 +525,11 @@ function RecentDays({ history, detail }: { history: HabitHistory; detail: HabitD
   if (logged.length === 0) return null;
   return (
     <section aria-labelledby="recent-heading" className="space-y-2">
-      <h3 id="recent-heading" className="text-sm font-semibold">
+      <h3 id="recent-heading" className="flex items-center gap-2.5 text-sm font-semibold">
+        <IconChip icon={History} tone="slate" />
         Recent entries
       </h3>
-      <ul className="divide-y rounded-xl border bg-card">
+      <ul className="divide-y rounded-2xl border bg-card">
         {logged.map((day) => (
           <li
             key={day.day}

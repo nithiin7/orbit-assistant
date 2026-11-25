@@ -46,14 +46,13 @@ export const widgetIds = [
   "shopping",
   "watchlist",
   "places",
+  "people",
   "workouts",
   "water",
   "nutrition",
   "weight",
   "fitness_goals",
   "workspace",
-  "status",
-  "modules",
 ] as const satisfies readonly WidgetId[];
 
 export type WidgetGroup = "Today" | "Plan and track" | "Money" | "Health" | "Orbit";
@@ -215,6 +214,14 @@ export const widgetCatalog: readonly WidgetDefinition[] = [
     defaultVisible: false,
   },
   {
+    id: "people",
+    title: "Coming up",
+    description: "Birthdays, anniversaries, and other dates in the next month.",
+    group: "Today",
+    defaultSize: "half",
+    defaultVisible: false,
+  },
+  {
     id: "workouts",
     title: "Workouts",
     description: "Today’s scheduled workout, your last one, and this week’s count.",
@@ -260,22 +267,6 @@ export const widgetCatalog: readonly WidgetDefinition[] = [
     description: "The active workspace and who is signed in.",
     group: "Orbit",
     defaultSize: "half",
-    defaultVisible: false,
-  },
-  {
-    id: "status",
-    title: "Orbit status",
-    description: "What is built so far and what comes next.",
-    group: "Orbit",
-    defaultSize: "half",
-    defaultVisible: false,
-  },
-  {
-    id: "modules",
-    title: "Planned modules",
-    description: "Sections of Orbit that are not built yet.",
-    group: "Orbit",
-    defaultSize: "full",
     defaultVisible: false,
   },
 ];

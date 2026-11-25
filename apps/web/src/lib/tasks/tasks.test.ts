@@ -5,11 +5,15 @@ import { fieldErrors } from "@/test/validation";
 import {
   DEFAULT_TASK_FILTERS,
   describeDueDate,
+  fromRepeatValue,
   groupTasksByDue,
   isNarrowed,
+  repeatLabel,
+  repeatOptions,
   TASK_PAGE_SIZE,
   taskListSchema,
   taskSchema,
+  toRepeatValue,
   toTaskListQuery,
 } from "./tasks";
 
@@ -19,6 +23,7 @@ const validTask = {
   dueDate: "",
   priority: "none",
   list: "none",
+  repeat: "none",
 };
 const taskErrors = (changes: Partial<typeof validTask>) =>
   fieldErrors(taskSchema, { ...validTask, ...changes });
@@ -99,6 +104,34 @@ describe("task title", () => {
   it("accepts titles the API accepts", () => {
     expect(taskErrors({ title: `  ${"x".repeat(200)}  ` })).toEqual({});
     expect(taskErrors({ title: "Dinner 👨‍👩‍👧 at 7" })).toEqual({});
+  });
+});
+
+describe("task repeats", () => {
+  it("describes how often a task repeats", () => {
+    expect(repeatLabel({ frequency: "daily", interval: 1 })).toBe("Every day");
+    expect(repeatLabel({ frequency: "monthly", interval: 3 })).toBe("Every 3 months");
+  });
+
+  it("converts between repeats and the picker's values", () => {
+    expect(toRepeatValue(null)).toBe("none");
+    expect(toRepeatValue({ frequency: "weekly", interval: 2 })).toBe("weekly:2");
+    expect(fromRepeatValue("weekly:2")).toEqual({ frequency: "weekly", interval: 2 });
+    expect(fromRepeatValue("none")).toBeNull();
+  });
+
+  it("keeps a repeat that isn't one of the presets selectable", () => {
+    const custom = { frequency: "daily", interval: 10 } as const;
+
+    expect(repeatOptions(null).map((option) => option.value)).not.toContain("daily:10");
+    expect(repeatOptions(custom).at(-1)).toEqual({ value: "daily:10", label: "Every 10 days" });
+  });
+
+  it("needs a due date to repeat", () => {
+    expect(taskErrors({ repeat: "weekly:1" })).toEqual({
+      repeat: "Set a due date to repeat this task.",
+    });
+    expect(taskErrors({ repeat: "weekly:1", dueDate: "2026-03-10" })).toEqual({});
   });
 });
 

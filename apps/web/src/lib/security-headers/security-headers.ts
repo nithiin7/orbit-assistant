@@ -23,9 +23,10 @@ export const securityHeaders: readonly Header[] = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  // Orbit uses none of these; a script injected into a page couldn't either.
+  // Voice conversations need the microphone on Orbit's own pages. Orbit uses none of the others;
+  // a script injected into a page couldn't either.
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
+    value: "camera=(), microphone=(self), geolocation=(), payment=(), usb=(), interest-cohort=()",
   },
 ];

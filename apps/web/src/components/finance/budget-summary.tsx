@@ -1,7 +1,7 @@
 "use client";
 
 import type { Currency } from "@orbit/contracts";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, PiggyBank, Target } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -71,6 +71,8 @@ export function BudgetSummary({
         <Panel
           title="Budget"
           description={monthLabel(month)}
+          icon={Target}
+          accent="spending"
           action={
             <Button variant="ghost" size="sm" onClick={onOpenBudgets}>
               Budgets
@@ -128,6 +130,8 @@ export function BudgetSummary({
         <Panel
           title="Savings goals"
           description="Saving isn’t spending."
+          icon={PiggyBank}
+          accent="positive"
           action={
             <Button variant="ghost" size="sm" onClick={onOpenGoals}>
               Goals

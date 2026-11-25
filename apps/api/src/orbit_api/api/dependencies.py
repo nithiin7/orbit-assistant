@@ -16,11 +16,13 @@ from orbit_api.repositories.ai_services import AiServices, build_ai
 from orbit_api.repositories.avatars import SqlAvatarRepository, SqlCoverRepository
 from orbit_api.repositories.backup import build_backup_service
 from orbit_api.repositories.bookmarks import SqlBookmarkRepository, SqlBookmarkSettings
+from orbit_api.repositories.briefings import build_briefing_service
 from orbit_api.repositories.budgets import build_budget_service
 from orbit_api.repositories.calendar import (
     build_calendar_preference_service,
     build_calendar_service,
 )
+from orbit_api.repositories.capture import build_capture_services
 from orbit_api.repositories.commitments import build_commitment_service
 from orbit_api.repositories.dashboard import SqlDashboardRepository
 from orbit_api.repositories.documents import build_document_service
@@ -40,14 +42,22 @@ from orbit_api.repositories.investments import (
 )
 from orbit_api.repositories.notes import build_attachment_service, build_note_service
 from orbit_api.repositories.notifications import SqlNotificationRepository
+from orbit_api.repositories.people import build_ledger_service, build_people_service
 from orbit_api.repositories.places import SqlPlaceRepository, SqlPlaceSettings
 from orbit_api.repositories.planning import build_planning_service
-from orbit_api.repositories.reminders import SqlOccurrenceRepository, SqlReminderRepository
+from orbit_api.repositories.push import build_push_service
+from orbit_api.repositories.reminders import (
+    SqlOccurrenceRepository,
+    SqlReminderRepository,
+    build_task_service,
+)
 from orbit_api.repositories.search.history import build_search_history
 from orbit_api.repositories.search.providers import build_universal_search
 from orbit_api.repositories.shopping import SqlShoppingItemRepository, SqlShoppingListRepository
+from orbit_api.repositories.statements import build_statement_service
 from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import SqlTransaction
+from orbit_api.repositories.voice import VoiceServices, build_voice
 from orbit_api.repositories.watchlist import SqlLookupSettings, SqlWatchItemRepository
 from orbit_api.repositories.workspaces import SqlWorkspaceRepository
 from orbit_api.services.accounts.service import AccountService
@@ -55,6 +65,7 @@ from orbit_api.services.achievements.service import AchievementService
 from orbit_api.services.avatars.service import MAX_COVER_BYTES, AvatarService
 from orbit_api.services.backup.service import BackupService
 from orbit_api.services.bookmarks.service import BookmarkService, LinkFetcher
+from orbit_api.services.briefings.service import BriefingService
 from orbit_api.services.budgets.service import BudgetService
 from orbit_api.services.calendar.service import CalendarPreferenceService, CalendarService
 from orbit_api.services.commitments.service import CommitmentService
@@ -74,14 +85,20 @@ from orbit_api.services.networth.service import NetWorthService
 from orbit_api.services.notes.attachments import AttachmentService
 from orbit_api.services.notes.service import NoteService
 from orbit_api.services.notifications.service import NotificationService
+from orbit_api.services.people.ledger import PeopleLedgerService
+from orbit_api.services.people.service import PeopleService
 from orbit_api.services.places.service import Geocoder, PlaceService
 from orbit_api.services.planning.service import PlanningService
+from orbit_api.services.push.models import PushSender
+from orbit_api.services.push.service import PushService
 from orbit_api.services.reminders.service import ReminderService
 from orbit_api.services.search.history import SearchHistoryService
 from orbit_api.services.search.service import SearchService
 from orbit_api.services.search.universal import UniversalSearchService
 from orbit_api.services.shopping.service import ShoppingService
+from orbit_api.services.statements.service import StatementImportService
 from orbit_api.services.tasks.service import TaskService
+from orbit_api.services.voice.models import AudioProviderFactory
 from orbit_api.services.watchlist.service import TitleCatalogs, WatchlistService
 from orbit_api.services.workspaces.service import WorkspaceService
 from orbit_api.system.attachment_store import FileAttachmentStore
@@ -203,7 +220,7 @@ DashboardServiceDep = Annotated[DashboardService, Depends(get_dashboard_service)
 
 
 def get_task_service(session: SessionDep) -> TaskService:
-    return TaskService(SqlTaskRepository(session), SqlTransaction(session))
+    return build_task_service(session, SqlTransaction(session))
 
 
 TaskServiceDep = Annotated[TaskService, Depends(get_task_service)]
@@ -239,6 +256,14 @@ def get_notification_service(session: SessionDep) -> NotificationService:
 NotificationServiceDep = Annotated[NotificationService, Depends(get_notification_service)]
 
 
+def get_push_service(request: Request, session: SessionDep) -> PushService:
+    sender: PushSender = getattr(request.app.state, "push_sender")  # noqa: B009
+    return build_push_service(session, sender)
+
+
+PushServiceDep = Annotated[PushService, Depends(get_push_service)]
+
+
 def get_finance_service(session: SessionDep) -> FinanceService:
     return FinanceService(
         SqlFinanceAccountRepository(session),
@@ -256,6 +281,13 @@ def get_commitment_service(session: SessionDep) -> CommitmentService:
 
 
 CommitmentServiceDep = Annotated[CommitmentService, Depends(get_commitment_service)]
+
+
+def get_statement_service(session: SessionDep) -> StatementImportService:
+    return build_statement_service(session)
+
+
+StatementServiceDep = Annotated[StatementImportService, Depends(get_statement_service)]
 
 
 def get_investment_service(session: SessionDep) -> InvestmentService:
@@ -364,6 +396,20 @@ def get_place_service(request: Request, session: SessionDep, settings: SettingsD
 PlaceServiceDep = Annotated[PlaceService, Depends(get_place_service)]
 
 
+def get_people_service(session: SessionDep) -> PeopleService:
+    return build_people_service(session)
+
+
+PeopleServiceDep = Annotated[PeopleService, Depends(get_people_service)]
+
+
+def get_people_ledger_service(session: SessionDep) -> PeopleLedgerService:
+    return build_ledger_service(session)
+
+
+PeopleLedgerServiceDep = Annotated[PeopleLedgerService, Depends(get_people_ledger_service)]
+
+
 def get_archive_store(settings: SettingsDep) -> FileArchiveStore:
     return FileArchiveStore(settings.backups_dir)
 
@@ -453,6 +499,14 @@ def get_daily_overview_service(
 DailyOverviewServiceDep = Annotated[DailyOverviewService, Depends(get_daily_overview_service)]
 
 
+def get_briefing_service(session: SessionDep, store: AttachmentStoreDep) -> BriefingService:
+    """Briefings compose the modules' own services; only the snapshots have a repository."""
+    return build_briefing_service(session, store)
+
+
+BriefingServiceDep = Annotated[BriefingService, Depends(get_briefing_service)]
+
+
 def get_search_service(
     session: SessionDep,
     tasks: TaskServiceDep,
@@ -516,6 +570,7 @@ def build_ai_for(session: AsyncSession, state: object) -> AiServices:
             calendar=modules.calendar,
             notes=modules.notes,
             documents=modules.documents,
+            capture=build_capture_services(session, app_settings, SqlTransaction(session)),
         ),
     )
 
@@ -552,3 +607,13 @@ def build_agent_for(session: AsyncSession, state: object) -> AgentServices:
 
 
 AgentServicesDep = Annotated[AgentServices, Depends(get_agent_services)]
+
+
+def get_voice_services(request: Request, session: SessionDep, ai: AiServicesDep) -> VoiceServices:
+    """The voice services on the request's session (the AI services' too), over the app's
+    speech adapters; tests replace those with fakes."""
+    factory: AudioProviderFactory = getattr(request.app.state, "voice_providers")  # noqa: B009 - untyped State
+    return build_voice(session, ai.config, factory)
+
+
+VoiceServicesDep = Annotated[VoiceServices, Depends(get_voice_services)]

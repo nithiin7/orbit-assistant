@@ -7,7 +7,20 @@ import type {
   NetWorthItem,
   NetWorthSnapshot,
 } from "@orbit/contracts";
-import { Camera, ChevronDown, CircleHelp, CreditCard, Landmark, Scale, Wallet } from "lucide-react";
+import {
+  ArrowDownLeft,
+  ArrowUpDown,
+  ArrowUpRight,
+  Camera,
+  ChartLine,
+  ChevronDown,
+  CircleHelp,
+  CreditCard,
+  Landmark,
+  type LucideIcon,
+  Scale,
+  Wallet,
+} from "lucide-react";
 import { useState } from "react";
 
 import { describeApiError } from "@/api/client";
@@ -24,7 +37,7 @@ import { Chip } from "./finance-meta";
 import type { FinanceData } from "./finance-view";
 import { FreshnessBadge, Gain } from "./investment-parts";
 import { EndedSection, LoadError, Panel } from "./panel";
-import { StatGrid, StatTile } from "./stat-tile";
+import { StatGrid, StatTile, type TileAccent } from "./stat-tile";
 import { CurrencySwitcher, ViewHeader } from "./view-header";
 
 /**
@@ -132,7 +145,7 @@ function NetWorthDetail({
         }
       />
 
-      <StatGrid>
+      <StatGrid hero icon={Scale}>
         <StatTile
           label="Net worth"
           icon={Wallet}
@@ -184,7 +197,12 @@ function NetWorthDetail({
       {/* How it changed, beside what it's made of when there's room. */}
       <div className="grid items-start gap-6 @5xl/list:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-6">
-          <Panel title="Net worth over time" description="Monthly snapshots, then today.">
+          <Panel
+            title="Net worth over time"
+            description="Monthly snapshots, then today."
+            icon={ChartLine}
+            accent="brand"
+          >
             {snapshots.state.status === "loading" ? (
               <Skeleton className="h-48" />
             ) : snapshots.state.status === "error" ? (
@@ -193,7 +211,7 @@ function NetWorthDetail({
               <TrendBars snapshots={snapshots.state.data.snapshots} live={data} />
             )}
           </Panel>
-          <Panel title="Change">
+          <Panel title="Change" icon={ArrowUpDown} accent="neutral">
             <dl className="grid grid-cols-2 gap-4 @2xl/list:grid-cols-4">
               {data.changes.map((change) => (
                 <div key={change.months}>
@@ -215,6 +233,8 @@ function NetWorthDetail({
         <div className="grid gap-6 @3xl/list:grid-cols-2 @5xl/list:grid-cols-1">
           <Breakdown
             title="Assets"
+            icon={ArrowDownLeft}
+            accent="positive"
             total={data.assets}
             groups={data.groups.filter((g) => g.side === "asset")}
             items={counted}
@@ -222,6 +242,8 @@ function NetWorthDetail({
           />
           <Breakdown
             title="Liabilities"
+            icon={ArrowUpRight}
+            accent="negative"
             total={data.liabilities}
             groups={data.groups.filter((g) => g.side === "liability")}
             items={counted}
@@ -245,12 +267,16 @@ function NetWorthDetail({
  */
 function Breakdown({
   title,
+  icon,
+  accent,
   total,
   groups,
   items,
   currency,
 }: {
   title: string;
+  icon: LucideIcon;
+  accent: TileAccent;
   total: number;
   groups: readonly NetWorthGroupTotal[];
   items: readonly NetWorthItem[];
@@ -259,6 +285,8 @@ function Breakdown({
   return (
     <Panel
       title={title}
+      icon={icon}
+      accent={accent}
       action={
         <p className="pt-1.5 pr-2 text-sm font-semibold whitespace-nowrap tabular-nums">
           {formatMoney(total, currency)}

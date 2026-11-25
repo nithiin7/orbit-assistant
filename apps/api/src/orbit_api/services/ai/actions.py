@@ -29,7 +29,7 @@ from orbit_api.services.ai.models import (
 from orbit_api.services.transactions import Transaction
 from orbit_api.utils.clock import utc_now
 
-MAX_PROPOSALS_PER_ANSWER = 3
+MAX_PROPOSALS_PER_ANSWER = 8
 
 
 class ActionValidator(Protocol):
@@ -192,6 +192,11 @@ class ProposalService:
         else:
             await self._repository.finish(proposal.id, "executed", result, None)
             await self._transaction.commit()
+        return await self._get(workspace_id, user_id, proposal_id)
+
+    async def get(
+        self, workspace_id: uuid.UUID, user_id: uuid.UUID, proposal_id: uuid.UUID
+    ) -> Proposal:
         return await self._get(workspace_id, user_id, proposal_id)
 
     async def reject(

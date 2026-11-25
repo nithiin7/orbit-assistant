@@ -7,6 +7,7 @@ IDs from a request.
 """
 
 import uuid
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any, cast
 
@@ -32,6 +33,7 @@ from orbit_api.db.models import (
     TaskModel,
     WorkspaceModel,
 )
+from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import flush
 from orbit_api.services.reminders.models import (
     ClaimedOccurrence,
@@ -54,7 +56,11 @@ from orbit_api.services.reminders.recurrence import (
     recurrence_from_json,
     recurrence_to_json,
 )
+from orbit_api.services.reminders.task_series import SeriesReminders
 from orbit_api.services.tasks.models import TaskListColor, TaskStatus
+from orbit_api.services.tasks.service import TaskService
+from orbit_api.services.transactions import Transaction
+from orbit_api.utils.clock import utc_now
 
 _ACTIVE: tuple[OccurrenceStatus, ...] = ("pending", "processing")
 
@@ -97,6 +103,8 @@ def _commitment_of(model: ReminderModel) -> CommitmentLink | None:
         return CommitmentLink(kind="habit_reminder", id=model.habit_reminder_id)
     if model.document_id is not None:
         return CommitmentLink(kind="document", id=model.document_id)
+    if model.person_id is not None:
+        return CommitmentLink(kind="person", id=model.person_id)
     return None
 
 
@@ -192,6 +200,7 @@ class SqlReminderRepository:
                 ),
                 habit_reminder_id=link.id if link and link.kind == "habit_reminder" else None,
                 document_id=link.id if link and link.kind == "document" else None,
+                person_id=link.id if link and link.kind == "person" else None,
                 last_occurrence_at=reminder.last_occurrence_at,
                 last_outcome=reminder.last_outcome,
                 created_at=reminder.created_at,
@@ -215,6 +224,7 @@ class SqlReminderRepository:
             "calendar_alert": ReminderModel.calendar_event_alert_id,
             "habit_reminder": ReminderModel.habit_reminder_id,
             "document": ReminderModel.document_id,
+            "person": ReminderModel.person_id,
         }[link.kind]
         model = await self._session.scalar(
             select(ReminderModel)
@@ -222,6 +232,16 @@ class SqlReminderRepository:
             .with_for_update()
         )
         return _to_reminder(model) if model else None
+
+    async def for_task(self, workspace_id: uuid.UUID, task_id: uuid.UUID) -> list[Reminder]:
+        """The task's reminders, oldest first, locked for this transaction."""
+        models = await self._session.scalars(
+            select(ReminderModel)
+            .where(ReminderModel.workspace_id == workspace_id, ReminderModel.task_id == task_id)
+            .order_by(ReminderModel.created_at, ReminderModel.id)
+            .with_for_update()
+        )
+        return [_to_reminder(model) for model in models]
 
     async def view(
         self, workspace_id: uuid.UUID, reminder_id: uuid.UUID, now: datetime
@@ -510,3 +530,15 @@ class SqlOccurrenceRepository:
             .execution_options(synchronize_session=False)
         )
         return rows.first() is not None
+
+
+def build_task_service(
+    session: AsyncSession, transaction: Transaction, clock: Callable[[], datetime] = utc_now
+) -> TaskService:
+    """Tasks whose repeating series carry their reminders along, in `transaction`."""
+    return TaskService(
+        SqlTaskRepository(session),
+        SeriesReminders(SqlReminderRepository(session), SqlOccurrenceRepository(session)),
+        transaction,
+        clock,
+    )

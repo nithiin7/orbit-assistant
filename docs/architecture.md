@@ -102,6 +102,8 @@ Design decisions:
 - **Server Components by default**; `"use client"` only where needed.
 - **Route groups:** `RequireAuth` shows a loading screen until the session is confirmed and
   redirects to `/sign-in?next=…` (validated against open redirects by `lib/auth/redirect.ts`).
+- **Installable app:** `app/manifest.ts` and `public/sw.js`, registered in production only. The
+  worker has no fetch handler, so private pages and API responses are never cached on the device.
 
 ## API
 
@@ -404,6 +406,8 @@ To-dos inside a workspace.
 - `scheduled_start`/`scheduled_end`: optional UTC calendar block, both or neither, end after
   start (CHECK).
 - `list_id`: composite FK `(list_id, workspace_id)` (`0027`).
+- `recurrence` (JSON, `0043`): the repeat rule, on a series' current occurrence only. `series_id`
+  groups a series' occurrences and references no row.
 - `updated_at` changes only when a field actually changes.
 - Indexes `(workspace_id, status, due_date)` and `(workspace_id, status, priority)`. Search is
   `ILIKE` substring (`%`, `_`, `\` literal), unindexed, scanning one workspace (fine at personal
@@ -440,6 +444,25 @@ one.
 - Titles and descriptions reject control characters (descriptions allow line breaks and tabs);
   emoji sequences and non-breaking spaces are fine.
 
+### Repeating tasks
+
+A repeating task (`services/tasks/recurrence.py`) is one open task at a time, repeating every 1-99
+days, weeks, months, or years from its due date, which it must have (`422` otherwise).
+
+- **Completing** moves the rule to a new open occurrence in the same transaction, copying the
+  title, description, priority, and list. The time block, notes, and documents stay with the
+  completed occurrence.
+- **Reminders** move to the new occurrence (`services/reminders/task_series.py`). A one-time
+  reminder moves by as many days as the due date did; a recurring one keeps its schedule.
+- **Next due date:** the first date in the series after both the due date and `today` (`?today=`
+  on `/complete`, the user's local date; UTC by default). Finishing early doesn't bring the next
+  one forward; finishing late skips missed dates. Dates count from the anchor, so the 31st clamps
+  to shorter months and returns.
+- **Reopening** the occurrence that created the current one deletes that next occurrence and takes
+  the rule and reminders back, unless the next occurrence was edited; then the reopened task is
+  one-off.
+- `PATCH` with `recurrence: null` stops the series. A new rule or due date restarts it there.
+
 ### Web app
 
 - `/tasks` (`components/tasks/`), hooks `useTaskList`/`useTaskMutations` in
@@ -456,7 +479,7 @@ one.
 
 ### Not implemented
 
-Recurring tasks, subtasks, tags (one list per task), reordering lists, sharing, drag-and-drop
+Subtasks, tags (one list per task), reordering lists, sharing, drag-and-drop
 ordering. Scheduled time blocks ([calendar](#calendar-task-integration)) are separate from the
 due date; [reminders](#reminders-and-notifications) are a separate feature.
 
@@ -532,6 +555,9 @@ reminders); `notifications.occurrence_id`/`reminder_id` `ON DELETE SET NULL`, `u
   (`reminders.calendar_event_alert_id`, unique; a CHECK forbids also having a finance link),
   "Managed in Calendar", 409 from the reminders API. See
   [Reminder integration](#calendar-reminder-integration).
+- **People-managed reminders.** Each person with a date reminder owns one
+  (`reminders.person_id`, unique; a CHECK forbids any other manager), "Managed in People", 409
+  from the reminders API; its notification opens `/people?person=<id>`. See [People](#people).
 
 ### Scheduling and delivery
 
@@ -606,12 +632,31 @@ Reminders: `/api/v1/workspaces/{workspace_id}/reminders` (CRUD, `WorkspaceDep`).
 
 ### Reminder limitations
 
-- **In-app only.** No browser push, email, SMS, or mobile; seen only while Orbit is open. The
-  polling bell stands in for push.
+- No email or SMS. Push is an opt-in, best-effort copy of the in-app notification
+  ([Push notifications](#push-notifications)).
 - Delivery granularity is the poll interval; `overdue` until delivered.
 - Notifications go to the workspace owner (its only member). Shared workspaces would need
   per-member delivery and membership checks.
 - No snooze, recurrence end date/count, "every N days/weeks", or history beyond the inbox.
+
+### Push notifications
+
+Opt-in per device under Settings → Notifications; preferences (reminders, daily briefing, show
+details) are per person. Code: `services/push/`, `providers/push/web_push.py`,
+`system/push_keys.py`, `api/v1/push.py`, `lib/push/`, and the handlers in `public/sw.js`.
+
+- **Delivery:** after a worker batch commits, each delivered occurrence's notifications are copied
+  to the recipient's devices; a briefing is pushed when the worker prepares it at its chosen time
+  (not when it was already prepared that day). Failures are logged and never retried or allowed to
+  affect the reminder, and no transaction is open during network calls.
+- **Privacy:** payloads are encrypted for the device (RFC 8291). By default they carry no content,
+  only "You have a reminder." Endpoints and keys are never returned, logged, or backed up.
+- **Safety:** the server posts only to known browser push services over HTTPS, without following
+  redirects, so a subscription can't aim it at an internal address.
+- **Keys:** the VAPID key comes from `ORBIT_WEB_PUSH_PRIVATE_KEY`, or in local mode from
+  `web-push.key` beside the database. Replacing it means turning push on again on each device.
+- **Lifecycle:** devices a push service reports gone (404, 410) are deleted; a person keeps at most 20. Signing out unsubscribes the browser. A subscription the browser rotates by itself is not
+  picked up until push is turned on again there.
 
 ## Finance
 
@@ -737,6 +782,47 @@ attachment `orbit-transactions[-from-to].csv`, `Cache-Control: no-store`, oldest
 Date, Type, Description, Category, Account, To account, Amount (positive major-unit decimal,
 `20000.50`), Currency, Notes, ID. Text starting with `=`, `+`, `-`, `@`, tab, or CR gets a `'`
 prefix (CSV injection). No BOM; Excel users may need to import as UTF-8.
+
+### Statement imports
+
+A bank statement (PDF, `.xlsx`, `.xls`, or CSV, at most 5 MB) is imported into one account in
+two steps: a preview that writes nothing, then an import of the rows the person reviewed. Code:
+`services/statements/` (`readers.py` files to text cells, `columns.py` header keywords,
+`parsing.py` amounts, dates, and balance checks, `matching.py` proposals, `service.py`), routes
+under `…/finance/statements`.
+
+- **Files** are read in memory and never stored. The type comes from the content. PDFs are read
+  with `pdfminer.six` from each character's position: characters group into lines by height and
+  into cells by gaps, and a cell goes under the header above it (numbers by nearest right edge,
+  since amounts are right-aligned). Excel uses `openpyxl` and `xlrd`. Scanned PDFs (no text) and
+  password-protected Excel files are refused; there is no OCR.
+- **Passwords:** a locked PDF previews as `password_required` (or `wrong_password`). The password
+  is sent base64-encoded in `X-Statement-Password`, never in the URL, used only to open the file,
+  and never stored or logged.
+- **Columns** are found by keyword in the first 40 rows (`columns.py`): an exact header beats a
+  partial one, short words (`dr`, `cr`) match whole words, and a tie or a missing field returns
+  `needs_mapping` so the person picks columns. Numeric dates that read either way are settled by
+  the reading that keeps the dates far closer together, otherwise the person chooses day or month
+  first.
+- **Balance check:** each row must take the printed balance before it to its own printed balance.
+  In a PDF a row that only works with its direction flipped is flipped (a number under the wrong
+  column); any other mismatch, and any dated row without a readable amount, is shown flagged and
+  can't be imported. Newest-first statements are reordered by whichever order the balances agree
+  with.
+- **Proposals**, in order: imported before (fingerprint), already in the ledger (same account,
+  amount, and direction within 3 days, auto-debit SIPs included), a bill or EMI payment already
+  recorded, an open bill or EMI of the same amount due within 5 days (settled through the
+  commitment's own payment flow), else a new transaction categorized by the person's rules.
+  Each ledger entry and payment matches one row.
+- **Tables** (`0047`): `finance_import_batches`, `finance_import_rows` (a SHA-256 fingerprint of
+  account, date, direction, amount, normalized description, and its order among identical rows;
+  unique per account), `finance_category_rules` (first merchant word of a narration to category,
+  learned from what the person chose).
+- **Import** is one transaction, all or nothing; rows already imported are skipped, so a repeated
+  request is safe. **Undo** deletes a batch's transactions except those a payment or goal uses
+  (kept and counted); fingerprints of kept rows stay.
+- Web: **Import statement** in Transactions opens `StatementImportDialog` (file, password,
+  mapping, review, done with Undo).
 
 ### Web app
 
@@ -1223,15 +1309,17 @@ JSON integers; nothing logged about amounts.
 
 ## Finance limitations and extension points (planned, not implemented)
 
-- **Statement imports** (CAS, contract notes) would implement `PriceFeed` or record buys (see
-  [Valuation strategy](#valuation-strategy)); none integrated.
+- **Investment statement imports** (CAS, contract notes) would implement `PriceFeed` or record
+  buys (see [Valuation strategy](#valuation-strategy)); none integrated. Bank statements import
+  (see [Statement imports](#statement-imports)).
 - Only auto-debit SIPs create transactions automatically. Overdue subscription or bill occurrences
   are listed up to the 60 most recent.
 - No loan history before it was added; floating rates via rescheduling; interest per installment
   period (no daily-balance interest, fees, or bundled insurance).
 - Editing a transaction that records a payment isn't blocked; the payment keeps its amounts.
-- Not supported: conversion, split transactions, attachments, imports, bank connections,
-  reconciliation, undo.
+- Not supported: conversion, split categories (shares with people go through
+  [People](#money-owed)), attachments, bank connections, reconciliation,
+  undo (except undoing a statement import).
 
 ## Notes and knowledge management
 
@@ -1883,6 +1971,90 @@ Module `places`: both tables, JSON/CSV. Universal search: name, city, note.
 No reverse geocoding, import, trips/repeat visits, or agent tool. Countries missing from the 1:50m
 shapes and pinless places count but don't show on the offline map.
 
+## People
+
+`/people` (Plan): the people who matter, with birthdays, anniversaries, and named yearly dates,
+a reminder before each one, the money between you, gift ideas, and their dates on the calendar,
+in the briefing, and in the assistant.
+
+### Data
+
+`people`: name, `relationship` (family, partner, friend, colleague, other), optional phone,
+email, and note, `favorite`, and when date reminders fire (`reminder_time`, IANA `timezone`,
+default the user's zone, else UTC). `person_dates` (migration `0048`): `kind` birthday,
+anniversary, or other (with a `label`), `month`/`day`, optional `year` (1900-2100; gives ages and
+years together), optional `remind_days_before` (0-30, `NULL` = no reminder), `position`. One
+birthday per person (partial unique index); composite FKs keep dates in the person's workspace.
+`PATCH` with `dates` replaces them all. 29 February is allowed without a year or in a leap year,
+and falls on 28 February in other years.
+
+### Reminders
+
+One managed reminder per person (`services/people/dates.py`, pure): the soonest alert still ahead
+across their dates (`date − days_before` at `reminder_time` local), one-time, re-pointed in the
+same transaction as every change and by `after_delivery` once it fires (so it moves to next
+year). No occurrence before the date's own year. Title "Priya turns 30 in 7 days" / "Priya's
+birthday is today"; description has the date only, never contact details or the note. Deleting
+the person cascades to the reminder; delivered notifications stay.
+
+### Web
+
+`components/people/`, rail `?view=` Everyone (cards with initials avatars, favorites first,
+search and relationship chips) and Upcoming dates (today's celebrated, then this week and by
+month). `?person=<id>` opens a detail dialog (notifications and search link there). Date maths in
+`lib/people` uses the browser's local date. Dashboard widget "Coming up" (next 30 days).
+
+### Money owed
+
+`person_ledger_entries` (migration `0049`): `kind` `they_owe` (you paid or lent), `i_owe`,
+`they_paid`, `i_paid` (repayments); positive `amount` in minor units with `currency`; date,
+description; optional `transaction_id` (FK `ON DELETE SET NULL`; the service keeps it in the
+workspace). Balances are derived (`services/people/ledger.py`), per person and currency, never
+mixed or stored; positive while they owe you. Routes: `GET …/people/ledger` (declared before
+`/{person_id}`), `POST|PATCH|DELETE …/people/{id}/ledger[/{entry_id}]`.
+
+- **Split from an expense:** a `they_owe` share links to one of your expenses (same currency);
+  shares can't exceed it. The expense stays whole in Finance. The transaction dialog's "Split
+  with" records shares after the expense saves (separate requests; a failed share is reported,
+  not retried).
+- **Repayments in Finance:** `record_in_finance` (repayments only) creates a refund (`they_paid`,
+  in the expense category, so spending comes down to your share) or an expense (`i_paid`), via
+  `FinanceService.create(commit=False)`, in the entry's commit. Settle up suggests the account
+  and category of the person's latest split expense. Plain loans stay in People. A recorded
+  repayment keeps its amount (422); deleting an entry leaves its transaction.
+- Web: rail view Money (owed to you / you owe per currency, who owes whom with Settle up,
+  recent entries), balance chips on cards, a Money section in the person detail.
+
+### Across Orbit
+
+- **Calendar:** birthdays, anniversaries, and named dates show as read-only all-day items in every
+  calendar view and the dashboard's Today list (`datesBetween` in `lib/people`, from the people
+  list; nothing is stored in the calendar). They open the person and can't be dragged. Like
+  reminders, a date with a year starts the year after it.
+- **Briefing:** source `people` (can be hidden like any source) lists dates from today through the
+  horizon, names and dates only, at most 10, with `today` and `total`; People reminders count as
+  represented elsewhere. People has no AI permission, so it is never sent to a model; the
+  dashboard shows a "celebrations today" chip.
+- **Assistant and agent:** capture kind `add_person` (migration `0051`; name, relationship,
+  birthday month/day/year, note) adds a person whose birthday reminds on the day. It's never
+  added without asking (a model could invent the date), and a spoken yes may approve it. Agent
+  module `people` is capture-only and on by default, like Places.
+- **Gift ideas:** `shopping_items.person_id` (migration `0050`; composite FK to
+  `people(id, workspace_id)` with no ON DELETE; deleting a person clears the link first, so the
+  item stays). `GET …/shopping/gifts` lists them; items take `person_id` on create and update
+  (422 for someone outside the workspace). The person detail adds and ticks ideas on the default
+  list; Shopping shows "For Priya" and a "Gift idea for" choice.
+
+### Backup and search
+
+Module `people`: all three tables, JSON/CSV; gift links travel with Shopping's items. Universal search: name and note (contact details aren't
+searched or shown).
+
+### Limitations
+
+No contact import (vCard, Google), photos, payment requests or reminders about money, or currency
+conversion. Calendar dates aren't exported to `.ics`; the agent can add people but not read them.
+
 ## Achievements and the XP store
 
 Per person: `/me/achievements` routes act on the session user only; web `/profile` (Overview,
@@ -2160,6 +2332,127 @@ the only creation path for dashboard and palette, reusing module dialogs; no new
 - `components/tasks/task-overview.tsx` is unused, pending removal.
 - Widgets only component-tested; e2e loads the dashboard without exercising widgets.
 
+## Daily briefing (phases 22.1 and 22.2)
+
+A structured, provider-independent snapshot of one person's day in a workspace, at
+`/api/v1/workspaces/{workspace_id}/briefings`. The snapshot is deterministic; an optional
+AI-written summary (22.2) only restates it. There is no briefing page: the summary lives in the
+dashboard's greeting (see [Briefing on the dashboard](#briefing-on-the-dashboard)).
+
+### Briefing domain
+
+`services/briefings/` keeps four concerns apart:
+
+- `aggregation.py` (`BriefingAggregator`) reads each module through its own service, behind
+  `Protocol` sources, and normalizes the answers. It repeats no module rule: occurrences come
+  from the calendar's recurrence expansion (all-day by date, timed by instant, DST-safe
+  `window_instants`), payment statuses from commitments, utilization from budgets (basis
+  points, integer minor units), habit states and streaks from habits. Health is read as the
+  person (`Owner(workspace, user)`), and only workout names, times, and goal pace, never
+  measurements, weights, nutrition, or session notes. Documents contribute titles and their
+  expiry (lapsed, or within 30 days) and renewal (within the horizon) dates, never details or
+  files; shopping contributes lists with something to buy and their counts, never items;
+  investments contribute active SIPs' next installments and open deposits maturing within the
+  horizon (or already matured), with the plan's amount and the module's projected maturity.
+- `insights.py` counts the finished sections and orders the `critical`/`warning` items into
+  an attention list. Severity comes only from module statuses: overdue or exceeded money is
+  `critical`; late work, due-today high priority, conflicts, near budgets, and overdue
+  reminders are `warning`.
+- `service.py` (`BriefingService`) prepares, keeps, regenerates, and lists briefings.
+- Delivery (notifications, a narrative) is a later phase.
+
+Sources load one after another on the request's session. One that fails is logged with its
+traceback, rolled back, reported in `content.unavailable` and `sources`, and the briefing is
+stored as `partial`; the rest still load. Lists hold at most 10 items with complete `total`s,
+and every sort ends on a stable key. An undated task is never urgent, an unscheduled or
+paused habit is never listed (so never "missed"), and reminders already shown by their task,
+calendar event, payment, habit, document, or deposit are counted in `represented_elsewhere`
+instead of listed (a task's reminder time shows on the task). Notes are those linked to
+today's tasks and events (one batched `NoteService.linked_to` read) plus up to three pinned
+notes, titles only.
+
+### Briefing persistence
+
+`daily_briefings` (migration 0040, RLS on PostgreSQL) holds one row per workspace, user, local
+date, and time zone (unique key; the time zone was added in 0042, which rebuilds the table on
+SQLite and keeps every row). The same date is a different day elsewhere, so opening the briefing
+in a second time zone prepares its own; both stay in history. Each row holds the snapshot as
+JSON (`content`, encoded and validated with pydantic's `TypeAdapter` over the snapshot
+dataclasses), its `summary` for cheap history, `status`, `revision`, `format_version`, and
+timestamps. The snapshot stores references, titles, times,
+states, and module-computed figures; descriptions and note content are never copied.
+
+- `GET /today` returns today's stored briefing (in the requested time zone, else the
+  user's, else UTC), preparing it on the day's first request. Concurrent first requests both
+  aggregate; the unique key lets one insert win and the others return it.
+- `POST /today/regenerate` replaces today's snapshot and adds one to `revision` in a single
+  `UPDATE`. Earlier days can't be regenerated: they are history, kept as prepared.
+- `GET /{date}` returns a stored briefing: `?timezone=` picks one, else the date's most
+  recently prepared (404 if none). Nothing is prepared for other days. `POST
+/{date}/narrative` takes the same `?timezone=`.
+- `GET /` lists history newest first (`limit` 1–100, `offset`), without content.
+
+Briefings and their settings are excluded from backups (derived snapshots, and a per-person
+preference).
+
+### Briefing settings and scheduled preparation
+
+`briefing_settings` (migration 0041, one row per workspace and person, RLS on PostgreSQL):
+`horizon_days` (1–14, default 7; savings-goal target dates still look 30 days ahead),
+`hidden_sources` (modules left out: never read, reported with status `off`, never as
+unavailable), and `prepare_at` (a local time in the person's time zone preference, else UTC).
+`GET`/`PUT /briefings/settings`; changes apply to the next briefing prepared.
+
+The existing worker (`ReminderWorker.prepare_briefings`, every 5 minutes) prepares today's
+briefing for each person whose `prepare_at` has passed and who has none yet, only in workspaces
+they own, each in its own session; the unique key makes repeats and concurrent workers
+harmless. It needs the attachment store (fitness reads through it), so it runs wherever the
+worker has `files`. No notification is sent.
+
+### Briefing summary (AI)
+
+`POST /briefings/{date}/narrative` (`services/briefings/narrative.py`) asks the person's chat
+provider for a headline, two to four sentences, and up to three priorities, from the stored
+snapshot alone, and keeps it on the row (`narrative`, cleared when the snapshot is
+regenerated). It is gated like every AI feature (`ai_errors`: AI on, provider set, cloud consent,
+monthly limit) and sends only sources whose AI module is allowed (payments, budgets, and goals
+and investments need `finance`; routines need `habits`; documents need `documents`; shopping
+has no AI permission and is never sent). If none is allowed, it is refused with 403 before any
+call. Items go to the model as numbered, escaped records with no money amounts (names, statuses,
+dates, and percentages instead), no health measurements, and titles only for notes. Priorities
+must cite a given record; others are dropped, and their titles come from the snapshot.
+
+### Briefing agent tool
+
+`get_daily_briefing` (read, low risk, `module=None` because it spans modules) returns today's
+stored snapshot as the same escaped records, limited to modules both the agent and Settings → AI
+may read. It never prepares a briefing: that would write, and a module failing during a fresh
+read would roll back the run's own pending records.
+
+### Briefing on the dashboard
+
+The Today widget (`components/dashboard/today-widget.tsx`, `day-summary.tsx`) keeps its live
+details (the overview's stat tiles and next event) whatever happens to the summary. With AI on
+and a chat model chosen (`useAiReady`), `useDailySummary` asks for today's briefing (preparing
+it on the day's first visit) and, when it has no summary, writes one once per briefing revision
+per visit, showing "Summarizing your day…" meanwhile. The summary then shows above the details:
+the headline and sentences, up to three focus cards linking to their records (by `ref.key`
+through `briefingItemHrefs`), and at-a-glance chips counted from the briefing's own summary. A
+menu refreshes it (regenerate, then rewrite) or opens the briefing settings. With AI off nothing
+is requested, so no briefing is prepared. A failed summary is a quiet note with a retry; it is
+never retried on its own. The snapshot isn't refreshed on a timer, so the summary describes the
+day as of when it was prepared, as its footer says.
+
+### Briefing limitations
+
+- Stock and fund prices, net worth, and shopping items aren't included; investments are
+  limited to SIP installments and deposit maturities.
+- Calendar alerts and habit reminders are treated as shown whenever the calendar or habits
+  source loaded, even for an event beyond the horizon.
+- Scheduled preparation doesn't notify or write the summary; the dashboard writes it on the
+  first visit after.
+- Briefing history and past dates are API-only (`GET /`, `GET /{date}`); the web shows today's.
+
 ## Universal search
 
 Command palette results plus a `/search` page (module tabs, filters, paging, recent and saved
@@ -2413,14 +2706,32 @@ days. Dismissal key includes the period. No notifications.
 1. Model emits a fenced `orbit-action` block (hidden from the stream), or a feature builds one.
 2. Kept only if the message asked (`routing.wants_action`), kind allowlisted (`create_task`,
    `create_reminder`, `create_event`, `create_note`, `append_to_note`, `add_note_tags`,
-   `update_document_details`), ≤ 3 per answer, validated by the module's request schema
-   (`api/ai_actions.py`).
+   `update_document_details`, and the capture kinds `add_shopping_item`, `create_habit`,
+   `log_water`, `log_weight`, `log_activity`, `add_transaction`, `add_place`, `save_link`,
+   `add_watch_item`, `add_person`), ≤ 8 per answer, validated by the module's request schema
+   (`api/ai_actions.py`). Capture kinds in habits, health, finance, and watchlist are offered only
+   while the AI layer may read that module.
 3. Stored `pending`; proposals made while reading records are flagged.
 4. Approve: conditional update `pending` → `executing` (repeat is 409), re-validate, run the
    module's service, record result. Reject changes nothing.
 
-No generic query/update, deletion, or financial action. The
+No generic query/update or deletion. `add_transaction` records income or an expense the person
+stated: the amount is in major units and converted with the account's currency, the account is
+named or the default (never guessed between several), and it moves no money. The
 [personal agent](#personal-agent-and-automation) reuses this validator and executor.
+
+With **Add simple items without asking** on (`ai_settings.auto_capture`, off by default; Settings →
+AI, or **Always add** on a card), `services/ai/auto_capture.py` runs a proposal straight away only
+if it is a new task, reminder, note, shopping item, habit, health log, place, link, or watchlist
+title, the message was typed, and every word of its text and every logged number appears in that
+message. Everything else stays a card, including events, changes to existing records, transactions,
+new people (their birthdays), and spoken requests. The composer's **Quick add** menu starts these sentences. The agent keeps its
+own autonomy settings.
+
+Plain commands from Quick add (`services/ai/quick_commands.py`, such as `Add a task: …`) become
+proposals with no model call and no records read. Otherwise, when an answer holds no usable action,
+one narrow request sends only the person's message to the model; if a command still adds nothing,
+the answer says so.
 
 ### Prompt injection and untrusted content
 
@@ -2841,19 +3152,22 @@ Each tool declares name, description, input schema (Pydantic, `extra="forbid"`),
 idempotency, always-asks, whether it sends record content to the AI provider, and workflow use.
 `GET …/agent/tools` lists them with current decisions.
 
-| Module              | Read                                                                                                             | Write (risk)                                                             |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Tasks               | `search_tasks`                                                                                                   | `create_task` (low), `complete_task` (low), `update_task` (medium)       |
-| Reminders           | `get_reminders`                                                                                                  | `create_reminder` (low), `send_notification` (low, in-app to owner only) |
-| Calendar            | `search_calendar` (Orbit finds overlaps)                                                                         | `create_event` (medium)                                                  |
-| Notes               | `search_notes`, `summarize_note` (AI)                                                                            | `create_note` (low), `append_to_note` (medium), `add_note_tags` (low)    |
-| Documents           | `search_documents`, `get_document` (no reference numbers), `summarize_document`, `extract_document_details` (AI) | `update_document_details` (medium; descriptive fields only)              |
-| Finance (read only) | `get_accounts`, `get_transactions`, `get_finance_summary`, `get_budgets`, `get_upcoming_payments`                | none                                                                     |
-| Habits, health      | `get_habit_progress`, `get_workout_history`, `get_health_summary` (owner only)                                   | none                                                                     |
-| Mail (read only)    | `search_email` (labels chosen for Orbit, via the integrations' mail service)                                     | none                                                                     |
-| The agent's own     |                                                                                                                  | `remember_preference`, `run_workflow` (agent runs only; both always ask) |
+| Module           | Read                                                                                                             | Write (risk)                                                             |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Tasks            | `search_tasks`                                                                                                   | `create_task` (low), `complete_task` (low), `update_task` (medium)       |
+| Reminders        | `get_reminders`                                                                                                  | `create_reminder` (low), `send_notification` (low, in-app to owner only) |
+| Calendar         | `search_calendar` (Orbit finds overlaps)                                                                         | `create_event` (medium)                                                  |
+| Notes            | `search_notes`, `summarize_note` (AI)                                                                            | `create_note` (low), `append_to_note` (medium), `add_note_tags` (low)    |
+| Documents        | `search_documents`, `get_document` (no reference numbers), `summarize_document`, `extract_document_details` (AI) | `update_document_details` (medium; descriptive fields only)              |
+| Finance          | `get_accounts`, `get_transactions`, `get_finance_summary`, `get_budgets`, `get_upcoming_payments`                | `add_transaction` (high; always asks; agent runs only)                   |
+| Habits, health   | `get_habit_progress`, `get_workout_history`, `get_health_summary` (owner only)                                   | `create_habit`, `log_water`, `log_weight`, `log_activity` (low)          |
+| Shopping, places |                                                                                                                  | `add_shopping_item`, `add_place` (low)                                   |
+| Saved, watchlist |                                                                                                                  | `save_link`, `add_watch_item` (low)                                      |
+| Mail (read only) | `search_email` (labels chosen for Orbit, via the integrations' mail service)                                     | none                                                                     |
+| The agent's own  |                                                                                                                  | `remember_preference`, `run_workflow` (agent runs only; both always ask) |
 
-No tool deletes, pays, transfers, invests, sends email or messages, shares documents, changes
+Agents created before these modules existed keep their saved module list until the person allows
+the new ones. No tool deletes, pays, transfers, invests, sends email or messages, shares documents, changes
 connected accounts, settings, or permissions, or runs code, SQL, shell, or HTTP. Every call is
 prepared (validated by the tool's model, then the module's request schema for writes, target looked
 up) before it runs or is proposed, and again when an approval is acted on.
@@ -3030,6 +3344,156 @@ refetch every five seconds.
 - Agent configuration, workflows, and memory aren't backed up.
 - Tested on SQLite; no agent-specific PostgreSQL tests.
 
+## Voice conversations
+
+Talking to the [assistant](#assistant-and-rag-orchestration) instead of typing. Voice adds speech
+around the existing assistant and owns no conversation, retrieval, or action logic: a transcript
+is sent to `POST …/ai/messages` like a typed question (`input_mode: "voice"`), so routing, RAG,
+citations, proposals, usage, history, and permissions are the assistant's. Off unless AI is on.
+
+### What was reused, and what wasn't built
+
+- **Reused:** the assistant stream and conversation history (voice and typed turns share one
+  conversation; switching keeps context), `useAssistantChat.send` (with an `onEvent` tap),
+  proposal approval (`ProposalService`) and agent approval (`AgentService.approve` with
+  `arguments_hash`), the person's AI providers (connection, Fernet key, cloud consent,
+  monthly limit, `ai_usage`), endpoint checks, `read_body`.
+- **Rejected:** OpenAI Realtime speech-to-speech. It would answer from the model alone, bypassing
+  Orbit's grounding, citations, action fencing, and approvals; Realtime as transcription only adds
+  WebRTC and ephemeral-key plumbing for little gain over per-utterance transcription. Revisit only
+  if turn latency must drop below what sentence-streamed speech gives.
+- **Not built:** wake words, always-on or background listening, speaker identification, stored
+  audio, a voice-only assistant or retrieval pipeline.
+
+### Layout
+
+API: `services/voice/` (`models` settings and `AudioProvider` protocol, `service` settings,
+transcription, speech, test, history; `confirmation` reply classifier; `approvals` spoken answers),
+`providers/voice/` (`openai_audio.py`, `registry.py`), `repositories/voice.py`,
+`schemas/voice.py`, `api/v1/voice.py`, migration `0039`. Web: `lib/voice/` (VAD, sentence splitter,
+playback queue, browser engines, device preferences), `api/voice/`, `hooks/use-voice.ts`,
+`hooks/use-voice-conversation.ts` (orchestration), `components/voice/` (panel, orb),
+`components/settings/voice-settings.tsx`.
+
+### Providers and capabilities
+
+| Half        | Engine                                       | Where it runs                                                                                                | Streaming                                          |
+| ----------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| Recognition | Browser (`SpeechRecognition`)                | Browser vendor: Chrome/Edge send audio to Google/Microsoft; Safari may stay on device; Firefox has none      | Partial and final results                          |
+| Recognition | Provider: `POST {base}/audio/transcriptions` | OpenAI (cloud), or an OpenAI-compatible server (whisper.cpp server, Speaches/faster-whisper, LocalAI: local) | Per utterance (final only)                         |
+| Speech      | Browser (`speechSynthesis`)                  | Device voices (`localService`) or the vendor's network voices, labelled                                      | Sentence by sentence                               |
+| Speech      | Provider: `POST {base}/audio/speech` (MP3)   | OpenAI, or a compatible server (Kokoro-FastAPI, Speaches, LocalAI)                                           | Sentence by sentence; bytes proxied as they arrive |
+
+Only `openai` and `openai_compatible` provider kinds are offered (others have no such API).
+Voices come from `GET {base}/audio/voices` where a server lists them; otherwise (OpenAI) the
+person types a voice name: no voice identifiers are hard-coded. Language: BCP 47 tags (Indian
+English and Hindi first) or `auto`; Whisper gets the ISO 639-1 code (`en-IN` → `en`) or none to
+detect, which handles Hindi–English code-switching best.
+
+### Session lifecycle and turn-taking
+
+`useVoiceConversation` runs one session per panel (the panel is keyed by workspace):
+
+1. **Start:** `getUserMedia` with echo cancellation, noise suppression, auto gain; a level meter
+   (`AnalyserNode`, read every 50 ms); recognition or a `MediaRecorder` per utterance.
+2. **Listen:** energy VAD (`lib/voice/vad.ts`) with an adaptive noise floor, sensitivity 1-10, and
+   a configurable end-of-speech silence (300-5,000 ms). Continuous mode ends an utterance on
+   silence (hard cap 30 s); push-to-talk records while held, then shows the transcript for
+   correction before sending.
+3. **Answer:** the transcript goes to the assistant; deltas pass through `SentenceSplitter`
+   (citations, Markdown, code, and URLs removed; short sentences joined, long ones split at 280
+   chars) into `SpeechQueue`, which prepares up to two chunks ahead and plays strictly in order.
+4. **Interrupt:** speech detected while Orbit answers (or **Interrupt**) bumps the generation,
+   cancels playback, aborts in-flight audio fetches, and aborts the stream (the API keeps the
+   partial answer as `stopped`). Events and audio of an older generation are dropped, so stale
+   chunks never play after a newer answer starts. A new turn waits for the previous stream to
+   settle, so answers never overlap. Browser recognition results heard while Orbit speaks are
+   ignored unless the person interrupted (Orbit hearing itself).
+5. **End:** stops tracks (microphone indicator off), closes the audio context, aborts recognition
+   and recording, cancels speech and the stream. Also on unmount (navigation, sign-out, workspace
+   switch).
+
+Recovery: a track that ends (device unplugged) reopens the default microphone (`reconnecting`);
+a missing saved device falls back to the default; offline shows `reconnecting` until online; a
+hidden tab mutes the microphone until the person turns it back on. States: idle, connecting,
+listening, processing, speaking, interrupted, reconnecting, error, shown as text (status region)
+and color; the animation is decorative and stops with reduced motion.
+
+### Spoken confirmation
+
+Voice never approves by itself. After an answer, one pending proposal is read back ("I've
+prepared this: …. Shall I go ahead?"); several are left for the screen. Replies before the
+question finished playing are ignored. `POST …/voice/confirmations` reads the reply on the server:
+
+- `classify_reply`: a yes only if every word is agreement (English, romanized and Devanagari
+  Hindi) with at least one core word, at most six words, no question mark; a no likewise; anything
+  else (both, a longer sentence, unrelated speech) is `unclear` and changes nothing. Two unclear
+  replies leave it on screen.
+- Voice may approve only `create_task`, `create_reminder`, `create_event`, `create_note` not
+  proposed while reading records, and agent approvals with risk `low` and no untrusted context.
+  Others return `needs_screen` (rejecting by voice is always allowed).
+- Proposals must belong to the named conversation; agent approvals need the `arguments_hash`
+  read out. Approval then runs through the existing services: permissions, expiry, policy, and the
+  hash are checked again, and the conditional `pending → executing` update runs it at most once.
+
+Agent capabilities stay where they are: multi-step requests go to the agent from Automation; the
+voice confirmation endpoint accepts its approvals with the same rules.
+
+### Security and privacy
+
+- Provider keys stay on the server; the browser only talks to Orbit's API with its session.
+  Transcription and speech are workspace routes (`WorkspaceDep`) for usage attribution and
+  isolation; settings are per person under `/me/voice`.
+- Cloud providers need **allow cloud** in AI settings (409 otherwise), like chat. The UI labels
+  where each half runs (this browser, your server, the cloud).
+- Audio is never stored or logged: it's streamed through to the provider and discarded.
+  Uploads: `audio/webm|ogg|wav|mpeg|mp4`, ≤ 10 MB; speech text ≤ 2,000 chars.
+- Transcripts are ordinary messages; retrieved content stays fenced as untrusted, and voice
+  can't widen what the assistant reads or does.
+- Retention: `voice_settings.history_days` deletes whole conversations that contain a spoken
+  question (worker, hourly); **Clear voice history** deletes them now. Typed-only conversations
+  follow the assistant's policy (kept until deleted).
+- `voice_settings` excluded from backups (refers to providers); RLS enabled on PostgreSQL.
+
+### Data model
+
+`voice_settings` (per person): engines, provider/model/voice choices (cleared when the provider
+is deleted), languages, listening mode, silence, sensitivity, auto-speak, speaking rate, history
+days. `ai_messages.input_mode` (`text` | `voice`, plain `ADD COLUMN`). `ai_usage.operation` gains
+`transcription` and `speech` (SQLite rebuilds `ai_usage` only). Device choices (microphone,
+speaker, volume, browser voice) live in the browser (`orbit:voice-device`).
+
+### API
+
+`GET|PUT /me/voice/settings` (also reports processing locations and audio-capable providers),
+`GET /me/voice/providers/{id}/voices`. Workspace `…/voice/`: `POST transcriptions` (raw audio
+body, `?language=`), `POST speech` (streamed MP3), `POST test` (speaks, then transcribes),
+`POST confirmations`, `DELETE history`. `POST …/ai/messages` accepts `input_mode`.
+
+### Browser compatibility
+
+Chrome and Edge: everything, including speaker selection. Safari: recognition (`webkit` prefix)
+and synthesis, MP4 recording, no speaker selection. Firefox: no browser recognition (choose a
+provider), synthesis and recording work. All need a secure context (https or localhost); without
+a microphone or support, the panel explains why and typing stays available.
+
+### Performance and measurement
+
+The panel shows measured times for the current session: microphone ready, end of speech → first
+words, end of speech → first audio, and interruption → audio stopped, with turn and failure
+counts. Latency is not claimed beyond what is measured there; it depends mostly on the chat model
+and speech provider.
+
+### Known limitations
+
+- Provider transcription is per utterance (no partial text); the VAD may clip the first ~100 ms
+  of speech, as recording starts at speech onset.
+- Browser recognition can't use Orbit's echo-cancelled stream; while Orbit speaks, only a
+  detected interruption lets results through.
+- The spoken answer language picks the voice; the assistant answers in the question's language.
+- Agent runs aren't started from the voice panel; approvals for them can be answered by voice.
+- Not tested against live providers in CI (fakes only); e2e fakes browser speech engines.
+
 ## Configuration
 
 | App | Source                                                    | Validation                                    | Visibility  |
@@ -3114,7 +3578,7 @@ behind the same chunk store for large cloud indexes.
 ### Evolution
 
 In place: tasks, reminders (database-backed worker), finance phases 1–4, notes, calendar, habits,
-documents, health, dashboard, AI layer, integrations, and backup. Next: more modules on the same pattern, then
+documents, health, dashboard, AI layer, voice, integrations, and backup. Next: more modules on the same pattern, then
 optional sync and extension points, leaving the boundaries above intact.
 
 ## Continuous integration

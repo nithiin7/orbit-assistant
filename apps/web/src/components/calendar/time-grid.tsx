@@ -271,7 +271,7 @@ export function TimeGrid({
   const wide = dates.length > 1;
 
   return (
-    <div className="overflow-hidden rounded-xl border bg-card shadow-elevation-1">
+    <div className="overflow-hidden rounded-2xl border bg-card shadow-elevation-1">
       <div className="overflow-x-auto">
         <div className={cn(wide && "min-w-[40rem]")}>
           {/* Day headings */}

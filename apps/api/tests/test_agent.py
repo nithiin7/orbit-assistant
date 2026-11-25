@@ -162,7 +162,18 @@ def test_agent_starts_off_with_safe_defaults(client: TestClient, ada: Headers, w
     assert agent["enabled"] is False
     assert agent["autonomy"] == "approval"
     # Sensitive modules start off, like the AI layer's.
-    assert set(agent["modules"]) == {"tasks", "notes", "calendar", "reminders", "habits"}
+    assert set(agent["modules"]) == {
+        "tasks",
+        "notes",
+        "calendar",
+        "reminders",
+        "habits",
+        "shopping",
+        "places",
+        "saved",
+        "watchlist",
+        "people",
+    }
     assert agent["tool_modes"] == {}
     assert overview["runtime"]["server_enabled"] is True
     assert overview["runtime"]["storage_mode"] == "local"
@@ -180,8 +191,14 @@ def test_tool_registry_describes_every_tool_and_has_no_dangerous_ones(
         assert tool["output_schema"]["required"] == ["text", "records", "data"]
         assert tool["access"] in {"read", "create", "update"}
         assert tool["risk"] in {"low", "medium", "high"}
-    # Financial tools are read only; nothing deletes, pays, sends, or shares.
-    assert all(t["access"] == "read" for t in tools.values() if t["module"] == "finance")
+    # The one financial write records what the person states, always asks, and never runs from
+    # a workflow; nothing deletes, pays, sends, or shares.
+    finance_writes = [
+        t for t in tools.values() if t["module"] == "finance" and t["access"] != "read"
+    ]
+    assert [t["name"] for t in finance_writes] == ["add_transaction"]
+    assert finance_writes[0]["approval"] == "always" and finance_writes[0]["risk"] == "high"
+    assert finance_writes[0]["in_workflows"] is False
     verbs = {"delete", "remove", "pay", "transfer", "invest", "share", "grant", "execute", "fetch"}
     assert not [name for name in tools if name.split("_")[0] in verbs]
     assert not [
@@ -1163,3 +1180,70 @@ def test_the_server_switch_turns_automation_off(
         assert overview["runtime"]["server_enabled"] is False
         response = client.patch(f"{ws}/agent", json={"enabled": True}, headers=headers)
         assert response.status_code == 409
+
+
+# Quick capture
+
+
+def test_capture_tools_add_records_after_approval(
+    client: TestClient, app: FastAPI, fake: FakeProviderFactory, ada: Headers, ws: str
+) -> None:
+    enable_ai(client, ada)
+    configure(client, ws, ada)
+    fake.state.script = Planner(call("add_shopping_item", name="Eggs"), final("Added."))
+    execution = run(client, ws, ada, "Add eggs to my shopping list")
+    work(client, app, fake)
+
+    [approval] = pending(client, ws, ada)
+    assert approval["summary"] == "Add “Eggs” to your shopping list"
+    [groceries] = ok(client.get(f"{ws}/shopping/lists", headers=ada))["lists"]
+    assert groceries["needed_count"] == 0
+
+    ok(
+        client.post(
+            f"{ws}/agent/approvals/{approval['id']}/approve",
+            json={"arguments_hash": approval["arguments_hash"]},
+            headers=ada,
+        )
+    )
+    work(client, app, fake, times=2)
+    assert detail(client, ws, ada, execution["id"])["execution"]["status"] == "succeeded"
+    [groceries] = ok(client.get(f"{ws}/shopping/lists", headers=ada))["lists"]
+    assert groceries["needed_count"] == 1
+
+
+def test_recording_a_transaction_always_asks_even_with_limited_autonomy(
+    client: TestClient, app: FastAPI, fake: FakeProviderFactory, ada: Headers, ws: str
+) -> None:
+    enable_ai(client, ada, ["finance"])
+    modules = ["finance"]
+    configure(
+        client,
+        ws,
+        ada,
+        autonomy="limited",
+        modules=modules,
+        tool_modes={"add_transaction": "auto"},
+        autonomous_triggers=["manual", "agent"],
+    )
+    arguments = {"type": "expense", "amount": 120, "description": "Tea"}
+    fake.state.script = Planner(call("add_transaction", **arguments), final())
+    run(client, ws, ada, "I spent 120 on tea")
+    work(client, app, fake)
+
+    [approval] = pending(client, ws, ada)
+    assert approval["risk"] == "high"
+    assert ok(client.get(f"{ws}/finance/transactions", headers=ada))["total"] == 0
+
+
+def test_capture_tools_respect_the_agents_allowed_modules(
+    client: TestClient, app: FastAPI, fake: FakeProviderFactory, ada: Headers, ws: str
+) -> None:
+    enable_ai(client, ada)
+    configure(client, ws, ada, modules=["tasks"])
+    fake.state.script = Planner(call("add_place", name="Oslo", country_code="NO"), final("No."))
+    run(client, ws, ada, "Add Oslo to my places")
+    work(client, app, fake)
+
+    assert pending(client, ws, ada) == []
+    assert ok(client.get(f"{ws}/places/items", headers=ada))["places"] == []

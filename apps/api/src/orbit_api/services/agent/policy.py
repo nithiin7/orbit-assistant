@@ -19,7 +19,7 @@ High-risk and `always_confirm` tools ask at every level that can write.
 from dataclasses import dataclass
 from typing import Literal
 
-from orbit_api.services.agent.models import Agent, TriggerKind
+from orbit_api.services.agent.models import CAPTURE_ONLY_MODULES, Agent, TriggerKind
 from orbit_api.services.agent.tools import ToolSpec
 from orbit_api.services.ai.models import AiModule
 
@@ -86,5 +86,7 @@ def _ai_may_read(spec: ToolSpec, ai_modules: frozenset[AiModule]) -> bool:
         # Mail has no AI-layer permission of its own; the agent's `mail` permission covers it,
         # and its text is only given to a model as untrusted data. Memory and workflows are
         # the agent's own records.
+        return True
+    if spec.module in CAPTURE_ONLY_MODULES:
         return True
     return spec.module in ai_modules

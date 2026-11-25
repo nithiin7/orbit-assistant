@@ -6,14 +6,23 @@ import type {
   ShoppingListOverview,
   UpdateShoppingItemRequest,
 } from "@orbit/contracts";
-import { PartyPopper, RotateCcw } from "lucide-react";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { type LucideIcon, PartyPopper, RotateCcw } from "lucide-react";
+import {
+  type CSSProperties,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 
 import { describeApiError } from "@/api/client";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePeople } from "@/hooks/use-people";
 import { useShopping, useShoppingMutations } from "@/hooks/use-shopping";
 import { DEFAULT_LIST_ICON } from "@/lib/shopping";
 import { useWorkspaces } from "@/providers/workspace";
@@ -45,6 +54,10 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
   const shopping = useShopping(workspaceId);
   const { active, items, select } = shopping;
   const mutations = useShoppingMutations(workspaceId);
+  // Gift ideas name their person; People is optional, so a failed load only hides names.
+  const { people } = usePeople(workspaceId);
+  const everyone = people.status === "success" ? people.data : [];
+  const names = new Map(everyone.map((person) => [person.id, person.name]));
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [editing, setEditing] = useState<ShoppingItem | null>(null);
   const [nameDialog, setNameDialog] = useState<NameDialog | null>(null);
@@ -212,7 +225,7 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
     <ul
       aria-label={label}
       className={cn(
-        "@container/rows divide-y overflow-hidden rounded-xl border bg-card shadow-elevation-1",
+        "@container/rows divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1",
         className,
       )}
     >
@@ -220,6 +233,7 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
         <ShoppingItemRow
           key={item.id}
           item={item}
+          giftFor={item.person_id ? (names.get(item.person_id) ?? null) : null}
           pending={pending.has(item.id)}
           onToggle={(entry) => void toggle(entry)}
           onEdit={setEditing}
@@ -251,23 +265,20 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
             aria-labelledby="shopping-list-heading"
             className="@container/list min-w-0 space-y-5"
           >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0 flex-1 space-y-2">
-                <h2
-                  id="shopping-list-heading"
-                  className="text-lg font-semibold tracking-tight break-words"
-                >
-                  {active.name}
-                </h2>
-                <ListProgress needed={active.needed_count} purchased={active.purchased_count} />
-              </div>
-              <ListActions
-                key={active.id}
-                list={active}
-                onEdit={() => setNameDialog({ mode: "edit", list: active })}
-                onDelete={removeList}
-              />
-            </div>
+            <ListHero
+              icon={SHOPPING_LIST_ICON_COMPONENTS[active.icon]}
+              name={active.name}
+              needed={active.needed_count}
+              purchased={active.purchased_count}
+              actions={
+                <ListActions
+                  key={active.id}
+                  list={active}
+                  onEdit={() => setNameDialog({ mode: "edit", list: active })}
+                  onDelete={removeList}
+                />
+              }
+            />
 
             <ItemComposer
               key={active.id}
@@ -317,8 +328,13 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
                           : undefined,
                       )
                     ) : (
-                      <div className="flex items-center gap-3 rounded-xl border border-dashed bg-card/40 px-4 py-6 text-sm text-muted-foreground">
-                        <PartyPopper className="size-5 shrink-0 text-brand" aria-hidden="true" />
+                      <div className="flex items-center gap-3 rounded-2xl border border-dashed border-success/40 bg-success/5 px-4 py-6 text-sm text-muted-foreground">
+                        <span
+                          aria-hidden="true"
+                          className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-success/12 text-success"
+                        >
+                          <PartyPopper className="size-4 animate-check-pop" />
+                        </span>
                         You’ve got everything on this list.
                       </div>
                     )}
@@ -364,7 +380,12 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
       </p>
 
       {editing ? (
-        <ItemEditDialog item={editing} onSave={save} onClose={() => setEditing(null)} />
+        <ItemEditDialog
+          item={editing}
+          people={everyone}
+          onSave={save}
+          onClose={() => setEditing(null)}
+        />
       ) : null}
       {nameDialog ? (
         <ListNameDialog
@@ -400,22 +421,144 @@ function SectionHeading({ id, count, children }: { id: string; count: number; ch
   );
 }
 
-/** How much of the list is bought, in words and as a bar. */
-function ListProgress({ needed, purchased }: { needed: number; purchased: number }) {
+/** What's left to buy, in a few words. */
+function listHeadline(needed: number, purchased: number): string {
+  if (needed + purchased === 0) return "Add what you need below";
+  if (needed === 0) return "Everything’s in the basket";
+  return `${needed} ${needed === 1 ? "item" : "items"} to buy`;
+}
+
+/**
+ * The open list as a card: its icon and name, what's left to buy, and how much is bought as a
+ * ring. The list's own actions sit in the corner.
+ */
+function ListHero({
+  icon: Icon,
+  name,
+  needed,
+  purchased,
+  actions,
+}: {
+  icon: LucideIcon;
+  name: string;
+  needed: number;
+  purchased: number;
+  actions: ReactNode;
+}) {
   const total = needed + purchased;
-  if (total === 0) return <p className="text-sm text-muted-foreground">No items yet.</p>;
-  const percent = Math.round((purchased / total) * 100);
+  const done = total > 0 && needed === 0;
   return (
-    <div className="flex max-w-md items-center gap-3">
-      <div aria-hidden="true" className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-        <div
-          className="h-full rounded-full bg-linear-to-r from-brand to-brand-2 transition-[width] duration-300 ease-out-soft"
-          style={{ width: `${percent}%` }}
-        />
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-2xl border bg-linear-to-br via-card to-card p-5 shadow-elevation-1 transition-colors duration-300 @3xl/list:p-6",
+        done ? "border-success/40 from-success/15" : "from-brand-subtle/80",
+      )}
+    >
+      <Icon
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-6 -bottom-8 size-40 -rotate-12 text-brand opacity-[0.06]"
+      />
+      <div className="relative flex flex-wrap items-center gap-5">
+        <BoughtRing purchased={purchased} total={total} icon={Icon} done={done} />
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <p
+            className={cn(
+              "text-xs font-medium tracking-wide uppercase",
+              done ? "text-success" : "text-brand",
+            )}
+          >
+            Shopping list
+          </p>
+          <h2
+            id="shopping-list-heading"
+            className="text-xl font-semibold tracking-tight break-words @3xl/list:text-2xl"
+          >
+            {name}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {listHeadline(needed, purchased)}
+            {total > 0 ? (
+              <>
+                {" · "}
+                <span className="tabular-nums">
+                  {purchased} of {total} bought
+                </span>
+              </>
+            ) : null}
+          </p>
+        </div>
+        <div className="self-start">{actions}</div>
       </div>
-      <p className="shrink-0 text-sm text-muted-foreground tabular-nums">
-        {purchased} of {total} bought
-      </p>
+    </div>
+  );
+}
+
+/** How much of the list is bought, as a ring that sweeps in unless motion is reduced. */
+function BoughtRing({
+  purchased,
+  total,
+  icon: Icon,
+  done,
+}: {
+  purchased: number;
+  total: number;
+  icon: LucideIcon;
+  done: boolean;
+}) {
+  const percent = total === 0 ? 0 : Math.round((purchased / total) * 100);
+  const offset = 100 - percent;
+  const style: CSSProperties & { "--ring-offset": number } = { "--ring-offset": offset };
+  return (
+    <div
+      role="progressbar"
+      aria-label="Bought"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={percent}
+      className="relative size-20 shrink-0"
+    >
+      <svg
+        viewBox="0 0 100 100"
+        aria-hidden="true"
+        className={cn("size-full", done ? "text-success" : "text-brand")}
+      >
+        <circle
+          cx="50"
+          cy="50"
+          r="42"
+          fill="none"
+          strokeWidth="9"
+          stroke="currentColor"
+          className="opacity-15"
+        />
+        {percent > 0 ? (
+          <circle
+            cx="50"
+            cy="50"
+            r="42"
+            fill="none"
+            strokeWidth="9"
+            stroke="currentColor"
+            strokeLinecap="round"
+            pathLength={100}
+            strokeDasharray="100"
+            strokeDashoffset={offset}
+            transform="rotate(-90 50 50)"
+            style={style}
+            className="motion-safe:animate-ring-fill"
+          />
+        ) : null}
+      </svg>
+      <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center">
+        <span
+          className={cn(
+            "flex size-11 items-center justify-center rounded-full",
+            done ? "bg-success/12 text-success" : "bg-brand-subtle text-brand",
+          )}
+        >
+          <Icon className="size-5" />
+        </span>
+      </div>
     </div>
   );
 }

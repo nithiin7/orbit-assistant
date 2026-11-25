@@ -11,6 +11,7 @@ from orbit_api.api.dependencies import TaskServiceDep
 from orbit_api.schemas.tasks import (
     CreateTaskListRequest,
     CreateTaskRequest,
+    TaskCompleteParams,
     TaskListDetailResponse,
     TaskListParams,
     TaskListResponse,
@@ -23,6 +24,7 @@ from orbit_api.schemas.tasks import (
 )
 from orbit_api.services.tasks.models import (
     MAX_TASK_LISTS,
+    InvalidTaskRecurrenceError,
     InvalidTaskScheduleError,
     TaskListNameTakenError,
     TaskListNotFoundError,
@@ -56,6 +58,10 @@ def task_not_found() -> HTTPException:
     return HTTPException(status.HTTP_404_NOT_FOUND, "Task not found.")
 
 
+def invalid_recurrence(exc: InvalidTaskRecurrenceError) -> HTTPException:
+    return HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc))
+
+
 def invalid_schedule(exc: InvalidTaskScheduleError) -> HTTPException:
     return HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc))
 
@@ -84,6 +90,8 @@ async def create_task(
         return TaskResponse.of(await tasks.create(workspace.id, body.to_draft()))
     except InvalidTaskScheduleError as exc:
         raise invalid_schedule(exc) from None
+    except InvalidTaskRecurrenceError as exc:
+        raise invalid_recurrence(exc) from None
     except TaskListNotFoundError:
         raise unknown_list() from None
 
@@ -114,19 +122,27 @@ async def update_task(
         raise task_not_found() from None
     except InvalidTaskScheduleError as exc:
         raise invalid_schedule(exc) from None
+    except InvalidTaskRecurrenceError as exc:
+        raise invalid_recurrence(exc) from None
     except TaskListNotFoundError:
         raise unknown_list() from None
 
 
 @router.post("/{task_id}/complete", summary="Complete a task")
 async def complete_task(
-    task_id: TaskId, workspace: WorkspaceDep, tasks: TaskServiceDep
+    task_id: TaskId,
+    params: Annotated[TaskCompleteParams, Query()],
+    workspace: WorkspaceDep,
+    tasks: TaskServiceDep,
 ) -> TaskResponse:
-    """Idempotent: completing a completed task keeps its original completion time."""
+    """Idempotent: completing a completed task keeps its original completion time. Completing a
+    repeating task also creates its next occurrence."""
     try:
-        return TaskResponse.of(await tasks.complete(workspace.id, task_id))
+        return TaskResponse.of(await tasks.complete(workspace.id, task_id, params.today))
     except TaskNotFoundError:
         raise task_not_found() from None
+    except InvalidTaskRecurrenceError as exc:
+        raise invalid_recurrence(exc) from None
 
 
 @router.post("/{task_id}/reopen", summary="Reopen a task")

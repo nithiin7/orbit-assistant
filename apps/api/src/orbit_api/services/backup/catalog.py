@@ -27,6 +27,7 @@ Module = Literal[
     "watchlist",
     "bookmarks",
     "places",
+    "people",
 ]
 
 MODULES: Final[tuple[Module, ...]] = (
@@ -44,6 +45,7 @@ MODULES: Final[tuple[Module, ...]] = (
     "watchlist",
     "bookmarks",
     "places",
+    "people",
 )
 
 MODULE_LABELS: Final[dict[Module, str]] = {
@@ -61,6 +63,7 @@ MODULE_LABELS: Final[dict[Module, str]] = {
     "watchlist": "Watchlist",
     "bookmarks": "Saved",
     "places": "Places",
+    "people": "People",
 }
 
 _PREFIXES: Final[tuple[tuple[str, Module], ...]] = (
@@ -95,6 +98,9 @@ _EXACT: Final[dict[str, Module]] = {
     "bookmark_settings": "bookmarks",
     "places": "places",
     "place_settings": "places",
+    "people": "people",
+    "person_dates": "people",
+    "person_ledger_entries": "people",
 }
 
 # Tables a backup leaves out, and why. Credentials and tokens never leave the server; derived
@@ -107,6 +113,8 @@ EXCLUDED_TABLES: Final[dict[str, str]] = {
     "user_avatars": "the profile photo belongs to the account",
     "user_covers": "the profile cover photo belongs to the account",
     "dashboard_layouts": "a per-person preference, not workspace data",
+    "daily_briefings": "derived snapshots of other records; prepared again after a restore",
+    "briefing_settings": "a per-person preference, not workspace data",
     "achievement_unlocks": "achievements belong to the person, not the workspace",
     "reward_purchases": "XP store purchases belong to the person, not the workspace",
     "reward_equips": "worn store items belong to the person, not the workspace",
@@ -134,6 +142,9 @@ EXCLUDED_TABLES: Final[dict[str, str]] = {
     "backup_settings": "set again in the restored workspace",
     "backup_uploads": "staging state",
     "watchlist_settings": "the encrypted TMDB key never leaves the server",
+    "voice_settings": "per-person voice settings refer to AI providers, which aren't backed up",
+    "push_subscriptions": "devices turn push on again; their keys never leave the server",
+    "push_preferences": "a per-person preference, not workspace data",
 }
 
 # Columns that name a file in the attachment store: `(table, column)`. The file is stored as

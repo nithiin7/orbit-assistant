@@ -13,7 +13,14 @@ const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: fileURLToPath(new URL("../..", import.meta.url)),
   headers() {
-    return Promise.resolve([{ source: "/:path*", headers: [...securityHeaders] }]);
+    return Promise.resolve([
+      { source: "/:path*", headers: [...securityHeaders] },
+      // Browsers must always fetch the latest service worker.
+      {
+        source: "/sw.js",
+        headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }],
+      },
+    ]);
   },
 };
 

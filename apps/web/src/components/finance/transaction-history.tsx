@@ -1,7 +1,7 @@
 "use client";
 
 import type { FinanceTransaction } from "@orbit/contracts";
-import { Download, Receipt, Search, SearchX, SlidersHorizontal, Tags } from "lucide-react";
+import { Download, FileUp, Receipt, Search, SearchX, SlidersHorizontal, Tags } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { describeApiError } from "@/api/client";
@@ -47,7 +47,8 @@ export function TransactionHistory({
   onEditTransaction,
   onAnnounce,
   onManageCategories,
-}: FinanceData & { onManageCategories: () => void }) {
+  onImportStatement,
+}: FinanceData & { onManageCategories: () => void; onImportStatement: () => void }) {
   const id = useId();
   const [filters, setFilters] = useState<TransactionFilters>(DEFAULT_TRANSACTION_FILTERS);
   const [search, setSearch] = useState("");
@@ -123,6 +124,10 @@ export function TransactionHistory({
             <Button variant="outline" onClick={onManageCategories}>
               <Tags aria-hidden="true" />
               Categories
+            </Button>
+            <Button variant="outline" onClick={onImportStatement}>
+              <FileUp aria-hidden="true" />
+              Import statement
             </Button>
             <Button variant="outline" disabled={exporting} onClick={() => void download()}>
               <Download aria-hidden="true" />
@@ -483,7 +488,7 @@ function Pager({
 
 function HistorySkeleton() {
   return (
-    <div className="divide-y overflow-hidden rounded-xl border bg-card">
+    <div className="divide-y overflow-hidden rounded-2xl border bg-card">
       <span className="sr-only">Loading transactions…</span>
       {[0, 1, 2, 3].map((row) => (
         <div key={row} className="flex items-center gap-3 px-4 py-3.5">

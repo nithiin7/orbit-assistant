@@ -3,10 +3,13 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { Food, FoodEntry, MealType, Portion, SavedMeal } from "@orbit/contracts";
 import {
+  Apple,
+  ChartColumn,
   ChevronLeft,
   ChevronRight,
   Coffee,
   Cookie,
+  Flame,
   type LucideIcon,
   Moon,
   MoreHorizontal,
@@ -18,6 +21,7 @@ import {
   Sun,
   Trash2,
   Utensils,
+  UtensilsCrossed,
 } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { Controller, useForm, type UseFormRegisterReturn, useWatch } from "react-hook-form";
@@ -79,6 +83,7 @@ import {
   toSavedMealRequest,
   type Units,
 } from "@/lib/fitness";
+import { cn } from "@/utils/common";
 import { addDays } from "@/utils/dates";
 
 import { FoodIdeasDialog } from "./food-ideas";
@@ -135,6 +140,7 @@ export function NutritionView({ workspaceId, today }: { workspaceId: string; tod
                     key={meal.value}
                     title={meal.label}
                     icon={MEAL_ICONS[meal.value]}
+                    tone="orange"
                     description={
                       totals && entries.length > 0
                         ? `${formatEnergy(totals.energy_cal, units.energy_unit)} · ${formatGrams(totals.protein_mg)} protein`
@@ -217,7 +223,12 @@ export function NutritionView({ workspaceId, today }: { workspaceId: string; tod
               })}
             </div>
             <div className="space-y-4">
-              <Section title="Totals" description={day === today ? "Today" : shortDate(day)}>
+              <Section
+                icon={Flame}
+                tone="orange"
+                title="Totals"
+                description={day === today ? "Today" : shortDate(day)}
+              >
                 <div className="space-y-3">
                   <Meter
                     label="Energy"
@@ -358,7 +369,12 @@ function SavedMeals({
     if (ok) act((token) => deleteMeal(token, workspaceId, meal.id));
   }
   return (
-    <Section title="Saved meals" description="Log several foods at once.">
+    <Section
+      icon={UtensilsCrossed}
+      tone="orange"
+      title="Saved meals"
+      description="Log several foods at once."
+    >
       <Loaded resource={meals.state} reload={meals.reload} skeleton="h-16">
         {({ meals: list }) =>
           list.length === 0 ? (
@@ -436,7 +452,7 @@ function NutritionHistory({
   const start = addDays(today, -13);
   const history = useNutritionHistory(workspaceId, start, today);
   return (
-    <Section title="Last 14 days">
+    <Section icon={ChartColumn} tone="orange" title="Last 14 days">
       <Loaded resource={history.state} reload={history.reload} skeleton="h-32">
         {({ days }) => {
           const byDay = new Map(days.map((d) => [d.day, d.nutrients.energy_cal]));
@@ -472,7 +488,7 @@ function SavedFoods({
   const [editing, setEditing] = useState<Food | "new" | null>(null);
   const [browsing, setBrowsing] = useState(false);
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<FoodSort>("most-used");
+  const [sort, setSort] = useState<FoodSort>("name-asc");
   async function remove(food: Food) {
     const ok = await confirm({
       title: `Delete ${food.name}?`,
@@ -484,6 +500,8 @@ function SavedFoods({
   }
   return (
     <Section
+      icon={Apple}
+      tone="green"
       title="Saved foods"
       description="Foods you eat often, with their nutrients per serving."
       action={
@@ -528,15 +546,20 @@ function SavedFoods({
                 render={(food) => (
                   <li
                     key={food.id}
-                    className="flex items-center justify-between gap-2 rounded-lg border p-2.5"
+                    className="flex items-start gap-3 rounded-xl border bg-card p-3 transition-colors hover:border-ring/40"
                   >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm">{food.name}</p>
+                    <FoodMonogram name={food.name} />
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <p className="truncate text-sm font-medium">{food.name}</p>
+                        <p className="shrink-0 text-sm font-semibold tabular-nums">
+                          {formatEnergy(food.nutrients.energy_cal, units.energy_unit)}
+                        </p>
+                      </div>
                       <p className="text-xs text-muted-foreground">
-                        {formatQuantity(food.serving_quantity_milli)} {food.serving_unit} ·{" "}
-                        {formatEnergy(food.nutrients.energy_cal, units.energy_unit)} ·{" "}
-                        {formatGrams(food.nutrients.protein_mg)} protein
+                        Per {formatQuantity(food.serving_quantity_milli)} {food.serving_unit}
                       </p>
+                      <MacroSummary nutrients={food.nutrients} />
                     </div>
                     <Menu
                       variant="ghost"
@@ -599,10 +622,15 @@ function SearchBox({
   label,
   value,
   onChange,
+  onEnter,
+  autoFocus = false,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  /** Inside a form, Enter calls this instead of submitting. */
+  onEnter?: () => void;
+  autoFocus?: boolean;
 }) {
   const id = useId();
   return (
@@ -619,10 +647,146 @@ function SearchBox({
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        onKeyDown={
+          onEnter
+            ? (event) => {
+                if (event.key !== "Enter") return;
+                event.preventDefault();
+                onEnter();
+              }
+            : undefined
+        }
         placeholder="Search by name"
         className="pl-9"
         autoComplete="off"
+        autoFocus={autoFocus}
       />
+    </div>
+  );
+}
+
+/** Warm tints for food initials, picked by name so each food keeps its own. */
+const MONOGRAM_TINTS = [
+  "bg-event-orange/15 text-event-orange",
+  "bg-event-green/15 text-event-green",
+  "bg-event-amber/15 text-event-amber",
+  "bg-event-rose/15 text-event-rose",
+  "bg-event-teal/15 text-event-teal",
+  "bg-event-violet/15 text-event-violet",
+] as const;
+
+/** A food's first letter on a tinted tile; decorative, since the name sits beside it. */
+function FoodMonogram({ name }: { name: string }) {
+  let hash = 0;
+  for (const character of name) hash = (hash * 31 + (character.codePointAt(0) ?? 0)) | 0;
+  const tint = MONOGRAM_TINTS[Math.abs(hash) % MONOGRAM_TINTS.length];
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "flex size-9 shrink-0 items-center justify-center rounded-lg text-sm font-semibold uppercase",
+        tint,
+      )}
+    >
+      {Array.from(name.trim())[0] ?? "?"}
+    </span>
+  );
+}
+
+const MACROS = [
+  { key: "protein_mg", label: "Protein", calPerGram: 4, color: "bg-event-rose" },
+  { key: "carbs_mg", label: "Carbs", calPerGram: 4, color: "bg-event-amber" },
+  { key: "fat_mg", label: "Fat", calPerGram: 9, color: "bg-event-blue" },
+] as const;
+
+/** Protein, carbs, and fat per serving, with a bar of where the calories come from. */
+function MacroSummary({ nutrients }: { nutrients: Food["nutrients"] }) {
+  const energy = MACROS.map((macro) => (nutrients[macro.key] / 1000) * macro.calPerGram);
+  const total = energy.reduce((sum, value) => sum + value, 0);
+  return (
+    <div className="space-y-1.5">
+      {total > 0 ? (
+        <div aria-hidden="true" className="flex h-1.5 overflow-hidden rounded-full bg-muted">
+          {MACROS.map((macro, index) => (
+            <span
+              key={macro.key}
+              className={macro.color}
+              style={{ width: `${((energy[index] ?? 0) / total) * 100}%` }}
+            />
+          ))}
+        </div>
+      ) : null}
+      <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+        {MACROS.map((macro) => (
+          <span key={macro.key} className="flex items-center gap-1.5">
+            <span aria-hidden="true" className={cn("size-1.5 rounded-full", macro.color)} />
+            <span className="tabular-nums">{formatGrams(nutrients[macro.key])}</span>
+            {macro.label.toLowerCase()}
+          </span>
+        ))}
+      </p>
+    </div>
+  );
+}
+
+/** Saved foods to log from, A–Z, narrowed by a search box. Enter picks the first match. */
+function FoodPicker({
+  foods,
+  units,
+  onPick,
+}: {
+  foods: readonly Food[];
+  units: Units;
+  onPick: (food: Food) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const shown = sortFoods(
+    foods.filter((food) => matchesName(food.name, query)),
+    "name-asc",
+  );
+  return (
+    <div className="space-y-2">
+      <SearchBox
+        label="Search saved foods"
+        value={query}
+        onChange={setQuery}
+        autoFocus
+        onEnter={() => {
+          const first = shown[0];
+          if (first) onPick(first);
+        }}
+      />
+      {shown.length === 0 ? (
+        <p className="px-1 py-2 text-xs text-muted-foreground">
+          No saved foods match your search. Try another name, or type it in.
+        </p>
+      ) : (
+        <ul
+          aria-label="Saved foods"
+          className="max-h-64 divide-y overflow-y-auto rounded-lg border"
+        >
+          {shown.map((food) => (
+            <li key={food.id}>
+              <button
+                type="button"
+                onClick={() => onPick(food)}
+                className="flex w-full items-center gap-3 px-3 py-2 text-left outline-none hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+              >
+                <FoodMonogram name={food.name} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{food.name}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {formatQuantity(food.serving_quantity_milli)} {food.serving_unit}
+                  </span>
+                </span>
+                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                  {formatEnergy(food.nutrients.energy_cal, units.energy_unit)}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -920,11 +1084,21 @@ export function FoodEntryDialog({
     control,
     handleSubmit,
     setError,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<EntryFormValues>({ resolver: yupResolver(entrySchema), defaultValues: initial });
   const [foodId, quantity] = useWatch({ control, name: ["foodId", "quantity"] });
   const food = list.find((f) => f.id === foodId);
   const milli = parseQuantity(quantity);
+  // Saved foods first when there are any; an entry typed in by hand reopens that way.
+  const [source, setSource] = useState<"saved" | "typed">(
+    editing && !editing.portion.food_id ? "typed" : "saved",
+  );
+  const picking = list.length > 0 && source === "saved";
+
+  function chooseFood(id: string) {
+    setValue("foodId", id, { shouldValidate: errors.name !== undefined });
+  }
 
   async function save(values: EntryFormValues, close: () => void) {
     try {
@@ -968,21 +1142,66 @@ export function FoodEntryDialog({
       submitLabel={editing ? "Save changes" : "Add"}
       wide
     >
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <DateField control={control} name="day" label="Date" />
         <SelectField control={control} name="meal" label="Meal" options={MEALS} />
-        <SelectField
-          control={control}
-          name="foodId"
-          label="Food"
-          options={[
-            { value: "", label: "Type it in" },
-            ...list.map((f) => ({ value: f.id, label: f.name })),
-          ]}
-        />
       </div>
-      {food ? (
-        <div className="space-y-2">
+      {list.length > 0 ? (
+        <div
+          role="group"
+          aria-label="Food source"
+          className="inline-flex rounded-lg border bg-muted/40 p-0.5"
+        >
+          {(
+            [
+              ["saved", "Saved food"],
+              ["typed", "Type it in"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={source === value}
+              onClick={() => {
+                setSource(value);
+                if (value === "typed") chooseFood("");
+              }}
+              className={cn(
+                "rounded-md px-3 py-1 text-xs font-medium text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
+                source === value && "bg-card text-foreground shadow-elevation-1",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      {picking && !food ? (
+        <div className="space-y-1.5">
+          <FoodPicker foods={list} units={units} onPick={(picked) => chooseFood(picked.id)} />
+          {errors.name ? (
+            <p className="text-xs text-destructive" role="alert">
+              Choose a food, or type it in.
+            </p>
+          ) : null}
+        </div>
+      ) : picking && food ? (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <FoodMonogram name={food.name} />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{food.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatQuantity(food.serving_quantity_milli)} {food.serving_unit} ·{" "}
+                  {formatEnergy(food.nutrients.energy_cal, units.energy_unit)}
+                </p>
+              </div>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => chooseFood("")}>
+              Change
+            </Button>
+          </div>
           <FormField
             label={`How much (${food.serving_unit})`}
             inputMode="decimal"

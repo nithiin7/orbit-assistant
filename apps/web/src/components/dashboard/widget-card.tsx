@@ -6,9 +6,13 @@ import { type ReactNode, useId } from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { IconChip, type IconChipTone } from "@/components/ui/icon-chip";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Resource } from "@/hooks/query-resource";
 import { cn } from "@/utils/common";
+
+/** The card behind a dashboard widget. */
+export const WIDGET_CARD_CLASS = "rounded-2xl shadow-elevation-1";
 
 /**
  * The frame dashboard widgets share: a heading with an icon, an optional action, a link to the
@@ -16,7 +20,8 @@ import { cn } from "@/utils/common";
  */
 export function WidgetCard({
   title,
-  icon: Icon,
+  icon,
+  tone = "brand",
   href,
   linkLabel,
   actions,
@@ -26,6 +31,7 @@ export function WidgetCard({
 }: {
   title: string;
   icon: LucideIcon;
+  tone?: IconChipTone;
   /** The module page the widget summarizes. */
   href: string;
   /** The link's text, such as "Open tasks". */
@@ -38,10 +44,10 @@ export function WidgetCard({
   const headingId = useId();
   return (
     <section aria-labelledby={headingId} className="h-full">
-      <Card className={cn("flex h-full flex-col shadow-elevation-1", className)} aria-busy={busy}>
+      <Card className={cn("flex h-full flex-col", WIDGET_CARD_CLASS, className)} aria-busy={busy}>
         <div className="widget-header flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b px-5 py-4">
-          <h2 id={headingId} className="flex items-center gap-2 text-base font-semibold">
-            <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
+          <h2 id={headingId} className="flex items-center gap-2.5 text-base font-semibold">
+            <IconChip icon={icon} tone={tone} />
             {title}
           </h2>
           <div className="flex flex-wrap items-center gap-1">

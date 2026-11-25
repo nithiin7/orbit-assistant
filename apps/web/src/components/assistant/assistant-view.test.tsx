@@ -52,6 +52,7 @@ const enabled: AiSettings = {
   response_style: "balanced",
   monthly_token_limit: null,
   indexing_enabled: true,
+  auto_capture: false,
 };
 
 const session = {
@@ -110,6 +111,7 @@ const saved = (content: string, proposals: AiProposal[] = []): AiConversationDet
       input_tokens: null,
       output_tokens: null,
       created_at: "2026-11-02T10:00:00Z",
+      input_mode: "text",
     },
     {
       id: "m2",
@@ -123,6 +125,7 @@ const saved = (content: string, proposals: AiProposal[] = []): AiConversationDet
       input_tokens: 10,
       output_tokens: 5,
       created_at: "2026-11-02T10:00:01Z",
+      input_mode: "text",
     },
   ],
   proposals,
@@ -207,7 +210,7 @@ describe("AssistantView", () => {
     expect(within(card).getByText(/Check the details before approving/)).toBeInTheDocument();
     expect(within(card).getByText("high")).toBeInTheDocument();
 
-    await user.click(within(card).getByRole("button", { name: "Approve" }));
+    await user.click(within(card).getByRole("button", { name: "Approve once" }));
     expect(await within(card).findByRole("link", { name: "Open it" })).toHaveAttribute(
       "href",
       `/tasks?task=${TASK_ID}`,
@@ -215,6 +218,55 @@ describe("AssistantView", () => {
     expect(api).toHaveBeenCalledWith(
       expect.stringContaining("/ai/proposals/pr1/approve"),
       expect.objectContaining({ method: "POST" }),
+    );
+  });
+
+  it("adds the item and stops asking when the person chooses Always add", async () => {
+    const user = userEvent.setup();
+    navigation.search = "c=c1";
+    const milk: AiProposal = {
+      ...proposal,
+      id: "pr2",
+      kind: "add_shopping_item",
+      payload: { name: "Milk" },
+      summary: "Add “Milk” to your shopping list",
+      from_untrusted_context: false,
+    };
+    const api = mockApi({
+      ...session,
+      "GET /api/v1/me/ai/settings": json(enabled),
+      "PATCH /api/v1/me/ai/settings": json({ ...enabled, auto_capture: true }),
+      [`GET ${WS}/ai/conversations/c1`]: json(saved("Added.", [milk])),
+      [`POST ${WS}/ai/proposals/pr2/approve`]: json({ ...milk, status: "executed" }),
+    });
+    await renderSignedIn(<AssistantView />);
+
+    const card = await screen.findByRole("region", {
+      name: "Proposed: Add “Milk” to your shopping list",
+    });
+    await user.click(within(card).getByRole("button", { name: "Always add" }));
+
+    expect(await within(card).findByRole("status")).toHaveTextContent("Done.");
+    expect(api).toHaveBeenCalledWith(
+      expect.stringContaining("/me/ai/settings"),
+      expect.objectContaining({ method: "PATCH", body: JSON.stringify({ auto_capture: true }) }),
+    );
+    expect(api).toHaveBeenCalledWith(
+      expect.stringContaining("/ai/proposals/pr2/approve"),
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
+
+  it("starts a sentence from a quick add template", async () => {
+    const user = userEvent.setup();
+    mockApi({ ...session, "GET /api/v1/me/ai/settings": json(enabled) });
+    await renderSignedIn(<AssistantView />);
+
+    await user.click(await screen.findByRole("button", { name: "Quick add" }));
+    await user.click(screen.getByRole("menuitem", { name: "Shopping item" }));
+
+    expect(screen.getByRole("textbox", { name: "Ask Orbit" })).toHaveValue(
+      "Add to my shopping list: ",
     );
   });
 

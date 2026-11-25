@@ -2,14 +2,7 @@
 
 import type { CreateTaskRequest, Task, UpdateTaskRequest } from "@orbit/contracts";
 import type { TaskListDetail } from "@orbit/contracts";
-import {
-  AlertCircle,
-  CalendarClock,
-  CheckCheck,
-  ListTodo,
-  MoreHorizontal,
-  SearchX,
-} from "lucide-react";
+import { CheckCheck, ListTodo, MoreHorizontal, SearchX } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { describeApiError } from "@/api/client";
@@ -43,6 +36,7 @@ import { isEditableTarget } from "@/utils/keyboard";
 
 import { TaskComposer } from "./task-composer";
 import { TaskEditDialog } from "./task-edit-dialog";
+import { TasksHero } from "./task-hero";
 import { TaskItem } from "./task-item";
 import { TaskListDialog, type TaskListValues } from "./task-list-dialog";
 import { TaskListFilter } from "./task-list-filter";
@@ -237,7 +231,7 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
     />
   );
   const listClassName = cn(
-    "@container/rows divide-y overflow-hidden rounded-xl border bg-card shadow-elevation-1 transition-opacity duration-150",
+    "@container/rows divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1 transition-opacity duration-150",
     refreshing && "opacity-70",
   );
   // Sections by due date help most for open tasks in due order; other views read as one list.
@@ -259,6 +253,7 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
         </aside>
 
         <section aria-labelledby="task-list-heading" className="@container/list min-w-0 space-y-5">
+          <TasksHero summary={summary} today={today} />
           <div className="flex flex-col gap-3 @3xl/list:flex-row @3xl/list:items-end @3xl/list:justify-between">
             <div className="min-w-0 space-y-1.5">
               <div className="flex min-w-0 items-center gap-1">
@@ -312,10 +307,6 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
                   </Menu>
                 ) : null}
               </div>
-              <AttentionSummary
-                overdue={summary?.overdue ?? 0}
-                dueToday={summary?.due_today ?? 0}
-              />
             </div>
             <TaskToolbar
               search={search}
@@ -460,29 +451,6 @@ const VIEW_TITLES: Record<StatusFilter, string> = {
 
 function countLabel(count: number): string {
   return `${count} ${count === 1 ? "task" : "tasks"}`;
-}
-
-/** What needs attention now, in words as well as color. Nothing when all is calm. */
-function AttentionSummary({ overdue, dueToday }: { overdue: number; dueToday: number }) {
-  if (overdue === 0 && dueToday === 0) {
-    return <p className="text-sm text-muted-foreground">Nothing overdue or due today.</p>;
-  }
-  return (
-    <p className="flex flex-wrap items-center gap-2 text-sm">
-      {overdue > 0 ? (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 px-2.5 py-0.5 font-medium text-destructive">
-          <AlertCircle className="size-3.5" aria-hidden="true" />
-          {overdue} overdue
-        </span>
-      ) : null}
-      {dueToday > 0 ? (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-subtle px-2.5 py-0.5 font-medium text-brand">
-          <CalendarClock className="size-3.5" aria-hidden="true" />
-          {dueToday} due today
-        </span>
-      ) : null}
-    </p>
-  );
 }
 
 function TaskEmptyState({

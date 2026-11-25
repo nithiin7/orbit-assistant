@@ -19,6 +19,7 @@ import {
   Ruler,
   Target,
   TrendingUp,
+  Users,
   Wallet,
 } from "lucide-react";
 
@@ -52,6 +53,7 @@ const ICONS: Readonly<Record<SearchEntityType, LucideIcon>> = {
   watch_item: Clapperboard,
   bookmark: BookmarkIcon,
   place: MapPinned,
+  person: Users,
 };
 
 const updatedFormat = new Intl.DateTimeFormat(undefined, {

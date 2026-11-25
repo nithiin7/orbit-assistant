@@ -19,9 +19,11 @@ export function SidebarSettings() {
 
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid gap-3 @2xl/panel:grid-cols-2">
         {sections.map(({ id, label, items }) => (
-          <fieldset key={id} className="rounded-lg border bg-card p-1.5 shadow-elevation-1">
+          // min-w-0: a fieldset defaults to min-content width, which the truncated descriptions
+          // would stretch past the screen on small widths.
+          <fieldset key={id} className="min-w-0 rounded-lg border bg-card p-1.5 shadow-elevation-1">
             <legend className="sr-only">{label}</legend>
             <p
               aria-hidden="true"

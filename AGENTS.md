@@ -9,20 +9,27 @@ the same change.
 Privacy-first, self-hosted personal assistant. pnpm + uv monorepo: Next.js web and FastAPI API,
 talking only over HTTP. Every record belongs to a workspace.
 
-**Built:** local or Supabase accounts and workspaces; tasks; shopping; reminders and in-app
+**Built:** local or Supabase accounts and workspaces; tasks (including repeating tasks); shopping; reminders and in-app
 notifications (DB-backed worker); finance (ledger, commitments, investments, budgets, goals,
-plans, auto-debit SIPs; opt-in prices from mfapi.in and Yahoo); notes; calendar (RFC 5545);
+plans, auto-debit SIPs; opt-in prices from mfapi.in and Yahoo; bank statement import from PDF,
+Excel, or CSV, reviewed before anything is saved); notes; calendar (RFC 5545);
 habits and routines; documents vault; health and fitness (per person); saved links (`/saved`,
 "bookmarks" in code; opt-in previews); watchlist (opt-in TMDB); places (world map; opt-in online
-maps and Nominatim); achievements and XP store (`/profile`, per person); dashboard; universal
-search (SQL, no index); AI layer (off by default; OpenAI, Anthropic, Gemini, Ollama,
-OpenAI-compatible); Google and Microsoft integrations; backup and restore; personal agent with
-approval-gated workflows.
+maps and Nominatim); people (birthdays, anniversaries, managed reminders; money owed, shares split from expenses;
+gift ideas on shopping lists; dates on the calendar and in the briefing); achievements and XP store (`/profile`, per person); dashboard; daily
+briefing (structured API; AI summary in the dashboard greeting); universal search (SQL, no
+index); AI layer (off by default; OpenAI, Anthropic, Gemini, Ollama, OpenAI-compatible); Google
+and Microsoft integrations; backup and restore; personal agent with approval-gated workflows;
+voice conversations in the assistant (browser or OpenAI-style speech; no audio stored; spoken
+approval only for new, low-risk records); installable web app (manifest and a service worker
+that caches nothing); opt-in web push for reminders and the daily briefing.
 
 **Not built; never claim or build on unless asked:** OCR, encryption at rest by Orbit,
-push/email/SMS notifications, email sending, bank or broker feeds, auto-created transactions
-(except auto-debit SIP installments), recurring tasks, CalDAV or `.ics`/CSV/Markdown import,
-voice, multi-device sync, shared workspaces, an event bus, any vector DB, agent tools that
+email/SMS notifications, email sending, bank or broker feeds, auto-created transactions
+(except auto-debit SIP installments, confirmed statement imports, and repayments the user records
+from People), investment statement (CAS)
+import, CalDAV or `.ics`/Markdown import, CSV import other than bank statements,
+wake words or always-on listening, stored audio, multi-device sync, shared workspaces, an event bus, any vector DB, agent tools that
 delete, pay, send, share, or change permissions.
 
 Module design: grep `^## `/`^### ` in `docs/architecture.md` and read only that section.

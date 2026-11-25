@@ -36,6 +36,7 @@ from orbit_api.services.ai.models import (
     Conversation,
     IndexStatus,
     IndexSummary,
+    InputMode,
     Insight,
     InsightKind,
     Message,
@@ -118,6 +119,7 @@ class AiSettingsResponse(BaseModel):
     response_style: ResponseStyle
     monthly_token_limit: int | None
     indexing_enabled: bool
+    auto_capture: bool = Field(description="Add simple items the person typed without asking.")
 
     @classmethod
     def of(cls, settings: AiSettings, server_enabled: bool) -> "AiSettingsResponse":
@@ -135,6 +137,7 @@ class AiSettingsResponse(BaseModel):
             response_style=settings.response_style,
             monthly_token_limit=settings.monthly_token_limit,
             indexing_enabled=settings.indexing_enabled,
+            auto_capture=settings.auto_capture,
         )
 
 
@@ -155,6 +158,7 @@ class UpdateAiSettingsRequest(BaseModel):
     response_style: ResponseStyle | None = None
     monthly_token_limit: int | None = Field(default=None, ge=1000, le=10**10)
     indexing_enabled: bool | None = None
+    auto_capture: bool | None = None
 
     @model_validator(mode="after")
     def _check(self) -> Self:
@@ -418,6 +422,7 @@ class AiMessageResponse(BaseModel):
     input_tokens: int | None
     output_tokens: int | None
     created_at: datetime
+    input_mode: InputMode = Field(description="`voice` when the question was spoken.")
 
     @classmethod
     def of(cls, message: Message) -> "AiMessageResponse":
@@ -433,6 +438,7 @@ class AiMessageResponse(BaseModel):
             input_tokens=message.usage.input_tokens,
             output_tokens=message.usage.output_tokens,
             created_at=message.created_at,
+            input_mode=message.input_mode,
         )
 
 
@@ -476,6 +482,11 @@ class SendAiMessageRequest(BaseModel):
     )
     timezone: TimeZoneName | None = Field(
         default=None, description="The viewer's zone for 'today'; defaults to the profile's."
+    )
+    input_mode: InputMode = Field(
+        default_factory=lambda: "text",
+        description="`voice` when the question was spoken and transcribed; it is answered the "
+        "same way and saved as the question's origin.",
     )
 
 

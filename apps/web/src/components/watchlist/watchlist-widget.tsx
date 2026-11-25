@@ -6,13 +6,16 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { describeApiError } from "@/api/client";
+import { WIDGET_CARD_CLASS } from "@/components/dashboard/widget-card";
 import { FormAlert } from "@/components/form-field";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { IconChip } from "@/components/ui/icon-chip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActiveWorkspaceId } from "@/hooks/use-calendar";
 import { useWatchlist, useWatchlistMutations } from "@/hooks/use-watchlist";
 import { episodeLabel, metaLine, seriesProgress, titlesIn, watchlistHref } from "@/lib/watchlist";
+import { cn } from "@/utils/common";
 
 import { WatchPoster } from "./poster";
 
@@ -24,13 +27,13 @@ export function WatchlistWidget() {
   const workspaceId = useActiveWorkspaceId();
   return (
     <section aria-labelledby="watchlist-widget-heading" className="h-full">
-      <Card className="h-full shadow-elevation-1">
+      <Card className={cn("h-full", WIDGET_CARD_CLASS)}>
         <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
           <h2
             id="watchlist-widget-heading"
-            className="flex items-center gap-2 text-base font-semibold"
+            className="flex items-center gap-2.5 text-base font-semibold"
           >
-            <Clapperboard className="size-4 text-muted-foreground" aria-hidden="true" />
+            <IconChip icon={Clapperboard} tone="violet" />
             Watchlist
           </h2>
           <Link href="/watchlist" className={buttonVariants({ variant: "ghost", size: "sm" })}>

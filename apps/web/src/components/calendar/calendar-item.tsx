@@ -1,7 +1,7 @@
 "use client";
 
 import type { CalendarCategory } from "@orbit/contracts";
-import { CheckCircle2, Circle, Repeat, Repeat2 } from "lucide-react";
+import { Cake, CalendarHeart, CheckCircle2, Circle, Heart, Repeat, Repeat2 } from "lucide-react";
 import type { ComponentProps } from "react";
 
 import { type CalendarItem, CATEGORY_STYLES, describeWhen, itemTitle } from "@/lib/calendar";
@@ -22,6 +22,7 @@ export function itemClassName(
       item.entry.state === "completed" && "text-muted-foreground",
     );
   }
+  if (item.kind === "person") return "border border-brand/20 bg-brand-subtle text-brand";
   if (item.kind === "task") {
     return cn(
       "border border-dashed border-foreground/30 bg-card text-foreground",
@@ -48,6 +49,15 @@ export function ItemMark({ item }: { item: CalendarItem }) {
       <Repeat2 className="size-3.5 shrink-0 opacity-70" aria-hidden="true" />
     );
   }
+  if (item.kind === "person") {
+    const Icon =
+      item.entry.kind === "birthday"
+        ? Cake
+        : item.entry.kind === "anniversary"
+          ? Heart
+          : CalendarHeart;
+    return <Icon className="size-3.5 shrink-0" aria-hidden="true" />;
+  }
   if (item.kind === "event") {
     return item.occurrence.recurring ? (
       <Repeat className="size-3 shrink-0 opacity-70" aria-hidden="true" />
@@ -72,6 +82,7 @@ export function itemLabel(
     const state = item.entry.state === "completed" ? ", done" : "";
     return `${kind}: ${item.entry.title}, ${when}${state}`;
   }
+  if (item.kind === "person") return `${item.entry.title}, ${when}`;
   if (item.kind === "task") {
     const state = item.task.status === "completed" ? ", completed" : "";
     return `Task: ${item.task.title}, ${when}${state}`;
@@ -106,6 +117,7 @@ export function ItemChip({
 }: ItemChipProps) {
   const timed =
     showTime &&
+    item.kind !== "person" &&
     !(item.kind === "event" && item.occurrence.all_day) &&
     !(item.kind === "task" && item.due);
   return (

@@ -35,6 +35,12 @@ export type UpdateTaskRequest = Schemas["UpdateTaskRequest"];
 export type TaskListQuery = NonNullable<
   paths["/api/v1/workspaces/{workspace_id}/tasks"]["get"]["parameters"]["query"]
 >;
+/** How a task repeats, counted from its due date. */
+export type TaskRepeat = Schemas["TaskRepeatBody"];
+/** The client's local date, which decides when a repeating task comes due next. */
+export type CompleteTaskQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/tasks/{task_id}/complete"]["post"]["parameters"]["query"]
+>;
 export type TaskSummaryQuery = NonNullable<
   paths["/api/v1/workspaces/{workspace_id}/tasks/summary"]["get"]["parameters"]["query"]
 >;
@@ -88,6 +94,21 @@ export type UpdatePlaceRequest = Schemas["UpdatePlaceRequest"];
 export type PlaceMatch = Schemas["PlaceMatchResponse"];
 export type PlaceMatches = Schemas["PlaceMatchesResponse"];
 export type PlaceSettings = Schemas["PlaceSettingsResponse"];
+
+// People
+export type Person = Schemas["PersonResponse"];
+export type People = Schemas["PeopleResponse"];
+export type PersonDate = Schemas["PersonDateBody"];
+export type PersonDateKind = PersonDate["kind"];
+export type PersonRelationship = Person["relationship"];
+export type CreatePersonRequest = Schemas["CreatePersonRequest"];
+export type UpdatePersonRequest = Schemas["UpdatePersonRequest"];
+export type PersonLedger = Schemas["PersonLedgerResponse"];
+export type PersonLedgerEntry = Schemas["PersonLedgerEntryResponse"];
+export type PersonLedgerKind = PersonLedgerEntry["kind"];
+export type PersonBalance = Schemas["PersonBalanceResponse"];
+export type CreatePersonLedgerEntryRequest = Schemas["CreatePersonLedgerEntryRequest"];
+export type UpdatePersonLedgerEntryRequest = Schemas["UpdatePersonLedgerEntryRequest"];
 export type AchievementProfile = Schemas["AchievementProfileResponse"];
 export type Achievement = Schemas["AchievementResponse"];
 export type AchievementTier = Achievement["tier"];
@@ -105,6 +126,31 @@ export type DashboardWidget = Schemas["DashboardWidgetModel"];
 export type DashboardWidgetId = DashboardWidget["id"];
 export type DashboardWidgetSize = DashboardWidget["size"];
 export type DashboardDensity = DashboardLayout["density"];
+export type Briefing = Schemas["BriefingResponse"];
+export type BriefingContent = Schemas["BriefingContentResponse"];
+export type BriefingModule = BriefingContent["unavailable"][number];
+export type BriefingSeverity = Schemas["BriefingAttentionItem"]["severity"];
+export type BriefingSourceRef = Schemas["BriefingSourceRef"];
+export type BriefingTaskItem = Schemas["BriefingTaskItem"];
+export type BriefingEventItem = Schemas["BriefingEventItem"];
+export type BriefingReminderItem = Schemas["BriefingReminderItem"];
+export type BriefingPaymentItem = Schemas["BriefingPaymentItem"];
+export type BriefingBudgetItem = Schemas["BriefingBudgetItem"];
+export type BriefingHabitItem = Schemas["BriefingHabitItem"];
+export type BriefingRoutineItem = Schemas["BriefingRoutineItem"];
+export type BriefingWorkoutItem = Schemas["BriefingWorkoutItem"];
+export type BriefingNoteItem = Schemas["BriefingNoteItem"];
+export type BriefingHistory = Schemas["BriefingHistoryResponse"];
+export type BriefingListing = Schemas["BriefingListingResponse"];
+export type BriefingQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/briefings/today"]["get"]["parameters"]["query"]
+>;
+export type BriefingRegenerateRequest = Schemas["BriefingRegenerateRequest"];
+export type BriefingNarrative = Schemas["BriefingNarrativeResponse"];
+export type BriefingSettings = Schemas["BriefingSettingsBody"];
+export type BriefingHistoryQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/briefings"]["get"]["parameters"]["query"]
+>;
 export type TodayOverview = Schemas["TodayOverviewResponse"];
 export type TodayOverviewSection = TodayOverview["unavailable"][number];
 export type TodayOverviewQuery = NonNullable<
@@ -199,6 +245,17 @@ export type FinanceReportQuery = NonNullable<
 export type FinanceTrendQuery = NonNullable<
   paths["/api/v1/workspaces/{workspace_id}/finance/trend"]["get"]["parameters"]["query"]
 >;
+export type StatementPreview = Schemas["StatementPreviewResponse"];
+export type StatementPreviewStatus = StatementPreview["status"];
+export type StatementRow = Schemas["StatementRowResponse"];
+export type StatementColumns = Schemas["StatementColumnsResponse"];
+export type StatementPreviewQuery = NonNullable<
+  paths["/api/v1/workspaces/{workspace_id}/finance/statements/preview"]["post"]["parameters"]["query"]
+>;
+export type ImportStatementRequest = Schemas["ImportStatementRequest"];
+export type ImportStatementRow = Schemas["ImportStatementRowRequest"];
+export type ImportStatementResult = Schemas["ImportStatementResponse"];
+export type UndoStatementImportResult = Schemas["UndoStatementImportResponse"];
 export type MonthlySummary = Schemas["MonthlySummaryResponse"];
 export type MonthCashFlow = Schemas["MonthCashFlowResponse"];
 export type FinanceTrend = Schemas["TrendResponse"];
@@ -781,3 +838,27 @@ export type AgentApprovalList = Schemas["AgentApprovalListResponse"];
 export type AgentMemory = Schemas["AgentMemoryResponse"];
 export type AgentMemoryList = Schemas["AgentMemoryListResponse"];
 export type AgentMemoryCategory = AgentMemory["category"];
+
+// Voice
+export type VoiceSettings = Schemas["VoiceSettingsResponse"];
+export type UpdateVoiceSettingsRequest = Schemas["UpdateVoiceSettingsRequest"];
+export type VoiceProvider = Schemas["VoiceProviderResponse"];
+export type VoiceSpeechEngine = VoiceSettings["stt_engine"];
+export type VoiceListeningMode = VoiceSettings["listening_mode"];
+export type VoiceProcessing = NonNullable<VoiceSettings["stt_processing"]>;
+export type VoiceOption = Schemas["VoiceOptionResponse"];
+export type VoiceOptionList = Schemas["VoiceOptionListResponse"];
+export type VoiceTranscript = Schemas["VoiceTranscriptResponse"];
+export type SpeakVoiceRequest = Schemas["SpeakVoiceRequest"];
+export type VoiceTest = Schemas["VoiceTestResponse"];
+export type VoiceConfirmationRequest = Schemas["VoiceConfirmationRequest"];
+export type VoiceConfirmation = Schemas["VoiceConfirmationResponse"];
+export type VoiceConfirmationOutcome = VoiceConfirmation["outcome"];
+export type VoiceHistoryClear = Schemas["VoiceHistoryClearResponse"];
+export type AiInputMode = AiMessage["input_mode"];
+
+// Push notifications
+export type PushStatus = Schemas["PushStatusResponse"];
+export type UpdatePushPreferencesRequest = Schemas["UpdatePushPreferencesRequest"];
+export type PushSubscriptionRequest = Schemas["PushSubscriptionRequest"];
+export type PushTestResult = Schemas["PushTestResponse"];

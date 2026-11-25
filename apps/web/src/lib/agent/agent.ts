@@ -95,9 +95,14 @@ export const MODULE_LABELS: Record<AgentModule, string> = {
   reminders: "Reminders & notifications",
   habits: "Habits",
   documents: "Documents",
-  finance: "Finance (read only)",
+  finance: "Finance",
   health: "Health",
   mail: "Email (read only)",
+  shopping: "Shopping",
+  places: "Places",
+  people: "People",
+  saved: "Saved links",
+  watchlist: "Watchlist",
 };
 
 export const AGENT_MODULES: readonly AgentModule[] = [
@@ -110,6 +115,11 @@ export const AGENT_MODULES: readonly AgentModule[] = [
   "finance",
   "health",
   "mail",
+  "shopping",
+  "places",
+  "people",
+  "saved",
+  "watchlist",
 ];
 
 export const SENSITIVE_MODULES: ReadonlySet<AgentModule> = new Set([

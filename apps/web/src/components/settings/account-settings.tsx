@@ -60,7 +60,7 @@ export function AccountSettings() {
     <div className={settingsSectionsClassName}>
       <ProfilePhoto />
 
-      <dl className="grid gap-4 rounded-xl border bg-card p-4 text-sm sm:grid-cols-2">
+      <dl className="grid gap-4 rounded-2xl border bg-card p-4 text-sm sm:grid-cols-2">
         <div className="min-w-0 space-y-0.5">
           <dt className="text-muted-foreground">Email</dt>
           <dd className="truncate font-medium">{user.email}</dd>
@@ -95,7 +95,7 @@ export function AccountSettings() {
 
       <section
         aria-labelledby="setup-guide-title"
-        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4"
+        className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-4"
       >
         <div className="space-y-0.5">
           <h2 id="setup-guide-title" className="text-sm font-semibold">
