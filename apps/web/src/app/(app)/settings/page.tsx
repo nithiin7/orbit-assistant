@@ -17,7 +17,10 @@ export default function SettingsPage() {
     <>
       {/* Small screens: the menu on its own. */}
       <div className="space-y-8 lg:hidden">
-        <PageHeader title="Settings" />
+        <PageHeader
+          title="Settings"
+          description="Your account, workspaces, appearance, and other preferences."
+        />
         <SettingsMenu />
       </div>
       {/* Large screens: the layout shows the menu, so open the first panel beside it. */}
