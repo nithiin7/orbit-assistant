@@ -1,14 +1,14 @@
 "use client";
 
 import type { Task, TaskListDetail } from "@orbit/contracts";
-import { Trash2 } from "lucide-react";
+import { Timer, Trash2 } from "lucide-react";
 import { useId } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/utils/common";
 
-import { DueDateLabel, PriorityBadge, RepeatBadge, TaskListBadge } from "./task-meta";
+import { DueDateLabel, FocusBadge, PriorityBadge, RepeatBadge, TaskListBadge } from "./task-meta";
 
 type TaskItemProps = {
   task: Task;
@@ -18,11 +18,27 @@ type TaskItemProps = {
   onToggle: (task: Task) => void;
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
+  /** Time spent on the task with the focus timer, in seconds. */
+  focusedSeconds?: number;
+  /** The focus timer is on this task. */
+  focusing?: boolean;
+  /** Start the focus timer on the task; open tasks only. */
+  onFocus?: (task: Task) => void;
 };
 
 const completedFormat = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
 
-export function TaskItem({ task, list, today, onToggle, onEdit, onDelete }: TaskItemProps) {
+export function TaskItem({
+  task,
+  list,
+  today,
+  onToggle,
+  onEdit,
+  onDelete,
+  focusedSeconds = 0,
+  focusing = false,
+  onFocus,
+}: TaskItemProps) {
   const titleId = useId();
   const completed = task.status === "completed";
 
@@ -69,7 +85,9 @@ export function TaskItem({ task, list, today, onToggle, onEdit, onDelete }: Task
         task.due_date ||
         task.recurrence ||
         task.priority !== "none" ||
-        task.completed_at ? (
+        task.completed_at ||
+        focusedSeconds > 0 ||
+        focusing ? (
           <div className="flex shrink-0 flex-wrap items-center gap-1.5 @lg/rows:justify-end">
             {list ? <TaskListBadge name={list.name} color={list.color} /> : null}
             <PriorityBadge priority={task.priority} />
@@ -77,6 +95,9 @@ export function TaskItem({ task, list, today, onToggle, onEdit, onDelete }: Task
               <DueDateLabel dueDate={task.due_date} today={today} muted={completed} />
             ) : null}
             {task.recurrence ? <RepeatBadge repeat={task.recurrence} /> : null}
+            {focusedSeconds > 0 || focusing ? (
+              <FocusBadge seconds={focusedSeconds} active={focusing} />
+            ) : null}
             {task.completed_at ? (
               <span className="text-xs text-muted-foreground">
                 Completed {completedFormat.format(new Date(task.completed_at))}
@@ -87,6 +108,17 @@ export function TaskItem({ task, list, today, onToggle, onEdit, onDelete }: Task
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
+        {onFocus && !completed && !focusing ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={`Focus on “${task.title}”`}
+            onClick={() => onFocus(task)}
+            className="size-8 text-muted-foreground hover:text-brand pointer-fine:opacity-0 pointer-fine:group-focus-within:opacity-100 pointer-fine:group-hover:opacity-100"
+          >
+            <Timer aria-hidden="true" />
+          </Button>
+        ) : null}
         <Button
           variant="ghost"
           size="icon"

@@ -472,6 +472,35 @@ days, weeks, months, or years from its due date, which it must have (`422` other
   one-off.
 - `PATCH` with `recurrence: null` stops the series. A new rule or due date restarts it there.
 
+### Focus timer
+
+A Pomodoro timer on a task: by default 25 minutes of focus, 5-minute breaks, and 15 minutes after
+every fourth session.
+
+- **Settings** (`lib/focus/settings.ts`, localStorage `orbit:focus-settings`, per browser; the
+  gear on the timer card or the dashboard widget): lengths from fixed choices (focus 10-90 min),
+  sessions before a long break, a chime, and a browser notification. Each timer keeps the lengths
+  it started with. When a phase ends, a toast shows. If it ended in the last minute (not while the
+  page was closed), a Web Audio chime plays (`lib/focus/chime.ts`, no sound file). A notification
+  shows only while the page is hidden, once the browser allows it (asked when it's turned on).
+- **Dashboard widget** `focus` (off by default): the running timer with its controls, or the next
+  open tasks to start on, and today's focus time.
+
+- **The timer runs in the browser** (`lib/focus/timer.ts`, pure; `providers/focus.tsx` above
+  every page; `components/focus/focus-timer.tsx`, a card in the corner). Its state is saved in
+  localStorage (`orbit:focus`), so it survives reloads; a phase that ran out while the page was
+  closed is caught up on load. One task at a time: focusing on another stops the current one.
+- **Sessions are recorded when they end** (`POST …/tasks/{task_id}/focus-sessions`, table
+  `focus_sessions`, migration 0052, backed up with Tasks): start and end, focused seconds without
+  pauses, the local `day`, and `completed` (ran to the end, or stopped early). Stopped sessions
+  under a minute aren't sent. The API rejects sessions under a minute or over four hours, ending in
+  the future, starting more than two days ago, with more focus than elapsed time, or with a day
+  more than one off the UTC start date. Deleting the task deletes its sessions.
+- `GET …/focus/summary?today=` gives today's total and each task's; task rows show it.
+- **XP** comes only through focus achievements ([Achievements](#achievements-and-the-xp-store)):
+  finished sessions, total focus minutes (stopped sessions count), and a streak of days with a
+  finished session.
+
 ### Web app
 
 - `/tasks` (`components/tasks/`), hooks `useTaskList`/`useTaskMutations` in
@@ -2078,7 +2107,7 @@ Achievements, XP store, Collection).
 
 ### Data
 
-- 44 achievements (easy to legendary) and store items (frames, banners, titles, confetti) are a
+- 52 achievements (easy to legendary; focus ones count timer sessions) and store items (frames, banners, titles, confetti) are a
   code catalog, `services/achievements/catalog.py`. Keys are stored: never rename or reuse; retire.
 - `achievement_unlocks`, `reward_purchases` (price paid), `reward_equips` (slot; composite FK to
   the purchase); migration 0034. Not backed up: per person, not per workspace.

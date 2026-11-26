@@ -150,7 +150,7 @@ from orbit_api.db.models.statements import (
     FinanceImportBatchModel,
     FinanceImportRowModel,
 )
-from orbit_api.db.models.tasks import TaskListModel, TaskModel
+from orbit_api.db.models.tasks import FocusSessionModel, TaskListModel, TaskModel
 from orbit_api.db.models.users import LocalCredentialModel, LocalSessionModel, UserModel
 from orbit_api.db.models.voice import VoiceSettingsModel
 from orbit_api.db.models.watchlist import WatchItemModel, WatchlistSettingsModel
@@ -243,6 +243,7 @@ __all__ = [
     "FitnessTemplateModel",
     "FitnessWaterEntryModel",
     "FitnessWorkoutEventModel",
+    "FocusSessionModel",
     "HabitCategoryModel",
     "HabitLogModel",
     "HabitModel",

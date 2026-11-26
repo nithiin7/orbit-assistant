@@ -7,6 +7,7 @@ import { Toaster } from "@/components/toaster";
 import { writeLocalSession } from "@/lib/auth/local-session";
 import { AuthProvider } from "@/providers/auth";
 import { AvatarProvider } from "@/providers/avatar";
+import { FocusProvider } from "@/providers/focus";
 import { QueryProvider } from "@/providers/query";
 import { ToastProvider } from "@/providers/toast";
 import { WorkspaceProvider } from "@/providers/workspace";
@@ -32,7 +33,9 @@ export async function renderSignedIn(ui: ReactNode) {
           <AvatarProvider>
             <WorkspaceProvider>
               <ToastProvider>
-                <div data-testid="signed-in">{ui}</div>
+                <FocusProvider>
+                  <div data-testid="signed-in">{ui}</div>
+                </FocusProvider>
                 <Toaster />
               </ToastProvider>
             </WorkspaceProvider>

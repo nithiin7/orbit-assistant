@@ -2,6 +2,9 @@ import type {
   CompleteTaskQuery,
   CreateTaskListRequest,
   CreateTaskRequest,
+  FocusSession,
+  FocusSummary,
+  RecordFocusSessionRequest,
   Task,
   TaskList,
   TaskListDetail,
@@ -131,4 +134,31 @@ export function updateTaskList(
 /** Delete a list. Its tasks stay, on no list. */
 export function deleteTaskList(token: string, workspaceId: string, listId: string): Promise<void> {
   return request<void>(taskListPath(workspaceId, listId), { method: "DELETE", token });
+}
+
+/** Records time spent on a task with the focus timer, once the session ends. */
+export function recordFocusSession(
+  token: string,
+  workspaceId: string,
+  taskId: string,
+  body: RecordFocusSessionRequest,
+): Promise<FocusSession> {
+  return request<FocusSession>(taskPath(workspaceId, taskId, "/focus-sessions"), {
+    method: "POST",
+    token,
+    body,
+  });
+}
+
+/** Focus time today (`today` is the user's local date) and on each task. */
+export function getFocusSummary(
+  token: string,
+  workspaceId: string,
+  today: string,
+  { signal }: Signal = {},
+): Promise<FocusSummary> {
+  return request<FocusSummary>(
+    `${workspacePath(workspaceId, "/focus/summary")}${toQueryString({ today })}`,
+    { token, signal },
+  );
 }

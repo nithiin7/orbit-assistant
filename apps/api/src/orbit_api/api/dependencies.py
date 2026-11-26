@@ -32,6 +32,7 @@ from orbit_api.repositories.finance import (
     SqlFinanceTransactionRepository,
 )
 from orbit_api.repositories.fitness import build_fitness
+from orbit_api.repositories.focus import SqlFocusRepository
 from orbit_api.repositories.goals import build_goal_service
 from orbit_api.repositories.habits import build_habit_service, build_routine_service
 from orbit_api.repositories.integrations import Integrations, build_integrations
@@ -74,6 +75,7 @@ from orbit_api.services.dashboard.today import DailyOverviewService
 from orbit_api.services.documents.service import DocumentService
 from orbit_api.services.finance.service import FinanceService
 from orbit_api.services.fitness.overview import Fitness
+from orbit_api.services.focus.service import FocusService
 from orbit_api.services.goals.service import GoalService
 from orbit_api.services.habits.routines import RoutineService
 from orbit_api.services.habits.service import HabitService
@@ -224,6 +226,15 @@ def get_task_service(session: SessionDep) -> TaskService:
 
 
 TaskServiceDep = Annotated[TaskService, Depends(get_task_service)]
+
+
+def get_focus_service(session: SessionDep) -> FocusService:
+    return FocusService(
+        SqlFocusRepository(session), SqlTaskRepository(session), SqlTransaction(session)
+    )
+
+
+FocusServiceDep = Annotated[FocusService, Depends(get_focus_service)]
 
 
 def get_shopping_service(session: SessionDep) -> ShoppingService:

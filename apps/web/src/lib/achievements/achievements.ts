@@ -45,6 +45,7 @@ export const TIER_LABELS: Record<AchievementTier, string> = {
 
 export const AREA_LABELS: Record<AchievementArea, string> = {
   tasks: "Tasks",
+  focus: "Focus",
   habits: "Habits",
   notes: "Notes",
   shopping: "Shopping",

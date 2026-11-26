@@ -9,7 +9,7 @@ the same change.
 Privacy-first, self-hosted personal assistant. pnpm + uv monorepo: Next.js web and FastAPI API,
 talking only over HTTP. Every record belongs to a workspace.
 
-**Built:** local or Supabase accounts and workspaces; tasks (including repeating tasks); shopping; reminders and in-app
+**Built:** local or Supabase accounts and workspaces; tasks (including repeating tasks and a focus timer that feeds achievements); shopping; reminders and in-app
 notifications (DB-backed worker); finance (ledger, commitments, investments, budgets, goals,
 plans, auto-debit SIPs; opt-in prices from mfapi.in and Yahoo; bank statement import from PDF,
 Excel, or CSV, reviewed before anything is saved); notes; calendar (RFC 5545);

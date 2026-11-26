@@ -22,6 +22,7 @@ from orbit_api.db.models import (
     FitnessGoalModel,
     FitnessSessionModel,
     FitnessWaterEntryModel,
+    FocusSessionModel,
     HabitLogModel,
     HabitModel,
     NoteModel,
@@ -146,9 +147,22 @@ class SqlAchievementMetrics:
             HabitLogModel.skipped.is_(False),
             HabitLogModel.value >= HabitLogModel.target,
         )
+        focus_days = await self._session.scalars(
+            select(FocusSessionModel.day)
+            .where(FocusSessionModel.workspace_id.in_(owned), FocusSessionModel.completed.is_(True))
+            .distinct()
+        )
         metrics: Metrics = {
             "tasks_completed": tasks_completed,
             "inbox_zero": int(tasks_completed >= 10 and tasks_open == 0),
+            "focus_sessions": await count(FocusSessionModel, FocusSessionModel.completed.is_(True)),
+            "focus_minutes": await self._scalar(
+                select(func.coalesce(func.sum(FocusSessionModel.focused_seconds), 0)).where(
+                    FocusSessionModel.workspace_id.in_(owned)
+                )
+            )
+            // 60,
+            "focus_streak": longest_streak(focus_days),
             "habit_checkins": checkins,
             "habit_streak": longest_streak(done_days),
             "routines_completed": await count(
