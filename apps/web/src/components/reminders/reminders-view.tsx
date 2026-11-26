@@ -13,7 +13,11 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Resource } from "@/hooks/query-resource";
 import { useLinkedRecord } from "@/hooks/use-linked-record";
-import { useReminderList, useReminderMutations } from "@/hooks/use-reminders";
+import {
+  useDeleteReminderWithUndo,
+  useReminderList,
+  useReminderMutations,
+} from "@/hooks/use-reminders";
 import { useTaskList } from "@/hooks/use-tasks";
 import {
   type FireGroupKey,
@@ -64,7 +68,6 @@ function RemindersView({ workspaceId }: { workspaceId: string }) {
   const { state: openTasks } = useTaskList(workspaceId, OPEN_TASKS);
   const mutations = useReminderMutations(workspaceId);
   const [dialog, setDialog] = useState<DialogState>(null);
-  const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [actionError, setActionError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const [search, setSearch] = useState("");
@@ -80,15 +83,6 @@ function RemindersView({ workspaceId }: { workspaceId: string }) {
   const viewerTimeZone = browserTimeZone();
   const defaultTimeZone = user.timezone ?? viewerTimeZone;
 
-  const setReminderPending = useCallback((reminderId: string, isPending: boolean) => {
-    setPending((current) => {
-      const next = new Set(current);
-      if (isPending) next.add(reminderId);
-      else next.delete(reminderId);
-      return next;
-    });
-  }, []);
-
   const save = useCallback(
     async (fields: ReminderFields) => {
       const saved =
@@ -101,51 +95,36 @@ function RemindersView({ workspaceId }: { workspaceId: string }) {
     [dialog, mutations.create, mutations.update],
   );
 
-  const toggle = useCallback(
-    async (reminder: Reminder) => {
-      const enabling = !reminder.enabled;
-      setActionError(null);
-      setReminderPending(reminder.id, true);
-      try {
-        await mutations.update.mutateAsync({ reminder, changes: { enabled: enabling } });
-        setAnnouncement(
-          enabling ? `Enabled “${reminder.title}”.` : `Disabled “${reminder.title}”.`,
-        );
-      } catch (reason) {
-        setActionError(
-          describeApiError(
-            reason,
-            enabling ? "Couldn’t enable the reminder." : "Couldn’t disable the reminder.",
-          ),
-        );
-      }
-      setReminderPending(reminder.id, false);
-    },
-    [mutations.update, setReminderPending],
-  );
+  // The switch flips at once (see `useReminderMutations`); only a failure needs reporting.
+  const toggle = async (reminder: Reminder) => {
+    const enabling = !reminder.enabled;
+    setActionError(null);
+    try {
+      await mutations.update.mutateAsync({ reminder, changes: { enabled: enabling } });
+      setAnnouncement(enabling ? `Enabled “${reminder.title}”.` : `Disabled “${reminder.title}”.`);
+    } catch (reason) {
+      setActionError(
+        describeApiError(
+          reason,
+          enabling ? "Couldn’t enable the reminder." : "Couldn’t disable the reminder.",
+        ),
+      );
+    }
+  };
 
-  const remove = useCallback(
-    async (reminder: Reminder) => {
-      setActionError(null);
-      setReminderPending(reminder.id, true);
-      try {
-        await mutations.remove.mutateAsync(reminder);
-        setAnnouncement(`Deleted “${reminder.title}”.`);
-        listRef.current?.focus();
-      } catch (reason) {
-        setActionError(describeApiError(reason, "Couldn’t delete the reminder. Try again."));
-      }
-      setReminderPending(reminder.id, false);
-    },
-    [mutations.remove, setReminderPending],
-  );
+  const deleteWithUndo = useDeleteReminderWithUndo(workspaceId, mutations.remove.mutateAsync);
+  const remove = (reminder: Reminder) => {
+    setActionError(null);
+    deleteWithUndo(reminder);
+    // The row and its focused button are gone; keep focus in the list.
+    listRef.current?.focus();
+  };
 
   const renderRow = (reminder: Reminder) => (
     <ReminderItem
       key={reminder.id}
       reminder={reminder}
       viewerTimeZone={viewerTimeZone}
-      pending={pending.has(reminder.id)}
       onToggle={(item) => void toggle(item)}
       onEdit={setDialog}
       onDelete={remove}

@@ -23,7 +23,7 @@ import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePeople } from "@/hooks/use-people";
-import { useShopping, useShoppingMutations } from "@/hooks/use-shopping";
+import { useDeleteItemWithUndo, useShopping, useShoppingMutations } from "@/hooks/use-shopping";
 import { DEFAULT_LIST_ICON } from "@/lib/shopping";
 import { useWorkspaces } from "@/providers/workspace";
 import { cn } from "@/utils/common";
@@ -58,7 +58,6 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
   const { people } = usePeople(workspaceId);
   const everyone = people.status === "success" ? people.data : [];
   const names = new Map(everyone.map((person) => [person.id, person.name]));
-  const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [editing, setEditing] = useState<ShoppingItem | null>(null);
   const [nameDialog, setNameDialog] = useState<NameDialog | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -78,15 +77,6 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
-
-  const setItemPending = useCallback((itemId: string, isPending: boolean) => {
-    setPending((current) => {
-      const next = new Set(current);
-      if (isPending) next.add(itemId);
-      else next.delete(itemId);
-      return next;
-    });
   }, []);
 
   // Lists
@@ -170,7 +160,7 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
     async (item: ShoppingItem) => {
       const purchasing = item.status === "needed";
       setActionError(null);
-      setItemPending(item.id, true);
+      // The row flips at once (see `useShoppingMutations`), so it isn't dimmed meanwhile.
       try {
         await mutations.toggleItem.mutateAsync(item);
         setAnnouncement(
@@ -181,9 +171,8 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
       } catch (reason) {
         setActionError(describeApiError(reason, "Couldn’t update the item. Try again."));
       }
-      setItemPending(item.id, false);
     },
-    [mutations.toggleItem, setItemPending],
+    [mutations.toggleItem],
   );
 
   const save = useCallback(
@@ -195,22 +184,13 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
     [mutations.updateItem],
   );
 
-  const remove = useCallback(
-    async (item: ShoppingItem) => {
-      setActionError(null);
-      setItemPending(item.id, true);
-      try {
-        await mutations.deleteItem.mutateAsync(item);
-        setAnnouncement(`Deleted “${item.name}”.`);
-        // The row and its focused button are gone; keep focus in the list.
-        listRef.current?.focus();
-      } catch (reason) {
-        setActionError(describeApiError(reason, "Couldn’t delete the item. Try again."));
-      }
-      setItemPending(item.id, false);
-    },
-    [mutations.deleteItem, setItemPending],
-  );
+  const deleteWithUndo = useDeleteItemWithUndo(workspaceId, mutations.deleteItem.mutateAsync);
+  const remove = (item: ShoppingItem) => {
+    setActionError(null);
+    deleteWithUndo(item);
+    // The row and its focused button are gone; keep focus in the list.
+    listRef.current?.focus();
+  };
 
   if (shopping.lists.status === "loading") return <ShoppingSkeleton />;
   if (shopping.lists.status === "error") {
@@ -234,7 +214,6 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
           key={item.id}
           item={item}
           giftFor={item.person_id ? (names.get(item.person_id) ?? null) : null}
-          pending={pending.has(item.id)}
           onToggle={(entry) => void toggle(entry)}
           onEdit={setEditing}
           onDelete={remove}

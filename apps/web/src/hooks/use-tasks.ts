@@ -35,6 +35,7 @@ import {
   updateTaskList,
 } from "@/api/tasks";
 import { queryResource, type Resource } from "@/hooks/query-resource";
+import { useUndoableDelete } from "@/hooks/use-undoable-delete";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
 import { useAuth } from "@/providers/auth";
 import { useWorkspaces } from "@/providers/workspace";
@@ -153,6 +154,8 @@ export function useTaskMutations(workspaceId: string) {
   });
 
   const toggle = useMutation({
+    // One at a time, in order, so a quick second click lands after the first.
+    scope: { id: "task-toggle" },
     mutationFn: (task: Task) =>
       withToken((token) =>
         task.status === "open"
@@ -192,6 +195,26 @@ export function useTaskMutations(workspaceId: string) {
   });
 
   return { create, update, toggle, remove };
+}
+
+/**
+ * Delete a task with Undo: it leaves the list at once and `remove` (from `useTaskMutations`) runs
+ * once the Undo toast goes. Needs `ToastProvider`.
+ */
+export function useDeleteTaskWithUndo(
+  workspaceId: string,
+  remove: (task: Task) => Promise<unknown>,
+) {
+  const queryClient = useQueryClient();
+  const undoableDelete = useUndoableDelete();
+  return (task: Task) =>
+    void undoableDelete({
+      message: `Deleted “${task.title}”.`,
+      queryKey: taskKeys.lists(workspaceId),
+      hide: () => removeCachedTask(queryClient, workspaceId, task.id),
+      commit: () => remove(task),
+      failure: "Couldn’t delete the task. Try again.",
+    });
 }
 
 /** The workspace's task lists (Work, Personal, ...), with a lookup by ID for task rows. */

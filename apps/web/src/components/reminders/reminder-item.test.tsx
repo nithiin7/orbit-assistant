@@ -30,7 +30,6 @@ function renderItem(value: Reminder) {
       <ReminderItem
         reminder={value}
         viewerTimeZone="UTC"
-        pending={false}
         onToggle={vi.fn()}
         onEdit={vi.fn()}
         onDelete={vi.fn()}

@@ -392,7 +392,7 @@ describe("TasksPanel", () => {
     expect(screen.getByRole("dialog", { name: "Edit task" })).toBeInTheDocument();
   });
 
-  it("deletes a task after confirmation", async () => {
+  it("deletes a task at once and sends the delete when the Undo toast goes", async () => {
     const user = userEvent.setup();
     const api = mockApi({
       ...session,
@@ -400,32 +400,54 @@ describe("TasksPanel", () => {
       [`DELETE ${TASKS}/${rent.id}`]: status(204),
     });
     await renderSignedIn(<TasksPanel />);
+    const deletes = () => api.mock.calls.filter(([, init]) => init?.method === "DELETE");
 
     await user.click(await screen.findByRole("button", { name: "Delete “Pay rent”" }));
-    const confirm = within(screen.getByRole("group", { name: "Delete “Pay rent”?" }));
-    expect(confirm.getByRole("button", { name: "Delete" })).toHaveFocus();
-    await user.click(confirm.getByRole("button", { name: "Delete" }));
 
     await waitFor(() =>
       expect(screen.queryByRole("checkbox", { name: "Pay rent" })).not.toBeInTheDocument(),
     );
     expect(screen.queryByRole("list", { name: /^Overdue/ })).not.toBeInTheDocument();
     expect(screen.getByRole("list", { name: "Today, 1 task" })).toBeInTheDocument();
-    expect(api.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(true);
+    expect(screen.getByText("Deleted “Pay rent”.")).toBeInTheDocument();
+    // Nothing is sent while Undo is still on offer.
+    expect(deletes()).toHaveLength(0);
+
+    await user.click(screen.getByRole("button", { name: "Dismiss" }));
+    await waitFor(() => expect(deletes()).toHaveLength(1));
+    expect(screen.queryByText("Deleted “Pay rent”.")).not.toBeInTheDocument();
   });
 
-  it("cancels a deletion and returns focus to the delete button", async () => {
+  it("brings a deleted task back on Undo without deleting it", async () => {
     const user = userEvent.setup();
-    mockApi({ ...session, [`GET ${TASKS}`]: json({ tasks: [rent], total: 1 }) });
+    const api = mockApi({ ...session, [`GET ${TASKS}`]: json({ tasks: [rent], total: 1 }) });
     await renderSignedIn(<TasksPanel />);
 
     await user.click(await screen.findByRole("button", { name: "Delete “Pay rent”" }));
-    await user.keyboard("{Escape}");
-
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Delete “Pay rent”" })).toHaveFocus(),
+      expect(screen.queryByRole("checkbox", { name: "Pay rent" })).not.toBeInTheDocument(),
     );
-    expect(screen.getByRole("checkbox", { name: "Pay rent" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Undo" }));
+
+    expect(await screen.findByRole("checkbox", { name: "Pay rent" })).toBeInTheDocument();
+    expect(screen.queryByText("Deleted “Pay rent”.")).not.toBeInTheDocument();
+    expect(api.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
+  });
+
+  it("brings a task back and says so when the delete fails", async () => {
+    const user = userEvent.setup();
+    mockApi({
+      ...session,
+      [`GET ${TASKS}`]: json({ tasks: [rent], total: 1 }),
+      [`DELETE ${TASKS}/${rent.id}`]: status(500),
+    });
+    await renderSignedIn(<TasksPanel />);
+
+    await user.click(await screen.findByRole("button", { name: "Delete “Pay rent”" }));
+    await user.click(await screen.findByRole("button", { name: "Dismiss" }));
+
+    expect(await screen.findByRole("checkbox", { name: "Pay rent" })).toBeInTheDocument();
+    expect(await screen.findByText(/Couldn’t delete the task/)).toBeInTheDocument();
   });
 
   it("searches after a pause and filters by status and priority", async () => {

@@ -230,6 +230,30 @@ describe("ShoppingPanel", () => {
     expect(screen.getByRole("checkbox", { name: "Milk" })).not.toBeChecked();
   });
 
+  it("deletes an item with Undo, sending the delete only when the toast goes", async () => {
+    const user = userEvent.setup();
+    const api = mockApi({
+      ...session,
+      ...listsRoute,
+      ...itemsRoutes,
+      [`DELETE ${SHOP}/items/${milk.id}`]: status(204),
+    });
+    await renderSignedIn(<ShoppingPanel />);
+    const deletes = () => api.mock.calls.filter(([, init]) => init?.method === "DELETE");
+
+    await user.click(await screen.findByRole("button", { name: "Delete “Milk”" }));
+    expect(screen.queryByRole("checkbox", { name: "Milk" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Groceries, 1 to buy" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Undo" }));
+    expect(await screen.findByRole("checkbox", { name: "Milk" })).toBeInTheDocument();
+    expect(deletes()).toHaveLength(0);
+
+    await user.click(screen.getByRole("button", { name: "Delete “Milk”" }));
+    await user.click(screen.getByRole("button", { name: "Dismiss" }));
+    await waitFor(() => expect(deletes()).toHaveLength(1));
+    expect(screen.queryByRole("checkbox", { name: "Milk" })).not.toBeInTheDocument();
+  });
+
   it("edits an item's details and clears its link", async () => {
     const user = userEvent.setup();
     const patched: unknown[] = [];

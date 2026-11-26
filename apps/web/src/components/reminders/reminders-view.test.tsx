@@ -291,13 +291,16 @@ describe("RemindersPanel", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Disabled “Call the dentist”.");
 
     await user.click(screen.getByRole("button", { name: "Delete “Call the dentist”" }));
-    const confirm = screen.getByRole("group", { name: "Delete “Call the dentist”?" });
-    await user.click(within(confirm).getByRole("button", { name: "Delete" }));
-
+    await waitFor(() =>
+      expect(screen.queryByRole("switch", { name: /Call the dentist/ })).not.toBeInTheDocument(),
+    );
+    expect(screen.getByText("Deleted “Call the dentist”.")).toBeInTheDocument();
+    // The delete is sent only once the Undo toast goes.
+    expect(api.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
+    await user.click(screen.getByRole("button", { name: "Dismiss" }));
     await waitFor(() =>
       expect(api.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(true),
     );
-    expect(screen.getByRole("status")).toHaveTextContent("Deleted “Call the dentist”.");
   });
 
   it("shows an error with a retry when reminders can't load", async () => {

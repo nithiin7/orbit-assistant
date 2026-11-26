@@ -3,10 +3,12 @@ import type { ReactNode } from "react";
 
 import { createQueryClient } from "@/api/query-client";
 import { RequireAuth } from "@/components/auth/require-auth";
+import { Toaster } from "@/components/toaster";
 import { writeLocalSession } from "@/lib/auth/local-session";
 import { AuthProvider } from "@/providers/auth";
 import { AvatarProvider } from "@/providers/avatar";
 import { QueryProvider } from "@/providers/query";
+import { ToastProvider } from "@/providers/toast";
 import { WorkspaceProvider } from "@/providers/workspace";
 
 export const SESSION_TOKEN = "local-session-token";
@@ -17,7 +19,7 @@ export function storeSession(token = SESSION_TOKEN) {
 }
 
 /**
- * Render `ui` inside the real auth and workspace providers, with a stored local session.
+ * Render `ui` inside the real auth, workspace, and toast providers, with a stored local session.
  * Mock the API (config, `/me`, workspaces, and the profile photo) with `mockApi` first.
  * Each render gets an empty query cache that doesn't retry, so failures show at once.
  */
@@ -29,7 +31,10 @@ export async function renderSignedIn(ui: ReactNode) {
         <RequireAuth>
           <AvatarProvider>
             <WorkspaceProvider>
-              <div data-testid="signed-in">{ui}</div>
+              <ToastProvider>
+                <div data-testid="signed-in">{ui}</div>
+                <Toaster />
+              </ToastProvider>
             </WorkspaceProvider>
           </AvatarProvider>
         </RequireAuth>

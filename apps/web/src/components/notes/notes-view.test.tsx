@@ -399,6 +399,7 @@ describe("NotesPanel", () => {
         [`POST ${NOTES}/${spec.id}/trash`]: json(
           detail({ ...spec, trashed_at: "2026-10-31T00:00:00Z" }),
         ),
+        [`POST ${NOTES}/${spec.id}/restore`]: json(detail(spec)),
       }),
     );
     await renderNotes();
@@ -414,6 +415,16 @@ describe("NotesPanel", () => {
       ).toBe(true),
     );
     expect(await screen.findByText("Moved “Spec” to the Trash.")).toBeInTheDocument();
+
+    // Undo takes it straight back out of the Trash.
+    await user.click(screen.getByRole("button", { name: "Undo" }));
+    await waitFor(() =>
+      expect(
+        api.mock.calls.some(
+          ([input, init]) => init?.method === "POST" && String(input).endsWith("/restore"),
+        ),
+      ).toBe(true),
+    );
   });
 
   it("asks before deleting a note in the Trash forever", async () => {

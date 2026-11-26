@@ -104,6 +104,15 @@ Design decisions:
   redirects to `/sign-in?next=…` (validated against open redirects by `lib/auth/redirect.ts`).
 - **Installable app:** `app/manifest.ts` and `public/sw.js`, registered in production only. The
   worker has no fetch handler, so private pages and API responses are never cached on the device.
+- **Toasts and Undo:** `ToastProvider` (`providers/toast.tsx`, in `app/(app)/layout.tsx`) shows one
+  toast at a time through `Toaster`; its timer lives in the provider, so it outlives the view.
+  Deleting a task, shopping item, or reminder doesn't ask first: `useUndoableDelete` hides the
+  record from the cache and sends the delete only when the Undo toast goes (timeout, close, a
+  newer toast, or `pagehide`); Undo puts the cached record back, a failed delete restores it with
+  an error toast. Moving a note to the Trash offers Undo (restore).
+- **Optimistic updates:** task completion, shopping check-off, reminder on/off, and note
+  pin/favorite change the cache in `onMutate` and refetch or revert on error; toggles run in a
+  mutation `scope` so quick repeat clicks apply in order.
 
 ## API
 
@@ -466,8 +475,8 @@ days, weeks, months, or years from its due date, which it must have (`422` other
 ### Web app
 
 - `/tasks` (`components/tasks/`), hooks `useTaskList`/`useTaskMutations` in
-  `src/hooks/use-tasks.ts`. Keyboard: `N` composer, `/` search, Escape clears search or cancels a
-  delete confirmation.
+  `src/hooks/use-tasks.ts`. Keyboard: `N` composer, `/` search, Escape clears search. Deleting
+  a task offers Undo instead of asking (see [Web app](#web-app)).
 - Keeps previous results while a new filter loads; mutations update cached lists in place and
   mark the dashboard summary stale.
 - Complete/reopen is optimistic (reverts with an error); a completed task stays, struck through,
