@@ -54,17 +54,20 @@ export function StorageStatusCard() {
   const { icon: Icon, label, detail, tone } = presentStorage(useStorageStatus());
 
   return (
-    <div role="status" className="flex items-start gap-3 rounded-xl border bg-card p-4">
+    <div
+      role="status"
+      className="flex items-center gap-3.5 rounded-2xl border bg-linear-to-br from-event-slate/8 via-card to-card p-4 shadow-elevation-1 sm:p-5"
+    >
       <span
         className={cn(
-          "flex size-9 shrink-0 items-center justify-center rounded-lg border bg-background text-muted-foreground",
+          "flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground ring-1 ring-border/50",
           tone,
         )}
       >
         {Icon ? <Icon className="size-4" aria-hidden="true" /> : null}
       </span>
       <div className="min-w-0 space-y-0.5">
-        <p className="text-sm font-medium">
+        <p className="text-base font-semibold tracking-tight">
           <span className="sr-only">Storage: </span>
           {label}
         </p>

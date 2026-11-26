@@ -1,4 +1,5 @@
 import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ada, json, mockApi, personal, status } from "@/test/api-mock";
@@ -55,6 +56,33 @@ describe("SettingsMenu", () => {
 
     expect(screen.getByRole("link", { name: /^Storage/ })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: /^Account/ })).not.toHaveAttribute("aria-current");
+  });
+
+  it("filters the panels by title or keyword and says when nothing matches", async () => {
+    mockApi(signedIn);
+    const user = userEvent.setup();
+    await renderSignedIn(<SettingsMenu variant="rail" />);
+
+    const search = screen.getByRole("searchbox", { name: "Search settings" });
+    await user.type(search, "dark");
+    expect(screen.getByRole("link", { name: /^Appearance/ })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^Storage/ })).not.toBeInTheDocument();
+    // The profile row stays, so account settings are always one click away.
+    expect(screen.getByRole("link", { name: /^Account: Ada/ })).toBeInTheDocument();
+
+    await user.clear(search);
+    await user.type(search, "zzz");
+    expect(screen.getByText(/No settings match/)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^Appearance/ })).not.toBeInTheDocument();
+  });
+
+  it("groups the panels under labelled lists", async () => {
+    mockApi(signedIn);
+    await renderSignedIn(<SettingsMenu />);
+
+    const data = screen.getByRole("list", { name: "Your data" });
+    expect(within(data).getByRole("link", { name: /^Backup & restore/ })).toBeInTheDocument();
+    expect(within(data).getByRole("link", { name: /^Storage/ })).toBeInTheDocument();
   });
 
   it("marks the fallback panel as current on the settings index", async () => {

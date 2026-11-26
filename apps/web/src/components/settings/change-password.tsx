@@ -1,6 +1,7 @@
 "use client";
 
 import { yupResolver } from "@hookform/resolvers/yup";
+import { KeyRound } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -10,6 +11,8 @@ import { FormAlert, FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { changePasswordSchema } from "@/lib/auth/validation";
 import { useAuth } from "@/providers/auth";
+
+import { SettingsCard } from "./settings-card";
 
 /** For local accounts. Changing the password signs out every other browser and device. */
 export function ChangePassword() {
@@ -42,47 +45,51 @@ export function ChangePassword() {
   });
 
   return (
-    <form
-      noValidate
-      onSubmit={onSubmit}
-      aria-labelledby="change-password-heading"
-      className="space-y-3 border-t pt-4 @5xl/panel:border-t-0 @5xl/panel:pt-0"
+    <SettingsCard
+      titleId="change-password-heading"
+      icon={KeyRound}
+      title="Change password"
+      description="Other sessions are signed out when it changes."
     >
-      <h3 id="change-password-heading" className="text-sm font-medium">
-        Change password
-      </h3>
-      <FormField
-        label="Current password"
-        type="password"
-        autoComplete="current-password"
-        {...register("currentPassword", { onChange: () => setChanged(false) })}
-        error={errors.currentPassword?.message}
-      />
-      <div className="grid gap-3 sm:grid-cols-2">
+      <form
+        noValidate
+        onSubmit={onSubmit}
+        aria-labelledby="change-password-heading"
+        className="space-y-3"
+      >
         <FormField
-          label="New password"
+          label="Current password"
           type="password"
-          autoComplete="new-password"
-          {...register("password")}
-          error={errors.password?.message}
+          autoComplete="current-password"
+          {...register("currentPassword", { onChange: () => setChanged(false) })}
+          error={errors.currentPassword?.message}
         />
-        <FormField
-          label="Confirm new password"
-          type="password"
-          autoComplete="new-password"
-          {...register("confirmPassword")}
-          error={errors.confirmPassword?.message}
-        />
-      </div>
-      <FormAlert message={errors.root?.server?.message ?? null} />
-      <div className="flex items-center gap-3">
-        <Button type="submit" size="sm" variant="soft" disabled={isSubmitting}>
-          {isSubmitting ? "Changing…" : "Change password"}
-        </Button>
-        <p role="status" className="text-sm text-muted-foreground">
-          {changed ? "Password changed. Other sessions were signed out." : null}
-        </p>
-      </div>
-    </form>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <FormField
+            label="New password"
+            type="password"
+            autoComplete="new-password"
+            {...register("password")}
+            error={errors.password?.message}
+          />
+          <FormField
+            label="Confirm new password"
+            type="password"
+            autoComplete="new-password"
+            {...register("confirmPassword")}
+            error={errors.confirmPassword?.message}
+          />
+        </div>
+        <FormAlert message={errors.root?.server?.message ?? null} />
+        <div className="flex items-center gap-3">
+          <Button type="submit" size="sm" variant="soft" disabled={isSubmitting}>
+            {isSubmitting ? "Changing…" : "Change password"}
+          </Button>
+          <p role="status" className="text-sm text-muted-foreground">
+            {changed ? "Password changed. Other sessions were signed out." : null}
+          </p>
+        </div>
+      </form>
+    </SettingsCard>
   );
 }

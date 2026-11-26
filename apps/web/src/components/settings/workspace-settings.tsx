@@ -2,7 +2,7 @@
 
 import { yupResolver } from "@hookform/resolvers/yup";
 import type { Workspace } from "@orbit/contracts";
-import { Trash2 } from "lucide-react";
+import { Layers, PencilLine, Plus, Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
@@ -15,6 +15,9 @@ import { WorkspaceAvatar } from "@/components/workspace/workspace-switcher";
 import { workspaceNameSchema } from "@/lib/auth/validation";
 import { settingsSectionsClassName } from "@/lib/settings";
 import { useWorkspaces } from "@/providers/workspace";
+import { cn } from "@/utils/common";
+
+import { SettingsCard } from "./settings-card";
 
 export function WorkspaceSettings() {
   const { state, switchWorkspace, refresh } = useWorkspaces();
@@ -45,13 +48,24 @@ export function WorkspaceSettings() {
       {/* Keyed so the form resets when another workspace becomes active. */}
       <RenameWorkspaceForm key={`rename-${active.id}`} workspace={active} />
 
-      <div className="space-y-3">
-        <h3 className="text-sm font-medium">Your workspaces</h3>
-        <ul className="divide-y rounded-2xl border bg-card">
+      <SettingsCard
+        titleId="your-workspaces-title"
+        icon={Layers}
+        title="Your workspaces"
+        description="Each keeps its own records. Switch any time."
+        bodyClassName="p-2 sm:p-2"
+      >
+        <ul className="space-y-1">
           {workspaces.map((workspace) => {
             const current = workspace.id === active.id;
             return (
-              <li key={workspace.id} className="flex items-center gap-3 px-4 py-3">
+              <li
+                key={workspace.id}
+                className={cn(
+                  "flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors duration-150",
+                  current ? "bg-brand-subtle/60" : "hover:bg-accent",
+                )}
+              >
                 <WorkspaceAvatar name={workspace.name} />
                 <span className="min-w-0 flex-1 truncate text-sm font-medium">
                   {workspace.name}
@@ -73,7 +87,7 @@ export function WorkspaceSettings() {
             );
           })}
         </ul>
-      </div>
+      </SettingsCard>
 
       <CreateWorkspaceForm />
 
@@ -114,23 +128,30 @@ function RenameWorkspaceForm({ workspace }: { workspace: Workspace }) {
   });
 
   return (
-    <form noValidate onSubmit={onSubmit} className="space-y-3">
-      <FormField
-        label="Workspace name"
-        autoComplete="off"
-        {...register("name", { onChange: () => setSaved(false) })}
-        error={errors.name?.message}
-      />
-      <FormAlert message={errors.root?.server?.message ?? null} />
-      <div className="flex items-center gap-3">
-        <Button type="submit" size="sm" disabled={isSubmitting || unchanged}>
-          {isSubmitting ? "Saving…" : "Rename"}
-        </Button>
-        <p role="status" className="text-sm text-muted-foreground">
-          {saved ? "Saved." : null}
-        </p>
-      </div>
-    </form>
+    <SettingsCard
+      titleId="rename-workspace-title"
+      icon={PencilLine}
+      title="This workspace"
+      description="The name shown in the sidebar and the workspace switcher."
+    >
+      <form noValidate onSubmit={onSubmit} className="space-y-3">
+        <FormField
+          label="Workspace name"
+          autoComplete="off"
+          {...register("name", { onChange: () => setSaved(false) })}
+          error={errors.name?.message}
+        />
+        <FormAlert message={errors.root?.server?.message ?? null} />
+        <div className="flex items-center gap-3">
+          <Button type="submit" size="sm" disabled={isSubmitting || unchanged}>
+            {isSubmitting ? "Saving…" : "Rename"}
+          </Button>
+          <p role="status" className="text-sm text-muted-foreground">
+            {saved ? "Saved." : null}
+          </p>
+        </div>
+      </form>
+    </SettingsCard>
   );
 }
 
@@ -159,28 +180,31 @@ function CreateWorkspaceForm() {
   });
 
   return (
-    <form
-      noValidate
-      onSubmit={onSubmit}
-      className="space-y-3 border-t pt-6 @5xl/panel:border-t-0 @5xl/panel:pt-0"
+    <SettingsCard
+      titleId="new-workspace-title"
+      icon={Plus}
+      title="Create a workspace"
+      description="Start fresh for a project or another part of life."
     >
-      <FormField
-        label="New workspace"
-        autoComplete="off"
-        placeholder="For example, Side project"
-        {...register("name")}
-        error={errors.name?.message}
-      />
-      <FormAlert message={errors.root?.server?.message ?? null} />
-      <div className="flex items-center gap-3">
-        <Button type="submit" size="sm" variant="outline" disabled={isSubmitting}>
-          {isSubmitting ? "Creating…" : "Create workspace"}
-        </Button>
-        <p role="status" className="text-sm text-muted-foreground">
-          {created ? `Created and switched to ${created}.` : null}
-        </p>
-      </div>
-    </form>
+      <form noValidate onSubmit={onSubmit} className="space-y-3">
+        <FormField
+          label="New workspace"
+          autoComplete="off"
+          placeholder="For example, Side project"
+          {...register("name")}
+          error={errors.name?.message}
+        />
+        <FormAlert message={errors.root?.server?.message ?? null} />
+        <div className="flex items-center gap-3">
+          <Button type="submit" size="sm" variant="outline" disabled={isSubmitting}>
+            {isSubmitting ? "Creating…" : "Create workspace"}
+          </Button>
+          <p role="status" className="text-sm text-muted-foreground">
+            {created ? `Created and switched to ${created}.` : null}
+          </p>
+        </div>
+      </form>
+    </SettingsCard>
   );
 }
 
@@ -208,18 +232,14 @@ function DeleteWorkspaceSection({ workspace }: { workspace: Workspace }) {
   }
 
   return (
-    <section
-      aria-labelledby="delete-workspace-heading"
-      className="space-y-3 rounded-2xl border border-destructive/30 p-4"
+    <SettingsCard
+      titleId="delete-workspace-heading"
+      icon={Trash2}
+      tone="danger"
+      title="Delete this workspace"
+      description={`Deletes ${workspace.name} and everything in it. This can’t be undone.`}
+      bodyClassName="space-y-3"
     >
-      <div className="space-y-1">
-        <h3 id="delete-workspace-heading" className="text-sm font-medium text-destructive">
-          Delete this workspace
-        </h3>
-        <p className="text-sm text-pretty text-muted-foreground">
-          Deletes {workspace.name} and everything in it. This can’t be undone.
-        </p>
-      </div>
       {confirming ? (
         <form noValidate onSubmit={onSubmit} className="space-y-3">
           <FormField
@@ -256,6 +276,6 @@ function DeleteWorkspaceSection({ workspace }: { workspace: Workspace }) {
           Delete workspace…
         </Button>
       )}
-    </section>
+    </SettingsCard>
   );
 }

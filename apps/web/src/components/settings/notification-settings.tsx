@@ -36,7 +36,7 @@ export function NotificationSettings() {
   }
   if (!status.data.available) {
     return (
-      <p className="rounded-2xl border bg-card px-4 py-5 text-sm text-pretty text-muted-foreground sm:px-5">
+      <p className="rounded-2xl border border-dashed bg-card/60 px-4 py-6 text-center text-sm text-pretty text-muted-foreground sm:px-5">
         Push notifications aren’t available on this server. Whoever runs it can set them up in the
         server’s configuration. Reminders still appear in Orbit’s notification list.
       </p>
