@@ -472,6 +472,13 @@ days, weeks, months, or years from its due date, which it must have (`422` other
   mark the dashboard summary stale.
 - Complete/reopen is optimistic (reverts with an error); a completed task stays, struck through,
   until reload. Create/edit reloads in the background to land in sorted position.
+- **Quick add:** `TaskComposer` (Tasks page, task widget, global quick add) reads the title with
+  `parseQuickAdd` (`lib/tasks/quick-add.ts`): due dates ("fri", "next week", "in 3 days",
+  "dec 5", "on the 1st"), repeats ("every other week", "every monday", "monthly"), priority
+  (`!high`, `p1`), and `#list` (exact or unique prefix). Plain English rules in the browser, no
+  AI or network. Chips show what was understood; dismissing one keeps its words in the title, and
+  a picker the user set wins. The placeholder gives an example and the "?" button in the field
+  opens tips. Clock times are not read (tasks carry a date only).
 - Loads at most 200 tasks and says when more match (no pagination).
 - Side rail Lists section (All lists, each with open count, No list, New list); the composer adds
   to the selected list; rows show a list chip except in that list's own view.
