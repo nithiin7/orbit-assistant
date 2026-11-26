@@ -870,6 +870,46 @@ export interface paths {
         patch: operations["update_task_list_api_v1_workspaces__workspace_id__task_lists__list_id__patch"];
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/tasks/{task_id}/focus-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record a focus session
+         * @description Record time spent on a task with the focus timer, once the session ends.
+         */
+        post: operations["record_focus_session_api_v1_workspaces__workspace_id__tasks__task_id__focus_sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/focus/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Summarize focus time
+         * @description Focus time today and on each task.
+         */
+        get: operations["summarize_focus_api_v1_workspaces__workspace_id__focus_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/shopping/lists": {
         parameters: {
             query?: never;
@@ -7719,7 +7759,7 @@ export interface components {
              * Area
              * @enum {string}
              */
-            area: "tasks" | "habits" | "notes" | "shopping" | "reminders" | "calendar" | "documents" | "places" | "watchlist" | "saved" | "finance" | "health" | "orbit";
+            area: "tasks" | "focus" | "habits" | "notes" | "shopping" | "reminders" | "calendar" | "documents" | "places" | "watchlist" | "saved" | "finance" | "health" | "orbit";
             /**
              * Tier
              * @enum {string}
@@ -12796,7 +12836,7 @@ export interface components {
              * Id
              * @enum {string}
              */
-            id: "today" | "quick_actions" | "attention" | "workspace" | "tasks" | "reminders" | "calendar" | "habits" | "notes" | "documents" | "shopping" | "watchlist" | "places" | "people" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "savings_goals" | "workouts" | "water" | "nutrition" | "weight" | "fitness_goals";
+            id: "today" | "quick_actions" | "attention" | "workspace" | "tasks" | "focus" | "reminders" | "calendar" | "habits" | "notes" | "documents" | "shopping" | "watchlist" | "places" | "people" | "cash_flow" | "upcoming_payments" | "budget" | "net_worth" | "savings_goals" | "workouts" | "water" | "nutrition" | "weight" | "fitness_goals";
             /**
              * Size
              * @description `half` widgets sit side by side on wide screens.
@@ -13992,6 +14032,55 @@ export interface components {
              * @description Expenses paying subscriptions, bills, and EMI interest.
              */
             commitment_expenses: number;
+        };
+        /** FocusSessionResponse */
+        FocusSessionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /**
+             * Ended At
+             * Format: date-time
+             */
+            ended_at: string;
+            /** Focused Seconds */
+            focused_seconds: number;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Completed */
+            completed: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** FocusSummaryResponse */
+        FocusSummaryResponse: {
+            /** Today Seconds */
+            today_seconds: number;
+            /** Today Sessions */
+            today_sessions: number;
+            /**
+             * Tasks
+             * @description Every task in the workspace with focus time, most focused first.
+             */
+            tasks: components["schemas"]["TaskFocusResponse"][];
         };
         /** FolderListResponse */
         FolderListResponse: {
@@ -18002,6 +18091,35 @@ export interface components {
              */
             used_at: string;
         };
+        /** RecordFocusSessionRequest */
+        RecordFocusSessionRequest: {
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /**
+             * Ended At
+             * Format: date-time
+             */
+            ended_at: string;
+            /**
+             * Focused Seconds
+             * @description Time spent focusing, without pauses: at most the time between start and end.
+             */
+            focused_seconds: number;
+            /**
+             * Day
+             * Format: date
+             * @description The client's local date when the session started.
+             */
+            day: string;
+            /**
+             * Completed
+             * @description Whether the timer ran to the end.
+             */
+            completed: boolean;
+        };
         /**
          * RecordInvestmentTransactionRequest
          * @description Record a buy, sale, dividend, interest, fee, or deposit flow.
@@ -20076,6 +20194,18 @@ export interface components {
              * @description Nightly sleep.
              */
             sleep_s?: number | null;
+        };
+        /** TaskFocusResponse */
+        TaskFocusResponse: {
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /** Focused Seconds */
+            focused_seconds: number;
+            /** Sessions */
+            sessions: number;
         };
         /** TaskListDetailResponse */
         TaskListDetailResponse: {
@@ -24759,6 +24889,105 @@ export interface operations {
             };
             /** @description The name is taken. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_focus_session_api_v1_workspaces__workspace_id__tasks__task_id__focus_sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The task's ID. */
+                task_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordFocusSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FocusSessionResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or task does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    summarize_focus_api_v1_workspaces__workspace_id__focus_summary_get: {
+        parameters: {
+            query?: {
+                /** @description The client's local date, which decides what counts as today. Defaults to today's date in UTC. */
+                today?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FocusSummaryResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or task does not exist or is not accessible. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -48,6 +48,12 @@ export type TaskSummaryQuery = NonNullable<
 export type TaskListDetail = Schemas["TaskListDetailResponse"];
 export type TaskListColor = TaskListDetail["color"];
 export type TaskLists = Schemas["TaskListsResponse"];
+/** A focus timer session recorded on a task. */
+export type FocusSession = Schemas["FocusSessionResponse"];
+export type RecordFocusSessionRequest = Schemas["RecordFocusSessionRequest"];
+/** Focus time today and on each task. */
+export type FocusSummary = Schemas["FocusSummaryResponse"];
+export type TaskFocus = Schemas["TaskFocusResponse"];
 export type CreateTaskListRequest = Schemas["CreateTaskListRequest"];
 export type UpdateTaskListRequest = Schemas["UpdateTaskListRequest"];
 export type ShoppingList = Schemas["ShoppingListResponse"];
