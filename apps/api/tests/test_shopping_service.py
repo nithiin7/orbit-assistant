@@ -1,6 +1,7 @@
 """Unit tests for the shopping service, using in-memory repositories and a fixed clock."""
 
 import uuid
+from collections.abc import Sequence
 from dataclasses import replace
 from datetime import datetime
 
@@ -102,6 +103,16 @@ class FakeItems:
 
     async def delete_purchased(self, workspace_id: uuid.UUID, list_id: uuid.UUID) -> int:
         raise NotImplementedError
+
+    async def next_position(self, workspace_id: uuid.UUID, list_id: uuid.UUID) -> int:
+        return len(await self.in_list(workspace_id, list_id))
+
+    async def arrange(
+        self, workspace_id: uuid.UUID, list_id: uuid.UUID, item_ids: Sequence[uuid.UUID]
+    ) -> None:
+        # Dicts keep insertion order, so re-adding the items in order is the new order.
+        for item_id in item_ids:
+            self.items[item_id] = self.items.pop(item_id)
 
 
 @pytest.fixture

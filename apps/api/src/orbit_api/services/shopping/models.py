@@ -61,6 +61,8 @@ class ShoppingItem:
     updated_at: datetime
     # A gift idea for this person, from People.
     person_id: uuid.UUID | None = None
+    # The item's place on its list; needed items are listed in this order.
+    position: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -92,6 +94,10 @@ class ShoppingListNotFoundError(Exception):
 
 class ShoppingItemNotFoundError(Exception):
     """The item does not exist in this workspace."""
+
+
+class ItemOrderError(ValueError):
+    """A new order for a list that doesn't name each of its needed items exactly once."""
 
 
 class GiftPersonNotFoundError(Exception):

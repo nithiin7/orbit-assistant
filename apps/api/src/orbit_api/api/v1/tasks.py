@@ -11,6 +11,7 @@ from orbit_api.api.dependencies import TaskServiceDep
 from orbit_api.schemas.tasks import (
     CreateTaskListRequest,
     CreateTaskRequest,
+    MoveTaskRequest,
     TaskCompleteParams,
     TaskListDetailResponse,
     TaskListParams,
@@ -26,6 +27,7 @@ from orbit_api.services.tasks.models import (
     MAX_TASK_LISTS,
     InvalidTaskRecurrenceError,
     InvalidTaskScheduleError,
+    TaskAnchorNotFoundError,
     TaskListNameTakenError,
     TaskListNotFoundError,
     TaskNotFoundError,
@@ -153,6 +155,29 @@ async def reopen_task(
         return TaskResponse.of(await tasks.reopen(workspace.id, task_id))
     except TaskNotFoundError:
         raise task_not_found() from None
+
+
+@router.post(
+    "/{task_id}/move",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Move a task in the workspace's own order",
+    responses={422: {"description": "The other task does not exist, or is this task."}},
+)
+async def move_task(
+    task_id: TaskId, body: MoveTaskRequest, workspace: WorkspaceDep, tasks: TaskServiceDep
+) -> Response:
+    """Put the task just before or after another one in the order the `manual` sort lists."""
+    anchor_id = body.before_id or body.after_id
+    assert anchor_id is not None  # The request requires exactly one.
+    try:
+        await tasks.move(workspace.id, task_id, anchor_id, after=body.after_id is not None)
+    except TaskNotFoundError:
+        raise task_not_found() from None
+    except TaskAnchorNotFoundError:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT, "The task to move it beside wasn't found."
+        ) from None
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a task")

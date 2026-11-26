@@ -828,6 +828,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/workspaces/{workspace_id}/tasks/{task_id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move a task in the workspace's own order
+         * @description Put the task just before or after another one in the order the `manual` sort lists.
+         */
+        post: operations["move_task_api_v1_workspaces__workspace_id__tasks__task_id__move_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspaces/{workspace_id}/task-lists": {
         parameters: {
             query?: never;
@@ -1005,6 +1025,26 @@ export interface paths {
         put?: never;
         /** Add an item */
         post: operations["add_item_api_v1_workspaces__workspace_id__shopping_lists__list_id__items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/workspaces/{workspace_id}/shopping/lists/{list_id}/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Reorder a shopping list's needed items
+         * @description Purchased items keep their place below, newest first.
+         */
+        put: operations["reorder_items_api_v1_workspaces__workspace_id__shopping_lists__list_id__order_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -15828,6 +15868,14 @@ export interface components {
              */
             created_at: string;
         };
+        /** ItemOrderRequest */
+        ItemOrderRequest: {
+            /**
+             * Item Ids
+             * @description Every needed item on the list, each once, in the new order.
+             */
+            item_ids: string[];
+        };
         JsonValue: unknown;
         /** LineResponse */
         LineResponse: {
@@ -16448,6 +16496,22 @@ export interface components {
              * @enum {string}
              */
             currency: "INR" | "USD" | "EUR" | "GBP" | "AED" | "SGD" | "AUD" | "CAD" | "CHF" | "JPY";
+        };
+        /**
+         * MoveTaskRequest
+         * @description Where to put a task in the workspace's own order: just before or just after another.
+         */
+        MoveTaskRequest: {
+            /**
+             * Before Id
+             * @description Not with `after_id`.
+             */
+            before_id?: string | null;
+            /**
+             * After Id
+             * @description Not with `before_id`.
+             */
+            after_id?: string | null;
         };
         /** NetWorthItemResponse */
         NetWorthItemResponse: {
@@ -19602,6 +19666,11 @@ export interface components {
              * @description Who it's a gift idea for, from People.
              */
             person_id: string | null;
+            /**
+             * Position
+             * @description The item's place on its list. Needed items are listed in this order.
+             */
+            position: number;
         };
         /** ShoppingItemsResponse */
         ShoppingItemsResponse: {
@@ -24316,8 +24385,9 @@ export interface operations {
                 list_id?: string | null;
                 /** @description `true` for only tasks on no list. Not with `list_id`. */
                 unlisted?: boolean;
-                sort?: "due_date" | "priority" | "created_at" | "completed_at";
-                /** @description Defaults to the sort's natural order: soonest due date, highest priority, newest, or most recently completed. Tasks without a due date always come last. */
+                /** @description `manual` is the workspace's own order, set by moving tasks. */
+                sort?: "due_date" | "priority" | "created_at" | "completed_at" | "manual";
+                /** @description Defaults to the sort's natural order: soonest due date, highest priority, newest, or most recently completed. Tasks without a due date always come last. Ignored with the `manual` sort. */
                 order?: ("asc" | "desc") | null;
                 limit?: number;
                 offset?: number;
@@ -24698,6 +24768,53 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    move_task_api_v1_workspaces__workspace_id__tasks__task_id__move_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The task's ID. */
+                task_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveTaskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace or task does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The other task does not exist, or is this task. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -25390,6 +25507,55 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    reorder_items_api_v1_workspaces__workspace_id__shopping_lists__list_id__order_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The shopping list's ID. */
+                list_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ItemOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShoppingItemsResponse"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The workspace, list, or item does not exist or is not accessible. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The IDs aren't the list's needed items, each once. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

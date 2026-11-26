@@ -75,6 +75,10 @@ Notes = Annotated[
 ]
 
 
+# More needed items than one list sensibly holds; it only bounds the request.
+MAX_ORDERED_ITEMS = 2000
+
+
 class ShoppingListResponse(BaseModel):
     id: uuid.UUID
     workspace_id: uuid.UUID
@@ -141,6 +145,15 @@ class UpdateShoppingListRequest(BaseModel):
         return self
 
 
+class ItemOrderRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    item_ids: list[uuid.UUID] = Field(
+        max_length=MAX_ORDERED_ITEMS,
+        description="Every needed item on the list, each once, in the new order.",
+    )
+
+
 class BulkChangeResponse(BaseModel):
     count: int = Field(description="How many items changed.")
 
@@ -158,6 +171,9 @@ class ShoppingItemResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     person_id: uuid.UUID | None = Field(description="Who it's a gift idea for, from People.")
+    position: int = Field(
+        description="The item's place on its list. Needed items are listed in this order."
+    )
 
     @classmethod
     def of(cls, item: ShoppingItem) -> "ShoppingItemResponse":
@@ -174,6 +190,7 @@ class ShoppingItemResponse(BaseModel):
             created_at=item.created_at,
             updated_at=item.updated_at,
             person_id=item.person_id,
+            position=item.position,
         )
 
 

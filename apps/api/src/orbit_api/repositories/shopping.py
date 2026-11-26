@@ -2,6 +2,7 @@
 workspaces' rows."""
 
 import uuid
+from collections.abc import Sequence
 from datetime import datetime
 from typing import cast
 
@@ -48,6 +49,7 @@ def _to_item(model: ShoppingItemModel) -> ShoppingItem:
         created_at=model.created_at,
         updated_at=model.updated_at,
         person_id=model.person_id,
+        position=model.position,
     )
 
 
@@ -144,6 +146,7 @@ class SqlShoppingItemRepository:
                 created_at=item.created_at,
                 updated_at=item.updated_at,
                 person_id=item.person_id,
+                position=item.position,
             )
         )
         await flush(self._session)
@@ -157,10 +160,11 @@ class SqlShoppingItemRepository:
             select(ShoppingItemModel)
             .where(*self._in_list(workspace_id, list_id))
             # "needed" sorts before "purchased". Needed items have no purchase time, so within
-            # them the creation time decides.
+            # them the list's own order decides, then the creation time.
             .order_by(
                 ShoppingItemModel.status,
                 ShoppingItemModel.purchased_at.desc(),
+                ShoppingItemModel.position,
                 ShoppingItemModel.created_at,
                 ShoppingItemModel.id,
             )
@@ -226,6 +230,32 @@ class SqlShoppingItemRepository:
             .returning(ShoppingItemModel.id)
         )
         return len(deleted.all())
+
+    async def next_position(self, workspace_id: uuid.UUID, list_id: uuid.UUID) -> int:
+        last = await self._session.scalar(
+            select(func.max(ShoppingItemModel.position)).where(
+                *self._in_list(workspace_id, list_id)
+            )
+        )
+        return 0 if last is None else last + 1
+
+    async def arrange(
+        self, workspace_id: uuid.UUID, list_id: uuid.UUID, item_ids: Sequence[uuid.UUID]
+    ) -> None:
+        if not item_ids:
+            return
+        positions = {item_id: index for index, item_id in enumerate(item_ids)}
+        await self._session.execute(
+            update(ShoppingItemModel)
+            .where(*self._in_list(workspace_id, list_id), ShoppingItemModel.id.in_(positions))
+            # Moving an item doesn't change it, so its update time stays.
+            .values(
+                position=case(positions, value=ShoppingItemModel.id),
+                updated_at=ShoppingItemModel.updated_at,
+            )
+            # Expires the changed rows' loaded copies, so reading the list again shows the order.
+            .execution_options(synchronize_session="fetch")
+        )
 
     @staticmethod
     def _in_list(workspace_id: uuid.UUID, list_id: uuid.UUID) -> list[ColumnElement[bool]]:

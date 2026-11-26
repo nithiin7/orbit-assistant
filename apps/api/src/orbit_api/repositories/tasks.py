@@ -103,6 +103,11 @@ def _filters(workspace_id: uuid.UUID, query: TaskQuery) -> list[ColumnElement[bo
     return conditions
 
 
+# The workspace's own order. Positions can repeat (rows restored from before there was one);
+# creation time decides then.
+_MANUAL_ORDER = (TaskModel.position.asc(), TaskModel.created_at.asc(), TaskModel.id.asc())
+
+
 def _ordering(query: TaskQuery) -> Sequence[ColumnElement[Any]]:
     # Tasks without a due date always come last, whichever direction dates are sorted in.
     undated_last = TaskModel.due_date.is_(None)
@@ -120,6 +125,8 @@ def _ordering(query: TaskQuery) -> Sequence[ColumnElement[Any]]:
         case "created_at":
             created = TaskModel.created_at.asc() if query.order == "asc" else newest
             return (created, TaskModel.id.asc())
+        case "manual":
+            return _MANUAL_ORDER
         case "completed_at":
             # Open tasks have no completion time; they come last either way.
             completed = (
@@ -135,6 +142,10 @@ class SqlTaskRepository:
         self._session = session
 
     async def add(self, task: Task) -> None:
+        # New tasks go last in the workspace's own order.
+        last = await self._session.scalar(
+            select(func.max(TaskModel.position)).where(TaskModel.workspace_id == task.workspace_id)
+        )
         self._session.add(
             TaskModel(
                 id=task.id,
@@ -152,6 +163,7 @@ class SqlTaskRepository:
                 list_id=task.list_id,
                 recurrence=recurrence_to_json(task.recurrence),
                 series_id=task.series_id,
+                position=0 if last is None else last + 1,
             )
         )
         await flush(self._session)
@@ -210,6 +222,31 @@ class SqlTaskRepository:
             .returning(TaskModel.id)
         )
         return deleted.first() is not None
+
+    async def place(
+        self, workspace_id: uuid.UUID, task_id: uuid.UUID, anchor_id: uuid.UUID, *, after: bool
+    ) -> None:
+        rows = (
+            await self._session.execute(
+                select(TaskModel.id, TaskModel.position)
+                .where(TaskModel.workspace_id == workspace_id)
+                .order_by(*_MANUAL_ORDER)
+            )
+        ).all()
+        order = [task for task, _ in rows if task != task_id]
+        order.insert(order.index(anchor_id) + (1 if after else 0), task_id)
+        current = {row.id: row.position for row in rows}
+        # Number the whole order again, writing only the rows whose position changes.
+        changed = {task: index for index, task in enumerate(order) if current[task] != index}
+        if not changed:
+            return
+        await self._session.execute(
+            update(TaskModel)
+            .where(TaskModel.workspace_id == workspace_id, TaskModel.id.in_(changed))
+            # Moving a task doesn't change it, so its update time stays.
+            .values(position=case(changed, value=TaskModel.id), updated_at=TaskModel.updated_at)
+            .execution_options(synchronize_session="fetch")
+        )
 
     async def summarize(self, workspace_id: uuid.UUID, today: date) -> TaskSummary:
         is_open = TaskModel.status == "open"
