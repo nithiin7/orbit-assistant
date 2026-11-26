@@ -1,16 +1,28 @@
 /**
  * Color theme ("palette") and font preferences. Like the sidebar preference, each lives on an
  * attribute of `<html>` (`data-palette`, `data-font`) so CSS applies it before React hydrates, and
- * is saved per browser in localStorage. The defaults, Clay and Geist, set no attribute at all, so
+ * is saved per browser in localStorage. The defaults, Studio and Inter Tight, set no attribute, so
  * the base tokens in tokens.css apply unchanged.
  */
 
 export const PALETTES = [
   {
+    value: "studio",
+    label: "Studio",
+    description: "Cream and ink with violet and sun",
+    swatch: ["oklch(0.977 0.012 88)", "oklch(0.52 0.17 295)", "oklch(0.84 0.16 85)"],
+  },
+  {
     value: "clay",
     label: "Clay",
     description: "Warm cream and terracotta",
     swatch: ["oklch(0.985 0.006 75)", "oklch(0.54 0.15 40)", "oklch(0.8 0.13 78)"],
+  },
+  {
+    value: "signal",
+    label: "Signal",
+    description: "Paper and ink with signal orange",
+    swatch: ["oklch(0.955 0.006 100)", "oklch(0.16 0 0)", "oklch(0.67 0.22 38)"],
   },
   {
     value: "sage",
@@ -39,7 +51,18 @@ export const PALETTES = [
 ] as const;
 
 export const FONTS = [
-  { value: "geist", label: "Geist", description: "Clean and modern", family: "--font-geist-sans" },
+  {
+    value: "inter-tight",
+    label: "Inter Tight",
+    description: "Crisp and modern",
+    family: "--font-inter-tight",
+  },
+  {
+    value: "geist",
+    label: "Geist",
+    description: "Clean and geometric",
+    family: "--font-geist-sans",
+  },
   { value: "inter", label: "Inter", description: "Compact and neutral", family: "--font-inter" },
   {
     value: "serif",
@@ -59,8 +82,8 @@ export const FONTS = [
 export type Palette = (typeof PALETTES)[number]["value"];
 export type AppFont = (typeof FONTS)[number]["value"];
 
-export const DEFAULT_PALETTE: Palette = "clay";
-export const DEFAULT_FONT: AppFont = "geist";
+export const DEFAULT_PALETTE: Palette = "studio";
+export const DEFAULT_FONT: AppFont = "inter-tight";
 
 export const PALETTE_STORAGE_KEY = "orbit:palette";
 export const FONT_STORAGE_KEY = "orbit:font";

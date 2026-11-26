@@ -25,17 +25,17 @@ describe("AppearanceSettings", () => {
     expect(screen.getByRole("group", { name: "Theme" })).toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Color theme" })).toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Font" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: /Clay/ })).toBeChecked();
-    expect(screen.getByRole("radio", { name: /Geist/ })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /Studio/ })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /Inter Tight/ })).toBeChecked();
   });
 
   it("reflects a saved choice", () => {
-    root.dataset.palette = "slate";
-    root.dataset.font = "inter";
+    root.dataset.palette = "clay";
+    root.dataset.font = "geist";
     render(<AppearanceSettings />);
 
-    expect(screen.getByRole("radio", { name: /Slate/ })).toBeChecked();
-    expect(screen.getByRole("radio", { name: /Inter/ })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /Clay/ })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /Geist/ })).toBeChecked();
   });
 
   it("applies and saves a new color theme and font", async () => {
@@ -58,7 +58,7 @@ describe("AppearanceSettings", () => {
     const user = userEvent.setup();
     render(<AppearanceSettings />);
 
-    await user.click(screen.getByRole("radio", { name: /Clay/ }));
+    await user.click(screen.getByRole("radio", { name: /Studio/ }));
     expect(root.dataset.palette).toBeUndefined();
     expect(localStorage.getItem(PALETTE_STORAGE_KEY)).toBeNull();
   });
