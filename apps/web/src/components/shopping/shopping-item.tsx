@@ -36,7 +36,7 @@ export function ShoppingItemRow({
     <li
       {...sortable?.row}
       className={cn(
-        "group flex items-start gap-3 px-3 py-3 transition-[background-color,opacity] duration-150 hover:bg-accent/40 sm:px-4 @lg/rows:items-center pointer-coarse:py-3.5",
+        "group flex items-start gap-3 px-3 py-3 transition-[background-color,opacity] duration-150 hover:bg-accent/40 sm:px-4 @lg/rows:items-center pointer-coarse:py-3.5 compact:py-1.5 compact:pointer-coarse:py-2.5",
         purchased && "bg-muted/20",
         sortable && "pl-1 sm:pl-2",
         sortable?.dragging && "relative z-10 bg-card shadow-elevation-2",
@@ -58,7 +58,7 @@ export function ShoppingItemRow({
         className="mt-0.5 @lg/rows:mt-0 pointer-coarse:size-6"
       />
 
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5 @lg/rows:flex-row @lg/rows:items-center @lg/rows:gap-4">
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5 @lg/rows:flex-row @lg/rows:items-center @lg/rows:gap-4 compact:gap-1">
         <div className="min-w-0 flex-1 space-y-0.5">
           <button
             type="button"
