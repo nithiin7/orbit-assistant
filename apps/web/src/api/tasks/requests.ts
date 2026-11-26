@@ -4,6 +4,7 @@ import type {
   CreateTaskRequest,
   FocusSession,
   FocusSummary,
+  MoveTaskRequest,
   RecordFocusSessionRequest,
   Task,
   TaskList,
@@ -89,6 +90,16 @@ export function completeTask(
 
 export function reopenTask(token: string, workspaceId: string, taskId: string): Promise<Task> {
   return request<Task>(taskPath(workspaceId, taskId, "/reopen"), { method: "POST", token });
+}
+
+/** Puts a task just before or after another in the workspace's own order (the `manual` sort). */
+export function moveTask(
+  token: string,
+  workspaceId: string,
+  taskId: string,
+  body: MoveTaskRequest,
+): Promise<void> {
+  return request<void>(taskPath(workspaceId, taskId, "/move"), { method: "POST", body, token });
 }
 
 export function deleteTask(token: string, workspaceId: string, taskId: string): Promise<void> {

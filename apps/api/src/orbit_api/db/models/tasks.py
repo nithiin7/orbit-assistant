@@ -110,6 +110,9 @@ class TaskModel(Base):
     recurrence: Mapped[dict[str, Any] | None] = mapped_column(JSON)
     # Shared by a repeating task's occurrences. Not a reference to any row.
     series_id: Mapped[uuid.UUID | None]
+    # The task's place in the workspace's own order ("My order"), set by dragging. The
+    # repository puts new tasks last; positions may repeat, and creation time breaks ties.
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now, onupdate=utc_now)
 

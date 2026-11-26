@@ -2540,12 +2540,15 @@
                 "due_date",
                 "priority",
                 "created_at",
-                "completed_at"
+                "completed_at",
+                "manual"
               ],
               "type": "string",
+              "description": "`manual` is the workspace's own order, set by moving tasks.",
               "default": "created_at",
               "title": "Sort"
-            }
+            },
+            "description": "`manual` is the workspace's own order, set by moving tasks."
           },
           {
             "name": "order",
@@ -2564,10 +2567,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Defaults to the sort's natural order: soonest due date, highest priority, newest, or most recently completed. Tasks without a due date always come last.",
+              "description": "Defaults to the sort's natural order: soonest due date, highest priority, newest, or most recently completed. Tasks without a due date always come last. Ignored with the `manual` sort.",
               "title": "Order"
             },
-            "description": "Defaults to the sort's natural order: soonest due date, highest priority, newest, or most recently completed. Tasks without a due date always come last."
+            "description": "Defaults to the sort's natural order: soonest due date, highest priority, newest, or most recently completed. Tasks without a due date always come last. Ignored with the `manual` sort."
           },
           {
             "name": "limit",
@@ -3104,6 +3107,69 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/tasks/{task_id}/move": {
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Move a task in the workspace's own order",
+        "description": "Put the task just before or after another one in the order the `manual` sort lists.",
+        "operationId": "move_task_api_v1_workspaces__workspace_id__tasks__task_id__move_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The task's ID.",
+              "title": "Task Id"
+            },
+            "description": "The task's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveTaskRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace or task does not exist or is not accessible."
+          },
+          "422": {
+            "description": "The other task does not exist, or is this task."
           }
         }
       }
@@ -4040,6 +4106,76 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/shopping/lists/{list_id}/order": {
+      "put": {
+        "tags": [
+          "shopping"
+        ],
+        "summary": "Reorder a shopping list's needed items",
+        "description": "Purchased items keep their place below, newest first.",
+        "operationId": "reorder_items_api_v1_workspaces__workspace_id__shopping_lists__list_id__order_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The shopping list's ID.",
+              "title": "List Id"
+            },
+            "description": "The shopping list's ID."
+          },
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemOrderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShoppingItemsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "404": {
+            "description": "The workspace, list, or item does not exist or is not accessible."
+          },
+          "422": {
+            "description": "The IDs aren't the list's needed items, each once."
           }
         }
       }
@@ -59494,6 +59630,26 @@
         ],
         "title": "InvestmentTransactionResponse"
       },
+      "ItemOrderRequest": {
+        "properties": {
+          "item_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 2000,
+            "title": "Item Ids",
+            "description": "Every needed item on the list, each once, in the new order."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "item_ids"
+        ],
+        "title": "ItemOrderRequest"
+      },
       "JsonValue": {},
       "LineResponse": {
         "properties": {
@@ -60979,6 +61135,40 @@
           "currency"
         ],
         "title": "MonthlySummaryResponse"
+      },
+      "MoveTaskRequest": {
+        "properties": {
+          "before_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before Id",
+            "description": "Not with `after_id`."
+          },
+          "after_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After Id",
+            "description": "Not with `before_id`."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "MoveTaskRequest",
+        "description": "Where to put a task in the workspace's own order: just before or just after another."
       },
       "NetWorthItemResponse": {
         "properties": {
@@ -68387,6 +68577,11 @@
             ],
             "title": "Person Id",
             "description": "Who it's a gift idea for, from People."
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position",
+            "description": "The item's place on its list. Needed items are listed in this order."
           }
         },
         "type": "object",
@@ -68402,7 +68597,8 @@
           "purchased_at",
           "created_at",
           "updated_at",
-          "person_id"
+          "person_id",
+          "position"
         ],
         "title": "ShoppingItemResponse"
       },

@@ -320,6 +320,65 @@ def test_sort_by_completion_puts_the_latest_first(
     ]
 
 
+def test_move_sets_the_manual_order(client: TestClient, ada: Headers, tasks_url: str) -> None:
+    first, second, third = (
+        create(client, tasks_url, ada, title=title) for title in ("First", "Second", "Third")
+    )
+    assert titles(client, tasks_url, ada, sort="manual") == ["First", "Second", "Third"]
+
+    def move(task: dict[str, Any], **anchor: str) -> None:
+        response = client.post(f"{tasks_url}/{task['id']}/move", json=anchor, headers=ada)
+        assert response.status_code == 204, response.text
+
+    move(third, before_id=first["id"])
+    assert titles(client, tasks_url, ada, sort="manual") == ["Third", "First", "Second"]
+    move(third, after_id=second["id"])
+    move(first, after_id=second["id"])
+    assert titles(client, tasks_url, ada, sort="manual") == ["Second", "First", "Third"]
+    # New tasks go last, and the order ignores `order`.
+    create(client, tasks_url, ada, title="Fourth")
+    assert titles(client, tasks_url, ada, sort="manual", order="desc")[-1] == "Fourth"
+    # A move doesn't change the task.
+    assert client.get(f"{tasks_url}/{third['id']}", headers=ada).json() == third
+
+
+def test_move_is_validated(client: TestClient, ada: Headers, tasks_url: str) -> None:
+    task = create(client, tasks_url, ada, title="Mine")
+    other = create(client, tasks_url, ada, title="Other")
+    url = f"{tasks_url}/{task['id']}/move"
+
+    for body in (
+        {},
+        {"before_id": other["id"], "after_id": other["id"]},
+        {"before_id": task["id"]},
+        {"after_id": str(uuid.uuid4())},
+        {"after_id": other["id"], "position": 3},
+    ):
+        assert client.post(url, json=body, headers=ada).status_code == 422, body
+    missing = client.post(
+        f"{tasks_url}/{uuid.uuid4()}/move", json={"after_id": other["id"]}, headers=ada
+    )
+    assert missing.status_code == 404
+
+
+def test_the_next_occurrence_takes_the_completed_ones_place(
+    client: TestClient, ada: Headers, tasks_url: str
+) -> None:
+    daily = create(
+        client,
+        tasks_url,
+        ada,
+        title="Daily",
+        due_date="2026-11-01",
+        recurrence={"frequency": "daily"},
+    )
+    create(client, tasks_url, ada, title="Later")
+
+    client.post(f"{tasks_url}/{daily['id']}/complete", headers=ada)
+
+    assert titles(client, tasks_url, ada, sort="manual", status="open") == ["Daily", "Later"]
+
+
 def test_pagination_reports_the_total(client: TestClient, ada: Headers, tasks_url: str) -> None:
     for index in range(5):
         create(client, tasks_url, ada, title=f"Task {index}")
@@ -547,6 +606,7 @@ def test_other_users_cannot_reach_tasks_through_the_owners_workspace(
         client.patch(task_url, json={"title": "Mine now"}, headers=grace),
         client.post(f"{task_url}/complete", headers=grace),
         client.post(f"{task_url}/reopen", headers=grace),
+        client.post(f"{task_url}/move", json={"after_id": task["id"]}, headers=grace),
         client.delete(task_url, headers=grace),
     ]
 
@@ -571,6 +631,7 @@ def test_other_users_cannot_reach_tasks_through_their_own_workspace(
         client.patch(task_url, json={"title": "Mine now"}, headers=grace),
         client.post(f"{task_url}/complete", headers=grace),
         client.post(f"{task_url}/reopen", headers=grace),
+        client.post(f"{task_url}/move", json={"after_id": task["id"]}, headers=grace),
         client.delete(task_url, headers=grace),
     ]
 
@@ -579,6 +640,12 @@ def test_other_users_cannot_reach_tasks_through_their_own_workspace(
     assert client.get(graces_url, headers=grace).json() == {"tasks": [], "total": 0}
     assert client.get(f"{graces_url}/summary", headers=grace).json()["open"] == 0
     assert client.get(f"{tasks_url}/{task['id']}", headers=ada).json() == task
+    # Nor can her own task be moved beside Ada's.
+    graces_task = create(client, graces_url, grace, title="Grace's task")
+    beside = client.post(
+        f"{graces_url}/{graces_task['id']}/move", json={"after_id": task["id"]}, headers=grace
+    )
+    assert beside.status_code == 422
 
 
 def test_deleting_a_workspace_deletes_its_tasks(
@@ -605,6 +672,7 @@ def test_deleting_a_workspace_deletes_its_tasks(
         ("DELETE", f"/{uuid.uuid4()}"),
         ("POST", f"/{uuid.uuid4()}/complete"),
         ("POST", f"/{uuid.uuid4()}/reopen"),
+        ("POST", f"/{uuid.uuid4()}/move"),
     ],
 )
 def test_every_task_endpoint_requires_authentication(

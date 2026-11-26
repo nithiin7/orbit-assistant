@@ -6,6 +6,7 @@ import { useId } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DragHandle, type SortableItem, useSortableItem } from "@/components/ui/sortable";
 import { cn } from "@/utils/common";
 
 import { DueDateLabel, FocusBadge, PriorityBadge, RepeatBadge, TaskListBadge } from "./task-meta";
@@ -24,6 +25,8 @@ type TaskItemProps = {
   focusing?: boolean;
   /** Start the focus timer on the task; open tasks only. */
   onFocus?: (task: Task) => void;
+  /** Set by `SortableTaskItem`: the row can be dragged by a handle. */
+  sortable?: SortableItem;
 };
 
 const completedFormat = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
@@ -38,17 +41,28 @@ export function TaskItem({
   focusedSeconds = 0,
   focusing = false,
   onFocus,
+  sortable,
 }: TaskItemProps) {
   const titleId = useId();
   const completed = task.status === "completed";
 
   return (
     <li
+      {...sortable?.row}
       className={cn(
         "group flex items-start gap-3 px-3 py-3 transition-[background-color,opacity] duration-150 hover:bg-accent/40 sm:px-4 @lg/rows:items-center",
         completed && "bg-muted/20",
+        sortable && "pl-1 sm:pl-2",
+        sortable?.dragging && "relative z-10 bg-card shadow-elevation-2",
       )}
     >
+      {sortable ? (
+        <DragHandle
+          {...sortable.handle}
+          aria-label={`Move “${task.title}”`}
+          className="-my-1.5 @lg/rows:my-0"
+        />
+      ) : null}
       <Checkbox
         shape="round"
         checked={completed}
@@ -133,4 +147,10 @@ export function TaskItem({
       </div>
     </li>
   );
+}
+
+/** A task row that can be dragged into a new place, inside `SortableList`. */
+export function SortableTaskItem(props: Omit<TaskItemProps, "sortable">) {
+  const sortable = useSortableItem(props.task.id);
+  return <TaskItem {...props} sortable={sortable} />;
 }

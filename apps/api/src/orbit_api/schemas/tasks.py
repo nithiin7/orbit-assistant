@@ -155,11 +155,15 @@ class TaskListParams(BaseModel):
     unlisted: bool = Field(
         default=False, description="`true` for only tasks on no list. Not with `list_id`."
     )
-    sort: TaskSort = "created_at"
+    sort: TaskSort = Field(
+        default="created_at",
+        description="`manual` is the workspace's own order, set by moving tasks.",
+    )
     order: SortOrder | None = Field(
         default=None,
         description="Defaults to the sort's natural order: soonest due date, highest priority, "
-        "newest, or most recently completed. Tasks without a due date always come last.",
+        "newest, or most recently completed. Tasks without a due date always come last. "
+        "Ignored with the `manual` sort.",
     )
     limit: int = Field(default=100, ge=1, le=PAGE_MAX_SIZE)
     offset: int = Field(default=0, ge=0)
@@ -222,6 +226,21 @@ class TaskSummaryResponse(BaseModel):
             overdue=summary.overdue,
             due_today=summary.due_today,
         )
+
+
+class MoveTaskRequest(BaseModel):
+    """Where to put a task in the workspace's own order: just before or just after another."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    before_id: uuid.UUID | None = Field(default=None, description="Not with `after_id`.")
+    after_id: uuid.UUID | None = Field(default=None, description="Not with `before_id`.")
+
+    @model_validator(mode="after")
+    def _check_one_anchor(self) -> Self:
+        if (self.before_id is None) == (self.after_id is None):
+            raise ValueError("give before_id or after_id, not both")
+        return self
 
 
 class CreateTaskRequest(BaseModel):

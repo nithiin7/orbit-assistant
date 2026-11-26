@@ -292,6 +292,49 @@ def test_items_are_ordered_needed_first_then_recently_purchased(
     assert names(client, shop, list_id, ada) == ["Bread", "Rice", "Milk", "Eggs"]
 
 
+def test_reorder_needed_items(client: TestClient, ada: Headers, shop: str) -> None:
+    list_id = groceries(client, shop, ada)["id"]
+    milk, eggs, bread = (add(client, shop, list_id, ada, name=n) for n in ("Milk", "Eggs", "Bread"))
+    rice = add(client, shop, list_id, ada, name="Rice")
+    client.post(f"{shop}/items/{rice['id']}/purchase", headers=ada)
+
+    response = client.put(
+        f"{shop}/lists/{list_id}/order",
+        json={"item_ids": [bread["id"], milk["id"], eggs["id"]]},
+        headers=ada,
+    )
+
+    assert response.status_code == 200, response.text
+    assert [item["name"] for item in response.json()["items"]] == ["Bread", "Milk", "Eggs", "Rice"]
+    assert response.json()["items"][0]["updated_at"] == bread["updated_at"]
+    # New items go last among the needed ones.
+    add(client, shop, list_id, ada, name="Tea")
+    assert names(client, shop, list_id, ada) == ["Bread", "Milk", "Eggs", "Tea", "Rice"]
+
+
+def test_a_reorder_lists_every_needed_item_once(
+    client: TestClient, ada: Headers, shop: str
+) -> None:
+    list_id = groceries(client, shop, ada)["id"]
+    milk, eggs = (add(client, shop, list_id, ada, name=n) for n in ("Milk", "Eggs"))
+    bought = add(client, shop, list_id, ada, name="Rice")
+    client.post(f"{shop}/items/{bought['id']}/purchase", headers=ada)
+    other_list = create_list(client, shop, ada, "Hardware")["id"]
+    elsewhere = add(client, shop, other_list, ada, name="Nails")
+    url = f"{shop}/lists/{list_id}/order"
+
+    for item_ids in (
+        [milk["id"]],
+        [milk["id"], milk["id"]],
+        [milk["id"], eggs["id"], bought["id"]],
+        [milk["id"], elsewhere["id"]],
+    ):
+        response = client.put(url, json={"item_ids": item_ids}, headers=ada)
+        assert response.status_code == 422, item_ids
+    assert client.put(url, json={"item_ids": ["nope"]}, headers=ada).status_code == 422
+    assert names(client, shop, list_id, ada) == ["Milk", "Eggs", "Rice"]
+
+
 def test_items_are_kept_per_list(client: TestClient, ada: Headers, shop: str) -> None:
     grocery_id = groceries(client, shop, ada)["id"]
     electronics_id = create_list(client, shop, ada, "Electronics")["id"]
@@ -498,6 +541,7 @@ def test_other_users_cannot_reach_lists_through_the_owners_workspace(
         client.post(f"{shop}/lists/{list_id}/clear-purchased", headers=grace),
         client.get(f"{shop}/lists/{list_id}/items", headers=grace),
         client.post(f"{shop}/lists/{list_id}/items", json={"name": "Planted"}, headers=grace),
+        client.put(f"{shop}/lists/{list_id}/order", json={"item_ids": []}, headers=grace),
         client.patch(item_url, json={"name": "Mine"}, headers=grace),
         client.post(f"{item_url}/purchase", headers=grace),
         client.post(f"{item_url}/restock", headers=grace),
@@ -528,6 +572,7 @@ def test_other_users_cannot_reach_lists_through_their_own_workspace(
         client.post(f"{graces}/lists/{list_id}/clear-purchased", headers=grace),
         client.get(f"{graces}/lists/{list_id}/items", headers=grace),
         client.post(f"{graces}/lists/{list_id}/items", json={"name": "Planted"}, headers=grace),
+        client.put(f"{graces}/lists/{list_id}/order", json={"item_ids": []}, headers=grace),
     ]:
         assert (response.status_code, response.json()) == (404, list_not_found)
     for response in [
@@ -537,6 +582,13 @@ def test_other_users_cannot_reach_lists_through_their_own_workspace(
         client.delete(f"{graces}/items/{item['id']}", headers=grace),
     ]:
         assert (response.status_code, response.json()) == (404, item_not_found)
+
+    # Her own list's order can't take Ada's items either.
+    graces_list = groceries(client, graces, grace)["id"]
+    planted = client.put(
+        f"{graces}/lists/{graces_list}/order", json={"item_ids": [item["id"]]}, headers=grace
+    )
+    assert planted.status_code == 422
 
     [graces_groceries] = lists(client, graces, grace)
     assert graces_groceries["needed_count"] == 0
@@ -569,6 +621,7 @@ def test_deleting_a_workspace_deletes_its_lists_and_items(
         ("POST", f"/lists/{uuid.uuid4()}/clear-purchased"),
         ("GET", f"/lists/{uuid.uuid4()}/items"),
         ("POST", f"/lists/{uuid.uuid4()}/items"),
+        ("PUT", f"/lists/{uuid.uuid4()}/order"),
         ("PATCH", f"/items/{uuid.uuid4()}"),
         ("DELETE", f"/items/{uuid.uuid4()}"),
         ("POST", f"/items/{uuid.uuid4()}/purchase"),

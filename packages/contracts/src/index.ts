@@ -31,6 +31,7 @@ export type TaskList = Schemas["TaskListResponse"];
 export type TaskSummary = Schemas["TaskSummaryResponse"];
 export type CreateTaskRequest = Schemas["CreateTaskRequest"];
 export type UpdateTaskRequest = Schemas["UpdateTaskRequest"];
+export type MoveTaskRequest = Schemas["MoveTaskRequest"];
 /** Filters, sorting, and paging accepted when listing tasks. */
 export type TaskListQuery = NonNullable<
   paths["/api/v1/workspaces/{workspace_id}/tasks"]["get"]["parameters"]["query"]
@@ -67,6 +68,7 @@ export type ShoppingItemStatus = ShoppingItem["status"];
 export type ShoppingItems = Schemas["ShoppingItemsResponse"];
 export type CreateShoppingItemRequest = Schemas["CreateItemRequest"];
 export type UpdateShoppingItemRequest = Schemas["UpdateItemRequest"];
+export type ShoppingItemOrderRequest = Schemas["ItemOrderRequest"];
 
 export type WatchItem = Schemas["WatchItemResponse"];
 export type WatchKind = WatchItem["kind"];

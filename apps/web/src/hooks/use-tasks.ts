@@ -3,6 +3,7 @@
 import type {
   CreateTaskListRequest,
   CreateTaskRequest,
+  MoveTaskRequest,
   Task,
   TaskList,
   TaskListDetail,
@@ -25,6 +26,7 @@ import {
   deleteTaskList,
   focusSummaryOptions,
   getTask,
+  moveTask,
   removeCachedTask,
   reopenTask,
   replaceCachedTask,
@@ -202,8 +204,39 @@ export function useTaskMutations(workspaceId: string) {
     },
   });
 
-  return { create, update, toggle, remove };
+  const move = useMutation({
+    // One at a time, in order, so quick moves land as they were made.
+    scope: { id: "task-move" },
+    mutationFn: ({ task, body }: TaskMove) =>
+      withToken((token) => moveTask(token, workspaceId, task.id, body)),
+    // Show the new order at once; put the old one back if the move fails.
+    onMutate: async ({ query, order }) => {
+      const key = taskKeys.list(workspaceId, query);
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<TaskList>(key);
+      queryClient.setQueryData<TaskList>(key, (list) => list && { ...list, tasks: order });
+      return { previous };
+    },
+    onError: (_error, { query }, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(taskKeys.list(workspaceId, query), context.previous);
+      }
+    },
+    // Other cached views in this order are out of date; the one on screen already shows it.
+    onSuccess: markTasksStale,
+  });
+
+  return { create, update, toggle, remove, move };
 }
+
+/** A task dragged to a new place in the list for `query`, the `manual` sort. */
+export type TaskMove = {
+  task: Task;
+  body: MoveTaskRequest;
+  query: TaskListQuery;
+  /** The list's tasks in their new order. */
+  order: Task[];
+};
 
 /**
  * Delete a task with Undo: it leaves the list at once and `remove` (from `useTaskMutations`) runs

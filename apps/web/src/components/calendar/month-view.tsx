@@ -26,7 +26,8 @@ type MonthViewProps = {
   onOpenItem: (item: CalendarItem) => void;
   onOpenDay: (date: string) => void;
   onCreateOn: (date: string) => void;
-  /** Move an event or a scheduled task to `date`, keeping its time of day. */
+  /** Move an event or a scheduled task to `date`, keeping its time of day, or a task due on
+   * one day to be due on `date`. */
   onMoveItem: (item: CalendarItem, date: string) => void;
   onDropTask: (taskId: string, date: string) => void;
 };
@@ -170,7 +171,7 @@ export function MonthView({
                           timeZone={timeZone}
                           categories={categories}
                           showTime
-                          draggable={item.kind === "event" || (item.kind === "task" && !item.due)}
+                          draggable={item.kind === "event" || item.kind === "task"}
                           onDragStart={(event) => {
                             event.dataTransfer.setData(ITEM_DRAG_TYPE, item.id);
                             event.dataTransfer.effectAllowed = "move";

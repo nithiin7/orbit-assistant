@@ -2,6 +2,7 @@ import type {
   BulkChangeResponse,
   CreateShoppingItemRequest,
   ShoppingItem,
+  ShoppingItemOrderRequest,
   ShoppingItems,
   ShoppingList,
   ShoppingListRequest,
@@ -100,6 +101,20 @@ export function listShoppingItems(
   return request<ShoppingItems>(shoppingListPath(workspaceId, listId, "/items"), {
     token,
     signal,
+  });
+}
+
+/** Puts the list's needed items in this order; every needed item is listed once. */
+export function reorderShoppingItems(
+  token: string,
+  workspaceId: string,
+  listId: string,
+  body: ShoppingItemOrderRequest,
+): Promise<ShoppingItems> {
+  return request<ShoppingItems>(shoppingListPath(workspaceId, listId, "/order"), {
+    method: "PUT",
+    body,
+    token,
   });
 }
 
