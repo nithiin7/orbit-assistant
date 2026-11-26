@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { markdownToDocument } from "@/lib/note-content";
+import { asJsonContent, markdownToDocument } from "@/lib/note-content";
 
 import { NOTE_TEMPLATES, noteTemplateSections } from "./templates";
 
@@ -8,7 +8,7 @@ describe("note templates", () => {
   it.each(NOTE_TEMPLATES.map((template) => [template.name, template] as const))(
     "%s becomes a document with a heading per section",
     (_name, template) => {
-      const document = markdownToDocument(template.markdown);
+      const document = asJsonContent(markdownToDocument(template.markdown));
       const headings = (document.content ?? []).filter((node) => node.type === "heading");
 
       expect(headings).toHaveLength(noteTemplateSections(template).length);
