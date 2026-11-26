@@ -104,6 +104,42 @@
   }
 }
 
+/*
+ * Route transitions (`components/page-transition.tsx`). The old page fades out quickly while the
+ * new one fades in and rises a few pixels, so the swap reads as one calm motion. The rest of the
+ * page (sidebar, settings menu) is the root snapshot; it stays still instead of crossfading.
+ */
+@keyframes page-exit {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-old(.page-exit) {
+  animation: page-exit 120ms ease-out both;
+}
+
+::view-transition-new(.page-enter) {
+  animation: page-enter 240ms var(--ease-out-soft) 40ms both;
+}
+
+/* The snapshot overlay would swallow clicks while it runs; let them reach the live page. */
+::view-transition {
+  pointer-events: none;
+}
+
 /* Honor reduced-motion preferences everywhere, including third-party and native elements. */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -114,5 +150,11 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }

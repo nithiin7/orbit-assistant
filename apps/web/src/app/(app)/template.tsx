@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 
-/** Remounts on navigation, giving page content a brief fade for continuity. */
+import { PageTransition } from "@/components/page-transition";
+
+/** Remounts on navigation, so moving between modules crossfades the page content. */
 export default function Template({ children }: { children: ReactNode }) {
-  return <div className="animate-page-in">{children}</div>;
+  return <PageTransition>{children}</PageTransition>;
 }
