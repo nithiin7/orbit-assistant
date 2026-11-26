@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   useDeleteTaskWithUndo,
   useLinkedTask,
+  useTaskFocusTimes,
   useTaskList,
   useTaskListMutations,
   useTaskLists,
@@ -30,6 +31,7 @@ import {
   type TaskFilters,
   toTaskListQuery,
 } from "@/lib/tasks";
+import { useFocusTimer } from "@/providers/focus";
 import { useWorkspaces } from "@/providers/workspace";
 import { cn } from "@/utils/common";
 import { localDateString } from "@/utils/dates";
@@ -72,6 +74,8 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
   const summary = useTaskSummary(workspaceId);
   const mutations = useTaskMutations(workspaceId);
   const lists = useTaskLists(workspaceId);
+  const focusTimes = useTaskFocusTimes(workspaceId);
+  const focus = useFocusTimer();
   const listMutations = useTaskListMutations(workspaceId);
   const { confirm, confirmDialog } = useConfirm();
   // The list being created (`"new"`) or edited, in a dialog.
@@ -208,6 +212,12 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
       onToggle={(item) => void toggle(item)}
       onEdit={setEditing}
       onDelete={remove}
+      focusedSeconds={focusTimes.get(task.id)}
+      focusing={focus.timer?.taskId === task.id}
+      onFocus={(item) => {
+        focus.start({ workspaceId, taskId: item.id, taskTitle: item.title });
+        setAnnouncement(`Focusing on “${item.title}” for 25 minutes.`);
+      }}
     />
   );
   const listClassName = cn(

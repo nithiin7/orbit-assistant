@@ -23,6 +23,7 @@ import {
   createTaskList,
   deleteTask,
   deleteTaskList,
+  focusSummaryOptions,
   getTask,
   removeCachedTask,
   reopenTask,
@@ -69,6 +70,13 @@ export function useTaskSummary(workspaceId: string): TaskSummary | undefined {
   const today = localDateString();
   const { data } = useQuery(taskSummaryOptions(withToken, workspaceId, { today }));
   return data;
+}
+
+/** Seconds of focus timer time on each task in the workspace, keyed by task ID. */
+export function useTaskFocusTimes(workspaceId: string): Map<string, number> {
+  const { withToken } = useAuth();
+  const { data } = useQuery(focusSummaryOptions(withToken, workspaceId, localDateString()));
+  return new Map(data?.tasks.map((task) => [task.task_id, task.focused_seconds]));
 }
 
 const UP_NEXT_QUERY: TaskListQuery = { status: "open", sort: "due_date", limit: 5 };

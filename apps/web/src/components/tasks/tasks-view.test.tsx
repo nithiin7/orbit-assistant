@@ -29,6 +29,11 @@ const session = {
   ...signedIn,
   [`GET ${LISTS}`]: json({ lists: [] }),
   [`GET ${TASKS}/summary`]: json({ open: 2, completed: 5, overdue: 1, due_today: 1 }),
+  [`GET /api/v1/workspaces/${personal.id}/focus/summary`]: json({
+    today_seconds: 0,
+    today_sessions: 0,
+    tasks: [],
+  }),
   // The task dialog lists the task's linked documents.
   [`GET /api/v1/workspaces/${personal.id}/documents`]: json({ documents: [], total: 0 }),
 };
@@ -680,5 +685,29 @@ describe("TasksPanel", () => {
       expect(await screen.findByRole("heading", { name: "Open tasks" })).toBeInTheDocument();
       await waitFor(() => expect(listQueries(api).at(-1)?.get("list_id")).toBeNull());
     });
+  });
+
+  it("shows focused time and starts the focus timer on a task", async () => {
+    mockApi({
+      ...session,
+      [`GET ${TASKS}`]: json({ tasks: [rent, plants], total: 2 }),
+      [`GET /api/v1/workspaces/${personal.id}/focus/summary`]: json({
+        today_seconds: 0,
+        today_sessions: 0,
+        tasks: [{ task_id: rent.id, focused_seconds: 3900, sessions: 3 }],
+      }),
+    });
+
+    await renderSignedIn(<TasksPanel />);
+
+    expect(await screen.findByText("1h 5m")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Focus on “Water plants”" }));
+
+    expect(screen.getByText("Focusing on “Water plants” for 25 minutes.")).toBeInTheDocument();
+    expect(screen.getByText(", focusing now")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Focus on “Water plants”" }),
+    ).not.toBeInTheDocument();
+    expect(localStorage.getItem("orbit:focus")).toContain(plants.id);
   });
 });

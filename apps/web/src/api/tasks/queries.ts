@@ -2,7 +2,7 @@ import type { Task, TaskList, TaskListQuery, TaskSummaryQuery } from "@orbit/con
 import { type QueryClient, queryOptions, skipToken } from "@tanstack/react-query";
 
 import type { WithToken } from "../client";
-import { getTaskSummary, listTaskLists, listTasks } from "./requests";
+import { getFocusSummary, getTaskSummary, listTaskLists, listTasks } from "./requests";
 
 /**
  * Cache keys for a workspace's tasks. Every key starts with the workspace ID, so one workspace's
@@ -19,6 +19,9 @@ export const taskKeys = {
     [...taskKeys.summaries(workspaceId), query] as const,
   /** The workspace's lists (Work, Personal, ...), whose open counts follow task changes. */
   taskLists: (workspaceId: string | null) => [...taskKeys.all(workspaceId), "task-lists"] as const,
+  /** Focus timer totals, which follow recorded sessions and deleted tasks. */
+  focus: (workspaceId: string | null, today: string) =>
+    [...taskKeys.all(workspaceId), "focus", today] as const,
 };
 
 export function taskListOptions(
@@ -61,6 +64,21 @@ export function taskListsOptions(withToken: WithToken, workspaceId: string | nul
 }
 
 /** Show a changed task in every cached list that contains it, without refetching. */
+export function focusSummaryOptions(
+  withToken: WithToken,
+  workspaceId: string | null,
+  today: string,
+) {
+  return queryOptions({
+    queryKey: taskKeys.focus(workspaceId, today),
+    queryFn:
+      workspaceId === null
+        ? skipToken
+        : ({ signal }) =>
+            withToken((token) => getFocusSummary(token, workspaceId, today, { signal })),
+  });
+}
+
 export function replaceCachedTask(queryClient: QueryClient, workspaceId: string, task: Task) {
   queryClient.setQueriesData<TaskList>(
     { queryKey: taskKeys.lists(workspaceId) },

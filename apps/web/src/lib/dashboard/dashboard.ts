@@ -33,6 +33,7 @@ export const widgetIds = [
   "quick_actions",
   "calendar",
   "tasks",
+  "focus",
   "habits",
   "attention",
   "notes",
@@ -108,6 +109,14 @@ export const widgetCatalog: readonly WidgetDefinition[] = [
     group: "Today",
     defaultSize: "half",
     defaultVisible: true,
+  },
+  {
+    id: "focus",
+    title: "Focus",
+    description: "The focus timer, today’s focus time, and tasks to start on.",
+    group: "Today",
+    defaultSize: "half",
+    defaultVisible: false,
   },
   {
     id: "habits",

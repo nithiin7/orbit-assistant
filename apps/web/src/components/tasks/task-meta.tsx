@@ -1,6 +1,7 @@
 import type { TaskListColor, TaskPriority, TaskRepeat } from "@orbit/contracts";
-import { CalendarDays, Repeat } from "lucide-react";
+import { CalendarDays, Repeat, Timer } from "lucide-react";
 
+import { formatFocusTime } from "@/lib/focus";
 import {
   describeDueDate,
   type DueState,
@@ -92,6 +93,23 @@ export function TaskListBadge({ name, color }: { name: string; color: TaskListCo
       />
       <span className="sr-only">List: </span>
       <span className="truncate">{name}</span>
+    </span>
+  );
+}
+
+/** Time spent on a task with the focus timer; brand-colored while the timer is on it. */
+export function FocusBadge({ seconds, active = false }: { seconds: number; active?: boolean }) {
+  return (
+    <span
+      className={cn(
+        chipClassName,
+        active ? "bg-brand-subtle text-brand" : "bg-muted/70 text-muted-foreground",
+      )}
+    >
+      <Timer className="size-3" aria-hidden="true" />
+      <span className="sr-only">Focused for </span>
+      {formatFocusTime(seconds)}
+      {active ? <span className="sr-only">, focusing now</span> : null}
     </span>
   );
 }

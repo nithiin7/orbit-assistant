@@ -16,6 +16,7 @@ import {
   Orbit,
   Repeat2,
   ShoppingCart,
+  Timer,
   Wallet,
 } from "lucide-react";
 import type { CSSProperties } from "react";
@@ -23,6 +24,7 @@ import type { CSSProperties } from "react";
 /** The same icons as the sidebar, so a badge says where it came from. */
 export const AREA_ICONS: Record<AchievementArea, LucideIcon> = {
   tasks: CheckSquare,
+  focus: Timer,
   habits: Repeat2,
   notes: NotebookPen,
   shopping: ShoppingCart,
