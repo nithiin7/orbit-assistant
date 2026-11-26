@@ -2,7 +2,7 @@
 
 import type { ShoppingItem } from "@orbit/contracts";
 import { ExternalLink, Gift, Trash2 } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useId } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,49 +13,31 @@ type ShoppingItemRowProps = {
   item: ShoppingItem;
   /** Who it's a gift idea for, when it is one and their name is known. */
   giftFor?: string | null;
-  /** A status change or deletion is in flight. */
-  pending: boolean;
   onToggle: (item: ShoppingItem) => void;
   onEdit: (item: ShoppingItem) => void;
-  onDelete: (item: ShoppingItem) => Promise<void>;
+  onDelete: (item: ShoppingItem) => void;
 };
 
 export function ShoppingItemRow({
   item,
   giftFor = null,
-  pending,
   onToggle,
   onEdit,
   onDelete,
 }: ShoppingItemRowProps) {
   const nameId = useId();
-  const [confirming, setConfirming] = useState(false);
-  const confirmRef = useRef<HTMLButtonElement>(null);
-  const deleteRef = useRef<HTMLButtonElement>(null);
   const purchased = item.status === "purchased";
-
-  useEffect(() => {
-    if (confirming) confirmRef.current?.focus();
-  }, [confirming]);
-
-  const cancelDelete = () => {
-    setConfirming(false);
-    // The confirmation unmounts; put focus back on the button that opened it.
-    requestAnimationFrame(() => deleteRef.current?.focus());
-  };
 
   return (
     <li
       className={cn(
         "group flex items-start gap-3 px-3 py-3 transition-[background-color,opacity] duration-150 hover:bg-accent/40 sm:px-4 @lg/rows:items-center pointer-coarse:py-3.5",
-        pending && "opacity-70",
         purchased && "bg-muted/20",
       )}
     >
       <Checkbox
         shape="round"
         checked={purchased}
-        disabled={pending}
         onChange={() => onToggle(item)}
         aria-labelledby={nameId}
         // A bigger target for ticking items off on a phone in the shop.
@@ -118,48 +100,17 @@ export function ShoppingItemRow({
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
-        {confirming ? (
-          <div
-            role="group"
-            aria-label={`Delete “${item.name}”?`}
-            className="flex items-center gap-1"
-            onKeyDown={(event) => {
-              if (event.key === "Escape") {
-                event.stopPropagation();
-                cancelDelete();
-              }
-            }}
-          >
-            <Button
-              ref={confirmRef}
-              variant="destructive"
-              size="sm"
-              disabled={pending}
-              onClick={() => {
-                // On success the row unmounts; on failure the page reports the error.
-                void onDelete(item).finally(() => setConfirming(false));
-              }}
-            >
-              Delete
-            </Button>
-            <Button variant="ghost" size="sm" disabled={pending} onClick={cancelDelete}>
-              Cancel
-            </Button>
-          </div>
-        ) : (
-          <Button
-            ref={deleteRef}
-            variant="ghost"
-            size="icon"
-            disabled={pending}
-            aria-label={`Delete “${item.name}”`}
-            onClick={() => setConfirming(true)}
-            // Revealed on hover or focus where there is a mouse; always visible on touch screens.
-            className="size-8 text-muted-foreground hover:text-destructive pointer-fine:opacity-0 pointer-fine:group-focus-within:opacity-100 pointer-fine:group-hover:opacity-100"
-          >
-            <Trash2 aria-hidden="true" />
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`Delete “${item.name}”`}
+          // Deleting offers Undo in a toast, so it doesn't ask first.
+          onClick={() => onDelete(item)}
+          // Revealed on hover or focus where there is a mouse; always visible on touch screens.
+          className="size-8 text-muted-foreground hover:text-destructive pointer-fine:opacity-0 pointer-fine:group-focus-within:opacity-100 pointer-fine:group-hover:opacity-100"
+        >
+          <Trash2 aria-hidden="true" />
+        </Button>
       </div>
     </li>
   );

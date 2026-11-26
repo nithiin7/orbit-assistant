@@ -30,6 +30,7 @@ import {
   updateShoppingList,
 } from "@/api/shopping";
 import { queryResource, type Resource } from "@/hooks/query-resource";
+import { useUndoableDelete } from "@/hooks/use-undoable-delete";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
 import { useAuth } from "@/providers/auth";
 import { useWorkspaces } from "@/providers/workspace";
@@ -144,6 +145,8 @@ export function useShoppingMutations(workspaceId: string) {
   });
 
   const toggleItem = useMutation({
+    // One at a time, in order, so a quick second click lands after the first.
+    scope: { id: "shopping-toggle" },
     mutationFn: (item: ShoppingItem) =>
       withToken((token) =>
         (item.status === "needed" ? purchaseShoppingItem : restockShoppingItem)(
@@ -192,6 +195,29 @@ export function useShoppingMutations(workspaceId: string) {
     updateItem,
     deleteItem,
   };
+}
+
+/**
+ * Delete a shopping item with Undo: it leaves the list at once and `remove` (`deleteItem` from
+ * `useShoppingMutations`) runs once the Undo toast goes. Needs `ToastProvider`.
+ */
+export function useDeleteItemWithUndo(
+  workspaceId: string,
+  remove: (item: ShoppingItem) => Promise<unknown>,
+) {
+  const queryClient = useQueryClient();
+  const undoableDelete = useUndoableDelete();
+  return (item: ShoppingItem) =>
+    void undoableDelete({
+      message: `Deleted “${item.name}”.`,
+      queryKey: shoppingKeys.all(workspaceId),
+      hide: () =>
+        updateCachedItems(queryClient, workspaceId, item.list_id, (items) =>
+          items.filter((entry) => entry.id !== item.id),
+        ),
+      commit: () => remove(item),
+      failure: "Couldn’t delete the item. Try again.",
+    });
 }
 
 /** The active workspace's shopping lists, for the dashboard. Shares the Shopping page's cache. */

@@ -2,7 +2,7 @@
 
 import type { Task, TaskListDetail } from "@orbit/contracts";
 import { Trash2 } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useId } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,52 +15,27 @@ type TaskItemProps = {
   /** The list the task is on, when it's on one and that isn't already the list in view. */
   list?: TaskListDetail;
   today: string;
-  /** A completion change or deletion is in flight. */
-  pending: boolean;
   onToggle: (task: Task) => void;
   onEdit: (task: Task) => void;
-  onDelete: (task: Task) => Promise<void>;
+  onDelete: (task: Task) => void;
 };
 
 const completedFormat = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
 
-export function TaskItem({
-  task,
-  list,
-  today,
-  pending,
-  onToggle,
-  onEdit,
-  onDelete,
-}: TaskItemProps) {
+export function TaskItem({ task, list, today, onToggle, onEdit, onDelete }: TaskItemProps) {
   const titleId = useId();
-  const [confirming, setConfirming] = useState(false);
-  const confirmRef = useRef<HTMLButtonElement>(null);
-  const deleteRef = useRef<HTMLButtonElement>(null);
   const completed = task.status === "completed";
-
-  useEffect(() => {
-    if (confirming) confirmRef.current?.focus();
-  }, [confirming]);
-
-  const cancelDelete = () => {
-    setConfirming(false);
-    // The confirmation unmounts; put focus back on the button that opened it.
-    requestAnimationFrame(() => deleteRef.current?.focus());
-  };
 
   return (
     <li
       className={cn(
         "group flex items-start gap-3 px-3 py-3 transition-[background-color,opacity] duration-150 hover:bg-accent/40 sm:px-4 @lg/rows:items-center",
-        pending && "opacity-70",
         completed && "bg-muted/20",
       )}
     >
       <Checkbox
         shape="round"
         checked={completed}
-        disabled={pending}
         onChange={() => onToggle(task)}
         aria-labelledby={titleId}
         className="mt-0.5 @lg/rows:mt-0"
@@ -112,48 +87,17 @@ export function TaskItem({
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
-        {confirming ? (
-          <div
-            role="group"
-            aria-label={`Delete “${task.title}”?`}
-            className="flex items-center gap-1"
-            onKeyDown={(event) => {
-              if (event.key === "Escape") {
-                event.stopPropagation();
-                cancelDelete();
-              }
-            }}
-          >
-            <Button
-              ref={confirmRef}
-              variant="destructive"
-              size="sm"
-              disabled={pending}
-              onClick={() => {
-                // On success the row unmounts; on failure the page reports the error.
-                void onDelete(task).finally(() => setConfirming(false));
-              }}
-            >
-              Delete
-            </Button>
-            <Button variant="ghost" size="sm" disabled={pending} onClick={cancelDelete}>
-              Cancel
-            </Button>
-          </div>
-        ) : (
-          <Button
-            ref={deleteRef}
-            variant="ghost"
-            size="icon"
-            disabled={pending}
-            aria-label={`Delete “${task.title}”`}
-            onClick={() => setConfirming(true)}
-            // Revealed on hover or focus where there is a mouse; always visible on touch screens.
-            className="size-8 text-muted-foreground hover:text-destructive pointer-fine:opacity-0 pointer-fine:group-focus-within:opacity-100 pointer-fine:group-hover:opacity-100"
-          >
-            <Trash2 aria-hidden="true" />
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`Delete “${task.title}”`}
+          // Deleting offers Undo in a toast, so it doesn't ask first.
+          onClick={() => onDelete(task)}
+          // Revealed on hover or focus where there is a mouse; always visible on touch screens.
+          className="size-8 text-muted-foreground hover:text-destructive pointer-fine:opacity-0 pointer-fine:group-focus-within:opacity-100 pointer-fine:group-hover:opacity-100"
+        >
+          <Trash2 aria-hidden="true" />
+        </Button>
       </div>
     </li>
   );

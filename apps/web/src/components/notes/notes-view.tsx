@@ -79,6 +79,7 @@ import {
   toNoteListQuery,
 } from "@/lib/notes";
 import { useCurrentUser } from "@/providers/auth";
+import { useToast } from "@/providers/toast";
 import { useWorkspaces } from "@/providers/workspace";
 import { cn } from "@/utils/common";
 import { addDays } from "@/utils/dates";
@@ -162,6 +163,7 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
   const tags = useTags(workspaceId);
   const mutations = useNoteMutations(workspaceId);
   const { confirm, confirmDialog } = useConfirm();
+  const { show: showToast } = useToast();
 
   const query = useMemo(
     () => ({ ...toNoteListQuery(location, sort, appliedSearch), offset: page * NOTES_PAGE_SIZE }),
@@ -309,7 +311,9 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
       ) {
         return;
       }
-      setNotePending(note.id, true);
+      // Pin and favorite show at once (see `useNoteMutations`), so the row isn't dimmed for them.
+      const instant = action === "pin" || action === "favorite";
+      if (!instant) setNotePending(note.id, true);
       try {
         switch (action) {
           case "pin":
@@ -361,7 +365,22 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
           case "trash":
             if (note.id === location.noteId) await editorRef.current?.flush();
             await mutations.act.mutateAsync({ noteId: note.id, action: "trash" });
-            setAnnouncement(`Moved “${title}” to the Trash.`);
+            // The toast announces it; Undo restores the note from the Trash.
+            showToast({
+              message: `Moved “${title}” to the Trash.`,
+              action: {
+                label: "Undo",
+                onAction: () =>
+                  void mutations.act
+                    .mutateAsync({ noteId: note.id, action: "restore" })
+                    .catch((reason: unknown) =>
+                      showToast({
+                        message: describeApiError(reason, "Couldn’t restore the note. Try again."),
+                        tone: "error",
+                      }),
+                    ),
+              },
+            });
             if (note.id === location.noteId) await navigate({ noteId: null });
             break;
           case "restore":
@@ -379,7 +398,7 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
       }
       setNotePending(note.id, false);
     },
-    [confirm, location.noteId, mutations, navigate],
+    [confirm, location.noteId, mutations, navigate, showToast],
   );
 
   // Keyboard: / searches, N starts a note (unless typing or a dialog is open), Escape clears.

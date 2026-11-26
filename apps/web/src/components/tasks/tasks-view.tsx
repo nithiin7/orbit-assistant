@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  useDeleteTaskWithUndo,
   useLinkedTask,
   useTaskList,
   useTaskListMutations,
@@ -78,7 +79,6 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
   const listOptions = lists.state.status === "success" ? lists.state.data : [];
   const selectedList =
     filters.list === "all" || filters.list === "none" ? undefined : lists.byId.get(filters.list);
-  const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [editing, setEditing] = useState<Task | null>(null);
   // A note's link to a task opens it here.
   useLinkedTask(workspaceId, setEditing);
@@ -115,15 +115,6 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const setTaskPending = useCallback((taskId: string, isPending: boolean) => {
-    setPending((current) => {
-      const next = new Set(current);
-      if (isPending) next.add(taskId);
-      else next.delete(taskId);
-      return next;
-    });
-  }, []);
-
   const create = useCallback(
     async (draft: CreateTaskRequest) => {
       const task = await mutations.create.mutateAsync(draft);
@@ -137,7 +128,7 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
     async (task: Task) => {
       const completing = task.status === "open";
       setActionError(null);
-      setTaskPending(task.id, true);
+      // The row flips at once (see `useTaskMutations`), so it isn't dimmed meanwhile.
       try {
         await mutations.toggle.mutateAsync(task);
         setAnnouncement(completing ? `Completed “${task.title}”.` : `Reopened “${task.title}”.`);
@@ -149,9 +140,8 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
           ),
         );
       }
-      setTaskPending(task.id, false);
     },
-    [mutations.toggle, setTaskPending],
+    [mutations.toggle],
   );
 
   const save = useCallback(
@@ -163,22 +153,13 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
     [mutations.update],
   );
 
-  const remove = useCallback(
-    async (task: Task) => {
-      setActionError(null);
-      setTaskPending(task.id, true);
-      try {
-        await mutations.remove.mutateAsync(task);
-        setAnnouncement(`Deleted “${task.title}”.`);
-        // The row and its focused button are gone; keep focus in the list.
-        listRef.current?.focus();
-      } catch (reason) {
-        setActionError(describeApiError(reason, "Couldn’t delete the task. Try again."));
-      }
-      setTaskPending(task.id, false);
-    },
-    [mutations.remove, setTaskPending],
-  );
+  const deleteWithUndo = useDeleteTaskWithUndo(workspaceId, mutations.remove.mutateAsync);
+  const remove = (task: Task) => {
+    setActionError(null);
+    deleteWithUndo(task);
+    // The row and its focused button are gone; keep focus in the list.
+    listRef.current?.focus();
+  };
 
   const saveList = async (values: TaskListValues) => {
     if (listDialog === "new") {
@@ -224,7 +205,6 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
         task.list_id && task.list_id !== filters.list ? lists.byId.get(task.list_id) : undefined
       }
       today={today}
-      pending={pending.has(task.id)}
       onToggle={(item) => void toggle(item)}
       onEdit={setEditing}
       onDelete={remove}
