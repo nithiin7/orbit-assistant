@@ -9,6 +9,7 @@ import { describeApiError } from "@/api/client";
 import { useConfirm } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
+import { TemplatePickerDialog } from "@/components/template-picker-dialog";
 import { Button } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,8 +30,11 @@ import {
   isNarrowed,
   type StatusFilter,
   TASK_LIST_STYLES,
+  TASK_TEMPLATES,
   type TaskFilters,
   taskMoveRequest,
+  type TaskTemplate,
+  taskTemplateRequests,
   toTaskListQuery,
 } from "@/lib/tasks";
 import { useFocusTimer } from "@/providers/focus";
@@ -86,6 +90,7 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
   const selectedList =
     filters.list === "all" || filters.list === "none" ? undefined : lists.byId.get(filters.list);
   const [editing, setEditing] = useState<Task | null>(null);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   // A note's link to a task opens it here.
   useLinkedTask(workspaceId, setEditing);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -129,6 +134,16 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
     },
     [mutations.create],
   );
+
+  /** Adds a template's tasks, in order, to the list in view (or no list). */
+  const applyTemplate = async (template: TaskTemplate) => {
+    const listId = selectedList?.id ?? null;
+    for (const draft of taskTemplateRequests(template, listId)) {
+      await mutations.create.mutateAsync(draft);
+    }
+    setActionError(null);
+    setAnnouncement(`Added ${template.tasks.length} tasks from “${template.name}”.`);
+  };
 
   const toggle = useCallback(
     async (task: Task) => {
@@ -351,6 +366,7 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
                 filters={filters}
                 listName={selectedList?.name ?? null}
                 onClear={clearNarrowing}
+                onTemplates={() => setTemplatesOpen(true)}
               />
             ) : (
               <div className="space-y-6">
@@ -452,6 +468,24 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
             onClose={() => setListDialog(null)}
           />
         ) : null}
+        {templatesOpen ? (
+          <TemplatePickerDialog
+            title="Start from a template"
+            description={
+              selectedList
+                ? `Pick a checklist. Its tasks are added to ${selectedList.name}, ready to edit.`
+                : "Pick a checklist. Its tasks are added to your list, ready to edit."
+            }
+            templates={TASK_TEMPLATES.map((template) => ({
+              ...template,
+              preview: template.tasks,
+              actionLabel: `Add ${template.tasks.length} tasks`,
+            }))}
+            onUse={applyTemplate}
+            errorMessage="Couldn’t add every task from that template. Check your tasks and try again."
+            onClose={() => setTemplatesOpen(false)}
+          />
+        ) : null}
         {confirmDialog}
       </div>
     </div>
@@ -472,11 +506,13 @@ function TaskEmptyState({
   filters,
   listName,
   onClear,
+  onTemplates,
 }: {
   filters: TaskFilters;
   /** The list in view, if one is. */
   listName: string | null;
   onClear: () => void;
+  onTemplates: () => void;
 }) {
   if (isNarrowed(filters)) {
     return (
@@ -496,7 +532,8 @@ function TaskEmptyState({
       <EmptyState
         icon={ListTodo}
         title={`Nothing on ${listName}${filters.status === "open" ? " to do" : " yet"}`}
-        description="Add a task above and it goes on this list. You can also move a task here from its details."
+        description="Add a task above, or move one here from its details."
+        template={{ onClick: onTemplates }}
       />
     );
   }
@@ -516,8 +553,9 @@ function TaskEmptyState({
       description={
         filters.status === "open"
           ? "You’re all caught up. Add a task above when something new comes up."
-          : "Add your first task above. Give it a due date or priority to keep it in view."
+          : "Add your first task above, with a due date or priority to keep it in view."
       }
+      template={{ onClick: onTemplates }}
     />
   );
 }

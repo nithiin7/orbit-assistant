@@ -233,6 +233,62 @@ describe("TasksPanel", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Added “Book dentist”.");
   });
 
+  it("adds a checklist of tasks from a template on an empty list", async () => {
+    const user = userEvent.setup();
+    let tasks: Task[] = [];
+    const posted: unknown[] = [];
+    mockApi({
+      ...session,
+      [`GET ${TASKS}`]: () => Response.json({ tasks, total: tasks.length }),
+      [`POST ${TASKS}`]: ({ body }: MockRequest) => {
+        posted.push(body);
+        const title = (body as { title: string }).title;
+        const created = task({ id: `t-${posted.length}`, title });
+        tasks = [...tasks, created];
+        return Response.json(created, { status: 201 });
+      },
+    });
+    await renderSignedIn(<TasksPanel />);
+    await screen.findByRole("heading", { name: "No open tasks" });
+
+    await user.click(screen.getByRole("button", { name: "Start from a template" }));
+    const dialog = await screen.findByRole("dialog", { name: "Start from a template" });
+    await user.click(
+      within(dialog).getByRole("button", { name: "Add 5 tasks from “Weekly reset”" }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Start from a template" })).toBeNull(),
+    );
+    expect(posted).toHaveLength(5);
+    expect(posted[0]).toEqual({
+      title: "Review last week’s tasks",
+      description: "",
+      priority: "none",
+      list_id: null,
+    });
+    expect(await screen.findByRole("checkbox", { name: "Tidy the desk" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Added 5 tasks from “Weekly reset”.");
+  });
+
+  it("keeps the template picker open with an error when adding fails", async () => {
+    const user = userEvent.setup();
+    mockApi({
+      ...session,
+      [`GET ${TASKS}`]: json({ tasks: [], total: 0 }),
+      [`POST ${TASKS}`]: status(500),
+    });
+    await renderSignedIn(<TasksPanel />);
+    await user.click(await screen.findByRole("button", { name: "Start from a template" }));
+    const dialog = await screen.findByRole("dialog", { name: "Start from a template" });
+
+    await user.click(within(dialog).getByRole("button", { name: /from “Trip prep”/ }));
+
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "Couldn’t add every task from that template.",
+    );
+  });
+
   it("validates the title before sending anything", async () => {
     const user = userEvent.setup();
     const api = mockApi({ ...session, [`GET ${TASKS}`]: json({ tasks: [], total: 0 }) });

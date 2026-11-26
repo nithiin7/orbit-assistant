@@ -85,7 +85,8 @@ export function RoutineListView({
       <EmptyState
         icon={ListChecks}
         title="No routines yet"
-        description="A routine is a short sequence you run through, like a morning or study routine. Steps can complete your habits as you go."
+        description="A short sequence you run through, like a morning routine, that can tick off habits."
+        template={{ href: habitsHref({ kind: "view", view: "templates" }) }}
       >
         <Button onClick={onCreate}>New routine</Button>
       </EmptyState>

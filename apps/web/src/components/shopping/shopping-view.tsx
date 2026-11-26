@@ -20,12 +20,18 @@ import {
 import { describeApiError } from "@/api/client";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
+import { TemplatePickerDialog } from "@/components/template-picker-dialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SortableList, type SortableMove } from "@/components/ui/sortable";
 import { usePeople } from "@/hooks/use-people";
 import { useDeleteItemWithUndo, useShopping, useShoppingMutations } from "@/hooks/use-shopping";
-import { DEFAULT_LIST_ICON } from "@/lib/shopping";
+import {
+  DEFAULT_LIST_ICON,
+  SHOPPING_TEMPLATES,
+  type ShoppingTemplate,
+  shoppingTemplateRequests,
+} from "@/lib/shopping";
 import { useWorkspaces } from "@/providers/workspace";
 import { cn } from "@/utils/common";
 import { isEditableTarget } from "@/utils/keyboard";
@@ -61,6 +67,7 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
   const names = new Map(everyone.map((person) => [person.id, person.name]));
   const [editing, setEditing] = useState<ShoppingItem | null>(null);
   const [nameDialog, setNameDialog] = useState<NameDialog | null>(null);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const nameRef = useRef<HTMLInputElement>(null);
@@ -156,6 +163,16 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
     },
     [mutations.addItem],
   );
+
+  /** Adds a template's items, in order, to the list in view. */
+  const applyTemplate = async (template: ShoppingTemplate) => {
+    if (!active) return;
+    for (const draft of shoppingTemplateRequests(template)) {
+      await mutations.addItem.mutateAsync({ listId: active.id, draft });
+    }
+    setActionError(null);
+    setAnnouncement(`Added ${template.items.length} items from “${template.name}”.`);
+  };
 
   const toggle = useCallback(
     async (item: ShoppingItem) => {
@@ -305,7 +322,8 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
                 <EmptyState
                   icon={SHOPPING_LIST_ICON_COMPONENTS[active.icon]}
                   title="Nothing on this list yet"
-                  description="Add what you need above. Check items off as you buy them."
+                  description="Add what you need above, and check items off as you buy them."
+                  template={{ onClick: () => setTemplatesOpen(true) }}
                 />
               ) : (
                 // Bought items sit beside the list when there's room, below it when not.
@@ -385,6 +403,20 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
           people={everyone}
           onSave={save}
           onClose={() => setEditing(null)}
+        />
+      ) : null}
+      {templatesOpen && active ? (
+        <TemplatePickerDialog
+          title="Start from a template"
+          description={`Pick a list. Its items are added to ${active.name}, ready to edit.`}
+          templates={SHOPPING_TEMPLATES.map((template) => ({
+            ...template,
+            preview: template.items,
+            actionLabel: `Add ${template.items.length} items`,
+          }))}
+          onUse={applyTemplate}
+          errorMessage="Couldn’t add every item from that template. Check the list and try again."
+          onClose={() => setTemplatesOpen(false)}
         />
       ) : null}
       {nameDialog ? (

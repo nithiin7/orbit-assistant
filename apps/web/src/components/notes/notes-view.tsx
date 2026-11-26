@@ -44,6 +44,7 @@ import { useConfirm } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { FolderPickerDialog } from "@/components/folders/folder-dialogs";
 import { FormAlert } from "@/components/form-field";
+import { TemplatePickerDialog } from "@/components/template-picker-dialog";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Menu, type MenuItem } from "@/components/ui/menu";
@@ -70,11 +71,14 @@ import {
   isReadOnly,
   journalToday,
   NOTE_SORTS,
+  NOTE_TEMPLATES,
   NOTE_VIEWS,
   noteDisplayTitle,
   NOTES_PAGE_SIZE,
   notesHref,
   type NotesLocation,
+  type NoteTemplate,
+  noteTemplateSections,
   parseNotesLocation,
   toNoteListQuery,
 } from "@/lib/notes";
@@ -151,6 +155,7 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
   // While a note is open, the list slides in over it on request.
   const [listOpen, setListOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [moving, setMoving] = useState<NoteSummary | Note | null>(null);
@@ -253,6 +258,24 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
     },
     [location, mutations.create, navigate, tags],
   );
+
+  /** Creates a note from a template where a new note would go, then opens it. */
+  const applyTemplate = async (template: NoteTemplate) => {
+    setError(null);
+    const tag = location.tagId ? tags.find((t) => t.id === location.tagId) : undefined;
+    const note = await mutations.create.mutateAsync({
+      title: template.title,
+      content: markdownToDocument(template.markdown),
+      note_type: "note",
+      folder_id: location.folderId,
+      tags: tag ? [tag.name] : [],
+    });
+    const stay = location.folderId || location.tagId || location.view === "inbox";
+    await navigate(
+      { ...(stay ? {} : { view: "inbox" as const }), noteId: note.id },
+      { keepNote: true },
+    );
+  };
 
   const openJournal = useCallback(
     async (date: string) => {
@@ -618,6 +641,7 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
             onClear={() => setSearch("")}
             onCreate={() => void createNote()}
             onJournal={() => void openJournal(today)}
+            onTemplates={() => setTemplatesOpen(true)}
           />
         ) : (
           <div className="space-y-3">
@@ -746,6 +770,20 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
             });
             setAnnouncement(`Moved “${noteDisplayTitle(moving)}”.`);
           }}
+        />
+      ) : null}
+      {templatesOpen ? (
+        <TemplatePickerDialog
+          title="Start from a template"
+          description="Pick a layout. The note opens ready to fill in."
+          templates={NOTE_TEMPLATES.map((template) => ({
+            ...template,
+            preview: noteTemplateSections(template),
+            actionLabel: "Create note",
+          }))}
+          onUse={applyTemplate}
+          errorMessage="Couldn’t create a note from that template. Try again."
+          onClose={() => setTemplatesOpen(false)}
         />
       ) : null}
       {confirmDialog}
@@ -911,12 +949,14 @@ function ListEmptyState({
   onClear,
   onCreate,
   onJournal,
+  onTemplates,
 }: {
   location: NotesLocation;
   search: string;
   onClear: () => void;
   onCreate: () => void;
   onJournal: () => void;
+  onTemplates: () => void;
 }) {
   if (search) {
     return (
@@ -941,6 +981,7 @@ function ListEmptyState({
             ? "Create a note here, or move notes in from their menu."
             : "Add the tag to a note from its details."
         }
+        template={location.folderId ? { onClick: onTemplates } : undefined}
       >
         <Button size="sm" onClick={onCreate}>
           <Plus aria-hidden="true" /> New note
@@ -950,7 +991,14 @@ function ListEmptyState({
   }
   const copy = EMPTY_COPY[location.view];
   return (
-    <EmptyState icon={copy.icon} title={copy.title} description={copy.description}>
+    <EmptyState
+      icon={copy.icon}
+      title={copy.title}
+      description={copy.description}
+      template={
+        location.view === "inbox" || location.view === "all" ? { onClick: onTemplates } : undefined
+      }
+    >
       {location.view === "journal" ? (
         <Button size="sm" onClick={onJournal}>
           Write today’s entry

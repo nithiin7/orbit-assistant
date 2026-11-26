@@ -7,7 +7,6 @@ import {
   Check,
   CircleCheck,
   CircleDashed,
-  LayoutTemplate,
   ListChecks,
   type LucideIcon,
   PartyPopper,
@@ -17,7 +16,7 @@ import {
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 
-import { EmptyState } from "@/components/empty-state";
+import { EmptyState, StartFromTemplate } from "@/components/empty-state";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { IconChip, type IconChipTone } from "@/components/ui/icon-chip";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -114,7 +113,7 @@ export function HabitTodayView({
       <EmptyState
         icon={Sparkles}
         title="Start with one small habit"
-        description="Habits you track show up here each day, with a one-tap check. Begin with something easy, or pick a ready-made one."
+        description="Habits you track show up here each day, with a one-tap check."
       >
         <div className="flex w-full flex-col items-center gap-4">
           <ul aria-label="Starter habits" className="flex flex-wrap justify-center gap-2">
@@ -132,13 +131,9 @@ export function HabitTodayView({
           </ul>
           <div className="flex flex-wrap justify-center gap-2">
             <Button onClick={onCreate}>New habit</Button>
-            <Link
-              href={habitsHref({ kind: "view", view: "templates" })}
-              className={buttonVariants({ variant: "ghost" })}
-            >
-              <LayoutTemplate aria-hidden="true" />
-              Browse templates
-            </Link>
+            <StartFromTemplate
+              template={{ href: habitsHref({ kind: "view", view: "templates" }) }}
+            />
           </div>
         </div>
       </EmptyState>
