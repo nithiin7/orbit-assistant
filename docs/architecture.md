@@ -113,6 +113,14 @@ Design decisions:
 - **Optimistic updates:** task completion, shopping check-off, reminder on/off, and note
   pin/favorite change the cache in `onMutate` and refetch or revert on error; toggles run in a
   mutation `scope` so quick repeat clicks apply in order.
+- **Reordering:** `SortableList`, `useSortableItem`, and `DragHandle` (`components/ui/sortable.tsx`,
+  `@dnd-kit`) make a list's rows draggable by a grip, with mouse, touch, or keyboard (Space to
+  pick up, arrows, Space to drop), and announce moves by name. Used for tasks in "My order" and a
+  shopping list's items to buy; the new order shows at once and reverts if the API refuses.
+  `test/sortable.ts` lays rows out and moves them with the keyboard in tests. Shopping:
+  `shopping_items.position` (`0053`, new items last) orders items to buy; `PUT
+…/shopping/lists/{id}/order` takes every needed item once (else `422`); bought items stay newest
+  first below.
 
 ## API
 
@@ -417,7 +425,10 @@ To-dos inside a workspace.
 - `list_id`: composite FK `(list_id, workspace_id)` (`0027`).
 - `recurrence` (JSON, `0043`): the repeat rule, on a series' current occurrence only. `series_id`
   groups a series' occurrences and references no row.
-- `updated_at` changes only when a field actually changes.
+- `updated_at` changes only when a field actually changes (moving a task doesn't).
+- `position` (`0053`): the workspace's own order ("My order"). New tasks go last; a repeating
+  task's next occurrence takes the completed one's place. Positions may repeat (restored rows);
+  creation time breaks ties.
 - Indexes `(workspace_id, status, due_date)` and `(workspace_id, status, priority)`. Search is
   `ILIKE` substring (`%`, `_`, `\` literal), unindexed, scanning one workspace (fine at personal
   scale; PostgreSQL full-text/trigram could replace it).
@@ -436,8 +447,13 @@ one.
 
 - `GET /` filters: `status`, `priority` (repeatable), `q`, `list_id` or `unlisted=true` (not
   both), `scheduled`; `limit` ≤ 500; returns `tasks`, `total`. `sort` = `due_date`, `priority`,
-  or `created_at` (default), each with a natural direction without `order` (soonest, highest,
-  newest); no-due-date tasks always last; ties fall back to priority, due date, creation time.
+  `created_at` (default), or `manual` (the workspace's own order, ignoring `order`), each with a
+  natural direction without `order` (soonest, highest, newest); no-due-date tasks always last;
+  ties fall back to priority, due date, creation time.
+- `POST /{id}/move` with `before_id` or `after_id` (exactly one, another task in the workspace,
+  else `422`) puts the task just there in the manual order; `204`. Relative to a neighbour, so it
+  works from filtered and partial lists. Renumbers the workspace's tasks, writing only changed
+  rows.
 - `GET /summary?today=`: open, completed, overdue, due-today counts. Overdue depends on the
   user's zone; the web sends its local date, the API falls back to UTC.
 - `POST /{id}/complete` (idempotent, keeps first completion time) and `/reopen` are the only
@@ -518,14 +534,16 @@ every fourth session.
   a picker the user set wins. The placeholder gives an example and the "?" button in the field
   opens tips. Clock times are not read (tasks carry a date only).
 - Loads at most 200 tasks and says when more match (no pagination).
+- **My order** (`sort=manual`): rows get a drag handle; a drop sends `POST …/move` beside the
+  new neighbour (`taskMoveRequest`) and reorders the cached list at once.
 - Side rail Lists section (All lists, each with open count, No list, New list); the composer adds
   to the selected list; rows show a list chip except in that list's own view.
 - Dashboard card: summary counts and next five open tasks by due date.
 
 ### Not implemented
 
-Subtasks, tags (one list per task), reordering lists, sharing, drag-and-drop
-ordering. Scheduled time blocks ([calendar](#calendar-task-integration)) are separate from the
+Subtasks, tags (one list per task), reordering lists, sharing. Dragging reorders tasks only in
+"My order", in one column. Scheduled time blocks ([calendar](#calendar-task-integration)) are separate from the
 due date; [reminders](#reminders-and-notifications) are a separate feature.
 
 ## Reminders and notifications
@@ -1600,7 +1618,8 @@ foreign category/note/task reference → 422.
 ### Calendar in the web app
 
 - `components/calendar/`; Month/Week/Day/Agenda in `?view=week&date=…`; overlap layout
-  `layoutDay`. Drag and drop (mouse/pen only) is optimistic with rollback; repeating events ask
+  `layoutDay`. Drag and drop (mouse/pen only) is optimistic with rollback; dragging a task's
+  due-date chip (month view, or the all-day row) to another day changes its due date; repeating events ask
   scope first; touch uses taps; dialogs are the non-drag alternative. Keys `N`, `T`, `M`/`W`/`D`/
   `A`, arrows. Query keys `["workspaces", id, "calendar", …]`, `["me", "calendar-preferences"]`;
   changes refetch reminders too.

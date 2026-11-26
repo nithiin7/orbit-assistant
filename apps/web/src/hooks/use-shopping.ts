@@ -3,6 +3,7 @@
 import type {
   CreateShoppingItemRequest,
   ShoppingItem,
+  ShoppingItems,
   ShoppingListOverview,
   ShoppingListRequest,
   UpdateShoppingItemRequest,
@@ -18,6 +19,7 @@ import {
   deleteShoppingItem,
   deleteShoppingList,
   purchaseShoppingItem,
+  reorderShoppingItems,
   replaceCachedItem,
   restockShoppingItem,
   restockShoppingList,
@@ -169,6 +171,33 @@ export function useShoppingMutations(workspaceId: string) {
     onError: (_error, item) => replaceCachedItem(queryClient, workspaceId, item),
   });
 
+  const reorderItems = useMutation({
+    // One at a time, in order, so quick moves land as they were made.
+    scope: { id: "shopping-reorder" },
+    mutationFn: ({ listId, order }: { listId: string; order: ShoppingItem[] }) =>
+      withToken((token) =>
+        reorderShoppingItems(token, workspaceId, listId, { item_ids: order.map((i) => i.id) }),
+      ),
+    // Show the new order at once; put the old one back if the request fails.
+    onMutate: async ({ listId, order }) => {
+      const key = shoppingKeys.items(workspaceId, listId);
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<ShoppingItems>(key);
+      const positions = new Map(order.map((item, index) => [item.id, index]));
+      updateCachedItems(queryClient, workspaceId, listId, (items) =>
+        items.map((item) => ({ ...item, position: positions.get(item.id) ?? item.position })),
+      );
+      return { previous };
+    },
+    onSuccess: (result, { listId }) =>
+      queryClient.setQueryData(shoppingKeys.items(workspaceId, listId), result),
+    onError: (_error, { listId }, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(shoppingKeys.items(workspaceId, listId), context.previous);
+      }
+    },
+  });
+
   const updateItem = useMutation({
     mutationFn: ({ item, changes }: { item: ShoppingItem; changes: UpdateShoppingItemRequest }) =>
       withToken((token) => updateShoppingItem(token, workspaceId, item.id, changes)),
@@ -192,6 +221,7 @@ export function useShoppingMutations(workspaceId: string) {
     clearPurchased,
     addItem,
     toggleItem,
+    reorderItems,
     updateItem,
     deleteItem,
   };

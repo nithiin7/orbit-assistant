@@ -326,6 +326,24 @@ export function useCalendarMutations(workspaceId: string) {
     },
   });
 
+  /** Move a task to another due date, shown at once. */
+  const setTaskDue = useMutation({
+    mutationFn: ({ task, dueDate }: { task: Task; dueDate: string }) =>
+      withToken((token) => updateTask(token, workspaceId, task.id, { due_date: dueDate })),
+    onMutate: async ({ task, dueDate }) =>
+      changeRanges(queryClient, workspaceId, (range) => ({
+        ...range,
+        due_tasks: range.due_tasks.map((item) =>
+          item.id === task.id ? { ...item, due_date: dueDate } : item,
+        ),
+      })),
+    onError: (_error, _variables, snapshot) => restore(queryClient, snapshot),
+    onSettled: () => {
+      refresh();
+      refreshTasks();
+    },
+  });
+
   const createNote = useMutation({
     mutationFn: ({ eventId, occurrenceStart }: { eventId: string; occurrenceStart?: string }) =>
       withToken((token) =>
@@ -376,6 +394,7 @@ export function useCalendarMutations(workspaceId: string) {
     updateOne,
     removeOne,
     scheduleTask,
+    setTaskDue,
     createNote,
     linkNote,
     linkTask,

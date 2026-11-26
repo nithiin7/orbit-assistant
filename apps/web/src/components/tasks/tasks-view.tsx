@@ -12,6 +12,7 @@ import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SortableList, type SortableMove } from "@/components/ui/sortable";
 import {
   useDeleteTaskWithUndo,
   useLinkedTask,
@@ -29,6 +30,7 @@ import {
   type StatusFilter,
   TASK_LIST_STYLES,
   type TaskFilters,
+  taskMoveRequest,
   toTaskListQuery,
 } from "@/lib/tasks";
 import { useFocusTimer } from "@/providers/focus";
@@ -40,7 +42,7 @@ import { isEditableTarget } from "@/utils/keyboard";
 import { TaskComposer } from "./task-composer";
 import { TaskEditDialog } from "./task-edit-dialog";
 import { TasksHero } from "./task-hero";
-import { TaskItem } from "./task-item";
+import { SortableTaskItem, TaskItem } from "./task-item";
 import { TaskListDialog, type TaskListValues } from "./task-list-dialog";
 import { TaskListFilter } from "./task-list-filter";
 import { TaskToolbar } from "./task-toolbar";
@@ -200,8 +202,20 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
     setFilters((current) => ({ ...current, search: "", priority: "all" }));
   };
 
+  // In "My order" the tasks can be dragged into a new order.
+  const manual = filters.sort === "manual";
+  const move = ({ item, to, order }: SortableMove<Task>) => {
+    const body = taskMoveRequest(order, to);
+    if (!body) return;
+    setActionError(null);
+    mutations.move.mutateAsync({ task: item, body, query, order }).catch((reason: unknown) => {
+      setActionError(describeApiError(reason, "Couldn’t move the task. Try again."));
+    });
+  };
+
+  const Row = manual ? SortableTaskItem : TaskItem;
   const renderRow = (task: Task) => (
-    <TaskItem
+    <Row
       key={task.id}
       task={task}
       // The list in view goes without saying.
@@ -380,6 +394,17 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
                       );
                     })}
                   </div>
+                ) : manual ? (
+                  // One column, so a dragged row moves straight up or down.
+                  <SortableList
+                    items={state.data.tasks}
+                    itemLabel={(task) => task.title}
+                    onMove={move}
+                  >
+                    <ul aria-label={countLabel(state.data.total)} className={listClassName}>
+                      {state.data.tasks.map(renderRow)}
+                    </ul>
+                  </SortableList>
                 ) : (
                   <ul
                     aria-label={countLabel(state.data.total)}

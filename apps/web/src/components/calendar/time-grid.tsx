@@ -358,7 +358,8 @@ export function TimeGrid({
                           item={item}
                           timeZone={timeZone}
                           categories={categories}
-                          draggable={item.kind === "event"}
+                          // Events, and tasks on their due date (to change it).
+                          draggable={item.kind === "event" || item.kind === "task"}
                           onDragStart={(event) => {
                             event.dataTransfer.setData(ITEM_DRAG_TYPE, item.id);
                             event.dataTransfer.effectAllowed = "move";

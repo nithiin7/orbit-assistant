@@ -357,6 +357,15 @@ function CalendarView({ workspaceId }: { workspaceId: string }) {
       return;
     }
     const { task } = item;
+    if (item.due) {
+      // A task on its due date moves to the new date.
+      if (task.due_date === day) return;
+      void report(
+        () => mutations.setTaskDue.mutateAsync({ task, dueDate: day }),
+        "Couldn’t change the due date.",
+      );
+      return;
+    }
     if (!task.scheduled_start) return;
     const from = localParts(new Date(task.scheduled_start), timeZone);
     const shift = daysBetween(from.date, day);

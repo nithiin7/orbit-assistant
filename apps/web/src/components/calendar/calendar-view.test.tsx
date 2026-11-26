@@ -339,6 +339,32 @@ describe("Calendar", () => {
     });
   });
 
+  it("changes a task's due date by dragging it to another day", async () => {
+    url.set("/calendar?view=month&date=2030-01-15");
+    const fetchMock = api({
+      [`PATCH ${WS}/tasks/${rent.id}`]: json({ ...rent, due_date: "2030-01-17" }),
+    });
+    await renderSignedIn(<CalendarPanel />);
+    const chip = await screen.findByRole("button", { name: "Task: Pay rent, Due" });
+    const data = new Map<string, string>();
+    const dataTransfer = {
+      get types() {
+        return [...data.keys()];
+      },
+      setData: (type: string, value: string) => void data.set(type, value),
+      getData: (type: string) => data.get(type) ?? "",
+      effectAllowed: "all",
+    };
+
+    fireEvent.dragStart(chip, { dataTransfer });
+    const thursday = screen.getByRole("cell", { name: "Thursday, January 17, 2030" });
+    fireEvent.dragOver(thursday, { dataTransfer });
+    fireEvent.drop(thursday, { dataTransfer });
+
+    await waitFor(() => expect(requests(fetchMock, "PATCH")).toHaveLength(1));
+    expect(requests(fetchMock, "PATCH")[0]?.body).toEqual({ due_date: "2030-01-17" });
+  });
+
   it("schedules an unscheduled task without dragging", async () => {
     const user = userEvent.setup();
     url.set("/calendar?view=week&date=2030-01-15");

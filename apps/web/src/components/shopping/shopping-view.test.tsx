@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ada, json, mockApi, type MockRequest, personal, status } from "@/test/api-mock";
 import { renderSignedIn } from "@/test/session";
+import { mockRowLayout, moveWithKeyboard } from "@/test/sortable";
 
 import { ShoppingPanel } from "./shopping-view";
 
@@ -48,6 +49,7 @@ function item(overrides: Partial<ShoppingItem> & Pick<ShoppingItem, "id" | "name
     created_at: "2026-10-01T09:00:00Z",
     updated_at: "2026-10-01T09:00:00Z",
     person_id: null,
+    position: 0,
     ...overrides,
   } satisfies ShoppingItem;
 }
@@ -66,6 +68,7 @@ const itemsRoutes = {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   localStorage.clear();
 });
 
@@ -94,6 +97,58 @@ describe("ShoppingPanel", () => {
     const options = screen.getByRole("menu", { name: "List options" });
     expect(within(options).getByRole("menuitem", { name: "Edit list" })).toBeInTheDocument();
     expect(within(options).queryByRole("menuitem", { name: /Delete/ })).not.toBeInTheDocument();
+  });
+
+  it("moves an item to buy by its handle", async () => {
+    let release: () => void = () => {};
+    const api = mockApi({
+      ...session,
+      ...listsRoute,
+      ...itemsRoutes,
+      [`PUT ${SHOP}/lists/${groceries.id}/order`]: () =>
+        new Promise((resolve) => {
+          release = () =>
+            resolve(
+              Response.json({
+                items: [
+                  { ...eggs, position: 0 },
+                  { ...milk, position: 1 },
+                ],
+              }),
+            );
+        }),
+    });
+    await renderSignedIn(<ShoppingPanel />);
+    const toBuy = await screen.findByRole("list", { name: "2 items to buy" });
+    mockRowLayout();
+
+    await moveWithKeyboard(within(toBuy).getByRole("button", { name: "Move “Milk”" }), 1);
+
+    // Moved before the API answers.
+    expect(within(toBuy).getAllByRole("listitem")[0]).toHaveTextContent("Eggs");
+    const [put] = api.mock.calls.filter(([, init]) => init?.method === "PUT");
+    expect(put && JSON.parse(String(put[1]?.body))).toEqual({ item_ids: [eggs.id, milk.id] });
+    release();
+    await waitFor(() =>
+      expect(within(toBuy).getAllByRole("listitem")[1]).toHaveTextContent("Milk"),
+    );
+  });
+
+  it("puts items back and says so when a move fails", async () => {
+    mockApi({
+      ...session,
+      ...listsRoute,
+      ...itemsRoutes,
+      [`PUT ${SHOP}/lists/${groceries.id}/order`]: status(500),
+    });
+    await renderSignedIn(<ShoppingPanel />);
+    const toBuy = await screen.findByRole("list", { name: "2 items to buy" });
+    mockRowLayout();
+
+    await moveWithKeyboard(within(toBuy).getByRole("button", { name: "Move “Milk”" }), 1);
+
+    expect(await screen.findByText(/Couldn’t move the item|wrong/)).toBeInTheDocument();
+    expect(within(toBuy).getAllByRole("listitem")[0]).toHaveTextContent("Milk");
   });
 
   it("switches between lists", async () => {

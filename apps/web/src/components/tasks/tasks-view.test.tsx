@@ -8,6 +8,7 @@ import { reminderKeys } from "@/api/reminders";
 import { ada, json, mockApi, type MockRequest, personal, status } from "@/test/api-mock";
 import { chooseOption } from "@/test/controls";
 import { renderSignedIn } from "@/test/session";
+import { mockRowLayout, moveWithKeyboard } from "@/test/sortable";
 import { localDateString } from "@/utils/dates";
 
 import { TasksPanel } from "./tasks-view";
@@ -80,6 +81,7 @@ function listQueries(api: ReturnType<typeof mockApi>): URLSearchParams[] {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   localStorage.clear();
 });
 
@@ -136,6 +138,35 @@ describe("TasksPanel", () => {
     const list = await screen.findByRole("list", { name: "2 tasks" });
     expect(within(list).getAllByRole("listitem")).toHaveLength(2);
     expect(screen.queryByRole("list", { name: /^Overdue/ })).not.toBeInTheDocument();
+  });
+
+  it("moves a task by its handle in My order", async () => {
+    const user = userEvent.setup();
+    const api = mockApi({
+      ...session,
+      [`GET ${TASKS}`]: json({ tasks: [rent, plants], total: 2 }),
+      [`POST ${TASKS}/${rent.id}/move`]: status(204),
+    });
+    await renderSignedIn(<TasksPanel />);
+    await screen.findByRole("list", { name: "Overdue, 1 task" });
+    // Other sorts have no handles; the API's order decides.
+    expect(screen.queryByRole("button", { name: /^Move / })).not.toBeInTheDocument();
+
+    await chooseOption(user, screen.getByRole("combobox", { name: "Sort by" }), "Sort: My order");
+    const list = await screen.findByRole("list", { name: "2 tasks" });
+    await waitFor(() => expect(listQueries(api).at(-1)?.get("sort")).toBe("manual"));
+    mockRowLayout();
+    await moveWithKeyboard(within(list).getByRole("button", { name: "Move “Pay rent”" }), 1);
+
+    // The list shows the new order before the API answers.
+    expect(within(list).getAllByRole("listitem")[0]).toHaveTextContent("Water plants");
+    await waitFor(() => {
+      const [move] = api.mock.calls.filter(([, init]) => init?.method === "POST");
+      expect(move && JSON.parse(String(move[1]?.body))).toEqual({
+        before_id: null,
+        after_id: plants.id,
+      });
+    });
   });
 
   it("refreshes the counts after completing a task", async () => {

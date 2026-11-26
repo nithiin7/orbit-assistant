@@ -1,6 +1,7 @@
 /** Task display rules, filters, and form schemas that mirror the API's. */
 
 import type {
+  MoveTaskRequest,
   TaskListColor,
   TaskListQuery,
   TaskPriority,
@@ -94,6 +95,8 @@ export const SORTS: readonly Option<TaskSort>[] = [
   { value: "due_date", label: "Due date" },
   { value: "priority", label: "Priority" },
   { value: "created_at", label: "Newest" },
+  // The workspace's own order, set by dragging tasks.
+  { value: "manual", label: "My order" },
 ];
 
 /** Every list, tasks on no list, or one list's ID. */
@@ -126,6 +129,23 @@ export function toTaskListQuery(filters: TaskFilters): TaskListQuery {
     sort: filters.sort,
     limit: TASK_PAGE_SIZE,
   };
+}
+
+/**
+ * Where a task dragged to index `to` of `order` (the list's new order) goes in the workspace's
+ * own order: just after the task now above it, or before the one below when it went to the top.
+ * Only the neighbours in view matter, so this works on filtered and partial lists too.
+ */
+export function taskMoveRequest(
+  order: readonly { id: string }[],
+  to: number,
+): MoveTaskRequest | null {
+  if (to === 0) {
+    const below = order[1];
+    return below ? { before_id: below.id, after_id: null } : null;
+  }
+  const above = order[to - 1];
+  return above ? { before_id: null, after_id: above.id } : null;
 }
 
 /** True when a search or priority filter hides tasks that the status view would show. */

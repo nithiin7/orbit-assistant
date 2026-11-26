@@ -22,6 +22,7 @@ import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SortableList, type SortableMove } from "@/components/ui/sortable";
 import { usePeople } from "@/hooks/use-people";
 import { useDeleteItemWithUndo, useShopping, useShoppingMutations } from "@/hooks/use-shopping";
 import { DEFAULT_LIST_ICON } from "@/lib/shopping";
@@ -35,7 +36,7 @@ import { ListActions } from "./list-actions";
 import { SHOPPING_LIST_ICON_COMPONENTS } from "./list-icon";
 import { type ListDetails, ListNameDialog } from "./list-name-dialog";
 import { ListTabs } from "./list-tabs";
-import { ShoppingItemRow } from "./shopping-item";
+import { ShoppingItemRow, SortableShoppingItemRow } from "./shopping-item";
 
 /** The Shopping page for the active workspace. Remounts (and resets) when the workspace changes. */
 export function ShoppingPanel() {
@@ -201,26 +202,49 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
   const purchased =
     items.status === "success" ? items.data.filter((i) => i.status === "purchased") : [];
 
-  const renderItems = (group: ShoppingItem[], label: string, className?: string) => (
-    <ul
-      aria-label={label}
-      className={cn(
-        "@container/rows divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1",
-        className,
-      )}
-    >
-      {group.map((item) => (
-        <ShoppingItemRow
-          key={item.id}
-          item={item}
-          giftFor={item.person_id ? (names.get(item.person_id) ?? null) : null}
-          onToggle={(entry) => void toggle(entry)}
-          onEdit={setEditing}
-          onDelete={remove}
-        />
-      ))}
-    </ul>
-  );
+  // Needed items can be dragged into a new order; purchased ones stay newest first.
+  const move = ({ order }: SortableMove<ShoppingItem>) => {
+    if (!active) return;
+    setActionError(null);
+    mutations.reorderItems.mutateAsync({ listId: active.id, order }).catch((reason: unknown) => {
+      setActionError(describeApiError(reason, "Couldn’t move the item. Try again."));
+    });
+  };
+
+  const renderItems = (
+    group: ShoppingItem[],
+    label: string,
+    { sortable = false, className }: { sortable?: boolean; className?: string } = {},
+  ) => {
+    const Row = sortable ? SortableShoppingItemRow : ShoppingItemRow;
+    const list = (
+      <ul
+        aria-label={label}
+        className={cn(
+          "@container/rows divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1",
+          className,
+        )}
+      >
+        {group.map((item) => (
+          <Row
+            key={item.id}
+            item={item}
+            giftFor={item.person_id ? (names.get(item.person_id) ?? null) : null}
+            onToggle={(entry) => void toggle(entry)}
+            onEdit={setEditing}
+            onDelete={remove}
+          />
+        ))}
+      </ul>
+    );
+    return sortable ? (
+      <SortableList items={group} itemLabel={(item) => item.name} onMove={move}>
+        {list}
+      </SortableList>
+    ) : (
+      list
+    );
+  };
 
   // Layout follows the space the page actually gets (which depends on the app sidebar), not the
   // screen: container queries place the lists rail, the composer, and the bought column.
@@ -297,14 +321,11 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
                       To buy
                     </SectionHeading>
                     {needed.length > 0 ? (
+                      // One column, so a dragged item moves straight up or down.
                       renderItems(
                         needed,
                         `${needed.length} ${needed.length === 1 ? "item" : "items"} to buy`,
-                        // Two columns of items on very wide screens, with a rule between them. A
-                        // single item keeps the full width so its details don't stop mid-card.
-                        needed.length > 1
-                          ? "grid @min-[88rem]/list:grid-cols-2 @min-[88rem]/list:divide-y-0 @min-[88rem]/list:*:-mb-px @min-[88rem]/list:*:border-b @min-[88rem]/list:*:odd:border-r @min-[88rem]/list:*:odd:last:border-r-0"
-                          : undefined,
+                        { sortable: needed.length > 1 },
                       )
                     ) : (
                       <div className="flex items-center gap-3 rounded-2xl border border-dashed border-success/40 bg-success/5 px-4 py-6 text-sm text-muted-foreground">
