@@ -15,14 +15,36 @@ import {
   UserRound,
 } from "lucide-react";
 
+/** Icon colours; the names match `IconChip` tones. */
+export type SettingsTone =
+  "brand" | "blue" | "green" | "amber" | "violet" | "teal" | "orange" | "rose" | "slate";
+
+/** Where a panel sits in the settings menu. `account` opens from the profile row. */
+export type SettingsSection = "account" | "workspace" | "modules" | "assistant" | "data";
+
 export type SettingsPanel = {
   slug: string;
   title: string;
   description: string;
   icon: LucideIcon;
-  /** `account` panels open from the profile row; `general` panels are listed beneath it. */
-  group: "account" | "general";
+  tone: SettingsTone;
+  section: SettingsSection;
+  /** Other words people search the menu with, e.g. "dark" for Appearance. */
+  keywords?: readonly string[];
 };
+
+/** The menu's groups, in order, with their visible labels. */
+export const settingsSections: readonly { value: SettingsSection; label: string }[] = [
+  { value: "workspace", label: "Workspace" },
+  { value: "modules", label: "Modules" },
+  { value: "assistant", label: "Assistant" },
+  { value: "data", label: "Your data" },
+];
+
+export function settingsSectionLabel(section: SettingsSection): string {
+  if (section === "account") return "Account";
+  return settingsSections.find((option) => option.value === section)?.label ?? "Settings";
+}
 
 /** Settings sub-pages. The single source of truth for the settings menu and its routes. */
 export const settingsPanels: readonly SettingsPanel[] = [
@@ -31,96 +53,131 @@ export const settingsPanels: readonly SettingsPanel[] = [
     title: "Account",
     description: "Profile, sign-in, and time zone.",
     icon: UserRound,
-    group: "account",
+    tone: "brand",
+    section: "account",
+    keywords: ["profile", "photo", "password", "sign out", "time zone"],
   },
   {
     slug: "workspaces",
     title: "Workspaces",
     description: "Switch, rename, or create workspaces.",
     icon: Layers,
-    group: "general",
+    tone: "slate",
+    section: "workspace",
+    keywords: ["switch", "rename", "new workspace"],
   },
   {
     slug: "appearance",
     title: "Appearance",
     description: "Mode, colors, and font for this browser.",
     icon: Palette,
-    group: "general",
-  },
-  {
-    slug: "finance",
-    title: "Finance",
-    description: "Live prices for your investments.",
-    icon: LineChart,
-    group: "general",
-  },
-  {
-    slug: "watchlist",
-    title: "Watchlist",
-    description: "Posters and details for movies and series.",
-    icon: Clapperboard,
-    group: "general",
-  },
-  {
-    slug: "saved",
-    title: "Saved",
-    description: "Link previews: names, descriptions, images, and icons.",
-    icon: Bookmark,
-    group: "general",
-  },
-  {
-    slug: "places",
-    title: "Places",
-    description: "Online maps and place search.",
-    icon: MapPinned,
-    group: "general",
+    tone: "rose",
+    section: "workspace",
+    keywords: ["theme", "dark", "light", "mode", "color", "font", "sidebar"],
   },
   {
     slug: "notifications",
     title: "Notifications",
     description: "Push notifications on your devices.",
     icon: Bell,
-    group: "general",
+    tone: "amber",
+    section: "workspace",
+    keywords: ["push", "alerts", "briefing"],
   },
   {
-    slug: "voice",
-    title: "Voice",
-    description: "Talking with Orbit: speech, languages, and privacy.",
-    icon: AudioLines,
-    group: "general",
+    slug: "finance",
+    title: "Finance",
+    description: "Live prices for your investments.",
+    icon: LineChart,
+    tone: "green",
+    section: "modules",
+    keywords: ["prices", "stocks", "mutual funds", "nav"],
   },
   {
-    slug: "ai",
-    title: "AI",
-    description: "Providers, models, and privacy.",
-    icon: Bot,
-    group: "general",
+    slug: "watchlist",
+    title: "Watchlist",
+    description: "Posters and details for movies and series.",
+    icon: Clapperboard,
+    tone: "orange",
+    section: "modules",
+    keywords: ["tmdb", "movies", "posters"],
+  },
+  {
+    slug: "saved",
+    title: "Saved",
+    description: "Link previews: names, descriptions, images, and icons.",
+    icon: Bookmark,
+    tone: "blue",
+    section: "modules",
+    keywords: ["bookmarks", "links", "previews"],
+  },
+  {
+    slug: "places",
+    title: "Places",
+    description: "Online maps and place search.",
+    icon: MapPinned,
+    tone: "teal",
+    section: "modules",
+    keywords: ["maps", "search", "nominatim"],
   },
   {
     slug: "integrations",
     title: "Integrations",
     description: "Google and Microsoft calendars, mail, and files.",
     icon: Plug,
-    group: "general",
+    tone: "blue",
+    section: "modules",
+    keywords: ["google", "microsoft", "outlook", "calendar", "mail", "drive"],
+  },
+  {
+    slug: "ai",
+    title: "AI",
+    description: "Providers, models, and privacy.",
+    icon: Bot,
+    tone: "violet",
+    section: "assistant",
+    keywords: ["openai", "anthropic", "gemini", "ollama", "model", "provider"],
+  },
+  {
+    slug: "voice",
+    title: "Voice",
+    description: "Talking with Orbit: speech, languages, and privacy.",
+    icon: AudioLines,
+    tone: "brand",
+    section: "assistant",
+    keywords: ["speech", "microphone", "language"],
   },
   {
     slug: "backup",
     title: "Backup & restore",
     description: "Back up, restore, and export your data.",
     icon: Archive,
-    group: "general",
+    tone: "green",
+    section: "data",
+    keywords: ["export", "restore", "download"],
   },
   {
     slug: "storage",
     title: "Storage",
     description: "Where your data is stored.",
     icon: Database,
-    group: "general",
+    tone: "slate",
+    section: "data",
+    keywords: ["database", "sqlite", "supabase", "location"],
   },
 ];
 
 export function settingsHref(slug: string): string {
   return `/settings/${slug}`;
+}
+
+/** Whether a panel matches a menu search, by title, description, or keyword. */
+export function matchesSettingsQuery(panel: SettingsPanel, query: string): boolean {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+  return [panel.title, panel.description, ...(panel.keywords ?? [])].some((text) =>
+    text.toLowerCase().includes(needle),
+  );
 }
 
 export function findSettingsPanel(slug: string): SettingsPanel | undefined {

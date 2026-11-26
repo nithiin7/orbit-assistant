@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Copy, FolderOpen } from "lucide-react";
+import { Copy, FolderOpen, HardDrive } from "lucide-react";
 import { useCallback, useState } from "react";
 
 import { describeApiError } from "@/api/client";
@@ -12,6 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { queryResource } from "@/hooks/query-resource";
 import { revealLabel } from "@/lib/storage";
 import { useAuth } from "@/providers/auth";
+
+import { SettingsCard } from "./settings-card";
 
 /**
  * Where the SQLite database lives, with a button that opens its folder. The API does the
@@ -74,14 +76,14 @@ export function DatabaseLocation() {
   if (!path) return null;
 
   return (
-    <section
-      aria-labelledby="database-location-heading"
-      className="space-y-3 rounded-2xl border bg-card p-4"
+    <SettingsCard
+      titleId="database-location-heading"
+      icon={HardDrive}
+      title="Database file"
+      description="Where this computer keeps your Orbit data."
+      bodyClassName="space-y-3"
     >
-      <h2 id="database-location-heading" className="text-sm font-medium">
-        Database file
-      </h2>
-      <code className="block rounded-md bg-muted px-3 py-2 font-mono text-xs break-all">
+      <code className="block rounded-xl border border-border/60 bg-muted/50 px-3.5 py-2.5 font-mono text-xs break-all">
         {path}
       </code>
       <div className="flex flex-wrap items-center gap-2">
@@ -100,6 +102,6 @@ export function DatabaseLocation() {
       <p role="status" className="text-sm text-muted-foreground">
         {message}
       </p>
-    </section>
+    </SettingsCard>
   );
 }

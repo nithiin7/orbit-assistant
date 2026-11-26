@@ -1,7 +1,7 @@
 "use client";
 
 import { yupResolver } from "@hookform/resolvers/yup";
-import { LogOut, Sparkles } from "lucide-react";
+import { Globe2, LogOut, Sparkles, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
@@ -17,6 +17,7 @@ import { useAuth, useCurrentUser } from "@/providers/auth";
 
 import { ChangePassword } from "./change-password";
 import { ProfilePhoto } from "./profile-photo";
+import { SettingsCard } from "./settings-card";
 import { TimeZonePreference } from "./time-zone-preference";
 
 const providerLabels = {
@@ -58,74 +59,87 @@ export function AccountSettings() {
 
   return (
     <div className={settingsSectionsClassName}>
-      <ProfilePhoto />
+      <SettingsCard
+        titleId="account-profile-title"
+        icon={UserRound}
+        title="Profile"
+        description="Your photo and the name Orbit greets you by."
+      >
+        <ProfilePhoto />
+        <dl className="grid gap-3 text-sm sm:grid-cols-2">
+          <div className="min-w-0 space-y-0.5 rounded-xl bg-muted/40 px-3.5 py-3">
+            <dt className="text-xs text-muted-foreground">Email</dt>
+            <dd className="truncate font-medium">{user.email}</dd>
+          </div>
+          <div className="space-y-0.5 rounded-xl bg-muted/40 px-3.5 py-3">
+            <dt className="text-xs text-muted-foreground">Sign-in method</dt>
+            <dd className="font-medium">{providerLabels[user.auth_provider]}</dd>
+          </div>
+        </dl>
+        <form noValidate onSubmit={onSubmit} className="space-y-3">
+          <FormField
+            label="Display name"
+            autoComplete="name"
+            {...register("displayName", { onChange: () => setSaved(false) })}
+            error={errors.displayName?.message}
+          />
+          <FormAlert message={errors.root?.server?.message ?? null} />
+          <div className="flex items-center gap-3">
+            <Button type="submit" size="sm" disabled={isSubmitting || unchanged}>
+              {isSubmitting ? "Saving…" : "Save name"}
+            </Button>
+            <p role="status" className="text-sm text-muted-foreground">
+              {saved ? "Saved." : null}
+            </p>
+          </div>
+        </form>
+      </SettingsCard>
 
-      <dl className="grid gap-4 rounded-2xl border bg-card p-4 text-sm sm:grid-cols-2">
-        <div className="min-w-0 space-y-0.5">
-          <dt className="text-muted-foreground">Email</dt>
-          <dd className="truncate font-medium">{user.email}</dd>
-        </div>
-        <div className="space-y-0.5">
-          <dt className="text-muted-foreground">Sign-in method</dt>
-          <dd className="font-medium">{providerLabels[user.auth_provider]}</dd>
-        </div>
-      </dl>
-
-      <form noValidate onSubmit={onSubmit} className="space-y-3">
-        <FormField
-          label="Display name"
-          autoComplete="name"
-          {...register("displayName", { onChange: () => setSaved(false) })}
-          error={errors.displayName?.message}
-        />
-        <FormAlert message={errors.root?.server?.message ?? null} />
-        <div className="flex items-center gap-3">
-          <Button type="submit" size="sm" disabled={isSubmitting || unchanged}>
-            {isSubmitting ? "Saving…" : "Save name"}
-          </Button>
-          <p role="status" className="text-sm text-muted-foreground">
-            {saved ? "Saved." : null}
-          </p>
-        </div>
-      </form>
-
-      <TimeZonePreference />
+      <SettingsCard
+        titleId="account-time-zone-title"
+        icon={Globe2}
+        title="Local time"
+        description="Where your day starts and ends."
+      >
+        <TimeZonePreference />
+      </SettingsCard>
 
       {user.auth_provider === "local" ? <ChangePassword /> : null}
 
-      <section
-        aria-labelledby="setup-guide-title"
-        className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-4"
-      >
-        <div className="space-y-0.5">
-          <h2 id="setup-guide-title" className="text-sm font-semibold">
-            Setup guide
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Walk through theme, money, health, accounts, and AI again.
-          </p>
-        </div>
-        <Link href={SETUP_PATH} className={buttonVariants({ variant: "soft", size: "sm" })}>
-          <Sparkles aria-hidden="true" />
-          Run setup again
-        </Link>
-      </section>
+      <SettingsCard
+        titleId="setup-guide-title"
+        icon={Sparkles}
+        title="Setup guide"
+        description="Walk through theme, money, health, accounts, and AI again."
+        action={
+          <Link href={SETUP_PATH} className={buttonVariants({ variant: "soft", size: "sm" })}>
+            <Sparkles aria-hidden="true" />
+            Run setup again
+          </Link>
+        }
+      />
 
-      {/* Its own top margin: in columns, the margin of the item above is dropped at the column end. */}
-      <div className="mt-6 border-t pt-4 [column-span:all]">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={signingOut}
-          onClick={() => {
-            setSigningOut(true);
-            void signOut();
-          }}
-        >
-          <LogOut aria-hidden="true" />
-          {signingOut ? "Signing out…" : "Sign out"}
-        </Button>
-      </div>
+      <SettingsCard
+        titleId="account-sign-out-title"
+        icon={LogOut}
+        tone="slate"
+        title="Sign out"
+        description="Leave Orbit in this browser. Your data stays where it is."
+        action={
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={signingOut}
+            onClick={() => {
+              setSigningOut(true);
+              void signOut();
+            }}
+          >
+            <LogOut aria-hidden="true" />
+            {signingOut ? "Signing out…" : "Sign out"}
+          </Button>
+        }
+      />
     </div>
   );
 }
