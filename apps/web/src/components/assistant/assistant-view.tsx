@@ -52,6 +52,7 @@ import {
   suggestedQuestions,
 } from "@/lib/ai";
 import { settingsHref } from "@/lib/settings";
+import { cn } from "@/utils/common";
 
 import { Answer, Sources } from "./answer";
 import { ConversationDrawer, ConversationList } from "./conversation-list";
@@ -265,18 +266,20 @@ function Chat({
     />
   );
 
-  if (empty) {
-    return (
-      <Welcome settings={settings} onAsk={(question) => void chat.send(question)}>
-        {composer}
-      </Welcome>
-    );
-  }
-
+  // Both layouts share one element shape, with the composer at the same place in it, so the
+  // first question doesn't remount the composer: a live voice session would end mid-answer.
   return (
-    <section aria-label="Conversation" className="flex min-h-[70dvh] flex-col">
-      <div className="mx-auto w-full max-w-3xl flex-1 pt-6 pb-8">
-        {detail.status === "loading" && conversationId !== null && chat.pending === null ? (
+    <section
+      aria-label={empty ? "Start a chat" : "Conversation"}
+      className={cn(
+        "flex min-h-[70dvh] flex-col",
+        empty && "mx-auto w-full max-w-3xl justify-center gap-8 py-10",
+      )}
+    >
+      <div className={cn(!empty && "mx-auto w-full max-w-3xl flex-1 pt-6 pb-8")}>
+        {empty ? (
+          <WelcomeIntro />
+        ) : detail.status === "loading" && conversationId !== null && chat.pending === null ? (
           <div className="space-y-6">
             <Skeleton className="ml-auto h-10 w-2/5 rounded-2xl" />
             <Skeleton className="h-32 w-full rounded-xl" />
@@ -307,13 +310,25 @@ function Chat({
         )}
       </div>
       {/* Pinned to the bottom of the screen; the fade lets the conversation scroll beneath it. */}
-      <div className="sticky bottom-0 bg-linear-to-t from-background from-70% to-transparent pt-6 pb-3">
-        <div className="mx-auto w-full max-w-3xl space-y-2">
+      <div
+        className={cn(
+          !empty &&
+            "sticky bottom-0 bg-linear-to-t from-background from-70% to-transparent pt-6 pb-3",
+        )}
+      >
+        <div className={cn(empty ? "space-y-3" : "mx-auto w-full max-w-3xl space-y-2")}>
           {composer}
-          <Disclaimer />
+          {empty ? (
+            <SuggestedQuestions
+              settings={settings}
+              onAsk={(question) => void chat.send(question)}
+            />
+          ) : (
+            <Disclaimer />
+          )}
         </div>
       </div>
-      <div ref={endRef} />
+      {empty ? <InsightsPanel /> : <div ref={endRef} />}
     </section>
   );
 }
@@ -374,48 +389,41 @@ function Disclaimer() {
 }
 
 /** A new chat: a greeting, the composer, and suggestions, centered like a blank page. */
-function Welcome({
+/** The greeting above the composer while a chat is empty. */
+function WelcomeIntro() {
+  return (
+    <div className="space-y-3 text-center">
+      <span className="mx-auto flex size-11 items-center justify-center rounded-2xl bg-brand-subtle text-brand">
+        <Sparkles className="size-5" aria-hidden="true" />
+      </span>
+      <h2 className="text-2xl font-semibold tracking-tight text-balance">How can I help?</h2>
+    </div>
+  );
+}
+
+function SuggestedQuestions({
   settings,
   onAsk,
-  children,
 }: {
   settings: AiSettings;
   onAsk: (q: string) => void;
-  /** The composer. */
-  children: ReactNode;
 }) {
   const questions = suggestedQuestions(settings.modules);
+  if (!questions.length) return null;
   return (
-    <section
-      aria-label="Start a chat"
-      className="mx-auto flex min-h-[70dvh] w-full max-w-3xl flex-col justify-center gap-8 py-10"
-    >
-      <div className="space-y-3 text-center">
-        <span className="mx-auto flex size-11 items-center justify-center rounded-2xl bg-brand-subtle text-brand">
-          <Sparkles className="size-5" aria-hidden="true" />
-        </span>
-        <h2 className="text-2xl font-semibold tracking-tight text-balance">How can I help?</h2>
-      </div>
-      <div className="space-y-3">
-        {children}
-        {questions.length ? (
-          <ul className="flex flex-wrap justify-center gap-2" aria-label="Suggested questions">
-            {questions.map((question) => (
-              <li key={question}>
-                <button
-                  type="button"
-                  onClick={() => onAsk(question)}
-                  className="rounded-full border bg-card px-3.5 py-1.5 text-sm text-foreground/85 outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  {question}
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </div>
-      <InsightsPanel />
-    </section>
+    <ul className="flex flex-wrap justify-center gap-2" aria-label="Suggested questions">
+      {questions.map((question) => (
+        <li key={question}>
+          <button
+            type="button"
+            onClick={() => onAsk(question)}
+            className="rounded-full border bg-card px-3.5 py-1.5 text-sm text-foreground/85 outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {question}
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 }
 

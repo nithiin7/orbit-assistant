@@ -188,6 +188,29 @@ describe("AssistantView", () => {
     expect(screen.getByText(/Ollama · llama3 · On this device or network/)).toBeInTheDocument();
   });
 
+  it("keeps the composer mounted when the first question starts the conversation", async () => {
+    // A remounted composer would also end a live voice session mid-answer.
+    const user = userEvent.setup();
+    mockApi({
+      ...session,
+      "GET /api/v1/me/ai/settings": json({ ...enabled, modules: ["tasks"] }),
+      [`POST ${WS}/ai/messages`]: stream([
+        ["start", { conversation, provider_name: "Ollama", model: "llama3", processing: "local" }],
+        ["delta", { text: "Renew your passport [S1]." }],
+        ["done", { message: saved("Renew your passport [S1].").messages[1], proposals: [] }],
+      ]),
+      [`GET ${WS}/ai/conversations/c1`]: json(saved("Renew your passport [S1].")),
+    });
+    await renderSignedIn(<AssistantView />);
+    const input = await screen.findByLabelText("Ask Orbit");
+    await user.type(input, "Half-typed draft");
+    await user.click(screen.getByRole("button", { name: "What tasks are overdue?" }));
+
+    expect(await screen.findByRole("region", { name: "Conversation" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Ask Orbit")).toBe(input);
+    expect(input).toHaveValue("Half-typed draft");
+  });
+
   it("shows a saved conversation with sources, provider, and a proposal to approve", async () => {
     const user = userEvent.setup();
     navigation.search = "c=c1";
