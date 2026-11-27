@@ -42,6 +42,7 @@ import { useWorkspaces } from "@/providers/workspace";
 import { cn } from "@/utils/common";
 import { localDateString } from "@/utils/dates";
 import { isEditableTarget } from "@/utils/keyboard";
+import { animateListChanges } from "@/utils/list-motion";
 
 import { TaskComposer } from "./task-composer";
 import { TaskEditDialog } from "./task-edit-dialog";
@@ -266,7 +267,7 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
     />
   );
   const listClassName = cn(
-    "@container/rows divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1 transition-opacity duration-150",
+    "@container/rows relative divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1 transition-opacity duration-150",
     refreshing && "opacity-70",
   );
   // Sections by due date help most for open tasks in due order; other views read as one list.
@@ -418,6 +419,7 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
                           </h3>
                           <ul
                             aria-label={`${group.label}, ${countLabel(group.tasks.length)}`}
+                            ref={animateListChanges}
                             className={listClassName}
                           >
                             {group.tasks.map(renderRow)}
@@ -429,12 +431,17 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
                 ) : manual ? (
                   // One column, so a dragged row moves straight up or down.
                   <SortableList items={shownTasks} itemLabel={(task) => task.title} onMove={move}>
-                    <ul aria-label={countLabel(shownTotal)} className={listClassName}>
+                    <ul
+                      ref={animateListChanges}
+                      aria-label={countLabel(shownTotal)}
+                      className={listClassName}
+                    >
                       {shownTasks.map(renderRow)}
                     </ul>
                   </SortableList>
                 ) : (
                   <ul
+                    ref={animateListChanges}
                     aria-label={countLabel(shownTotal)}
                     className={cn(
                       listClassName,

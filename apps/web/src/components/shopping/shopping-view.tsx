@@ -35,6 +35,7 @@ import {
 import { useWorkspaces } from "@/providers/workspace";
 import { cn } from "@/utils/common";
 import { isEditableTarget } from "@/utils/keyboard";
+import { animateListChanges } from "@/utils/list-motion";
 import { revealWhenVisible } from "@/utils/reveal";
 
 import { ItemComposer } from "./item-composer";
@@ -237,9 +238,10 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
     const Row = sortable ? SortableShoppingItemRow : ShoppingItemRow;
     const list = (
       <ul
+        ref={animateListChanges}
         aria-label={label}
         className={cn(
-          "@container/rows divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1",
+          "@container/rows relative divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1",
           className,
         )}
       >

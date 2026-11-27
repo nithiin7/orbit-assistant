@@ -30,6 +30,7 @@ import {
 import { useCurrentUser } from "@/providers/auth";
 import { useWorkspaces } from "@/providers/workspace";
 import { cn } from "@/utils/common";
+import { animateListChanges } from "@/utils/list-motion";
 import { browserTimeZone } from "@/utils/time-zones";
 
 import { ReminderDialog } from "./reminder-dialog";
@@ -131,7 +132,7 @@ function RemindersView({ workspaceId }: { workspaceId: string }) {
     />
   );
   const listClassName = cn(
-    "@container/rows divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1 transition-opacity duration-150",
+    "@container/rows relative divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1 transition-opacity duration-150",
     refreshing && "opacity-70",
   );
   // Sections by when they fire help where reminders have times ahead; other views read as one list.
@@ -280,6 +281,7 @@ function RemindersView({ workspaceId }: { workspaceId: string }) {
                           </h3>
                           <ul
                             aria-label={`${group.label}, ${countLabel(group.reminders.length)}`}
+                            ref={animateListChanges}
                             className={listClassName}
                           >
                             {group.reminders.map(renderRow)}
@@ -290,6 +292,7 @@ function RemindersView({ workspaceId }: { workspaceId: string }) {
                   </div>
                 ) : (
                   <ul
+                    ref={animateListChanges}
                     aria-label={countLabel(searching ? visible.length : state.data.total)}
                     className={cn(
                       listClassName,
