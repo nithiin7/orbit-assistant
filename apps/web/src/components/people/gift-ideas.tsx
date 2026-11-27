@@ -77,13 +77,13 @@ export function GiftIdeas({ workspaceId, person }: { workspaceId: string; person
                   disabled={toggle.isPending}
                   onChange={() => toggle.mutate(item)}
                 />
-                <span
-                  className={cn(
-                    "min-w-0 flex-1 truncate text-sm",
-                    bought && "text-muted-foreground line-through",
-                  )}
-                >
-                  {item.name}
+                <span className="min-w-0 flex-1 truncate text-sm">
+                  <span
+                    data-done={bought || undefined}
+                    className={cn("strike-sweep", bought && "text-muted-foreground")}
+                  >
+                    {item.name}
+                  </span>
                 </span>
                 {bought ? (
                   <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">

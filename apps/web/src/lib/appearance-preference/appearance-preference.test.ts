@@ -2,10 +2,13 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import {
   appearancePreferenceScript,
+  DENSITY_STORAGE_KEY,
   FONT_STORAGE_KEY,
   PALETTE_STORAGE_KEY,
+  readDensity,
   readFont,
   readPalette,
+  writeDensity,
   writeFont,
   writePalette,
 } from "./appearance-preference";
@@ -15,6 +18,7 @@ const root = document.documentElement;
 afterEach(() => {
   delete root.dataset.palette;
   delete root.dataset.font;
+  delete root.dataset.density;
   localStorage.clear();
 });
 
@@ -74,5 +78,31 @@ describe("appearance preference", () => {
     runScript();
     expect(root.dataset.palette).toBeUndefined();
     expect(root.dataset.font).toBeUndefined();
+  });
+
+  it("stores compact density and clears it when returning to comfortable", () => {
+    expect(readDensity()).toBe("comfortable");
+
+    writeDensity("compact");
+    expect(root.dataset.density).toBe("compact");
+    expect(localStorage.getItem(DENSITY_STORAGE_KEY)).toBe("compact");
+    expect(readDensity()).toBe("compact");
+
+    writeDensity("comfortable");
+    expect(root.dataset.density).toBeUndefined();
+    expect(localStorage.getItem(DENSITY_STORAGE_KEY)).toBeNull();
+  });
+
+  it("restores a saved density before paint and ignores unknown values", () => {
+    localStorage.setItem(DENSITY_STORAGE_KEY, "compact");
+    runScript();
+    expect(root.dataset.density).toBe("compact");
+
+    delete root.dataset.density;
+    localStorage.setItem(DENSITY_STORAGE_KEY, "tiny");
+    runScript();
+    expect(root.dataset.density).toBeUndefined();
+    root.dataset.density = "tiny";
+    expect(readDensity()).toBe("comfortable");
   });
 });

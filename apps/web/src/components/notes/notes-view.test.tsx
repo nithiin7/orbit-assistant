@@ -516,6 +516,43 @@ describe("NotesPanel", () => {
     expect(await screen.findByText("Your Inbox is clear")).toBeInTheDocument();
   });
 
+  it("creates a note from a template in the empty Inbox and opens it", async () => {
+    const user = userEvent.setup();
+    const created = summary({ id: "aaaaaaaa-0000-4000-8000-00000000000a", title: "Meeting notes" });
+    const api = mockApi(
+      routes({
+        [`GET ${NOTES}`]: json({ notes: [], total: 0 }),
+        [`POST ${NOTES}`]: json(detail(created, "x"), 201),
+        [`GET ${NOTES}/${created.id}`]: json(detail(created, "x")),
+        [`GET ${NOTES}/${created.id}/links`]: json({ outgoing: [], backlinks: [] }),
+        [`GET ${NOTES}/${created.id}/tasks`]: json({ tasks: [], total: 0 }),
+        [`GET ${NOTES}/${created.id}/attachments`]: json({ attachments: [], max_bytes: 1024 }),
+      }),
+    );
+    await renderNotes("?view=inbox");
+    await screen.findByText("Your Inbox is clear");
+
+    await user.click(screen.getByRole("button", { name: "Start from a template" }));
+    const dialog = await screen.findByRole("dialog", { name: "Start from a template" });
+    await user.click(
+      within(dialog).getByRole("button", { name: "Create note from “Meeting notes”" }),
+    );
+
+    await waitFor(() =>
+      expect(push).toHaveBeenLastCalledWith(`/notes?view=inbox&note=${created.id}`, {
+        scroll: false,
+      }),
+    );
+    const post = api.mock.calls.find(([, init]) => init?.method === "POST");
+    const body = JSON.parse(String(post?.[1]?.body)) as {
+      title: string;
+      content: { type: string; content: { type: string }[] };
+    };
+    expect(body.title).toBe("Meeting notes");
+    expect(body.content.type).toBe("doc");
+    expect(body.content.content.filter((node) => node.type === "heading")).toHaveLength(4);
+  });
+
   it("opens today's journal entry from the journal view", async () => {
     const user = userEvent.setup();
     const today = journalToday(null);

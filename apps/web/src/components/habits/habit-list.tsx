@@ -1,11 +1,11 @@
 "use client";
 
 import type { HabitList, HabitProgress } from "@orbit/contracts";
-import { Archive, Flame, LayoutTemplate, Sparkles } from "lucide-react";
+import { Archive, Flame, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/empty-state";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Resource } from "@/hooks/query-resource";
 import {
@@ -51,15 +51,9 @@ export function HabitListView({ state, archived, onReload, onCreate }: HabitList
         icon={Sparkles}
         title="No habits yet"
         description="Create a habit to track it each day and see how it builds over time."
+        template={{ href: habitsHref({ kind: "view", view: "templates" }) }}
       >
         <Button onClick={onCreate}>New habit</Button>
-        <Link
-          href={habitsHref({ kind: "view", view: "templates" })}
-          className={buttonVariants({ variant: "ghost" })}
-        >
-          <LayoutTemplate aria-hidden="true" />
-          Browse templates
-        </Link>
       </EmptyState>
     );
   }

@@ -1,8 +1,8 @@
 /**
- * Color theme ("palette") and font preferences. Like the sidebar preference, each lives on an
- * attribute of `<html>` (`data-palette`, `data-font`) so CSS applies it before React hydrates, and
- * is saved per browser in localStorage. The defaults, Studio and Inter Tight, set no attribute, so
- * the base tokens in tokens.css apply unchanged.
+ * Color theme ("palette"), font, and list density preferences. Like the sidebar preference, each
+ * lives on an attribute of `<html>` (`data-palette`, `data-font`, `data-density`) so CSS applies it
+ * before React hydrates, and is saved per browser in localStorage. The defaults, Studio, Inter
+ * Tight, and Comfortable, set no attribute, so the base styles apply unchanged.
  */
 
 export const PALETTES = [
@@ -79,17 +79,27 @@ export const FONTS = [
   { value: "system", label: "System", description: "Your device’s font", family: null },
 ] as const;
 
+/** List density: comfortable (the default, no attribute) or compact, which tightens list rows. */
+export const DENSITIES = [
+  { value: "comfortable", label: "Comfortable", description: "Roomy rows with breathing space" },
+  { value: "compact", label: "Compact", description: "Tighter rows, more on screen" },
+] as const;
+
 export type Palette = (typeof PALETTES)[number]["value"];
 export type AppFont = (typeof FONTS)[number]["value"];
+export type Density = (typeof DENSITIES)[number]["value"];
 
 export const DEFAULT_PALETTE: Palette = "studio";
 export const DEFAULT_FONT: AppFont = "inter-tight";
+export const DEFAULT_DENSITY: Density = "comfortable";
 
 export const PALETTE_STORAGE_KEY = "orbit:palette";
 export const FONT_STORAGE_KEY = "orbit:font";
+export const DENSITY_STORAGE_KEY = "orbit:density";
 
 const PALETTE_VALUES: readonly string[] = PALETTES.map((palette) => palette.value);
 const FONT_VALUES: readonly string[] = FONTS.map((font) => font.value);
+const DENSITY_VALUES: readonly string[] = DENSITIES.map((density) => density.value);
 
 function isPalette(value: string | undefined): value is Palette {
   return value !== undefined && PALETTE_VALUES.includes(value);
@@ -99,11 +109,15 @@ function isFont(value: string | undefined): value is AppFont {
   return value !== undefined && FONT_VALUES.includes(value);
 }
 
+function isDensity(value: string | undefined): value is Density {
+  return value !== undefined && DENSITY_VALUES.includes(value);
+}
+
 /**
  * Inline script for the root layout's <head>: applies the saved choices before first paint. Only
  * known, non-default values are applied, so a stale or tampered entry falls back to the default.
  */
-export const appearancePreferenceScript = `try{var d=document.documentElement,p=localStorage.getItem(${JSON.stringify(PALETTE_STORAGE_KEY)}),f=localStorage.getItem(${JSON.stringify(FONT_STORAGE_KEY)});if(${JSON.stringify(PALETTE_VALUES.filter((value) => value !== DEFAULT_PALETTE))}.indexOf(p)>=0)d.dataset.palette=p;if(${JSON.stringify(FONT_VALUES.filter((value) => value !== DEFAULT_FONT))}.indexOf(f)>=0)d.dataset.font=f}catch(e){}`;
+export const appearancePreferenceScript = `try{var d=document.documentElement,p=localStorage.getItem(${JSON.stringify(PALETTE_STORAGE_KEY)}),f=localStorage.getItem(${JSON.stringify(FONT_STORAGE_KEY)}),n=localStorage.getItem(${JSON.stringify(DENSITY_STORAGE_KEY)});if(${JSON.stringify(PALETTE_VALUES.filter((value) => value !== DEFAULT_PALETTE))}.indexOf(p)>=0)d.dataset.palette=p;if(${JSON.stringify(FONT_VALUES.filter((value) => value !== DEFAULT_FONT))}.indexOf(f)>=0)d.dataset.font=f;if(${JSON.stringify(DENSITY_VALUES.filter((value) => value !== DEFAULT_DENSITY))}.indexOf(n)>=0)d.dataset.density=n}catch(e){}`;
 
 export function readPalette(root: HTMLElement = document.documentElement): Palette {
   const value = root.dataset.palette;
@@ -115,6 +129,11 @@ export function readFont(root: HTMLElement = document.documentElement): AppFont 
   return isFont(value) ? value : DEFAULT_FONT;
 }
 
+export function readDensity(root: HTMLElement = document.documentElement): Density {
+  const value = root.dataset.density;
+  return isDensity(value) ? value : DEFAULT_DENSITY;
+}
+
 export function writePalette(palette: Palette, root: HTMLElement = document.documentElement) {
   write(root, "palette", PALETTE_STORAGE_KEY, palette, palette === DEFAULT_PALETTE);
 }
@@ -123,9 +142,13 @@ export function writeFont(font: AppFont, root: HTMLElement = document.documentEl
   write(root, "font", FONT_STORAGE_KEY, font, font === DEFAULT_FONT);
 }
 
+export function writeDensity(density: Density, root: HTMLElement = document.documentElement) {
+  write(root, "density", DENSITY_STORAGE_KEY, density, density === DEFAULT_DENSITY);
+}
+
 function write(
   root: HTMLElement,
-  attribute: "palette" | "font",
+  attribute: "palette" | "font" | "density",
   key: string,
   value: string,
   isDefault: boolean,

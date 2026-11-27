@@ -374,6 +374,11 @@ function WorkoutHistory({ workspaceId }: { workspaceId: string }) {
                   ? "Workouts you start or log show up here, newest first."
                   : "No workouts match this filter."
               }
+              template={
+                status === "all"
+                  ? { href: fitnessHref({ kind: "view", view: "templates" }) }
+                  : undefined
+              }
             />
           ) : (
             <div className="space-y-4">

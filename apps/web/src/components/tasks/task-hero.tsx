@@ -4,6 +4,7 @@ import type { CSSProperties } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/utils/common";
+import { revealWhenVisible } from "@/utils/reveal";
 
 function plural(count: number, word: string): string {
   return `${count} ${word}${count === 1 ? "" : "s"}`;
@@ -133,7 +134,10 @@ function AttentionSummary({ overdue, dueToday }: { overdue: number; dueToday: nu
 function DoneRing({ value }: { value: number }) {
   const percent = Math.round(Math.max(0, Math.min(1, value)) * 100);
   const offset = 100 - percent;
-  const style: CSSProperties & { "--ring-offset": number } = { "--ring-offset": offset };
+  const style: CSSProperties & { "--ring-offset": number } = {
+    "--ring-offset": offset,
+    strokeDashoffset: offset,
+  };
   return (
     <div
       role="progressbar"
@@ -143,7 +147,12 @@ function DoneRing({ value }: { value: number }) {
       aria-valuenow={percent}
       className="relative size-24 shrink-0"
     >
-      <svg viewBox="0 0 100 100" aria-hidden="true" className="size-full text-success">
+      <svg
+        ref={revealWhenVisible}
+        viewBox="0 0 100 100"
+        aria-hidden="true"
+        className="size-full text-success"
+      >
         <circle
           cx="50"
           cy="50"
@@ -164,10 +173,9 @@ function DoneRing({ value }: { value: number }) {
             strokeLinecap="round"
             pathLength={100}
             strokeDasharray="100"
-            strokeDashoffset={offset}
             transform="rotate(-90 50 50)"
             style={style}
-            className="motion-safe:animate-ring-fill"
+            className="progress-arc"
           />
         ) : null}
       </svg>

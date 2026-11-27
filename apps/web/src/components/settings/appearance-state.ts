@@ -4,14 +4,17 @@ import { useSyncExternalStore } from "react";
 
 import {
   type AppFont,
+  type Density,
   type Palette,
+  readDensity,
   readFont,
   readPalette,
+  writeDensity,
   writeFont,
   writePalette,
 } from "@/lib/appearance-preference";
 
-/** Keeps React in sync with the palette and font stored on `<html data-palette data-font>`. */
+/** Keeps React in sync with the palette, font, and density stored on `<html data-palette data-font data-density>`. */
 const listeners = new Set<() => void>();
 
 function subscribe(listener: () => void) {
@@ -38,6 +41,10 @@ export function useAppFont(): AppFont | undefined {
   return useSyncExternalStore(subscribe, () => readFont(), getServerSnapshot);
 }
 
+export function useDensity(): Density | undefined {
+  return useSyncExternalStore(subscribe, () => readDensity(), getServerSnapshot);
+}
+
 export function setPalette(palette: Palette) {
   writePalette(palette);
   notify();
@@ -45,5 +52,10 @@ export function setPalette(palette: Palette) {
 
 export function setAppFont(font: AppFont) {
   writeFont(font);
+  notify();
+}
+
+export function setDensity(density: Density) {
+  writeDensity(density);
   notify();
 }

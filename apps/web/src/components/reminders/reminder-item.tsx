@@ -83,7 +83,7 @@ export function ReminderItem({
   return (
     <li
       className={cn(
-        "group flex items-start gap-3 px-3 py-3.5 transition-[background-color,opacity] duration-150 hover:bg-accent/40 sm:gap-4 sm:px-4",
+        "group flex items-start gap-3 px-3 py-3.5 transition-[background-color,opacity] duration-150 hover:bg-accent/40 sm:gap-4 sm:px-4 compact:py-2",
         muted && "bg-muted/20",
       )}
     >
@@ -91,7 +91,7 @@ export function ReminderItem({
 
       <ReminderIcon reminder={reminder} group={group} className="hidden @md/rows:flex" />
 
-      <div className="min-w-0 flex-1 space-y-1.5">
+      <div className="min-w-0 flex-1 space-y-1.5 compact:space-y-1">
         <div className="space-y-0.5">
           {reminder.commitment?.kind === "document" ? (
             // A document's expiry reminder opens the document it's about.

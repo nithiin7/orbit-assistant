@@ -9,6 +9,7 @@ import { describeApiError } from "@/api/client";
 import { useConfirm } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
+import { TemplatePickerDialog } from "@/components/template-picker-dialog";
 import { Button } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,8 +30,11 @@ import {
   isNarrowed,
   type StatusFilter,
   TASK_LIST_STYLES,
+  TASK_TEMPLATES,
   type TaskFilters,
   taskMoveRequest,
+  type TaskTemplate,
+  taskTemplateRequests,
   toTaskListQuery,
 } from "@/lib/tasks";
 import { useFocusTimer } from "@/providers/focus";
@@ -86,10 +90,13 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
   const selectedList =
     filters.list === "all" || filters.list === "none" ? undefined : lists.byId.get(filters.list);
   const [editing, setEditing] = useState<Task | null>(null);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   // A note's link to a task opens it here.
   useLinkedTask(workspaceId, setEditing);
   const [actionError, setActionError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
+  /** Tasks whose rows folded away after they stopped belonging in the list in view. */
+  const [departed, setDeparted] = useState<ReadonlySet<string>>(new Set());
   const titleRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -129,6 +136,16 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
     },
     [mutations.create],
   );
+
+  /** Adds a template's tasks, in order, to the list in view (or no list). */
+  const applyTemplate = async (template: TaskTemplate) => {
+    const listId = selectedList?.id ?? null;
+    for (const draft of taskTemplateRequests(template, listId)) {
+      await mutations.create.mutateAsync(draft);
+    }
+    setActionError(null);
+    setAnnouncement(`Added ${template.tasks.length} tasks from “${template.name}”.`);
+  };
 
   const toggle = useCallback(
     async (task: Task) => {
@@ -213,11 +230,25 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
     });
   };
 
+  // A task completed (or reopened) here stays in the cached list until it refetches; its row
+  // folds away instead, and is then left out.
+  const belongs = (task: Task) => filters.status === "all" || task.status === filters.status;
+  const shownTasks =
+    state.status === "success"
+      ? state.data.tasks.filter((task) => belongs(task) || !departed.has(task.id))
+      : [];
+  const shownTotal =
+    state.status === "success"
+      ? state.data.total - (state.data.tasks.length - shownTasks.length)
+      : 0;
+
   const Row = manual ? SortableTaskItem : TaskItem;
   const renderRow = (task: Task) => (
     <Row
       key={task.id}
       task={task}
+      leaving={!belongs(task)}
+      onLeft={(item) => setDeparted((current) => new Set(current).add(item.id))}
       // The list in view goes without saying.
       list={
         task.list_id && task.list_id !== filters.list ? lists.byId.get(task.list_id) : undefined
@@ -346,18 +377,19 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
                   Try again
                 </Button>
               </div>
-            ) : state.data.tasks.length === 0 ? (
+            ) : shownTasks.length === 0 ? (
               <TaskEmptyState
                 filters={filters}
                 listName={selectedList?.name ?? null}
                 onClear={clearNarrowing}
+                onTemplates={() => setTemplatesOpen(true)}
               />
             ) : (
               <div className="space-y-6">
                 {grouped ? (
                   // On very wide screens the sections sit side by side, like a board.
                   <div className="gap-6 @5xl/list:columns-2 @min-[100rem]/list:columns-3">
-                    {groupTasksByDue(state.data.tasks, today).map((group) => {
+                    {groupTasksByDue(shownTasks, today).map((group) => {
                       const headingId = `${groupIdPrefix}-${group.key}`;
                       return (
                         <section
@@ -396,31 +428,27 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
                   </div>
                 ) : manual ? (
                   // One column, so a dragged row moves straight up or down.
-                  <SortableList
-                    items={state.data.tasks}
-                    itemLabel={(task) => task.title}
-                    onMove={move}
-                  >
-                    <ul aria-label={countLabel(state.data.total)} className={listClassName}>
-                      {state.data.tasks.map(renderRow)}
+                  <SortableList items={shownTasks} itemLabel={(task) => task.title} onMove={move}>
+                    <ul aria-label={countLabel(shownTotal)} className={listClassName}>
+                      {shownTasks.map(renderRow)}
                     </ul>
                   </SortableList>
                 ) : (
                   <ul
-                    aria-label={countLabel(state.data.total)}
+                    aria-label={countLabel(shownTotal)}
                     className={cn(
                       listClassName,
                       // Two columns of rows on very wide screens, with a rule between them.
                       "grid @5xl/list:grid-cols-2 @5xl/list:divide-y-0 @5xl/list:*:-mb-px @5xl/list:*:border-b @5xl/list:*:odd:border-r @5xl/list:*:odd:last:border-r-0",
                     )}
                   >
-                    {state.data.tasks.map(renderRow)}
+                    {shownTasks.map(renderRow)}
                   </ul>
                 )}
                 <p className="px-1 text-xs text-muted-foreground">
-                  {state.data.total > state.data.tasks.length
-                    ? `Showing ${state.data.tasks.length} of ${state.data.total} tasks. Search or filter to find the rest.`
-                    : countLabel(state.data.total)}
+                  {shownTotal > shownTasks.length
+                    ? `Showing ${shownTasks.length} of ${shownTotal} tasks. Search or filter to find the rest.`
+                    : countLabel(shownTotal)}
                 </p>
               </div>
             )}
@@ -452,6 +480,24 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
             onClose={() => setListDialog(null)}
           />
         ) : null}
+        {templatesOpen ? (
+          <TemplatePickerDialog
+            title="Start from a template"
+            description={
+              selectedList
+                ? `Pick a checklist. Its tasks are added to ${selectedList.name}, ready to edit.`
+                : "Pick a checklist. Its tasks are added to your list, ready to edit."
+            }
+            templates={TASK_TEMPLATES.map((template) => ({
+              ...template,
+              preview: template.tasks,
+              actionLabel: `Add ${template.tasks.length} tasks`,
+            }))}
+            onUse={applyTemplate}
+            errorMessage="Couldn’t add every task from that template. Check your tasks and try again."
+            onClose={() => setTemplatesOpen(false)}
+          />
+        ) : null}
         {confirmDialog}
       </div>
     </div>
@@ -472,11 +518,13 @@ function TaskEmptyState({
   filters,
   listName,
   onClear,
+  onTemplates,
 }: {
   filters: TaskFilters;
   /** The list in view, if one is. */
   listName: string | null;
   onClear: () => void;
+  onTemplates: () => void;
 }) {
   if (isNarrowed(filters)) {
     return (
@@ -496,7 +544,8 @@ function TaskEmptyState({
       <EmptyState
         icon={ListTodo}
         title={`Nothing on ${listName}${filters.status === "open" ? " to do" : " yet"}`}
-        description="Add a task above and it goes on this list. You can also move a task here from its details."
+        description="Add a task above, or move one here from its details."
+        template={{ onClick: onTemplates }}
       />
     );
   }
@@ -516,8 +565,9 @@ function TaskEmptyState({
       description={
         filters.status === "open"
           ? "You’re all caught up. Add a task above when something new comes up."
-          : "Add your first task above. Give it a due date or priority to keep it in view."
+          : "Add your first task above, with a due date or priority to keep it in view."
       }
+      template={{ onClick: onTemplates }}
     />
   );
 }

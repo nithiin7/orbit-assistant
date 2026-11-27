@@ -45,7 +45,11 @@ export function TaskChip({ task }: { task: NonNullable<Reminder["task"]> }) {
     <Chip className="max-w-56">
       <CheckSquare className="size-3 shrink-0" aria-hidden="true" />
       <span className="sr-only">Task: </span>
-      <span className={cn("truncate", done && "line-through decoration-1")}>{task.title}</span>
+      <span className="truncate">
+        <span data-done={done || undefined} className="strike-sweep">
+          {task.title}
+        </span>
+      </span>
     </Chip>
   );
 }

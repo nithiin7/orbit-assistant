@@ -178,6 +178,37 @@ describe("ShoppingPanel", () => {
     ).toBeInTheDocument();
   });
 
+  it("fills an empty list from a template", async () => {
+    const user = userEvent.setup();
+    const posted: unknown[] = [];
+    mockApi({
+      ...session,
+      [`GET ${SHOP}/lists`]: json({ lists: [{ ...groceries, needed_count: 0 }] }),
+      [`GET ${SHOP}/lists/${groceries.id}/items`]: json({ items: [] }),
+      [`POST ${SHOP}/lists/${groceries.id}/items`]: ({ body }: MockRequest) => {
+        posted.push(body);
+        const name = (body as { name: string }).name;
+        return Response.json(item({ id: `i-${posted.length}`, name }), { status: 201 });
+      },
+    });
+    await renderSignedIn(<ShoppingPanel />);
+    await screen.findByRole("heading", { name: "Nothing on this list yet" });
+
+    await user.click(screen.getByRole("button", { name: "Start from a template" }));
+    const dialog = await screen.findByRole("dialog", { name: "Start from a template" });
+    expect(dialog).toHaveAccessibleDescription(
+      "Pick a list. Its items are added to Groceries, ready to edit.",
+    );
+    await user.click(
+      within(dialog).getByRole("button", { name: "Add 6 items from “Household basics”" }),
+    );
+
+    await waitFor(() => expect(posted).toHaveLength(6));
+    expect(posted[0]).toEqual({ name: "Dish soap", notes: "" });
+    expect(await screen.findByRole("checkbox", { name: "Kitchen towels" })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Start from a template" })).toBeNull();
+  });
+
   it("adds an item with a quantity and link from the keyboard", async () => {
     const user = userEvent.setup();
     const bread = item({

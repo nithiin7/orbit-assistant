@@ -4,13 +4,21 @@ import { Check } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { FONTS, PALETTES } from "@/lib/appearance-preference";
+import { DENSITIES, type Density, FONTS, PALETTES } from "@/lib/appearance-preference";
+import { cn } from "@/utils/common";
 
-import { setAppFont, setPalette, useAppFont, usePalette } from "./appearance-state";
+import {
+  setAppFont,
+  setDensity,
+  setPalette,
+  useAppFont,
+  useDensity,
+  usePalette,
+} from "./appearance-state";
 import { SidebarSettings } from "./sidebar-settings";
 import { ThemeSelector } from "./theme-selector";
 
-/** Mode, color theme, font, and sidebar links. Every choice is saved in this browser only. */
+/** Mode, color theme, font, list density, and sidebar links. Every choice is saved in this browser only. */
 export function AppearanceSettings() {
   return (
     <div className="space-y-8">
@@ -34,6 +42,13 @@ export function AppearanceSettings() {
         description="The typeface used across Orbit."
       >
         <FontSelector />
+      </AppearanceSection>
+      <AppearanceSection
+        id="appearance-density"
+        title="Density"
+        description="How much space list rows take, in Tasks, Shopping, and Reminders."
+      >
+        <DensitySelector />
       </AppearanceSection>
       <AppearanceSection
         id="appearance-sidebar"
@@ -141,6 +156,53 @@ function FontSelector() {
         })}
       </div>
     </fieldset>
+  );
+}
+
+function DensitySelector() {
+  const density = useDensity();
+
+  if (!density)
+    return <OptionsSkeleton label="Loading density options…" count={DENSITIES.length} />;
+
+  return (
+    <fieldset>
+      <legend className="sr-only">Density</legend>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {DENSITIES.map((option) => (
+          <OptionCard
+            key={option.value}
+            name="density"
+            checked={density === option.value}
+            onSelect={() => setDensity(option.value)}
+            label={option.label}
+            description={option.description}
+            preview={<DensityPreview density={option.value} />}
+          />
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+/** Three mock rows, spaced the way the density spaces real list rows. */
+function DensityPreview({ density }: { density: Density }) {
+  const compact = density === "compact";
+  return (
+    <span
+      className={cn(
+        "flex h-8 w-14 flex-col justify-center rounded-md border bg-background px-1.5",
+        compact ? "gap-0.5" : "gap-1.5",
+      )}
+      aria-hidden="true"
+    >
+      {[0, 1, 2].map((row) => (
+        <span key={row} className="flex items-center gap-1">
+          <span className="size-1 shrink-0 rounded-full bg-muted-foreground/60" />
+          <span className="h-0.5 flex-1 rounded-full bg-muted-foreground/40" />
+        </span>
+      ))}
+    </span>
   );
 }
 
