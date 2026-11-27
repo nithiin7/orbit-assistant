@@ -19,7 +19,7 @@ import { useConfirm } from "@/components/confirm-dialog";
 import { FormAlert } from "@/components/form-field";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
 import {
   useCalendarCategories,
   useCalendarMutations,
@@ -99,12 +99,63 @@ export function CalendarPanel() {
   return <CalendarView key={state.active.id} workspaceId={state.active.id} />;
 }
 
+/**
+ * The Calendar page while the workspace loads: the same header, toolbar, month grid, and
+ * sidebar as the real page, so it fills in without moving.
+ */
 function CalendarSkeleton() {
   return (
-    <div className="space-y-4" aria-busy="true">
+    <div className="space-y-6" aria-busy="true">
       <span className="sr-only">Loading calendar…</span>
-      <Skeleton className="h-8 w-48" />
-      <Skeleton className="h-[60vh] w-full rounded-xl" />
+      <PageHeader
+        title="Calendar"
+        actions={
+          <div aria-hidden="true" className="flex items-center gap-2">
+            <Skeleton className="h-9 w-24" />
+            <Skeleton className="size-9" />
+            <Skeleton className="h-9 w-32" />
+          </div>
+        }
+      />
+      <div aria-hidden="true" className="flex flex-wrap items-center gap-2">
+        <Skeleton className="h-8 w-16" />
+        <Skeleton className="h-8 w-16" />
+        <SkeletonText className="w-40 text-lg" />
+        <Skeleton className="ml-auto h-8 w-52" />
+      </div>
+      <div aria-hidden="true" className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]">
+        <div className="overflow-hidden rounded-2xl border bg-card shadow-elevation-1">
+          <div className="grid grid-cols-7 border-b bg-muted/40">
+            {Array.from({ length: 7 }, (_, day) => (
+              <div key={day} className="flex justify-center px-2 py-2">
+                <SkeletonText className="w-8 text-xs" />
+              </div>
+            ))}
+          </div>
+          {Array.from({ length: 5 }, (_, week) => (
+            <div key={week} className="grid grid-cols-7 border-b last:border-b-0">
+              {Array.from({ length: 7 }, (_, day) => (
+                <div key={day} className="min-h-24 border-r p-1 last:border-r-0 sm:min-h-28">
+                  <SkeletonText className="w-5 text-xs" />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="min-w-0 space-y-6">
+          {[3, 2].map((rows, section) => (
+            <div key={section} className="space-y-2">
+              <div className="flex items-center gap-2.5">
+                <Skeleton className="size-8 rounded-xl" />
+                <SkeletonText className="w-28 text-sm" />
+              </div>
+              {Array.from({ length: rows }, (_, row) => (
+                <Skeleton key={row} className="h-8 w-full" />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -577,7 +628,11 @@ function CalendarView({ workspaceId }: { workspaceId: string }) {
       <FormAlert message={actionError} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]">
-        <div className="min-w-0">
+        {/* While events load, the empty grid holds their place; they fill in when they arrive. */}
+        <div className="min-w-0" aria-busy={view !== "agenda" && state.status === "loading"}>
+          {view !== "agenda" && state.status === "loading" ? (
+            <span className="sr-only">Loading calendar…</span>
+          ) : null}
           {view === "agenda" ? (
             <AgendaView
               workspaceId={workspaceId}
@@ -598,8 +653,6 @@ function CalendarView({ workspaceId }: { workspaceId: string }) {
                 Try again
               </Button>
             </div>
-          ) : state.status === "loading" ? (
-            <CalendarSkeleton />
           ) : view === "month" ? (
             <MonthView
               date={date}

@@ -22,7 +22,7 @@ import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
 import { TemplatePickerDialog } from "@/components/template-picker-dialog";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { HeroSkeleton, Skeleton, SkeletonText } from "@/components/ui/skeleton";
 import { SortableList, type SortableMove } from "@/components/ui/sortable";
 import { usePeople } from "@/hooks/use-people";
 import { useDeleteItemWithUndo, useShopping, useShoppingMutations } from "@/hooks/use-shopping";
@@ -612,29 +612,53 @@ function LoadError({ message, onRetry }: { message: string; onRetry: () => void 
   );
 }
 
+/**
+ * The Shopping page while its lists load: the same rail, list hero, composer, and item list
+ * frame as the real page, so it fills in without moving.
+ */
 function ShoppingSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="@container/shop" aria-busy="true">
       <span className="sr-only">Loading shopping lists…</span>
-      <div className="flex gap-2">
-        <Skeleton className="h-9 w-28" />
-        <Skeleton className="h-9 w-24" />
+      <div className="grid gap-6 @4xl/shop:grid-cols-[13rem_minmax(0,1fr)] @4xl/shop:gap-8 @7xl/shop:grid-cols-[15rem_minmax(0,1fr)] @7xl/shop:gap-12">
+        <div aria-hidden="true" className="min-w-0 space-y-2 @4xl/shop:space-y-3">
+          <SkeletonText className="hidden w-16 px-3 text-xs @4xl/shop:flex" />
+          <div className="flex gap-1 @4xl/shop:flex-col">
+            {[0, 1, 2].map((row) => (
+              <Skeleton key={row} className="h-9 w-28 rounded-lg @4xl/shop:w-full" />
+            ))}
+          </div>
+        </div>
+        <div className="@container/list min-w-0 space-y-5">
+          <HeroSkeleton
+            ring
+            className="@3xl/list:p-6"
+            titleClassName="text-xl @3xl/list:text-2xl"
+          />
+          <Skeleton className="h-15 rounded-2xl" />
+          <ItemsSkeleton />
+        </div>
       </div>
-      <ItemsSkeleton />
     </div>
   );
 }
 
 function ItemsSkeleton() {
   return (
-    <div className="divide-y overflow-hidden rounded-xl border bg-card">
+    <div className="space-y-2">
       <span className="sr-only">Loading items…</span>
-      {[0, 1, 2].map((row) => (
-        <div key={row} className="flex items-center gap-3 px-4 py-3.5">
-          <Skeleton className="size-5 rounded-full" />
-          <Skeleton className={cn("h-4", row === 1 ? "w-1/3" : "w-1/2")} />
-        </div>
-      ))}
+      <SkeletonText aria-hidden="true" className="w-20 px-1 text-xs" />
+      <div className="divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1">
+        {[0, 1, 2].map((row) => (
+          <div
+            key={row}
+            className="flex items-center gap-3 px-3 py-3 sm:px-4 pointer-coarse:py-3.5 compact:py-1.5"
+          >
+            <Skeleton className="size-5 rounded-full" />
+            <SkeletonText className={cn("text-sm", row === 1 ? "w-1/3" : "w-1/2")} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

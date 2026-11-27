@@ -267,22 +267,27 @@ export function Gauge({
   );
 }
 
-/** Renders a resource's loading and error states, and its data once loaded. */
+/**
+ * Renders a resource's loading and error states, and its data once loaded. While loading it
+ * shows `fallback` (a placeholder shaped like the view) or else a block `skeleton` tall.
+ */
 export function Loaded<T>({
   resource,
   reload,
   children,
   skeleton = "h-40",
+  fallback,
 }: {
   resource: Resource<T>;
   reload: () => void;
   children: (data: T) => ReactNode;
   skeleton?: string;
+  fallback?: ReactNode;
 }) {
   if (resource.status === "loading") {
     return (
       <div aria-busy="true" aria-label="Loading">
-        <Skeleton className={cn("w-full rounded-xl", skeleton)} />
+        {fallback ?? <Skeleton className={cn("w-full rounded-xl", skeleton)} />}
       </div>
     );
   }

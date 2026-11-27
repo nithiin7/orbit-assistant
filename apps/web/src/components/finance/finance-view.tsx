@@ -20,7 +20,7 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
 import { useBudgetMonth } from "@/hooks/use-budgets";
 import { useCommitmentSummary } from "@/hooks/use-commitments";
 import { useFinanceSetup } from "@/hooks/use-finance";
@@ -42,7 +42,7 @@ import { AssetsView } from "./assets-view";
 import { BudgetsView } from "./budgets-view";
 import { CategoriesDialog } from "./categories-dialog";
 import { FinanceNav, type ViewBadges } from "./finance-nav";
-import { FinanceOverview } from "./finance-overview";
+import { FinanceOverview, OverviewSkeleton } from "./finance-overview";
 import { GoalsView } from "./goals-view";
 import { InvestmentsView } from "./investments-view";
 import { LoanDialog } from "./loan-dialog";
@@ -471,17 +471,40 @@ function useViewBadges(workspaceId: string, thisMonth: string, currency: Currenc
   return badges;
 }
 
+/**
+ * The Finance page while its data loads: the same rail, view header, and overview frame as the
+ * real page, so it fills in without moving.
+ */
 function FinanceSkeleton() {
   return (
-    <div className="space-y-4">
+    <div className="@container/finance" aria-busy="true">
       <span className="sr-only">Loading finances…</span>
-      <Skeleton className="h-9 w-72" />
-      <div className="grid gap-4 sm:grid-cols-3">
-        {[0, 1, 2].map((tile) => (
-          <Skeleton key={tile} className="h-24 rounded-xl" />
-        ))}
+      <div className="grid gap-6 @5xl/finance:grid-cols-[13rem_minmax(0,1fr)] @5xl/finance:gap-8 @7xl/finance:grid-cols-[15rem_minmax(0,1fr)] @7xl/finance:gap-12">
+        <div aria-hidden="true" className="min-w-0">
+          <Skeleton className="h-9 w-full @5xl/finance:hidden" />
+          <div className="hidden space-y-1 @5xl/finance:block">
+            {Array.from({ length: 9 }, (_, row) => (
+              <Skeleton key={row} className="h-9 rounded-lg" />
+            ))}
+          </div>
+        </div>
+        <div className="@container/list min-w-0 space-y-6">
+          <div
+            aria-hidden="true"
+            className="flex flex-col gap-3 @3xl/list:flex-row @3xl/list:items-end @3xl/list:justify-between"
+          >
+            <div className="min-w-0 space-y-1">
+              <SkeletonText className="w-28 text-lg" />
+              <SkeletonText className="w-72 text-sm" />
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-9 w-40" />
+              <Skeleton className="h-9 w-24" />
+            </div>
+          </div>
+          <OverviewSkeleton />
+        </div>
       </div>
-      <Skeleton className="h-56 rounded-xl" />
     </div>
   );
 }

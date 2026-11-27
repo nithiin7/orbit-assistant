@@ -49,7 +49,7 @@ import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Menu, type MenuItem } from "@/components/ui/menu";
 import { Select } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
+import { HeroSkeleton, Skeleton, SkeletonText } from "@/components/ui/skeleton";
 import {
   useNote,
   useNoteCounts,
@@ -113,7 +113,7 @@ export function NotesPanel() {
       </div>
     );
   }
-  if (state.status === "loading") return <ListSkeleton />;
+  if (state.status === "loading") return <NotesPageSkeleton />;
   return <NotesView key={state.active.id} workspaceId={state.active.id} />;
 }
 
@@ -743,12 +743,12 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
             aria-labelledby="note-list-heading"
             className="@container/list min-w-0 space-y-3"
           >
-            {counts &&
-            location.view === "all" &&
-            !location.folderId &&
-            !location.tagId &&
-            !appliedSearch ? (
-              <NotesHero counts={counts} onNavigate={(view) => void navigate({ view })} />
+            {location.view === "all" && !location.folderId && !location.tagId && !appliedSearch ? (
+              counts ? (
+                <NotesHero counts={counts} onNavigate={(view) => void navigate({ view })} />
+              ) : (
+                <NotesHeroSkeleton />
+              )
             ) : null}
             {listContent(false)}
           </section>
@@ -1012,13 +1012,59 @@ function ListEmptyState({
   );
 }
 
+function NotesHeroSkeleton() {
+  return (
+    <HeroSkeleton
+      tiles={4}
+      className="@3xl/list:p-6"
+      headerClassName="space-y-1"
+      titleClassName="text-xl @3xl/list:text-2xl"
+      tilesClassName="grid-cols-2 @2xl/list:grid-cols-4"
+    />
+  );
+}
+
+/**
+ * The Notes page while the workspace loads: the same header, rail, hero, toolbar, and list
+ * frame as the real page, so it fills in without moving.
+ */
+function NotesPageSkeleton() {
+  return (
+    <div className="@container/notes space-y-5" aria-busy="true">
+      <div aria-hidden="true" className="flex items-center justify-between gap-3">
+        <SkeletonText className="w-24 text-2xl" />
+        <Skeleton className="h-9 w-28" />
+      </div>
+      <div className="grid gap-6 @5xl/notes:grid-cols-[13rem_minmax(0,1fr)] @7xl/notes:grid-cols-[14rem_minmax(0,1fr)]">
+        <div aria-hidden="true" className="hidden min-w-0 space-y-1 p-1 @5xl/notes:block">
+          {[0, 1, 2, 3, 4].map((row) => (
+            <Skeleton key={row} className="h-9 rounded-lg" />
+          ))}
+        </div>
+        <div className="@container/list min-w-0 space-y-3">
+          <NotesHeroSkeleton />
+          <div aria-hidden="true" className="space-y-3">
+            <SkeletonText className="w-28 text-lg" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-10 flex-1 rounded-xl" />
+              <Skeleton className="h-9 w-36 shrink-0" />
+              <Skeleton className="size-9 shrink-0" />
+            </div>
+          </div>
+          <ListSkeleton />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ListSkeleton() {
   return (
     <div aria-hidden="true" className="divide-y overflow-hidden rounded-xl border bg-card">
       {[0, 1, 2, 3].map((row) => (
-        <div key={row} className="space-y-2 px-4 py-3">
-          <Skeleton className="h-4 w-1/2" />
-          <Skeleton className="h-3 w-5/6" />
+        <div key={row} className="space-y-1 px-4 py-3">
+          <SkeletonText className="w-1/2 text-sm" />
+          <SkeletonText className="w-5/6 text-xs" />
         </div>
       ))}
     </div>

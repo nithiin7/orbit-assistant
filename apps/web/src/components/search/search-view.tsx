@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
 import { useActiveWorkspaceId } from "@/hooks/use-calendar";
 import { useDocumentCategories } from "@/hooks/use-documents";
 import {
@@ -314,10 +314,20 @@ export function SearchView() {
           </Button>
         </div>
       ) : search.loading || !searched ? (
+        // The same count line and result rows as the results, so they fill in without moving.
         <div aria-hidden="true" className="space-y-3">
-          {[0, 1, 2, 3].map((row) => (
-            <Skeleton key={row} className="h-16 w-full" />
-          ))}
+          <SkeletonText className="w-24 text-xs" />
+          <div className="space-y-1">
+            {[0, 1, 2, 3].map((row) => (
+              <div key={row} className="flex gap-3 px-3 py-3">
+                <Skeleton className="mt-0.5 size-8 shrink-0 rounded-md" />
+                <div className="min-w-0 flex-1 space-y-1">
+                  <SkeletonText className={cn("text-sm", row % 2 === 1 ? "w-1/3" : "w-1/2")} />
+                  <SkeletonText className="w-4/5 text-sm" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       ) : hits.length === 0 ? (
         <EmptyState

@@ -94,6 +94,7 @@ const EMPTY_VIEWS: Record<SavedView["kind"], { title: string; description: strin
 /** The Saved page for the active workspace. Remounts (and resets) when the workspace changes. */
 export function SavedPanel() {
   const { state, refresh } = useWorkspaces();
+  const view = parseSavedView(useSearchParams());
 
   if (state.status === "error") {
     return (
@@ -104,7 +105,11 @@ export function SavedPanel() {
   }
   if (state.status === "loading") {
     return (
-      <Shell>
+      <Shell
+        view={view}
+        title={viewTitle(view, [])}
+        actions={<Skeleton aria-hidden="true" className="h-9 w-28" />}
+      >
         <ListSkeleton />
       </Shell>
     );

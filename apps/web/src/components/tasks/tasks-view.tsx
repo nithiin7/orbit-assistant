@@ -12,7 +12,7 @@ import { FormAlert } from "@/components/form-field";
 import { TemplatePickerDialog } from "@/components/template-picker-dialog";
 import { Button } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
 import { SortableList, type SortableMove } from "@/components/ui/sortable";
 import {
   useDeleteTaskWithUndo,
@@ -69,7 +69,7 @@ export function TasksPanel() {
       </div>
     );
   }
-  if (state.status === "loading") return <TaskListSkeleton />;
+  if (state.status === "loading") return <TasksPageSkeleton />;
   return <TasksView key={state.active.id} workspaceId={state.active.id} />;
 }
 
@@ -576,6 +576,49 @@ function TaskEmptyState({
       }
       template={{ onClick: onTemplates }}
     />
+  );
+}
+
+/**
+ * The Tasks page while the workspace loads: the same rail, hero, toolbar, composer, and list
+ * frame as the real page, so it fills in without moving.
+ */
+function TasksPageSkeleton() {
+  return (
+    <div className="@container/tasks" aria-busy="true">
+      <div className="grid gap-6 @4xl/tasks:grid-cols-[13rem_minmax(0,1fr)] @4xl/tasks:gap-8 @7xl/tasks:grid-cols-[15rem_minmax(0,1fr)] @7xl/tasks:gap-12">
+        <div
+          aria-hidden="true"
+          className="min-w-0 space-y-3 @4xl/tasks:sticky @4xl/tasks:top-6 @4xl/tasks:space-y-6 @4xl/tasks:self-start"
+        >
+          <div className="flex gap-1 @4xl/tasks:flex-col">
+            {[0, 1, 2].map((row) => (
+              <Skeleton key={row} className="h-9 w-24 rounded-lg @4xl/tasks:w-full" />
+            ))}
+          </div>
+          <div className="flex gap-1.5 @4xl/tasks:flex-wrap">
+            {[0, 1, 2, 3].map((chip) => (
+              <Skeleton key={chip} className="h-8 w-20 rounded-full" />
+            ))}
+          </div>
+        </div>
+        <div className="@container/list min-w-0 space-y-5">
+          <TasksHero summary={undefined} today={localDateString()} />
+          <div
+            aria-hidden="true"
+            className="flex flex-col gap-3 @3xl/list:flex-row @3xl/list:items-end @3xl/list:justify-between"
+          >
+            <SkeletonText className="w-24 text-lg" />
+            <div className="flex w-full flex-col gap-2 @md/list:flex-row @3xl/list:w-auto">
+              <Skeleton className="h-9 min-w-0 flex-1 @3xl/list:w-64 @3xl/list:flex-none @5xl/list:w-80" />
+              <Skeleton className="h-9 @md/list:w-44" />
+            </div>
+          </div>
+          <Skeleton className="h-15 rounded-2xl" />
+          <TaskListSkeleton />
+        </div>
+      </div>
+    </div>
   );
 }
 
