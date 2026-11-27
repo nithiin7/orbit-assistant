@@ -38,6 +38,7 @@ import { EXERCISE_CATEGORIES, labelOf } from "@/lib/fitness";
 import { noteHref } from "@/lib/note-links";
 import { cn } from "@/utils/common";
 import { formatCalendarDate } from "@/utils/dates";
+import { revealWhenVisible } from "@/utils/reveal";
 
 import { ViewError } from "../habits/view-error";
 
@@ -209,7 +210,10 @@ export function Gauge({
 }) {
   const percent = fraction === null ? 0 : Math.round(fraction * 100);
   const offset = 100 - percent;
-  const style: CSSProperties & { "--ring-offset": number } = { "--ring-offset": offset };
+  const style: CSSProperties & { "--ring-offset": number } = {
+    "--ring-offset": offset,
+    strokeDashoffset: offset,
+  };
   return (
     <div
       role="progressbar"
@@ -221,6 +225,7 @@ export function Gauge({
       className="relative size-24 shrink-0"
     >
       <svg
+        ref={revealWhenVisible}
         viewBox="0 0 100 100"
         aria-hidden="true"
         className={cn("size-full", HEALTH_TONES[tone].stroke)}
@@ -245,10 +250,9 @@ export function Gauge({
             strokeLinecap="round"
             pathLength={100}
             strokeDasharray="100"
-            strokeDashoffset={offset}
             transform="rotate(-90 50 50)"
             style={style}
-            className="motion-safe:animate-ring-fill"
+            className="progress-arc"
           />
         ) : null}
       </svg>

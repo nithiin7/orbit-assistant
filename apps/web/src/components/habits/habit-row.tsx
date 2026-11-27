@@ -8,6 +8,7 @@ import { type FormEvent, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
+import { RollingNumber } from "@/components/ui/rolling-number";
 import {
   describeProgress,
   describeSchedule,
@@ -139,7 +140,7 @@ export function HabitRow({ item, onLog }: HabitRowProps) {
           >
             <Flame className="size-3.5 text-event-orange" aria-hidden="true" />
             <span className="sr-only">Streak </span>
-            {item.current_streak}
+            <RollingNumber value={item.current_streak} />
             <span className="sr-only"> {item.streak_unit}s</span>
           </span>
         ) : null}

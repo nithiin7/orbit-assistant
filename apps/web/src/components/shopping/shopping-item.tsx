@@ -68,10 +68,8 @@ export function ShoppingItemRow({
           >
             <span
               id={nameId}
-              className={cn(
-                "transition-colors duration-150",
-                purchased && "text-muted-foreground line-through decoration-1",
-              )}
+              data-done={purchased || undefined}
+              className={cn("strike-sweep", purchased && "text-muted-foreground")}
             >
               {item.name}
             </span>

@@ -95,6 +95,8 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
   useLinkedTask(workspaceId, setEditing);
   const [actionError, setActionError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
+  /** Tasks whose rows folded away after they stopped belonging in the list in view. */
+  const [departed, setDeparted] = useState<ReadonlySet<string>>(new Set());
   const titleRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -228,11 +230,25 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
     });
   };
 
+  // A task completed (or reopened) here stays in the cached list until it refetches; its row
+  // folds away instead, and is then left out.
+  const belongs = (task: Task) => filters.status === "all" || task.status === filters.status;
+  const shownTasks =
+    state.status === "success"
+      ? state.data.tasks.filter((task) => belongs(task) || !departed.has(task.id))
+      : [];
+  const shownTotal =
+    state.status === "success"
+      ? state.data.total - (state.data.tasks.length - shownTasks.length)
+      : 0;
+
   const Row = manual ? SortableTaskItem : TaskItem;
   const renderRow = (task: Task) => (
     <Row
       key={task.id}
       task={task}
+      leaving={!belongs(task)}
+      onLeft={(item) => setDeparted((current) => new Set(current).add(item.id))}
       // The list in view goes without saying.
       list={
         task.list_id && task.list_id !== filters.list ? lists.byId.get(task.list_id) : undefined
@@ -361,7 +377,7 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
                   Try again
                 </Button>
               </div>
-            ) : state.data.tasks.length === 0 ? (
+            ) : shownTasks.length === 0 ? (
               <TaskEmptyState
                 filters={filters}
                 listName={selectedList?.name ?? null}
@@ -373,7 +389,7 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
                 {grouped ? (
                   // On very wide screens the sections sit side by side, like a board.
                   <div className="gap-6 @5xl/list:columns-2 @min-[100rem]/list:columns-3">
-                    {groupTasksByDue(state.data.tasks, today).map((group) => {
+                    {groupTasksByDue(shownTasks, today).map((group) => {
                       const headingId = `${groupIdPrefix}-${group.key}`;
                       return (
                         <section
@@ -412,31 +428,27 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
                   </div>
                 ) : manual ? (
                   // One column, so a dragged row moves straight up or down.
-                  <SortableList
-                    items={state.data.tasks}
-                    itemLabel={(task) => task.title}
-                    onMove={move}
-                  >
-                    <ul aria-label={countLabel(state.data.total)} className={listClassName}>
-                      {state.data.tasks.map(renderRow)}
+                  <SortableList items={shownTasks} itemLabel={(task) => task.title} onMove={move}>
+                    <ul aria-label={countLabel(shownTotal)} className={listClassName}>
+                      {shownTasks.map(renderRow)}
                     </ul>
                   </SortableList>
                 ) : (
                   <ul
-                    aria-label={countLabel(state.data.total)}
+                    aria-label={countLabel(shownTotal)}
                     className={cn(
                       listClassName,
                       // Two columns of rows on very wide screens, with a rule between them.
                       "grid @5xl/list:grid-cols-2 @5xl/list:divide-y-0 @5xl/list:*:-mb-px @5xl/list:*:border-b @5xl/list:*:odd:border-r @5xl/list:*:odd:last:border-r-0",
                     )}
                   >
-                    {state.data.tasks.map(renderRow)}
+                    {shownTasks.map(renderRow)}
                   </ul>
                 )}
                 <p className="px-1 text-xs text-muted-foreground">
-                  {state.data.total > state.data.tasks.length
-                    ? `Showing ${state.data.tasks.length} of ${state.data.total} tasks. Search or filter to find the rest.`
-                    : countLabel(state.data.total)}
+                  {shownTotal > shownTasks.length
+                    ? `Showing ${shownTasks.length} of ${shownTotal} tasks. Search or filter to find the rest.`
+                    : countLabel(shownTotal)}
                 </p>
               </div>
             )}

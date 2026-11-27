@@ -446,10 +446,12 @@ function LinkedTasks({
                 href={`/tasks?task=${task.id}`}
                 className={cn(
                   "min-w-0 flex-1 truncate rounded-sm outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-ring",
-                  task.status === "completed" && "text-muted-foreground line-through",
+                  task.status === "completed" && "text-muted-foreground",
                 )}
               >
-                {task.title}
+                <span data-done={task.status === "completed" || undefined} className="strike-sweep">
+                  {task.title}
+                </span>
                 <span className="sr-only">{task.status === "completed" ? " (completed)" : ""}</span>
               </Link>
               {readOnly ? null : (

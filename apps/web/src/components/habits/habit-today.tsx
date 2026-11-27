@@ -35,6 +35,7 @@ import {
 import { WEEKDAYS } from "@/lib/reminders";
 import { cn } from "@/utils/common";
 import { dayOfWeek, formatCalendarDate } from "@/utils/dates";
+import { revealWhenVisible } from "@/utils/reveal";
 
 import { useCelebration } from "./celebration";
 import { COLOR_STYLES, HABIT_ICON_COMPONENTS, HabitTile } from "./habit-icon";
@@ -408,7 +409,10 @@ function ProgressRing({
 }) {
   const percent = Math.round(Math.max(0, Math.min(1, value)) * 100);
   const offset = 100 - percent;
-  const style: CSSProperties & { "--ring-offset": number } = { "--ring-offset": offset };
+  const style: CSSProperties & { "--ring-offset": number } = {
+    "--ring-offset": offset,
+    strokeDashoffset: offset,
+  };
   return (
     <div
       role="progressbar"
@@ -418,7 +422,12 @@ function ProgressRing({
       aria-valuenow={percent}
       className="relative size-24 shrink-0"
     >
-      <svg viewBox="0 0 100 100" aria-hidden="true" className="size-full text-success">
+      <svg
+        ref={revealWhenVisible}
+        viewBox="0 0 100 100"
+        aria-hidden="true"
+        className="size-full text-success"
+      >
         <circle
           cx="50"
           cy="50"
@@ -439,10 +448,9 @@ function ProgressRing({
             strokeLinecap="round"
             pathLength={100}
             strokeDasharray="100"
-            strokeDashoffset={offset}
             transform="rotate(-90 50 50)"
             style={style}
-            className="motion-safe:animate-ring-fill"
+            className="progress-arc"
           />
         ) : null}
       </svg>

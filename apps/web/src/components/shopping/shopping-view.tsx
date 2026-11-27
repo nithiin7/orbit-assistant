@@ -35,6 +35,7 @@ import {
 import { useWorkspaces } from "@/providers/workspace";
 import { cn } from "@/utils/common";
 import { isEditableTarget } from "@/utils/keyboard";
+import { revealWhenVisible } from "@/utils/reveal";
 
 import { ItemComposer } from "./item-composer";
 import { ItemEditDialog } from "./item-edit-dialog";
@@ -539,7 +540,10 @@ function BoughtRing({
 }) {
   const percent = total === 0 ? 0 : Math.round((purchased / total) * 100);
   const offset = 100 - percent;
-  const style: CSSProperties & { "--ring-offset": number } = { "--ring-offset": offset };
+  const style: CSSProperties & { "--ring-offset": number } = {
+    "--ring-offset": offset,
+    strokeDashoffset: offset,
+  };
   return (
     <div
       role="progressbar"
@@ -550,6 +554,7 @@ function BoughtRing({
       className="relative size-20 shrink-0"
     >
       <svg
+        ref={revealWhenVisible}
         viewBox="0 0 100 100"
         aria-hidden="true"
         className={cn("size-full", done ? "text-success" : "text-brand")}
@@ -574,10 +579,9 @@ function BoughtRing({
             strokeLinecap="round"
             pathLength={100}
             strokeDasharray="100"
-            strokeDashoffset={offset}
             transform="rotate(-90 50 50)"
             style={style}
-            className="motion-safe:animate-ring-fill"
+            className="progress-arc"
           />
         ) : null}
       </svg>

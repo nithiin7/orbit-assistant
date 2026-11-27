@@ -336,13 +336,16 @@ export function TaskPickerDialog({
           render={(task) => (
             <>
               <CheckSquare className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-              <span
-                className={cn(
-                  "min-w-0 flex-1 truncate",
-                  task.status === "completed" && "text-muted-foreground line-through",
-                )}
-              >
-                {task.title}
+              <span className="min-w-0 flex-1 truncate">
+                <span
+                  data-done={task.status === "completed" || undefined}
+                  className={cn(
+                    "strike-sweep",
+                    task.status === "completed" && "text-muted-foreground",
+                  )}
+                >
+                  {task.title}
+                </span>
               </span>
             </>
           )}
