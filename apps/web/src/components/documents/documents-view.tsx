@@ -36,7 +36,7 @@ import { IconChip } from "@/components/ui/icon-chip";
 import { Input } from "@/components/ui/input";
 import { Menu } from "@/components/ui/menu";
 import { Select } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
+import { HeroSkeleton, Skeleton, SkeletonText } from "@/components/ui/skeleton";
 import { useViewerTimeZone } from "@/hooks/use-calendar";
 import {
   useDocumentCategories,
@@ -100,15 +100,118 @@ export function DocumentsPanel() {
       </div>
     );
   }
-  if (state.status === "loading") return <ListSkeleton />;
+  if (state.status === "loading") return <DocumentsPageSkeleton />;
   return <DocumentsView key={state.active.id} workspaceId={state.active.id} />;
 }
 
-function ListSkeleton() {
+/**
+ * The Documents page while the workspace loads: the same header, rail, and overview frame as
+ * the real page, so it fills in without moving.
+ */
+function DocumentsPageSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Loading documents" className="space-y-3">
-      {Array.from({ length: 5 }, (_, index) => (
-        <Skeleton key={index} className="h-16 w-full rounded-xl" />
+    <div className="@container/documents space-y-5" aria-busy="true" aria-label="Loading documents">
+      <div aria-hidden="true" className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <SkeletonText className="w-36 text-2xl" />
+          <SkeletonText className="w-80 text-sm" />
+        </div>
+        <Skeleton className="h-9 w-28" />
+      </div>
+      <div className="grid gap-6 @5xl/documents:grid-cols-[15rem_minmax(0,1fr)]">
+        <div aria-hidden="true" className="hidden min-w-0 space-y-1 @5xl/documents:block">
+          {[0, 1, 2, 3, 4, 5].map((row) => (
+            <Skeleton key={row} className="h-9 rounded-lg" />
+          ))}
+        </div>
+        <div className="@container/list min-w-0 space-y-3">
+          <SkeletonText aria-hidden="true" className="w-32 text-lg" />
+          <OverviewSkeleton />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** The vault overview's hero and two columns of panels, while it loads. */
+function OverviewSkeleton() {
+  return (
+    <div aria-hidden="true" className="space-y-6">
+      <HeroSkeleton
+        tiles={4}
+        className="@3xl/list:p-6"
+        headerClassName="space-y-1"
+        titleClassName="text-xl @3xl/list:text-2xl"
+        tilesClassName="grid-cols-2 @2xl/list:grid-cols-4"
+      />
+      <div className="grid items-start gap-6 @4xl/list:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        {[3, 2].map((rows, column) => (
+          <div
+            key={column}
+            className="overflow-hidden rounded-2xl border bg-card shadow-elevation-1"
+          >
+            <div className="flex min-h-14 items-center gap-2.5 px-4 py-3">
+              <Skeleton className="size-8 rounded-xl" />
+              <SkeletonText className="w-28 text-sm" />
+            </div>
+            <div className="divide-y border-t">
+              {Array.from({ length: rows }, (_, row) => (
+                <div key={row} className="flex items-center gap-3 px-4 py-2.5">
+                  <Skeleton className="size-8 shrink-0 rounded-lg" />
+                  <div className="min-w-0 flex-1">
+                    <SkeletonText className="w-1/2 text-sm" />
+                    <SkeletonText className="w-1/3 text-xs" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** The document list (or grid) while it loads, with the real rows' padding and lines. */
+function ListSkeleton({ layout = "list" }: { layout?: DocumentLayout }) {
+  const rows = [0, 1, 2, 3, 4];
+  if (layout === "grid") {
+    return (
+      <div
+        aria-busy="true"
+        aria-label="Loading documents"
+        className="grid grid-cols-1 gap-3 @md/list:grid-cols-2 @3xl/list:grid-cols-3 @6xl/list:grid-cols-4"
+      >
+        {rows.map((row) => (
+          <div
+            key={row}
+            aria-hidden="true"
+            className="flex min-h-32 flex-col gap-3 rounded-2xl border bg-card p-4 pt-10 pr-10 shadow-elevation-1"
+          >
+            <Skeleton className="size-9 rounded-lg" />
+            <div>
+              <SkeletonText className="w-3/4 text-sm" />
+              <SkeletonText className="mt-1 w-1/2 text-xs" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div
+      aria-busy="true"
+      aria-label="Loading documents"
+      className="divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1"
+    >
+      {rows.map((row) => (
+        <div key={row} aria-hidden="true" className="flex items-center gap-3 py-3 pr-11 pl-11">
+          <Skeleton className="size-9 shrink-0 rounded-lg" />
+          <div className="min-w-0 flex-1">
+            <SkeletonText className={cn("text-sm", row % 2 === 1 ? "w-1/3" : "w-1/2")} />
+            <SkeletonText className="mt-1 w-1/4 text-xs" />
+          </div>
+        </div>
       ))}
     </div>
   );
@@ -696,7 +799,7 @@ function DocumentsView({ workspaceId }: { workspaceId: string }) {
 
                 {showOverview ? (
                   overview.state.status === "loading" ? (
-                    <ListSkeleton />
+                    <OverviewSkeleton />
                   ) : overview.state.status === "error" ? (
                     <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
                       <p>{overview.state.message}</p>
@@ -729,7 +832,7 @@ function DocumentsView({ workspaceId }: { workspaceId: string }) {
                     />
                   )
                 ) : list.state.status === "loading" ? (
-                  <ListSkeleton />
+                  <ListSkeleton layout={layout} />
                 ) : list.state.status === "error" ? (
                   <div role="alert" className="space-y-3 rounded-xl border bg-card p-4 text-sm">
                     <p>{list.state.message}</p>

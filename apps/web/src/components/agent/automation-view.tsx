@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 
+import { HeroSkeleton } from "@/components/ui/skeleton";
 import { useAgentOverview } from "@/hooks/use-agent";
 import { parseAgentTab } from "@/lib/agent";
 
@@ -30,7 +31,18 @@ export function AutomationView() {
 
         <div key={tab} className="@container min-w-0 animate-page-in space-y-6">
           {overview.status === "loading" ? (
-            <LoadingRows label="Loading the agent" />
+            tab === "overview" ? (
+              <div className="space-y-6">
+                <HeroSkeleton
+                  className="@3xl:p-6"
+                  headerClassName="space-y-0.5"
+                  titleClassName="text-xl @3xl:text-2xl"
+                />
+                <LoadingRows label="Loading the agent" />
+              </div>
+            ) : (
+              <LoadingRows label="Loading the agent" />
+            )
           ) : overview.status === "error" ? (
             <ErrorNote message={overview.message} />
           ) : tab === "overview" ? (

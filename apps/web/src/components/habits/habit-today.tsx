@@ -19,7 +19,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { EmptyState, StartFromTemplate } from "@/components/empty-state";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { IconChip, type IconChipTone } from "@/components/ui/icon-chip";
-import { Skeleton } from "@/components/ui/skeleton";
+import { HeroSkeleton, Skeleton, SkeletonText } from "@/components/ui/skeleton";
 import type { Resource } from "@/hooks/query-resource";
 import {
   cheerFor,
@@ -97,15 +97,7 @@ export function HabitTodayView({
 }: HabitTodayViewProps) {
   const { celebrate, celebration } = useCelebration();
 
-  if (state.status === "loading") {
-    return (
-      <div className="space-y-3" aria-busy="true" aria-label="Loading today’s habits">
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-14 w-full" />
-        <Skeleton className="h-14 w-full" />
-      </div>
-    );
-  }
+  if (state.status === "loading") return <HabitTodaySkeleton />;
   if (state.status === "error") return <ViewError message={state.message} onRetry={onReload} />;
 
   const today = state.data;
@@ -511,5 +503,51 @@ function SideCard({
       </h2>
       {children}
     </section>
+  );
+}
+
+/**
+ * Today's habits while they load: the same hero, rows, and side cards as the real view, so it
+ * fills in without moving.
+ */
+export function HabitTodaySkeleton() {
+  return (
+    <div
+      className="grid gap-6 @4xl:grid-cols-[minmax(0,1fr)_18rem]"
+      aria-busy="true"
+      aria-label="Loading today’s habits"
+    >
+      <div className="min-w-0 space-y-6">
+        <HeroSkeleton ring className="@3xl:p-6" titleClassName="text-xl @3xl:text-2xl" />
+        <div aria-hidden="true" className="space-y-2">
+          <SkeletonText className="w-20 text-sm" />
+          <ul className="space-y-2">
+            {[0, 1, 2].map((row) => (
+              <li
+                key={row}
+                className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2.5"
+              >
+                <Skeleton className="size-8 shrink-0 rounded-full" />
+                <div className="min-w-0 flex-1">
+                  <SkeletonText className={cn("text-sm", row === 1 ? "w-1/3" : "w-1/2")} />
+                  <SkeletonText className="w-1/4 text-xs" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+      <div aria-hidden="true" className="space-y-6">
+        {[0, 1].map((card) => (
+          <div key={card} className="space-y-3 rounded-2xl border bg-card p-4">
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="size-8 rounded-xl" />
+              <SkeletonText className="w-24 text-sm" />
+            </div>
+            <Skeleton className="h-12 w-full" />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

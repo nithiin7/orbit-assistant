@@ -417,7 +417,8 @@ export function AccountBalance({ account }: { account: FinanceAccount }) {
   );
 }
 
-function OverviewSkeleton() {
+/** The month overview while it loads. */
+export function OverviewSkeleton() {
   return (
     <div className="space-y-6">
       <span className="sr-only">Loading this month…</span>

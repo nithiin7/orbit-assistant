@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
 import type { Resource } from "@/hooks/query-resource";
 import { useLinkedRecord } from "@/hooks/use-linked-record";
 import {
@@ -23,6 +23,7 @@ import {
   type FireGroupKey,
   groupRemindersByFire,
   matchesReminder,
+  REMINDER_FILTERS,
   type ReminderFields,
   type ReminderFilter,
   toReminderListQuery,
@@ -30,6 +31,7 @@ import {
 import { useCurrentUser } from "@/providers/auth";
 import { useWorkspaces } from "@/providers/workspace";
 import { cn } from "@/utils/common";
+import { animateListChanges } from "@/utils/list-motion";
 import { browserTimeZone } from "@/utils/time-zones";
 
 import { ReminderDialog } from "./reminder-dialog";
@@ -53,7 +55,7 @@ export function RemindersPanel() {
       </div>
     );
   }
-  if (state.status === "loading") return <ReminderListSkeleton />;
+  if (state.status === "loading") return <RemindersPageSkeleton />;
   return <RemindersView key={state.active.id} workspaceId={state.active.id} />;
 }
 
@@ -131,7 +133,7 @@ function RemindersView({ workspaceId }: { workspaceId: string }) {
     />
   );
   const listClassName = cn(
-    "@container/rows divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1 transition-opacity duration-150",
+    "@container/rows relative divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1 transition-opacity duration-150",
     refreshing && "opacity-70",
   );
   // Sections by when they fire help where reminders have times ahead; other views read as one list.
@@ -280,6 +282,7 @@ function RemindersView({ workspaceId }: { workspaceId: string }) {
                           </h3>
                           <ul
                             aria-label={`${group.label}, ${countLabel(group.reminders.length)}`}
+                            ref={animateListChanges}
                             className={listClassName}
                           >
                             {group.reminders.map(renderRow)}
@@ -290,6 +293,7 @@ function RemindersView({ workspaceId }: { workspaceId: string }) {
                   </div>
                 ) : (
                   <ul
+                    ref={animateListChanges}
                     aria-label={countLabel(searching ? visible.length : state.data.total)}
                     className={cn(
                       listClassName,
@@ -414,6 +418,40 @@ function ReminderEmptyState({
   }
 }
 
+/**
+ * The Reminders page while the workspace loads: the same rail, heading, and list frame as the
+ * real page, so it fills in without moving.
+ */
+function RemindersPageSkeleton() {
+  return (
+    <div className="@container/reminders" aria-busy="true">
+      <div className="grid gap-6 @4xl/reminders:grid-cols-[13rem_minmax(0,1fr)] @4xl/reminders:gap-8 @7xl/reminders:grid-cols-[15rem_minmax(0,1fr)] @7xl/reminders:gap-12">
+        <div aria-hidden="true" className="flex min-w-0 gap-1 @4xl/reminders:flex-col">
+          {REMINDER_FILTERS.map(({ value }) => (
+            <Skeleton
+              key={value}
+              className="h-9 w-24 shrink-0 rounded-full @4xl/reminders:w-full @4xl/reminders:rounded-lg"
+            />
+          ))}
+        </div>
+        <div className="@container/list min-w-0 space-y-5">
+          <div
+            aria-hidden="true"
+            className="flex flex-col gap-3 @lg/list:flex-row @lg/list:items-end @lg/list:justify-between"
+          >
+            <div className="min-w-0 space-y-1.5">
+              <SkeletonText className="w-28 text-lg" />
+              <SkeletonText className="w-20 text-sm" />
+            </div>
+            <Skeleton className="h-9 w-36 shrink-0" />
+          </div>
+          <ReminderListSkeleton />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ReminderListSkeleton() {
   return (
     <div className="divide-y overflow-hidden rounded-2xl border bg-card">
@@ -421,12 +459,12 @@ function ReminderListSkeleton() {
       {[0, 1, 2, 3].map((row) => (
         <div key={row} className="flex items-start gap-4 px-4 py-3.5">
           <div className="w-16 shrink-0 space-y-1.5 sm:w-20">
-            <Skeleton className="h-4 w-14" />
-            <Skeleton className="h-3 w-10" />
+            <SkeletonText className="w-14 text-sm" />
+            <SkeletonText className="w-10 text-xs" />
           </div>
           <Skeleton className="hidden size-9 shrink-0 rounded-xl sm:block" />
           <div className="min-w-0 flex-1 space-y-2">
-            <Skeleton className={cn("h-4", row % 2 === 1 ? "w-1/3" : "w-1/2")} />
+            <SkeletonText className={cn("text-sm", row % 2 === 1 ? "w-1/3" : "w-1/2")} />
             <Skeleton className="h-5 w-24 rounded-full" />
           </div>
           <Skeleton className="h-5 w-9 self-center rounded-full" />

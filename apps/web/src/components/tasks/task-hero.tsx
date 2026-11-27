@@ -2,7 +2,7 @@ import type { TaskSummary } from "@orbit/contracts";
 import { AlertCircle, CalendarClock, CheckCheck, CircleDashed, ListChecks } from "lucide-react";
 import type { CSSProperties } from "react";
 
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
 import { cn } from "@/utils/common";
 import { revealWhenVisible } from "@/utils/reveal";
 
@@ -30,36 +30,38 @@ function longDate(day: string): string {
 
 /**
  * The workspace's tasks at a glance: a headline, what needs attention, how much is done, and the
- * counts behind it. Waits for the summary with a placeholder of the same shape.
+ * counts behind it. Until the summary arrives, the same card holds placeholders for the numbers
+ * and words, so nothing moves when they appear.
  */
 export function TasksHero({ summary, today }: { summary: TaskSummary | undefined; today: string }) {
-  if (!summary) return <Skeleton className="h-48 rounded-2xl" />;
-  const total = summary.open + summary.completed;
-  const share = total === 0 ? 0 : summary.completed / total;
+  const total = summary ? summary.open + summary.completed : 0;
+  const share = !summary || total === 0 ? 0 : summary.completed / total;
   const stats = [
-    { label: "Open", value: summary.open, icon: CircleDashed, tone: "bg-muted text-foreground" },
+    { label: "Open", value: summary?.open, icon: CircleDashed, tone: "bg-muted text-foreground" },
     {
       label: "Due today",
-      value: summary.due_today,
+      value: summary?.due_today,
       icon: CalendarClock,
       tone: "bg-brand-subtle text-brand",
     },
     {
       label: "Overdue",
-      value: summary.overdue,
+      value: summary?.overdue,
       icon: AlertCircle,
-      tone: summary.overdue ? "bg-destructive/10 text-destructive" : "bg-muted text-foreground",
+      tone: summary?.overdue ? "bg-destructive/10 text-destructive" : "bg-muted text-foreground",
     },
     {
       label: "Completed",
-      value: summary.completed,
+      value: summary?.completed,
       icon: CheckCheck,
       tone: "bg-success/12 text-success",
     },
   ];
   return (
     <section
-      aria-labelledby="tasks-hero-heading"
+      aria-labelledby={summary ? "tasks-hero-heading" : undefined}
+      aria-busy={summary ? undefined : true}
+      aria-label={summary ? undefined : "Loading the task summary"}
       className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-brand-subtle/80 via-card to-card p-5 shadow-elevation-1 @3xl/list:p-6"
     >
       <ListChecks
@@ -68,18 +70,31 @@ export function TasksHero({ summary, today }: { summary: TaskSummary | undefined
       />
       <div className="relative space-y-5">
         <div className="flex flex-wrap items-center gap-5">
-          <DoneRing value={share} />
+          {summary ? (
+            <DoneRing value={share} />
+          ) : (
+            <Skeleton className="size-24 shrink-0 rounded-full" />
+          )}
           <div className="min-w-0 flex-1 space-y-1.5">
             <p className="text-xs font-medium tracking-wide text-brand uppercase">
               {longDate(today)}
             </p>
-            <h2
-              id="tasks-hero-heading"
-              className="text-xl font-semibold tracking-tight @3xl/list:text-2xl"
-            >
-              {headline(summary)}
-            </h2>
-            <AttentionSummary overdue={summary.overdue} dueToday={summary.due_today} />
+            {summary ? (
+              <>
+                <h2
+                  id="tasks-hero-heading"
+                  className="text-xl font-semibold tracking-tight @3xl/list:text-2xl"
+                >
+                  {headline(summary)}
+                </h2>
+                <AttentionSummary overdue={summary.overdue} dueToday={summary.due_today} />
+              </>
+            ) : (
+              <>
+                <SkeletonText className="w-56 text-xl @3xl/list:text-2xl" />
+                <SkeletonText className="w-48 text-sm" />
+              </>
+            )}
           </div>
         </div>
         <dl className="grid grid-cols-2 gap-3 @2xl/list:grid-cols-4">
@@ -98,7 +113,9 @@ export function TasksHero({ summary, today }: { summary: TaskSummary | undefined
                 <Icon className="size-4" />
               </span>
               <dt className="pr-10 text-xs text-muted-foreground">{label}</dt>
-              <dd className="mt-1 text-2xl leading-tight font-semibold tabular-nums">{value}</dd>
+              <dd className="mt-1 text-2xl leading-tight font-semibold tabular-nums">
+                {value ?? <SkeletonText className="w-10" />}
+              </dd>
             </div>
           ))}
         </dl>

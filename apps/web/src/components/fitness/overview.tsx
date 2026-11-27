@@ -28,6 +28,7 @@ import { addWater, saveFoodEntry } from "@/api/fitness";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { IconChip } from "@/components/ui/icon-chip";
+import { HeroSkeleton, Skeleton, SkeletonText } from "@/components/ui/skeleton";
 import {
   useFitnessAction,
   useFitnessOverview,
@@ -440,7 +441,11 @@ export function OverviewView({
           onClose={() => setAddingFood(false)}
         />
       ) : null}
-      <Loaded resource={overview.state} reload={overview.reload} skeleton="h-96">
+      <Loaded
+        resource={overview.state}
+        reload={overview.reload}
+        fallback={<HealthOverviewSkeleton />}
+      >
         {(data) => {
           const shown = (section: FitnessSection) => !data.hidden_sections.includes(section);
           const weights = data.weight_trend;
@@ -712,5 +717,28 @@ export function OverviewView({
         }}
       </Loaded>
     </>
+  );
+}
+
+/**
+ * The overview while it loads: the same today card and grid of cards as the real view, so it
+ * fills in without moving.
+ */
+export function HealthOverviewSkeleton() {
+  return (
+    <div aria-hidden="true" className="space-y-4">
+      <HeroSkeleton className="p-4 shadow-none @3xl:p-6" titleClassName="text-xl @3xl:text-2xl" />
+      <div className="grid gap-4 @3xl:grid-cols-2 @6xl:grid-cols-3">
+        {[0, 1, 2].map((card) => (
+          <div key={card} className="flex flex-col gap-4 rounded-2xl border bg-card p-4 @3xl:p-5">
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="size-8 rounded-xl" />
+              <SkeletonText className="w-24 text-sm" />
+            </div>
+            <Skeleton className="h-24 w-full rounded-xl" />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
