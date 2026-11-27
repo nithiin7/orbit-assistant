@@ -104,6 +104,23 @@ Design decisions:
   redirects to `/sign-in?next=…` (validated against open redirects by `lib/auth/redirect.ts`).
 - **Installable app:** `app/manifest.ts` and `public/sw.js`, registered in production only. The
   worker has no fetch handler, so private pages and API responses are never cached on the device.
+- **Toasts and Undo:** `ToastProvider` (`providers/toast.tsx`, in `app/(app)/layout.tsx`) shows one
+  toast at a time through `Toaster`; its timer lives in the provider, so it outlives the view.
+  Deleting a task, shopping item, or reminder doesn't ask first: `useUndoableDelete` hides the
+  record from the cache and sends the delete only when the Undo toast goes (timeout, close, a
+  newer toast, or `pagehide`); Undo puts the cached record back, a failed delete restores it with
+  an error toast. Moving a note to the Trash offers Undo (restore).
+- **Optimistic updates:** task completion, shopping check-off, reminder on/off, and note
+  pin/favorite change the cache in `onMutate` and refetch or revert on error; toggles run in a
+  mutation `scope` so quick repeat clicks apply in order.
+- **Reordering:** `SortableList`, `useSortableItem`, and `DragHandle` (`components/ui/sortable.tsx`,
+  `@dnd-kit`) make a list's rows draggable by a grip, with mouse, touch, or keyboard (Space to
+  pick up, arrows, Space to drop), and announce moves by name. Used for tasks in "My order" and a
+  shopping list's items to buy; the new order shows at once and reverts if the API refuses.
+  `test/sortable.ts` lays rows out and moves them with the keyboard in tests. Shopping:
+  `shopping_items.position` (`0053`, new items last) orders items to buy; `PUT
+…/shopping/lists/{id}/order` takes every needed item once (else `422`); bought items stay newest
+  first below.
 
 ## API
 
@@ -408,7 +425,10 @@ To-dos inside a workspace.
 - `list_id`: composite FK `(list_id, workspace_id)` (`0027`).
 - `recurrence` (JSON, `0043`): the repeat rule, on a series' current occurrence only. `series_id`
   groups a series' occurrences and references no row.
-- `updated_at` changes only when a field actually changes.
+- `updated_at` changes only when a field actually changes (moving a task doesn't).
+- `position` (`0053`): the workspace's own order ("My order"). New tasks go last; a repeating
+  task's next occurrence takes the completed one's place. Positions may repeat (restored rows);
+  creation time breaks ties.
 - Indexes `(workspace_id, status, due_date)` and `(workspace_id, status, priority)`. Search is
   `ILIKE` substring (`%`, `_`, `\` literal), unindexed, scanning one workspace (fine at personal
   scale; PostgreSQL full-text/trigram could replace it).
@@ -427,8 +447,13 @@ one.
 
 - `GET /` filters: `status`, `priority` (repeatable), `q`, `list_id` or `unlisted=true` (not
   both), `scheduled`; `limit` ≤ 500; returns `tasks`, `total`. `sort` = `due_date`, `priority`,
-  or `created_at` (default), each with a natural direction without `order` (soonest, highest,
-  newest); no-due-date tasks always last; ties fall back to priority, due date, creation time.
+  `created_at` (default), or `manual` (the workspace's own order, ignoring `order`), each with a
+  natural direction without `order` (soonest, highest, newest); no-due-date tasks always last;
+  ties fall back to priority, due date, creation time.
+- `POST /{id}/move` with `before_id` or `after_id` (exactly one, another task in the workspace,
+  else `422`) puts the task just there in the manual order; `204`. Relative to a neighbour, so it
+  works from filtered and partial lists. Renumbers the workspace's tasks, writing only changed
+  rows.
 - `GET /summary?today=`: open, completed, overdue, due-today counts. Overdue depends on the
   user's zone; the web sends its local date, the API falls back to UTC.
 - `POST /{id}/complete` (idempotent, keeps first completion time) and `/reopen` are the only
@@ -463,24 +488,62 @@ days, weeks, months, or years from its due date, which it must have (`422` other
   one-off.
 - `PATCH` with `recurrence: null` stops the series. A new rule or due date restarts it there.
 
+### Focus timer
+
+A Pomodoro timer on a task: by default 25 minutes of focus, 5-minute breaks, and 15 minutes after
+every fourth session.
+
+- **Settings** (`lib/focus/settings.ts`, localStorage `orbit:focus-settings`, per browser; the
+  gear on the timer card or the dashboard widget): lengths from fixed choices (focus 10-90 min),
+  sessions before a long break, a chime, and a browser notification. Each timer keeps the lengths
+  it started with. When a phase ends, a toast shows. If it ended in the last minute (not while the
+  page was closed), a Web Audio chime plays (`lib/focus/chime.ts`, no sound file). A notification
+  shows only while the page is hidden, once the browser allows it (asked when it's turned on).
+- **Dashboard widget** `focus` (off by default): the running timer with its controls, or the next
+  open tasks to start on, and today's focus time.
+
+- **The timer runs in the browser** (`lib/focus/timer.ts`, pure; `providers/focus.tsx` above
+  every page; `components/focus/focus-timer.tsx`, a card in the corner). Its state is saved in
+  localStorage (`orbit:focus`), so it survives reloads; a phase that ran out while the page was
+  closed is caught up on load. One task at a time: focusing on another stops the current one.
+- **Sessions are recorded when they end** (`POST …/tasks/{task_id}/focus-sessions`, table
+  `focus_sessions`, migration 0052, backed up with Tasks): start and end, focused seconds without
+  pauses, the local `day`, and `completed` (ran to the end, or stopped early). Stopped sessions
+  under a minute aren't sent. The API rejects sessions under a minute or over four hours, ending in
+  the future, starting more than two days ago, with more focus than elapsed time, or with a day
+  more than one off the UTC start date. Deleting the task deletes its sessions.
+- `GET …/focus/summary?today=` gives today's total and each task's; task rows show it.
+- **XP** comes only through focus achievements ([Achievements](#achievements-and-the-xp-store)):
+  finished sessions, total focus minutes (stopped sessions count), and a streak of days with a
+  finished session.
+
 ### Web app
 
 - `/tasks` (`components/tasks/`), hooks `useTaskList`/`useTaskMutations` in
-  `src/hooks/use-tasks.ts`. Keyboard: `N` composer, `/` search, Escape clears search or cancels a
-  delete confirmation.
+  `src/hooks/use-tasks.ts`. Keyboard: `N` composer, `/` search, Escape clears search. Deleting
+  a task offers Undo instead of asking (see [Web app](#web-app)).
 - Keeps previous results while a new filter loads; mutations update cached lists in place and
   mark the dashboard summary stale.
 - Complete/reopen is optimistic (reverts with an error); a completed task stays, struck through,
   until reload. Create/edit reloads in the background to land in sorted position.
+- **Quick add:** `TaskComposer` (Tasks page, task widget, global quick add) reads the title with
+  `parseQuickAdd` (`lib/tasks/quick-add.ts`): due dates ("fri", "next week", "in 3 days",
+  "dec 5", "on the 1st"), repeats ("every other week", "every monday", "monthly"), priority
+  (`!high`, `p1`), and `#list` (exact or unique prefix). Plain English rules in the browser, no
+  AI or network. Chips show what was understood; dismissing one keeps its words in the title, and
+  a picker the user set wins. The placeholder gives an example and the "?" button in the field
+  opens tips. Clock times are not read (tasks carry a date only).
 - Loads at most 200 tasks and says when more match (no pagination).
+- **My order** (`sort=manual`): rows get a drag handle; a drop sends `POST …/move` beside the
+  new neighbour (`taskMoveRequest`) and reorders the cached list at once.
 - Side rail Lists section (All lists, each with open count, No list, New list); the composer adds
   to the selected list; rows show a list chip except in that list's own view.
 - Dashboard card: summary counts and next five open tasks by due date.
 
 ### Not implemented
 
-Subtasks, tags (one list per task), reordering lists, sharing, drag-and-drop
-ordering. Scheduled time blocks ([calendar](#calendar-task-integration)) are separate from the
+Subtasks, tags (one list per task), reordering lists, sharing. Dragging reorders tasks only in
+"My order", in one column. Scheduled time blocks ([calendar](#calendar-task-integration)) are separate from the
 due date; [reminders](#reminders-and-notifications) are a separate feature.
 
 ## Reminders and notifications
@@ -1555,7 +1618,8 @@ foreign category/note/task reference → 422.
 ### Calendar in the web app
 
 - `components/calendar/`; Month/Week/Day/Agenda in `?view=week&date=…`; overlap layout
-  `layoutDay`. Drag and drop (mouse/pen only) is optimistic with rollback; repeating events ask
+  `layoutDay`. Drag and drop (mouse/pen only) is optimistic with rollback; dragging a task's
+  due-date chip (month view, or the all-day row) to another day changes its due date; repeating events ask
   scope first; touch uses taps; dialogs are the non-drag alternative. Keys `N`, `T`, `M`/`W`/`D`/
   `A`, arrows. Query keys `["workspaces", id, "calendar", …]`, `["me", "calendar-preferences"]`;
   changes refetch reminders too.
@@ -2062,7 +2126,7 @@ Achievements, XP store, Collection).
 
 ### Data
 
-- 44 achievements (easy to legendary) and store items (frames, banners, titles, confetti) are a
+- 52 achievements (easy to legendary; focus ones count timer sessions) and store items (frames, banners, titles, confetti) are a
   code catalog, `services/achievements/catalog.py`. Keys are stored: never rename or reuse; retire.
 - `achievement_unlocks`, `reward_purchases` (price paid), `reward_equips` (slot; composite FK to
   the purchase); migration 0034. Not backed up: per person, not per workspace.

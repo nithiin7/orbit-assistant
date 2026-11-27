@@ -3,6 +3,7 @@
 import type {
   CreateTaskListRequest,
   CreateTaskRequest,
+  MoveTaskRequest,
   Task,
   TaskList,
   TaskListDetail,
@@ -23,7 +24,9 @@ import {
   createTaskList,
   deleteTask,
   deleteTaskList,
+  focusSummaryOptions,
   getTask,
+  moveTask,
   removeCachedTask,
   reopenTask,
   replaceCachedTask,
@@ -35,6 +38,7 @@ import {
   updateTaskList,
 } from "@/api/tasks";
 import { queryResource, type Resource } from "@/hooks/query-resource";
+import { useUndoableDelete } from "@/hooks/use-undoable-delete";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
 import { useAuth } from "@/providers/auth";
 import { useWorkspaces } from "@/providers/workspace";
@@ -68,6 +72,13 @@ export function useTaskSummary(workspaceId: string): TaskSummary | undefined {
   const today = localDateString();
   const { data } = useQuery(taskSummaryOptions(withToken, workspaceId, { today }));
   return data;
+}
+
+/** Seconds of focus timer time on each task in the workspace, keyed by task ID. */
+export function useTaskFocusTimes(workspaceId: string): Map<string, number> {
+  const { withToken } = useAuth();
+  const { data } = useQuery(focusSummaryOptions(withToken, workspaceId, localDateString()));
+  return new Map(data?.tasks.map((task) => [task.task_id, task.focused_seconds]));
 }
 
 const UP_NEXT_QUERY: TaskListQuery = { status: "open", sort: "due_date", limit: 5 };
@@ -153,6 +164,8 @@ export function useTaskMutations(workspaceId: string) {
   });
 
   const toggle = useMutation({
+    // One at a time, in order, so a quick second click lands after the first.
+    scope: { id: "task-toggle" },
     mutationFn: (task: Task) =>
       withToken((token) =>
         task.status === "open"
@@ -191,7 +204,58 @@ export function useTaskMutations(workspaceId: string) {
     },
   });
 
-  return { create, update, toggle, remove };
+  const move = useMutation({
+    // One at a time, in order, so quick moves land as they were made.
+    scope: { id: "task-move" },
+    mutationFn: ({ task, body }: TaskMove) =>
+      withToken((token) => moveTask(token, workspaceId, task.id, body)),
+    // Show the new order at once; put the old one back if the move fails.
+    onMutate: async ({ query, order }) => {
+      const key = taskKeys.list(workspaceId, query);
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<TaskList>(key);
+      queryClient.setQueryData<TaskList>(key, (list) => list && { ...list, tasks: order });
+      return { previous };
+    },
+    onError: (_error, { query }, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(taskKeys.list(workspaceId, query), context.previous);
+      }
+    },
+    // Other cached views in this order are out of date; the one on screen already shows it.
+    onSuccess: markTasksStale,
+  });
+
+  return { create, update, toggle, remove, move };
+}
+
+/** A task dragged to a new place in the list for `query`, the `manual` sort. */
+export type TaskMove = {
+  task: Task;
+  body: MoveTaskRequest;
+  query: TaskListQuery;
+  /** The list's tasks in their new order. */
+  order: Task[];
+};
+
+/**
+ * Delete a task with Undo: it leaves the list at once and `remove` (from `useTaskMutations`) runs
+ * once the Undo toast goes. Needs `ToastProvider`.
+ */
+export function useDeleteTaskWithUndo(
+  workspaceId: string,
+  remove: (task: Task) => Promise<unknown>,
+) {
+  const queryClient = useQueryClient();
+  const undoableDelete = useUndoableDelete();
+  return (task: Task) =>
+    void undoableDelete({
+      message: `Deleted “${task.title}”.`,
+      queryKey: taskKeys.lists(workspaceId),
+      hide: () => removeCachedTask(queryClient, workspaceId, task.id),
+      commit: () => remove(task),
+      failure: "Couldn’t delete the task. Try again.",
+    });
 }
 
 /** The workspace's task lists (Work, Personal, ...), with a lookup by ID for task rows. */

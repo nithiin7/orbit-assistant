@@ -1,5 +1,11 @@
-import type { ReminderListQuery, UpcomingRemindersQuery } from "@orbit/contracts";
-import { queryOptions, skipToken } from "@tanstack/react-query";
+import type {
+  Reminder,
+  ReminderList,
+  ReminderListQuery,
+  UpcomingReminders,
+  UpcomingRemindersQuery,
+} from "@orbit/contracts";
+import { type QueryClient, queryOptions, skipToken } from "@tanstack/react-query";
 
 import type { WithToken } from "../client";
 import { listReminders, listUpcomingReminders } from "./requests";
@@ -54,4 +60,25 @@ export function upcomingRemindersOptions(
             withToken((token) => listUpcomingReminders(token, workspaceId, query, { signal })),
     refetchInterval: REMINDER_REFRESH_MS,
   });
+}
+
+/**
+ * Change the reminders in every cached list and Up next, without refetching; a list's total
+ * drops by however many `change` removed.
+ */
+export function updateCachedReminders(
+  queryClient: QueryClient,
+  workspaceId: string,
+  change: (reminders: Reminder[]) => Reminder[],
+) {
+  queryClient.setQueriesData<ReminderList | UpcomingReminders>(
+    { queryKey: reminderKeys.all(workspaceId) },
+    (page) => {
+      if (!page) return page;
+      const reminders = change(page.reminders);
+      if (!("total" in page)) return { ...page, reminders };
+      const removed = page.reminders.length - reminders.length;
+      return { ...page, reminders, total: Math.max(0, page.total - removed) };
+    },
+  );
 }

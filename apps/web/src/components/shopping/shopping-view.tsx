@@ -20,14 +20,23 @@ import {
 import { describeApiError } from "@/api/client";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
+import { TemplatePickerDialog } from "@/components/template-picker-dialog";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { HeroSkeleton, Skeleton, SkeletonText } from "@/components/ui/skeleton";
+import { SortableList, type SortableMove } from "@/components/ui/sortable";
 import { usePeople } from "@/hooks/use-people";
-import { useShopping, useShoppingMutations } from "@/hooks/use-shopping";
-import { DEFAULT_LIST_ICON } from "@/lib/shopping";
+import { useDeleteItemWithUndo, useShopping, useShoppingMutations } from "@/hooks/use-shopping";
+import {
+  DEFAULT_LIST_ICON,
+  SHOPPING_TEMPLATES,
+  type ShoppingTemplate,
+  shoppingTemplateRequests,
+} from "@/lib/shopping";
 import { useWorkspaces } from "@/providers/workspace";
 import { cn } from "@/utils/common";
 import { isEditableTarget } from "@/utils/keyboard";
+import { animateListChanges } from "@/utils/list-motion";
+import { revealWhenVisible } from "@/utils/reveal";
 
 import { ItemComposer } from "./item-composer";
 import { ItemEditDialog } from "./item-edit-dialog";
@@ -35,7 +44,7 @@ import { ListActions } from "./list-actions";
 import { SHOPPING_LIST_ICON_COMPONENTS } from "./list-icon";
 import { type ListDetails, ListNameDialog } from "./list-name-dialog";
 import { ListTabs } from "./list-tabs";
-import { ShoppingItemRow } from "./shopping-item";
+import { ShoppingItemRow, SortableShoppingItemRow } from "./shopping-item";
 
 /** The Shopping page for the active workspace. Remounts (and resets) when the workspace changes. */
 export function ShoppingPanel() {
@@ -58,9 +67,9 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
   const { people } = usePeople(workspaceId);
   const everyone = people.status === "success" ? people.data : [];
   const names = new Map(everyone.map((person) => [person.id, person.name]));
-  const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [editing, setEditing] = useState<ShoppingItem | null>(null);
   const [nameDialog, setNameDialog] = useState<NameDialog | null>(null);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const nameRef = useRef<HTMLInputElement>(null);
@@ -78,15 +87,6 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
-
-  const setItemPending = useCallback((itemId: string, isPending: boolean) => {
-    setPending((current) => {
-      const next = new Set(current);
-      if (isPending) next.add(itemId);
-      else next.delete(itemId);
-      return next;
-    });
   }, []);
 
   // Lists
@@ -166,11 +166,21 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
     [mutations.addItem],
   );
 
+  /** Adds a template's items, in order, to the list in view. */
+  const applyTemplate = async (template: ShoppingTemplate) => {
+    if (!active) return;
+    for (const draft of shoppingTemplateRequests(template)) {
+      await mutations.addItem.mutateAsync({ listId: active.id, draft });
+    }
+    setActionError(null);
+    setAnnouncement(`Added ${template.items.length} items from “${template.name}”.`);
+  };
+
   const toggle = useCallback(
     async (item: ShoppingItem) => {
       const purchasing = item.status === "needed";
       setActionError(null);
-      setItemPending(item.id, true);
+      // The row flips at once (see `useShoppingMutations`), so it isn't dimmed meanwhile.
       try {
         await mutations.toggleItem.mutateAsync(item);
         setAnnouncement(
@@ -181,9 +191,8 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
       } catch (reason) {
         setActionError(describeApiError(reason, "Couldn’t update the item. Try again."));
       }
-      setItemPending(item.id, false);
     },
-    [mutations.toggleItem, setItemPending],
+    [mutations.toggleItem],
   );
 
   const save = useCallback(
@@ -195,22 +204,13 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
     [mutations.updateItem],
   );
 
-  const remove = useCallback(
-    async (item: ShoppingItem) => {
-      setActionError(null);
-      setItemPending(item.id, true);
-      try {
-        await mutations.deleteItem.mutateAsync(item);
-        setAnnouncement(`Deleted “${item.name}”.`);
-        // The row and its focused button are gone; keep focus in the list.
-        listRef.current?.focus();
-      } catch (reason) {
-        setActionError(describeApiError(reason, "Couldn’t delete the item. Try again."));
-      }
-      setItemPending(item.id, false);
-    },
-    [mutations.deleteItem, setItemPending],
-  );
+  const deleteWithUndo = useDeleteItemWithUndo(workspaceId, mutations.deleteItem.mutateAsync);
+  const remove = (item: ShoppingItem) => {
+    setActionError(null);
+    deleteWithUndo(item);
+    // The row and its focused button are gone; keep focus in the list.
+    listRef.current?.focus();
+  };
 
   if (shopping.lists.status === "loading") return <ShoppingSkeleton />;
   if (shopping.lists.status === "error") {
@@ -221,27 +221,50 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
   const purchased =
     items.status === "success" ? items.data.filter((i) => i.status === "purchased") : [];
 
-  const renderItems = (group: ShoppingItem[], label: string, className?: string) => (
-    <ul
-      aria-label={label}
-      className={cn(
-        "@container/rows divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1",
-        className,
-      )}
-    >
-      {group.map((item) => (
-        <ShoppingItemRow
-          key={item.id}
-          item={item}
-          giftFor={item.person_id ? (names.get(item.person_id) ?? null) : null}
-          pending={pending.has(item.id)}
-          onToggle={(entry) => void toggle(entry)}
-          onEdit={setEditing}
-          onDelete={remove}
-        />
-      ))}
-    </ul>
-  );
+  // Needed items can be dragged into a new order; purchased ones stay newest first.
+  const move = ({ order }: SortableMove<ShoppingItem>) => {
+    if (!active) return;
+    setActionError(null);
+    mutations.reorderItems.mutateAsync({ listId: active.id, order }).catch((reason: unknown) => {
+      setActionError(describeApiError(reason, "Couldn’t move the item. Try again."));
+    });
+  };
+
+  const renderItems = (
+    group: ShoppingItem[],
+    label: string,
+    { sortable = false, className }: { sortable?: boolean; className?: string } = {},
+  ) => {
+    const Row = sortable ? SortableShoppingItemRow : ShoppingItemRow;
+    const list = (
+      <ul
+        ref={animateListChanges}
+        aria-label={label}
+        className={cn(
+          "@container/rows relative divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1",
+          className,
+        )}
+      >
+        {group.map((item) => (
+          <Row
+            key={item.id}
+            item={item}
+            giftFor={item.person_id ? (names.get(item.person_id) ?? null) : null}
+            onToggle={(entry) => void toggle(entry)}
+            onEdit={setEditing}
+            onDelete={remove}
+          />
+        ))}
+      </ul>
+    );
+    return sortable ? (
+      <SortableList items={group} itemLabel={(item) => item.name} onMove={move}>
+        {list}
+      </SortableList>
+    ) : (
+      list
+    );
+  };
 
   // Layout follows the space the page actually gets (which depends on the app sidebar), not the
   // screen: container queries place the lists rail, the composer, and the bought column.
@@ -302,7 +325,8 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
                 <EmptyState
                   icon={SHOPPING_LIST_ICON_COMPONENTS[active.icon]}
                   title="Nothing on this list yet"
-                  description="Add what you need above. Check items off as you buy them."
+                  description="Add what you need above, and check items off as you buy them."
+                  template={{ onClick: () => setTemplatesOpen(true) }}
                 />
               ) : (
                 // Bought items sit beside the list when there's room, below it when not.
@@ -318,14 +342,11 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
                       To buy
                     </SectionHeading>
                     {needed.length > 0 ? (
+                      // One column, so a dragged item moves straight up or down.
                       renderItems(
                         needed,
                         `${needed.length} ${needed.length === 1 ? "item" : "items"} to buy`,
-                        // Two columns of items on very wide screens, with a rule between them. A
-                        // single item keeps the full width so its details don't stop mid-card.
-                        needed.length > 1
-                          ? "grid @min-[88rem]/list:grid-cols-2 @min-[88rem]/list:divide-y-0 @min-[88rem]/list:*:-mb-px @min-[88rem]/list:*:border-b @min-[88rem]/list:*:odd:border-r @min-[88rem]/list:*:odd:last:border-r-0"
-                          : undefined,
+                        { sortable: needed.length > 1 },
                       )
                     ) : (
                       <div className="flex items-center gap-3 rounded-2xl border border-dashed border-success/40 bg-success/5 px-4 py-6 text-sm text-muted-foreground">
@@ -385,6 +406,20 @@ function ShoppingView({ workspaceId }: { workspaceId: string }) {
           people={everyone}
           onSave={save}
           onClose={() => setEditing(null)}
+        />
+      ) : null}
+      {templatesOpen && active ? (
+        <TemplatePickerDialog
+          title="Start from a template"
+          description={`Pick a list. Its items are added to ${active.name}, ready to edit.`}
+          templates={SHOPPING_TEMPLATES.map((template) => ({
+            ...template,
+            preview: template.items,
+            actionLabel: `Add ${template.items.length} items`,
+          }))}
+          onUse={applyTemplate}
+          errorMessage="Couldn’t add every item from that template. Check the list and try again."
+          onClose={() => setTemplatesOpen(false)}
         />
       ) : null}
       {nameDialog ? (
@@ -507,7 +542,10 @@ function BoughtRing({
 }) {
   const percent = total === 0 ? 0 : Math.round((purchased / total) * 100);
   const offset = 100 - percent;
-  const style: CSSProperties & { "--ring-offset": number } = { "--ring-offset": offset };
+  const style: CSSProperties & { "--ring-offset": number } = {
+    "--ring-offset": offset,
+    strokeDashoffset: offset,
+  };
   return (
     <div
       role="progressbar"
@@ -518,6 +556,7 @@ function BoughtRing({
       className="relative size-20 shrink-0"
     >
       <svg
+        ref={revealWhenVisible}
         viewBox="0 0 100 100"
         aria-hidden="true"
         className={cn("size-full", done ? "text-success" : "text-brand")}
@@ -542,10 +581,9 @@ function BoughtRing({
             strokeLinecap="round"
             pathLength={100}
             strokeDasharray="100"
-            strokeDashoffset={offset}
             transform="rotate(-90 50 50)"
             style={style}
-            className="motion-safe:animate-ring-fill"
+            className="progress-arc"
           />
         ) : null}
       </svg>
@@ -574,29 +612,53 @@ function LoadError({ message, onRetry }: { message: string; onRetry: () => void 
   );
 }
 
+/**
+ * The Shopping page while its lists load: the same rail, list hero, composer, and item list
+ * frame as the real page, so it fills in without moving.
+ */
 function ShoppingSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="@container/shop" aria-busy="true">
       <span className="sr-only">Loading shopping lists…</span>
-      <div className="flex gap-2">
-        <Skeleton className="h-9 w-28" />
-        <Skeleton className="h-9 w-24" />
+      <div className="grid gap-6 @4xl/shop:grid-cols-[13rem_minmax(0,1fr)] @4xl/shop:gap-8 @7xl/shop:grid-cols-[15rem_minmax(0,1fr)] @7xl/shop:gap-12">
+        <div aria-hidden="true" className="min-w-0 space-y-2 @4xl/shop:space-y-3">
+          <SkeletonText className="hidden w-16 px-3 text-xs @4xl/shop:flex" />
+          <div className="flex gap-1 @4xl/shop:flex-col">
+            {[0, 1, 2].map((row) => (
+              <Skeleton key={row} className="h-9 w-28 rounded-lg @4xl/shop:w-full" />
+            ))}
+          </div>
+        </div>
+        <div className="@container/list min-w-0 space-y-5">
+          <HeroSkeleton
+            ring
+            className="@3xl/list:p-6"
+            titleClassName="text-xl @3xl/list:text-2xl"
+          />
+          <Skeleton className="h-15 rounded-2xl" />
+          <ItemsSkeleton />
+        </div>
       </div>
-      <ItemsSkeleton />
     </div>
   );
 }
 
 function ItemsSkeleton() {
   return (
-    <div className="divide-y overflow-hidden rounded-xl border bg-card">
+    <div className="space-y-2">
       <span className="sr-only">Loading items…</span>
-      {[0, 1, 2].map((row) => (
-        <div key={row} className="flex items-center gap-3 px-4 py-3.5">
-          <Skeleton className="size-5 rounded-full" />
-          <Skeleton className={cn("h-4", row === 1 ? "w-1/3" : "w-1/2")} />
-        </div>
-      ))}
+      <SkeletonText aria-hidden="true" className="w-20 px-1 text-xs" />
+      <div className="divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1">
+        {[0, 1, 2].map((row) => (
+          <div
+            key={row}
+            className="flex items-center gap-3 px-3 py-3 sm:px-4 pointer-coarse:py-3.5 compact:py-1.5"
+          >
+            <Skeleton className="size-5 rounded-full" />
+            <SkeletonText className={cn("text-sm", row === 1 ? "w-1/3" : "w-1/2")} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

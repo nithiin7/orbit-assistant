@@ -12,6 +12,7 @@ import {
   repeatOptions,
   TASK_PAGE_SIZE,
   taskListSchema,
+  taskMoveRequest,
   taskSchema,
   toRepeatValue,
   toTaskListQuery,
@@ -78,6 +79,23 @@ describe("taskListSchema", () => {
     expect(fieldErrors(taskListSchema, { name: "", color: "blue" }).name).toBe("Enter a name.");
     expect(fieldErrors(taskListSchema, { name: "x".repeat(51), color: "blue" }).name).toBeDefined();
     expect(fieldErrors(taskListSchema, { name: "Work", color: "red" }).color).toBeDefined();
+  });
+});
+
+describe("taskMoveRequest", () => {
+  const order = [{ id: "a" }, { id: "b" }, { id: "c" }];
+
+  it("puts a task after the one now above it", () => {
+    expect(taskMoveRequest(order, 2)).toEqual({ before_id: null, after_id: "b" });
+    expect(taskMoveRequest(order, 1)).toEqual({ before_id: null, after_id: "a" });
+  });
+
+  it("puts a task moved to the top before the one now below it", () => {
+    expect(taskMoveRequest(order, 0)).toEqual({ before_id: "b", after_id: null });
+  });
+
+  it("has nothing to do in a list of one", () => {
+    expect(taskMoveRequest([{ id: "a" }], 0)).toBeNull();
   });
 });
 

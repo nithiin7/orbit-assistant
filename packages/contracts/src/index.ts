@@ -31,6 +31,7 @@ export type TaskList = Schemas["TaskListResponse"];
 export type TaskSummary = Schemas["TaskSummaryResponse"];
 export type CreateTaskRequest = Schemas["CreateTaskRequest"];
 export type UpdateTaskRequest = Schemas["UpdateTaskRequest"];
+export type MoveTaskRequest = Schemas["MoveTaskRequest"];
 /** Filters, sorting, and paging accepted when listing tasks. */
 export type TaskListQuery = NonNullable<
   paths["/api/v1/workspaces/{workspace_id}/tasks"]["get"]["parameters"]["query"]
@@ -48,6 +49,12 @@ export type TaskSummaryQuery = NonNullable<
 export type TaskListDetail = Schemas["TaskListDetailResponse"];
 export type TaskListColor = TaskListDetail["color"];
 export type TaskLists = Schemas["TaskListsResponse"];
+/** A focus timer session recorded on a task. */
+export type FocusSession = Schemas["FocusSessionResponse"];
+export type RecordFocusSessionRequest = Schemas["RecordFocusSessionRequest"];
+/** Focus time today and on each task. */
+export type FocusSummary = Schemas["FocusSummaryResponse"];
+export type TaskFocus = Schemas["TaskFocusResponse"];
 export type CreateTaskListRequest = Schemas["CreateTaskListRequest"];
 export type UpdateTaskListRequest = Schemas["UpdateTaskListRequest"];
 export type ShoppingList = Schemas["ShoppingListResponse"];
@@ -61,6 +68,7 @@ export type ShoppingItemStatus = ShoppingItem["status"];
 export type ShoppingItems = Schemas["ShoppingItemsResponse"];
 export type CreateShoppingItemRequest = Schemas["CreateItemRequest"];
 export type UpdateShoppingItemRequest = Schemas["UpdateItemRequest"];
+export type ShoppingItemOrderRequest = Schemas["ItemOrderRequest"];
 
 export type WatchItem = Schemas["WatchItemResponse"];
 export type WatchKind = WatchItem["kind"];

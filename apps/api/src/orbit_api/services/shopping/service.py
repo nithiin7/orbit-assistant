@@ -9,7 +9,7 @@ never reaches a row: one in another workspace is indistinguishable from one that
 """
 
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import replace
 from datetime import datetime
 from typing import Protocol
@@ -20,6 +20,7 @@ from orbit_api.services.shopping.models import (
     GiftPersonNotFoundError,
     ItemChanges,
     ItemDraft,
+    ItemOrderError,
     ShoppingItem,
     ShoppingItemNotFoundError,
     ShoppingList,
@@ -91,6 +92,16 @@ class ShoppingItemRepository(Protocol):
 
     async def delete_purchased(self, workspace_id: uuid.UUID, list_id: uuid.UUID) -> int:
         """Delete every purchased item in the list; return how many were deleted."""
+        ...
+
+    async def next_position(self, workspace_id: uuid.UUID, list_id: uuid.UUID) -> int:
+        """The position after the list's last item, so a new item goes last."""
+        ...
+
+    async def arrange(
+        self, workspace_id: uuid.UUID, list_id: uuid.UUID, item_ids: Sequence[uuid.UUID]
+    ) -> None:
+        """Number these items of the list in this order."""
         ...
 
 
@@ -204,10 +215,24 @@ class ShoppingService:
             created_at=now,
             updated_at=now,
             person_id=draft.person_id,
+            position=await self._items.next_position(workspace_id, list_id),
         )
         await self._items.add(item)
         await self._transaction.commit()
         return item
+
+    async def reorder(
+        self, workspace_id: uuid.UUID, list_id: uuid.UUID, item_ids: Sequence[uuid.UUID]
+    ) -> list[ShoppingItem]:
+        """Put the list's needed items in this order; every needed item must be listed once.
+        Purchased items stay newest first below them."""
+        items = await self.items(workspace_id, list_id)
+        needed = {item.id for item in items if item.status == "needed"}
+        if len(item_ids) != len(needed) or set(item_ids) != needed:
+            raise ItemOrderError
+        await self._items.arrange(workspace_id, list_id, item_ids)
+        await self._transaction.commit()
+        return await self._items.in_list(workspace_id, list_id)
 
     async def get_item(self, workspace_id: uuid.UUID, item_id: uuid.UUID) -> ShoppingItem:
         item = await self._items.get(workspace_id, item_id)

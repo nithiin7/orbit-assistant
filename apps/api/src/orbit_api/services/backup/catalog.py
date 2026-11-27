@@ -80,6 +80,7 @@ _PREFIXES: Final[tuple[tuple[str, Module], ...]] = (
 _EXACT: Final[dict[str, Module]] = {
     "tasks": "tasks",
     "task_lists": "tasks",
+    "focus_sessions": "tasks",
     "reminders": "reminders",
     "reminder_occurrences": "reminders",
     "notifications": "reminders",

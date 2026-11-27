@@ -11,7 +11,7 @@ from orbit_api.utils.sorting import SortOrder
 TaskStatus = Literal["open", "completed"]
 # Ordered from lowest to highest.
 TaskPriority = Literal["none", "low", "medium", "high"]
-TaskSort = Literal["due_date", "priority", "created_at", "completed_at"]
+TaskSort = Literal["due_date", "priority", "created_at", "completed_at", "manual"]
 TaskListColor = Literal["blue", "green", "amber", "rose", "violet", "teal", "orange", "slate"]
 TaskRepeatFrequency = Literal["daily", "weekly", "monthly", "yearly"]
 
@@ -159,6 +159,10 @@ class TaskSummary:
 
 class TaskNotFoundError(Exception):
     """The task does not exist in this workspace."""
+
+
+class TaskAnchorNotFoundError(ValueError):
+    """The task to move another one beside does not exist in this workspace, or is that task."""
 
 
 class InvalidTaskRecurrenceError(ValueError):

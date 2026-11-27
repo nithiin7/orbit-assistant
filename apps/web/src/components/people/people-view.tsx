@@ -72,7 +72,7 @@ export function PeoplePanel() {
   }
   if (state.status === "loading") {
     return (
-      <Shell view={view}>
+      <Shell view={view} actions={<Skeleton aria-hidden="true" className="h-9 w-36" />}>
         <PageSkeleton />
       </Shell>
     );

@@ -16,9 +16,11 @@ import {
   reminderKeys,
   reminderListOptions,
   upcomingRemindersOptions,
+  updateCachedReminders,
   updateReminder,
 } from "@/api/reminders";
 import { queryResource, type Resource } from "@/hooks/query-resource";
+import { useUndoableDelete } from "@/hooks/use-undoable-delete";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
 import { useAuth } from "@/providers/auth";
 import { useWorkspaces } from "@/providers/workspace";
@@ -80,7 +82,17 @@ export function useReminderMutations(workspaceId: string) {
   const update = useMutation({
     mutationFn: ({ reminder, changes }: { reminder: Reminder; changes: UpdateReminderRequest }) =>
       withToken((token) => updateReminder(token, workspaceId, reminder.id, changes)),
+    // Turning a reminder on or off shows at once; the refetch then brings its new status.
+    onMutate: async ({ reminder, changes }) => {
+      const { enabled } = changes;
+      if (typeof enabled !== "boolean") return;
+      await queryClient.cancelQueries({ queryKey: reminderKeys.all(workspaceId) });
+      updateCachedReminders(queryClient, workspaceId, (reminders) =>
+        reminders.map((item) => (item.id === reminder.id ? { ...item, enabled } : item)),
+      );
+    },
     onSuccess: refetchReminders,
+    onError: refetchReminders,
   });
 
   const remove = useMutation({
@@ -90,4 +102,27 @@ export function useReminderMutations(workspaceId: string) {
   });
 
   return { create, update, remove };
+}
+
+/**
+ * Delete a reminder with Undo: it leaves the list at once and `remove` (from
+ * `useReminderMutations`) runs once the Undo toast goes. Needs `ToastProvider`.
+ */
+export function useDeleteReminderWithUndo(
+  workspaceId: string,
+  remove: (reminder: Reminder) => Promise<unknown>,
+) {
+  const queryClient = useQueryClient();
+  const undoableDelete = useUndoableDelete();
+  return (reminder: Reminder) =>
+    void undoableDelete({
+      message: `Deleted “${reminder.title}”.`,
+      queryKey: reminderKeys.all(workspaceId),
+      hide: () =>
+        updateCachedReminders(queryClient, workspaceId, (reminders) =>
+          reminders.filter((item) => item.id !== reminder.id),
+        ),
+      commit: () => remove(reminder),
+      failure: "Couldn’t delete the reminder. Try again.",
+    });
 }

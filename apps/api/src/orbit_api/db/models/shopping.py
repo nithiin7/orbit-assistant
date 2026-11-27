@@ -8,6 +8,7 @@ from sqlalchemy import (
     ForeignKey,
     ForeignKeyConstraint,
     Index,
+    Integer,
     String,
     Text,
     UniqueConstraint,
@@ -97,5 +98,8 @@ class ShoppingItemModel(Base):
     purchased_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     # A gift idea for someone in People.
     person_id: Mapped[uuid.UUID | None]
+    # The item's place on its list, set by dragging. The repository puts new items last;
+    # positions may repeat, and creation time breaks ties.
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now, onupdate=utc_now)

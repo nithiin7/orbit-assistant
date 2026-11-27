@@ -7,7 +7,6 @@ import {
   Check,
   CircleCheck,
   CircleDashed,
-  LayoutTemplate,
   ListChecks,
   type LucideIcon,
   PartyPopper,
@@ -17,10 +16,10 @@ import {
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 
-import { EmptyState } from "@/components/empty-state";
+import { EmptyState, StartFromTemplate } from "@/components/empty-state";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { IconChip, type IconChipTone } from "@/components/ui/icon-chip";
-import { Skeleton } from "@/components/ui/skeleton";
+import { HeroSkeleton, Skeleton, SkeletonText } from "@/components/ui/skeleton";
 import type { Resource } from "@/hooks/query-resource";
 import {
   cheerFor,
@@ -36,6 +35,7 @@ import {
 import { WEEKDAYS } from "@/lib/reminders";
 import { cn } from "@/utils/common";
 import { dayOfWeek, formatCalendarDate } from "@/utils/dates";
+import { revealWhenVisible } from "@/utils/reveal";
 
 import { useCelebration } from "./celebration";
 import { COLOR_STYLES, HABIT_ICON_COMPONENTS, HabitTile } from "./habit-icon";
@@ -97,15 +97,7 @@ export function HabitTodayView({
 }: HabitTodayViewProps) {
   const { celebrate, celebration } = useCelebration();
 
-  if (state.status === "loading") {
-    return (
-      <div className="space-y-3" aria-busy="true" aria-label="Loading today’s habits">
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-14 w-full" />
-        <Skeleton className="h-14 w-full" />
-      </div>
-    );
-  }
+  if (state.status === "loading") return <HabitTodaySkeleton />;
   if (state.status === "error") return <ViewError message={state.message} onRetry={onReload} />;
 
   const today = state.data;
@@ -114,7 +106,7 @@ export function HabitTodayView({
       <EmptyState
         icon={Sparkles}
         title="Start with one small habit"
-        description="Habits you track show up here each day, with a one-tap check. Begin with something easy, or pick a ready-made one."
+        description="Habits you track show up here each day, with a one-tap check."
       >
         <div className="flex w-full flex-col items-center gap-4">
           <ul aria-label="Starter habits" className="flex flex-wrap justify-center gap-2">
@@ -132,13 +124,9 @@ export function HabitTodayView({
           </ul>
           <div className="flex flex-wrap justify-center gap-2">
             <Button onClick={onCreate}>New habit</Button>
-            <Link
-              href={habitsHref({ kind: "view", view: "templates" })}
-              className={buttonVariants({ variant: "ghost" })}
-            >
-              <LayoutTemplate aria-hidden="true" />
-              Browse templates
-            </Link>
+            <StartFromTemplate
+              template={{ href: habitsHref({ kind: "view", view: "templates" }) }}
+            />
           </div>
         </div>
       </EmptyState>
@@ -413,7 +401,10 @@ function ProgressRing({
 }) {
   const percent = Math.round(Math.max(0, Math.min(1, value)) * 100);
   const offset = 100 - percent;
-  const style: CSSProperties & { "--ring-offset": number } = { "--ring-offset": offset };
+  const style: CSSProperties & { "--ring-offset": number } = {
+    "--ring-offset": offset,
+    strokeDashoffset: offset,
+  };
   return (
     <div
       role="progressbar"
@@ -423,7 +414,12 @@ function ProgressRing({
       aria-valuenow={percent}
       className="relative size-24 shrink-0"
     >
-      <svg viewBox="0 0 100 100" aria-hidden="true" className="size-full text-success">
+      <svg
+        ref={revealWhenVisible}
+        viewBox="0 0 100 100"
+        aria-hidden="true"
+        className="size-full text-success"
+      >
         <circle
           cx="50"
           cy="50"
@@ -444,10 +440,9 @@ function ProgressRing({
             strokeLinecap="round"
             pathLength={100}
             strokeDasharray="100"
-            strokeDashoffset={offset}
             transform="rotate(-90 50 50)"
             style={style}
-            className="motion-safe:animate-ring-fill"
+            className="progress-arc"
           />
         ) : null}
       </svg>
@@ -508,5 +503,51 @@ function SideCard({
       </h2>
       {children}
     </section>
+  );
+}
+
+/**
+ * Today's habits while they load: the same hero, rows, and side cards as the real view, so it
+ * fills in without moving.
+ */
+export function HabitTodaySkeleton() {
+  return (
+    <div
+      className="grid gap-6 @4xl:grid-cols-[minmax(0,1fr)_18rem]"
+      aria-busy="true"
+      aria-label="Loading today’s habits"
+    >
+      <div className="min-w-0 space-y-6">
+        <HeroSkeleton ring className="@3xl:p-6" titleClassName="text-xl @3xl:text-2xl" />
+        <div aria-hidden="true" className="space-y-2">
+          <SkeletonText className="w-20 text-sm" />
+          <ul className="space-y-2">
+            {[0, 1, 2].map((row) => (
+              <li
+                key={row}
+                className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2.5"
+              >
+                <Skeleton className="size-8 shrink-0 rounded-full" />
+                <div className="min-w-0 flex-1">
+                  <SkeletonText className={cn("text-sm", row === 1 ? "w-1/3" : "w-1/2")} />
+                  <SkeletonText className="w-1/4 text-xs" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+      <div aria-hidden="true" className="space-y-6">
+        {[0, 1].map((card) => (
+          <div key={card} className="space-y-3 rounded-2xl border bg-card p-4">
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="size-8 rounded-xl" />
+              <SkeletonText className="w-24 text-sm" />
+            </div>
+            <Skeleton className="h-12 w-full" />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -17,6 +17,7 @@ from orbit_api.api.v1 import (
     documents,
     finance,
     fitness,
+    focus,
     goals,
     habits,
     health,
@@ -51,6 +52,7 @@ router.include_router(workspaces.router)
 router.include_router(backups.router)
 router.include_router(tasks.router)
 router.include_router(tasks.lists_router)
+router.include_router(focus.router)
 router.include_router(shopping.router)
 router.include_router(watchlist.router)
 router.include_router(bookmarks.router)

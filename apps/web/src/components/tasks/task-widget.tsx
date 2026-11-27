@@ -188,10 +188,14 @@ function TaskLine({
         href={`/tasks?task=${encodeURIComponent(task.id)}`}
         className={cn(
           "min-w-0 flex-1 truncate rounded-sm text-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring",
-          done && "text-muted-foreground line-through",
         )}
       >
-        {task.title}
+        <span
+          data-done={done || undefined}
+          className={cn("strike-sweep", done && "text-muted-foreground")}
+        >
+          {task.title}
+        </span>
       </Link>
       <PriorityBadge priority={task.priority} />
       {task.due_date ? <DueDateLabel dueDate={task.due_date} today={today} muted={done} /> : null}

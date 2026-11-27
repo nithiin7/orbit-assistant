@@ -14,6 +14,7 @@ import type { CSSProperties } from "react";
 
 import { RING_KEYS, type RingKey, type RingProgress } from "@/lib/fitness";
 import { cn } from "@/utils/common";
+import { revealWhenVisible } from "@/utils/reveal";
 
 /** How each ring looks and reads. Classes are written out in full so Tailwind sees them. */
 export const RINGS: Record<
@@ -91,6 +92,7 @@ export function ActivityRings({
   const width = thin ? 8 : 10;
   return (
     <svg
+      ref={revealWhenVisible}
       viewBox="0 0 100 100"
       {...(label ? { role: "img", "aria-label": label } : { "aria-hidden": true })}
       className={cn("shrink-0", className)}
@@ -98,7 +100,10 @@ export function ActivityRings({
       {RING_KEYS.map((key) => {
         const share = Math.min(1, Math.max(0, progress[key]));
         const offset = 100 - share * 100;
-        const style: CSSProperties & { "--ring-offset": number } = { "--ring-offset": offset };
+        const style: CSSProperties & { "--ring-offset": number } = {
+          "--ring-offset": offset,
+          strokeDashoffset: offset,
+        };
         return (
           <g key={key} className={RINGS[key].text}>
             <circle
@@ -121,10 +126,9 @@ export function ActivityRings({
                 strokeLinecap="round"
                 pathLength={100}
                 strokeDasharray="100"
-                strokeDashoffset={offset}
                 transform="rotate(-90 50 50)"
                 style={style}
-                className="motion-safe:animate-ring-fill"
+                className="progress-arc"
               />
             ) : null}
           </g>

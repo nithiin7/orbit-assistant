@@ -1,25 +1,38 @@
 "use client";
 
 import type { Task, TaskListDetail } from "@orbit/contracts";
-import { Trash2 } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { Timer, Trash2 } from "lucide-react";
+import { useId } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DragHandle, type SortableItem, useSortableItem } from "@/components/ui/sortable";
 import { cn } from "@/utils/common";
 
-import { DueDateLabel, PriorityBadge, RepeatBadge, TaskListBadge } from "./task-meta";
+import { DueDateLabel, FocusBadge, PriorityBadge, RepeatBadge, TaskListBadge } from "./task-meta";
 
 type TaskItemProps = {
   task: Task;
   /** The list the task is on, when it's on one and that isn't already the list in view. */
   list?: TaskListDetail;
   today: string;
-  /** A completion change or deletion is in flight. */
-  pending: boolean;
   onToggle: (task: Task) => void;
   onEdit: (task: Task) => void;
-  onDelete: (task: Task) => Promise<void>;
+  onDelete: (task: Task) => void;
+  /** Time spent on the task with the focus timer, in seconds. */
+  focusedSeconds?: number;
+  /** The focus timer is on this task. */
+  focusing?: boolean;
+  /** Start the focus timer on the task; open tasks only. */
+  onFocus?: (task: Task) => void;
+  /** Set by `SortableTaskItem`: the row can be dragged by a handle. */
+  sortable?: SortableItem;
+  /**
+   * The task no longer belongs in the list in view (it was just completed in Open, say): the
+   * row folds away, then `onLeft` tells the list to drop it.
+   */
+  leaving?: boolean;
+  onLeft?: (task: Task) => void;
 };
 
 const completedFormat = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
@@ -28,133 +41,136 @@ export function TaskItem({
   task,
   list,
   today,
-  pending,
   onToggle,
   onEdit,
   onDelete,
+  focusedSeconds = 0,
+  focusing = false,
+  onFocus,
+  sortable,
+  leaving = false,
+  onLeft,
 }: TaskItemProps) {
   const titleId = useId();
-  const [confirming, setConfirming] = useState(false);
-  const confirmRef = useRef<HTMLButtonElement>(null);
-  const deleteRef = useRef<HTMLButtonElement>(null);
   const completed = task.status === "completed";
 
-  useEffect(() => {
-    if (confirming) confirmRef.current?.focus();
-  }, [confirming]);
-
-  const cancelDelete = () => {
-    setConfirming(false);
-    // The confirmation unmounts; put focus back on the button that opened it.
-    requestAnimationFrame(() => deleteRef.current?.focus());
-  };
-
   return (
+    // A one-track grid, so `animate-row-out` can fold the row's height to nothing.
     <li
+      {...sortable?.row}
+      onAnimationEnd={(event) => {
+        // The check and strike-through animate inside the row too; only the fold counts.
+        if (leaving && event.target === event.currentTarget) onLeft?.(task);
+      }}
       className={cn(
-        "group flex items-start gap-3 px-3 py-3 transition-[background-color,opacity] duration-150 hover:bg-accent/40 sm:px-4 @lg/rows:items-center",
-        pending && "opacity-70",
+        "group grid grid-rows-[1fr] transition-[background-color,opacity] duration-150 hover:bg-accent/40",
         completed && "bg-muted/20",
+        leaving && "animate-row-out",
+        sortable?.dragging && "relative z-10 bg-card shadow-elevation-2",
       )}
     >
-      <Checkbox
-        shape="round"
-        checked={completed}
-        disabled={pending}
-        onChange={() => onToggle(task)}
-        aria-labelledby={titleId}
-        className="mt-0.5 @lg/rows:mt-0"
-      />
-
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5 @lg/rows:flex-row @lg/rows:items-center @lg/rows:gap-4">
-        <div className="min-w-0 flex-1 space-y-0.5">
-          <button
-            type="button"
-            onClick={() => onEdit(task)}
-            aria-label={`Edit “${task.title}”`}
-            className="block max-w-full rounded-sm text-left text-sm font-medium break-words outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <span
-              id={titleId}
-              className={cn(
-                "transition-colors duration-150",
-                completed && "text-muted-foreground line-through decoration-1",
-              )}
-            >
-              {task.title}
-            </span>
-          </button>
-          {task.description ? (
-            <p className="line-clamp-1 text-sm break-words text-muted-foreground">
-              {task.description}
-            </p>
+      <div className={cn("min-h-0", leaving && "overflow-hidden")}>
+        <div
+          className={cn(
+            "flex items-start gap-3 px-3 py-3 sm:px-4 @lg/rows:items-center compact:py-1.5",
+            sortable && "pl-1 sm:pl-2",
+          )}
+        >
+          {sortable ? (
+            <DragHandle
+              {...sortable.handle}
+              aria-label={`Move “${task.title}”`}
+              className="-my-1.5 @lg/rows:my-0"
+            />
           ) : null}
-        </div>
-        {list ||
-        task.due_date ||
-        task.recurrence ||
-        task.priority !== "none" ||
-        task.completed_at ? (
-          <div className="flex shrink-0 flex-wrap items-center gap-1.5 @lg/rows:justify-end">
-            {list ? <TaskListBadge name={list.name} color={list.color} /> : null}
-            <PriorityBadge priority={task.priority} />
-            {task.due_date ? (
-              <DueDateLabel dueDate={task.due_date} today={today} muted={completed} />
-            ) : null}
-            {task.recurrence ? <RepeatBadge repeat={task.recurrence} /> : null}
-            {task.completed_at ? (
-              <span className="text-xs text-muted-foreground">
-                Completed {completedFormat.format(new Date(task.completed_at))}
-              </span>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
+          <Checkbox
+            shape="round"
+            checked={completed}
+            onChange={() => onToggle(task)}
+            aria-labelledby={titleId}
+            className="mt-0.5 @lg/rows:mt-0"
+          />
 
-      <div className="flex shrink-0 items-center gap-1">
-        {confirming ? (
-          <div
-            role="group"
-            aria-label={`Delete “${task.title}”?`}
-            className="flex items-center gap-1"
-            onKeyDown={(event) => {
-              if (event.key === "Escape") {
-                event.stopPropagation();
-                cancelDelete();
-              }
-            }}
-          >
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5 @lg/rows:flex-row @lg/rows:items-center @lg/rows:gap-4 compact:gap-1">
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <button
+                type="button"
+                onClick={() => onEdit(task)}
+                aria-label={`Edit “${task.title}”`}
+                className="block max-w-full rounded-sm text-left text-sm font-medium break-words outline-none hover:text-brand focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <span
+                  id={titleId}
+                  data-done={completed || undefined}
+                  className={cn("strike-sweep", completed && "text-muted-foreground")}
+                >
+                  {task.title}
+                </span>
+              </button>
+              {task.description ? (
+                <p className="line-clamp-1 text-sm break-words text-muted-foreground">
+                  {task.description}
+                </p>
+              ) : null}
+            </div>
+            {list ||
+            task.due_date ||
+            task.recurrence ||
+            task.priority !== "none" ||
+            task.completed_at ||
+            focusedSeconds > 0 ||
+            focusing ? (
+              <div className="flex shrink-0 flex-wrap items-center gap-1.5 @lg/rows:justify-end">
+                {list ? <TaskListBadge name={list.name} color={list.color} /> : null}
+                <PriorityBadge priority={task.priority} />
+                {task.due_date ? (
+                  <DueDateLabel dueDate={task.due_date} today={today} muted={completed} />
+                ) : null}
+                {task.recurrence ? <RepeatBadge repeat={task.recurrence} /> : null}
+                {focusedSeconds > 0 || focusing ? (
+                  <FocusBadge seconds={focusedSeconds} active={focusing} />
+                ) : null}
+                {task.completed_at ? (
+                  <span className="text-xs text-muted-foreground">
+                    Completed {completedFormat.format(new Date(task.completed_at))}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="flex shrink-0 items-center gap-1">
+            {onFocus && !completed && !focusing ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Focus on “${task.title}”`}
+                onClick={() => onFocus(task)}
+                className="size-8 text-muted-foreground hover:text-brand pointer-fine:opacity-0 pointer-fine:group-focus-within:opacity-100 pointer-fine:group-hover:opacity-100"
+              >
+                <Timer aria-hidden="true" />
+              </Button>
+            ) : null}
             <Button
-              ref={confirmRef}
-              variant="destructive"
-              size="sm"
-              disabled={pending}
-              onClick={() => {
-                // On success the row unmounts; on failure the page reports the error.
-                void onDelete(task).finally(() => setConfirming(false));
-              }}
+              variant="ghost"
+              size="icon"
+              aria-label={`Delete “${task.title}”`}
+              // Deleting offers Undo in a toast, so it doesn't ask first.
+              onClick={() => onDelete(task)}
+              // Revealed on hover or focus where there is a mouse; always visible on touch screens.
+              className="size-8 text-muted-foreground hover:text-destructive pointer-fine:opacity-0 pointer-fine:group-focus-within:opacity-100 pointer-fine:group-hover:opacity-100"
             >
-              Delete
-            </Button>
-            <Button variant="ghost" size="sm" disabled={pending} onClick={cancelDelete}>
-              Cancel
+              <Trash2 aria-hidden="true" />
             </Button>
           </div>
-        ) : (
-          <Button
-            ref={deleteRef}
-            variant="ghost"
-            size="icon"
-            disabled={pending}
-            aria-label={`Delete “${task.title}”`}
-            onClick={() => setConfirming(true)}
-            // Revealed on hover or focus where there is a mouse; always visible on touch screens.
-            className="size-8 text-muted-foreground hover:text-destructive pointer-fine:opacity-0 pointer-fine:group-focus-within:opacity-100 pointer-fine:group-hover:opacity-100"
-          >
-            <Trash2 aria-hidden="true" />
-          </Button>
-        )}
+        </div>
       </div>
     </li>
   );
+}
+
+/** A task row that can be dragged into a new place, inside `SortableList`. */
+export function SortableTaskItem(props: Omit<TaskItemProps, "sortable">) {
+  const sortable = useSortableItem(props.task.id);
+  return <TaskItem {...props} sortable={sortable} />;
 }

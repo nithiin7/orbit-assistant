@@ -7,6 +7,7 @@ import { useState } from "react";
 
 import { useConfirm } from "@/components/confirm-dialog";
 import { Menu } from "@/components/ui/menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useActiveWorkspaceId, useViewerTimeZone } from "@/hooks/use-calendar";
 import {
   useHabit,
@@ -49,7 +50,7 @@ import { HabitDetailView, HEATMAP_DAYS } from "./habit-detail";
 import { HabitDialog } from "./habit-dialog";
 import { HabitListView } from "./habit-list";
 import { HabitTemplatesView } from "./habit-templates";
-import { HabitTodayView } from "./habit-today";
+import { HabitTodaySkeleton, HabitTodayView } from "./habit-today";
 import { HabitsNav, VIEW_ICONS } from "./habits-nav";
 import { RoutineDialog } from "./routine-dialog";
 import { RoutineDetailView, RoutineListView } from "./routines-view";
@@ -70,7 +71,6 @@ export function HabitsPanel() {
   const [dialog, setDialog] = useState<Dialog>(null);
   const { confirm, confirmDialog } = useConfirm();
 
-  if (workspaceId === null) return null;
   const view = location.kind === "view" ? location.view : null;
   const ViewIcon = view ? VIEW_ICONS[view] : null;
 
@@ -123,17 +123,29 @@ export function HabitsPanel() {
             </div>
           ) : null}
 
-          <Content
-            location={location}
-            workspaceId={workspaceId}
-            timeZone={timeZone}
-            onDialog={setDialog}
-            confirm={confirm}
-          />
+          {workspaceId === null ? (
+            // The workspace is still loading: hold the view's place.
+            view === "today" ? (
+              <HabitTodaySkeleton />
+            ) : (
+              <div className="grid gap-3 @2xl:grid-cols-2" aria-busy="true">
+                <Skeleton className="h-28" />
+                <Skeleton className="h-28" />
+              </div>
+            )
+          ) : (
+            <Content
+              location={location}
+              workspaceId={workspaceId}
+              timeZone={timeZone}
+              onDialog={setDialog}
+              confirm={confirm}
+            />
+          )}
         </div>
       </div>
 
-      {dialog?.kind === "habit" ? (
+      {workspaceId !== null && dialog?.kind === "habit" ? (
         <HabitDialogContainer
           workspaceId={workspaceId}
           timeZone={timeZone}
@@ -142,7 +154,7 @@ export function HabitsPanel() {
           onClose={() => setDialog(null)}
         />
       ) : null}
-      {dialog?.kind === "routine" ? (
+      {workspaceId !== null && dialog?.kind === "routine" ? (
         <RoutineDialogContainer
           workspaceId={workspaceId}
           timeZone={timeZone}

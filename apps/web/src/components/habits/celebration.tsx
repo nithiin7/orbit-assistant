@@ -83,7 +83,8 @@ function CelebrationToast({ shown, onDismiss }: { shown: Shown | null; onDismiss
             shown.big && "border-success/40",
           )}
         >
-          <ConfettiBurst style={confetti} big={shown.big} />
+          {/* Confetti is saved for milestones, so it still means something. */}
+          {shown.big ? <ConfettiBurst style={confetti} big /> : null}
           <span
             aria-hidden="true"
             className={cn(

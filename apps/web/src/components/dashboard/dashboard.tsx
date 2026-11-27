@@ -20,6 +20,7 @@ import {
   WeightWidget,
   WorkoutsWidget,
 } from "@/components/fitness/fitness-widgets";
+import { FocusWidget } from "@/components/focus/focus-widget";
 import { HabitsWidget } from "@/components/habits/habits-widget";
 import { NotesWidget } from "@/components/notes/notes-widget";
 import { PageHeader } from "@/components/page-header";
@@ -62,6 +63,7 @@ const widgetComponents: Record<WidgetId, ComponentType> = {
   attention: AttentionWidget,
   workspace: WorkspaceOverview,
   tasks: TaskWidget,
+  focus: FocusWidget,
   reminders: ReminderOverview,
   calendar: CalendarWidget,
   habits: HabitsWidget,

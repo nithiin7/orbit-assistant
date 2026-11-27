@@ -416,10 +416,12 @@ function TaskPanel({
                 href={`/tasks?task=${task.id}`}
                 className={cn(
                   "min-w-0 flex-1 truncate hover:underline",
-                  task.status === "completed" && "text-muted-foreground line-through",
+                  task.status === "completed" && "text-muted-foreground",
                 )}
               >
-                {task.title}
+                <span data-done={task.status === "completed" || undefined} className="strike-sweep">
+                  {task.title}
+                </span>
               </Link>
               <Button
                 variant="ghost"

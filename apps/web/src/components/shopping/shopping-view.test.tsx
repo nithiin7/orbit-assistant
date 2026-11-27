@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ada, json, mockApi, type MockRequest, personal, status } from "@/test/api-mock";
 import { renderSignedIn } from "@/test/session";
+import { mockRowLayout, moveWithKeyboard } from "@/test/sortable";
 
 import { ShoppingPanel } from "./shopping-view";
 
@@ -48,6 +49,7 @@ function item(overrides: Partial<ShoppingItem> & Pick<ShoppingItem, "id" | "name
     created_at: "2026-10-01T09:00:00Z",
     updated_at: "2026-10-01T09:00:00Z",
     person_id: null,
+    position: 0,
     ...overrides,
   } satisfies ShoppingItem;
 }
@@ -66,6 +68,7 @@ const itemsRoutes = {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   localStorage.clear();
 });
 
@@ -96,6 +99,58 @@ describe("ShoppingPanel", () => {
     expect(within(options).queryByRole("menuitem", { name: /Delete/ })).not.toBeInTheDocument();
   });
 
+  it("moves an item to buy by its handle", async () => {
+    let release: () => void = () => {};
+    const api = mockApi({
+      ...session,
+      ...listsRoute,
+      ...itemsRoutes,
+      [`PUT ${SHOP}/lists/${groceries.id}/order`]: () =>
+        new Promise((resolve) => {
+          release = () =>
+            resolve(
+              Response.json({
+                items: [
+                  { ...eggs, position: 0 },
+                  { ...milk, position: 1 },
+                ],
+              }),
+            );
+        }),
+    });
+    await renderSignedIn(<ShoppingPanel />);
+    const toBuy = await screen.findByRole("list", { name: "2 items to buy" });
+    mockRowLayout();
+
+    await moveWithKeyboard(within(toBuy).getByRole("button", { name: "Move “Milk”" }), 1);
+
+    // Moved before the API answers.
+    expect(within(toBuy).getAllByRole("listitem")[0]).toHaveTextContent("Eggs");
+    const [put] = api.mock.calls.filter(([, init]) => init?.method === "PUT");
+    expect(put && JSON.parse(String(put[1]?.body))).toEqual({ item_ids: [eggs.id, milk.id] });
+    release();
+    await waitFor(() =>
+      expect(within(toBuy).getAllByRole("listitem")[1]).toHaveTextContent("Milk"),
+    );
+  });
+
+  it("puts items back and says so when a move fails", async () => {
+    mockApi({
+      ...session,
+      ...listsRoute,
+      ...itemsRoutes,
+      [`PUT ${SHOP}/lists/${groceries.id}/order`]: status(500),
+    });
+    await renderSignedIn(<ShoppingPanel />);
+    const toBuy = await screen.findByRole("list", { name: "2 items to buy" });
+    mockRowLayout();
+
+    await moveWithKeyboard(within(toBuy).getByRole("button", { name: "Move “Milk”" }), 1);
+
+    expect(await screen.findByText(/Couldn’t move the item|wrong/)).toBeInTheDocument();
+    expect(within(toBuy).getAllByRole("listitem")[0]).toHaveTextContent("Milk");
+  });
+
   it("switches between lists", async () => {
     const user = userEvent.setup();
     mockApi({ ...session, ...listsRoute, ...itemsRoutes });
@@ -121,6 +176,37 @@ describe("ShoppingPanel", () => {
     expect(
       await screen.findByRole("heading", { name: "Nothing on this list yet" }),
     ).toBeInTheDocument();
+  });
+
+  it("fills an empty list from a template", async () => {
+    const user = userEvent.setup();
+    const posted: unknown[] = [];
+    mockApi({
+      ...session,
+      [`GET ${SHOP}/lists`]: json({ lists: [{ ...groceries, needed_count: 0 }] }),
+      [`GET ${SHOP}/lists/${groceries.id}/items`]: json({ items: [] }),
+      [`POST ${SHOP}/lists/${groceries.id}/items`]: ({ body }: MockRequest) => {
+        posted.push(body);
+        const name = (body as { name: string }).name;
+        return Response.json(item({ id: `i-${posted.length}`, name }), { status: 201 });
+      },
+    });
+    await renderSignedIn(<ShoppingPanel />);
+    await screen.findByRole("heading", { name: "Nothing on this list yet" });
+
+    await user.click(screen.getByRole("button", { name: "Start from a template" }));
+    const dialog = await screen.findByRole("dialog", { name: "Start from a template" });
+    expect(dialog).toHaveAccessibleDescription(
+      "Pick a list. Its items are added to Groceries, ready to edit.",
+    );
+    await user.click(
+      within(dialog).getByRole("button", { name: "Add 6 items from “Household basics”" }),
+    );
+
+    await waitFor(() => expect(posted).toHaveLength(6));
+    expect(posted[0]).toEqual({ name: "Dish soap", notes: "" });
+    expect(await screen.findByRole("checkbox", { name: "Kitchen towels" })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Start from a template" })).toBeNull();
   });
 
   it("adds an item with a quantity and link from the keyboard", async () => {
@@ -228,6 +314,30 @@ describe("ShoppingPanel", () => {
     const message = await screen.findByText(/database is unavailable/);
     expect(message.closest("[role=alert]")).not.toBeNull();
     expect(screen.getByRole("checkbox", { name: "Milk" })).not.toBeChecked();
+  });
+
+  it("deletes an item with Undo, sending the delete only when the toast goes", async () => {
+    const user = userEvent.setup();
+    const api = mockApi({
+      ...session,
+      ...listsRoute,
+      ...itemsRoutes,
+      [`DELETE ${SHOP}/items/${milk.id}`]: status(204),
+    });
+    await renderSignedIn(<ShoppingPanel />);
+    const deletes = () => api.mock.calls.filter(([, init]) => init?.method === "DELETE");
+
+    await user.click(await screen.findByRole("button", { name: "Delete “Milk”" }));
+    expect(screen.queryByRole("checkbox", { name: "Milk" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Groceries, 1 to buy" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Undo" }));
+    expect(await screen.findByRole("checkbox", { name: "Milk" })).toBeInTheDocument();
+    expect(deletes()).toHaveLength(0);
+
+    await user.click(screen.getByRole("button", { name: "Delete “Milk”" }));
+    await user.click(screen.getByRole("button", { name: "Dismiss" }));
+    await waitFor(() => expect(deletes()).toHaveLength(1));
+    expect(screen.queryByRole("checkbox", { name: "Milk" })).not.toBeInTheDocument();
   });
 
   it("edits an item's details and clears its link", async () => {

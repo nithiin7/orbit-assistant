@@ -1,6 +1,6 @@
 import type { Task } from "@orbit/contracts";
 import { useQuery } from "@tanstack/react-query";
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -8,6 +8,7 @@ import { reminderKeys } from "@/api/reminders";
 import { ada, json, mockApi, type MockRequest, personal, status } from "@/test/api-mock";
 import { chooseOption } from "@/test/controls";
 import { renderSignedIn } from "@/test/session";
+import { mockRowLayout, moveWithKeyboard } from "@/test/sortable";
 import { localDateString } from "@/utils/dates";
 
 import { TasksPanel } from "./tasks-view";
@@ -29,6 +30,11 @@ const session = {
   ...signedIn,
   [`GET ${LISTS}`]: json({ lists: [] }),
   [`GET ${TASKS}/summary`]: json({ open: 2, completed: 5, overdue: 1, due_today: 1 }),
+  [`GET /api/v1/workspaces/${personal.id}/focus/summary`]: json({
+    today_seconds: 0,
+    today_sessions: 0,
+    tasks: [],
+  }),
   // The task dialog lists the task's linked documents.
   [`GET /api/v1/workspaces/${personal.id}/documents`]: json({ documents: [], total: 0 }),
 };
@@ -75,6 +81,7 @@ function listQueries(api: ReturnType<typeof mockApi>): URLSearchParams[] {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   localStorage.clear();
 });
 
@@ -131,6 +138,35 @@ describe("TasksPanel", () => {
     const list = await screen.findByRole("list", { name: "2 tasks" });
     expect(within(list).getAllByRole("listitem")).toHaveLength(2);
     expect(screen.queryByRole("list", { name: /^Overdue/ })).not.toBeInTheDocument();
+  });
+
+  it("moves a task by its handle in My order", async () => {
+    const user = userEvent.setup();
+    const api = mockApi({
+      ...session,
+      [`GET ${TASKS}`]: json({ tasks: [rent, plants], total: 2 }),
+      [`POST ${TASKS}/${rent.id}/move`]: status(204),
+    });
+    await renderSignedIn(<TasksPanel />);
+    await screen.findByRole("list", { name: "Overdue, 1 task" });
+    // Other sorts have no handles; the API's order decides.
+    expect(screen.queryByRole("button", { name: /^Move / })).not.toBeInTheDocument();
+
+    await chooseOption(user, screen.getByRole("combobox", { name: "Sort by" }), "Sort: My order");
+    const list = await screen.findByRole("list", { name: "2 tasks" });
+    await waitFor(() => expect(listQueries(api).at(-1)?.get("sort")).toBe("manual"));
+    mockRowLayout();
+    await moveWithKeyboard(within(list).getByRole("button", { name: "Move “Pay rent”" }), 1);
+
+    // The list shows the new order before the API answers.
+    expect(within(list).getAllByRole("listitem")[0]).toHaveTextContent("Water plants");
+    await waitFor(() => {
+      const [move] = api.mock.calls.filter(([, init]) => init?.method === "POST");
+      expect(move && JSON.parse(String(move[1]?.body))).toEqual({
+        before_id: null,
+        after_id: plants.id,
+      });
+    });
   });
 
   it("refreshes the counts after completing a task", async () => {
@@ -197,6 +233,62 @@ describe("TasksPanel", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Added “Book dentist”.");
   });
 
+  it("adds a checklist of tasks from a template on an empty list", async () => {
+    const user = userEvent.setup();
+    let tasks: Task[] = [];
+    const posted: unknown[] = [];
+    mockApi({
+      ...session,
+      [`GET ${TASKS}`]: () => Response.json({ tasks, total: tasks.length }),
+      [`POST ${TASKS}`]: ({ body }: MockRequest) => {
+        posted.push(body);
+        const title = (body as { title: string }).title;
+        const created = task({ id: `t-${posted.length}`, title });
+        tasks = [...tasks, created];
+        return Response.json(created, { status: 201 });
+      },
+    });
+    await renderSignedIn(<TasksPanel />);
+    await screen.findByRole("heading", { name: "No open tasks" });
+
+    await user.click(screen.getByRole("button", { name: "Start from a template" }));
+    const dialog = await screen.findByRole("dialog", { name: "Start from a template" });
+    await user.click(
+      within(dialog).getByRole("button", { name: "Add 5 tasks from “Weekly reset”" }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Start from a template" })).toBeNull(),
+    );
+    expect(posted).toHaveLength(5);
+    expect(posted[0]).toEqual({
+      title: "Review last week’s tasks",
+      description: "",
+      priority: "none",
+      list_id: null,
+    });
+    expect(await screen.findByRole("checkbox", { name: "Tidy the desk" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Added 5 tasks from “Weekly reset”.");
+  });
+
+  it("keeps the template picker open with an error when adding fails", async () => {
+    const user = userEvent.setup();
+    mockApi({
+      ...session,
+      [`GET ${TASKS}`]: json({ tasks: [], total: 0 }),
+      [`POST ${TASKS}`]: status(500),
+    });
+    await renderSignedIn(<TasksPanel />);
+    await user.click(await screen.findByRole("button", { name: "Start from a template" }));
+    const dialog = await screen.findByRole("dialog", { name: "Start from a template" });
+
+    await user.click(within(dialog).getByRole("button", { name: /from “Trip prep”/ }));
+
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "Couldn’t add every task from that template.",
+    );
+  });
+
   it("validates the title before sending anything", async () => {
     const user = userEvent.setup();
     const api = mockApi({ ...session, [`GET ${TASKS}`]: json({ tasks: [], total: 0 }) });
@@ -236,6 +328,37 @@ describe("TasksPanel", () => {
       expect(screen.getByRole("status")).toHaveTextContent("Completed “Pay rent”."),
     );
     expect(screen.getByRole("checkbox", { name: "Pay rent" })).toBeChecked();
+  });
+
+  it("folds a completed task out of the open list once its row has animated away", async () => {
+    const user = userEvent.setup();
+    const groceries: Task = { ...rent, id: "task-groceries", title: "Buy groceries" };
+    mockApi({
+      ...session,
+      [`GET ${TASKS}`]: json({ tasks: [rent, groceries], total: 2 }),
+      [`POST ${TASKS}/${rent.id}/complete`]: json({
+        ...rent,
+        status: "completed",
+        completed_at: "2026-10-29T10:00:00Z",
+      }),
+    });
+    await renderSignedIn(<TasksPanel />);
+
+    const checkbox = await screen.findByRole("checkbox", { name: "Pay rent" });
+    await user.click(checkbox);
+    const row = checkbox.closest("li");
+    if (!row) throw new Error("The task has no row.");
+    // The check and strike-through finishing inside the row don't remove it.
+    fireEvent.animationEnd(checkbox);
+    expect(row).toBeInTheDocument();
+
+    fireEvent.animationEnd(row);
+
+    await waitFor(() =>
+      expect(screen.queryByRole("checkbox", { name: "Pay rent" })).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole("checkbox", { name: "Buy groceries" })).toBeInTheDocument();
+    expect(screen.getByText("1 task")).toBeInTheDocument();
   });
 
   it("shows the next occurrence after completing a repeating task", async () => {
@@ -392,7 +515,7 @@ describe("TasksPanel", () => {
     expect(screen.getByRole("dialog", { name: "Edit task" })).toBeInTheDocument();
   });
 
-  it("deletes a task after confirmation", async () => {
+  it("deletes a task at once and sends the delete when the Undo toast goes", async () => {
     const user = userEvent.setup();
     const api = mockApi({
       ...session,
@@ -400,32 +523,54 @@ describe("TasksPanel", () => {
       [`DELETE ${TASKS}/${rent.id}`]: status(204),
     });
     await renderSignedIn(<TasksPanel />);
+    const deletes = () => api.mock.calls.filter(([, init]) => init?.method === "DELETE");
 
     await user.click(await screen.findByRole("button", { name: "Delete “Pay rent”" }));
-    const confirm = within(screen.getByRole("group", { name: "Delete “Pay rent”?" }));
-    expect(confirm.getByRole("button", { name: "Delete" })).toHaveFocus();
-    await user.click(confirm.getByRole("button", { name: "Delete" }));
 
     await waitFor(() =>
       expect(screen.queryByRole("checkbox", { name: "Pay rent" })).not.toBeInTheDocument(),
     );
     expect(screen.queryByRole("list", { name: /^Overdue/ })).not.toBeInTheDocument();
     expect(screen.getByRole("list", { name: "Today, 1 task" })).toBeInTheDocument();
-    expect(api.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(true);
+    expect(screen.getByText("Deleted “Pay rent”.")).toBeInTheDocument();
+    // Nothing is sent while Undo is still on offer.
+    expect(deletes()).toHaveLength(0);
+
+    await user.click(screen.getByRole("button", { name: "Dismiss" }));
+    await waitFor(() => expect(deletes()).toHaveLength(1));
+    expect(screen.queryByText("Deleted “Pay rent”.")).not.toBeInTheDocument();
   });
 
-  it("cancels a deletion and returns focus to the delete button", async () => {
+  it("brings a deleted task back on Undo without deleting it", async () => {
     const user = userEvent.setup();
-    mockApi({ ...session, [`GET ${TASKS}`]: json({ tasks: [rent], total: 1 }) });
+    const api = mockApi({ ...session, [`GET ${TASKS}`]: json({ tasks: [rent], total: 1 }) });
     await renderSignedIn(<TasksPanel />);
 
     await user.click(await screen.findByRole("button", { name: "Delete “Pay rent”" }));
-    await user.keyboard("{Escape}");
-
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Delete “Pay rent”" })).toHaveFocus(),
+      expect(screen.queryByRole("checkbox", { name: "Pay rent" })).not.toBeInTheDocument(),
     );
-    expect(screen.getByRole("checkbox", { name: "Pay rent" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Undo" }));
+
+    expect(await screen.findByRole("checkbox", { name: "Pay rent" })).toBeInTheDocument();
+    expect(screen.queryByText("Deleted “Pay rent”.")).not.toBeInTheDocument();
+    expect(api.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
+  });
+
+  it("brings a task back and says so when the delete fails", async () => {
+    const user = userEvent.setup();
+    mockApi({
+      ...session,
+      [`GET ${TASKS}`]: json({ tasks: [rent], total: 1 }),
+      [`DELETE ${TASKS}/${rent.id}`]: status(500),
+    });
+    await renderSignedIn(<TasksPanel />);
+
+    await user.click(await screen.findByRole("button", { name: "Delete “Pay rent”" }));
+    await user.click(await screen.findByRole("button", { name: "Dismiss" }));
+
+    expect(await screen.findByRole("checkbox", { name: "Pay rent" })).toBeInTheDocument();
+    expect(await screen.findByText(/Couldn’t delete the task/)).toBeInTheDocument();
   });
 
   it("searches after a pause and filters by status and priority", async () => {
@@ -658,5 +803,29 @@ describe("TasksPanel", () => {
       expect(await screen.findByRole("heading", { name: "Open tasks" })).toBeInTheDocument();
       await waitFor(() => expect(listQueries(api).at(-1)?.get("list_id")).toBeNull());
     });
+  });
+
+  it("shows focused time and starts the focus timer on a task", async () => {
+    mockApi({
+      ...session,
+      [`GET ${TASKS}`]: json({ tasks: [rent, plants], total: 2 }),
+      [`GET /api/v1/workspaces/${personal.id}/focus/summary`]: json({
+        today_seconds: 0,
+        today_sessions: 0,
+        tasks: [{ task_id: rent.id, focused_seconds: 3900, sessions: 3 }],
+      }),
+    });
+
+    await renderSignedIn(<TasksPanel />);
+
+    expect(await screen.findByText("1h 5m")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Focus on “Water plants”" }));
+
+    expect(screen.getByText("Focusing on “Water plants” for 25 minutes.")).toBeInTheDocument();
+    expect(screen.getByText(", focusing now")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Focus on “Water plants”" }),
+    ).not.toBeInTheDocument();
+    expect(localStorage.getItem("orbit:focus")).toContain(plants.id);
   });
 });

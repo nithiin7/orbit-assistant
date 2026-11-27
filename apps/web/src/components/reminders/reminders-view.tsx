@@ -10,15 +10,20 @@ import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
 import type { Resource } from "@/hooks/query-resource";
 import { useLinkedRecord } from "@/hooks/use-linked-record";
-import { useReminderList, useReminderMutations } from "@/hooks/use-reminders";
+import {
+  useDeleteReminderWithUndo,
+  useReminderList,
+  useReminderMutations,
+} from "@/hooks/use-reminders";
 import { useTaskList } from "@/hooks/use-tasks";
 import {
   type FireGroupKey,
   groupRemindersByFire,
   matchesReminder,
+  REMINDER_FILTERS,
   type ReminderFields,
   type ReminderFilter,
   toReminderListQuery,
@@ -26,6 +31,7 @@ import {
 import { useCurrentUser } from "@/providers/auth";
 import { useWorkspaces } from "@/providers/workspace";
 import { cn } from "@/utils/common";
+import { animateListChanges } from "@/utils/list-motion";
 import { browserTimeZone } from "@/utils/time-zones";
 
 import { ReminderDialog } from "./reminder-dialog";
@@ -49,7 +55,7 @@ export function RemindersPanel() {
       </div>
     );
   }
-  if (state.status === "loading") return <ReminderListSkeleton />;
+  if (state.status === "loading") return <RemindersPageSkeleton />;
   return <RemindersView key={state.active.id} workspaceId={state.active.id} />;
 }
 
@@ -64,7 +70,6 @@ function RemindersView({ workspaceId }: { workspaceId: string }) {
   const { state: openTasks } = useTaskList(workspaceId, OPEN_TASKS);
   const mutations = useReminderMutations(workspaceId);
   const [dialog, setDialog] = useState<DialogState>(null);
-  const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [actionError, setActionError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const [search, setSearch] = useState("");
@@ -80,15 +85,6 @@ function RemindersView({ workspaceId }: { workspaceId: string }) {
   const viewerTimeZone = browserTimeZone();
   const defaultTimeZone = user.timezone ?? viewerTimeZone;
 
-  const setReminderPending = useCallback((reminderId: string, isPending: boolean) => {
-    setPending((current) => {
-      const next = new Set(current);
-      if (isPending) next.add(reminderId);
-      else next.delete(reminderId);
-      return next;
-    });
-  }, []);
-
   const save = useCallback(
     async (fields: ReminderFields) => {
       const saved =
@@ -101,58 +97,43 @@ function RemindersView({ workspaceId }: { workspaceId: string }) {
     [dialog, mutations.create, mutations.update],
   );
 
-  const toggle = useCallback(
-    async (reminder: Reminder) => {
-      const enabling = !reminder.enabled;
-      setActionError(null);
-      setReminderPending(reminder.id, true);
-      try {
-        await mutations.update.mutateAsync({ reminder, changes: { enabled: enabling } });
-        setAnnouncement(
-          enabling ? `Enabled “${reminder.title}”.` : `Disabled “${reminder.title}”.`,
-        );
-      } catch (reason) {
-        setActionError(
-          describeApiError(
-            reason,
-            enabling ? "Couldn’t enable the reminder." : "Couldn’t disable the reminder.",
-          ),
-        );
-      }
-      setReminderPending(reminder.id, false);
-    },
-    [mutations.update, setReminderPending],
-  );
+  // The switch flips at once (see `useReminderMutations`); only a failure needs reporting.
+  const toggle = async (reminder: Reminder) => {
+    const enabling = !reminder.enabled;
+    setActionError(null);
+    try {
+      await mutations.update.mutateAsync({ reminder, changes: { enabled: enabling } });
+      setAnnouncement(enabling ? `Enabled “${reminder.title}”.` : `Disabled “${reminder.title}”.`);
+    } catch (reason) {
+      setActionError(
+        describeApiError(
+          reason,
+          enabling ? "Couldn’t enable the reminder." : "Couldn’t disable the reminder.",
+        ),
+      );
+    }
+  };
 
-  const remove = useCallback(
-    async (reminder: Reminder) => {
-      setActionError(null);
-      setReminderPending(reminder.id, true);
-      try {
-        await mutations.remove.mutateAsync(reminder);
-        setAnnouncement(`Deleted “${reminder.title}”.`);
-        listRef.current?.focus();
-      } catch (reason) {
-        setActionError(describeApiError(reason, "Couldn’t delete the reminder. Try again."));
-      }
-      setReminderPending(reminder.id, false);
-    },
-    [mutations.remove, setReminderPending],
-  );
+  const deleteWithUndo = useDeleteReminderWithUndo(workspaceId, mutations.remove.mutateAsync);
+  const remove = (reminder: Reminder) => {
+    setActionError(null);
+    deleteWithUndo(reminder);
+    // The row and its focused button are gone; keep focus in the list.
+    listRef.current?.focus();
+  };
 
   const renderRow = (reminder: Reminder) => (
     <ReminderItem
       key={reminder.id}
       reminder={reminder}
       viewerTimeZone={viewerTimeZone}
-      pending={pending.has(reminder.id)}
       onToggle={(item) => void toggle(item)}
       onEdit={setDialog}
       onDelete={remove}
     />
   );
   const listClassName = cn(
-    "@container/rows divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1 transition-opacity duration-150",
+    "@container/rows relative divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1 transition-opacity duration-150",
     refreshing && "opacity-70",
   );
   // Sections by when they fire help where reminders have times ahead; other views read as one list.
@@ -301,6 +282,7 @@ function RemindersView({ workspaceId }: { workspaceId: string }) {
                           </h3>
                           <ul
                             aria-label={`${group.label}, ${countLabel(group.reminders.length)}`}
+                            ref={animateListChanges}
                             className={listClassName}
                           >
                             {group.reminders.map(renderRow)}
@@ -311,6 +293,7 @@ function RemindersView({ workspaceId }: { workspaceId: string }) {
                   </div>
                 ) : (
                   <ul
+                    ref={animateListChanges}
                     aria-label={countLabel(searching ? visible.length : state.data.total)}
                     className={cn(
                       listClassName,
@@ -435,6 +418,40 @@ function ReminderEmptyState({
   }
 }
 
+/**
+ * The Reminders page while the workspace loads: the same rail, heading, and list frame as the
+ * real page, so it fills in without moving.
+ */
+function RemindersPageSkeleton() {
+  return (
+    <div className="@container/reminders" aria-busy="true">
+      <div className="grid gap-6 @4xl/reminders:grid-cols-[13rem_minmax(0,1fr)] @4xl/reminders:gap-8 @7xl/reminders:grid-cols-[15rem_minmax(0,1fr)] @7xl/reminders:gap-12">
+        <div aria-hidden="true" className="flex min-w-0 gap-1 @4xl/reminders:flex-col">
+          {REMINDER_FILTERS.map(({ value }) => (
+            <Skeleton
+              key={value}
+              className="h-9 w-24 shrink-0 rounded-full @4xl/reminders:w-full @4xl/reminders:rounded-lg"
+            />
+          ))}
+        </div>
+        <div className="@container/list min-w-0 space-y-5">
+          <div
+            aria-hidden="true"
+            className="flex flex-col gap-3 @lg/list:flex-row @lg/list:items-end @lg/list:justify-between"
+          >
+            <div className="min-w-0 space-y-1.5">
+              <SkeletonText className="w-28 text-lg" />
+              <SkeletonText className="w-20 text-sm" />
+            </div>
+            <Skeleton className="h-9 w-36 shrink-0" />
+          </div>
+          <ReminderListSkeleton />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ReminderListSkeleton() {
   return (
     <div className="divide-y overflow-hidden rounded-2xl border bg-card">
@@ -442,12 +459,12 @@ function ReminderListSkeleton() {
       {[0, 1, 2, 3].map((row) => (
         <div key={row} className="flex items-start gap-4 px-4 py-3.5">
           <div className="w-16 shrink-0 space-y-1.5 sm:w-20">
-            <Skeleton className="h-4 w-14" />
-            <Skeleton className="h-3 w-10" />
+            <SkeletonText className="w-14 text-sm" />
+            <SkeletonText className="w-10 text-xs" />
           </div>
           <Skeleton className="hidden size-9 shrink-0 rounded-xl sm:block" />
           <div className="min-w-0 flex-1 space-y-2">
-            <Skeleton className={cn("h-4", row % 2 === 1 ? "w-1/3" : "w-1/2")} />
+            <SkeletonText className={cn("text-sm", row % 2 === 1 ? "w-1/3" : "w-1/2")} />
             <Skeleton className="h-5 w-24 rounded-full" />
           </div>
           <Skeleton className="h-5 w-9 self-center rounded-full" />

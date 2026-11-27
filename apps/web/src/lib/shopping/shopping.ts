@@ -78,8 +78,9 @@ export function optionalText(value: string): string | null {
 }
 
 /**
- * The API's order: needed items in the order they were added, then purchased items, most
- * recently purchased first. Lets the page re-sort after a change without reloading.
+ * The API's order: needed items in the list's own order (`position`, set by dragging), then
+ * purchased items, most recently purchased first. Lets the page re-sort after a change without
+ * reloading.
  */
 export function sortItems(items: readonly ShoppingItem[]): ShoppingItem[] {
   return [...items].sort((a, b) => {
@@ -87,7 +88,11 @@ export function sortItems(items: readonly ShoppingItem[]): ShoppingItem[] {
     if (a.status === "purchased" && a.purchased_at !== b.purchased_at) {
       return (b.purchased_at ?? "").localeCompare(a.purchased_at ?? "");
     }
-    return a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id);
+    return (
+      a.position - b.position ||
+      a.created_at.localeCompare(b.created_at) ||
+      a.id.localeCompare(b.id)
+    );
   });
 }
 

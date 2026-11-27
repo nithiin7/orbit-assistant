@@ -11,6 +11,7 @@ WidgetId = Literal[
     "attention",
     "workspace",
     "tasks",
+    "focus",
     "reminders",
     "calendar",
     "habits",

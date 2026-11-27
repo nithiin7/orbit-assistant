@@ -96,6 +96,16 @@ afterEach(() => {
 });
 
 describe("HabitsPanel: Today", () => {
+  it("keeps the rail and a placeholder for today while the workspace loads", async () => {
+    mockApi({
+      ...session,
+      "GET /api/v1/workspaces": () => new Promise<Response>(() => {}),
+    });
+    await renderSignedIn(<HabitsPanel />);
+    expect(await screen.findByRole("navigation", { name: /habit/i })).toBeInTheDocument();
+    expect(screen.getByLabelText("Loading today’s habits")).toHaveAttribute("aria-busy", "true");
+  });
+
   it("encourages a first habit when there are none", async () => {
     mockApi({ ...session, [`GET ${WS}/habits/today`]: json(today([])) });
     await renderSignedIn(<HabitsPanel />);

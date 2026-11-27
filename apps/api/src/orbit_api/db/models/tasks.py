@@ -6,6 +6,7 @@ from typing import Any
 
 from sqlalchemy import (
     JSON,
+    Boolean,
     CheckConstraint,
     Date,
     ForeignKey,
@@ -109,5 +110,48 @@ class TaskModel(Base):
     recurrence: Mapped[dict[str, Any] | None] = mapped_column(JSON)
     # Shared by a repeating task's occurrences. Not a reference to any row.
     series_id: Mapped[uuid.UUID | None]
+    # The task's place in the workspace's own order ("My order"), set by dragging. The
+    # repository puts new tasks last; positions may repeat, and creation time breaks ties.
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now, onupdate=utc_now)
+
+
+# A focus session is a working block, not a whole day: at most four hours of focus.
+MAX_FOCUS_SECONDS = 4 * 60 * 60
+
+
+class FocusSessionModel(Base):
+    """Time spent focusing on a task with the focus timer. Deleting the task, or its workspace,
+    deletes its sessions.
+
+    `focused_seconds` leaves out pauses, so it can be shorter than `ended_at - started_at`.
+    `day` is the client's local date when the session started, which decides focus streaks.
+    `completed` is set when the timer ran to the end rather than being stopped early.
+    """
+
+    __tablename__ = "focus_sessions"
+    __table_args__ = (
+        CheckConstraint(
+            f"focused_seconds BETWEEN 1 AND {MAX_FOCUS_SECONDS}", name="focused_seconds_range"
+        ),
+        CheckConstraint("ended_at > started_at", name="ends_after_start"),
+        ForeignKeyConstraint(
+            ["task_id", "workspace_id"],
+            ["tasks.id", "tasks.workspace_id"],
+            name="fk_focus_sessions_task",
+            ondelete="CASCADE",
+        ),
+        Index("ix_focus_sessions_workspace_task", "workspace_id", "task_id"),
+        Index("ix_focus_sessions_workspace_day", "workspace_id", "day"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+    workspace_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"))
+    task_id: Mapped[uuid.UUID]
+    started_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    ended_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    focused_seconds: Mapped[int] = mapped_column(Integer)
+    day: Mapped[date] = mapped_column(Date)
+    completed: Mapped[bool] = mapped_column(Boolean)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utc_now)

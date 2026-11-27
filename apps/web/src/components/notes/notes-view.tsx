@@ -44,11 +44,12 @@ import { useConfirm } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { FolderPickerDialog } from "@/components/folders/folder-dialogs";
 import { FormAlert } from "@/components/form-field";
+import { TemplatePickerDialog } from "@/components/template-picker-dialog";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Menu, type MenuItem } from "@/components/ui/menu";
 import { Select } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
+import { HeroSkeleton, Skeleton, SkeletonText } from "@/components/ui/skeleton";
 import {
   useNote,
   useNoteCounts,
@@ -70,15 +71,19 @@ import {
   isReadOnly,
   journalToday,
   NOTE_SORTS,
+  NOTE_TEMPLATES,
   NOTE_VIEWS,
   noteDisplayTitle,
   NOTES_PAGE_SIZE,
   notesHref,
   type NotesLocation,
+  type NoteTemplate,
+  noteTemplateSections,
   parseNotesLocation,
   toNoteListQuery,
 } from "@/lib/notes";
 import { useCurrentUser } from "@/providers/auth";
+import { useToast } from "@/providers/toast";
 import { useWorkspaces } from "@/providers/workspace";
 import { cn } from "@/utils/common";
 import { addDays } from "@/utils/dates";
@@ -108,7 +113,7 @@ export function NotesPanel() {
       </div>
     );
   }
-  if (state.status === "loading") return <ListSkeleton />;
+  if (state.status === "loading") return <NotesPageSkeleton />;
   return <NotesView key={state.active.id} workspaceId={state.active.id} />;
 }
 
@@ -150,6 +155,7 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
   // While a note is open, the list slides in over it on request.
   const [listOpen, setListOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [moving, setMoving] = useState<NoteSummary | Note | null>(null);
@@ -162,6 +168,7 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
   const tags = useTags(workspaceId);
   const mutations = useNoteMutations(workspaceId);
   const { confirm, confirmDialog } = useConfirm();
+  const { show: showToast } = useToast();
 
   const query = useMemo(
     () => ({ ...toNoteListQuery(location, sort, appliedSearch), offset: page * NOTES_PAGE_SIZE }),
@@ -252,6 +259,24 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
     [location, mutations.create, navigate, tags],
   );
 
+  /** Creates a note from a template where a new note would go, then opens it. */
+  const applyTemplate = async (template: NoteTemplate) => {
+    setError(null);
+    const tag = location.tagId ? tags.find((t) => t.id === location.tagId) : undefined;
+    const note = await mutations.create.mutateAsync({
+      title: template.title,
+      content: markdownToDocument(template.markdown),
+      note_type: "note",
+      folder_id: location.folderId,
+      tags: tag ? [tag.name] : [],
+    });
+    const stay = location.folderId || location.tagId || location.view === "inbox";
+    await navigate(
+      { ...(stay ? {} : { view: "inbox" as const }), noteId: note.id },
+      { keepNote: true },
+    );
+  };
+
   const openJournal = useCallback(
     async (date: string) => {
       setError(null);
@@ -309,7 +334,9 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
       ) {
         return;
       }
-      setNotePending(note.id, true);
+      // Pin and favorite show at once (see `useNoteMutations`), so the row isn't dimmed for them.
+      const instant = action === "pin" || action === "favorite";
+      if (!instant) setNotePending(note.id, true);
       try {
         switch (action) {
           case "pin":
@@ -361,7 +388,22 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
           case "trash":
             if (note.id === location.noteId) await editorRef.current?.flush();
             await mutations.act.mutateAsync({ noteId: note.id, action: "trash" });
-            setAnnouncement(`Moved “${title}” to the Trash.`);
+            // The toast announces it; Undo restores the note from the Trash.
+            showToast({
+              message: `Moved “${title}” to the Trash.`,
+              action: {
+                label: "Undo",
+                onAction: () =>
+                  void mutations.act
+                    .mutateAsync({ noteId: note.id, action: "restore" })
+                    .catch((reason: unknown) =>
+                      showToast({
+                        message: describeApiError(reason, "Couldn’t restore the note. Try again."),
+                        tone: "error",
+                      }),
+                    ),
+              },
+            });
             if (note.id === location.noteId) await navigate({ noteId: null });
             break;
           case "restore":
@@ -379,7 +421,7 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
       }
       setNotePending(note.id, false);
     },
-    [confirm, location.noteId, mutations, navigate],
+    [confirm, location.noteId, mutations, navigate, showToast],
   );
 
   // Keyboard: / searches, N starts a note (unless typing or a dialog is open), Escape clears.
@@ -599,6 +641,7 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
             onClear={() => setSearch("")}
             onCreate={() => void createNote()}
             onJournal={() => void openJournal(today)}
+            onTemplates={() => setTemplatesOpen(true)}
           />
         ) : (
           <div className="space-y-3">
@@ -700,12 +743,12 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
             aria-labelledby="note-list-heading"
             className="@container/list min-w-0 space-y-3"
           >
-            {counts &&
-            location.view === "all" &&
-            !location.folderId &&
-            !location.tagId &&
-            !appliedSearch ? (
-              <NotesHero counts={counts} onNavigate={(view) => void navigate({ view })} />
+            {location.view === "all" && !location.folderId && !location.tagId && !appliedSearch ? (
+              counts ? (
+                <NotesHero counts={counts} onNavigate={(view) => void navigate({ view })} />
+              ) : (
+                <NotesHeroSkeleton />
+              )
             ) : null}
             {listContent(false)}
           </section>
@@ -727,6 +770,20 @@ function NotesView({ workspaceId }: { workspaceId: string }) {
             });
             setAnnouncement(`Moved “${noteDisplayTitle(moving)}”.`);
           }}
+        />
+      ) : null}
+      {templatesOpen ? (
+        <TemplatePickerDialog
+          title="Start from a template"
+          description="Pick a layout. The note opens ready to fill in."
+          templates={NOTE_TEMPLATES.map((template) => ({
+            ...template,
+            preview: noteTemplateSections(template),
+            actionLabel: "Create note",
+          }))}
+          onUse={applyTemplate}
+          errorMessage="Couldn’t create a note from that template. Try again."
+          onClose={() => setTemplatesOpen(false)}
         />
       ) : null}
       {confirmDialog}
@@ -892,12 +949,14 @@ function ListEmptyState({
   onClear,
   onCreate,
   onJournal,
+  onTemplates,
 }: {
   location: NotesLocation;
   search: string;
   onClear: () => void;
   onCreate: () => void;
   onJournal: () => void;
+  onTemplates: () => void;
 }) {
   if (search) {
     return (
@@ -922,6 +981,7 @@ function ListEmptyState({
             ? "Create a note here, or move notes in from their menu."
             : "Add the tag to a note from its details."
         }
+        template={location.folderId ? { onClick: onTemplates } : undefined}
       >
         <Button size="sm" onClick={onCreate}>
           <Plus aria-hidden="true" /> New note
@@ -931,7 +991,14 @@ function ListEmptyState({
   }
   const copy = EMPTY_COPY[location.view];
   return (
-    <EmptyState icon={copy.icon} title={copy.title} description={copy.description}>
+    <EmptyState
+      icon={copy.icon}
+      title={copy.title}
+      description={copy.description}
+      template={
+        location.view === "inbox" || location.view === "all" ? { onClick: onTemplates } : undefined
+      }
+    >
       {location.view === "journal" ? (
         <Button size="sm" onClick={onJournal}>
           Write today’s entry
@@ -945,13 +1012,59 @@ function ListEmptyState({
   );
 }
 
+function NotesHeroSkeleton() {
+  return (
+    <HeroSkeleton
+      tiles={4}
+      className="@3xl/list:p-6"
+      headerClassName="space-y-1"
+      titleClassName="text-xl @3xl/list:text-2xl"
+      tilesClassName="grid-cols-2 @2xl/list:grid-cols-4"
+    />
+  );
+}
+
+/**
+ * The Notes page while the workspace loads: the same header, rail, hero, toolbar, and list
+ * frame as the real page, so it fills in without moving.
+ */
+function NotesPageSkeleton() {
+  return (
+    <div className="@container/notes space-y-5" aria-busy="true">
+      <div aria-hidden="true" className="flex items-center justify-between gap-3">
+        <SkeletonText className="w-24 text-2xl" />
+        <Skeleton className="h-9 w-28" />
+      </div>
+      <div className="grid gap-6 @5xl/notes:grid-cols-[13rem_minmax(0,1fr)] @7xl/notes:grid-cols-[14rem_minmax(0,1fr)]">
+        <div aria-hidden="true" className="hidden min-w-0 space-y-1 p-1 @5xl/notes:block">
+          {[0, 1, 2, 3, 4].map((row) => (
+            <Skeleton key={row} className="h-9 rounded-lg" />
+          ))}
+        </div>
+        <div className="@container/list min-w-0 space-y-3">
+          <NotesHeroSkeleton />
+          <div aria-hidden="true" className="space-y-3">
+            <SkeletonText className="w-28 text-lg" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-10 flex-1 rounded-xl" />
+              <Skeleton className="h-9 w-36 shrink-0" />
+              <Skeleton className="size-9 shrink-0" />
+            </div>
+          </div>
+          <ListSkeleton />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ListSkeleton() {
   return (
     <div aria-hidden="true" className="divide-y overflow-hidden rounded-xl border bg-card">
       {[0, 1, 2, 3].map((row) => (
-        <div key={row} className="space-y-2 px-4 py-3">
-          <Skeleton className="h-4 w-1/2" />
-          <Skeleton className="h-3 w-5/6" />
+        <div key={row} className="space-y-1 px-4 py-3">
+          <SkeletonText className="w-1/2 text-sm" />
+          <SkeletonText className="w-5/6 text-xs" />
         </div>
       ))}
     </div>

@@ -1,4 +1,3 @@
-import { Check } from "lucide-react";
 import type { ComponentProps } from "react";
 
 import { cn } from "@/utils/common";
@@ -30,11 +29,19 @@ function Checkbox({ className, shape = "square", ...props }: CheckboxProps) {
         )}
         {...props}
       />
-      <Check
+      {/* Lucide's check mark, drawn along its stroke when checked (`check-draw`). */}
+      <svg
         aria-hidden="true"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
         strokeWidth={3}
-        className="pointer-events-none absolute size-3 scale-50 text-brand-foreground opacity-0 transition-[opacity,scale] duration-150 ease-out-soft peer-checked:scale-100 peer-checked:opacity-100"
-      />
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="pointer-events-none absolute size-3 text-brand-foreground check-draw"
+      >
+        <path d="M20 6 9 17l-5-5" pathLength={1} />
+      </svg>
     </span>
   );
 }

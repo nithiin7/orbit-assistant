@@ -3,7 +3,7 @@
 import type { Reminder } from "@orbit/contracts";
 import { AlarmClock, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
+import { useId } from "react";
 
 import { TaskListBadge } from "@/components/tasks/task-meta";
 import { Button } from "@/components/ui/button";
@@ -27,11 +27,9 @@ type ReminderItemProps = {
   reminder: Reminder;
   /** The viewer's time zone; a reminder in another one says which. */
   viewerTimeZone: string;
-  /** An enable, disable, or delete is in flight. */
-  pending: boolean;
   onToggle: (reminder: Reminder) => void;
   onEdit: (reminder: Reminder) => void;
-  onDelete: (reminder: Reminder) => Promise<void>;
+  onDelete: (reminder: Reminder) => void;
 };
 
 /** When it fires next, or last fired, on the reminder's own clock. Plain text, for the dashboard. */
@@ -57,15 +55,11 @@ export function ReminderTime({ reminder }: { reminder: Reminder }) {
 export function ReminderItem({
   reminder,
   viewerTimeZone,
-  pending,
   onToggle,
   onEdit,
   onDelete,
 }: ReminderItemProps) {
   const titleId = useId();
-  const [confirming, setConfirming] = useState(false);
-  const confirmRef = useRef<HTMLButtonElement>(null);
-  const deleteRef = useRef<HTMLButtonElement>(null);
   const hint = statusHint(reminder);
   const muted = reminder.status === "disabled" || reminder.status === "completed";
   // A loan, subscription, or bill keeps this reminder on its next payment, an event's alert on its
@@ -73,16 +67,6 @@ export function ReminderItem({
   // renewal, or review alert; change it there.
   const managedBy = reminder.commitment ? managingModule(reminder.commitment.kind) : null;
   const managed = managedBy !== null;
-
-  useEffect(() => {
-    if (confirming) confirmRef.current?.focus();
-  }, [confirming]);
-
-  const cancelDelete = () => {
-    setConfirming(false);
-    // The confirmation unmounts; put focus back on the button that opened it.
-    requestAnimationFrame(() => deleteRef.current?.focus());
-  };
 
   const title = (
     <span
@@ -99,8 +83,7 @@ export function ReminderItem({
   return (
     <li
       className={cn(
-        "group flex items-start gap-3 px-3 py-3.5 transition-[background-color,opacity] duration-150 hover:bg-accent/40 sm:gap-4 sm:px-4",
-        pending && "opacity-70",
+        "group flex items-start gap-3 px-3 py-3.5 transition-[background-color,opacity] duration-150 hover:bg-accent/40 sm:gap-4 sm:px-4 compact:py-2",
         muted && "bg-muted/20",
       )}
     >
@@ -108,7 +91,7 @@ export function ReminderItem({
 
       <ReminderIcon reminder={reminder} group={group} className="hidden @md/rows:flex" />
 
-      <div className="min-w-0 flex-1 space-y-1.5">
+      <div className="min-w-0 flex-1 space-y-1.5 compact:space-y-1">
         <div className="space-y-0.5">
           {reminder.commitment?.kind === "document" ? (
             // A document's expiry reminder opens the document it's about.
@@ -150,72 +133,40 @@ export function ReminderItem({
       </div>
 
       <div className="flex shrink-0 items-center gap-1 self-center">
-        {managed ? null : confirming ? (
-          <div
-            role="group"
-            aria-label={`Delete “${reminder.title}”?`}
-            className="flex items-center gap-1"
-            onKeyDown={(event) => {
-              if (event.key === "Escape") {
-                event.stopPropagation();
-                cancelDelete();
-              }
-            }}
-          >
-            <Button
-              ref={confirmRef}
-              variant="destructive"
-              size="sm"
-              disabled={pending}
-              onClick={() => {
-                // On success the row unmounts; on failure the page reports the error.
-                void onDelete(reminder).finally(() => setConfirming(false));
-              }}
-            >
-              Delete
-            </Button>
-            <Button variant="ghost" size="sm" disabled={pending} onClick={cancelDelete}>
-              Cancel
-            </Button>
-          </div>
-        ) : (
+        {managed ? null : (
           <Button
-            ref={deleteRef}
             variant="ghost"
             size="icon"
-            disabled={pending}
             aria-label={`Delete “${reminder.title}”`}
-            onClick={() => setConfirming(true)}
+            // Deleting offers Undo in a toast, so it doesn't ask first.
+            onClick={() => onDelete(reminder)}
             // Revealed on hover or focus where there is a mouse; always visible on touch screens.
             className="size-8 text-muted-foreground hover:text-destructive pointer-fine:opacity-0 pointer-fine:group-focus-within:opacity-100 pointer-fine:group-hover:opacity-100"
           >
             <Trash2 aria-hidden="true" />
           </Button>
         )}
-        {confirming ? null : (
-          <button
-            type="button"
-            role="switch"
-            aria-checked={reminder.enabled}
-            aria-label={`${reminder.enabled ? "Disable" : "Enable"} “${reminder.title}”`}
-            disabled={pending || managed}
-            title={managedBy ? `Change this reminder in ${MODULE_LABEL[managedBy]}` : undefined}
-            onClick={() => onToggle(reminder)}
+        <button
+          type="button"
+          role="switch"
+          aria-checked={reminder.enabled}
+          aria-label={`${reminder.enabled ? "Disable" : "Enable"} “${reminder.title}”`}
+          disabled={managed}
+          title={managedBy ? `Change this reminder in ${MODULE_LABEL[managedBy]}` : undefined}
+          onClick={() => onToggle(reminder)}
+          className={cn(
+            "relative ml-1 inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none",
+            reminder.enabled ? "border-transparent bg-brand" : "bg-muted",
+          )}
+        >
+          <span
+            aria-hidden="true"
             className={cn(
-              "relative ml-1 inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none",
-              pending && "disabled:cursor-wait",
-              reminder.enabled ? "border-transparent bg-brand" : "bg-muted",
+              "inline-block size-3.5 rounded-full bg-card shadow-elevation-1 transition-transform duration-150 motion-reduce:transition-none",
+              reminder.enabled ? "translate-x-4.5" : "translate-x-0.5",
             )}
-          >
-            <span
-              aria-hidden="true"
-              className={cn(
-                "inline-block size-3.5 rounded-full bg-card shadow-elevation-1 transition-transform duration-150 motion-reduce:transition-none",
-                reminder.enabled ? "translate-x-4.5" : "translate-x-0.5",
-              )}
-            />
-          </button>
-        )}
+          />
+        </button>
       </div>
     </li>
   );

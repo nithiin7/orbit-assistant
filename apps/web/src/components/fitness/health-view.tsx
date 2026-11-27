@@ -17,6 +17,7 @@ import { useState } from "react";
 import { describeApiError } from "@/api/client";
 import { FormAlert } from "@/components/form-field";
 import { Menu } from "@/components/ui/menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useActiveWorkspaceId, useViewerTimeZone } from "@/hooks/use-calendar";
 import { useTemplates, useUnits } from "@/hooks/use-fitness";
 import { todayIn } from "@/lib/calendar";
@@ -35,7 +36,7 @@ import { ExerciseDetail, ExercisesView } from "./exercises";
 import { GoalDetail, GoalsView } from "./goals";
 import { HealthNav, VIEW_ICONS, viewLabel } from "./health-nav";
 import { FoodEntryDialog, NutritionView } from "./nutrition";
-import { OverviewView } from "./overview";
+import { HealthOverviewSkeleton, OverviewView } from "./overview";
 import { ProgressView } from "./progress";
 import { SettingsView } from "./settings";
 import { type ViewTab, ViewTabs } from "./shared";
@@ -52,8 +53,47 @@ export function HealthPanel() {
   const location = parseFitnessLocation(params);
   const workspaceId = useActiveWorkspaceId();
   const timeZone = useViewerTimeZone();
-  if (workspaceId === null) return null;
+  if (workspaceId === null) return <HealthSkeleton location={location} />;
   return <HealthContent workspaceId={workspaceId} timeZone={timeZone} location={location} />;
+}
+
+/**
+ * The Health page while the workspace loads: the real rail and view heading, with a placeholder
+ * for the view, so the page fills in without moving.
+ */
+function HealthSkeleton({ location }: { location: ReturnType<typeof parseFitnessLocation> }) {
+  const view = location.kind === "view" ? viewOf(location) : null;
+  const ViewIcon = view ? VIEW_ICONS[view] : null;
+  return (
+    <div className="@container/health" aria-busy="true">
+      <div className="grid gap-6 @5xl/health:grid-cols-[13rem_minmax(0,1fr)] @5xl/health:gap-8 @7xl/health:grid-cols-[15rem_minmax(0,1fr)] @7xl/health:gap-12">
+        <aside className="min-w-0 @5xl/health:sticky @5xl/health:top-6 @5xl/health:self-start">
+          <HealthNav section={viewOf(location)} />
+        </aside>
+        <div className="@container min-w-0 space-y-6">
+          {view && ViewIcon ? (
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0 space-y-1">
+                <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+                  <ViewIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+                  {viewLabel(view)}
+                </h2>
+                <p className="max-w-prose text-sm text-pretty text-muted-foreground">
+                  {FITNESS_VIEW_HINTS[view]}
+                </p>
+              </div>
+              {view === "overview" ? <Skeleton className="h-9 w-24" /> : null}
+            </div>
+          ) : null}
+          {view === "overview" ? (
+            <HealthOverviewSkeleton />
+          ) : (
+            <Skeleton className="h-40 w-full rounded-xl" />
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function HealthContent({

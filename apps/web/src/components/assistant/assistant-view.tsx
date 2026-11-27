@@ -29,7 +29,7 @@ import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
 import { Select } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
 import { VoicePanel } from "@/components/voice/voice-panel";
 import {
   type PendingTurn,
@@ -61,9 +61,7 @@ import { ProposalCard } from "./proposal-card";
 /** The assistant page: conversations beside the open one. The open conversation is in the URL. */
 export function AssistantView() {
   const settings = useAiSettings();
-  if (settings.status === "loading") {
-    return <Skeleton className="h-96 w-full rounded-xl" />;
-  }
+  if (settings.status === "loading") return <AssistantSkeleton />;
   if (settings.status === "error") {
     return (
       <p role="alert" className="text-sm text-destructive">
@@ -110,6 +108,41 @@ function SetupNotice({ settings }: { settings: AiSettings }) {
  * A chat layout: past conversations in a rail on wide screens (a drawer on narrow ones) beside
  * the open conversation, which reads in one centered column above a composer pinned to the bottom.
  */
+/**
+ * The assistant while its settings load: the same conversation rail, header, and chat column
+ * (with the composer at the bottom) as the real page, so it fills in without moving.
+ */
+function AssistantSkeleton() {
+  return (
+    <div className="@container/assistant" aria-busy="true" aria-label="Loading the assistant">
+      <div
+        aria-hidden="true"
+        className="grid gap-8 @4xl/assistant:grid-cols-[15rem_minmax(0,1fr)] @7xl/assistant:grid-cols-[17rem_minmax(0,1fr)]"
+      >
+        <div className="hidden min-w-0 space-y-3 p-0.5 @4xl/assistant:block">
+          <Skeleton className="h-9 w-full" />
+          <div className="space-y-1.5 px-1">
+            <Skeleton className="h-7 w-full" />
+            <Skeleton className="h-7 w-4/5" />
+            <Skeleton className="h-7 w-full" />
+          </div>
+        </div>
+        <div className="flex min-w-0 flex-col">
+          <div className="flex min-h-9 items-center px-1">
+            <SkeletonText className="w-40 text-sm" />
+          </div>
+          <div className="flex min-h-[70dvh] flex-col">
+            <div className="mx-auto w-full max-w-3xl flex-1 pt-6 pb-8" />
+            <div className="mx-auto w-full max-w-3xl pt-6 pb-3">
+              <Skeleton className="h-28 w-full rounded-2xl" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Assistant({ settings }: { settings: AiSettings }) {
   const params = useSearchParams();
   const router = useRouter();

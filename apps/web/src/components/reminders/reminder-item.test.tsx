@@ -30,7 +30,6 @@ function renderItem(value: Reminder) {
       <ReminderItem
         reminder={value}
         viewerTimeZone="UTC"
-        pending={false}
         onToggle={vi.fn()}
         onEdit={vi.fn()}
         onDelete={vi.fn()}
@@ -57,7 +56,7 @@ describe("ReminderItem", () => {
       task: { id: "t1", title: "File taxes", status: "completed", list: null },
     });
     expect(screen.getByText("Weekly on Mon, Thu")).toBeInTheDocument();
-    expect(screen.getByText("File taxes")).toHaveClass("line-through");
+    expect(screen.getByText("File taxes")).toHaveAttribute("data-done");
     expect(screen.getByText("Asia / Tokyo")).toBeInTheDocument();
     expect(screen.queryByText(/List:/)).not.toBeInTheDocument();
   });

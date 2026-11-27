@@ -5,6 +5,7 @@ import type {
   CreateNoteRequest,
   FolderDeleteMode,
   Note,
+  NoteList,
   NoteListQuery,
   UpdateNoteFolderRequest,
   UpdateNoteRequest,
@@ -161,7 +162,31 @@ export function useNoteMutations(workspaceId: string) {
   const update = useMutation({
     mutationFn: ({ noteId, changes }: { noteId: string; changes: UpdateNoteRequest }) =>
       withToken((token) => updateNote(token, workspaceId, noteId, changes)),
+    // Pinning and favoriting show at once; the server's note replaces the guess when it lands.
+    onMutate: async ({ noteId, changes }) => {
+      const flags: { is_pinned?: boolean; is_favorite?: boolean } = {};
+      if (typeof changes.is_pinned === "boolean") flags.is_pinned = changes.is_pinned;
+      if (typeof changes.is_favorite === "boolean") flags.is_favorite = changes.is_favorite;
+      if (Object.keys(flags).length === 0) return;
+      await queryClient.cancelQueries({ queryKey: noteKeys.lists(workspaceId) });
+      queryClient.setQueriesData<NoteList>({ queryKey: noteKeys.lists(workspaceId) }, (list) =>
+        list?.notes.some((item) => item.id === noteId)
+          ? {
+              ...list,
+              notes: list.notes.map((item) => (item.id === noteId ? { ...item, ...flags } : item)),
+            }
+          : list,
+      );
+      queryClient.setQueryData<Note>(
+        noteKeys.detail(workspaceId, noteId),
+        (note) => note && { ...note, ...flags },
+      );
+    },
     onSuccess: saved,
+    onError: (_error, { noteId }) => {
+      refreshLists();
+      void queryClient.invalidateQueries({ queryKey: noteKeys.detail(workspaceId, noteId) });
+    },
   });
 
   const act = useMutation({

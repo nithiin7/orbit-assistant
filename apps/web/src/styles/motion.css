@@ -4,13 +4,22 @@
   --animate-page-in: page-in 180ms var(--ease-out-soft);
   --animate-tooltip-in: fade-in 120ms ease-out;
   --animate-popover-in: popover-in 140ms var(--ease-out-soft);
+  --animate-toast-in: toast-in 200ms var(--ease-out-soft);
   /* Celebrations are the one place motion is allowed to be playful. */
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --animate-celebrate-in: celebrate-in 360ms var(--ease-spring);
   --animate-check-pop: check-pop 360ms var(--ease-spring);
   --animate-confetti: confetti 1100ms var(--ease-out-soft) both;
   /* Activity rings sweep in from empty; each arc sets --ring-offset, its final dash offset. */
-  --animate-ring-fill: ring-fill 900ms var(--ease-out-soft) both;
+  --animate-ring-fill: ring-fill 900ms var(--ease-out-soft) backwards;
+  /*
+   * A finished row folds away once its check and strike-through have played and the struck
+   * title has been on screen for a moment.
+   */
+  --animate-row-out: row-out 280ms var(--ease-out-soft) 900ms both;
+  /* A changed count rolls in from below (or above, when it went down). */
+  --animate-roll-up: roll-up 280ms var(--ease-out-soft);
+  --animate-roll-down: roll-down 280ms var(--ease-out-soft);
   /* Achievement cosmetics: a slowly turning frame, a drifting banner, a sheen on rare badges. */
   --animate-spin-slow: spin-slow 9s linear infinite;
   --animate-drift: drift 16s ease-in-out infinite alternate;
@@ -50,6 +59,28 @@
     }
   }
 
+  /* The row is a one-track grid, so its height can shrink to nothing (see `TaskItem`). */
+  @keyframes row-out {
+    to {
+      grid-template-rows: 0fr;
+      opacity: 0;
+    }
+  }
+
+  @keyframes roll-up {
+    from {
+      opacity: 0;
+      translate: 0 100%;
+    }
+  }
+
+  @keyframes roll-down {
+    from {
+      opacity: 0;
+      translate: 0 -100%;
+    }
+  }
+
   @keyframes page-in {
     from {
       opacity: 0;
@@ -68,6 +99,13 @@
       opacity: 0;
       scale: 0.98;
       translate: 0 -2px;
+    }
+  }
+
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      translate: 0 8px;
     }
   }
 
@@ -104,6 +142,96 @@
   }
 }
 
+/* The check mark in `Checkbox` draws along its stroke; its path sets pathLength="1". */
+@utility check-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+  transition:
+    opacity 80ms ease-out,
+    stroke-dashoffset 260ms var(--ease-out-soft) 40ms;
+
+  :checked ~ & {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+/*
+ * A strike-through that sweeps across when `data-done` is set, in place of `line-through`. It is
+ * a background line, so on a title that wraps it runs along each line in turn. Put it on an
+ * inline element (a span around the text), or the line spans the whole box. The text keeps its
+ * color while the line sweeps and only then fades to a muted one, so the sweep reads first.
+ */
+@utility strike-sweep {
+  --strike-weight: max(1px, 0.08em);
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 55%;
+  background-size: 0% var(--strike-weight);
+  transition:
+    background-size 340ms var(--ease-out-soft),
+    color 240ms ease-out 340ms;
+
+  &[data-done] {
+    background-size: 100% var(--strike-weight);
+  }
+}
+
+/*
+ * A progress ring's arc. It sweeps in from empty the first time the ring scrolls into view (the
+ * svg gets `data-in-view` from `revealWhenVisible`), then glides to each new value. Set
+ * --ring-offset and stroke-dashoffset to the same final offset.
+ */
+@utility progress-arc {
+  transition: stroke-dashoffset 600ms var(--ease-out-soft);
+
+  @media (prefers-reduced-motion: no-preference) {
+    animation: var(--animate-ring-fill);
+    animation-play-state: paused;
+
+    :where([data-in-view]) & {
+      animation-play-state: running;
+    }
+  }
+}
+
+/*
+ * Route transitions (`components/page-transition.tsx`). The old page fades out quickly while the
+ * new one fades in and rises a few pixels, so the swap reads as one calm motion. The rest of the
+ * page (sidebar, settings menu) is the root snapshot; it stays still instead of crossfading.
+ */
+@keyframes page-exit {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-old(.page-exit) {
+  animation: page-exit 120ms ease-out both;
+}
+
+::view-transition-new(.page-enter) {
+  animation: page-enter 240ms var(--ease-out-soft) 40ms both;
+}
+
+/* The snapshot overlay would swallow clicks while it runs; let them reach the live page. */
+::view-transition {
+  pointer-events: none;
+}
+
 /* Honor reduced-motion preferences everywhere, including third-party and native elements. */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -114,5 +242,11 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }

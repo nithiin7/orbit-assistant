@@ -9,11 +9,15 @@ import { describeApiError } from "@/api/client";
 import { useConfirm } from "@/components/confirm-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { FormAlert } from "@/components/form-field";
+import { TemplatePickerDialog } from "@/components/template-picker-dialog";
 import { Button } from "@/components/ui/button";
 import { Menu } from "@/components/ui/menu";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
+import { SortableList, type SortableMove } from "@/components/ui/sortable";
 import {
+  useDeleteTaskWithUndo,
   useLinkedTask,
+  useTaskFocusTimes,
   useTaskList,
   useTaskListMutations,
   useTaskLists,
@@ -26,18 +30,24 @@ import {
   isNarrowed,
   type StatusFilter,
   TASK_LIST_STYLES,
+  TASK_TEMPLATES,
   type TaskFilters,
+  taskMoveRequest,
+  type TaskTemplate,
+  taskTemplateRequests,
   toTaskListQuery,
 } from "@/lib/tasks";
+import { useFocusTimer } from "@/providers/focus";
 import { useWorkspaces } from "@/providers/workspace";
 import { cn } from "@/utils/common";
 import { localDateString } from "@/utils/dates";
 import { isEditableTarget } from "@/utils/keyboard";
+import { animateListChanges } from "@/utils/list-motion";
 
 import { TaskComposer } from "./task-composer";
 import { TaskEditDialog } from "./task-edit-dialog";
 import { TasksHero } from "./task-hero";
-import { TaskItem } from "./task-item";
+import { SortableTaskItem, TaskItem } from "./task-item";
 import { TaskListDialog, type TaskListValues } from "./task-list-dialog";
 import { TaskListFilter } from "./task-list-filter";
 import { TaskToolbar } from "./task-toolbar";
@@ -59,7 +69,7 @@ export function TasksPanel() {
       </div>
     );
   }
-  if (state.status === "loading") return <TaskListSkeleton />;
+  if (state.status === "loading") return <TasksPageSkeleton />;
   return <TasksView key={state.active.id} workspaceId={state.active.id} />;
 }
 
@@ -71,6 +81,8 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
   const summary = useTaskSummary(workspaceId);
   const mutations = useTaskMutations(workspaceId);
   const lists = useTaskLists(workspaceId);
+  const focusTimes = useTaskFocusTimes(workspaceId);
+  const focus = useFocusTimer();
   const listMutations = useTaskListMutations(workspaceId);
   const { confirm, confirmDialog } = useConfirm();
   // The list being created (`"new"`) or edited, in a dialog.
@@ -78,12 +90,14 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
   const listOptions = lists.state.status === "success" ? lists.state.data : [];
   const selectedList =
     filters.list === "all" || filters.list === "none" ? undefined : lists.byId.get(filters.list);
-  const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [editing, setEditing] = useState<Task | null>(null);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   // A note's link to a task opens it here.
   useLinkedTask(workspaceId, setEditing);
   const [actionError, setActionError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
+  /** Tasks whose rows folded away after they stopped belonging in the list in view. */
+  const [departed, setDeparted] = useState<ReadonlySet<string>>(new Set());
   const titleRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -115,15 +129,6 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const setTaskPending = useCallback((taskId: string, isPending: boolean) => {
-    setPending((current) => {
-      const next = new Set(current);
-      if (isPending) next.add(taskId);
-      else next.delete(taskId);
-      return next;
-    });
-  }, []);
-
   const create = useCallback(
     async (draft: CreateTaskRequest) => {
       const task = await mutations.create.mutateAsync(draft);
@@ -133,11 +138,21 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
     [mutations.create],
   );
 
+  /** Adds a template's tasks, in order, to the list in view (or no list). */
+  const applyTemplate = async (template: TaskTemplate) => {
+    const listId = selectedList?.id ?? null;
+    for (const draft of taskTemplateRequests(template, listId)) {
+      await mutations.create.mutateAsync(draft);
+    }
+    setActionError(null);
+    setAnnouncement(`Added ${template.tasks.length} tasks from “${template.name}”.`);
+  };
+
   const toggle = useCallback(
     async (task: Task) => {
       const completing = task.status === "open";
       setActionError(null);
-      setTaskPending(task.id, true);
+      // The row flips at once (see `useTaskMutations`), so it isn't dimmed meanwhile.
       try {
         await mutations.toggle.mutateAsync(task);
         setAnnouncement(completing ? `Completed “${task.title}”.` : `Reopened “${task.title}”.`);
@@ -149,9 +164,8 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
           ),
         );
       }
-      setTaskPending(task.id, false);
     },
-    [mutations.toggle, setTaskPending],
+    [mutations.toggle],
   );
 
   const save = useCallback(
@@ -163,22 +177,13 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
     [mutations.update],
   );
 
-  const remove = useCallback(
-    async (task: Task) => {
-      setActionError(null);
-      setTaskPending(task.id, true);
-      try {
-        await mutations.remove.mutateAsync(task);
-        setAnnouncement(`Deleted “${task.title}”.`);
-        // The row and its focused button are gone; keep focus in the list.
-        listRef.current?.focus();
-      } catch (reason) {
-        setActionError(describeApiError(reason, "Couldn’t delete the task. Try again."));
-      }
-      setTaskPending(task.id, false);
-    },
-    [mutations.remove, setTaskPending],
-  );
+  const deleteWithUndo = useDeleteTaskWithUndo(workspaceId, mutations.remove.mutateAsync);
+  const remove = (task: Task) => {
+    setActionError(null);
+    deleteWithUndo(task);
+    // The row and its focused button are gone; keep focus in the list.
+    listRef.current?.focus();
+  };
 
   const saveList = async (values: TaskListValues) => {
     if (listDialog === "new") {
@@ -215,23 +220,54 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
     setFilters((current) => ({ ...current, search: "", priority: "all" }));
   };
 
+  // In "My order" the tasks can be dragged into a new order.
+  const manual = filters.sort === "manual";
+  const move = ({ item, to, order }: SortableMove<Task>) => {
+    const body = taskMoveRequest(order, to);
+    if (!body) return;
+    setActionError(null);
+    mutations.move.mutateAsync({ task: item, body, query, order }).catch((reason: unknown) => {
+      setActionError(describeApiError(reason, "Couldn’t move the task. Try again."));
+    });
+  };
+
+  // A task completed (or reopened) here stays in the cached list until it refetches; its row
+  // folds away instead, and is then left out.
+  const belongs = (task: Task) => filters.status === "all" || task.status === filters.status;
+  const shownTasks =
+    state.status === "success"
+      ? state.data.tasks.filter((task) => belongs(task) || !departed.has(task.id))
+      : [];
+  const shownTotal =
+    state.status === "success"
+      ? state.data.total - (state.data.tasks.length - shownTasks.length)
+      : 0;
+
+  const Row = manual ? SortableTaskItem : TaskItem;
   const renderRow = (task: Task) => (
-    <TaskItem
+    <Row
       key={task.id}
       task={task}
+      leaving={!belongs(task)}
+      onLeft={(item) => setDeparted((current) => new Set(current).add(item.id))}
       // The list in view goes without saying.
       list={
         task.list_id && task.list_id !== filters.list ? lists.byId.get(task.list_id) : undefined
       }
       today={today}
-      pending={pending.has(task.id)}
       onToggle={(item) => void toggle(item)}
       onEdit={setEditing}
       onDelete={remove}
+      focusedSeconds={focusTimes.get(task.id)}
+      focusing={focus.timer?.taskId === task.id}
+      onFocus={(item) => {
+        focus.start({ workspaceId, taskId: item.id, taskTitle: item.title });
+        setAnnouncement(`Focusing on “${item.title}” for 25 minutes.`);
+      }}
     />
   );
   const listClassName = cn(
-    "@container/rows divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1 transition-opacity duration-150",
+    "@container/rows relative divide-y overflow-hidden rounded-2xl border bg-card shadow-elevation-1 transition-opacity duration-150",
     refreshing && "opacity-70",
   );
   // Sections by due date help most for open tasks in due order; other views read as one list.
@@ -342,18 +378,19 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
                   Try again
                 </Button>
               </div>
-            ) : state.data.tasks.length === 0 ? (
+            ) : shownTasks.length === 0 ? (
               <TaskEmptyState
                 filters={filters}
                 listName={selectedList?.name ?? null}
                 onClear={clearNarrowing}
+                onTemplates={() => setTemplatesOpen(true)}
               />
             ) : (
               <div className="space-y-6">
                 {grouped ? (
                   // On very wide screens the sections sit side by side, like a board.
                   <div className="gap-6 @5xl/list:columns-2 @min-[100rem]/list:columns-3">
-                    {groupTasksByDue(state.data.tasks, today).map((group) => {
+                    {groupTasksByDue(shownTasks, today).map((group) => {
                       const headingId = `${groupIdPrefix}-${group.key}`;
                       return (
                         <section
@@ -382,6 +419,7 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
                           </h3>
                           <ul
                             aria-label={`${group.label}, ${countLabel(group.tasks.length)}`}
+                            ref={animateListChanges}
                             className={listClassName}
                           >
                             {group.tasks.map(renderRow)}
@@ -390,22 +428,34 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
                       );
                     })}
                   </div>
+                ) : manual ? (
+                  // One column, so a dragged row moves straight up or down.
+                  <SortableList items={shownTasks} itemLabel={(task) => task.title} onMove={move}>
+                    <ul
+                      ref={animateListChanges}
+                      aria-label={countLabel(shownTotal)}
+                      className={listClassName}
+                    >
+                      {shownTasks.map(renderRow)}
+                    </ul>
+                  </SortableList>
                 ) : (
                   <ul
-                    aria-label={countLabel(state.data.total)}
+                    ref={animateListChanges}
+                    aria-label={countLabel(shownTotal)}
                     className={cn(
                       listClassName,
                       // Two columns of rows on very wide screens, with a rule between them.
                       "grid @5xl/list:grid-cols-2 @5xl/list:divide-y-0 @5xl/list:*:-mb-px @5xl/list:*:border-b @5xl/list:*:odd:border-r @5xl/list:*:odd:last:border-r-0",
                     )}
                   >
-                    {state.data.tasks.map(renderRow)}
+                    {shownTasks.map(renderRow)}
                   </ul>
                 )}
                 <p className="px-1 text-xs text-muted-foreground">
-                  {state.data.total > state.data.tasks.length
-                    ? `Showing ${state.data.tasks.length} of ${state.data.total} tasks. Search or filter to find the rest.`
-                    : countLabel(state.data.total)}
+                  {shownTotal > shownTasks.length
+                    ? `Showing ${shownTasks.length} of ${shownTotal} tasks. Search or filter to find the rest.`
+                    : countLabel(shownTotal)}
                 </p>
               </div>
             )}
@@ -437,6 +487,24 @@ function TasksView({ workspaceId }: { workspaceId: string }) {
             onClose={() => setListDialog(null)}
           />
         ) : null}
+        {templatesOpen ? (
+          <TemplatePickerDialog
+            title="Start from a template"
+            description={
+              selectedList
+                ? `Pick a checklist. Its tasks are added to ${selectedList.name}, ready to edit.`
+                : "Pick a checklist. Its tasks are added to your list, ready to edit."
+            }
+            templates={TASK_TEMPLATES.map((template) => ({
+              ...template,
+              preview: template.tasks,
+              actionLabel: `Add ${template.tasks.length} tasks`,
+            }))}
+            onUse={applyTemplate}
+            errorMessage="Couldn’t add every task from that template. Check your tasks and try again."
+            onClose={() => setTemplatesOpen(false)}
+          />
+        ) : null}
         {confirmDialog}
       </div>
     </div>
@@ -457,11 +525,13 @@ function TaskEmptyState({
   filters,
   listName,
   onClear,
+  onTemplates,
 }: {
   filters: TaskFilters;
   /** The list in view, if one is. */
   listName: string | null;
   onClear: () => void;
+  onTemplates: () => void;
 }) {
   if (isNarrowed(filters)) {
     return (
@@ -481,7 +551,8 @@ function TaskEmptyState({
       <EmptyState
         icon={ListTodo}
         title={`Nothing on ${listName}${filters.status === "open" ? " to do" : " yet"}`}
-        description="Add a task above and it goes on this list. You can also move a task here from its details."
+        description="Add a task above, or move one here from its details."
+        template={{ onClick: onTemplates }}
       />
     );
   }
@@ -501,9 +572,53 @@ function TaskEmptyState({
       description={
         filters.status === "open"
           ? "You’re all caught up. Add a task above when something new comes up."
-          : "Add your first task above. Give it a due date or priority to keep it in view."
+          : "Add your first task above, with a due date or priority to keep it in view."
       }
+      template={{ onClick: onTemplates }}
     />
+  );
+}
+
+/**
+ * The Tasks page while the workspace loads: the same rail, hero, toolbar, composer, and list
+ * frame as the real page, so it fills in without moving.
+ */
+function TasksPageSkeleton() {
+  return (
+    <div className="@container/tasks" aria-busy="true">
+      <div className="grid gap-6 @4xl/tasks:grid-cols-[13rem_minmax(0,1fr)] @4xl/tasks:gap-8 @7xl/tasks:grid-cols-[15rem_minmax(0,1fr)] @7xl/tasks:gap-12">
+        <div
+          aria-hidden="true"
+          className="min-w-0 space-y-3 @4xl/tasks:sticky @4xl/tasks:top-6 @4xl/tasks:space-y-6 @4xl/tasks:self-start"
+        >
+          <div className="flex gap-1 @4xl/tasks:flex-col">
+            {[0, 1, 2].map((row) => (
+              <Skeleton key={row} className="h-9 w-24 rounded-lg @4xl/tasks:w-full" />
+            ))}
+          </div>
+          <div className="flex gap-1.5 @4xl/tasks:flex-wrap">
+            {[0, 1, 2, 3].map((chip) => (
+              <Skeleton key={chip} className="h-8 w-20 rounded-full" />
+            ))}
+          </div>
+        </div>
+        <div className="@container/list min-w-0 space-y-5">
+          <TasksHero summary={undefined} today={localDateString()} />
+          <div
+            aria-hidden="true"
+            className="flex flex-col gap-3 @3xl/list:flex-row @3xl/list:items-end @3xl/list:justify-between"
+          >
+            <SkeletonText className="w-24 text-lg" />
+            <div className="flex w-full flex-col gap-2 @md/list:flex-row @3xl/list:w-auto">
+              <Skeleton className="h-9 min-w-0 flex-1 @3xl/list:w-64 @3xl/list:flex-none @5xl/list:w-80" />
+              <Skeleton className="h-9 @md/list:w-44" />
+            </div>
+          </div>
+          <Skeleton className="h-15 rounded-2xl" />
+          <TaskListSkeleton />
+        </div>
+      </div>
+    </div>
   );
 }
 

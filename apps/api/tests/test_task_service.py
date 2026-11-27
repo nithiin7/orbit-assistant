@@ -9,6 +9,7 @@ import pytest
 from orbit_api.services.tasks.models import (
     MAX_TASK_LISTS,
     Task,
+    TaskAnchorNotFoundError,
     TaskChanges,
     TaskDraft,
     TaskList,
@@ -36,9 +37,12 @@ class FakeTasks:
         self.items: dict[uuid.UUID, Task] = {}
         self.task_lists: dict[uuid.UUID, TaskList] = {}
         self.saves = 0
+        # The workspace's own order, as task IDs.
+        self.order: list[uuid.UUID] = []
 
     async def add(self, task: Task) -> None:
         self.items[task.id] = task
+        self.order.append(task.id)
 
     async def get(self, workspace_id: uuid.UUID, task_id: uuid.UUID) -> Task | None:
         task = self.items.get(task_id)
@@ -66,7 +70,14 @@ class FakeTasks:
         if await self.get(workspace_id, task_id) is None:
             return False
         del self.items[task_id]
+        self.order.remove(task_id)
         return True
+
+    async def place(
+        self, workspace_id: uuid.UUID, task_id: uuid.UUID, anchor_id: uuid.UUID, *, after: bool
+    ) -> None:
+        self.order.remove(task_id)
+        self.order.insert(self.order.index(anchor_id) + (1 if after else 0), task_id)
 
     async def summarize(self, workspace_id: uuid.UUID, today: date) -> TaskSummary:
         raise NotImplementedError
@@ -227,6 +238,35 @@ async def test_delete_commits_only_when_a_task_was_deleted(
         await service.delete(WORKSPACE, task.id)
 
     assert transaction.commits == 2
+
+
+async def test_move_puts_a_task_before_or_after_another(
+    service: TaskService, repository: FakeTasks, transaction: FakeTransaction
+) -> None:
+    first, second, third = [
+        await service.create(WORKSPACE, TaskDraft(title=title)) for title in ("A", "B", "C")
+    ]
+
+    await service.move(WORKSPACE, third.id, first.id, after=False)
+    assert repository.order == [third.id, first.id, second.id]
+    await service.move(WORKSPACE, third.id, second.id, after=True)
+    assert repository.order == [first.id, second.id, third.id]
+    assert transaction.commits == 5
+
+
+async def test_move_needs_another_task_in_the_workspace(
+    service: TaskService, repository: FakeTasks
+) -> None:
+    task = await service.create(WORKSPACE, TaskDraft(title="Mine"))
+    other = await service.create(OTHER_WORKSPACE, TaskDraft(title="Theirs"))
+
+    with pytest.raises(TaskAnchorNotFoundError):
+        await service.move(WORKSPACE, task.id, task.id, after=True)
+    with pytest.raises(TaskAnchorNotFoundError):
+        await service.move(WORKSPACE, task.id, other.id, after=True)
+    with pytest.raises(TaskNotFoundError):
+        await service.move(OTHER_WORKSPACE, task.id, other.id, after=True)
+    assert repository.order == [task.id, other.id]
 
 
 async def test_list_names_are_unique_ignoring_case_and_spacing(service: TaskService) -> None:

@@ -20,7 +20,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { IconChip } from "@/components/ui/icon-chip";
 import { Select } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
 import { useWatchlist, useWatchlistMutations } from "@/hooks/use-watchlist";
 import {
   countByStatus,
@@ -81,6 +81,7 @@ const DESCRIPTION =
 /** The Watchlist page for the active workspace. Remounts (and resets) when the workspace changes. */
 export function WatchlistPanel() {
   const { state, refresh } = useWorkspaces();
+  const view = parseWatchView(useSearchParams());
 
   if (state.status === "error") {
     return (
@@ -91,7 +92,15 @@ export function WatchlistPanel() {
   }
   if (state.status === "loading") {
     return (
-      <Shell>
+      <Shell
+        view={view}
+        actions={
+          <div aria-hidden="true" className="flex items-center gap-2">
+            <Skeleton className="h-9 w-36" />
+            <Skeleton className="h-9 w-28" />
+          </div>
+        }
+      >
         <GridSkeleton />
       </Shell>
     );
@@ -622,7 +631,7 @@ function GridSkeleton() {
         {[0, 1, 2, 3, 4, 5].map((card) => (
           <div key={card} className="space-y-2">
             <Skeleton className="aspect-[2/3] w-full rounded-xl" />
-            <Skeleton className="h-4 w-3/4" />
+            <SkeletonText className="w-3/4 text-sm" />
           </div>
         ))}
       </div>

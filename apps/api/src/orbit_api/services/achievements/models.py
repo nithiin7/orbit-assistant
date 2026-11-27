@@ -8,6 +8,7 @@ Tier = Literal["easy", "medium", "hard", "legendary"]
 Slot = Literal["frame", "banner", "title", "confetti"]
 Area = Literal[
     "tasks",
+    "focus",
     "habits",
     "notes",
     "shopping",
@@ -26,6 +27,9 @@ Area = Literal[
 Metric = Literal[
     "tasks_completed",
     "inbox_zero",
+    "focus_sessions",
+    "focus_minutes",
+    "focus_streak",
     "habit_checkins",
     "habit_streak",
     "routines_completed",

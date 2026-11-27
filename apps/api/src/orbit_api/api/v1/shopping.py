@@ -11,6 +11,7 @@ from orbit_api.api.dependencies import ShoppingServiceDep
 from orbit_api.schemas.shopping import (
     BulkChangeResponse,
     CreateItemRequest,
+    ItemOrderRequest,
     ShoppingItemResponse,
     ShoppingItemsResponse,
     ShoppingListOverviewResponse,
@@ -23,6 +24,7 @@ from orbit_api.schemas.shopping import (
 from orbit_api.services.shopping.models import (
     DefaultListError,
     GiftPersonNotFoundError,
+    ItemOrderError,
     ShoppingItemNotFoundError,
     ShoppingListNotFoundError,
 )
@@ -144,6 +146,27 @@ async def list_items(
         items = await shopping.items(workspace.id, list_id)
     except ShoppingListNotFoundError:
         raise list_not_found() from None
+    return ShoppingItemsResponse(items=[ShoppingItemResponse.of(item) for item in items])
+
+
+@router.put(
+    "/lists/{list_id}/order",
+    summary="Reorder a shopping list's needed items",
+    responses={422: {"description": "The IDs aren't the list's needed items, each once."}},
+)
+async def reorder_items(
+    list_id: ListId, body: ItemOrderRequest, workspace: WorkspaceDep, shopping: ShoppingServiceDep
+) -> ShoppingItemsResponse:
+    """Purchased items keep their place below, newest first."""
+    try:
+        items = await shopping.reorder(workspace.id, list_id, body.item_ids)
+    except ShoppingListNotFoundError:
+        raise list_not_found() from None
+    except ItemOrderError:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "List every needed item on the list exactly once.",
+        ) from None
     return ShoppingItemsResponse(items=[ShoppingItemResponse.of(item) for item in items])
 
 

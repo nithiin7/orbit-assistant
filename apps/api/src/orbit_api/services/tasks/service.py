@@ -17,6 +17,7 @@ from orbit_api.services.tasks.models import (
     InvalidTaskRecurrenceError,
     InvalidTaskScheduleError,
     Task,
+    TaskAnchorNotFoundError,
     TaskChanges,
     TaskDraft,
     TaskList,
@@ -71,6 +72,13 @@ class TaskRepository(Protocol):
 
     async def delete(self, workspace_id: uuid.UUID, task_id: uuid.UUID) -> bool:
         """Delete the task if it belongs to `workspace_id`; report whether it did."""
+        ...
+
+    async def place(
+        self, workspace_id: uuid.UUID, task_id: uuid.UUID, anchor_id: uuid.UUID, *, after: bool
+    ) -> None:
+        """Put the task just before or after `anchor_id` in the workspace's own order. Both tasks
+        exist in the workspace."""
         ...
 
     async def summarize(self, workspace_id: uuid.UUID, today: date) -> TaskSummary: ...
@@ -209,6 +217,8 @@ class TaskService:
                 updated_at=now,
             )
             await self._tasks.add(following)
+            # The next occurrence takes this one's place in the workspace's own order.
+            await self._tasks.place(workspace_id, following.id, task.id, after=True)
             await self._reminders.move(
                 workspace_id, task.id, following.id, due_date - task.due_date, now
             )
@@ -243,6 +253,17 @@ class TaskService:
         await self._tasks.save(reopened)
         await self._transaction.commit()
         return reopened
+
+    async def move(
+        self, workspace_id: uuid.UUID, task_id: uuid.UUID, anchor_id: uuid.UUID, *, after: bool
+    ) -> None:
+        """Put the task just before or after another one in the workspace's own order, the order
+        tasks are listed in with the `manual` sort."""
+        await self.get(workspace_id, task_id)
+        if anchor_id == task_id or await self._tasks.get(workspace_id, anchor_id) is None:
+            raise TaskAnchorNotFoundError
+        await self._tasks.place(workspace_id, task_id, anchor_id, after=after)
+        await self._transaction.commit()
 
     async def delete(self, workspace_id: uuid.UUID, task_id: uuid.UUID) -> None:
         if not await self._tasks.delete(workspace_id, task_id):

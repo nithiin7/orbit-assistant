@@ -7,7 +7,7 @@ import { type ReactNode, useId } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { IconChip, type IconChipTone } from "@/components/ui/icon-chip";
-import { Skeleton } from "@/components/ui/skeleton";
+import { SkeletonText } from "@/components/ui/skeleton";
 import type { Resource } from "@/hooks/query-resource";
 import { cn } from "@/utils/common";
 
@@ -79,11 +79,17 @@ export function WidgetBody<T>({
 }) {
   if (resource.status === "loading") {
     return (
-      <div className="widget-body space-y-2 p-5">
+      // Most widgets show a short list; hold that shape so the card keeps its height.
+      <div className="widget-body p-5 pt-3">
         <span className="sr-only">Loading {label}…</span>
-        <Skeleton className="h-5 w-1/3" />
-        <Skeleton className="h-4 w-2/3" />
-        <Skeleton className="h-4 w-1/2" />
+        <div aria-hidden="true" className="divide-y rounded-lg border">
+          {["w-2/3", "w-1/2", "w-3/5"].map((width) => (
+            <div key={width} className="px-3 py-2">
+              <SkeletonText className={cn("text-sm", width)} />
+              <SkeletonText className="w-1/3 text-xs" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

@@ -1,16 +1,20 @@
 /*
  * Optional color themes and UI fonts, chosen in Settings → Appearance and set on <html> as
- * `data-palette` and `data-font` (see lib/appearance-preference). The defaults, Clay and Geist,
- * set no attribute, so tokens.css applies unchanged.
+ * `data-palette` and `data-font` (see lib/appearance-preference). The defaults, Studio and Inter
+ * Tight, set no attribute, so tokens.css applies unchanged.
  *
- * Each palette only sets a few parameters: the hue of its neutrals, the hue and chroma of its
- * brand color, and the hue of the gradient-only second color. The shared blocks below derive the
- * surface and brand tokens from them with the same lightness steps as Clay, so contrast matches
- * the default theme. Status, chart, and calendar colors carry meaning and never change.
+ * Clay (the original theme) and Signal (paper, ink, and signal orange) set every surface and brand
+ * token themselves. The others only set a few parameters: the hue of their neutrals, the hue and
+ * chroma of their brand color, and the hue of the gradient-only second color; the shared blocks
+ * below derive the surface and brand tokens from them with Clay's lightness steps, so contrast
+ * matches. Status, chart, and calendar colors carry meaning and never change.
  */
 
-/* UI font. Geist by default; the variables come from fonts.ts. */
+/* UI font. Inter Tight by default; the variables come from fonts.ts. */
 :root {
+  --font-ui: var(--font-inter-tight);
+}
+:root[data-font="geist"] {
   --font-ui: var(--font-geist-sans);
 }
 :root[data-font="inter"] {
@@ -59,8 +63,150 @@
   --shadow-color: 230 15% 25%;
 }
 
+/*
+ * Clay: warm cream and terracotta, the original default. Light values outrank `:root` and `.dark`
+ * in tokens.css, so the dark block repeats every token the light block sets.
+ */
+:root[data-palette="clay"] {
+  --background: oklch(0.985 0.006 75);
+  --foreground: oklch(0.22 0.012 55);
+  --card: oklch(0.998 0.002 75);
+  --card-foreground: oklch(0.22 0.012 55);
+  --popover: oklch(0.998 0.002 75);
+  --popover-foreground: oklch(0.22 0.012 55);
+
+  --primary: oklch(0.54 0.15 40);
+  --primary-foreground: oklch(0.99 0.005 75);
+  --secondary: oklch(0.955 0.008 75);
+  --secondary-foreground: oklch(0.24 0.012 55);
+  --muted: oklch(0.955 0.008 75);
+  --muted-foreground: oklch(0.5 0.015 60);
+  --accent: oklch(0.945 0.012 70);
+  --accent-foreground: oklch(0.24 0.012 55);
+  --brand: oklch(0.54 0.15 40);
+  --brand-foreground: oklch(0.99 0.005 75);
+  --brand-subtle: oklch(0.955 0.028 52);
+  --brand-2: oklch(0.8 0.13 78);
+
+  --border: oklch(0.91 0.008 70);
+  --input: oklch(0.88 0.01 70);
+  --ring: oklch(0.6 0.14 42);
+
+  --sidebar: oklch(0.97 0.008 75);
+  --sidebar-foreground: oklch(0.22 0.012 55);
+  --sidebar-accent: oklch(0.935 0.014 68);
+  --sidebar-accent-foreground: oklch(0.22 0.012 55);
+  --sidebar-border: oklch(0.905 0.01 70);
+
+  --shadow-color: 30 25% 25%;
+}
+:root.dark[data-palette="clay"] {
+  --background: oklch(0.17 0.008 60);
+  --foreground: oklch(0.95 0.008 75);
+  --card: oklch(0.205 0.009 60);
+  --card-foreground: oklch(0.95 0.008 75);
+  --popover: oklch(0.225 0.01 60);
+  --popover-foreground: oklch(0.95 0.008 75);
+
+  --primary: oklch(0.72 0.13 48);
+  --primary-foreground: oklch(0.2 0.02 45);
+  --secondary: oklch(0.26 0.01 60);
+  --secondary-foreground: oklch(0.95 0.008 75);
+  --muted: oklch(0.255 0.01 60);
+  --muted-foreground: oklch(0.72 0.015 70);
+  --accent: oklch(0.27 0.012 60);
+  --accent-foreground: oklch(0.95 0.008 75);
+  --brand: oklch(0.75 0.13 50);
+  --brand-foreground: oklch(0.2 0.02 45);
+  --brand-subtle: oklch(0.3 0.05 45);
+  --brand-2: oklch(0.78 0.12 78);
+
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.72 0.12 48);
+
+  --sidebar: oklch(0.185 0.008 60);
+  --sidebar-foreground: oklch(0.95 0.008 75);
+  --sidebar-accent: oklch(0.27 0.025 50);
+  --sidebar-accent-foreground: oklch(0.95 0.008 75);
+  --sidebar-border: oklch(1 0 0 / 8%);
+
+  --shadow-color: 30 30% 3%;
+}
+
+/*
+ * Signal: off-white paper, near-black ink, and one signal orange. Buttons are ink; the orange is
+ * deepened in light mode so it stays readable as text on paper.
+ */
+:root[data-palette="signal"] {
+  --background: oklch(0.955 0.006 100);
+  --foreground: oklch(0.16 0 0);
+  --card: oklch(0.985 0.004 100);
+  --card-foreground: oklch(0.16 0 0);
+  --popover: oklch(0.99 0.003 100);
+  --popover-foreground: oklch(0.16 0 0);
+
+  --primary: oklch(0.16 0 0);
+  --primary-foreground: oklch(0.97 0.005 100);
+  --secondary: oklch(0.925 0.007 100);
+  --secondary-foreground: oklch(0.16 0 0);
+  --muted: oklch(0.925 0.007 100);
+  --muted-foreground: oklch(0.46 0.008 90);
+  --accent: oklch(0.91 0.008 100);
+  --accent-foreground: oklch(0.16 0 0);
+  --brand: oklch(0.55 0.19 38);
+  --brand-foreground: oklch(0.99 0.004 100);
+  --brand-subtle: oklch(0.94 0.035 45);
+  --brand-2: oklch(0.67 0.22 38);
+
+  --border: oklch(0.89 0.008 100);
+  --input: oklch(0.85 0.01 100);
+  --ring: oklch(0.6 0.2 38);
+
+  --sidebar: oklch(0.94 0.006 100);
+  --sidebar-foreground: oklch(0.16 0 0);
+  --sidebar-accent: oklch(0.905 0.008 100);
+  --sidebar-accent-foreground: oklch(0.16 0 0);
+  --sidebar-border: oklch(0.89 0.008 100);
+
+  --shadow-color: 60 5% 20%;
+}
+:root.dark[data-palette="signal"] {
+  --background: oklch(0.15 0 0);
+  --foreground: oklch(0.95 0.006 100);
+  --card: oklch(0.19 0.002 100);
+  --card-foreground: oklch(0.95 0.006 100);
+  --popover: oklch(0.22 0.003 100);
+  --popover-foreground: oklch(0.95 0.006 100);
+
+  --primary: oklch(0.95 0.006 100);
+  --primary-foreground: oklch(0.15 0 0);
+  --secondary: oklch(0.24 0.003 100);
+  --secondary-foreground: oklch(0.95 0.006 100);
+  --muted: oklch(0.24 0.003 100);
+  --muted-foreground: oklch(0.65 0.008 90);
+  --accent: oklch(0.26 0.004 100);
+  --accent-foreground: oklch(0.95 0.006 100);
+  --brand: oklch(0.67 0.22 38);
+  --brand-foreground: oklch(0.15 0 0);
+  --brand-subtle: oklch(0.28 0.07 38);
+  --brand-2: oklch(0.75 0.17 50);
+
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.67 0.2 38);
+
+  --sidebar: oklch(0.17 0.001 100);
+  --sidebar-foreground: oklch(0.95 0.006 100);
+  --sidebar-accent: oklch(0.26 0.04 38);
+  --sidebar-accent-foreground: oklch(0.95 0.006 100);
+  --sidebar-border: oklch(1 0 0 / 8%);
+
+  --shadow-color: 0 0% 2%;
+}
+
 /* Light mode. `:root[...]:not(...)` outranks both `:root` and `.dark` in tokens.css. */
-:root[data-palette]:not([data-palette="clay"]) {
+:root[data-palette]:not([data-palette="clay"]):not([data-palette="signal"]) {
   --background: oklch(0.985 0.006 var(--palette-neutral-hue));
   --foreground: oklch(0.22 0.012 var(--palette-neutral-hue));
   --card: oklch(0.998 0.002 var(--palette-neutral-hue));
@@ -93,7 +239,7 @@
 }
 
 /* Dark mode. Lines and shadows keep the default dark values. */
-:root.dark[data-palette]:not([data-palette="clay"]) {
+:root.dark[data-palette]:not([data-palette="clay"]):not([data-palette="signal"]) {
   --background: oklch(0.17 0.008 var(--palette-neutral-hue));
   --foreground: oklch(0.95 0.008 var(--palette-neutral-hue));
   --card: oklch(0.205 0.009 var(--palette-neutral-hue));

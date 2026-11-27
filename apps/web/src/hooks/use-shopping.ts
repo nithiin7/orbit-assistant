@@ -3,6 +3,7 @@
 import type {
   CreateShoppingItemRequest,
   ShoppingItem,
+  ShoppingItems,
   ShoppingListOverview,
   ShoppingListRequest,
   UpdateShoppingItemRequest,
@@ -18,6 +19,7 @@ import {
   deleteShoppingItem,
   deleteShoppingList,
   purchaseShoppingItem,
+  reorderShoppingItems,
   replaceCachedItem,
   restockShoppingItem,
   restockShoppingList,
@@ -30,6 +32,7 @@ import {
   updateShoppingList,
 } from "@/api/shopping";
 import { queryResource, type Resource } from "@/hooks/query-resource";
+import { useUndoableDelete } from "@/hooks/use-undoable-delete";
 import { useWorkspaceNotFound } from "@/hooks/use-workspace-not-found";
 import { useAuth } from "@/providers/auth";
 import { useWorkspaces } from "@/providers/workspace";
@@ -144,6 +147,8 @@ export function useShoppingMutations(workspaceId: string) {
   });
 
   const toggleItem = useMutation({
+    // One at a time, in order, so a quick second click lands after the first.
+    scope: { id: "shopping-toggle" },
     mutationFn: (item: ShoppingItem) =>
       withToken((token) =>
         (item.status === "needed" ? purchaseShoppingItem : restockShoppingItem)(
@@ -164,6 +169,33 @@ export function useShoppingMutations(workspaceId: string) {
     },
     onSuccess: (updated) => replaceCachedItem(queryClient, workspaceId, updated),
     onError: (_error, item) => replaceCachedItem(queryClient, workspaceId, item),
+  });
+
+  const reorderItems = useMutation({
+    // One at a time, in order, so quick moves land as they were made.
+    scope: { id: "shopping-reorder" },
+    mutationFn: ({ listId, order }: { listId: string; order: ShoppingItem[] }) =>
+      withToken((token) =>
+        reorderShoppingItems(token, workspaceId, listId, { item_ids: order.map((i) => i.id) }),
+      ),
+    // Show the new order at once; put the old one back if the request fails.
+    onMutate: async ({ listId, order }) => {
+      const key = shoppingKeys.items(workspaceId, listId);
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<ShoppingItems>(key);
+      const positions = new Map(order.map((item, index) => [item.id, index]));
+      updateCachedItems(queryClient, workspaceId, listId, (items) =>
+        items.map((item) => ({ ...item, position: positions.get(item.id) ?? item.position })),
+      );
+      return { previous };
+    },
+    onSuccess: (result, { listId }) =>
+      queryClient.setQueryData(shoppingKeys.items(workspaceId, listId), result),
+    onError: (_error, { listId }, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(shoppingKeys.items(workspaceId, listId), context.previous);
+      }
+    },
   });
 
   const updateItem = useMutation({
@@ -189,9 +221,33 @@ export function useShoppingMutations(workspaceId: string) {
     clearPurchased,
     addItem,
     toggleItem,
+    reorderItems,
     updateItem,
     deleteItem,
   };
+}
+
+/**
+ * Delete a shopping item with Undo: it leaves the list at once and `remove` (`deleteItem` from
+ * `useShoppingMutations`) runs once the Undo toast goes. Needs `ToastProvider`.
+ */
+export function useDeleteItemWithUndo(
+  workspaceId: string,
+  remove: (item: ShoppingItem) => Promise<unknown>,
+) {
+  const queryClient = useQueryClient();
+  const undoableDelete = useUndoableDelete();
+  return (item: ShoppingItem) =>
+    void undoableDelete({
+      message: `Deleted “${item.name}”.`,
+      queryKey: shoppingKeys.all(workspaceId),
+      hide: () =>
+        updateCachedItems(queryClient, workspaceId, item.list_id, (items) =>
+          items.filter((entry) => entry.id !== item.id),
+        ),
+      commit: () => remove(item),
+      failure: "Couldn’t delete the item. Try again.",
+    });
 }
 
 /** The active workspace's shopping lists, for the dashboard. Shares the Shopping page's cache. */
