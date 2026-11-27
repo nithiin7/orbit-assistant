@@ -16,9 +16,9 @@ with an optional AI assistant that only sees what you allow.
 [Contributing](CONTRIBUTING.md)
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dashboard-dark_mode.webp">
-  <source media="(prefers-color-scheme: light)" srcset="docs/screenshots/dashboard-light_mode.webp">
-  <img src="docs/screenshots/dashboard-light_mode.webp" alt="Orbit dashboard" width="900">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/hero-dark.webp">
+  <source media="(prefers-color-scheme: light)" srcset="docs/screenshots/hero-light.webp">
+  <img src="docs/screenshots/hero-light.webp" alt="Orbit dashboard" width="900">
 </picture>
 
 </div>
@@ -35,24 +35,29 @@ with an optional AI assistant that only sees what you allow.
 
 ## Features
 
-| Module                  | What you get                                                                             |
-| ----------------------- | ---------------------------------------------------------------------------------------- |
-| 🏠 **Dashboard**        | Today at a glance: agenda, due tasks, habits, payments, and customizable widgets         |
-| ✅ **Tasks**            | Tasks, shopping lists, and reminders, including recurring ones                           |
-| 📅 **Calendar**         | Month, week, day, and agenda views, recurring events, and drag-and-drop scheduling       |
-| 💰 **Finance**          | Accounts, budgets, loans, subscriptions, investments, goals, and net worth               |
-| 📝 **Notes**            | Rich-text editor, folders, tags, backlinks, a daily journal, and Markdown                |
-| 🔁 **Habits**           | Streaks, routines, a Today view, and history heatmaps                                    |
-| 📂 **Documents**        | A personal vault with previews, versions, and expiry reminders                           |
-| 💪 **Health**           | Workout logging, personal records, body measurements, nutrition, and goals               |
-| 🎬 **Watchlist**        | Movies and series to watch, episode tracking, ratings, and a "watch tonight" picker      |
-| 🔖 **Saved**            | Links you come back to, plus reels, videos, and articles to get to later, in collections |
-| 🗺️ **Places**           | Where you've been and want to go, on a world map that tallies countries and continents   |
-| 👥 **People**           | Birthdays and anniversaries with reminders, and who owes whom, split from your expenses  |
-| 🔍 **Search**           | One search across every module, from anywhere with <kbd>Cmd/Ctrl</kbd>+<kbd>K</kbd>      |
-| ✨ **AI assistant**     | Chat with your data, summaries and drafts, and automations you approve                   |
-| 🔗 **Integrations**     | Google and Microsoft calendars, mail, and files                                          |
-| 🛡️ **Backup & restore** | Encrypted, scheduled backups and exports to JSON, CSV, iCalendar, and Markdown           |
+| Module                  | What you get                                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 🏠 **Dashboard**        | Today at a glance: a daily briefing (with an optional AI summary), agenda, due tasks, habits, payments, and widgets you arrange |
+| ✅ **Tasks**            | Lists, repeating tasks, a quick add that reads dates, repeats, and priority, a focus timer, and drag to reorder                 |
+| 🛒 **Shopping**         | Shopping lists you reorder by dragging, with gift ideas for the people in your life                                             |
+| 🔔 **Reminders**        | One-off and repeating reminders, in-app notifications, and optional push notifications                                          |
+| 📅 **Calendar**         | Month, week, day, and agenda views, recurring events, and drag tasks onto a day to schedule them                                |
+| 💰 **Finance**          | Accounts, budgets, loans, subscriptions, investments with SIPs, goals, net worth, and bank statement import you review first    |
+| 📝 **Notes**            | Rich-text editor, folders, tags, backlinks, a daily journal, and Markdown                                                       |
+| 🔁 **Habits**           | Streaks, routines, a Today view, history heatmaps, and templates to start from                                                  |
+| 📂 **Documents**        | A personal vault with previews, versions, and expiry reminders                                                                  |
+| 💪 **Health**           | Workouts, personal records, activity rings, body measurements, food and water, and goals                                        |
+| 🎬 **Watchlist**        | Movies and series to watch, episode tracking, ratings, and a "watch tonight" picker                                             |
+| 🔖 **Saved**            | Links you come back to, plus reels, videos, and articles to get to later, in collections                                        |
+| 🗺️ **Places**           | Where you've been and want to go, on a world map that tallies countries and continents                                          |
+| 👥 **People**           | Birthdays and anniversaries with reminders, and who owes whom, split from your expenses                                         |
+| 🏆 **Profile**          | Achievements and XP for using Orbit, and a store to spend XP on frames and banners                                              |
+| 🔍 **Search**           | One search across every module, from anywhere with <kbd>Cmd/Ctrl</kbd>+<kbd>K</kbd>                                             |
+| ✨ **AI assistant**     | Chat with your data, with cited sources, and talk to it by voice; no audio is stored                                            |
+| 🤖 **Automation**       | Workflows on a schedule or trigger, and an agent that asks before it changes anything                                           |
+| 🔗 **Integrations**     | Google and Microsoft calendars, mail, and files                                                                                 |
+| 🛡️ **Backup & restore** | Encrypted, scheduled backups and exports to JSON, CSV, iCalendar, and Markdown                                                  |
+| 🎨 **Make it yours**    | Light and dark themes, color palettes, fonts, compact density, undo for deletes, and an installable app                         |
 
 ## Screenshots
 
