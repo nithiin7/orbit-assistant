@@ -56,18 +56,36 @@ with an optional AI assistant that only sees what you allow.
 
 ## Screenshots
 
+Shown with sample data. The assistant runs on a local model through Ollama.
+
 <table>
   <tr>
     <td align="center"><img src="docs/screenshots/dashboard-light_mode.webp" alt="Dashboard in light mode"><br><sub>Dashboard, light</sub></td>
     <td align="center"><img src="docs/screenshots/dashboard-dark_mode.webp" alt="Dashboard in dark mode"><br><sub>Dashboard, dark</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/calendar.webp" alt="Calendar"><br><sub>Calendar</sub></td>
+    <td align="center"><img src="docs/screenshots/tasks.webp" alt="Tasks"><br><sub>Tasks</sub></td>
+    <td align="center"><img src="docs/screenshots/calendar.webp" alt="Calendar week view"><br><sub>Calendar</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/finance.webp" alt="Finance overview"><br><sub>Finance</sub></td>
+    <td align="center"><img src="docs/screenshots/notes.webp" alt="Notes"><br><sub>Notes</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/habits.webp" alt="Habits"><br><sub>Habits</sub></td>
     <td align="center"><img src="docs/screenshots/health.webp" alt="Health"><br><sub>Health</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/people.webp" alt="People"><br><sub>People</sub></td>
+    <td align="center"><img src="docs/screenshots/shopping.webp" alt="Shopping list"><br><sub>Shopping</sub></td>
   </tr>
   <tr>
     <td align="center"><img src="docs/screenshots/watchlist.webp" alt="Watchlist"><br><sub>Watchlist</sub></td>
     <td align="center"><img src="docs/screenshots/saved.webp" alt="Saved links"><br><sub>Saved</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/places.webp" alt="Places world map"><br><sub>Places</sub></td>
+    <td align="center"><img src="docs/screenshots/profile.webp" alt="Profile and achievements"><br><sub>Profile</sub></td>
   </tr>
   <tr>
     <td align="center"><img src="docs/screenshots/assistant.webp" alt="AI assistant"><br><sub>AI assistant</sub></td>
