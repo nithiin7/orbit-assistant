@@ -11,7 +11,8 @@
       "extra-files": [
         { "type": "json", "path": "apps/web/package.json", "jsonpath": "$.version" },
         { "type": "json", "path": "apps/api/package.json", "jsonpath": "$.version" },
-        { "type": "toml", "path": "apps/api/pyproject.toml", "jsonpath": "$.project.version" }
+        { "type": "toml", "path": "apps/api/pyproject.toml", "jsonpath": "$.project.version" },
+        { "type": "json", "path": "packages/contracts/openapi.json", "jsonpath": "$.info.version" }
       ]
     }
   }
