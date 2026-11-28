@@ -113,6 +113,51 @@ export function TrendChart({
   );
 }
 
+/**
+ * A small line of one value across months, for a stat tile. Decorative: the tile carries the
+ * figures in words. The last point is the month being viewed and is marked.
+ */
+export function Sparkline({
+  values,
+  className,
+}: {
+  values: readonly number[];
+  className?: string;
+}) {
+  if (values.length < 2) return null;
+  const width = 100;
+  const height = 28;
+  const pad = 3;
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const span = max - min || 1;
+  const x = (i: number) => pad + (i * (width - 2 * pad)) / (values.length - 1);
+  const y = (v: number) => pad + (1 - (v - min) / span) * (height - 2 * pad);
+  const line = values.map((v, i) => `${i === 0 ? "M" : "L"}${x(i)},${y(v)}`).join(" ");
+  const area = `${line} L${x(values.length - 1)},${height} L${x(0)},${height} Z`;
+  const last = values[values.length - 1] ?? 0;
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      className={cn("h-8 w-full overflow-visible", className)}
+    >
+      <path d={area} fill="currentColor" opacity={0.12} />
+      <path
+        d={line}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.75}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
+      <circle cx={x(values.length - 1)} cy={y(last)} r={2.5} fill="currentColor" />
+    </svg>
+  );
+}
+
 /** How many categories get their own row; the rest are added up into one. */
 const TOP_CATEGORIES = 6;
 

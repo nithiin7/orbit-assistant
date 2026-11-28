@@ -8,6 +8,7 @@ import {
   formatRate,
   habitSchema,
   habitsHref,
+  heatCells,
   heatLevel,
   isRemaining,
   newHabitValues,
@@ -66,6 +67,20 @@ describe("targets and progress", () => {
     expect(heatLevel({ day: "", due: 0, completed: 0, extra: 1 })).toBe(2);
     expect(heatLevel({ day: "", due: 4, completed: 4, extra: 0 })).toBe(4);
     expect(heatLevel({ day: "", due: 3, completed: 1, extra: 0 })).toBe(1);
+  });
+
+  it("labels heatmap cells and outlines days with nothing due", () => {
+    expect(
+      heatCells([
+        { day: "2026-11-01", due: 0, completed: 0, extra: 0 },
+        { day: "2026-11-02", due: 0, completed: 0, extra: 1 },
+        { day: "2026-11-03", due: 2, completed: 1, extra: 1 },
+      ]),
+    ).toEqual([
+      { day: "2026-11-01", level: null, label: "Nothing due" },
+      { day: "2026-11-02", level: 2, label: "1 done" },
+      { day: "2026-11-03", level: 4, label: "1 of 2 due done, 1 more" },
+    ]);
   });
 });
 

@@ -59,6 +59,8 @@ type HabitTodayViewProps = {
   onCreate: () => void;
   onUseTemplate: (template: HabitTemplate) => void;
   onStartRoutine: (routine: Routine) => void;
+  /** The recent-weeks chart, shown below the day's habits. */
+  history?: ReactNode;
 };
 
 function isDone(item: Pick<HabitProgress, "state">): boolean {
@@ -94,6 +96,7 @@ export function HabitTodayView({
   onCreate,
   onUseTemplate,
   onStartRoutine,
+  history,
 }: HabitTodayViewProps) {
   const { celebrate, celebration } = useCelebration();
 
@@ -225,6 +228,7 @@ export function HabitTodayView({
           items={other}
           onLog={log}
         />
+        {history}
       </div>
 
       <aside className="space-y-6">

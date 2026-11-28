@@ -230,6 +230,25 @@ export function heatLevel(day: HabitHeatmapDay): 0 | 1 | 2 | 3 | 4 {
   return 4;
 }
 
+/**
+ * Heatmap squares for a run of days: shaded by `heatLevel`, outlined (`null`) on days with
+ * nothing due and nothing done, and labelled with what the day was.
+ */
+export function heatCells(
+  days: readonly HabitHeatmapDay[],
+): { day: string; level: 0 | 1 | 2 | 3 | 4 | null; label: string }[] {
+  return days.map((day) => ({
+    day: day.day,
+    level: day.due === 0 && day.extra === 0 ? null : heatLevel(day),
+    label:
+      day.due === 0
+        ? day.extra
+          ? `${day.extra} done`
+          : "Nothing due"
+        : `${day.completed} of ${day.due} due done${day.extra ? `, ${day.extra} more` : ""}`,
+  }));
+}
+
 // Celebrations
 
 /** The icon shown beside a cheer; the toast maps each to a lucide icon. */

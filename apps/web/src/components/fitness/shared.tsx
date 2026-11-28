@@ -410,10 +410,13 @@ export function BarChart({
   bars,
   format,
   title,
+  barClassName = "bg-brand/80",
 }: {
   bars: readonly ChartPoint[];
   format: (value: number) => string;
   title: string;
+  /** The bars' colour. */
+  barClassName?: string;
 }) {
   const max = Math.max(1, ...bars.map((b) => b.value));
   return (
@@ -426,7 +429,7 @@ export function BarChart({
             className="flex h-full flex-1 flex-col items-center justify-end gap-1"
           >
             <div
-              className="w-full max-w-8 rounded-t bg-brand/80"
+              className={cn("w-full max-w-8 rounded-t", barClassName)}
               style={{ height: `${Math.max(bar.value > 0 ? 4 : 0, (bar.value / max) * 100)}%` }}
               title={`${bar.label}: ${format(bar.value)}`}
             />

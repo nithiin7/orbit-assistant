@@ -17,7 +17,7 @@ import { IconChip } from "@/components/ui/icon-chip";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Resource } from "@/hooks/query-resource";
-import { describeStreak, formatRate, habitsHref, heatLevel } from "@/lib/habits";
+import { describeStreak, formatRate, habitsHref, heatCells } from "@/lib/habits";
 import { cn } from "@/utils/common";
 import { formatCalendarDate, monthLabel } from "@/utils/dates";
 
@@ -113,16 +113,7 @@ function Loaded({ analytics }: { analytics: HabitAnalytics }) {
   const declining = ranked
     .filter((h) => h.trend !== null && h.trend <= DECLINE)
     .sort((a, b) => (a.trend ?? 0) - (b.trend ?? 0));
-  const cells = analytics.heatmap.map((day) => ({
-    day: day.day,
-    level: day.due === 0 && day.extra === 0 ? null : heatLevel(day),
-    label:
-      day.due === 0
-        ? day.extra
-          ? `${day.extra} done`
-          : "Nothing due"
-        : `${day.completed} of ${day.due} due done${day.extra ? `, ${day.extra} more` : ""}`,
-  }));
+  const cells = heatCells(analytics.heatmap);
 
   return (
     <div className="space-y-6">

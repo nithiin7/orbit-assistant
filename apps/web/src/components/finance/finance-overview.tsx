@@ -1,6 +1,6 @@
 "use client";
 
-import type { Currency, FinanceAccount } from "@orbit/contracts";
+import type { Currency, FinanceAccount, MonthCashFlow } from "@orbit/contracts";
 import {
   ArrowDownLeft,
   ArrowRight,
@@ -15,13 +15,13 @@ import { type ReactNode, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFinanceReport } from "@/hooks/use-finance";
-import { accountTypeLabel, formatMoney } from "@/lib/finance";
+import { accountTypeLabel, formatMoney, spendingVsAverage } from "@/lib/finance";
 import { byId, cn } from "@/utils/common";
 import { monthLabel } from "@/utils/dates";
 
 import { BudgetSummary } from "./budget-summary";
 import { CommitmentsSummary } from "./commitments-summary";
-import { CategoryBreakdown, TrendChart } from "./finance-charts";
+import { CategoryBreakdown, Sparkline, TrendChart } from "./finance-charts";
 import { ACCOUNT_TYPE_ICONS as TYPE_ICONS } from "./finance-meta";
 import type { FinanceData } from "./finance-view";
 import { LoadError, Panel } from "./panel";
@@ -76,7 +76,12 @@ export function FinanceOverview({
           aria-busy={refreshing}
           className={cn("space-y-6 transition-opacity duration-150", refreshing && "opacity-70")}
         >
-          <CashFlowHero {...resource.data.summary} month={month} currency={currency} />
+          <CashFlowHero
+            {...resource.data.summary}
+            month={month}
+            currency={currency}
+            trend={resource.data.trend.months}
+          />
 
           {/* A dashboard of cards: one column on phones, two from a medium column, three on very
               wide ones. Budget, goal, and commitment cards appear once the workspace has them. */}
@@ -180,6 +185,7 @@ function CashFlowHero({
   transactions,
   month,
   currency,
+  trend,
 }: {
   income: number;
   expenses: number;
@@ -189,7 +195,10 @@ function CashFlowHero({
   transactions: number;
   month: string;
   currency: Currency;
+  /** The months up to this one, oldest first, for the spending trend. */
+  trend: readonly MonthCashFlow[];
 }) {
+  const comparison = spendingVsAverage(trend, month);
   const savedShare = income > 0 && net > 0 ? Math.round((net / income) * 100) : null;
   // How much of the income went on spending; past 100% the bar is all spending.
   const spentShare = income > 0 ? Math.min(100, Math.round((net_expenses / income) * 100)) : null;
@@ -262,6 +271,25 @@ function CashFlowHero({
             {refunds > 0
               ? `${formatMoney(expenses, currency)} spent, ${formatMoney(refunds, currency)} refunded`
               : "Expenses this month"}
+            {comparison ? (
+              <span className="mt-2 block space-y-1">
+                <Sparkline
+                  values={trend.filter((m) => m.month <= month).map((m) => m.net_expenses)}
+                  className="text-chart-2"
+                />
+                <span
+                  className={cn(
+                    "block font-medium",
+                    comparison.change > 0.005 ? "text-warning" : "text-success",
+                  )}
+                >
+                  {Math.abs(comparison.change) < 0.005
+                    ? "In line with"
+                    : `${Math.round(Math.abs(comparison.change) * 100)}% ${comparison.change > 0 ? "above" : "below"}`}{" "}
+                  your {formatMoney(Math.round(comparison.average), currency)} average
+                </span>
+              </span>
+            ) : null}
           </FlowFigure>
         </div>
       </dl>

@@ -4,6 +4,7 @@ import type { FitnessOverview, FitnessSection, Food, WorkoutTemplate } from "@or
 import {
   Activity,
   CalendarClock,
+  ChartColumn,
   ChevronRight,
   Droplets,
   Dumbbell,
@@ -34,7 +35,9 @@ import {
   useFitnessOverview,
   useFitnessProfile,
   useFoods,
+  useNutritionHistory,
   useTemplates,
+  useWaterHistory,
 } from "@/hooks/use-fitness";
 import { hourIn } from "@/lib/dashboard";
 import {
@@ -55,13 +58,15 @@ import {
   share,
   type Units,
 } from "@/lib/fitness";
+import { WEEKDAYS } from "@/lib/reminders";
 import { cn } from "@/utils/common";
+import { addDays, dayOfWeek } from "@/utils/dates";
 
 import { KIND_ICONS } from "./activity-rings";
 import { GoalCard } from "./goals";
 import { FoodEntryDialog } from "./nutrition";
 import { RecordTable } from "./progress";
-import { Gauge, type HealthTone, LineChart, Loaded, shortDate } from "./shared";
+import { BarChart, Gauge, type HealthTone, LineChart, Loaded, shortDate } from "./shared";
 import { ActiveWorkoutBanner, StartWorkoutMenu, useStartWorkout, WorkoutRow } from "./workouts";
 
 function More({ view, children }: { view: FitnessView; children: ReactNode }) {
@@ -583,6 +588,23 @@ export function OverviewView({
                     </div>
                   </Card>
                 ) : null}
+                {shown("nutrition") || shown("water") ? (
+                  <Card
+                    title="Last 7 days"
+                    icon={ChartColumn}
+                    tone="brand"
+                    className="@3xl:col-span-2"
+                  >
+                    <div className="grid gap-6 @xl:grid-cols-2">
+                      {shown("nutrition") ? (
+                        <EnergyWeek workspaceId={workspaceId} today={today} units={units} />
+                      ) : null}
+                      {shown("water") ? (
+                        <WaterWeek workspaceId={workspaceId} today={today} units={units} />
+                      ) : null}
+                    </div>
+                  </Card>
+                ) : null}
                 {shown("weight") ? (
                   <Card
                     title="Weight"
@@ -720,6 +742,102 @@ export function OverviewView({
   );
 }
 
+const WEEK_DAYS = 7;
+
+/** The last week of days ending today, each with its value (0 for days with nothing logged). */
+function lastWeek(today: string, values: ReadonlyMap<string, number>) {
+  const start = addDays(today, -(WEEK_DAYS - 1));
+  return Array.from({ length: WEEK_DAYS }, (_, i) => {
+    const day = addDays(start, i);
+    return {
+      label: WEEKDAYS[(dayOfWeek(day) + 6) % 7]?.label ?? day.slice(8),
+      value: values.get(day) ?? 0,
+    };
+  });
+}
+
+/** One small chart in the week card: a label, the daily average, and the bars. */
+function WeekChart({
+  title,
+  bars,
+  format,
+  barClassName,
+}: {
+  title: string;
+  bars: readonly { label: string; value: number }[];
+  format: (value: number) => string;
+  barClassName: string;
+}) {
+  const logged = bars.filter((bar) => bar.value > 0);
+  const average = logged.length
+    ? logged.reduce((sum, bar) => sum + bar.value, 0) / logged.length
+    : 0;
+  return (
+    <div className="space-y-2">
+      <div className="flex items-baseline justify-between gap-2">
+        <h3 className="text-sm font-medium">{title}</h3>
+        <p className="text-xs text-muted-foreground tabular-nums">
+          {logged.length ? `${format(Math.round(average))} a day on average` : "Nothing logged"}
+        </p>
+      </div>
+      <BarChart
+        title={`${title}, last 7 days`}
+        bars={bars}
+        format={format}
+        barClassName={barClassName}
+      />
+    </div>
+  );
+}
+
+function EnergyWeek({
+  workspaceId,
+  today,
+  units,
+}: {
+  workspaceId: string;
+  today: string;
+  units: Units;
+}) {
+  const history = useNutritionHistory(workspaceId, addDays(today, -(WEEK_DAYS - 1)), today);
+  return (
+    <Loaded resource={history.state} reload={history.reload} skeleton="h-40">
+      {({ days }) => (
+        <WeekChart
+          title="Energy"
+          bars={lastWeek(today, new Map(days.map((d) => [d.day, d.nutrients.energy_cal])))}
+          format={(cal) => formatEnergy(cal, units.energy_unit)}
+          barClassName="bg-event-orange/80"
+        />
+      )}
+    </Loaded>
+  );
+}
+
+function WaterWeek({
+  workspaceId,
+  today,
+  units,
+}: {
+  workspaceId: string;
+  today: string;
+  units: Units;
+}) {
+  const history = useWaterHistory(workspaceId, addDays(today, -(WEEK_DAYS - 1)), today);
+  return (
+    <Loaded resource={history.state} reload={history.reload} skeleton="h-40">
+      {({ days }) => (
+        <WeekChart
+          title="Water"
+          bars={lastWeek(today, new Map(days.map((d) => [d.day, d.total_ml])))}
+          format={(ml) => formatWater(ml, units.water_unit)}
+          barClassName="bg-event-blue/80"
+        />
+      )}
+    </Loaded>
+  );
+}
+
 /**
  * The overview while it loads: the same today card and grid of cards as the real view, so it
  * fills in without moving.
@@ -729,13 +847,20 @@ export function HealthOverviewSkeleton() {
     <div aria-hidden="true" className="space-y-4">
       <HeroSkeleton className="p-4 shadow-none @3xl:p-6" titleClassName="text-xl @3xl:text-2xl" />
       <div className="grid gap-4 @3xl:grid-cols-2 @6xl:grid-cols-3">
+        {/* Food and water today, then the wide last-7-days chart card. */}
         {[0, 1, 2].map((card) => (
-          <div key={card} className="flex flex-col gap-4 rounded-2xl border bg-card p-4 @3xl:p-5">
+          <div
+            key={card}
+            className={cn(
+              "flex flex-col gap-4 rounded-2xl border bg-card p-4 @3xl:p-5",
+              card === 2 && "@3xl:col-span-2",
+            )}
+          >
             <div className="flex items-center gap-2.5">
               <Skeleton className="size-8 rounded-xl" />
               <SkeletonText className="w-24 text-sm" />
             </div>
-            <Skeleton className="h-24 w-full rounded-xl" />
+            <Skeleton className={cn("w-full rounded-xl", card === 2 ? "h-40" : "h-24")} />
           </div>
         ))}
       </div>
