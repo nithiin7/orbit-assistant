@@ -48,6 +48,7 @@ import { addDays } from "@/utils/dates";
 import { type AnalyticsRange, HabitAnalyticsView } from "./habit-analytics";
 import { HabitDetailView, HEATMAP_DAYS } from "./habit-detail";
 import { HabitDialog } from "./habit-dialog";
+import { HabitHistoryCard, HISTORY_WEEKS } from "./habit-history-card";
 import { HabitListView } from "./habit-list";
 import { HabitTemplatesView } from "./habit-templates";
 import { HabitTodaySkeleton, HabitTodayView } from "./habit-today";
@@ -216,9 +217,17 @@ function TodayPage({
   const { log } = useHabitMutations(workspaceId);
   const { start } = useRoutineMutations(workspaceId);
   const day = today.state.status === "success" ? today.state.data.day : todayIn(timeZone);
+  // From the browser's today rather than the loaded day, so it fetches once, alongside today.
+  const historyEnd = todayIn(timeZone);
+  const history = useHabitAnalytics(workspaceId, {
+    start: addDays(historyEnd, -(HISTORY_WEEKS * 7 - 1)),
+    end: historyEnd,
+    timezone: timeZone,
+  });
   return (
     <HabitTodayView
       state={today.state}
+      history={<HabitHistoryCard state={history.state} onReload={history.reload} />}
       routines={routines.state.status === "success" ? routines.state.data.routines : []}
       onReload={today.reload}
       onLog={(item: HabitProgress, body: LogHabitRequest | null) =>

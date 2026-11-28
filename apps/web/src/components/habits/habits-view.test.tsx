@@ -1,4 +1,4 @@
-import type { Habit, HabitProgress, HabitToday, Routine } from "@orbit/contracts";
+import type { Habit, HabitAnalytics, HabitProgress, HabitToday, Routine } from "@orbit/contracts";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -96,6 +96,36 @@ afterEach(() => {
 });
 
 describe("HabitsPanel: Today", () => {
+  it("charts the last twelve weeks below today's habits", async () => {
+    const history: HabitAnalytics = {
+      start: "2030-01-12",
+      end: DAY,
+      heatmap: [
+        { day: "2030-01-12", due: 2, completed: 2, extra: 0 },
+        { day: "2030-01-13", due: 2, completed: 1, extra: 0 },
+        { day: DAY, due: 0, completed: 0, extra: 0 },
+      ],
+      weekly: [],
+      monthly: [],
+      habits: [],
+      categories: [],
+    };
+    mockApi({
+      ...session,
+      [`GET ${WS}/habits/today`]: json(today([progress(read)])),
+      [`GET ${WS}/habits/analytics`]: json(history),
+    });
+    await renderSignedIn(<HabitsPanel />);
+    const card = await screen.findByRole("region", { name: "Last 12 weeks" });
+    expect(await within(card).findByText("75%")).toBeInTheDocument();
+    const grid = within(card).getByRole("grid", { name: "Habits, last 12 weeks" });
+    expect(within(grid).getAllByRole("gridcell")).toHaveLength(3);
+    expect(within(card).getByRole("link", { name: "Analytics" })).toHaveAttribute(
+      "href",
+      "/habits?view=analytics",
+    );
+  });
+
   it("keeps the rail and a placeholder for today while the workspace loads", async () => {
     mockApi({
       ...session,
