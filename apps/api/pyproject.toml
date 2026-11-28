@@ -1,6 +1,6 @@
 [project]
 name = "orbit-api"
-version = "1.0.0"
+version = "1.1.0"
 description = "Orbit API: the backend for the Orbit personal assistant."
 readme = "README.md"
 license = "Apache-2.0"
