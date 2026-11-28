@@ -30,3 +30,7 @@ class ExternalIdentity:
     subject: str
     email: str
     display_name: str | None
+    # The Supabase sign-in session the token belongs to; it survives token refreshes.
+    session_id: str | None = None
+    # When the person last proved who they are (for example with their password), if stated.
+    authenticated_at: datetime | None = None

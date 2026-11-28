@@ -13,6 +13,7 @@ from orbit_api.repositories.accounts import SqlAccountRepository, SqlLocalAuthRe
 from orbit_api.repositories.achievements import SqlAchievementMetrics, SqlAchievementRecords
 from orbit_api.repositories.agent_services import AgentServices, build_agent
 from orbit_api.repositories.ai_services import AiServices, build_ai
+from orbit_api.repositories.app_lock import build_app_lock_service
 from orbit_api.repositories.avatars import SqlAvatarRepository, SqlCoverRepository
 from orbit_api.repositories.backup import build_backup_service
 from orbit_api.repositories.bookmarks import SqlBookmarkRepository, SqlBookmarkSettings
@@ -63,6 +64,8 @@ from orbit_api.repositories.watchlist import SqlLookupSettings, SqlWatchItemRepo
 from orbit_api.repositories.workspaces import SqlWorkspaceRepository
 from orbit_api.services.accounts.service import AccountService
 from orbit_api.services.achievements.service import AchievementService
+from orbit_api.services.app_lock.models import DeviceAuthenticator
+from orbit_api.services.app_lock.service import AppLockService
 from orbit_api.services.avatars.service import MAX_COVER_BYTES, AvatarService
 from orbit_api.services.backup.service import BackupService
 from orbit_api.services.bookmarks.service import BookmarkService, LinkFetcher
@@ -173,6 +176,18 @@ def get_local_auth_service(
 
 
 LocalAuthServiceDep = Annotated[LocalAuthService, Depends(get_local_auth_service)]
+
+
+def get_app_lock_service(
+    request: Request,
+    session: SessionDep,
+    hasher: Annotated[PasswordHasher, Depends(get_password_hasher)],
+) -> AppLockService:
+    devices: DeviceAuthenticator = request.app.state.device_authenticator
+    return build_app_lock_service(session, hasher, devices)
+
+
+AppLockServiceDep = Annotated[AppLockService, Depends(get_app_lock_service)]
 
 
 def get_sign_in_throttle(request: Request) -> SignInThrottle:

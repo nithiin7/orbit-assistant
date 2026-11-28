@@ -5,7 +5,7 @@ from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
-from orbit_api.api.auth import BearerTokenDep, CurrentUserDep, require_local_mode
+from orbit_api.api.auth import BearerTokenDep, CallerDep, CurrentUserDep, require_local_mode
 from orbit_api.api.dependencies import LocalAuthServiceDep, SettingsDep, SignInThrottleDep
 from orbit_api.schemas.auth import (
     AuthConfigResponse,
@@ -150,7 +150,7 @@ async def change_password(
     responses={401: {"description": "Not signed in."}},
 )
 async def sign_out(
-    _user: CurrentUserDep, token: BearerTokenDep, local_auth: LocalAuthServiceDep
+    _caller: CallerDep, token: BearerTokenDep, local_auth: LocalAuthServiceDep
 ) -> Response:
     """Revoke the session token used for this request."""
     await local_auth.sign_out(token)

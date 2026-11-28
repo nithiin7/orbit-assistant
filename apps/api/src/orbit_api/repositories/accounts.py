@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from orbit_api.db.models import LocalCredentialModel, LocalSessionModel, UserModel
 from orbit_api.repositories.transaction import flush
 from orbit_api.services.accounts.models import AuthProvider, SetupStatus, User
-from orbit_api.services.local_auth.models import LocalCredential
+from orbit_api.services.local_auth.models import ActiveSession, LocalCredential
 from orbit_api.utils.changes import UNSET, Change
 
 
@@ -131,17 +131,22 @@ class SqlLocalAuthRepository:
         )
         await flush(self._session)
 
-    async def find_session_user(self, token_hash: str, now: datetime) -> User | None:
-        model = await self._session.scalar(
-            select(UserModel)
-            .join(LocalSessionModel, LocalSessionModel.user_id == UserModel.id)
-            .where(
-                LocalSessionModel.token_hash == token_hash,
-                LocalSessionModel.expires_at > now,
-                UserModel.auth_provider == "local",
+    async def find_session(self, token_hash: str, now: datetime) -> ActiveSession | None:
+        row = (
+            await self._session.execute(
+                select(UserModel, LocalSessionModel.created_at)
+                .join(LocalSessionModel, LocalSessionModel.user_id == UserModel.id)
+                .where(
+                    LocalSessionModel.token_hash == token_hash,
+                    LocalSessionModel.expires_at > now,
+                    UserModel.auth_provider == "local",
+                )
             )
-        )
-        return _to_user(model) if model else None
+        ).first()
+        if row is None:
+            return None
+        model, started_at = row
+        return ActiveSession(user=_to_user(model), started_at=started_at)
 
     async def delete_session(self, token_hash: str) -> None:
         await self._session.execute(

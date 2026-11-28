@@ -146,6 +146,9 @@ EXCLUDED_TABLES: Final[dict[str, str]] = {
     "voice_settings": "per-person voice settings refer to AI providers, which aren't backed up",
     "push_subscriptions": "devices turn push on again; their keys never leave the server",
     "push_preferences": "a per-person preference, not workspace data",
+    "app_lock_settings": "a per-person security setting, not workspace data",
+    "app_lock_credentials": "device keys are registered again on each device",
+    "app_lock_sessions": "lock state of sign-in sessions, which never leave the server",
 }
 
 # Columns that name a file in the attachment store: `(table, column)`. The file is stored as

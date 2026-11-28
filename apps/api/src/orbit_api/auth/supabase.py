@@ -6,6 +6,7 @@ default for new projects; legacy shared-secret (HS256) tokens are rejected.
 """
 
 import uuid
+from datetime import UTC, datetime
 from typing import Any, Protocol, cast
 
 import jwt
@@ -88,11 +89,27 @@ def _identity(claims: dict[str, Any]) -> ExternalIdentity:
         if isinstance(metadata, dict)
         else None
     )
+    session_id = claims.get("session_id")
     return ExternalIdentity(
         subject=subject,
         email=email.lower(),
         display_name=display_name if isinstance(display_name, str) else None,
+        session_id=session_id if isinstance(session_id, str) and session_id else None,
+        authenticated_at=_authenticated_at(claims.get("amr")),
     )
+
+
+def _authenticated_at(amr: object) -> datetime | None:
+    """The latest sign-in time in the `amr` claim (`[{"method": ..., "timestamp": ...}]`)."""
+    if not isinstance(amr, list):
+        return None
+    times: list[int] = []
+    for entry in cast(list[object], amr):
+        if isinstance(entry, dict):
+            timestamp = cast(dict[str, object], entry).get("timestamp")
+            if isinstance(timestamp, int) and not isinstance(timestamp, bool):
+                times.append(timestamp)
+    return datetime.fromtimestamp(max(times), UTC) if times else None
 
 
 def _is_uuid(value: str) -> bool:
