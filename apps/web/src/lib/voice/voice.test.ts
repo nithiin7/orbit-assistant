@@ -61,10 +61,9 @@ describe("sentence splitter", () => {
 
   it("splits Hindi at the danda", () => {
     const splitter = new SentenceSplitter();
-    expect([
-      ...splitter.push("कल आपकी दो मीटिंग हैं और एक रिमाइंडर। "),
-      ...splitter.flush(),
-    ]).toEqual(["कल आपकी दो मीटिंग हैं और एक रिमाइंडर।"]);
+    expect([...splitter.push("कल आपकी दो मीटिंग हैं और एक रिमाइंडर। "), ...splitter.flush()]).toEqual([
+      "कल आपकी दो मीटिंग हैं और एक रिमाइंडर।",
+    ]);
   });
 });
 

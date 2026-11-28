@@ -7,6 +7,8 @@ function Input({ className, type = "text", ...props }: ComponentProps<"input">) 
     <input
       type={type}
       data-slot="input"
+      // React focuses `autoFocus` without the attribute; modal dialogs look for this mark.
+      data-autofocus={props.autoFocus ? "" : undefined}
       className={cn(
         "flex h-9 w-full min-w-0 rounded-md border border-input bg-card px-3 py-1 text-sm shadow-elevation-1 transition-[border-color,box-shadow] duration-150 outline-none placeholder:text-muted-foreground dark:bg-transparent",
         "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40",

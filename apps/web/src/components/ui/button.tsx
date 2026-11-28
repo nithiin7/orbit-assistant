@@ -37,6 +37,8 @@ function Button({ className, variant, size, type = "button", ...props }: ButtonP
     <button
       type={type}
       data-slot="button"
+      // React focuses `autoFocus` without the attribute; modal dialogs look for this mark.
+      data-autofocus={props.autoFocus ? "" : undefined}
       className={cn(buttonVariants({ variant, size }), className)}
       {...props}
     />

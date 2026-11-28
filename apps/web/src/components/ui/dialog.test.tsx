@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 
 import { Dialog, DialogFormActions, DialogHeader } from "./dialog";
+import { Input } from "./input";
 
 function Example({
   busy = false,
@@ -26,6 +27,7 @@ function Example({
           description={description}
           onClose={close}
         />
+        <Input aria-label="Name" autoFocus />
         <DialogFormActions busy={busy} onCancel={close} submitLabel="Rename" />
       </form>
     </Dialog>
@@ -39,6 +41,12 @@ describe("Dialog", () => {
     const dialog = screen.getByRole("dialog", { name: "Rename list" });
     expect(dialog).toHaveAttribute("open");
     expect(dialog).toHaveClass("dialog-pop", "rounded-xl", "mt-[10vh]", "max-w-sm");
+  });
+
+  it("focuses the field marked autoFocus, not the close button, when it opens", () => {
+    render(<Example onClose={() => {}} />);
+
+    expect(screen.getByRole("textbox", { name: "Name" })).toHaveFocus();
   });
 
   it("closes from the close button and from Cancel", async () => {
