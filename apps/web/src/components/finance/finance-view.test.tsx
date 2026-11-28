@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ada, json, mockApi, type MockRequest, personal, status } from "@/test/api-mock";
 import { chooseOption } from "@/test/controls";
 import { renderSignedIn } from "@/test/session";
+import { localMonthString, shiftMonth } from "@/utils/dates";
 
 import { FinancePanel } from "./finance-view";
 
@@ -227,6 +228,36 @@ describe("FinancePanel", () => {
     expect(screen.getByRole("region", { name: "Spending by category" })).toHaveTextContent(
       /Rent₹25,000.00100%/,
     );
+  });
+
+  it("compares the month's spending with the months before it", async () => {
+    // The overview opens on this month.
+    const now = localMonthString();
+    const month = (key: string, spent: number) => ({
+      ...emptyMonth(key),
+      expenses: spent,
+      net_expenses: spent,
+      net: -spent,
+      transactions: 1,
+    });
+    mockApi({
+      ...session,
+      ...finance(),
+      [`GET ${FINANCE}/summary`]: json({ ...month(now, 1_200_000), currency: "INR" }),
+      [`GET ${FINANCE}/trend`]: json({
+        currency: "INR",
+        months: [
+          month(shiftMonth(now, -2), 1_000_000),
+          month(shiftMonth(now, -1), 1_000_000),
+          month(now, 1_200_000),
+        ],
+      }),
+    });
+
+    await renderSignedIn(<FinancePanel />);
+
+    const spending = (await screen.findByText("Spending", { selector: "dt" })).parentElement!;
+    expect(spending).toHaveTextContent("20% above your ₹10,000.00 average");
   });
 
   it("hides loan accounts on the accounts tab until asked for", async () => {

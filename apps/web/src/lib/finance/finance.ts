@@ -17,6 +17,7 @@ import type {
   FinanceTransaction,
   FinanceTransactionListQuery,
   FinanceTransactionType,
+  MonthCashFlow,
 } from "@orbit/contracts";
 import { mixed, object, string } from "yup";
 
@@ -450,3 +451,20 @@ export const categorySchema = object({
     .test("printable", "Remove unsupported characters.", (value) => !/\p{C}/u.test(value)),
   type: mixed<FinanceCategory["type"]>().oneOf(["income", "expense"]).defined(),
 });
+
+/**
+ * How a month's spending compares with the average of the months before it in the trend,
+ * counting only months with something recorded. `change` is a fraction: 0.12 is 12% more.
+ * `null` when there is nothing to compare with.
+ */
+export function spendingVsAverage(
+  months: readonly MonthCashFlow[],
+  month: string,
+): { average: number; change: number } | null {
+  const current = months.find((entry) => entry.month === month);
+  const earlier = months.filter((entry) => entry.month < month && entry.transactions > 0);
+  if (!current || earlier.length === 0) return null;
+  const average = earlier.reduce((sum, entry) => sum + entry.net_expenses, 0) / earlier.length;
+  if (average <= 0) return null;
+  return { average, change: (current.net_expenses - average) / average };
+}

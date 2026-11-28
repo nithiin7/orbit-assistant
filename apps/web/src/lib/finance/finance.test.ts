@@ -14,6 +14,7 @@ import {
   parseAmount,
   parseSignedAmount,
   signedAmount,
+  spendingVsAverage,
   toDecimalString,
   toTransactionListQuery,
 } from "./finance";
@@ -284,5 +285,33 @@ describe("moreFiltersCount", () => {
         sort: "amount",
       }),
     ).toBe(2);
+  });
+});
+
+describe("spendingVsAverage", () => {
+  const month = (key: string, net_expenses: number, transactions = 1) => ({
+    month: key,
+    income: 0,
+    expenses: net_expenses,
+    refunds: 0,
+    net_expenses,
+    net: -net_expenses,
+    transactions,
+  });
+
+  it("compares a month with the earlier months that have records", () => {
+    const months = [
+      month("2030-01", 0, 0),
+      month("2030-02", 100),
+      month("2030-03", 300),
+      month("2030-04", 150),
+    ];
+    expect(spendingVsAverage(months, "2030-04")).toEqual({ average: 200, change: -0.25 });
+  });
+
+  it("has nothing to say without earlier spending", () => {
+    expect(spendingVsAverage([month("2030-04", 150)], "2030-04")).toBeNull();
+    expect(spendingVsAverage([month("2030-03", 0), month("2030-04", 150)], "2030-04")).toBeNull();
+    expect(spendingVsAverage([month("2030-03", 100)], "2030-04")).toBeNull();
   });
 });
