@@ -105,6 +105,146 @@
         }
       }
     },
+    "/api/v1/system/status": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Get the installation's status",
+        "description": "Version, database schema, reminder worker, and which optional parts are configured.",
+        "operationId": "get_system_status_api_v1_system_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system/update": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Get the update notice",
+        "description": "With update checks on, asks GitHub when the last answer is a day old (an hour after a\nfailure). A failed check is reported in the result, not as an error.",
+        "operationId": "get_update_status_api_v1_system_update_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system/update/check": {
+      "post": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Check for updates now",
+        "description": "Asks GitHub now, unless it was asked in the last minute. Does nothing while update\nchecks are off.",
+        "operationId": "check_for_updates_api_v1_system_update_check_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/system/settings": {
+      "put": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Change the server-wide settings",
+        "description": "Turning update checks on asks GitHub right away; GitHub sees the server's address.",
+        "operationId": "update_system_settings_api_v1_system_settings_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/auth/config": {
       "get": {
         "tags": [
@@ -70498,6 +70638,170 @@
         "title": "SupabaseAuthConfig",
         "description": "Public Supabase settings the web app needs to sign users in. Contains no secrets."
       },
+      "SystemDatabaseStatus": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "outdated"
+            ],
+            "title": "Status",
+            "description": "`outdated` when the schema isn't at this version's revision: run `pnpm db:migrate`."
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision",
+            "description": "The database's schema revision."
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Revision",
+            "description": "The revision this version expects."
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "revision",
+          "expected_revision"
+        ],
+        "title": "SystemDatabaseStatus"
+      },
+      "SystemFeatures": {
+        "properties": {
+          "ai": {
+            "type": "boolean",
+            "title": "Ai"
+          },
+          "agent": {
+            "type": "boolean",
+            "title": "Agent"
+          },
+          "web_push": {
+            "type": "boolean",
+            "title": "Web Push"
+          },
+          "google": {
+            "type": "boolean",
+            "title": "Google"
+          },
+          "microsoft": {
+            "type": "boolean",
+            "title": "Microsoft"
+          },
+          "online_maps": {
+            "type": "boolean",
+            "title": "Online Maps"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ai",
+          "agent",
+          "web_push",
+          "google",
+          "microsoft",
+          "online_maps"
+        ],
+        "title": "SystemFeatures",
+        "description": "Optional parts the server's configuration turns on. Never secrets or addresses."
+      },
+      "SystemSettingsRequest": {
+        "properties": {
+          "update_check_enabled": {
+            "type": "boolean",
+            "title": "Update Check Enabled",
+            "description": "Ask GitHub for the latest release about once a day. GitHub sees the server's address; nothing else is sent."
+          }
+        },
+        "type": "object",
+        "required": [
+          "update_check_enabled"
+        ],
+        "title": "SystemSettingsRequest"
+      },
+      "SystemStatusResponse": {
+        "properties": {
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "description": "Version of the running API."
+          },
+          "storage_mode": {
+            "type": "string",
+            "enum": [
+              "local",
+              "cloud"
+            ],
+            "title": "Storage Mode"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At",
+            "description": "When the API process started."
+          },
+          "database": {
+            "$ref": "#/components/schemas/SystemDatabaseStatus"
+          },
+          "worker": {
+            "$ref": "#/components/schemas/SystemWorkerStatus"
+          },
+          "features": {
+            "$ref": "#/components/schemas/SystemFeatures"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "storage_mode",
+          "started_at",
+          "database",
+          "worker",
+          "features"
+        ],
+        "title": "SystemStatusResponse",
+        "description": "Health of this installation, for whoever runs it. Reveals no paths or secrets."
+      },
+      "SystemWorkerStatus": {
+        "properties": {
+          "runs_in_api": {
+            "type": "boolean",
+            "title": "Runs In Api",
+            "description": "Whether the API process runs the worker; otherwise `orbit-worker` must."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "behind"
+            ],
+            "title": "Status",
+            "description": "`behind` when reminders that were due minutes ago are still waiting, which usually means no worker is running."
+          }
+        },
+        "type": "object",
+        "required": [
+          "runs_in_api",
+          "status"
+        ],
+        "title": "SystemWorkerStatus"
+      },
       "TableResultResponse": {
         "properties": {
           "table": {
@@ -76320,6 +76624,96 @@
         "type": "object",
         "title": "UpdateSipPlanRequest",
         "description": "`state` pauses, cancels, or resumes (`active`) the SIP. `null` clears `end_date` or\n`funding_account_id`."
+      },
+      "UpdateStatusResponse": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "description": "Whether this server checks for new releases."
+          },
+          "repository": {
+            "type": "string",
+            "title": "Repository",
+            "description": "The GitHub repository whose releases it follows."
+          },
+          "current_version": {
+            "type": "string",
+            "title": "Current Version"
+          },
+          "latest_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Version",
+            "description": "The newest release found, e.g. `1.2.0`."
+          },
+          "latest_published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Published At"
+          },
+          "update_available": {
+            "type": "boolean",
+            "title": "Update Available"
+          },
+          "release_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Url",
+            "description": "The newest release's page on GitHub."
+          },
+          "checked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked At",
+            "description": "When the server last asked."
+          },
+          "check_failed": {
+            "type": "boolean",
+            "title": "Check Failed",
+            "description": "Whether the last attempt failed; the release shown is from an earlier one."
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled",
+          "repository",
+          "current_version",
+          "latest_version",
+          "latest_published_at",
+          "update_available",
+          "release_url",
+          "checked_at",
+          "check_failed"
+        ],
+        "title": "UpdateStatusResponse",
+        "description": "Whether a newer Orbit release is out. Empty until update checks are turned on."
       },
       "UpdateTaskListRequest": {
         "properties": {

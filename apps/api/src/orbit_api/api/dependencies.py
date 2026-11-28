@@ -7,6 +7,7 @@ from typing import Annotated
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from orbit_api import __version__
 from orbit_api.config import Settings
 from orbit_api.db.database import Database
 from orbit_api.repositories.accounts import SqlAccountRepository, SqlLocalAuthRepository
@@ -57,6 +58,7 @@ from orbit_api.repositories.search.history import build_search_history
 from orbit_api.repositories.search.providers import build_universal_search
 from orbit_api.repositories.shopping import SqlShoppingItemRepository, SqlShoppingListRepository
 from orbit_api.repositories.statements import build_statement_service
+from orbit_api.repositories.system import SqlSystemHealth, SqlSystemSettings
 from orbit_api.repositories.tasks import SqlTaskRepository
 from orbit_api.repositories.transaction import SqlTransaction
 from orbit_api.repositories.voice import VoiceServices, build_voice
@@ -102,6 +104,7 @@ from orbit_api.services.search.service import SearchService
 from orbit_api.services.search.universal import UniversalSearchService
 from orbit_api.services.shopping.service import ShoppingService
 from orbit_api.services.statements.service import StatementImportService
+from orbit_api.services.system.service import ReleaseFeed, SystemService
 from orbit_api.services.tasks.service import TaskService
 from orbit_api.services.voice.models import AudioProviderFactory
 from orbit_api.services.watchlist.service import TitleCatalogs, WatchlistService
@@ -420,6 +423,24 @@ def get_place_service(request: Request, session: SessionDep, settings: SettingsD
 
 
 PlaceServiceDep = Annotated[PlaceService, Depends(get_place_service)]
+
+
+def get_system_service(
+    request: Request, session: SessionDep, settings: SettingsDep
+) -> SystemService:
+    # Tests replace the release feed with a fake.
+    feed: ReleaseFeed = getattr(request.app.state, "release_feed")  # noqa: B009 - untyped State
+    return SystemService(
+        SqlSystemSettings(session),
+        SqlSystemHealth(session),
+        SqlTransaction(session),
+        feed,
+        repository=settings.update_repository,
+        current_version=__version__,
+    )
+
+
+SystemServiceDep = Annotated[SystemService, Depends(get_system_service)]
 
 
 def get_people_service(session: SessionDep) -> PeopleService:

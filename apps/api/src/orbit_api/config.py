@@ -153,6 +153,12 @@ class Settings(BaseSettings):
     online_maps_enabled: bool = True
     map_style_url: AnyHttpUrl = AnyHttpUrl("https://tiles.openfreemap.org/styles/positron")
     geocoder_url: AnyHttpUrl = AnyHttpUrl("https://nominatim.openstreetmap.org")
+    # Update notices: when someone turns them on in Settings → System, the server asks GitHub for
+    # this repository's latest release, about once a day. Point it at a fork to follow that.
+    update_repository: str = Field(
+        default="nithiin7/orbit-assistant",
+        pattern=r"^[A-Za-z0-9_-][A-Za-z0-9_.-]{0,99}/[A-Za-z0-9_-][A-Za-z0-9_.-]{0,99}$",
+    )
     # The personal agent and workflow automation (per person, off until each turns it on).
     # `false` turns it off for everyone: no runs start and the worker skips agent jobs.
     agent_enabled: bool = True
