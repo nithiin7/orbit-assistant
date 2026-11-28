@@ -150,7 +150,7 @@ export function LockScreen({ status, displayName }: LockScreenProps) {
       id="main"
       aria-labelledby={`${id}-title`}
       className={cn(
-        "relative isolate flex min-h-dvh animate-lock-in flex-col items-center overflow-y-auto bg-background px-4 py-6",
+        "relative isolate flex h-dvh animate-lock-in flex-col items-center overflow-y-auto bg-background px-4 py-[clamp(0.75rem,3dvh,1.5rem)]",
         accepted && "animate-unlock-out [animation-delay:200ms]",
       )}
     >
@@ -167,23 +167,34 @@ export function LockScreen({ status, displayName }: LockScreenProps) {
         </span>
       </header>
 
-      <div className="flex w-full max-w-sm flex-1 flex-col items-center justify-center py-8">
-        <p className="text-5xl font-extralight tracking-tight tabular-nums sm:text-6xl">
-          <time dateTime={now.toISOString()}>{time}</time>
-        </p>
-        <p className="mt-1 text-sm font-medium text-muted-foreground">{date}</p>
+      <div className="flex min-h-0 w-full max-w-sm flex-1 flex-col items-center justify-center py-[clamp(0.25rem,1.5dvh,2rem)]">
+        {/* Very short screens (a phone on its side) skip the clock to keep the keypad in view. */}
+        <div className="flex flex-col items-center [@media(max-height:36rem)]:hidden">
+          <p className="text-[clamp(2.25rem,6.5dvh,3.75rem)] leading-none font-extralight tracking-tight tabular-nums">
+            <time dateTime={now.toISOString()}>{time}</time>
+          </p>
+          <p className="mt-[clamp(0.25rem,1dvh,0.5rem)] text-sm font-medium text-muted-foreground">
+            {date}
+          </p>
+        </div>
 
         {/* The avatar inside a slowly turning orbit. */}
-        <div className="relative mt-8 grid size-28 place-items-center" aria-hidden="true">
+        <div
+          className="relative mt-[clamp(0.5rem,3dvh,2rem)] grid size-[clamp(4rem,11dvh,7rem)] place-items-center [@media(max-height:30rem)]:hidden"
+          aria-hidden="true"
+        >
           <div className="absolute inset-0 animate-spin-slow rounded-full border border-dashed border-brand/30">
             <span className="absolute -top-1 left-1/2 size-2 -translate-x-1/2 rounded-full bg-brand shadow-[0_0_0_4px_var(--brand-subtle)]" />
           </div>
-          <div className="grid size-20 place-items-center rounded-full bg-linear-to-br from-brand to-brand-2 text-2xl font-semibold text-brand-foreground shadow-elevation-2 ring-4 ring-card">
+          <div className="grid size-[72%] place-items-center rounded-full bg-linear-to-br from-brand to-brand-2 text-[clamp(1.25rem,3.5dvh,1.5rem)] font-semibold text-brand-foreground shadow-elevation-2 ring-4 ring-card">
             {initials(displayName)}
           </div>
         </div>
 
-        <h1 id={`${id}-title`} className="mt-5 text-xl font-semibold tracking-tight text-balance">
+        <h1
+          id={`${id}-title`}
+          className="mt-[clamp(0.375rem,2dvh,1.25rem)] text-xl font-semibold tracking-tight text-balance"
+        >
           Welcome back, {firstName}
         </h1>
         <p className="sr-only">Orbit is locked.</p>
@@ -197,7 +208,7 @@ export function LockScreen({ status, displayName }: LockScreenProps) {
           {message ?? instruction}
         </p>
 
-        <div className="mt-8">
+        <div className="mt-[clamp(0.5rem,3dvh,2rem)]">
           {turnedOff ? (
             <div className="flex flex-col items-center gap-3 text-center">
               <p className="text-sm text-muted-foreground">App lock was turned off.</p>
@@ -229,7 +240,7 @@ export function LockScreen({ status, displayName }: LockScreenProps) {
             <div aria-busy="true" className="flex flex-col items-center gap-8">
               <span className="sr-only">Checking the lock…</span>
               <Skeleton className="h-4 w-32 rounded-full" />
-              <Skeleton className="h-72 w-64 rounded-3xl" />
+              <Skeleton className="h-[min(18rem,42dvh)] w-64 rounded-3xl" />
             </div>
           )}
         </div>
@@ -238,7 +249,8 @@ export function LockScreen({ status, displayName }: LockScreenProps) {
           <Button
             variant="soft"
             size="sm"
-            className="mt-6 rounded-full"
+            // The fingerprint key on the pad does the same; short screens keep just that.
+            className="mt-[clamp(0.75rem,3dvh,1.5rem)] rounded-full [@media(max-height:46rem)]:hidden"
             onClick={unlockWithDevice}
             disabled={busy || accepted}
           >

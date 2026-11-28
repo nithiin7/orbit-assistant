@@ -108,13 +108,13 @@ export function PinPad({
     "group relative grid place-items-center rounded-full text-foreground outline-none select-none",
     "transition-[background-color,scale,box-shadow] duration-150 ease-out active:scale-92",
     "focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40",
-    large ? "size-[4.25rem] sm:size-[4.5rem]" : "size-14",
+    large ? "size-[clamp(3.25rem,8dvh,4.5rem)]" : "size-14",
   );
   const digitKeyClassName = cn(
     keyClassName,
     "border border-border/60 bg-card/70 shadow-elevation-1 backdrop-blur-sm",
     "hover:bg-brand-subtle/70 active:bg-brand-subtle",
-    large ? "text-[1.7rem] font-light" : "text-xl font-normal",
+    large ? "text-[clamp(1.375rem,3.6dvh,1.75rem)] font-light" : "text-xl font-normal",
   );
 
   return (
@@ -127,7 +127,7 @@ export function PinPad({
         key={rejection}
         className={cn(
           "flex items-center justify-center",
-          large ? "mb-9 h-6 gap-4" : "mb-6 h-5 gap-3.5",
+          large ? "mb-[clamp(0.875rem,3.5dvh,2.25rem)] h-6 gap-4" : "mb-6 h-5 gap-3.5",
           rejection > 0 && "animate-pin-shake",
           busy && "animate-pulse",
         )}
@@ -160,7 +160,14 @@ export function PinPad({
         {accepted ? "Unlocked." : `${value.length} of ${length} digits entered.`}
       </p>
 
-      <div className={cn("grid grid-cols-3", large ? "gap-x-6 gap-y-4" : "gap-x-5 gap-y-3")}>
+      <div
+        className={cn(
+          "grid grid-cols-3",
+          large
+            ? "gap-x-[clamp(1rem,3dvh,1.5rem)] gap-y-[clamp(0.5rem,1.5dvh,1rem)]"
+            : "gap-x-5 gap-y-3",
+        )}
+      >
         {KEYS.map((digit) => (
           <button
             key={digit}
@@ -175,7 +182,7 @@ export function PinPad({
         <div
           className={cn(
             "grid place-items-center",
-            large ? "size-[4.25rem] sm:size-[4.5rem]" : "size-14",
+            large ? "size-[clamp(3.25rem,8dvh,4.5rem)]" : "size-14",
           )}
         >
           {extraKey}
